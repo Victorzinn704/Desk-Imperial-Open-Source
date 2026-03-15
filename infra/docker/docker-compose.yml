@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: partner-portal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: partner_portal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - partner_portal_pgdata:/var/lib/postgresql/data
+
+volumes:
+  partner_portal_pgdata:

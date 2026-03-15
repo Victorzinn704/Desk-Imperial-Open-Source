@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build outputs
+.next/
+dist/
+coverage/
+out/
+
+# envs
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+logs/
+
+# runtime
+.turbo/
+.cache/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

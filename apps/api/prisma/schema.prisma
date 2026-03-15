@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ConsentKind {
+  LEGAL
+  COOKIE
+}
+
+enum AuditSeverity {
+  INFO
+  WARN
+  ERROR
+}
+
+enum OrderStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  fullName        String
+  companyName     String?
+  email           String           @unique
+  passwordHash    String
+  status          UserStatus       @default(ACTIVE)
+  passwordChangedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  sessions        Session[]
+  consents        UserConsent[]
+  cookiePreference CookiePreference?
+  auditLogs       AuditLog[]
+  products        Product[]
+  orders          Order[]
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model ConsentDocument {
+  id          String        @id @default(cuid())
+  key         String
+  version     String
+  title       String
+  description String?
+  contentUrl  String?
+  kind        ConsentKind
+  required    Boolean       @default(true)
+  active      Boolean       @default(true)
+  publishedAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  consents    UserConsent[]
+
+  @@unique([key, version])
+  @@index([key, active])
+}
+
+model UserConsent {
+  id          String          @id @default(cuid())
+  userId      String
+  documentId  String
+  acceptedAt  DateTime        @default(now())
+  revokedAt   DateTime?
+  ipAddress   String?
+  userAgent   String?
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document    ConsentDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+}
+
+model CookiePreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  necessary  Boolean  @default(true)
+  analytics  Boolean  @default(false)
+  marketing  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String        @id @default(cuid())
+  actorUserId String?
+  event       String
+  resource    String
+  resourceId  String?
+  severity    AuditSeverity @default(INFO)
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime      @default(now())
+  actor       User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([event, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  category    String
+  description String?
+  unitCost    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  stock       Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  @@index([userId, active])
+  @@unique([userId, name])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  customerName String?
+  channel      String?
+  notes        String?
+  status       OrderStatus @default(COMPLETED)
+  totalRevenue Decimal     @db.Decimal(10, 2)
+  totalCost    Decimal     @db.Decimal(10, 2)
+  totalProfit  Decimal     @db.Decimal(10, 2)
+  totalItems   Int
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  cancelledAt  DateTime?
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items        OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  category    String
+  quantity    Int
+  unitCost    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  lineRevenue Decimal  @db.Decimal(10, 2)
+  lineCost    Decimal  @db.Decimal(10, 2)
+  lineProfit  Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId, createdAt])
+}
