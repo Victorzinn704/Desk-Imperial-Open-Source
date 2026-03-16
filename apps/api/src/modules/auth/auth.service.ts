@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Injectable,
   Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -120,14 +121,16 @@ export class AuthService {
         bypassRateLimit: true,
       })
     } catch (error) {
+      await this.prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      })
+
       if (isServiceUnavailable(error)) {
-        return {
-          success: true,
-          requiresEmailVerification: true,
-          email: user.email,
-          message:
-            'Cadastro concluido, mas o envio do codigo ainda nao respondeu. Abra a tela de confirmar email para reenviar em instantes.',
-        }
+        throw new ServiceUnavailableException(
+          'Nao foi possivel enviar o codigo de confirmacao agora. O cadastro nao foi concluido. Tente novamente em instantes.',
+        )
       }
 
       throw error
