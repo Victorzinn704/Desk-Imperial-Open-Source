@@ -8,6 +8,8 @@ import { roundCurrency, roundPercent, toProductRecord } from '../products/produc
 export type FinanceSummaryResponse = {
   displayCurrency: 'BRL' | 'USD' | 'EUR'
   ratesUpdatedAt: string | null
+  ratesSource: 'live' | 'stale-cache' | 'fallback'
+  ratesNotice: string | null
   totals: {
     activeProducts: number
     inventoryUnits: number
@@ -295,6 +297,8 @@ export class FinanceService {
     return {
       displayCurrency,
       ratesUpdatedAt: snapshot.updatedAt,
+      ratesSource: snapshot.source,
+      ratesNotice: snapshot.notice,
       totals,
       categoryBreakdown: [...categoryMap.values()].sort((left, right) => right.potentialProfit - left.potentialProfit),
       topProducts: records

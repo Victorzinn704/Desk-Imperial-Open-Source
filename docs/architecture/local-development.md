@@ -48,6 +48,8 @@ PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
 Observacao:
+- se a AwesomeAPI devolver `429`, o backend reutiliza o ultimo cache valido e, se necessario, uma estimativa de contingencia
+- se voce tiver acesso a uma chave da AwesomeAPI, preencha `EXCHANGE_RATES_API_KEY` para reduzir limites do modo publico
 - o projeto agora usa a API HTTPS da Brevo como fluxo oficial de email
 - a chave configurada em `BREVO_API_KEY` precisa ser uma API key valida do painel `SMTP & API > API Keys`
 - `EMAIL_FROM_EMAIL` deve existir como sender validado na Brevo

@@ -115,7 +115,12 @@ APP_URL=http://localhost:3000
 COOKIE_SECRET=change-me
 CSRF_SECRET=change-me
 EXCHANGE_RATES_URL=https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BRL-USD,BRL-EUR,USD-EUR,EUR-USD
+EXCHANGE_RATES_API_KEY=
 EXCHANGE_RATES_CACHE_SECONDS=300
+EXCHANGE_RATES_STALE_CACHE_SECONDS=21600
+EXCHANGE_RATES_RATE_LIMIT_BACKOFF_SECONDS=600
+EXCHANGE_RATES_FALLBACK_USD_BRL=5.5
+EXCHANGE_RATES_FALLBACK_EUR_BRL=6.0
 GEOCODING_URL=https://nominatim.openstreetmap.org/search
 GEOCODING_CACHE_SECONDS=86400
 GEOCODING_CONTACT_EMAIL=
@@ -127,6 +132,8 @@ GEMINI_CACHE_SECONDS=900
 
 Observacao:
 - as cotacoes em tempo real usam a AwesomeAPI publica e ficam em cache no backend
+- se voce tiver uma chave da AwesomeAPI, preencha `EXCHANGE_RATES_API_KEY` para aumentar o limite e reduzir `429`
+- se a AwesomeAPI devolver `429` ou ficar indisponivel, o backend usa o ultimo cache valido e, em ultimo caso, uma estimativa de contingencia para nao derrubar o dashboard
 - a geocodificacao do mapa usa Nominatim publico, com cache e tolerancia a falha no backend
 - em bancos hospedados como Neon, use `DATABASE_URL` para a conexao pooled do app e `DIRECT_URL` para migrations e seed
 

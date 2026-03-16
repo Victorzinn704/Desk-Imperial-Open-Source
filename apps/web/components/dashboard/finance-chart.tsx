@@ -204,7 +204,12 @@ export function FinanceChart({
             {finance?.ratesUpdatedAt
               ? ` • cotacao de ${new Date(finance.ratesUpdatedAt).toLocaleString('pt-BR')}`
               : ''}
+            {finance?.ratesSource === 'stale-cache' ? ' • cache de contingencia' : ''}
+            {finance?.ratesSource === 'fallback' ? ' • estimativa temporaria' : ''}
           </p>
+          {finance?.ratesNotice ? (
+            <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">{finance.ratesNotice}</p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-2">

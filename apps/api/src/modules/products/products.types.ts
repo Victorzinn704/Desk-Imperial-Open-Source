@@ -43,6 +43,8 @@ export type ProductRecord = {
 export type ProductsResponse = {
   displayCurrency: CurrencyCode
   ratesUpdatedAt: string | null
+  ratesSource: 'live' | 'stale-cache' | 'fallback'
+  ratesNotice: string | null
   items: ProductRecord[]
   totals: {
     totalProducts: number
@@ -141,6 +143,8 @@ export function buildProductsResponse(
   return {
     displayCurrency: options.displayCurrency,
     ratesUpdatedAt: options.ratesUpdatedAt,
+    ratesSource: options.snapshot.source,
+    ratesNotice: options.snapshot.notice,
     items: records,
     totals: {
       totalProducts: records.length,

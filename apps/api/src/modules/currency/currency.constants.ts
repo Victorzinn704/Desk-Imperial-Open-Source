@@ -12,3 +12,6 @@ export const DEFAULT_EXCHANGE_PAIRS = [
   'USD-EUR',
   'EUR-USD',
 ] as const
+
+export const DEFAULT_FALLBACK_USD_BRL = 5.5
+export const DEFAULT_FALLBACK_EUR_BRL = 6

@@ -50,6 +50,8 @@ export type ProductRecord = {
 export type ProductsResponse = {
   displayCurrency: CurrencyCode
   ratesUpdatedAt: string | null
+  ratesSource: 'live' | 'stale-cache' | 'fallback'
+  ratesNotice: string | null
   items: ProductRecord[]
   totals: {
     totalProducts: number
@@ -67,6 +69,8 @@ export type ProductsResponse = {
 export type FinanceSummaryResponse = {
   displayCurrency: CurrencyCode
   ratesUpdatedAt: string | null
+  ratesSource: 'live' | 'stale-cache' | 'fallback'
+  ratesNotice: string | null
   totals: {
     activeProducts: number
     inventoryUnits: number
