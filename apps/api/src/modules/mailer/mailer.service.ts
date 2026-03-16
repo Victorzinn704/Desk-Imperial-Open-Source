@@ -497,6 +497,7 @@ export class MailerService {
 
     const port = Number(this.configService.get<string>('SMTP_PORT') ?? 587)
     const smtpService = this.getSmtpService()
+    const smtpFamily = Number(this.configService.get<string>('SMTP_IP_FAMILY') ?? 4)
     const auth = this.configService.get<string>('SMTP_USER')
       ? {
           user: this.configService.get<string>('SMTP_USER'),
@@ -511,6 +512,7 @@ export class MailerService {
             port,
             secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
             auth,
+            family: Number.isFinite(smtpFamily) ? smtpFamily : 4,
             requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
             connectionTimeout: 15000,
             greetingTimeout: 15000,
@@ -521,6 +523,7 @@ export class MailerService {
             port,
             secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
             auth,
+            family: Number.isFinite(smtpFamily) ? smtpFamily : 4,
             requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
             connectionTimeout: 15000,
             greetingTimeout: 15000,

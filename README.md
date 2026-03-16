@@ -163,6 +163,7 @@ SMTP_SERVICE=gmail
 SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_REQUIRE_TLS=true
+SMTP_IP_FAMILY=4
 SMTP_USER=seu-email@gmail.com
 SMTP_PASS=sua-senha-de-app
 SMTP_FROM_NAME=DESK IMPERIAL
@@ -180,6 +181,7 @@ Observacao:
 - para testes iniciais, `onboarding@resend.dev` so envia para o proprio email da conta Resend; para liberar envio publico, verifique um dominio no provedor
 - na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `RESEND_API_KEY` ou `BREVO_API_KEY`
 - para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
+- `SMTP_IP_FAMILY=4` ajuda hosts como Railway a evitar tentativa de conexao por IPv6 quando o relay responde melhor em IPv4
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
 - para cair menos em spam, prefira remetente com dominio proprio e dominio verificado no provedor
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente
