@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowRight, ChartColumn, Radar, ScrollText } from 'lucide-react'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
+import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 
@@ -31,6 +32,12 @@ const deliverables = [
   'Login e cadastro conectados a uma API segura',
   'Dashboard inicial com sessao e preferencias de consentimento',
   'Base pronta para produtos, financeiro, mapa e pendencias',
+]
+
+const heroLines = [
+  'Portal empresarial moderno',
+  'para operar com seguranca,',
+  'controle e identidade forte.',
 ]
 
 export function LandingPage() {
@@ -72,11 +79,38 @@ export function LandingPage() {
               Projeto principal em evolucao
             </span>
 
-            <h1 className="mt-8 text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
-              <span className="text-flag-brazil">
-                Portal empresarial moderno para operar com seguranca, controle e identidade forte.
-              </span>
-            </h1>
+            <motion.div
+              animate="visible"
+              className="mt-8 space-y-1 sm:space-y-2"
+              initial="hidden"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.12,
+                    delayChildren: 0.1,
+                  },
+                },
+              }}
+            >
+              {heroLines.map((line) => (
+                <motion.span
+                  className="block text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                  key={line}
+                  variants={{
+                    hidden: { opacity: 0, y: -34, filter: 'blur(12px)' },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      filter: 'blur(0px)',
+                      transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+                    },
+                  }}
+                >
+                  <span className="text-flag-brazil">{line}</span>
+                </motion.span>
+              ))}
+            </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
               A base atual do sistema ja une monorepo, Next.js, NestJS, autenticacao segura, consentimento LGPD,
@@ -117,6 +151,7 @@ export function LandingPage() {
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
+            <HeroFloatingCard />
 
             <div className="relative z-10 rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.95),rgba(11,13,16,0.95))] p-6 shadow-[var(--shadow-panel-strong)]">
               <div className="flex items-center justify-between">
