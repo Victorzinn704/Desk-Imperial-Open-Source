@@ -32,6 +32,8 @@ export type ProductRecord = {
   measurementUnit: string
   measurementValue: number
   unitsPerPackage: number
+  stockPackages: number
+  stockLooseUnits: number
   description: string | null
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -64,6 +66,8 @@ export type ProductsResponse = {
     activeProducts: number
     inactiveProducts: number
     stockUnits: number
+    stockPackages: number
+    stockLooseUnits: number
     stockBaseUnits: number
     inventoryCostValue: number
     inventorySalesValue: number

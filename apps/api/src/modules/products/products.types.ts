@@ -30,6 +30,8 @@ export type ProductRecord = {
   measurementUnit: string
   measurementValue: number
   unitsPerPackage: number
+  stockPackages: number
+  stockLooseUnits: number
   description: string | null
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -59,13 +61,15 @@ export type ProductsResponse = {
   items: ProductRecord[]
   totals: {
     totalProducts: number
-      activeProducts: number
-      inactiveProducts: number
-      stockUnits: number
-      stockBaseUnits: number
-      inventoryCostValue: number
-      inventorySalesValue: number
-      potentialProfit: number
+    activeProducts: number
+    inactiveProducts: number
+    stockUnits: number
+    stockPackages: number
+    stockLooseUnits: number
+    stockBaseUnits: number
+    inventoryCostValue: number
+    inventorySalesValue: number
+    potentialProfit: number
     averageMarginPercent: number
     categories: string[]
   }
@@ -85,7 +89,9 @@ export function toProductRecord(
   const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
   const originalInventorySalesValue = roundCurrency(originalUnitPrice * product.stock)
   const originalPotentialProfit = roundCurrency(originalInventorySalesValue - originalInventoryCostValue)
-  const stockBaseUnits = product.stock * product.unitsPerPackage
+  const stockBaseUnits = product.stock
+  const stockPackages = product.unitsPerPackage > 1 ? Math.floor(product.stock / product.unitsPerPackage) : 0
+  const stockLooseUnits = product.unitsPerPackage > 1 ? product.stock % product.unitsPerPackage : product.stock
 
   const unitCost = options.currencyService.convert(
     originalUnitCost,
@@ -123,6 +129,8 @@ export function toProductRecord(
     measurementUnit: product.measurementUnit,
     measurementValue,
     unitsPerPackage: product.unitsPerPackage,
+    stockPackages,
+    stockLooseUnits,
     description: product.description,
     currency: product.currency,
     displayCurrency: options.displayCurrency,
@@ -171,6 +179,8 @@ export function buildProductsResponse(
       activeProducts: activeItems.length,
       inactiveProducts: records.length - activeItems.length,
       stockUnits: records.reduce((total, item) => total + item.stock, 0),
+      stockPackages: records.reduce((total, item) => total + item.stockPackages, 0),
+      stockLooseUnits: records.reduce((total, item) => total + item.stockLooseUnits, 0),
       stockBaseUnits: records.reduce((total, item) => total + item.stockBaseUnits, 0),
       inventoryCostValue,
       inventorySalesValue,

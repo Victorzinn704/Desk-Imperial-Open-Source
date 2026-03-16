@@ -92,3 +92,46 @@ export function formatMeasurement(value: number, unit: string) {
   const formattedValue = Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, '')
   return `${formattedValue}${normalizedUnit.toLowerCase() === 'un' ? ' und' : normalizedUnit.toLowerCase()}`
 }
+
+export function getStockBreakdown(totalUnits: number, unitsPerPackage: number) {
+  const safeUnitsPerPackage = Math.max(1, unitsPerPackage)
+
+  if (safeUnitsPerPackage <= 1) {
+    return {
+      stockPackages: 0,
+      stockLooseUnits: Math.max(0, totalUnits),
+      totalUnits: Math.max(0, totalUnits),
+    }
+  }
+
+  return {
+    stockPackages: Math.floor(Math.max(0, totalUnits) / safeUnitsPerPackage),
+    stockLooseUnits: Math.max(0, totalUnits) % safeUnitsPerPackage,
+    totalUnits: Math.max(0, totalUnits),
+  }
+}
+
+export function buildStockTotalUnits(stockPackages: number, stockLooseUnits: number, unitsPerPackage: number) {
+  const safePackages = Math.max(0, stockPackages)
+  const safeLooseUnits = Math.max(0, stockLooseUnits)
+  const safeUnitsPerPackage = Math.max(1, unitsPerPackage)
+
+  return safePackages * safeUnitsPerPackage + safeLooseUnits
+}
+
+export function formatStockBreakdown(
+  totalUnits: number,
+  unitsPerPackage: number,
+  options?: {
+    compact?: boolean
+  },
+) {
+  const breakdown = getStockBreakdown(totalUnits, unitsPerPackage)
+
+  if (Math.max(1, unitsPerPackage) <= 1) {
+    return `${breakdown.stockLooseUnits} und`
+  }
+
+  const packageLabel = options?.compact ? 'cx/fd' : 'caixa(s)/fardo(s)'
+  return `${breakdown.stockPackages} ${packageLabel} + ${breakdown.stockLooseUnits} und`
+}

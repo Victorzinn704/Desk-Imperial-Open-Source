@@ -27,7 +27,7 @@ export function ProductSearchField({
             className="mt-1 h-9 w-full border-none bg-transparent text-sm text-white outline-none placeholder:text-[rgba(255,255,255,0.38)]"
             id="portfolio-search"
             onChange={(event) => onChange(event.currentTarget.value)}
-            placeholder="Pesquise por nome, inicial, marca ou classe"
+            placeholder="Digite nome, inicial, marca ou classe"
             type="search"
             value={value}
           />
@@ -45,7 +45,7 @@ export function ProductSearchField({
         ) : (
           <div className="inline-flex items-center gap-2 rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
             <Sparkles className="size-4" />
-            Busca viva
+            Busca imediata
           </div>
         )}
       </div>

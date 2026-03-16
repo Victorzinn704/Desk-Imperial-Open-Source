@@ -70,11 +70,14 @@ export function ProductImportCard({
         <p className="font-medium text-white">Colunas esperadas</p>
         <p className="mt-2">
           `name`, `brand`, `category`, `packagingClass`, `measurementUnit`, `measurementValue`,
-          `unitsPerPackage`, `description`, `unitCost`, `unitPrice`, `stock`, `currency`
+          `unitsPerPackage`, `description`, `unitCost`, `unitPrice`, `stockPackages`,
+          `stockLooseUnits`, `stock`, `currency`
         </p>
         <p className="mt-2 text-xs text-[var(--text-soft)]">
           `brand` e opcional. Se `packagingClass`, `measurementUnit`, `measurementValue` ou
           `unitsPerPackage` nao forem enviados, o sistema usa um cadastro rapido com `UN`.
+          `stockPackages` e `stockLooseUnits` sao o formato recomendado; `stock` continua como
+          compatibilidade para total em unidades.
         </p>
       </div>
 

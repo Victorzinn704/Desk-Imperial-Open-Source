@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
 import type { EmployeeRecord } from '@/lib/api'
 import { currencyOptions } from '@/lib/currency'
+import { formatStockBreakdown } from '@/lib/product-packaging'
 import { orderSchema, type OrderFormInputValues, type OrderFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
@@ -60,7 +61,7 @@ export function OrderForm({
     () => [
       { label: 'Selecione um produto', value: '' },
       ...products.map((product) => ({
-        label: `${product.name} • estoque ${product.stock}`,
+        label: `${product.name} • ${formatStockBreakdown(product.stock, product.unitsPerPackage, { compact: true })} (${product.stock} und)`,
         value: product.id,
       })),
     ],
@@ -146,7 +147,14 @@ export function OrderForm({
         />
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <InputField error={errors.quantity?.message} label="Quantidade" step="1" type="number" {...register('quantity')} />
+          <InputField
+            error={errors.quantity?.message}
+            hint="A venda sempre sai em unidades. Se o estoque entrou por caixa/fardo, o sistema converte tudo para und."
+            label="Quantidade em unidades"
+            step="1"
+            type="number"
+            {...register('quantity')}
+          />
           <SelectField error={errors.currency?.message} label="Moeda da venda" options={currencyOptions} {...register('currency')} />
         </div>
 

@@ -3,7 +3,7 @@
 import { Archive, PencilLine, RotateCcw } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
-import { formatMeasurement } from '@/lib/product-packaging'
+import { formatMeasurement, formatStockBreakdown } from '@/lib/product-packaging'
 import { Button } from '@/components/shared/button'
 
 export function ProductCard({
@@ -38,10 +38,11 @@ export function ProductCard({
     displayCurrency: product.displayCurrency,
   })
   const measurementLabel = formatMeasurement(product.measurementValue, product.measurementUnit)
-  const stockHelper =
+  const stockBreakdown = formatStockBreakdown(product.stock, product.unitsPerPackage)
+  const packageHelper =
     product.unitsPerPackage > 1
-      ? `${product.stockBaseUnits} und totais no estoque`
-      : `${product.stockBaseUnits} und disponiveis`
+      ? `${product.unitsPerPackage} und por caixa/fardo`
+      : 'Produto operado apenas por unidade'
 
   return (
     <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
@@ -102,8 +103,8 @@ export function ProductCard({
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque</p>
-          <p className="mt-2 text-lg font-semibold text-white">{product.stock}</p>
-          <p className="mt-1 text-xs text-[var(--text-soft)]">{stockHelper}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{stockBreakdown}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">{product.stock} und totais • {packageHelper}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro potencial</p>

@@ -92,8 +92,30 @@ export const productSchema = z.object({
   unitCost: z.coerce.number().min(0, 'O custo nao pode ser negativo.'),
   unitPrice: z.coerce.number().min(0, 'O preco nao pode ser negativo.'),
   currency: currencyCodeSchema,
-  stock: z.coerce.number().int('Use um numero inteiro para estoque.').min(0, 'O estoque nao pode ser negativo.'),
+  stockPackages: z
+    .coerce
+    .number()
+    .int('Use um numero inteiro para caixas/fardos.')
+    .min(0, 'A quantidade de caixas/fardos nao pode ser negativa.'),
+  stockLooseUnits: z
+    .coerce
+    .number()
+    .int('Use um numero inteiro para unidades avulsas.')
+    .min(0, 'A quantidade de unidades avulsas nao pode ser negativa.'),
 })
+  .superRefine((values, context) => {
+    if (values.unitsPerPackage > 1 && values.stockLooseUnits >= values.unitsPerPackage) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['stockLooseUnits'],
+        message: 'As unidades avulsas devem ser menores que a quantidade por caixa/fardo.',
+      })
+    }
+  })
+  .transform((values) => ({
+    ...values,
+    stock: values.stockPackages * values.unitsPerPackage + values.stockLooseUnits,
+  }))
 
 export const profileSchema = z.object({
   fullName: z

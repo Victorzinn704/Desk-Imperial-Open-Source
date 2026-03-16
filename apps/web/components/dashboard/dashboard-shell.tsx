@@ -236,7 +236,7 @@ export function DashboardShell() {
     onSuccess: () => invalidateCatalog(queryClient),
   })
   const updateProductMutation = useMutation({
-    mutationFn: ({ productId, values }: { productId: string; values: ProductFormValues }) =>
+    mutationFn: ({ productId, values }: { productId: string; values: Parameters<typeof updateProduct>[1] }) =>
       updateProduct(productId, values),
     onSuccess: () => {
       setEditingProduct(null)
@@ -332,12 +332,27 @@ export function DashboardShell() {
   const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error.message : null
 
   const handleProductSubmit = (values: ProductFormValues) => {
+    const payload: Parameters<typeof createProduct>[0] = {
+      name: values.name,
+      brand: values.brand,
+      category: values.category,
+      packagingClass: values.packagingClass,
+      measurementUnit: values.measurementUnit,
+      measurementValue: values.measurementValue,
+      unitsPerPackage: values.unitsPerPackage,
+      description: values.description,
+      unitCost: values.unitCost,
+      unitPrice: values.unitPrice,
+      currency: values.currency,
+      stock: values.stock,
+    }
+
     if (editingProduct) {
-      updateProductMutation.mutate({ productId: editingProduct.id, values })
+      updateProductMutation.mutate({ productId: editingProduct.id, values: payload })
       return
     }
 
-    createProductMutation.mutate(values)
+    createProductMutation.mutate(payload)
   }
 
   const handleProfileSubmit = (values: ProfileFormValues) => {
@@ -941,6 +956,48 @@ function PortfolioEnvironment({
         title="Modulo de portfolio e produtos"
       />
 
+      <section className="rounded-[34px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(12,15,20,0.96),rgba(16,20,28,0.94))] p-6 shadow-[var(--shadow-panel)]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-end">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
+              Localize um produto
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">
+              Busque por nome, inicial, marca ou classe de cadastro
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
+              A barra abaixo filtra o portfolio em tempo real para voce achar qualquer item sem
+              descer a tela inteira.
+            </p>
+            <div className="mt-5">
+              <ProductSearchField
+                onChange={setSearchQuery}
+                onClear={() => setSearchQuery('')}
+                value={searchQuery}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-[26px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,10,14,0.7)] px-5 py-4 text-sm text-[var(--text-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
+              Portfolio filtrado
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-white">{filteredProducts.length}</p>
+            <p className="mt-2 leading-7">
+              {productsTotals
+                ? `${productsTotals.totalProducts} produto(s) no total e ${productsTotals.stockUnits} und disponiveis.`
+                : 'Carregando produtos cadastrados...'}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-[var(--text-soft)]">
+          {filteredProducts.length === products.length
+            ? 'Digite apenas o nome, a inicial, a marca ou o tipo da embalagem para localizar um item mais rapido.'
+            : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
+        </p>
+      </section>
+
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
         <div className="space-y-4">
           <ProductForm
@@ -1007,7 +1064,7 @@ function PortfolioEnvironment({
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
             {productsTotals
-              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockBaseUnits} und base`
+              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockUnits} und disponiveis`
               : 'Carregando portfolio...'}
           </div>
         </div>
@@ -1016,19 +1073,6 @@ function PortfolioEnvironment({
         {productMutationError ? (
           <p className="mt-5 text-sm text-[var(--danger)]">{productMutationError.message}</p>
         ) : null}
-
-        <div className="mt-8">
-          <ProductSearchField
-            onChange={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-            value={searchQuery}
-          />
-          <p className="mt-3 text-sm text-[var(--text-soft)]">
-            {filteredProducts.length === products.length
-              ? 'Pesquise por nome, inicial, marca ou classe de cadastro para encontrar um item mais rapido.'
-              : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
-          </p>
-        </div>
 
         <div className="mt-8 space-y-4">
           {filteredProducts.length ? (

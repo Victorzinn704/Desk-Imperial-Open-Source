@@ -11,13 +11,15 @@ export type ProductImportRow = {
   unitCost: number
   unitPrice: number
   currency: string
+  stockPackages: number
+  stockLooseUnits: number
   stock: number
 }
 
-const requiredHeaders = ['name', 'category', 'description', 'unitcost', 'unitprice', 'stock']
+const requiredHeaders = ['name', 'category', 'description', 'unitcost', 'unitprice']
 const MAX_IMPORT_ROWS = 500
 const MAX_LINE_LENGTH = 4000
-const MAX_COLUMNS = 12
+const MAX_COLUMNS = 14
 const MAX_CELL_LENGTH = 280
 
 export function parseProductImportCsv(content: string): ProductImportRow[] {
@@ -56,6 +58,10 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     }
   }
 
+  if (!headers.includes('stock') && !headers.includes('stockpackages') && !headers.includes('stocklooseunits')) {
+    throw new Error('O CSV precisa conter "stock" ou o par "stockPackages" e "stockLooseUnits".')
+  }
+
   return lines.slice(1).map((line, index) => {
     if (line.length > MAX_LINE_LENGTH) {
       throw new Error(`Linha ${index + 2}: excede o limite maximo permitido.`)
@@ -73,6 +79,10 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     }
 
     const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex]?.trim() ?? '']))
+    const unitsPerPackage = Number.parseInt(row.unitsperpackage || '1', 10)
+    const stockPackages = Number.parseInt(row.stockpackages || '0', 10)
+    const stockLooseUnits = Number.parseInt(row.stocklooseunits || '0', 10)
+    const totalStock = Number.parseInt(row.stock || '-1', 10)
 
     return {
       line: index + 2,
@@ -82,12 +92,18 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
       packagingClass: row.packagingclass || 'Cadastro rapido',
       measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
       measurementValue: Number.parseFloat(row.measurementvalue || '1'),
-      unitsPerPackage: Number.parseInt(row.unitsperpackage || '1', 10),
+      unitsPerPackage,
       description: row.description || null,
       unitCost: Number.parseFloat(row.unitcost),
       unitPrice: Number.parseFloat(row.unitprice),
       currency: (row.currency || 'BRL').toUpperCase(),
-      stock: Number.parseInt(row.stock, 10),
+      stockPackages: Number.isNaN(stockPackages) ? 0 : stockPackages,
+      stockLooseUnits: Number.isNaN(stockLooseUnits) ? 0 : stockLooseUnits,
+      stock:
+        !Number.isNaN(totalStock) && totalStock >= 0
+          ? totalStock
+          : Math.max(0, Number.isNaN(stockPackages) ? 0 : stockPackages) * Math.max(1, unitsPerPackage) +
+            Math.max(0, Number.isNaN(stockLooseUnits) ? 0 : stockLooseUnits),
     }
   })
 }
