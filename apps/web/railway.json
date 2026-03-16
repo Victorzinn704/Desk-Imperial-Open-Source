@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "cd ../.. && npm --workspace @partner/web run start",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
