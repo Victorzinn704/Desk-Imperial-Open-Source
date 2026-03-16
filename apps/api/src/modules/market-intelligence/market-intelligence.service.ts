@@ -105,6 +105,7 @@ export class MarketIntelligenceService {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
       body: JSON.stringify({
         contents: [
           {
@@ -123,7 +124,11 @@ export class MarketIntelligenceService {
         generationConfig: {
           temperature: 0.45,
           topP: 0.9,
+          maxOutputTokens: this.getMaxOutputTokens(),
           responseMimeType: 'application/json',
+          thinkingConfig: {
+            thinkingBudget: this.getThinkingBudget(),
+          },
           responseSchema: {
             type: 'OBJECT',
             properties: {
@@ -156,15 +161,7 @@ export class MarketIntelligenceService {
       )
     }
 
-    const payload = (await response.json()) as {
-      candidates?: Array<{
-        content?: {
-          parts?: Array<{
-            text?: string
-          }>
-        }
-      }>
-    }
+    const payload = (await response.json()) as GeminiGenerateContentResponse
 
     const rawText = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('')?.trim()
     if (!rawText) {
@@ -206,6 +203,19 @@ export class MarketIntelligenceService {
     })
 
     return result
+  }
+
+  private getRequestTimeoutMs() {
+    return Math.max(Number(this.configService.get<string>('GEMINI_TIMEOUT_MS') ?? 15000), 5000)
+  }
+
+  private getMaxOutputTokens() {
+    return Math.max(Number(this.configService.get<string>('GEMINI_MAX_OUTPUT_TOKENS') ?? 768), 256)
+  }
+
+  private getThinkingBudget() {
+    const configuredBudget = Number(this.configService.get<string>('GEMINI_THINKING_BUDGET') ?? 0)
+    return Number.isFinite(configuredBudget) ? configuredBudget : 0
   }
 
   private buildModelUrl(model: string, apiKey: string) {
@@ -291,6 +301,16 @@ export class MarketIntelligenceService {
 
     return entry.payload
   }
+}
+
+type GeminiGenerateContentResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string
+      }>
+    }
+  }>
 }
 
 function buildPrompt(params: {
