@@ -52,15 +52,15 @@ export function LoginForm() {
   const errorMessage =
     loginMutation.error instanceof ApiError
       ? loginMutation.error.message
-      : 'Use seu email corporativo para entrar. Se o acesso ainda estiver pendente, o portal abre a validacao de email automaticamente.'
+      : 'Entre com seu email e sua senha. Se a conta ainda estiver pendente, o portal abre a validacao de email automaticamente.'
 
   return (
     <div>
       <div className="space-y-3">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Entrar</p>
-        <h2 className="text-3xl font-semibold text-white">Acesse sua operacao com uma sessao segura.</h2>
+        <h2 className="text-3xl font-semibold text-white">Acesse sua operacao com seguranca.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          Este fluxo conversa com a API real do projeto e prepara o caminho para produtos, financeiro e preferencias do usuario.
+          Este fluxo conversa com a API real do projeto e libera o caminho para produtos, financeiro e preferencias da conta.
         </p>
       </div>
 

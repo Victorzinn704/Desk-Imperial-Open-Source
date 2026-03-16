@@ -33,6 +33,7 @@ export class DemoAccessService {
   async reserveWindow(params: {
     email: string
     ipAddress: string | null
+    userAgent: string | null
     sessionTtlMs: number
   }): Promise<DemoReservation | null> {
     if (!this.isDemoAccount(params.email)) {
@@ -48,7 +49,7 @@ export class DemoAccessService {
 
     const now = new Date()
     const dayKey = this.getDayKey(now)
-    const ipHash = this.hashIpAddress(ipAddress)
+    const ipHash = this.hashDeviceSignature(ipAddress, params.userAgent)
     const grants = await this.prisma.demoAccessGrant.findMany({
       where: {
         dayKey,
@@ -167,8 +168,11 @@ export class DemoAccessService {
     return this.configService.get<string>('DEMO_ACCOUNT_EMAIL') ?? 'demo@partnerportal.com'
   }
 
-  private hashIpAddress(ipAddress: string) {
-    return createHash('sha256').update(`demo-ip:${ipAddress}`).digest('hex')
+  private hashDeviceSignature(ipAddress: string, userAgent: string | null) {
+    const normalizedUserAgent = normalizeUserAgent(userAgent)
+    return createHash('sha256')
+      .update(`demo-device:${ipAddress}:${normalizedUserAgent}`)
+      .digest('hex')
   }
 
   private getDayKey(date: Date) {
@@ -209,4 +213,12 @@ function normalizeIpAddress(ipAddress: string | null) {
 
 function diffSeconds(start: Date, end: Date) {
   return Math.max(0, Math.ceil((end.getTime() - start.getTime()) / 1000))
+}
+
+function normalizeUserAgent(userAgent: string | null) {
+  if (!userAgent) {
+    return 'unknown-device'
+  }
+
+  return userAgent.trim().toLowerCase().replaceAll(/\s+/g, ' ').slice(0, 240) || 'unknown-device'
 }

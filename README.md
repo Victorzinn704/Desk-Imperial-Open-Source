@@ -134,6 +134,7 @@ Observacao:
 Para envio real de email de confirmacao e redefinicao:
 
 ```env
+EMAIL_PROVIDER=auto
 RESEND_API_URL=https://api.resend.com/emails
 RESEND_API_KEY=sua-api-key-da-resend
 RESEND_FROM_EMAIL=onboarding@resend.dev
@@ -152,10 +153,28 @@ EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
 ```
 
+Exemplo com Gmail SMTP:
+
+```env
+EMAIL_PROVIDER=smtp
+SMTP_SERVICE=gmail
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_REQUIRE_TLS=true
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=sua-senha-de-app
+SMTP_FROM_NAME=DESK IMPERIAL
+SMTP_FROM_EMAIL=seu-email@gmail.com
+EMAIL_REPLY_TO=seu-email@gmail.com
+EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
+```
+
 Observacao:
+- `EMAIL_PROVIDER` aceita `auto`, `resend`, `brevo`, `smtp` ou `log`
 - em producao, a API da Resend e o caminho principal de envio; Brevo API e SMTP ficam como fallback
 - para testes iniciais, `onboarding@resend.dev` so envia para o proprio email da conta Resend; para liberar envio publico, verifique um dominio no provedor
 - na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `RESEND_API_KEY` ou `BREVO_API_KEY`
+- para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
 - para cair menos em spam, prefira remetente com dominio proprio e dominio verificado no provedor
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente

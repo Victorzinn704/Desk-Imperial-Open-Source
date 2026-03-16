@@ -76,7 +76,7 @@ export function RegisterForm() {
   const errorMessage =
     registerMutation.error instanceof ApiError
       ? registerMutation.error.message
-      : 'Seu cadastro cria a conta, registra os consentimentos e envia um codigo para confirmar o email antes do primeiro login.'
+      : 'Seu cadastro cria a conta, registra os consentimentos e envia um codigo para confirmar o email antes do primeiro acesso.'
 
   return (
     <div>
@@ -84,7 +84,7 @@ export function RegisterForm() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Cadastro</p>
         <h2 className="text-3xl font-semibold text-white">Crie uma conta pronta para operar com seguranca.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          O cadastro ja considera aceite de documentos legais e base de sessao por cookie HttpOnly.
+          O cadastro ja considera os documentos legais e a base de sessao por cookie HttpOnly.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export function RegisterForm() {
           <div>
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">Consentimento legal</h3>
             <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-              Para criar a conta, os documentos obrigatorios precisam ser aceitos. As preferencias de cookies agora ficam no banner do site.
+              Para criar a conta, os documentos obrigatorios precisam ser aceitos. As preferencias de cookies ficam no banner do site.
             </p>
           </div>
 

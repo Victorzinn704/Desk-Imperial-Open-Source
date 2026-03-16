@@ -152,7 +152,7 @@ export class AuthService {
       success: true,
       requiresEmailVerification: true,
       email: user.email,
-      message: 'Cadastro concluido. Enviamos um codigo para confirmar o seu email antes do primeiro acesso.',
+      message: 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.',
     }
   }
 
@@ -364,7 +364,7 @@ export class AuthService {
     return {
       success: true,
       email: user.email,
-      message: 'Enviamos um codigo de verificacao para redefinir a senha.',
+      message: 'Enviamos um codigo de verificacao para redefinir sua senha.',
     }
   }
 
@@ -654,7 +654,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Email confirmado com sucesso. Agora voce ja pode entrar no portal.',
+      message: 'Email confirmado com sucesso. Agora voce pode entrar no portal.',
     }
   }
 
@@ -788,6 +788,7 @@ export class AuthService {
     const demoReservation = await this.demoAccessService.reserveWindow({
       email: user.email,
       ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
       sessionTtlMs,
     })
     const expiresAt = demoReservation?.expiresAt ?? new Date(Date.now() + sessionTtlMs)
@@ -938,14 +939,14 @@ export class AuthService {
         trigger: 'login',
       })
 
-      return 'Seu email ainda nao foi confirmado. Enviamos um codigo de verificacao para liberar o acesso.'
+      return 'Seu email ainda nao foi confirmado. Enviamos um codigo para liberar o primeiro acesso.'
     } catch (error) {
       if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
         return 'Seu email ainda nao foi confirmado. Aguarde alguns minutos antes de solicitar um novo codigo.'
       }
 
       if (isServiceUnavailable(error)) {
-        return 'Seu email ainda nao foi confirmado. O portal abriu a validacao, mas o envio do codigo esta indisponivel no momento. Tente reenviar pela tela de confirmar email em alguns instantes.'
+        return 'Seu email ainda nao foi confirmado. A validacao foi aberta, mas o envio do codigo esta indisponivel no momento. Tente reenviar em alguns instantes.'
       }
 
       throw error

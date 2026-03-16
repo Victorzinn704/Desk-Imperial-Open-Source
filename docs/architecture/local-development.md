@@ -34,6 +34,7 @@ GEMINI_MODEL=gemini-2.5-flash
 Exemplo com Resend:
 
 ```env
+EMAIL_PROVIDER=auto
 RESEND_API_URL=https://api.resend.com/emails
 RESEND_API_KEY=sua-api-key-da-resend
 RESEND_FROM_EMAIL=onboarding@resend.dev
@@ -52,8 +53,25 @@ EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
 ```
 
+Exemplo com Gmail SMTP:
+
+```env
+EMAIL_PROVIDER=smtp
+SMTP_SERVICE=gmail
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_REQUIRE_TLS=true
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=sua-senha-de-app
+SMTP_FROM_NAME=DESK IMPERIAL
+SMTP_FROM_EMAIL=seu-email@gmail.com
+EMAIL_REPLY_TO=seu-email@gmail.com
+EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
+```
+
 Observacao:
 - no Railway, o envio SMTP nao funciona nos planos `Free`, `Trial` e `Hobby`
+- para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
 - para producao na Railway, use `RESEND_API_KEY` com a API HTTPS da Resend
 - `onboarding@resend.dev` serve apenas para teste e so envia para o proprio email da conta Resend
 - para envio publico, verifique um dominio no Resend e troque `RESEND_FROM_EMAIL` para esse dominio

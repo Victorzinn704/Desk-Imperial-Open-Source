@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
         </p>
         <h2 className="text-3xl font-semibold text-white">Receba um codigo seguro para redefinir a senha.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          O portal envia um codigo de verificacao com expiracao curta para o email cadastrado e aplica limite contra abuso de requisicoes.
+          O portal envia um codigo temporario para o email cadastrado e aplica limite contra abuso de requisicoes.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export function ForgotPasswordForm() {
       ) : null}
 
       <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
-        Nao chegou ainda? Verifique spam, promocoes e atualizacoes. O codigo sempre expira rapido para evitar abuso.
+        Nao chegou ainda? Verifique spam, promocoes e atualizacoes. O codigo expira rapido para evitar abuso.
       </div>
 
       <div className="mt-6 flex flex-col gap-3 text-sm text-[var(--text-soft)] sm:flex-row sm:items-center sm:justify-between">

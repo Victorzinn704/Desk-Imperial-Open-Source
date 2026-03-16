@@ -10,6 +10,7 @@ import {
 } from './mailer.templates'
 
 type DeliveryMode = 'resend-api' | 'brevo-api' | 'smtp' | 'log'
+type DeliveryPreference = DeliveryMode | 'auto'
 
 type DeliveryResult = {
   mode: DeliveryMode
@@ -131,17 +132,59 @@ export class MailerService {
   }
 
   private async sendTransactionalEmail(params: TransactionalEmailPayload): Promise<DeliveryResult> {
+    const preferredMode = this.getDeliveryPreference()
     const resendApiKey = this.getResendApiKey()
+    const brevoApiKey = this.getBrevoApiKey()
+    const hasSmtpConfig = this.hasSmtpConfig()
+
+    if (preferredMode === 'resend-api') {
+      if (!resendApiKey) {
+        throw new ServiceUnavailableException(
+          'EMAIL_PROVIDER esta definido como Resend, mas RESEND_API_KEY nao foi configurada.',
+        )
+      }
+
+      return this.sendWithResendApi(params, resendApiKey)
+    }
+
+    if (preferredMode === 'brevo-api') {
+      if (!brevoApiKey) {
+        throw new ServiceUnavailableException(
+          'EMAIL_PROVIDER esta definido como Brevo, mas BREVO_API_KEY nao foi configurada.',
+        )
+      }
+
+      return this.sendWithBrevoApi(params, brevoApiKey)
+    }
+
+    if (preferredMode === 'smtp') {
+      if (!hasSmtpConfig) {
+        throw new ServiceUnavailableException(
+          'EMAIL_PROVIDER esta definido como SMTP, mas a configuracao SMTP ainda esta incompleta.',
+        )
+      }
+
+      return this.sendWithSmtp(params)
+    }
+
+    if (preferredMode === 'log') {
+      this.logger.warn(params.fallbackLogMessage)
+      return { mode: 'log' }
+    }
+
+    if (this.getSmtpService() === 'gmail' && hasSmtpConfig) {
+      return this.sendWithSmtp(params)
+    }
+
     if (resendApiKey) {
       return this.sendWithResendApi(params, resendApiKey)
     }
 
-    const brevoApiKey = this.getBrevoApiKey()
     if (brevoApiKey) {
       return this.sendWithBrevoApi(params, brevoApiKey)
     }
 
-    if (this.hasSmtpConfig()) {
+    if (hasSmtpConfig) {
       return this.sendWithSmtp(params)
     }
 
@@ -395,31 +438,85 @@ export class MailerService {
     }
 
     const port = Number(this.configService.get<string>('SMTP_PORT') ?? 587)
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port,
-      secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
-      auth: this.configService.get<string>('SMTP_USER')
+    const smtpService = this.getSmtpService()
+    const auth = this.configService.get<string>('SMTP_USER')
+      ? {
+          user: this.configService.get<string>('SMTP_USER'),
+          pass: this.configService.get<string>('SMTP_PASS'),
+        }
+      : undefined
+
+    this.transporter = nodemailer.createTransport(
+      smtpService
         ? {
-            user: this.configService.get<string>('SMTP_USER'),
-            pass: this.configService.get<string>('SMTP_PASS'),
+            service: smtpService,
+            port,
+            secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
+            auth,
+            requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000,
           }
-        : undefined,
-      requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-    })
+        : {
+            host: this.configService.get<string>('SMTP_HOST'),
+            port,
+            secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
+            auth,
+            requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000,
+          },
+    )
 
     return this.transporter
   }
 
   private hasSmtpConfig() {
-    return Boolean(
-      this.configService.get<string>('SMTP_HOST') &&
-        this.configService.get<string>('SMTP_PORT') &&
-        this.configService.get<string>('SMTP_FROM_EMAIL'),
-    )
+    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')
+    const smtpService = this.getSmtpService()
+    const smtpHost = this.configService.get<string>('SMTP_HOST')
+    const smtpPort = this.configService.get<string>('SMTP_PORT')
+    const smtpUser = this.configService.get<string>('SMTP_USER')
+    const smtpPass = this.configService.get<string>('SMTP_PASS')
+
+    if (!fromEmail) {
+      return false
+    }
+
+    if (smtpService) {
+      return Boolean(smtpUser && smtpPass)
+    }
+
+    return Boolean(smtpHost && smtpPort)
+  }
+
+  private getDeliveryPreference(): DeliveryPreference {
+    const rawPreference =
+      this.configService.get<string>('EMAIL_PROVIDER')?.trim().toLowerCase() ?? 'auto'
+
+    if (rawPreference === 'resend' || rawPreference === 'resend-api') {
+      return 'resend-api'
+    }
+
+    if (rawPreference === 'brevo' || rawPreference === 'brevo-api') {
+      return 'brevo-api'
+    }
+
+    if (rawPreference === 'smtp' || rawPreference === 'gmail' || rawPreference === 'gmail-smtp') {
+      return 'smtp'
+    }
+
+    if (rawPreference === 'log') {
+      return 'log'
+    }
+
+    return 'auto'
+  }
+
+  private getSmtpService() {
+    return this.configService.get<string>('SMTP_SERVICE')?.trim().toLowerCase() || null
   }
 
   private isProduction() {

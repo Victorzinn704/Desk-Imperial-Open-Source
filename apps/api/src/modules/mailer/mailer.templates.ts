@@ -33,7 +33,7 @@ export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
       'Recebemos uma solicitacao para redefinir a senha da sua conta. Se foi voce, use o codigo abaixo no portal.',
     actionLabel: 'Codigo de redefinicao',
     helper:
-      'Se voce nao solicitou essa troca, ignore este email. Por seguranca, considere revisar os acessos recentes a conta.',
+      'Se voce nao solicitou essa troca, ignore este email. Por seguranca, recomendamos revisar os acessos recentes da conta.',
     previewText: 'Codigo para redefinir a senha da sua conta DESK IMPERIAL.',
   })
 }
@@ -51,7 +51,7 @@ export function buildEmailVerificationContent(params: CodeTemplateParams) {
       'Sua conta foi criada com sucesso. Antes de entrar no portal, precisamos validar este email para liberar o acesso com seguranca.',
     actionLabel: 'Codigo de confirmacao',
     helper:
-      'Se voce nao criou esta conta, ignore esta mensagem. Se nao encontrar o email na caixa principal, confira spam, promocoes ou atualizacoes.',
+      'Se voce nao criou esta conta, ignore esta mensagem. Se nao encontrar este email na caixa principal, confira spam, promocoes ou atualizacoes.',
     previewText: 'Confirme seu email para concluir o cadastro no DESK IMPERIAL.',
   })
 }
@@ -77,7 +77,7 @@ export function buildPasswordChangedEmailContent(params: PasswordChangedTemplate
     eyebrow: 'Alerta de seguranca',
     title: 'Sua senha foi atualizada.',
     intro:
-      'Este aviso confirma que a senha da sua conta foi alterada no DESK IMPERIAL. Se foi voce, nenhuma acao extra e necessaria.',
+      'Este aviso confirma que a senha da sua conta foi alterada no DESK IMPERIAL. Se foi voce, nenhuma acao adicional e necessaria.',
     body: `
       <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
         <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(occurredAt)}</p>
@@ -121,7 +121,7 @@ export function buildLoginAlertEmailContent(params: LoginAlertTemplateParams) {
     eyebrow: 'Alerta de acesso',
     title: 'Nova entrada detectada.',
     intro:
-      'Este aviso ajuda a monitorar acessos a conta. Se foi voce, nenhuma acao extra e necessaria.',
+      'Este aviso ajuda a monitorar acessos a conta. Se foi voce, nenhuma acao adicional e necessaria.',
     body: `
       <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
         <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(occurredAt)}</p>
@@ -244,7 +244,7 @@ function buildEmailLayout(params: {
             </div>
             <div style="padding:18px 6px 0;color:#6b7280;font-size:12px;line-height:1.8">
               <p style="margin:0 0 6px">${escapeHtml(params.footerNote)}</p>
-              <p style="margin:0">Voce recebeu este email porque existe uma acao de seguranca ou autenticacao vinculada a sua conta.</p>
+              <p style="margin:0">Voce recebeu este email porque houve uma acao de seguranca ou autenticacao vinculada a sua conta.</p>
             </div>
           </div>
         </div>

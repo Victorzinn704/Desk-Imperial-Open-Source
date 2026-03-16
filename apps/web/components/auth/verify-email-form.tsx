@@ -75,7 +75,7 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
         </p>
         <h2 className="text-3xl font-semibold text-white">Valide o codigo enviado para o seu email.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          A conta so e liberada depois da confirmacao. Se precisar, voce tambem pode reenviar o codigo. Vale conferir tambem spam, promocoes e atualizacoes.
+          A conta so e liberada depois da confirmacao. Se precisar, voce pode reenviar o codigo. Vale conferir spam, promocoes e atualizacoes.
         </p>
       </div>
 

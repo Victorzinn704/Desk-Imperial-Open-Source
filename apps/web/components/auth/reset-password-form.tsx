@@ -68,7 +68,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
         </p>
         <h2 className="text-3xl font-semibold text-white">Escolha uma nova senha para sua conta.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          O codigo enviado por email tem expiracao curta e invalida as sessoes anteriores depois da troca.
+          O codigo enviado por email expira rapido e invalida as sessoes anteriores depois da troca.
         </p>
       </div>
 
@@ -137,7 +137,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
         )}
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
-          Se o codigo venceu ou nao chegou, volte para recuperar a senha e gere um novo envio.
+          Se o codigo venceu ou nao chegou, volte para recuperar a senha e solicite um novo envio.
         </div>
 
         <Button fullWidth loading={resetPasswordMutation.isPending} size="lg" type="submit">
