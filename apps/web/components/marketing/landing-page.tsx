@@ -137,8 +137,8 @@ export function LandingPage() {
                 hidden: {},
                 visible: {
                   transition: {
-                    staggerChildren: 0.2,
-                    delayChildren: 0.18,
+                    staggerChildren: 0.26,
+                    delayChildren: 0.26,
                   },
                 },
               }}
@@ -159,7 +159,7 @@ export function LandingPage() {
                       opacity: 1,
                       y: 0,
                       filter: 'blur(0px)',
-                      transition: { duration: 1.15, ease: [0.22, 1, 0.36, 1] },
+                      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] },
                     },
                   }}
                 >
@@ -200,12 +200,12 @@ export function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div
-            animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-6 pt-[20rem] lg:pt-[22.5rem]"
-            initial={{ opacity: 0, x: 24 }}
-            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-          >
+            <motion.div
+              animate={{ opacity: 1, x: 0 }}
+              className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
+              initial={{ opacity: 0, x: 24 }}
+              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
+            >
             <FounderPortraitCard />
             <HeroFloatingCard />
 

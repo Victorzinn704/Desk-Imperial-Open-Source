@@ -11,24 +11,41 @@ const signals = [
 
 export function HeroFloatingCard() {
   return (
-    <motion.aside
-      animate={{ x: [0, 10, 0], y: [0, -10, 0], rotate: [0, -0.9, 0] }}
-      className="pointer-events-none absolute -left-10 top-[10.5rem] z-10 hidden w-[280px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:-left-14 xl:top-[11rem]"
-      transition={{ duration: 8.4, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
-    >
+    <>
+      <motion.aside
+        animate={{ x: [0, 42, 14, 36, 0], y: [0, -10, 0], rotate: [0, 0.75, -0.45, 0] }}
+        className="pointer-events-none absolute top-[10.9rem] z-10 hidden w-[248px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:w-[264px]"
+        style={{ right: 'clamp(-12rem, calc((100vw - 78rem) / -2), -4rem)' }}
+        transition={{ duration: 10.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+      >
+        <CardContent compact={false} />
+      </motion.aside>
+
+      <div className="lg:hidden">
+        <div className="rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl">
+          <CardContent compact />
+        </div>
+      </div>
+    </>
+  )
+}
+
+function CardContent({ compact }: Readonly<{ compact: boolean }>) {
+  return (
+    <>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
             Leitura ao vivo
           </p>
-          <p className="mt-2 text-lg font-semibold text-white">Pulso executivo</p>
+          <p className={`mt-2 font-semibold text-white ${compact ? 'text-base' : 'text-lg'}`}>Pulso executivo</p>
         </div>
         <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(123,214,138,0.08)] text-[var(--success)]">
           <ShieldCheck className="size-4" />
         </span>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className={`space-y-3 ${compact ? 'mt-4' : 'mt-5'}`}>
         {signals.map((signal, index) => (
           <motion.div
             animate={{ opacity: [0.72, 1, 0.72], x: [0, 3, 0] }}
@@ -49,7 +66,7 @@ export function HeroFloatingCard() {
         ))}
       </div>
 
-      <div className="mt-5 rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-4">
+      <div className={`rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-4 ${compact ? 'mt-4' : 'mt-5'}`}>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Moedas</p>
           <ArrowUpRight className="size-4 text-[var(--accent)]" />
@@ -73,6 +90,6 @@ export function HeroFloatingCard() {
           ))}
         </div>
       </div>
-    </motion.aside>
+    </>
   )
 }
