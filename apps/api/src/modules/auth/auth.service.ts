@@ -197,6 +197,7 @@ export class AuthService {
     if (!isValidPassword) {
       await this.handleFailedLogin({
         actorUserId: activeUser.id,
+        actorFullName: activeUser.fullName,
         email: normalizedEmail,
         reason: 'invalid_password',
         rateLimitKey,
@@ -253,7 +254,7 @@ export class AuthService {
       userAgent: context.userAgent,
     })
 
-    void this.sendLoginAlertIfEnabled(activeUser, context)
+    void this.sendLoginAlertIfEnabled(activeUser, context, session.sessionId)
 
     return {
       user: toAuthUser(activeUser, {
@@ -889,6 +890,7 @@ export class AuthService {
 
   private async handleFailedLogin(params: {
     actorUserId?: string
+    actorFullName?: string
     email: string
     reason: string
     rateLimitKey: string
@@ -910,6 +912,18 @@ export class AuthService {
       ipAddress: params.context.ipAddress,
       userAgent: params.context.userAgent,
     })
+
+    if (params.actorUserId && params.actorFullName) {
+      void this.sendFailedLoginAlertIfEnabled(
+        {
+          id: params.actorUserId,
+          email: params.email,
+          fullName: params.actorFullName,
+        },
+        params.context,
+        rateLimitState.count,
+      )
+    }
 
     if (rateLimitState.lockedUntil) {
       const retryAfterSeconds = Math.ceil((rateLimitState.lockedUntil - Date.now()) / 1000)
@@ -1116,8 +1130,41 @@ export class AuthService {
       fullName: string
     },
     context: RequestContext,
+    currentSessionId: string,
   ) {
     if (!parseBoolean(this.configService.get<string>('LOGIN_ALERT_EMAILS_ENABLED'))) {
+      return
+    }
+
+    const previousSessions = await this.prisma.session.findMany({
+      where: {
+        userId: user.id,
+        id: {
+          not: currentSessionId,
+        },
+      },
+      select: {
+        id: true,
+        ipAddress: true,
+        userAgent: true,
+      },
+      take: 12,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    if (previousSessions.length === 0) {
+      return
+    }
+
+    const isKnownDevice = previousSessions.some(
+      (session) =>
+        normalizeComparableValue(session.ipAddress) === normalizeComparableValue(context.ipAddress) &&
+        normalizeComparableValue(session.userAgent) === normalizeComparableValue(context.userAgent),
+    )
+
+    if (isKnownDevice) {
       return
     }
 
@@ -1144,6 +1191,62 @@ export class AuthService {
     } catch (error) {
       this.logger.warn(
         `Falha ao enviar alerta de login para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+    }
+  }
+
+  private async sendFailedLoginAlertIfEnabled(
+    user: {
+      id: string
+      email: string
+      fullName: string
+    },
+    context: RequestContext,
+    failedAttempts: number,
+  ) {
+    if (!parseBoolean(this.configService.get<string>('FAILED_LOGIN_ALERTS_ENABLED'))) {
+      return
+    }
+
+    const threshold = Math.max(
+      Number(this.configService.get<string>('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3),
+      1,
+    )
+
+    if (failedAttempts < threshold) {
+      return
+    }
+
+    if (failedAttempts > threshold) {
+      return
+    }
+
+    try {
+      const delivery = await this.mailerService.sendFailedLoginAlertEmail({
+        to: user.email,
+        fullName: user.fullName,
+        occurredAt: new Date(),
+        attemptCount: failedAttempts,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        locationSummary: context.ipAddress ? 'Local aproximado indisponivel no momento' : null,
+      })
+
+      await this.auditLogService.record({
+        actorUserId: user.id,
+        event: 'auth.login.failed_notification_sent',
+        resource: 'session',
+        metadata: {
+          email: user.email,
+          failedAttempts,
+          deliveryMode: delivery.mode,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+    } catch (error) {
+      this.logger.warn(
+        `Falha ao enviar alerta de tentativas suspeitas para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
       )
     }
   }
@@ -1212,6 +1315,10 @@ function parseBoolean(value: string | undefined) {
   }
 
   return value === 'true'
+}
+
+function normalizeComparableValue(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? ''
 }
 
 function isServiceUnavailable(error: unknown) {

@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config'
 import nodemailer, { type Transporter } from 'nodemailer'
 import {
   buildEmailVerificationContent,
+  buildFailedLoginAlertEmailContent,
+  buildFeedbackReceiptEmailContent,
   buildLoginAlertEmailContent,
   buildPasswordChangedEmailContent,
   buildPasswordResetEmailContent,
@@ -128,6 +130,62 @@ export class MailerService {
       html: content.html,
       tags: content.tags,
       fallbackLogMessage: `Email nao configurado. Novo acesso detectado para ${params.to}.`,
+    })
+  }
+
+  async sendFailedLoginAlertEmail(params: {
+    to: string
+    fullName: string
+    occurredAt: Date
+    attemptCount: number
+    ipAddress?: string | null
+    userAgent?: string | null
+    locationSummary?: string | null
+  }) {
+    const content = buildFailedLoginAlertEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      occurredAt: params.occurredAt,
+      attemptCount: params.attemptCount,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      locationSummary: params.locationSummary,
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Tentativas de acesso suspeitas para ${params.to}.`,
+    })
+  }
+
+  async sendFeedbackReceiptEmail(params: {
+    to: string
+    fullName: string
+    subjectLine: string
+    ticketId: string
+    receivedAt: Date
+  }) {
+    const content = buildFeedbackReceiptEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      subjectLine: params.subjectLine,
+      ticketId: params.ticketId,
+      receivedAt: params.receivedAt,
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Feedback recebido para ${params.to}, protocolo ${params.ticketId}.`,
     })
   }
 

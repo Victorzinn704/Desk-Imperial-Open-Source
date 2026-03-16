@@ -20,6 +20,20 @@ type LoginAlertTemplateParams = BaseTemplateParams & {
   userAgent?: string | null
 }
 
+type FailedLoginAlertTemplateParams = BaseTemplateParams & {
+  occurredAt: Date
+  ipAddress?: string | null
+  userAgent?: string | null
+  attemptCount: number
+  locationSummary?: string | null
+}
+
+type FeedbackReceiptTemplateParams = BaseTemplateParams & {
+  subjectLine: string
+  receivedAt: Date
+  ticketId: string
+}
+
 export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
   return buildCodeEmail({
     appName: params.appName,
@@ -140,6 +154,99 @@ export function buildLoginAlertEmailContent(params: LoginAlertTemplateParams) {
     text,
     html,
     tags: ['auth', 'login-alert'],
+  }
+}
+
+export function buildFailedLoginAlertEmailContent(params: FailedLoginAlertTemplateParams) {
+  const occurredAt = formatDateTime(params.occurredAt)
+  const ipSummary = params.ipAddress ? `IP: ${params.ipAddress}` : 'IP nao identificado'
+  const deviceSummary = params.userAgent ? truncate(params.userAgent, 140) : 'Dispositivo nao identificado'
+  const locationSummary = params.locationSummary || 'Local aproximado indisponivel'
+
+  const text = [
+    `Ola, ${params.fullName}.`,
+    '',
+    'Detectamos tentativas de acesso com senha invalida na sua conta do DESK IMPERIAL.',
+    `Tentativas registradas: ${params.attemptCount}`,
+    `Data e hora da ultima tentativa: ${occurredAt}`,
+    ipSummary,
+    `Local aproximado: ${locationSummary}`,
+    `Dispositivo: ${deviceSummary}`,
+    '',
+    'Se foi voce, ignore este aviso.',
+    `Se nao foi, troque sua senha e fale com ${params.supportEmail}.`,
+  ].join('\n')
+
+  const html = buildEmailLayout({
+    appName: params.appName,
+    previewText: 'Detectamos tentativas de acesso suspeitas na sua conta.',
+    eyebrow: 'Alerta de seguranca',
+    title: 'Tentativas de acesso detectadas.',
+    intro:
+      'Percebemos tentativas de entrada com senha invalida na sua conta. Este aviso existe para que voce reaja rapido se nao reconhecer a atividade.',
+    body: `
+      <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Tentativas registradas:</strong> ${params.attemptCount}</p>
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(occurredAt)}</p>
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>${escapeHtml(ipSummary)}</strong></p>
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Local aproximado:</strong> ${escapeHtml(locationSummary)}</p>
+        <p style="margin:0;color:#445264;font-size:14px"><strong>Dispositivo:</strong> ${escapeHtml(deviceSummary)}</p>
+      </div>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#4d5a6b">
+        Se voce nao reconhece esta atividade, altere sua senha, revise os acessos recentes e entre em contato com o suporte.
+      </p>
+    `,
+    footerNote: `Suporte: ${params.supportEmail}`,
+  })
+
+  return {
+    subject: `${params.appName} | Tentativas de acesso na sua conta`,
+    text,
+    html,
+    tags: ['auth', 'failed-login'],
+  }
+}
+
+export function buildFeedbackReceiptEmailContent(params: FeedbackReceiptTemplateParams) {
+  const receivedAt = formatDateTime(params.receivedAt)
+
+  const text = [
+    `Ola, ${params.fullName}.`,
+    '',
+    'Recebemos seu feedback no DESK IMPERIAL.',
+    `Assunto: ${params.subjectLine}`,
+    `Protocolo: ${params.ticketId}`,
+    `Recebido em: ${receivedAt}`,
+    '',
+    'Nossa equipe vai analisar a mensagem e retornar se houver necessidade.',
+    `Suporte: ${params.supportEmail}`,
+  ].join('\n')
+
+  const html = buildEmailLayout({
+    appName: params.appName,
+    previewText: 'Recebemos seu feedback e registramos seu protocolo.',
+    eyebrow: 'Confirmacao de recebimento',
+    title: 'Recebemos seu feedback.',
+    intro:
+      'Sua mensagem foi registrada com sucesso. Se precisarmos de mais contexto, entraremos em contato pelos canais informados.',
+    body: `
+      <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Assunto:</strong> ${escapeHtml(params.subjectLine)}</p>
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Protocolo:</strong> ${escapeHtml(params.ticketId)}</p>
+        <p style="margin:0;color:#445264;font-size:14px"><strong>Recebido em:</strong> ${escapeHtml(receivedAt)}</p>
+      </div>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#4d5a6b">
+        Obrigado por ajudar a evoluir o produto. Seu retorno e importante para a proxima rodada de melhorias.
+      </p>
+    `,
+    footerNote: `Suporte: ${params.supportEmail}`,
+  })
+
+  return {
+    subject: `${params.appName} | Recebemos seu feedback`,
+    text,
+    html,
+    tags: ['feedback', 'receipt'],
   }
 }
 

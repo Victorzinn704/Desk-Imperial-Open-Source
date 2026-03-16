@@ -151,6 +151,8 @@ SMTP_FROM_EMAIL=no-reply@suaempresa.com
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
+FAILED_LOGIN_ALERTS_ENABLED=false
+FAILED_LOGIN_ALERT_THRESHOLD=3
 ```
 
 Exemplo com Gmail SMTP:
@@ -167,6 +169,9 @@ SMTP_FROM_NAME=DESK IMPERIAL
 SMTP_FROM_EMAIL=seu-email@gmail.com
 EMAIL_REPLY_TO=seu-email@gmail.com
 EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
+LOGIN_ALERT_EMAILS_ENABLED=true
+FAILED_LOGIN_ALERTS_ENABLED=true
+FAILED_LOGIN_ALERT_THRESHOLD=3
 ```
 
 Observacao:
@@ -179,6 +184,8 @@ Observacao:
 - para cair menos em spam, prefira remetente com dominio proprio e dominio verificado no provedor
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente
 - se quiser receber alerta a cada novo login, ative `LOGIN_ALERT_EMAILS_ENABLED=true`
+- se quiser receber alerta de tentativa suspeita, ative `FAILED_LOGIN_ALERTS_ENABLED=true`
+- `FAILED_LOGIN_ALERT_THRESHOLD` define em qual tentativa o aviso e disparado
 - a chave `GEMINI_API_KEY` deve ficar apenas no backend; nunca use `NEXT_PUBLIC_` para isso
 
 ### 3. Suba o banco

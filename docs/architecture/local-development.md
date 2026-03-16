@@ -67,11 +67,16 @@ SMTP_FROM_NAME=DESK IMPERIAL
 SMTP_FROM_EMAIL=seu-email@gmail.com
 EMAIL_REPLY_TO=seu-email@gmail.com
 EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
+LOGIN_ALERT_EMAILS_ENABLED=true
+FAILED_LOGIN_ALERTS_ENABLED=true
+FAILED_LOGIN_ALERT_THRESHOLD=3
 ```
 
 Observacao:
 - no Railway, o envio SMTP nao funciona nos planos `Free`, `Trial` e `Hobby`
 - para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
+- `LOGIN_ALERT_EMAILS_ENABLED=true` envia alerta quando um novo dispositivo entra na conta
+- `FAILED_LOGIN_ALERTS_ENABLED=true` envia aviso quando a conta atinge o limite de tentativas suspeitas configurado
 - para producao na Railway, use `RESEND_API_KEY` com a API HTTPS da Resend
 - `onboarding@resend.dev` serve apenas para teste e so envia para o proprio email da conta Resend
 - para envio publico, verifique um dominio no Resend e troque `RESEND_FROM_EMAIL` para esse dominio
