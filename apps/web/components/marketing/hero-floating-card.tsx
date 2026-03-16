@@ -13,9 +13,9 @@ export function HeroFloatingCard() {
   return (
     <>
       <motion.aside
-        animate={{ x: [0, 42, 14, 36, 0], y: [0, -10, 0], rotate: [0, 0.75, -0.45, 0] }}
-        className="pointer-events-none absolute top-[10.9rem] z-10 hidden w-[248px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:w-[264px]"
-        style={{ right: 'clamp(-12rem, calc((100vw - 78rem) / -2), -4rem)' }}
+        animate={{ x: [0, -24, -8, -18, 0], y: [0, -10, 0], rotate: [0, -0.65, 0.35, 0] }}
+        className="pointer-events-none absolute top-[9.7rem] z-10 hidden w-[248px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:w-[264px]"
+        style={{ right: 'calc((100vw - min(100vw, 80rem)) / -2 - 1.2rem)' }}
         transition={{ duration: 10.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
       >
         <CardContent compact={false} />
