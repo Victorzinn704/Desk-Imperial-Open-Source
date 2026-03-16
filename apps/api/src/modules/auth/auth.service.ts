@@ -271,6 +271,7 @@ export class AuthService {
         marketing: activeUser.cookiePreference?.marketing ?? false,
         evaluationAccess: session.evaluationAccess,
       }),
+      csrfToken: this.buildCsrfToken(session.sessionId),
       session: {
         expiresAt: session.expiresAt,
       },
@@ -743,6 +744,7 @@ export class AuthService {
 
     return {
       user: auth,
+      csrfToken: this.buildCsrfToken(auth.sessionId),
     }
   }
 

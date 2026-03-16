@@ -12,8 +12,14 @@ export type ProductImportRow = {
 const requiredHeaders = ['name', 'category', 'description', 'unitcost', 'unitprice', 'stock']
 const MAX_IMPORT_ROWS = 500
 const MAX_LINE_LENGTH = 4000
+const MAX_COLUMNS = 7
+const MAX_CELL_LENGTH = 280
 
 export function parseProductImportCsv(content: string): ProductImportRow[] {
+  if (content.includes('\0')) {
+    throw new Error('O CSV contem bytes invalidos e nao pode ser processado.')
+  }
+
   const normalized = content.replace(/^\uFEFF/, '').trim()
   if (!normalized) {
     return []
@@ -35,6 +41,10 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
   const delimiter = detectDelimiter(lines[0])
   const headers = splitCsvLine(lines[0], delimiter).map((header) => normalizeHeader(header))
 
+  if (headers.length > MAX_COLUMNS) {
+    throw new Error(`O CSV suporta no maximo ${MAX_COLUMNS} colunas nesta importacao.`)
+  }
+
   for (const requiredHeader of requiredHeaders) {
     if (!headers.includes(requiredHeader)) {
       throw new Error(`O CSV precisa conter a coluna "${requiredHeader}".`)
@@ -47,6 +57,16 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     }
 
     const values = splitCsvLine(line, delimiter)
+    if (values.length !== headers.length) {
+      throw new Error(`Linha ${index + 2}: quantidade de colunas invalida para o cabecalho informado.`)
+    }
+
+    for (const value of values) {
+      if (value.length > MAX_CELL_LENGTH) {
+        throw new Error(`Linha ${index + 2}: uma das colunas excede o tamanho maximo permitido.`)
+      }
+    }
+
     const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex]?.trim() ?? '']))
 
     return {

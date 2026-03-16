@@ -44,6 +44,8 @@ export function OrderForm({
     handleSubmit,
     reset,
     setValue,
+    setError,
+    clearErrors,
     control,
     formState: { errors },
   } = useForm<OrderFormInputValues, undefined, OrderFormValues>({
@@ -65,15 +67,27 @@ export function OrderForm({
     [products],
   )
   const employeeOptions = useMemo(
-    () => [
-      { label: 'Venda sem funcionario vinculado', value: '' },
-      ...employees
-        .filter((employee) => employee.active)
-        .map((employee) => ({
+    () => {
+      const activeEmployees = employees.filter((employee) => employee.active)
+
+      return [
+        {
+          label:
+            activeEmployees.length > 0
+              ? 'Selecione o vendedor responsavel'
+              : 'Cadastre um funcionario para vincular a venda',
+          value: '',
+        },
+        ...activeEmployees.map((employee) => ({
           label: `${employee.employeeCode} • ${employee.displayName}`,
           value: employee.id,
         })),
-    ],
+      ]
+    },
+    [employees],
+  )
+  const activeEmployees = useMemo(
+    () => employees.filter((employee) => employee.active),
     [employees],
   )
 
@@ -108,6 +122,15 @@ export function OrderForm({
       <form
         className="mt-6 space-y-5"
         onSubmit={handleSubmit((values) => {
+          if (activeEmployees.length > 0 && !values.sellerEmployeeId) {
+            setError('sellerEmployeeId', {
+              type: 'manual',
+              message: 'Selecione o vendedor responsavel por esta venda.',
+            })
+            return
+          }
+
+          clearErrors('sellerEmployeeId')
           onSubmit(values)
           reset({
             ...emptyValues,
@@ -129,7 +152,11 @@ export function OrderForm({
 
         <SelectField
           error={errors.sellerEmployeeId?.message}
-          hint="Selecione o vendedor para alimentar ranking, ticket medio e rendimento individual."
+          hint={
+            activeEmployees.length > 0
+              ? 'Selecione o vendedor para alimentar ranking, ticket medio e rendimento individual.'
+              : 'Cadastre pelo menos um funcionario ativo para comecar a atribuir vendas.'
+          }
           label="Funcionario responsavel"
           options={employeeOptions}
           {...register('sellerEmployeeId')}

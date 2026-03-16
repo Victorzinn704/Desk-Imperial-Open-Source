@@ -11,6 +11,7 @@ import type {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
+const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
 
 type JsonBody = Record<string, unknown>
 type ApiBody = JsonBody | FormData
@@ -42,6 +43,7 @@ export type AuthUser = {
 
 export type AuthResponse = {
   user: AuthUser
+  csrfToken?: string
   session: {
     expiresAt: string
   }
@@ -196,9 +198,11 @@ export async function register(payload: RegisterPayload) {
 }
 
 export async function logout() {
-  return apiFetch<{ success: boolean }>('/auth/logout', {
+  const response = await apiFetch<{ success: boolean }>('/auth/logout', {
     method: 'POST',
   })
+  clearPersistedCsrfToken()
+  return response
 }
 
 export async function forgotPassword(payload: ForgotPasswordPayload) {
@@ -230,13 +234,13 @@ export async function resetPassword(payload: ResetPasswordPayload) {
 }
 
 export async function fetchCurrentUser() {
-  return apiFetch<{ user: AuthUser }>('/auth/me', {
+  return apiFetch<{ user: AuthUser; csrfToken?: string }>('/auth/me', {
     method: 'GET',
   })
 }
 
 export async function updateProfile(payload: ProfilePayload) {
-  return apiFetch<{ user: AuthUser }>('/auth/profile', {
+  return apiFetch<{ user: AuthUser; csrfToken?: string }>('/auth/profile', {
     method: 'PATCH',
     body: payload,
   })
@@ -255,7 +259,7 @@ export async function fetchConsentOverview() {
 }
 
 export async function fetchProducts() {
-  return apiFetch<ProductsResponse>('/products', {
+  return apiFetch<ProductsResponse>('/products?includeInactive=true', {
     method: 'GET',
   })
 }
@@ -381,7 +385,7 @@ async function apiFetch<T>(
   headers.set('Accept', 'application/json')
 
   if (shouldAttachCsrfToken(options.method)) {
-    const csrfToken = readCsrfToken()
+    const csrfToken = readPersistedCsrfToken() ?? readCsrfToken()
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken)
     }
@@ -403,7 +407,13 @@ async function apiFetch<T>(
     return undefined as T
   }
 
-  return (await response.json()) as T
+  const payload = (await response.json()) as T
+
+  if (hasCsrfToken(payload)) {
+    persistCsrfToken(payload.csrfToken)
+  }
+
+  return payload
 }
 
 function buildApiUrl(path: string) {
@@ -443,4 +453,37 @@ function readCsrfToken() {
     .find((entry) => CSRF_COOKIE_NAMES.some((cookieName) => entry.startsWith(`${cookieName}=`)))
 
   return cookie ? cookie.split('=')[1] ?? null : null
+}
+
+function persistCsrfToken(value: string) {
+  if (typeof window === 'undefined' || !value) {
+    return
+  }
+
+  window.localStorage.setItem(CSRF_STORAGE_KEY, value)
+}
+
+function readPersistedCsrfToken() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  return window.localStorage.getItem(CSRF_STORAGE_KEY)
+}
+
+function clearPersistedCsrfToken() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.removeItem(CSRF_STORAGE_KEY)
+}
+
+function hasCsrfToken(value: unknown): value is { csrfToken: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'csrfToken' in value &&
+    typeof (value as { csrfToken?: unknown }).csrfToken === 'string'
+  )
 }

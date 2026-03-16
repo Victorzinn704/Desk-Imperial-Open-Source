@@ -55,6 +55,7 @@ import {
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { formatAccountStatus } from '@/lib/dashboard-format'
+import { downloadPortfolioCsv, downloadProductTemplateCsv } from '@/lib/portfolio-csv'
 import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
@@ -913,6 +914,12 @@ function PortfolioEnvironment({
     updateProductMutation.isPending ||
     archiveProductMutation.isPending ||
     restoreProductMutation.isPending
+  const handleDownloadTemplate = () => {
+    downloadProductTemplateCsv()
+  }
+  const handleDownloadPortfolio = () => {
+    downloadPortfolioCsv(products)
+  }
 
   return (
     <section className="space-y-6">
@@ -934,8 +941,11 @@ function PortfolioEnvironment({
 
           <ProductImportCard
             error={importMutationError}
+            hasProducts={products.length > 0}
             lastImport={lastImport}
             loading={importProductsMutation.isPending}
+            onDownloadPortfolio={handleDownloadPortfolio}
+            onDownloadTemplate={handleDownloadTemplate}
             onImport={importProductsMutation.mutate}
           />
         </div>

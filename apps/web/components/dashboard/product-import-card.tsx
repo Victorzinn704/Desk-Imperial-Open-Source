@@ -2,21 +2,52 @@
 
 import { useState } from 'react'
 import type { ProductImportResponse } from '@contracts/contracts'
-import { FileSpreadsheet, Upload } from 'lucide-react'
+import { Download, FileSpreadsheet, Upload } from 'lucide-react'
 import { Button } from '@/components/shared/button'
 
 export function ProductImportCard({
   error,
   lastImport,
   loading,
+  hasProducts,
+  onDownloadPortfolio,
+  onDownloadTemplate,
   onImport,
 }: Readonly<{
   error?: string | null
   lastImport?: ProductImportResponse | null
   loading?: boolean
+  hasProducts: boolean
+  onDownloadPortfolio: () => void
+  onDownloadTemplate: () => void
   onImport: (file: File) => void
 }>) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
+
+  const handleFileChange = (file: File | null) => {
+    setLocalError(null)
+
+    if (!file) {
+      setSelectedFile(null)
+      return
+    }
+
+    const isCsv = file.name.toLowerCase().endsWith('.csv') || file.type.includes('csv')
+    if (!isCsv) {
+      setSelectedFile(null)
+      setLocalError('Selecione um arquivo CSV valido para importar.')
+      return
+    }
+
+    if (file.size > 256 * 1024) {
+      setSelectedFile(null)
+      setLocalError('O arquivo excede 256 KB. Divida a importacao em partes menores.')
+      return
+    }
+
+    setSelectedFile(file)
+  }
 
   return (
     <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
@@ -45,6 +76,23 @@ export function ProductImportCard({
         </p>
       </div>
 
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <Button fullWidth onClick={onDownloadTemplate} type="button" variant="secondary">
+          <Download className="size-4" />
+          Baixar modelo CSV
+        </Button>
+        <Button
+          disabled={!hasProducts}
+          fullWidth
+          onClick={onDownloadPortfolio}
+          type="button"
+          variant="ghost"
+        >
+          <Download className="size-4" />
+          Exportar portfolio atual
+        </Button>
+      </div>
+
       <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[rgba(255,255,255,0.02)] px-5 py-8 text-center transition hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
         <Upload className="size-6 text-[var(--accent)]" />
         <span className="mt-3 text-sm font-medium text-white">
@@ -56,11 +104,12 @@ export function ProductImportCard({
         <input
           accept=".csv,text/csv"
           className="hidden"
-          onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
           type="file"
         />
       </label>
 
+      {localError ? <p className="mt-4 text-sm text-[var(--danger)]">{localError}</p> : null}
       {error ? <p className="mt-4 text-sm text-[var(--danger)]">{error}</p> : null}
 
       <Button
@@ -68,7 +117,14 @@ export function ProductImportCard({
         disabled={!selectedFile}
         fullWidth
         loading={loading}
-        onClick={() => selectedFile && onImport(selectedFile)}
+        onClick={() => {
+          if (!selectedFile) {
+            return
+          }
+
+          onImport(selectedFile)
+          setSelectedFile(null)
+        }}
         size="lg"
         type="button"
       >
