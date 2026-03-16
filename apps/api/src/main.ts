@@ -15,12 +15,31 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap')
   const port = configService.get<number>('PORT') ?? 4000
   const cookieSecret = configService.get<string>('COOKIE_SECRET') ?? 'change-me'
+  const csrfSecret = configService.get<string>('CSRF_SECRET') ?? 'change-me'
+  const isProduction = configService.get<string>('NODE_ENV') === 'production'
+  const appUrl =
+    configService.get<string>('APP_URL') ??
+    configService.get<string>('NEXT_PUBLIC_APP_URL') ??
+    'http://localhost:3000'
+  const swaggerEnabled =
+    configService.get<string>('ENABLE_SWAGGER') === 'true' || !isProduction
+  const trustProxy = configService.get<string>('TRUST_PROXY')
 
   app.use(helmet())
   app.use(cookieParser(cookieSecret))
+  const httpAdapter = app.getHttpAdapter().getInstance()
+  httpAdapter.disable('x-powered-by')
+  if (trustProxy === 'true' || (isProduction && trustProxy !== 'false')) {
+    httpAdapter.set('trust proxy', 1)
+  } else if (trustProxy && trustProxy !== 'false') {
+    const parsed = Number(trustProxy)
+    httpAdapter.set('trust proxy', Number.isFinite(parsed) ? parsed : trustProxy)
+  }
   app.enableCors({
-    origin: configService.get<string>('NEXT_PUBLIC_APP_URL') ?? 'http://localhost:3000',
+    origin: appUrl,
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
   })
   app.setGlobalPrefix('api')
   app.useGlobalPipes(
@@ -31,14 +50,22 @@ async function bootstrap() {
     }),
   )
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Partner Portal API')
-    .setDescription('API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.')
-    .setVersion('1.0.0')
-    .build()
+  if (isProduction && (cookieSecret === 'change-me' || csrfSecret === 'change-me')) {
+    throw new Error('Defina COOKIE_SECRET e CSRF_SECRET antes de iniciar em producao.')
+  }
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup('docs', app, document)
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Partner Portal API')
+      .setDescription(
+        'API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.',
+      )
+      .setVersion('1.0.0')
+      .build()
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig)
+    SwaggerModule.setup('docs', app, document)
+  }
 
   await app.listen(port)
   logger.log(`API pronta em http://localhost:${port}/api`)

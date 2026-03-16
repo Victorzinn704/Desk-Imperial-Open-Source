@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
+import { CurrencyCode } from '@prisma/client'
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Produto Alpha' })
@@ -36,6 +37,11 @@ export class UpdateProductDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   unitPrice?: number
+
+  @ApiPropertyOptional({ enum: CurrencyCode, example: CurrencyCode.USD })
+  @IsOptional()
+  @IsEnum(CurrencyCode)
+  currency?: CurrencyCode
 
   @ApiPropertyOptional({ example: 120 })
   @IsOptional()

@@ -9,8 +9,8 @@ out/
 
 # envs
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # logs
 *.log

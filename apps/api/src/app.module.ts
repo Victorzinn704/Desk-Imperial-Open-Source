@@ -6,7 +6,11 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthModule } from './modules/auth/auth.module'
 import { ConsentModule } from './modules/consent/consent.module'
+import { CurrencyModule } from './modules/currency/currency.module'
+import { EmployeesModule } from './modules/employees/employees.module'
 import { FinanceModule } from './modules/finance/finance.module'
+import { GeocodingModule } from './modules/geocoding/geocoding.module'
+import { MarketIntelligenceModule } from './modules/market-intelligence/market-intelligence.module'
 import { MonitoringModule } from './modules/monitoring/monitoring.module'
 import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
@@ -15,7 +19,7 @@ import { ProductsModule } from './modules/products/products.module'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: ['../../.env'],
     }),
     LoggerModule.forRoot({
       pinoHttp: {
@@ -25,6 +29,7 @@ import { ProductsModule } from './modules/products/products.module'
             'req.headers.authorization',
             'req.headers.cookie',
             'req.body.password',
+            'req.body.confirmPassword',
             'req.body.token',
           ],
           censor: '[REDACTED]',
@@ -32,6 +37,10 @@ import { ProductsModule } from './modules/products/products.module'
       },
     }),
     PrismaModule,
+    CurrencyModule,
+    EmployeesModule,
+    GeocodingModule,
+    MarketIntelligenceModule,
     MonitoringModule,
     ConsentModule,
     AuthModule,

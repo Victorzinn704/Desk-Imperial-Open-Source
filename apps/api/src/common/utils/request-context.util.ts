@@ -10,9 +10,27 @@ export function extractRequestContext(request: Request): RequestContext {
   const firstForwardedIp = Array.isArray(forwardedFor)
     ? forwardedFor[0]
     : forwardedFor?.split(',')[0]?.trim()
+  const rawIp = request.ip ?? firstForwardedIp ?? null
 
   return {
-    ipAddress: firstForwardedIp ?? request.ip ?? null,
+    ipAddress: normalizeIpAddress(rawIp),
     userAgent: request.get('user-agent') ?? null,
   }
+}
+
+function normalizeIpAddress(ipAddress: string | null) {
+  if (!ipAddress) {
+    return null
+  }
+
+  const normalized = ipAddress.trim()
+  if (!normalized) {
+    return null
+  }
+
+  if (normalized === '::1') {
+    return '127.0.0.1'
+  }
+
+  return normalized.startsWith('::ffff:') ? normalized.slice(7) : normalized
 }

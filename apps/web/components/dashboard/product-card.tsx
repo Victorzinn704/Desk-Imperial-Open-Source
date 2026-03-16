@@ -2,6 +2,7 @@
 
 import { Archive, PencilLine, RotateCcw } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
+import { formatCurrencyComparison } from '@/lib/currency'
 import { Button } from '@/components/shared/button'
 
 export function ProductCard({
@@ -17,6 +18,25 @@ export function ProductCard({
   onRestore: (productId: string) => void
   busy?: boolean
 }>) {
+  const costValue = formatCurrencyComparison({
+    originalValue: product.originalUnitCost,
+    originalCurrency: product.currency,
+    convertedValue: product.unitCost,
+    displayCurrency: product.displayCurrency,
+  })
+  const priceValue = formatCurrencyComparison({
+    originalValue: product.originalUnitPrice,
+    originalCurrency: product.currency,
+    convertedValue: product.unitPrice,
+    displayCurrency: product.displayCurrency,
+  })
+  const profitValue = formatCurrencyComparison({
+    originalValue: product.originalPotentialProfit,
+    originalCurrency: product.currency,
+    convertedValue: product.potentialProfit,
+    displayCurrency: product.displayCurrency,
+  })
+
   return (
     <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -59,11 +79,13 @@ export function ProductCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Custo</p>
-          <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(product.unitCost)}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{costValue.primary}</p>
+          {costValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{costValue.secondary}</p> : null}
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Preco</p>
-          <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(product.unitPrice)}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{priceValue.primary}</p>
+          {priceValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{priceValue.secondary}</p> : null}
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque</p>
@@ -71,16 +93,10 @@ export function ProductCard({
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro potencial</p>
-          <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(product.potentialProfit)}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
+          {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
         </div>
       </div>
     </article>
   )
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
 }

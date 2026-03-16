@@ -6,7 +6,14 @@ export type AuthContext = {
   email: string
   fullName: string
   companyName: string | null
+  emailVerified: boolean
+  preferredCurrency: 'BRL' | 'USD' | 'EUR'
   status: string
+  evaluationAccess: {
+    dailyLimitMinutes: number
+    remainingSeconds: number
+    sessionExpiresAt: string
+  } | null
   cookiePreferences: {
     necessary: true
     analytics: boolean

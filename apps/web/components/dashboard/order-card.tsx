@@ -2,6 +2,8 @@
 
 import { Ban, ReceiptText } from 'lucide-react'
 import type { OrderRecord } from '@contracts/contracts'
+import { formatCurrencyComparison } from '@/lib/currency'
+import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
 import { Button } from '@/components/shared/button'
 
 export function OrderCard({
@@ -13,6 +15,19 @@ export function OrderCard({
   onCancel: (orderId: string) => void
   busy?: boolean
 }>) {
+  const revenueValue = formatCurrencyComparison({
+    originalValue: order.originalTotalRevenue,
+    originalCurrency: order.currency,
+    convertedValue: order.totalRevenue,
+    displayCurrency: order.displayCurrency,
+  })
+  const profitValue = formatCurrencyComparison({
+    originalValue: order.originalTotalProfit,
+    originalCurrency: order.currency,
+    convertedValue: order.totalProfit,
+    displayCurrency: order.displayCurrency,
+  })
+
   return (
     <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -34,6 +49,18 @@ export function OrderCard({
             <p className="mt-2 text-sm text-[var(--text-soft)]">
               {order.channel || 'Canal nao informado'} • {new Date(order.createdAt).toLocaleString('pt-BR')}
             </p>
+            <p className="mt-2 text-sm text-[var(--text-soft)]">
+              {formatBuyerType(order.buyerType)} • {maskBuyerDocument(order.buyerDocument)}
+            </p>
+            <p className="mt-2 text-sm text-[var(--text-soft)]">
+              {[order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry].filter(Boolean).join(', ') ||
+                'Local da venda nao informado'}
+            </p>
+            <p className="mt-2 text-sm text-[var(--text-soft)]">
+              {order.sellerName
+                ? `Vendedor ${order.sellerName}${order.sellerCode ? ` • ID ${order.sellerCode}` : ''}`
+                : 'Venda sem funcionario vinculado'}
+            </p>
             <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
               {order.notes || 'Pedido sem observacoes adicionais.'}
             </p>
@@ -51,11 +78,13 @@ export function OrderCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Receita</p>
-          <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(order.totalRevenue)}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{revenueValue.primary}</p>
+          {revenueValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{revenueValue.secondary}</p> : null}
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro</p>
-          <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(order.totalProfit)}</p>
+          <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
+          {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Itens</p>
@@ -64,27 +93,34 @@ export function OrderCard({
       </div>
 
       <div className="mt-5 space-y-2">
-        {order.items.map((item) => (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3" key={item.id}>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium text-[var(--text-primary)]">{item.productName}</p>
-                <p className="mt-1 text-sm text-[var(--text-soft)]">
-                  {item.category} • {item.quantity} unidade(s)
-                </p>
+        {order.items.map((item) => {
+          const lineRevenueValue = formatCurrencyComparison({
+            originalValue: item.originalLineRevenue,
+            originalCurrency: item.currency,
+            convertedValue: item.lineRevenue,
+            displayCurrency: order.displayCurrency,
+          })
+
+          return (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3" key={item.id}>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-[var(--text-primary)]">{item.productName}</p>
+                  <p className="mt-1 text-sm text-[var(--text-soft)]">
+                    {item.category} • {item.quantity} unidade(s)
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{lineRevenueValue.primary}</p>
+                  {lineRevenueValue.secondary ? (
+                    <p className="mt-1 text-xs text-[var(--text-soft)]">{lineRevenueValue.secondary}</p>
+                  ) : null}
+                </div>
               </div>
-              <p className="text-sm font-medium text-[var(--text-primary)]">{formatCurrency(item.lineRevenue)}</p>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </article>
   )
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
 }

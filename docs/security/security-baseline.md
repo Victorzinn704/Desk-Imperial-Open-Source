@@ -14,6 +14,10 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 6. ter trilha de auditoria para eventos sensiveis
 7. versionar aceite de termos e consentimentos
 8. separar cookies necessarios de cookies opcionais
+9. recuperar senha com codigo temporario e uso unico
+10. invalidar sessoes ativas apos redefinicao de senha
+11. confirmar email antes de liberar o primeiro login
+12. manter chaves de IA e SMTP somente no backend
 
 ## Eventos para audit log
 
@@ -21,6 +25,8 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 - login com falha
 - logout
 - troca de senha
+- solicitacao de redefinicao de senha
+- conclusao de redefinicao de senha
 - aceite de termos
 - alteracao de preferencia de cookies
 - exportacao de dados

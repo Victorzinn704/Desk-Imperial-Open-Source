@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 :root {
   color-scheme: dark;
@@ -30,6 +31,8 @@ html {
 }
 
 body {
+  position: relative;
+  isolation: isolate;
   margin: 0;
   min-height: 100vh;
   background:
@@ -48,12 +51,18 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: radial-gradient(circle at center, black, transparent 85%);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 a {
@@ -71,4 +80,144 @@ select {
 ::selection {
   background: rgba(212, 177, 106, 0.28);
   color: #fff7e8;
+}
+
+.maplibregl-map {
+  position: relative;
+  z-index: 2;
+  background: #0f1318;
+  font-family:
+    "Manrope",
+    "Inter",
+    "Segoe UI",
+    sans-serif;
+}
+
+.maplibregl-canvas {
+  outline: none;
+}
+
+.maplibregl-popup-content,
+.maplibregl-popup-tip {
+  background: rgba(18, 22, 27, 0.96);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.maplibregl-popup-content {
+  padding: 0;
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.34);
+}
+
+.maplibregl-ctrl-group {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 22, 27, 0.92);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.maplibregl-ctrl-group button {
+  background: transparent;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.4);
+}
+
+.sales-map-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--marker-size, 36px);
+  height: var(--marker-size, 36px);
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.sales-map-marker__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(52, 242, 127, 0.38), rgba(52, 242, 127, 0));
+  animation: sales-map-pulse 2.3s ease-in-out infinite;
+}
+
+.sales-map-marker__core {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--marker-size, 36px) - 12px);
+  height: calc(var(--marker-size, 36px) - 12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(26, 184, 89, 0.96), rgba(7, 112, 53, 0.98));
+  box-shadow:
+    0 0 0 6px rgba(52, 242, 127, 0.12),
+    0 18px 32px rgba(5, 62, 31, 0.35);
+  color: #f4fff8;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.sales-map-popup {
+  min-width: 220px;
+  padding: 14px;
+}
+
+.sales-map-popup__label {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sales-map-popup__grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sales-map-popup__grid div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sales-map-popup__grid span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-soft);
+}
+
+.sales-map-popup__grid strong {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+@keyframes sales-map-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
 }

@@ -1,5 +1,27 @@
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import * as argon2 from 'argon2'
-import { OrderStatus, PrismaClient, UserStatus } from '@prisma/client'
+import { BuyerType, OrderStatus, PrismaClient, UserStatus } from '@prisma/client'
+
+function loadSeedEnv() {
+  if (typeof process.loadEnvFile !== 'function') {
+    return
+  }
+
+  const candidatePaths = [
+    resolve(process.cwd(), '.env'),
+    resolve(__dirname, '..', '.env'),
+    resolve(__dirname, '..', '..', '..', '.env'),
+  ]
+
+  for (const envPath of candidatePaths) {
+    if (existsSync(envPath)) {
+      process.loadEnvFile(envPath)
+    }
+  }
+}
+
+loadSeedEnv()
 
 const prisma = new PrismaClient()
 
@@ -80,6 +102,7 @@ async function main() {
       fullName: 'Conta Demo',
       companyName: 'Operacao Demo',
       status: UserStatus.ACTIVE,
+      emailVerifiedAt: new Date(),
     },
     create: {
       fullName: 'Conta Demo',
@@ -87,6 +110,7 @@ async function main() {
       email,
       passwordHash,
       status: UserStatus.ACTIVE,
+      emailVerifiedAt: new Date(),
     },
   })
 
@@ -102,6 +126,45 @@ async function main() {
       marketing: false,
     },
   })
+
+  const [employeeAna, employeeCarlos] = await Promise.all([
+    prisma.employee.upsert({
+      where: {
+        userId_employeeCode: {
+          userId: user.id,
+          employeeCode: 'VD-001',
+        },
+      },
+      update: {
+        displayName: 'Ana Martins',
+        active: true,
+      },
+      create: {
+        userId: user.id,
+        employeeCode: 'VD-001',
+        displayName: 'Ana Martins',
+        active: true,
+      },
+    }),
+    prisma.employee.upsert({
+      where: {
+        userId_employeeCode: {
+          userId: user.id,
+          employeeCode: 'VD-002',
+        },
+      },
+      update: {
+        displayName: 'Carlos Lima',
+        active: true,
+      },
+      create: {
+        userId: user.id,
+        employeeCode: 'VD-002',
+        displayName: 'Carlos Lima',
+        active: true,
+      },
+    }),
+  ])
 
   const [terms, privacy] = await Promise.all([
     prisma.consentDocument.findUnique({
@@ -223,6 +286,17 @@ async function main() {
       },
       update: {
         customerName: 'Cliente Portfolio',
+        buyerType: BuyerType.PERSON,
+        buyerDocument: '12345678909',
+        buyerDistrict: 'Centro',
+        buyerCity: 'Araruama',
+        buyerState: 'RJ',
+        buyerCountry: 'Brasil',
+        buyerLatitude: -22.8701,
+        buyerLongitude: -42.3422,
+        employeeId: employeeAna.id,
+        sellerCode: employeeAna.employeeCode,
+        sellerName: employeeAna.displayName,
         channel: 'Marketplace',
         notes: 'Pedido base para receita do mes atual.',
         status: OrderStatus.COMPLETED,
@@ -236,6 +310,17 @@ async function main() {
         id: 'seed-order-alpha',
         userId: user.id,
         customerName: 'Cliente Portfolio',
+        buyerType: BuyerType.PERSON,
+        buyerDocument: '12345678909',
+        buyerDistrict: 'Centro',
+        buyerCity: 'Araruama',
+        buyerState: 'RJ',
+        buyerCountry: 'Brasil',
+        buyerLatitude: -22.8701,
+        buyerLongitude: -42.3422,
+        employeeId: employeeAna.id,
+        sellerCode: employeeAna.employeeCode,
+        sellerName: employeeAna.displayName,
         channel: 'Marketplace',
         notes: 'Pedido base para receita do mes atual.',
         status: OrderStatus.COMPLETED,
@@ -268,6 +353,17 @@ async function main() {
       },
       update: {
         customerName: 'Cliente Mensal',
+        buyerType: BuyerType.COMPANY,
+        buyerDocument: '12345678000190',
+        buyerDistrict: 'Botafogo',
+        buyerCity: 'Rio de Janeiro',
+        buyerState: 'RJ',
+        buyerCountry: 'Brasil',
+        buyerLatitude: -22.9519,
+        buyerLongitude: -43.1822,
+        employeeId: employeeCarlos.id,
+        sellerCode: employeeCarlos.employeeCode,
+        sellerName: employeeCarlos.displayName,
         channel: 'App',
         notes: 'Pedido do mes anterior para comparativo.',
         status: OrderStatus.COMPLETED,
@@ -281,6 +377,17 @@ async function main() {
         id: 'seed-order-beta-prev-month',
         userId: user.id,
         customerName: 'Cliente Mensal',
+        buyerType: BuyerType.COMPANY,
+        buyerDocument: '12345678000190',
+        buyerDistrict: 'Botafogo',
+        buyerCity: 'Rio de Janeiro',
+        buyerState: 'RJ',
+        buyerCountry: 'Brasil',
+        buyerLatitude: -22.9519,
+        buyerLongitude: -43.1822,
+        employeeId: employeeCarlos.id,
+        sellerCode: employeeCarlos.employeeCode,
+        sellerName: employeeCarlos.displayName,
         channel: 'App',
         notes: 'Pedido do mes anterior para comparativo.',
         status: OrderStatus.COMPLETED,

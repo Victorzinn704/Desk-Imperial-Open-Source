@@ -1,148 +1,243 @@
-# Partner Portal Monorepo
+# Partner Portal
 
-Base arquitetural do projeto com foco em:
+Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticacao segura, LGPD, auditoria e operacao comercial.
 
-- UX/UI forte e moderna
-- seguranca por padrao
-- LGPD, cookies e aceite versionado
-- monitoramento, logs e trilha de auditoria
-- separacao clara entre front, back e pacotes compartilhados
+## O que este projeto entrega
 
-## Visao geral
+- landing page institucional em `Next.js`
+- cadastro e login reais com sessao via cookie `HttpOnly`
+- banner global de cookies
+- dashboard autenticado com:
+  - perfil da conta
+  - produtos e portfolio
+  - pedidos e vendas
+  - financeiro e graficos
+  - leitura multi-moeda em BRL, USD e EUR
+  - mapa de vendas por bairro, cidade e regiao
+  - ranking de rendimento por funcionario e vendas vinculadas por ID
+  - conformidade e consentimento
+- importacao CSV de produtos
+- confirmacao obrigatoria de email antes do primeiro login
+- recuperacao de senha por codigo temporario e envio por email
+- consultor executivo com Gemini Flash para leitura de mercado e previsao operacional
+- API NestJS com Prisma, PostgreSQL e trilha de auditoria
 
-Este repositorio foi organizado como monorepo para manter o projeto escalavel, seguro e bem separado desde o inicio.
+## Stack
 
-### Arvore principal
+### Frontend
+
+- `Next.js`
+- `React`
+- `TanStack Query`
+- `React Hook Form`
+- `Zod`
+- `Framer Motion`
+- `MapLibre GL JS`
+- `Recharts`
+
+### Backend
+
+- `NestJS`
+- `Prisma`
+- `PostgreSQL`
+- `argon2`
+- `nodemailer`
+- `Pino`
+
+## Estrutura do repositorio
 
 ```text
 test1/
 ├─ apps/
-│  ├─ web/
-│  │  ├─ app/
-│  │  │  ├─ cadastro/
-│  │  │  ├─ dashboard/
-│  │  │  ├─ login/
-│  │  │  ├─ globals.css
-│  │  │  ├─ layout.tsx
-│  │  │  └─ page.tsx
-│  │  ├─ components/
-│  │  │  ├─ shared/
-│  │  │  ├─ marketing/
-│  │  │  ├─ auth/
-│  │  │  └─ dashboard/
-│  │  ├─ hooks/
-│  │  ├─ lib/
-│  │  ├─ providers/
-│  │  └─ styles/
-│  └─ api/
-│     ├─ prisma/
-│     │  ├─ migrations/
-│     │  ├─ schema.prisma
-│     │  └─ seed.ts
-│     ├─ src/
-│     │  ├─ common/
-│     │  │  ├─ config/
-│     │  │  ├─ decorators/
-│     │  │  ├─ filters/
-│     │  │  ├─ guards/
-│     │  │  ├─ interceptors/
-│     │  │  ├─ pipes/
-│     │  │  └─ utils/
-│     │  ├─ database/
-│     │  ├─ observability/
-│     │  └─ modules/
-│     │     ├─ auth/
-│     │     ├─ users/
-│     │     ├─ products/
-│     │     ├─ finance/
-│     │     ├─ consent/
-│     │     └─ monitoring/
-│     └─ test/
-├─ packages/
-│  ├─ ui/
-│  │  └─ src/
-│  │     ├─ components/
-│  │     └─ tokens/
-│  ├─ types/
-│  │  └─ src/
-│  └─ config/
-│     ├─ eslint/
-│     └─ typescript/
+│  ├─ api/
+│  └─ web/
 ├─ docs/
-│  ├─ architecture/
-│  └─ security/
 ├─ infra/
-│  ├─ docker/
-│  └─ scripts/
-├─ .editorconfig
+├─ packages/
 ├─ .env.example
-├─ .gitignore
 ├─ package.json
-├─ pnpm-workspace.yaml
-├─ tsconfig.base.json
 └─ turbo.json
 ```
 
-## Responsabilidades
+## Fluxos principais
 
-- `apps/web`: interface Next.js, marketing, login, cadastro, dashboard e componentes de UX/UI.
-- `apps/api`: API NestJS com auth, produtos, financeiro, consentimento, logs e monitoramento.
-- `packages/ui`: design system compartilhado.
-- `packages/types`: contratos de tipos entre front e back.
-- `packages/config`: configuracoes centralizadas de lint e TypeScript.
-- `docs`: arquitetura, seguranca, fluxo LGPD e decisoes de produto.
-- `infra`: docker, scripts locais e base de ambiente.
+### Autenticacao
 
-## Boas praticas base
+- cadastro com aceite de termos e aviso de privacidade
+- confirmacao de email antes do primeiro acesso
+- login com sessao segura
+- logout com invalidacao de sessao
+- edicao de perfil da conta
+- recuperacao de senha por codigo de verificacao no email
 
-- componentes pequenos e reutilizaveis
-- separacao entre camada de apresentacao, dominio e infraestrutura
-- validacao de entrada no front e no back
-- sessoes seguras com cookies `HttpOnly`, `Secure` e `SameSite`
-- trilha de auditoria para eventos sensiveis
-- mascaramento de dados pessoais em logs
-- documentacao clara desde o inicio
+### Dashboard
 
-## O que ja existe
+- visao executiva
+- modulo de vendas
+- modulo de portfolio
+- modulo de conformidade
+- roadmap de upgrades
+- preferencia de moeda com conversao em tempo real via AwesomeAPI
+- mapa de vendas com geocodificacao publica via Nominatim e visual moderno com MapLibre GL JS
+- cadastro de funcionarios com vinculo por ID em cada venda
+- consultoria de mercado e previsao orientada por Gemini Flash
 
-- home institucional em dark neutral premium
-- login conectado ao contrato real da API
-- cadastro com senha forte, aceite de termos e preferencias de cookies
-- dashboard autenticado com sessao, consentimento, portfolio e vendas
-- schema Prisma com usuarios, sessoes, consentimentos, logs e produtos
-- pedidos com baixa de estoque e cancelamento com estorno
-- financeiro com estoque potencial, receita realizada e comparativo mensal
-- migration inicial versionada em `apps/api/prisma/migrations`
-- seed preparado para documentos legais, usuario demo e produtos base
+### Seguranca
 
-## Rotas atuais do front
+- cookies `HttpOnly`, `SameSite` e CSRF por header/cookie
+- hash de senha com `argon2id`
+- audit logs para eventos sensiveis
+- sanitizacao defensiva de entradas
+- importacao CSV com validacao e limites
+- bloqueio de tentativas em login, verificacao de email e redefinicao de senha
+
+## Como rodar localmente
+
+### 1. Instale dependencias
+
+```powershell
+npm ci
+```
+
+### 2. Configure o ambiente
+
+Copie `.env.example` para `.env` e ajuste os valores necessarios.
+
+Variaveis mais importantes:
+
+```env
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+APP_URL=http://localhost:3000
+COOKIE_SECRET=change-me
+CSRF_SECRET=change-me
+EXCHANGE_RATES_URL=https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BRL-USD,BRL-EUR,USD-EUR,EUR-USD
+EXCHANGE_RATES_CACHE_SECONDS=300
+GEOCODING_URL=https://nominatim.openstreetmap.org/search
+GEOCODING_CACHE_SECONDS=86400
+GEOCODING_CONTACT_EMAIL=
+EMAIL_VERIFICATION_TTL_MINUTES=15
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_CACHE_SECONDS=900
+```
+
+Observacao:
+- as cotacoes em tempo real usam a AwesomeAPI publica e ficam em cache no backend
+- a geocodificacao do mapa usa Nominatim publico, com cache e tolerancia a falha no backend
+- em bancos hospedados como Neon, use `DATABASE_URL` para a conexao pooled do app e `DIRECT_URL` para migrations e seed
+
+Para envio real de email de confirmacao e redefinicao:
+
+```env
+SMTP_HOST=smtp.seuprovedor.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+SMTP_USER=seu-usuario
+SMTP_PASS=sua-senha-ou-app-password
+SMTP_FROM_NAME=Partner Portal
+SMTP_FROM_EMAIL=no-reply@suaempresa.com
+```
+
+Observacao:
+- em desenvolvimento, se o SMTP nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
+- em producao, o envio de email exige SMTP configurado
+- a chave `GEMINI_API_KEY` deve ficar apenas no backend; nunca use `NEXT_PUBLIC_` para isso
+
+### 3. Suba o banco
+
+```powershell
+npm run db:up
+```
+
+### 4. Gere o client Prisma e aplique migrations
+
+```powershell
+npm --workspace @partner/api run prisma:generate
+npm --workspace @partner/api run prisma:migrate:dev
+```
+
+### 5. Rode o seed
+
+```powershell
+npm run seed
+```
+
+### 6. Inicie a aplicacao
+
+Em terminais separados:
+
+```powershell
+npm --workspace @partner/api run dev
+npm --workspace @partner/web run dev
+```
+
+## Scripts uteis
+
+- `npm run dev`
+- `npm run build`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
+- `npm run db:up`
+- `npm run db:down`
+- `npm run db:studio`
+
+## Conta demo para avaliacao
+
+- email: `demo@partnerportal.com`
+- senha: `Demo@123`
+
+Observacoes:
+
+- a conta demo existe para avaliacao rapida do produto
+- cada dispositivo/IP tem ate `20 minutos por dia` no modo demo
+- o recrutador tambem pode criar a propria conta em `/cadastro`
+- em deploy publico, trate a demo como ambiente de showcase e nao como conta operacional
+
+## Rotas principais
 
 - `/`
 - `/login`
 - `/cadastro`
+- `/verificar-email`
+- `/recuperar-senha`
+- `/redefinir-senha`
 - `/dashboard`
 
-## Fluxo local recomendado
+API local:
 
-1. copiar `.env.example` para `.env`
-2. garantir um PostgreSQL local ou instalar Docker
-3. rodar `npm --workspace @partner/api run prisma:generate`
-4. rodar `npm --workspace @partner/api run prisma:migrate:dev`
-5. rodar `npm run seed`
-6. subir `apps/api` e `apps/web`
+- `http://localhost:4000/api`
 
-## Proximos passos
+Swagger:
 
-1. ligar banco local e aplicar migration + seed
-2. testar login/cadastro de ponta a ponta
-3. abrir pedidos multi-itens, pendencias e operacao de entrega
-4. evoluir monitoramento externo e health checks
-5. iniciar design system compartilhado em `packages/ui`
+- `http://localhost:4000/docs`
+- disponivel em desenvolvimento por padrao
 
-## Referencias oficiais usadas para esta base
+## Publicacao no GitHub
 
-- Next.js App Router: https://nextjs.org/docs/app
-- NestJS First Steps: https://docs.nestjs.com/first-steps
-- Tailwind com Next.js: https://tailwindcss.com/docs/installation/framework-guides/nextjs
-- TanStack Query: https://tanstack.com/query/latest/docs/framework/react/overview
-- React Three Fiber: https://r3f.docs.pmnd.rs/getting-started/introduction
+Este repositorio ja esta preparado para versionamento publico ou privado com:
+
+- `README` alinhado ao estado atual
+- workflow de CI
+- `LICENSE`
+- `SECURITY.md`
+- `CONTRIBUTING.md`
+
+Antes de publicar:
+
+1. confirme que nenhum `.env` real esta versionado
+2. revise screenshots e nome do projeto, se quiser personalizar a vitrine
+3. configure secrets no provedor de deploy para banco, cookie, CSRF e SMTP
+
+## Documentacao complementar
+
+- `docs/architecture/overview.md`
+- `docs/architecture/local-development.md`
+- `docs/security/deploy-checklist.md`
+- `docs/security/security-baseline.md`
+- `docs/security/observability-and-logs.md`

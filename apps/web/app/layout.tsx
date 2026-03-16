@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
 import { QueryProvider } from '@/providers/query-provider'
 import './globals.css'
 
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          {children}
+          <CookieConsentBanner />
+        </QueryProvider>
       </body>
     </html>
   )

@@ -1,14 +1,32 @@
-import type { Product } from '@prisma/client'
+import type { CurrencyCode, Product } from '@prisma/client'
+import type { CurrencyService, ExchangeRatesSnapshot } from '../currency/currency.service'
 
-type ProductLike = Pick<Product, 'id' | 'name' | 'category' | 'description' | 'unitCost' | 'unitPrice' | 'stock' | 'active' | 'createdAt' | 'updatedAt'>
+type ProductLike = Pick<
+  Product,
+  | 'id'
+  | 'name'
+  | 'category'
+  | 'description'
+  | 'unitCost'
+  | 'unitPrice'
+  | 'currency'
+  | 'stock'
+  | 'active'
+  | 'createdAt'
+  | 'updatedAt'
+>
 
 export type ProductRecord = {
   id: string
   name: string
   category: string
   description: string | null
+  currency: CurrencyCode
+  displayCurrency: CurrencyCode
   unitCost: number
   unitPrice: number
+  originalUnitCost: number
+  originalUnitPrice: number
   stock: number
   active: boolean
   createdAt: string
@@ -16,10 +34,15 @@ export type ProductRecord = {
   inventoryCostValue: number
   inventorySalesValue: number
   potentialProfit: number
+  originalInventoryCostValue: number
+  originalInventorySalesValue: number
+  originalPotentialProfit: number
   marginPercent: number
 }
 
 export type ProductsResponse = {
+  displayCurrency: CurrencyCode
+  ratesUpdatedAt: string | null
   items: ProductRecord[]
   totals: {
     totalProducts: number
@@ -34,11 +57,44 @@ export type ProductsResponse = {
   }
 }
 
-export function toProductRecord(product: ProductLike): ProductRecord {
-  const unitCost = toNumber(product.unitCost)
-  const unitPrice = toNumber(product.unitPrice)
-  const inventoryCostValue = roundCurrency(unitCost * product.stock)
-  const inventorySalesValue = roundCurrency(unitPrice * product.stock)
+export function toProductRecord(
+  product: ProductLike,
+  options: {
+    displayCurrency: CurrencyCode
+    currencyService: CurrencyService
+    snapshot: ExchangeRatesSnapshot
+  },
+): ProductRecord {
+  const originalUnitCost = toNumber(product.unitCost)
+  const originalUnitPrice = toNumber(product.unitPrice)
+  const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
+  const originalInventorySalesValue = roundCurrency(originalUnitPrice * product.stock)
+  const originalPotentialProfit = roundCurrency(originalInventorySalesValue - originalInventoryCostValue)
+
+  const unitCost = options.currencyService.convert(
+    originalUnitCost,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
+  const unitPrice = options.currencyService.convert(
+    originalUnitPrice,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
+  const inventoryCostValue = options.currencyService.convert(
+    originalInventoryCostValue,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
+  const inventorySalesValue = options.currencyService.convert(
+    originalInventorySalesValue,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
   const potentialProfit = roundCurrency(inventorySalesValue - inventoryCostValue)
   const marginPercent = inventorySalesValue > 0 ? roundPercent((potentialProfit / inventorySalesValue) * 100) : 0
 
@@ -47,8 +103,12 @@ export function toProductRecord(product: ProductLike): ProductRecord {
     name: product.name,
     category: product.category,
     description: product.description,
+    currency: product.currency,
+    displayCurrency: options.displayCurrency,
     unitCost,
     unitPrice,
+    originalUnitCost,
+    originalUnitPrice,
     stock: product.stock,
     active: product.active,
     createdAt: product.createdAt.toISOString(),
@@ -56,18 +116,31 @@ export function toProductRecord(product: ProductLike): ProductRecord {
     inventoryCostValue,
     inventorySalesValue,
     potentialProfit,
+    originalInventoryCostValue,
+    originalInventorySalesValue,
+    originalPotentialProfit,
     marginPercent,
   }
 }
 
-export function buildProductsResponse(items: ProductLike[]): ProductsResponse {
-  const records = items.map(toProductRecord)
+export function buildProductsResponse(
+  items: ProductLike[],
+  options: {
+    displayCurrency: CurrencyCode
+    currencyService: CurrencyService
+    snapshot: ExchangeRatesSnapshot
+    ratesUpdatedAt: string | null
+  },
+): ProductsResponse {
+  const records = items.map((item) => toProductRecord(item, options))
   const activeItems = records.filter((item) => item.active)
   const inventoryCostValue = roundCurrency(records.reduce((total, item) => total + item.inventoryCostValue, 0))
   const inventorySalesValue = roundCurrency(records.reduce((total, item) => total + item.inventorySalesValue, 0))
   const potentialProfit = roundCurrency(records.reduce((total, item) => total + item.potentialProfit, 0))
 
   return {
+    displayCurrency: options.displayCurrency,
+    ratesUpdatedAt: options.ratesUpdatedAt,
     items: records,
     totals: {
       totalProducts: records.length,

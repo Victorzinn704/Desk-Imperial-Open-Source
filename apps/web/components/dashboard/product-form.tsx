@@ -4,9 +4,11 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
+import { currencyOptions } from '@/lib/currency'
 import { productSchema, type ProductFormInputValues, type ProductFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
+import { SelectField } from '@/components/shared/select-field'
 
 const emptyValues: ProductFormInputValues = {
   name: '',
@@ -14,6 +16,7 @@ const emptyValues: ProductFormInputValues = {
   description: '',
   unitCost: 0,
   unitPrice: 0,
+  currency: 'BRL',
   stock: 0,
 }
 
@@ -48,8 +51,9 @@ export function ProductForm({
       name: product.name,
       category: product.category,
       description: product.description ?? '',
-      unitCost: product.unitCost,
-      unitPrice: product.unitPrice,
+      unitCost: product.originalUnitCost,
+      unitPrice: product.originalUnitPrice,
+      currency: product.currency,
       stock: product.stock,
     })
   }, [product, reset])
@@ -97,6 +101,10 @@ export function ProductForm({
         <div className="grid gap-5 sm:grid-cols-3">
           <InputField error={errors.unitCost?.message} label="Custo unitario" step="0.01" type="number" {...register('unitCost')} />
           <InputField error={errors.unitPrice?.message} label="Preco unitario" step="0.01" type="number" {...register('unitPrice')} />
+          <SelectField error={errors.currency?.message} label="Moeda" options={currencyOptions} {...register('currency')} />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-1">
           <InputField error={errors.stock?.message} label="Estoque" step="1" type="number" {...register('stock')} />
         </div>
 

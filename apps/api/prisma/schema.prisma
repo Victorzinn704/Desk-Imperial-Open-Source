@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserStatus {
@@ -28,22 +29,44 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum BuyerType {
+  PERSON
+  COMPANY
+}
+
+enum CurrencyCode {
+  BRL
+  USD
+  EUR
+}
+
+enum OneTimeCodePurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 model User {
-  id              String           @id @default(cuid())
-  fullName        String
-  companyName     String?
-  email           String           @unique
-  passwordHash    String
-  status          UserStatus       @default(ACTIVE)
-  passwordChangedAt DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  sessions        Session[]
-  consents        UserConsent[]
-  cookiePreference CookiePreference?
-  auditLogs       AuditLog[]
-  products        Product[]
-  orders          Order[]
+  id                  String               @id @default(cuid())
+  fullName            String
+  companyName         String?
+  email               String               @unique
+  passwordHash        String
+  status              UserStatus           @default(ACTIVE)
+  preferredCurrency   CurrencyCode         @default(BRL)
+  emailVerifiedAt     DateTime?
+  passwordChangedAt   DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  oneTimeCodes        OneTimeCode[]
+  consents            UserConsent[]
+  cookiePreference    CookiePreference?
+  auditLogs           AuditLog[]
+  demoAccessGrants    DemoAccessGrant[]
+  products            Product[]
+  employees           Employee[]
+  orders              Order[]
 }
 
 model Session {
@@ -57,8 +80,60 @@ model Session {
   ipAddress  String?
   userAgent  String?
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  demoAccessGrant DemoAccessGrant?
 
   @@index([userId, expiresAt])
+}
+
+model DemoAccessGrant {
+  id         String   @id @default(cuid())
+  userId     String
+  sessionId  String   @unique
+  dayKey     String
+  ipHash     String
+  startedAt  DateTime @default(now())
+  expiresAt  DateTime
+  endedAt    DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([ipHash, dayKey])
+  @@index([userId, dayKey])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model OneTimeCode {
+  id         String             @id @default(cuid())
+  userId     String
+  email      String
+  purpose    OneTimeCodePurpose
+  codeHash   String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime           @default(now())
+  ipAddress  String?
+  userAgent  String?
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, expiresAt])
+  @@index([email, purpose, expiresAt])
+  @@index([expiresAt, usedAt])
 }
 
 model ConsentDocument {
@@ -129,23 +204,51 @@ model Product {
   description String?
   unitCost    Decimal  @db.Decimal(10, 2)
   unitPrice   Decimal  @db.Decimal(10, 2)
+  currency    CurrencyCode @default(BRL)
   stock       Int
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems   OrderItem[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
 
   @@index([userId, active])
   @@unique([userId, name])
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  userId       String
+  employeeCode String
+  displayName  String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sales        Order[]
+
+  @@index([userId, active])
+  @@unique([userId, employeeCode])
 }
 
 model Order {
   id           String      @id @default(cuid())
   userId       String
   customerName String?
+  buyerType    BuyerType?
+  buyerDocument String?
+  buyerDistrict String?
+  buyerCity    String?
+  buyerState   String?
+  buyerCountry String?
+  buyerLatitude Float?
+  buyerLongitude Float?
+  employeeId   String?
+  sellerCode   String?
+  sellerName   String?
   channel      String?
   notes        String?
+  currency     CurrencyCode @default(BRL)
   status       OrderStatus @default(COMPLETED)
   totalRevenue Decimal     @db.Decimal(10, 2)
   totalCost    Decimal     @db.Decimal(10, 2)
@@ -155,10 +258,12 @@ model Order {
   updatedAt    DateTime    @updatedAt
   cancelledAt  DateTime?
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee     Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   items        OrderItem[]
 
   @@index([userId, createdAt])
   @@index([userId, status, createdAt])
+  @@index([employeeId, createdAt])
 }
 
 model OrderItem {
@@ -168,6 +273,7 @@ model OrderItem {
   productName String
   category    String
   quantity    Int
+  currency    CurrencyCode @default(BRL)
   unitCost    Decimal  @db.Decimal(10, 2)
   unitPrice   Decimal  @db.Decimal(10, 2)
   lineRevenue Decimal  @db.Decimal(10, 2)

@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, fetchConsentDocuments, register } from '@/lib/api'
+import { readCookieConsentChoice } from '@/lib/cookie-consent'
 import { fallbackConsentDocuments, getPasswordStrength, type RegisterFormValues, registerSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { CheckboxField } from '@/components/shared/checkbox-field'
@@ -14,7 +15,6 @@ import { InputField } from '@/components/shared/input-field'
 
 export function RegisterForm() {
   const router = useRouter()
-  const queryClient = useQueryClient()
   const [isRouting, startTransition] = useTransition()
   const {
     register: registerField,
@@ -30,8 +30,6 @@ export function RegisterForm() {
       password: '',
       acceptTerms: false,
       acceptPrivacy: false,
-      analyticsCookies: false,
-      marketingCookies: false,
     },
   })
 
@@ -44,10 +42,8 @@ export function RegisterForm() {
   const registerMutation = useMutation({
     mutationFn: register,
     onSuccess: (data) => {
-      queryClient.setQueryData(['auth', 'me'], { user: data.user })
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
       startTransition(() => {
-        router.push('/dashboard')
+        router.push(`/verificar-email?email=${encodeURIComponent(data.email)}`)
       })
     },
   })
@@ -58,9 +54,13 @@ export function RegisterForm() {
       name: 'password',
     }) ?? ''
   const passwordStrength = getPasswordStrength(password)
-  const documents = consentDocumentsQuery.data?.length ? consentDocumentsQuery.data : fallbackConsentDocuments
+  const documents = (
+    consentDocumentsQuery.data?.length ? consentDocumentsQuery.data : fallbackConsentDocuments
+  ).filter((document) => document.required)
 
   const onSubmit = handleSubmit((values) => {
+    const cookieConsentChoice = readCookieConsentChoice()
+
     registerMutation.mutate({
       fullName: values.fullName,
       companyName: values.companyName || undefined,
@@ -68,13 +68,15 @@ export function RegisterForm() {
       password: values.password,
       acceptTerms: values.acceptTerms,
       acceptPrivacy: values.acceptPrivacy,
-      analyticsCookies: values.analyticsCookies,
-      marketingCookies: values.marketingCookies,
+      analyticsCookies: cookieConsentChoice === 'accepted',
+      marketingCookies: cookieConsentChoice === 'accepted',
     })
   })
 
   const errorMessage =
-    registerMutation.error instanceof ApiError ? registerMutation.error.message : 'Seu cadastro sera criado com trilha de consentimento e sessao segura.'
+    registerMutation.error instanceof ApiError
+      ? registerMutation.error.message
+      : 'Seu cadastro cria a conta, registra os consentimentos e envia um codigo para confirmar o email antes do primeiro login.'
 
   return (
     <div>
@@ -82,7 +84,7 @@ export function RegisterForm() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Cadastro</p>
         <h2 className="text-3xl font-semibold text-white">Crie uma conta pronta para operar com seguranca.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          O cadastro ja considera aceite de documentos legais, preferencia de cookies e base de sessao por cookie HttpOnly.
+          O cadastro ja considera aceite de documentos legais e base de sessao por cookie HttpOnly.
         </p>
       </div>
 
@@ -143,9 +145,9 @@ export function RegisterForm() {
 
         <div className="space-y-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Consentimento e preferencia de cookies</h3>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Consentimento legal</h3>
             <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-              Os itens obrigatorios precisam ser aceitos. Os opcionais podem ser alterados depois dentro do painel.
+              Para criar a conta, os documentos obrigatorios precisam ser aceitos. As preferencias de cookies agora ficam no banner do site.
             </p>
           </div>
 
@@ -175,28 +177,6 @@ export function RegisterForm() {
                 )
               }
 
-              if (document.key === 'cookie-analytics') {
-                return (
-                  <CheckboxField
-                    description={document.description}
-                    key={document.key}
-                    label={document.title}
-                    {...registerField('analyticsCookies')}
-                  />
-                )
-              }
-
-              if (document.key === 'cookie-marketing') {
-                return (
-                  <CheckboxField
-                    description={document.description}
-                    key={document.key}
-                    label={document.title}
-                    {...registerField('marketingCookies')}
-                  />
-                )
-              }
-
               return null
             })}
           </div>
@@ -207,7 +187,7 @@ export function RegisterForm() {
         </div>
 
         <Button fullWidth loading={registerMutation.isPending || isRouting} size="lg" type="submit">
-          Criar conta e entrar
+          Criar conta e confirmar email
         </Button>
       </form>
 

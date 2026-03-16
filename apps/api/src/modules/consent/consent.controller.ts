@@ -5,6 +5,7 @@ import type { Request } from 'express'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
 import { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
 import { ConsentService } from './consent.service'
@@ -31,7 +32,7 @@ export class ConsentController {
     })
   }
 
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionGuard, CsrfGuard)
   @Post('preferences')
   updateCookiePreferences(
     @CurrentAuth() auth: AuthContext,

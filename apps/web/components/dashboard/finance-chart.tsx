@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import type { FinanceSummaryResponse, OrdersResponse } from '@contracts/contracts'
+import type { CurrencyCode, FinanceSummaryResponse, OrdersResponse } from '@contracts/contracts'
 import {
   BarChart3,
   Boxes,
-  ChartColumnIncreasing,
+  Building2,
   TrendingUp,
+  UsersRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -17,11 +18,15 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
+import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
 import { cn } from '@/lib/utils'
 
 type FinanceChartProps = {
@@ -31,7 +36,7 @@ type FinanceChartProps = {
   error?: string | null
 }
 
-type ChartView = 'orders' | 'categories' | 'comparison'
+type ChartView = 'timeline' | 'channels' | 'customers' | 'categories'
 
 type ChartViewOption = {
   id: ChartView
@@ -40,26 +45,32 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#d4b16a', '#8fb7ff', '#7bd68a', '#f58484', '#99a3b1']
+const palette = ['#d4b16a', '#8fb7ff', '#7bd68a', '#f58484', '#7df9d8', '#8c7dff']
 
 const chartViews: ChartViewOption[] = [
   {
-    id: 'orders',
-    label: 'Receita x lucro',
-    description: 'Leitura dos pedidos mais recentes para enxergar o quanto da venda virou resultado.',
+    id: 'timeline',
+    label: 'Linha do tempo',
+    description: 'Compara receita, lucro e volume recente para mostrar a progressao real da operacao.',
     icon: TrendingUp,
+  },
+  {
+    id: 'channels',
+    label: 'Canais',
+    description: 'Mostra quais canais estao trazendo mais volume, receita e resultado.',
+    icon: Building2,
+  },
+  {
+    id: 'customers',
+    label: 'Clientes',
+    description: 'Evidencia compradores com mais impacto financeiro para orientar relacao comercial.',
+    icon: UsersRound,
   },
   {
     id: 'categories',
     label: 'Categorias',
-    description: 'Compara o lucro potencial por carteira para evidenciar onde estao as melhores oportunidades.',
+    description: 'Apresenta o peso do portfolio e o lucro potencial por categoria.',
     icon: Boxes,
-  },
-  {
-    id: 'comparison',
-    label: 'Comparativo mensal',
-    description: 'Mostra a virada de receita e lucro entre o mes atual e o periodo anterior.',
-    icon: ChartColumnIncreasing,
   },
 ]
 
@@ -69,128 +80,130 @@ export function FinanceChart({
   isLoading = false,
   error = null,
 }: FinanceChartProps) {
-  const [activeView, setActiveView] = useState<ChartView>('orders')
+  const [activeView, setActiveView] = useState<ChartView>('timeline')
+  const displayCurrency = finance?.displayCurrency ?? 'BRL'
 
-  const recentOrdersData =
-    finance?.recentOrders
-      .slice(0, 6)
-      .reverse()
-      .map((order) => ({
-        id: order.id,
-        label: order.customerName?.split(' ')[0] ?? `#${order.id.slice(-4)}`,
-        fullLabel: order.customerName?.trim() || `Pedido ${order.id.slice(-6)}`,
-        dateLabel: formatShortDate(order.createdAt),
-        revenue: order.totalRevenue,
-        profit: order.totalProfit,
-        items: order.totalItems,
-      })) ?? []
-
+  const timelineData = finance?.revenueTimeline ?? []
+  const channelData = finance?.salesByChannel ?? []
+  const customerData =
+    finance?.topCustomers.map((customer) => ({
+      ...customer,
+      label: customer.customerName.length > 18 ? `${customer.customerName.slice(0, 18)}...` : customer.customerName,
+      documentLabel: maskBuyerDocument(customer.buyerDocument),
+      buyerTypeLabel: formatBuyerType(customer.buyerType),
+    })) ?? []
   const categoryData =
-    finance?.categoryBreakdown
-      .slice()
-      .sort((left, right) => right.potentialProfit - left.potentialProfit)
-      .map((category, index) => ({
-        label: category.category,
-        products: category.products,
-        units: category.units,
-        potentialProfit: category.potentialProfit,
-        inventoryCostValue: category.inventoryCostValue,
-        color: palette[index % palette.length],
-      })) ?? []
+    finance?.categoryBreakdown.map((category, index) => ({
+      ...category,
+      color: palette[index % palette.length],
+    })) ?? []
 
-  const comparisonData = finance
-    ? [
-        {
-          label: 'Mes anterior',
-          revenue: finance.totals.previousMonthRevenue,
-          profit: finance.totals.previousMonthProfit,
-        },
-        {
-          label: 'Mes atual',
-          revenue: finance.totals.currentMonthRevenue,
-          profit: finance.totals.currentMonthProfit,
-        },
-      ]
-    : []
-
-  const leadingCategory = categoryData[0]
-  const bestRecentOrder = recentOrdersData
-    .slice()
-    .sort((left, right) => right.revenue - left.revenue)[0]
+  const activeViewOption = chartViews.find((view) => view.id === activeView) ?? chartViews[0]
+  const highlightedChannel = channelData[0]
+  const highlightedCustomer = customerData[0]
+  const highlightedCategory = categoryData[0]
 
   const insightCards =
-    activeView === 'orders'
+    activeView === 'timeline'
       ? [
+          {
+            label: 'Receita do mes',
+            value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
+            helper: 'bruto consolidado do periodo atual',
+          },
+          {
+            label: 'Lucro do mes',
+            value: formatCurrency(finance?.totals.currentMonthProfit ?? 0, displayCurrency),
+            helper: 'resultado efetivo depois do custo',
+          },
           {
             label: 'Pedidos concluidos',
             value: String(ordersTotals?.completedOrders ?? finance?.totals.completedOrders ?? 0),
-            helper: 'pedidos que ja entram no financeiro',
-          },
-          {
-            label: 'Maior pedido recente',
-            value: bestRecentOrder ? formatCurrency(bestRecentOrder.revenue) : formatCurrency(0),
-            helper: bestRecentOrder
-              ? `${bestRecentOrder.fullLabel} em ${bestRecentOrder.dateLabel}`
-              : 'sem pedidos recentes ainda',
-          },
-          {
-            label: 'Margem media',
-            value: formatPercent(finance?.totals.averageMarginPercent ?? 0),
-            helper: 'media atual do portfolio e das vendas',
+            helper: 'pedidos que ja impactam o caixa',
           },
         ]
-      : activeView === 'categories'
+      : activeView === 'channels'
         ? [
             {
+              label: 'Canal lider',
+              value: highlightedChannel?.channel ?? 'Sem dados',
+              helper: highlightedChannel
+                ? `${formatCurrency(highlightedChannel.revenue, displayCurrency)} em receita`
+                : 'registre pedidos com canal para abrir esta visao',
+            },
+            {
+              label: 'Receita realizada',
+              value: formatCurrency(finance?.totals.realizedRevenue ?? 0, displayCurrency),
+              helper: 'somatorio das vendas concluidas',
+            },
+            {
+              label: 'Lucro realizado',
+              value: formatCurrency(finance?.totals.realizedProfit ?? 0, displayCurrency),
+              helper: 'resultado liquido dos pedidos concluidos',
+            },
+          ]
+        : activeView === 'customers'
+          ? [
+              {
+                label: 'Cliente lider',
+                value: highlightedCustomer?.customerName ?? 'Sem dados',
+                helper: highlightedCustomer
+                  ? `${highlightedCustomer.buyerTypeLabel} • ${highlightedCustomer.documentLabel}`
+                  : 'registre compradores para abrir esta visao',
+              },
+            {
+              label: 'Maior receita',
+              value: highlightedCustomer
+                ? formatCurrency(highlightedCustomer.revenue, displayCurrency)
+                : formatCurrency(0, displayCurrency),
+              helper: highlightedCustomer
+                ? `${highlightedCustomer.orders} pedido(s) registrados`
+                : 'sem compradores suficientes ainda',
+              },
+              {
+                label: 'Margem media',
+                value: formatPercent(finance?.totals.averageMarginPercent ?? 0),
+                helper: 'media geral do portfolio e das vendas',
+              },
+            ]
+          : [
+              {
               label: 'Categoria lider',
-              value: leadingCategory?.label ?? 'Sem dados',
-              helper: leadingCategory
-                ? `${formatCurrency(leadingCategory.potentialProfit)} de lucro potencial`
-                : 'cadastre produtos para abrir esta visao',
-            },
-            {
-              label: 'Valor em estoque',
-              value: formatCurrency(finance?.totals.inventoryCostValue ?? 0),
-              helper: 'capital imobilizado em produtos ativos',
-            },
-            {
-              label: 'Itens com baixo estoque',
-              value: String(finance?.totals.lowStockItems ?? 0),
-              helper: 'prioridade para reposicao e operacao',
-            },
-          ]
-        : [
-            {
-              label: 'Receita do mes',
-              value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0),
-              helper: 'resultado bruto do periodo atual',
-            },
-            {
-              label: 'Lucro do mes',
-              value: formatCurrency(finance?.totals.currentMonthProfit ?? 0),
-              helper: 'resultado liquido dos pedidos atuais',
-            },
-            {
-              label: 'Crescimento',
-              value: formatPercent(finance?.totals.revenueGrowthPercent ?? 0),
-              helper: 'variacao de receita vs mes anterior',
-            },
-          ]
-
-  const activeViewOption = chartViews.find((view) => view.id === activeView) ?? chartViews[0]
+              value: highlightedCategory?.category ?? 'Sem dados',
+              helper: highlightedCategory
+                  ? `${formatCurrency(highlightedCategory.potentialProfit, displayCurrency)} de lucro potencial`
+                  : 'cadastre produtos para destravar a leitura',
+              },
+              {
+                label: 'Valor em estoque',
+                value: formatCurrency(finance?.totals.inventoryCostValue ?? 0, displayCurrency),
+                helper: 'capital imobilizado no portfolio',
+              },
+              {
+                label: 'Itens com baixo estoque',
+                value: String(finance?.totals.lowStockItems ?? 0),
+                helper: 'pontos de reposicao imediata',
+              },
+            ]
 
   return (
     <section className="rounded-[36px] border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-panel)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Analytics interativo
+            Analytics profissional
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
-            O financeiro agora tem leitura visual da operacao.
+            Leitura executiva do desempenho comercial e financeiro.
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
             {activeViewOption.description}
+          </p>
+          <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            exibindo valores em {displayCurrency}
+            {finance?.ratesUpdatedAt
+              ? ` • cotacao de ${new Date(finance.ratesUpdatedAt).toLocaleString('pt-BR')}`
+              : ''}
           </p>
         </div>
 
@@ -220,19 +233,21 @@ export function FinanceChart({
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(16,20,26,0.95),rgba(11,13,16,0.98))] p-4 shadow-[var(--shadow-panel)]">
-          <div className="h-[360px]">
+          <div className="h-[380px]">
             {renderChart({
               activeView,
-              comparisonData,
+              categoryData,
+              channelData,
+              customerData,
+              displayCurrency,
               error,
               isLoading,
-              recentOrdersData,
-              categoryData,
+              timelineData,
             })}
           </div>
         </div>
 
-        <div className="grid gap-4 content-start">
+        <div className="grid content-start gap-4">
           <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
             <div className="flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
@@ -245,11 +260,13 @@ export function FinanceChart({
             </div>
 
             <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
-              {activeView === 'orders'
-                ? 'Esta visao ajuda a entender se o volume vendido esta realmente convertendo em margem.'
-                : activeView === 'categories'
-                  ? 'Use esta leitura para identificar onde vale ampliar estoque, promocao e foco comercial.'
-                  : 'Esse comparativo evidencia a saude financeira recente e evita decidir so por percepcao.'}
+              {activeView === 'timeline'
+                ? 'A curva temporal ajuda a separar um pico ocasional de uma operacao realmente saudavel.'
+                : activeView === 'channels'
+                  ? 'Use a comparacao por canal para decidir onde investir energia comercial e reposicao.'
+                  : activeView === 'customers'
+                    ? 'Essa visao mostra quem esta puxando o caixa e ajuda a orientar relacionamento e oferta.'
+                    : 'O mix por categoria evita decisoes no escuro e mostra onde existe margem para crescer.'}
             </p>
           </div>
 
@@ -273,39 +290,52 @@ export function FinanceChart({
 
 type RenderChartProps = {
   activeView: ChartView
-  comparisonData: Array<{
-    label: string
-    revenue: number
-    profit: number
-  }>
   categoryData: Array<{
-    label: string
+    category: string
     products: number
     units: number
-    potentialProfit: number
     inventoryCostValue: number
+    inventorySalesValue: number
+    potentialProfit: number
     color: string
   }>
-  error: string | null
-  isLoading: boolean
-  recentOrdersData: Array<{
-    id: string
-    label: string
-    fullLabel: string
-    dateLabel: string
+  channelData: Array<{
+    channel: string
+    orders: number
     revenue: number
     profit: number
-    items: number
+  }>
+  customerData: Array<{
+    customerName: string
+    label: string
+    buyerType: 'PERSON' | 'COMPANY' | null
+    buyerTypeLabel: string
+    buyerDocument: string | null
+    documentLabel: string
+    orders: number
+    revenue: number
+    profit: number
+  }>
+  displayCurrency: CurrencyCode
+  error: string | null
+  isLoading: boolean
+  timelineData: Array<{
+    label: string
+    revenue: number
+    profit: number
+    orders: number
   }>
 }
 
 function renderChart({
   activeView,
-  comparisonData,
   categoryData,
+  channelData,
+  customerData,
+  displayCurrency,
   error,
   isLoading,
-  recentOrdersData,
+  timelineData,
 }: RenderChartProps) {
   if (isLoading) {
     return (
@@ -319,98 +349,120 @@ function renderChart({
     return (
       <div className="flex h-full items-center justify-center rounded-[24px] border border-dashed border-[rgba(245,132,132,0.3)] bg-[rgba(245,132,132,0.06)] px-6 text-center">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">Falha na leitura</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">
+            Falha na leitura
+          </p>
           <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{error}</p>
         </div>
       </div>
     )
   }
 
-  if (activeView === 'orders' && !recentOrdersData.length) {
-    return <EmptyChartState message="Registre pedidos para destravar a curva de receita e lucro." />
+  if (activeView === 'timeline' && !timelineData.length) {
+    return <EmptyChartState message="Registre pedidos ao longo do tempo para destravar a linha executiva." />
+  }
+
+  if (activeView === 'channels' && !channelData.length) {
+    return <EmptyChartState message="Preencha o canal das vendas para comparar origem, receita e lucro." />
+  }
+
+  if (activeView === 'customers' && !customerData.length) {
+    return <EmptyChartState message="Identifique compradores nas vendas para liberar o ranking de clientes." />
   }
 
   if (activeView === 'categories' && !categoryData.length) {
-    return <EmptyChartState message="Cadastre produtos ativos para comparar categorias e potencial de lucro." />
+    return <EmptyChartState message="Cadastre produtos ativos para visualizar o mix de categorias." />
   }
 
-  if (activeView === 'comparison' && !comparisonData.length) {
-    return <EmptyChartState message="A comparacao mensal aparecera assim que o financeiro estiver carregado." />
-  }
-
-  if (activeView === 'orders') {
+  if (activeView === 'timeline') {
     return (
       <ResponsiveContainer height="100%" width="100%">
-        <AreaChart data={recentOrdersData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
+        <AreaChart data={timelineData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
           <defs>
-            <linearGradient id="revenueGradient" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id="timelineRevenue" x1="0" x2="0" y1="0" y2="1">
               <stop offset="5%" stopColor="#8fb7ff" stopOpacity={0.34} />
               <stop offset="95%" stopColor="#8fb7ff" stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="profitGradient" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id="timelineProfit" x1="0" x2="0" y1="0" y2="1">
               <stop offset="5%" stopColor="#d4b16a" stopOpacity={0.3} />
               <stop offset="95%" stopColor="#d4b16a" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            axisLine={false}
-            dataKey="label"
-            tick={{ fill: '#99a3b1', fontSize: 12 }}
-            tickLine={false}
-          />
+          <XAxis axisLine={false} dataKey="label" tick={{ fill: '#99a3b1', fontSize: 12 }} tickLine={false} />
           <YAxis
             axisLine={false}
             tick={{ fill: '#99a3b1', fontSize: 12 }}
-            tickFormatter={formatCompactCurrency}
+            tickFormatter={(value: number) => formatCompactCurrency(value, displayCurrency)}
             tickLine={false}
             width={80}
           />
-          <Tooltip content={<DashboardChartTooltip valueFormatter={formatCurrency} />} />
+          <Tooltip
+            content={
+              <DashboardChartTooltip
+                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
+              />
+            }
+          />
           <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
-          <Area
-            dataKey="revenue"
-            fill="url(#revenueGradient)"
-            name="Receita"
-            stroke="#8fb7ff"
-            strokeWidth={3}
-            type="monotone"
-          />
-          <Area
-            dataKey="profit"
-            fill="url(#profitGradient)"
-            name="Lucro"
-            stroke="#d4b16a"
-            strokeWidth={3}
-            type="monotone"
-          />
+          <Area dataKey="revenue" fill="url(#timelineRevenue)" name="Receita" stroke="#8fb7ff" strokeWidth={3} type="monotone" />
+          <Area dataKey="profit" fill="url(#timelineProfit)" name="Lucro" stroke="#d4b16a" strokeWidth={3} type="monotone" />
         </AreaChart>
       </ResponsiveContainer>
     )
   }
 
-  if (activeView === 'categories') {
+  if (activeView === 'channels') {
     return (
       <ResponsiveContainer height="100%" width="100%">
-        <BarChart data={categoryData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
-          <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
+        <BarChart data={channelData} layout="vertical" margin={{ top: 12, right: 12, left: 18, bottom: 0 }}>
+          <CartesianGrid stroke="#20262f" strokeDasharray="3 3" horizontal={false} />
           <XAxis
             axisLine={false}
-            dataKey="label"
             tick={{ fill: '#99a3b1', fontSize: 12 }}
+            tickFormatter={(value: number) => formatCompactCurrency(value, displayCurrency)}
             tickLine={false}
+            type="number"
           />
+          <YAxis axisLine={false} dataKey="channel" tick={{ fill: '#99a3b1', fontSize: 12 }} tickLine={false} type="category" width={110} />
+          <Tooltip
+            content={
+              <DashboardChartTooltip
+                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
+              />
+            }
+          />
+          <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
+          <Bar dataKey="revenue" fill="#8fb7ff" name="Receita" radius={[0, 14, 14, 0]} />
+          <Bar dataKey="profit" fill="#d4b16a" name="Lucro" radius={[0, 14, 14, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  if (activeView === 'customers') {
+    return (
+      <ResponsiveContainer height="100%" width="100%">
+        <BarChart data={customerData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
+          <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
+          <XAxis axisLine={false} dataKey="label" tick={{ fill: '#99a3b1', fontSize: 12 }} tickLine={false} />
           <YAxis
             axisLine={false}
             tick={{ fill: '#99a3b1', fontSize: 12 }}
-            tickFormatter={formatCompactCurrency}
+            tickFormatter={(value: number) => formatCompactCurrency(value, displayCurrency)}
             tickLine={false}
             width={80}
           />
-          <Tooltip content={<DashboardChartTooltip valueFormatter={formatCurrency} />} />
-          <Bar dataKey="potentialProfit" name="Lucro potencial" radius={[14, 14, 0, 0]}>
-            {categoryData.map((entry) => (
-              <Cell fill={entry.color} key={entry.label} />
+          <Tooltip
+            content={
+              <DashboardChartTooltip
+                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
+              />
+            }
+          />
+          <Bar dataKey="revenue" fill="#7df9d8" name="Receita" radius={[14, 14, 0, 0]}>
+            {customerData.map((entry, index) => (
+              <Cell fill={palette[index % palette.length]} key={`${entry.customerName}-${entry.documentLabel}`} />
             ))}
           </Bar>
         </BarChart>
@@ -420,26 +472,30 @@ function renderChart({
 
   return (
     <ResponsiveContainer height="100%" width="100%">
-      <BarChart data={comparisonData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
-        <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
-        <XAxis
-          axisLine={false}
-          dataKey="label"
-          tick={{ fill: '#99a3b1', fontSize: 12 }}
-          tickLine={false}
+      <PieChart>
+        <Tooltip
+          content={
+            <DashboardChartTooltip
+              valueFormatter={(value) => formatCurrency(value, displayCurrency)}
+            />
+          }
         />
-        <YAxis
-          axisLine={false}
-          tick={{ fill: '#99a3b1', fontSize: 12 }}
-          tickFormatter={formatCompactCurrency}
-          tickLine={false}
-          width={80}
-        />
-        <Tooltip content={<DashboardChartTooltip valueFormatter={formatCurrency} />} />
-        <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
-        <Bar dataKey="revenue" fill="#8fb7ff" name="Receita" radius={[14, 14, 0, 0]} />
-        <Bar dataKey="profit" fill="#d4b16a" name="Lucro" radius={[14, 14, 0, 0]} />
-      </BarChart>
+        <Legend wrapperStyle={{ color: '#f3f4f6' }} />
+        <Pie
+          cx="50%"
+          cy="50%"
+          data={categoryData}
+          dataKey="potentialProfit"
+          innerRadius={78}
+          nameKey="category"
+          outerRadius={124}
+          paddingAngle={3}
+        >
+          {categoryData.map((entry) => (
+            <Cell fill={entry.color} key={entry.category} />
+          ))}
+        </Pie>
+      </PieChart>
     </ResponsiveContainer>
   )
 }
@@ -482,11 +538,12 @@ function DashboardChartTooltip({
 
   const rowPayload = payload[0]?.payload ?? {}
   const description = [
-    typeof rowPayload.fullLabel === 'string' ? rowPayload.fullLabel : label,
-    typeof rowPayload.dateLabel === 'string' ? rowPayload.dateLabel : null,
+    typeof rowPayload.customerName === 'string' ? rowPayload.customerName : null,
+    typeof rowPayload.documentLabel === 'string' ? rowPayload.documentLabel : null,
+    typeof rowPayload.buyerTypeLabel === 'string' ? rowPayload.buyerTypeLabel : null,
   ]
     .filter(Boolean)
-    .join(' - ')
+    .join(' • ')
 
   return (
     <div className="min-w-[220px] rounded-[20px] border border-[var(--border-strong)] bg-[rgba(12,15,19,0.96)] p-4 shadow-[var(--shadow-panel)]">
@@ -496,10 +553,7 @@ function DashboardChartTooltip({
         {payload.map((item) => (
           <div className="flex items-center justify-between gap-4 text-sm" key={item.dataKey ?? item.name}>
             <span className="flex items-center gap-2 text-[var(--text-soft)]">
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: item.color ?? '#8fb7ff' }}
-              />
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color ?? '#8fb7ff' }} />
               {item.name ?? item.dataKey}
             </span>
             <span className="font-semibold text-white">
@@ -512,29 +566,6 @@ function DashboardChartTooltip({
   )
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
-}
-
-function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value)
-}
-
 function formatPercent(value: number) {
   return `${value.toFixed(2)}%`
-}
-
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-  }).format(new Date(value))
 }

@@ -1,8 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { AuditSeverity, OrderStatus } from '@prisma/client'
+import { AuditSeverity, BuyerType, OrderStatus } from '@prisma/client'
+import {
+  isValidCnpj,
+  isValidCpf,
+  sanitizeDocument,
+} from '../../common/utils/document-validation.util'
+import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
+import { CurrencyService } from '../currency/currency.service'
+import { GeocodingService } from '../geocoding/geocoding.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { ListOrdersQueryDto } from './dto/list-orders.query'
@@ -12,10 +20,13 @@ import { roundCurrency, toOrderRecord } from './orders.types'
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly currencyService: CurrencyService,
+    private readonly geocodingService: GeocodingService,
     private readonly auditLogService: AuditLogService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListOrdersQueryDto) {
+    const snapshot = await this.currencyService.getSnapshot()
     const limit = query.limit ?? 10
     const where = {
       userId: auth.userId,
@@ -46,17 +57,36 @@ export class OrdersService {
       }),
     ])
 
-    const completedOrders = totalsBase.filter((order) => order.status === OrderStatus.COMPLETED)
+    const orderRecords = orders.map((order) =>
+      toOrderRecord(order, {
+        displayCurrency: auth.preferredCurrency,
+        currencyService: this.currencyService,
+        snapshot,
+      }),
+    )
+    const completedOrderRecords = totalsBase
+      .filter((order) => order.status === OrderStatus.COMPLETED)
+      .map((order) =>
+        toOrderRecord(order, {
+          displayCurrency: auth.preferredCurrency,
+          currencyService: this.currencyService,
+          snapshot,
+        }),
+      )
     const cancelledOrders = totalsBase.filter((order) => order.status === OrderStatus.CANCELLED)
 
     return {
-      items: orders.map(toOrderRecord),
+      items: orderRecords,
       totals: {
-        completedOrders: completedOrders.length,
+        completedOrders: completedOrderRecords.length,
         cancelledOrders: cancelledOrders.length,
-        realizedRevenue: roundCurrency(completedOrders.reduce((total, order) => total + Number(order.totalRevenue), 0)),
-        realizedProfit: roundCurrency(completedOrders.reduce((total, order) => total + Number(order.totalProfit), 0)),
-        soldUnits: completedOrders.reduce(
+        realizedRevenue: roundCurrency(
+          completedOrderRecords.reduce((total, order) => total + order.totalRevenue, 0),
+        ),
+        realizedProfit: roundCurrency(
+          completedOrderRecords.reduce((total, order) => total + order.totalProfit, 0),
+        ),
+        soldUnits: completedOrderRecords.reduce(
           (total, order) => total + order.items.reduce((subtotal, item) => subtotal + item.quantity, 0),
           0,
         ),
@@ -81,8 +111,80 @@ export class OrdersService {
       throw new BadRequestException('Estoque insuficiente para concluir a venda.')
     }
 
-    const unitCost = Number(product.unitCost)
-    const unitPrice = Number(product.unitPrice)
+    const customerName = sanitizePlainText(dto.customerName, 'Comprador', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const buyerDocument = sanitizeDocument(dto.buyerDocument)
+    const buyerDistrict = sanitizePlainText(dto.buyerDistrict, 'Bairro ou regiao', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const buyerCity = sanitizePlainText(dto.buyerCity, 'Cidade da venda', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const buyerState = sanitizePlainText(dto.buyerState, 'Estado da venda', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const buyerCountry = sanitizePlainText(dto.buyerCountry, 'Pais da venda', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const channel = sanitizePlainText(dto.channel, 'Canal', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const notes = sanitizePlainText(dto.notes, 'Observacoes', {
+      allowEmpty: true,
+      rejectFormula: false,
+    })
+    const orderCurrency = dto.currency ?? product.currency
+    const snapshot = await this.currencyService.getSnapshot()
+    const unitCost = this.currencyService.convert(
+      Number(product.unitCost),
+      product.currency,
+      orderCurrency,
+      snapshot,
+    )
+    const unitPrice =
+      dto.unitPrice ??
+      this.currencyService.convert(
+        Number(product.unitPrice),
+        product.currency,
+        orderCurrency,
+        snapshot,
+      )
+
+    if (dto.buyerType === BuyerType.PERSON && !isValidCpf(buyerDocument)) {
+      throw new BadRequestException('Informe um CPF valido para a compra em nome de pessoa.')
+    }
+
+    if (dto.buyerType === BuyerType.COMPANY && !isValidCnpj(buyerDocument)) {
+      throw new BadRequestException('Informe um CNPJ valido para a compra em nome de empresa.')
+    }
+
+    const seller = dto.sellerEmployeeId
+      ? await this.prisma.employee.findFirst({
+          where: {
+            id: dto.sellerEmployeeId,
+            userId: auth.userId,
+            active: true,
+          },
+        })
+      : null
+
+    if (dto.sellerEmployeeId && !seller) {
+      throw new BadRequestException('Selecione um funcionario ativo para registrar esta venda.')
+    }
+
+    const geocodedLocation = await this.resolveBuyerLocation({
+      district: buyerDistrict,
+      city: buyerCity,
+      state: buyerState,
+      country: buyerCountry,
+    })
     const totalRevenue = roundCurrency(unitPrice * dto.quantity)
     const totalCost = roundCurrency(unitCost * dto.quantity)
     const totalProfit = roundCurrency(totalRevenue - totalCost)
@@ -100,9 +202,21 @@ export class OrdersService {
       return transaction.order.create({
         data: {
           userId: auth.userId,
-          customerName: dto.customerName?.trim() || null,
-          channel: dto.channel?.trim() || null,
-          notes: dto.notes?.trim() || null,
+          customerName,
+          buyerType: dto.buyerType,
+          buyerDocument,
+          buyerDistrict: geocodedLocation?.district ?? buyerDistrict,
+          buyerCity: geocodedLocation?.city ?? buyerCity,
+          buyerState: geocodedLocation?.state ?? buyerState,
+          buyerCountry: geocodedLocation?.country ?? buyerCountry,
+          buyerLatitude: geocodedLocation?.latitude,
+          buyerLongitude: geocodedLocation?.longitude,
+          employeeId: seller?.id,
+          sellerCode: seller?.employeeCode,
+          sellerName: seller?.displayName,
+          channel,
+          notes,
+          currency: orderCurrency,
           status: OrderStatus.COMPLETED,
           totalRevenue,
           totalCost,
@@ -114,6 +228,7 @@ export class OrdersService {
               productName: product.name,
               category: product.category,
               quantity: dto.quantity,
+              currency: orderCurrency,
               unitCost,
               unitPrice,
               lineRevenue: totalRevenue,
@@ -139,13 +254,24 @@ export class OrdersService {
         quantity: dto.quantity,
         totalRevenue,
         totalProfit,
+        buyerType: dto.buyerType,
+        currency: orderCurrency,
+        buyerLocation:
+          geocodedLocation?.label ??
+          [buyerDistrict, buyerCity, buyerState, buyerCountry].filter(Boolean).join(', '),
+        sellerCode: seller?.employeeCode,
+        sellerName: seller?.displayName,
       },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
 
     return {
-      order: toOrderRecord(order),
+      order: toOrderRecord(order, {
+        displayCurrency: auth.preferredCurrency,
+        currencyService: this.currencyService,
+        snapshot,
+      }),
     }
   }
 
@@ -208,8 +334,65 @@ export class OrdersService {
       userAgent: context.userAgent,
     })
 
+    const snapshot = await this.currencyService.getSnapshot()
+
     return {
-      order: toOrderRecord(cancelledOrder),
+      order: toOrderRecord(cancelledOrder, {
+        displayCurrency: auth.preferredCurrency,
+        currencyService: this.currencyService,
+        snapshot,
+      }),
     }
+  }
+
+  private async resolveBuyerLocation(input: {
+    district: string | null
+    city: string
+    state: string | null
+    country: string
+  }) {
+    const existingOrder = await this.prisma.order.findFirst({
+      where: {
+        buyerDistrict: input.district,
+        buyerCity: input.city,
+        buyerState: input.state,
+        buyerCountry: input.country,
+        buyerLatitude: {
+          not: null,
+        },
+        buyerLongitude: {
+          not: null,
+        },
+      },
+      select: {
+        buyerDistrict: true,
+        buyerCity: true,
+        buyerState: true,
+        buyerCountry: true,
+        buyerLatitude: true,
+        buyerLongitude: true,
+      },
+    })
+
+    if (existingOrder?.buyerLatitude != null && existingOrder?.buyerLongitude != null) {
+      return {
+        district: existingOrder.buyerDistrict,
+        city: existingOrder.buyerCity,
+        state: existingOrder.buyerState,
+        country: existingOrder.buyerCountry,
+        latitude: existingOrder.buyerLatitude,
+        longitude: existingOrder.buyerLongitude,
+        label: [
+          existingOrder.buyerDistrict,
+          existingOrder.buyerCity,
+          existingOrder.buyerState,
+          existingOrder.buyerCountry,
+        ]
+          .filter(Boolean)
+          .join(', '),
+      }
+    }
+
+    return this.geocodingService.geocodeCityLocation(input)
   }
 }

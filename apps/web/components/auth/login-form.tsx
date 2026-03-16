@@ -73,10 +73,21 @@ export function LoginForm() {
           {...registerField('password')}
         />
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
-          Conta seed prevista para ambiente local: <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span>
-          {' '}com senha{' '}
-          <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>
+        <div className="flex justify-end">
+          <div className="flex gap-4 text-sm font-semibold">
+            <Link className="text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/verificar-email">
+              Confirmar email
+            </Link>
+            <Link className="text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/recuperar-senha">
+              Esqueci minha senha
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
+          <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo para avaliacao:</span>{' '}
+          use <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span> com senha{' '}
+          <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Cada dispositivo tem ate 20 minutos por dia no modo demo, ou voce pode criar sua propria conta e testar tudo sem esse limite.
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
