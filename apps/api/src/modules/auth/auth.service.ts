@@ -111,8 +111,10 @@ export class AuthService {
       context,
     })
 
+    let verificationDelivery: EmailVerificationDeliveryResult
+
     try {
-      await this.sendEmailVerificationCode({
+      verificationDelivery = await this.sendEmailVerificationCode({
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
@@ -152,7 +154,13 @@ export class AuthService {
       success: true,
       requiresEmailVerification: true,
       email: user.email,
-      message: 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.',
+      deliveryMode: verificationDelivery.deliveryMode,
+      previewCode: verificationDelivery.previewCode,
+      previewExpiresAt: verificationDelivery.previewExpiresAt?.toISOString(),
+      message:
+        verificationDelivery.deliveryMode === 'preview'
+          ? 'Cadastro concluido. Como o email esta indisponivel agora, liberamos um codigo de apoio para voce concluir a verificacao neste navegador.'
+          : 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.',
     }
   }
 
@@ -522,7 +530,7 @@ export class AuthService {
       }
     }
 
-    await this.sendEmailVerificationCode({
+    const verificationDelivery = await this.sendEmailVerificationCode({
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
@@ -533,7 +541,13 @@ export class AuthService {
     return {
       success: true,
       email: user.email,
-      message: 'Enviamos um novo codigo de confirmacao para o email cadastrado.',
+      deliveryMode: verificationDelivery.deliveryMode,
+      previewCode: verificationDelivery.previewCode,
+      previewExpiresAt: verificationDelivery.previewExpiresAt?.toISOString(),
+      message:
+        verificationDelivery.deliveryMode === 'preview'
+          ? 'O email ainda esta indisponivel, entao exibimos um novo codigo de apoio para voce concluir a verificacao.'
+          : 'Enviamos um novo codigo de confirmacao para o email cadastrado.',
     }
   }
 
@@ -876,6 +890,10 @@ export class AuthService {
     return Math.max(ttlMinutes, 5)
   }
 
+  private shouldUsePortfolioEmailFallback() {
+    return parseBoolean(this.configService.get<string>('PORTFOLIO_EMAIL_FALLBACK'))
+  }
+
   private getCsrfSecret() {
     return (
       this.configService.get<string>('CSRF_SECRET') ??
@@ -945,13 +963,17 @@ export class AuthService {
     context: RequestContext,
   ) {
     try {
-      await this.sendEmailVerificationCode({
+      const verificationDelivery = await this.sendEmailVerificationCode({
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
         context,
         trigger: 'login',
       })
+
+      if (verificationDelivery.deliveryMode === 'preview') {
+        return 'Seu email ainda nao foi confirmado. Abra a tela de verificacao para usar o codigo de apoio liberado neste navegador.'
+      }
 
       return 'Seu email ainda nao foi confirmado. Enviamos um codigo para liberar o primeiro acesso.'
     } catch (error) {
@@ -974,7 +996,7 @@ export class AuthService {
     context: RequestContext
     trigger: 'register' | 'login' | 'manual'
     bypassRateLimit?: boolean
-  }) {
+  }): Promise<EmailVerificationDeliveryResult> {
     const rateLimitKey = this.authRateLimitService.buildEmailVerificationKey(
       params.email,
       params.context.ipAddress,
@@ -1004,6 +1026,34 @@ export class AuthService {
         expiresInMinutes: this.getEmailVerificationTtlMinutes(),
       })
 
+      if (delivery.mode === 'log' && this.shouldUsePortfolioEmailFallback()) {
+        await this.auditLogService.record({
+          actorUserId: params.userId,
+          event: 'auth.email-verification.preview_enabled',
+          resource: 'user',
+          resourceId: params.userId,
+          severity: AuditSeverity.WARN,
+          metadata: {
+            email: params.email,
+            trigger: params.trigger,
+            reason: 'log_delivery_mode',
+            deliveryMode: delivery.mode,
+            attempts: rateLimitState?.count ?? null,
+            lockedUntil: rateLimitState?.lockedUntil
+              ? new Date(rateLimitState.lockedUntil).toISOString()
+              : null,
+          },
+          ipAddress: params.context.ipAddress,
+          userAgent: params.context.userAgent,
+        })
+
+        return {
+          deliveryMode: 'preview',
+          previewCode: verificationCode.code,
+          previewExpiresAt: verificationCode.expiresAt,
+        }
+      }
+
       await this.auditLogService.record({
         actorUserId: params.userId,
         event: 'auth.email-verification.requested',
@@ -1021,7 +1071,42 @@ export class AuthService {
         ipAddress: params.context.ipAddress,
         userAgent: params.context.userAgent,
       })
+
+      return {
+        deliveryMode: 'email',
+      }
     } catch (error) {
+      if (isServiceUnavailable(error) && this.shouldUsePortfolioEmailFallback()) {
+        await this.auditLogService.record({
+          actorUserId: params.userId,
+          event: 'auth.email-verification.preview_enabled',
+          resource: 'user',
+          resourceId: params.userId,
+          severity: AuditSeverity.WARN,
+          metadata: {
+            email: params.email,
+            trigger: params.trigger,
+            reason: error instanceof Error ? error.message : 'unknown',
+            attempts: rateLimitState?.count ?? null,
+            lockedUntil: rateLimitState?.lockedUntil
+              ? new Date(rateLimitState.lockedUntil).toISOString()
+              : null,
+          },
+          ipAddress: params.context.ipAddress,
+          userAgent: params.context.userAgent,
+        })
+
+        this.logger.warn(
+          `Entrega de email indisponivel para ${params.email}. Codigo de apoio liberado no modo portfolio.`,
+        )
+
+        return {
+          deliveryMode: 'preview',
+          previewCode: verificationCode.code,
+          previewExpiresAt: verificationCode.expiresAt,
+        }
+      }
+
       await this.prisma.oneTimeCode.deleteMany({
         where: {
           id: verificationCode.recordId,
@@ -1323,4 +1408,10 @@ function normalizeComparableValue(value: string | null | undefined) {
 
 function isServiceUnavailable(error: unknown) {
   return error instanceof HttpException && error.getStatus() === HttpStatus.SERVICE_UNAVAILABLE
+}
+
+type EmailVerificationDeliveryResult = {
+  deliveryMode: 'email' | 'preview'
+  previewCode?: string
+  previewExpiresAt?: Date
 }

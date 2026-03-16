@@ -1,12 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, requestEmailVerification, verifyEmail } from '@/lib/api'
+import {
+  clearEmailVerificationChallenge,
+  readEmailVerificationChallenge,
+  saveEmailVerificationChallenge,
+  type StoredEmailVerificationChallenge,
+} from '@/lib/auth-challenge-storage'
 import { type VerifyEmailFormValues, verifyEmailSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
@@ -15,10 +21,12 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
   const router = useRouter()
   const [isRouting, startTransition] = useTransition()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [previewChallenge, setPreviewChallenge] = useState<StoredEmailVerificationChallenge | null>(null)
   const {
     register,
     handleSubmit,
     getValues,
+    control,
     formState: { errors },
   } = useForm<VerifyEmailFormValues>({
     resolver: zodResolver(verifyEmailSchema),
@@ -31,6 +39,8 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
   const verifyMutation = useMutation({
     mutationFn: verifyEmail,
     onSuccess: (payload) => {
+      const currentEmail = getValues('email')
+      clearEmailVerificationChallenge(currentEmail)
       setSuccessMessage(payload.message)
       startTransition(() => {
         router.push('/login')
@@ -42,8 +52,36 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
     mutationFn: requestEmailVerification,
     onSuccess: (payload) => {
       setSuccessMessage(payload.message)
+
+      const currentEmail = getValues('email')
+
+      if (payload.deliveryMode === 'preview' && payload.previewCode && payload.previewExpiresAt) {
+        const challenge = {
+          email: currentEmail,
+          previewCode: payload.previewCode,
+          previewExpiresAt: payload.previewExpiresAt,
+          savedAt: new Date().toISOString(),
+        }
+
+        saveEmailVerificationChallenge(challenge)
+        setPreviewChallenge(challenge)
+        return
+      }
+
+      clearEmailVerificationChallenge(currentEmail)
+      setPreviewChallenge(null)
     },
   })
+
+  const currentEmail =
+    useWatch({
+      control,
+      name: 'email',
+    }) ?? ''
+
+  useEffect(() => {
+    setPreviewChallenge(readEmailVerificationChallenge(currentEmail))
+  }, [currentEmail])
 
   const onSubmit = handleSubmit((values) => {
     setSuccessMessage(null)
@@ -107,6 +145,27 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
           </div>
         )}
 
+        {previewChallenge ? (
+          <div className="rounded-2xl border border-[rgba(255,208,87,0.28)] bg-[rgba(255,208,87,0.08)] px-4 py-4 text-sm text-[var(--text-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
+              Codigo de apoio do modo portfolio
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="font-mono text-3xl font-semibold tracking-[0.28em] text-white">
+                  {previewChallenge.previewCode}
+                </p>
+                <p className="mt-2 text-xs text-[var(--text-soft)]">
+                  Use este codigo apenas neste navegador para concluir a verificacao enquanto o email esta indisponivel.
+                </p>
+              </div>
+              <p className="text-xs text-[var(--text-soft)]">
+                Expira em {formatPreviewExpiry(previewChallenge.previewExpiresAt)}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
           Dica: o codigo chega por email transacional. Se nao aparecer na caixa principal, procure por mensagens do DESK IMPERIAL no spam ou na aba de promocoes.
         </div>
@@ -136,4 +195,17 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
       </div>
     </div>
   )
+}
+
+function formatPreviewExpiry(value: string) {
+  const expiresAt = new Date(value)
+
+  if (Number.isNaN(expiresAt.getTime())) {
+    return 'alguns minutos'
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(expiresAt)
 }

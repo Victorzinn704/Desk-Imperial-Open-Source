@@ -51,6 +51,9 @@ export type SimpleMessageResponse = {
   success: boolean
   message: string
   email?: string
+  deliveryMode?: 'email' | 'preview'
+  previewCode?: string
+  previewExpiresAt?: string
 }
 
 export type VerificationChallengeResponse = {
@@ -58,6 +61,9 @@ export type VerificationChallengeResponse = {
   requiresEmailVerification?: boolean
   email: string
   message: string
+  deliveryMode?: 'email' | 'preview'
+  previewCode?: string
+  previewExpiresAt?: string
 }
 
 export type ConsentDocument = {

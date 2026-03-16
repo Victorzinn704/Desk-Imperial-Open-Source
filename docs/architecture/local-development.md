@@ -51,6 +51,7 @@ SMTP_FROM_EMAIL=no-reply@suaempresa.com
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
+PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
 Exemplo com Gmail SMTP:
@@ -78,6 +79,7 @@ Observacao:
 - para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
 - `LOGIN_ALERT_EMAILS_ENABLED=true` envia alerta quando um novo dispositivo entra na conta
 - `FAILED_LOGIN_ALERTS_ENABLED=true` envia aviso quando a conta atinge o limite de tentativas suspeitas configurado
+- `PORTFOLIO_EMAIL_FALLBACK=true` mostra um codigo de apoio na verificacao de email quando o provedor falha e voce quer manter o portfolio utilizavel
 - para producao na Railway, use `RESEND_API_KEY` com a API HTTPS da Resend
 - `onboarding@resend.dev` serve apenas para teste e so envia para o proprio email da conta Resend
 - para envio publico, verifique um dominio no Resend e troque `RESEND_FROM_EMAIL` para esse dominio

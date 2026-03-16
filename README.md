@@ -153,6 +153,7 @@ EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
 FAILED_LOGIN_ALERTS_ENABLED=false
 FAILED_LOGIN_ALERT_THRESHOLD=3
+PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
 Exemplo com Gmail SMTP:
@@ -180,6 +181,7 @@ Observacao:
 - em producao, a API da Resend e o caminho principal de envio; Brevo API e SMTP ficam como fallback
 - para testes iniciais, `onboarding@resend.dev` so envia para o proprio email da conta Resend; para liberar envio publico, verifique um dominio no provedor
 - na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `RESEND_API_KEY` ou `BREVO_API_KEY`
+- `PORTFOLIO_EMAIL_FALLBACK=true` libera um codigo de apoio no fluxo de confirmacao de email quando o provedor falha, evitando travar o cadastro publico do portfolio
 - para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
 - `SMTP_IP_FAMILY=4` ajuda hosts como Railway a evitar tentativa de conexao por IPv6 quando o relay responde melhor em IPv4
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log

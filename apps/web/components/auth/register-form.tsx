@@ -7,6 +7,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, fetchConsentDocuments, register } from '@/lib/api'
+import { saveEmailVerificationChallenge } from '@/lib/auth-challenge-storage'
 import { readCookieConsentChoice } from '@/lib/cookie-consent'
 import { fallbackConsentDocuments, getPasswordStrength, type RegisterFormValues, registerSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
@@ -42,6 +43,15 @@ export function RegisterForm() {
   const registerMutation = useMutation({
     mutationFn: register,
     onSuccess: (data) => {
+      if (data.deliveryMode === 'preview' && data.previewCode && data.previewExpiresAt) {
+        saveEmailVerificationChallenge({
+          email: data.email,
+          previewCode: data.previewCode,
+          previewExpiresAt: data.previewExpiresAt,
+          savedAt: new Date().toISOString(),
+        })
+      }
+
       startTransition(() => {
         router.push(`/verificar-email?email=${encodeURIComponent(data.email)}`)
       })
