@@ -1,7 +1,9 @@
+import { lookup as dnsLookup } from 'node:dns'
 import { randomUUID } from 'node:crypto'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import nodemailer, { type Transporter } from 'nodemailer'
+import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 import {
   buildEmailVerificationContent,
   buildFailedLoginAlertEmailContent,
@@ -505,7 +507,7 @@ export class MailerService {
         }
       : undefined
 
-    this.transporter = nodemailer.createTransport(
+    const transportConfig =
       smtpService
         ? {
             service: smtpService,
@@ -513,6 +515,7 @@ export class MailerService {
             secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
             auth,
             family: Number.isFinite(smtpFamily) ? smtpFamily : 4,
+            lookup: buildSmtpLookup(smtpFamily),
             requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
             connectionTimeout: 15000,
             greetingTimeout: 15000,
@@ -524,12 +527,14 @@ export class MailerService {
             secure: parseBoolean(this.configService.get<string>('SMTP_SECURE')) ?? port === 465,
             auth,
             family: Number.isFinite(smtpFamily) ? smtpFamily : 4,
+            lookup: buildSmtpLookup(smtpFamily),
             requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
             connectionTimeout: 15000,
             greetingTimeout: 15000,
             socketTimeout: 20000,
-          },
-    )
+          }
+
+    this.transporter = nodemailer.createTransport(transportConfig as SMTPTransport.Options)
 
     return this.transporter
   }
@@ -591,4 +596,10 @@ function parseBoolean(value: string | undefined) {
   }
 
   return value === 'true'
+}
+
+function buildSmtpLookup(smtpFamily: number) {
+  return (hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+    dnsLookup(hostname, { family: Number.isFinite(smtpFamily) ? smtpFamily : 4, all: false }, callback)
+  }
 }

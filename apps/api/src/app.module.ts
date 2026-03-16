@@ -19,6 +19,7 @@ import { ProductsModule } from './modules/products/products.module'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       envFilePath: ['../../.env'],
     }),
     LoggerModule.forRoot({
