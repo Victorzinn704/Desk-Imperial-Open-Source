@@ -253,5 +253,6 @@ Antes de publicar:
 - `docs/architecture/overview.md`
 - `docs/architecture/local-development.md`
 - `docs/security/deploy-checklist.md`
+- `docs/security/resend-domain-setup.md`
 - `docs/security/security-baseline.md`
 - `docs/security/observability-and-logs.md`

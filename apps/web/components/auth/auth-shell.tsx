@@ -35,7 +35,7 @@ export function AuthShell({
 }>) {
   return (
     <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)] lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <motion.aside
           animate={{ opacity: 1, x: 0 }}
           className="relative overflow-hidden rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.98),rgba(11,13,16,0.98))] p-8 shadow-[var(--shadow-panel-strong)]"
@@ -52,7 +52,7 @@ export function AuthShell({
               <p className="mt-5 text-base leading-8 text-[var(--text-soft)]">{description}</p>
             </div>
 
-            <div className="mt-12 grid gap-4">
+            <div className="mt-12 grid gap-5">
               {highlights.map((item) => (
                 <article className="rounded-[28px] border border-[var(--border)] bg-[rgba(23,28,34,0.82)] p-5" key={item.title}>
                   <div className="flex items-start gap-4">
@@ -68,7 +68,7 @@ export function AuthShell({
               ))}
             </div>
 
-            <div className="mt-auto rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+            <div className="mt-8 rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5 lg:mt-auto lg:pt-6">
               <div className="flex items-center gap-3">
                 <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
                   <LockKeyhole className="size-5" />

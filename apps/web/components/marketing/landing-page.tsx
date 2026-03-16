@@ -62,8 +62,10 @@ export function LandingPage() {
               Projeto principal em evolucao
             </span>
 
-            <h1 className="mt-8 text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Portal empresarial moderno para operar com seguranca, controle e identidade forte.
+            <h1 className="mt-8 text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
+              <span className="text-flag-brazil">
+                Portal empresarial moderno para operar com seguranca, controle e identidade forte.
+              </span>
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">

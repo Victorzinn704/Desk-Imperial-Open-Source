@@ -98,6 +98,22 @@ select {
   color: #fff7e8;
 }
 
+.text-flag-brazil {
+  display: inline-block;
+  color: transparent;
+  background-image:
+    radial-gradient(circle at 50% 54%, rgba(0, 39, 118, 0.98) 0 13%, transparent 13.5%),
+    linear-gradient(135deg, transparent 0 31%, rgba(255, 223, 0, 0.98) 31% 69%, transparent 69%),
+    linear-gradient(180deg, #009739 0%, #009739 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.28));
+}
+
 .maplibregl-map {
   position: relative;
   z-index: 2;
