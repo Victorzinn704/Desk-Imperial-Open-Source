@@ -263,7 +263,7 @@ export class MailerService {
   }
 
   private getAppName() {
-    return this.configService.get<string>('APP_NAME') ?? 'Imperial Desk'
+    return this.configService.get<string>('APP_NAME') ?? 'Desk Imperial'
   }
 
   private getSupportEmail() {

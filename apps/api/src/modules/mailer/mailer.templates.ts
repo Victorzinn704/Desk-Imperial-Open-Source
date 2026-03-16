@@ -34,7 +34,7 @@ export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
     actionLabel: 'Codigo de redefinicao',
     helper:
       'Se voce nao solicitou essa troca, ignore este email. Por seguranca, considere revisar os acessos recentes a conta.',
-    previewText: 'Codigo para redefinir a senha da sua conta Imperial Desk.',
+    previewText: 'Codigo para redefinir a senha da sua conta Desk Imperial.',
   })
 }
 
@@ -52,7 +52,7 @@ export function buildEmailVerificationContent(params: CodeTemplateParams) {
     actionLabel: 'Codigo de confirmacao',
     helper:
       'Se voce nao criou esta conta, ignore esta mensagem. Se nao encontrar o email na caixa principal, confira spam, promocoes ou atualizacoes.',
-    previewText: 'Confirme seu email para concluir o cadastro no Imperial Desk.',
+    previewText: 'Confirme seu email para concluir o cadastro no Desk Imperial.',
   })
 }
 
@@ -63,7 +63,7 @@ export function buildPasswordChangedEmailContent(params: PasswordChangedTemplate
   const text = [
     `Ola, ${params.fullName}.`,
     '',
-    'Sua senha foi alterada com sucesso no Imperial Desk.',
+    'Sua senha foi alterada com sucesso no Desk Imperial.',
     `Data e hora: ${occurredAt}`,
     ipSummary,
     '',
@@ -77,7 +77,7 @@ export function buildPasswordChangedEmailContent(params: PasswordChangedTemplate
     eyebrow: 'Alerta de seguranca',
     title: 'Sua senha foi atualizada.',
     intro:
-      'Este aviso confirma que a senha da sua conta foi alterada no Imperial Desk. Se foi voce, nenhuma acao extra e necessaria.',
+      'Este aviso confirma que a senha da sua conta foi alterada no Desk Imperial. Se foi voce, nenhuma acao extra e necessaria.',
     body: `
       <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
         <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(occurredAt)}</p>
@@ -106,7 +106,7 @@ export function buildLoginAlertEmailContent(params: LoginAlertTemplateParams) {
   const text = [
     `Ola, ${params.fullName}.`,
     '',
-    'Detectamos uma nova entrada na sua conta do Imperial Desk.',
+    'Detectamos uma nova entrada na sua conta do Desk Imperial.',
     `Data e hora: ${occurredAt}`,
     ipSummary,
     `Dispositivo: ${deviceSummary}`,

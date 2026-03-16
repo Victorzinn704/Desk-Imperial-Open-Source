@@ -1,4 +1,4 @@
-# Imperial Desk
+# Desk Imperial
 
 Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticacao segura, LGPD, auditoria e operacao comercial.
 
@@ -142,7 +142,7 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=seu-login-smtp
 SMTP_PASS=sua-smtp-key
-SMTP_FROM_NAME=Imperial Desk
+SMTP_FROM_NAME=Desk Imperial
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
@@ -151,6 +151,7 @@ LOGIN_ALERT_EMAILS_ENABLED=false
 
 Observacao:
 - em producao, a API da Brevo e o caminho principal de envio; SMTP fica como fallback
+- na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `BREVO_API_KEY`
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
 - para cair menos em spam, prefira remetente com dominio proprio e sender verificado no Brevo
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente

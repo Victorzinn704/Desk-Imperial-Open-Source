@@ -46,6 +46,10 @@ Somente no servidor:
 - `LOGIN_ALERT_EMAILS_ENABLED`
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL`
+
+Observacao:
+- se a API continuar na Railway em plano `Free`, `Trial` ou `Hobby`, nao dependa de `SMTP_*`
+- para email transacional funcionando em producao, configure `BREVO_API_KEY`
 - `GEMINI_API_URL`
 
 Podem ser publicas:

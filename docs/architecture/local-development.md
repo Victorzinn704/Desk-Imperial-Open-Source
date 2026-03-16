@@ -42,12 +42,16 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=seu-login-smtp
 SMTP_PASS=sua-smtp-key
-SMTP_FROM_NAME=Imperial Desk
+SMTP_FROM_NAME=Desk Imperial
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
 ```
+
+Observacao:
+- no Railway, o envio SMTP nao funciona nos planos `Free`, `Trial` e `Hobby`
+- para producao na Railway, use `BREVO_API_KEY` com a API HTTPS da Brevo
 
 ## Banco de dados
 

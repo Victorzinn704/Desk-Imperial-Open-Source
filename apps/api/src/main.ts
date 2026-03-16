@@ -64,7 +64,7 @@ async function bootstrap() {
 
   if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Imperial Desk API')
+      .setTitle('Desk Imperial API')
       .setDescription(
         'API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.',
       )
