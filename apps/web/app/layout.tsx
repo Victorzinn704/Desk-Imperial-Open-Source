@@ -4,7 +4,7 @@ import { QueryProvider } from '@/providers/query-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Desk Imperial',
+  title: 'DESK IMPERIAL',
   description: 'Plataforma empresarial moderna com UX/UI premium, seguranca e observabilidade.',
 }
 

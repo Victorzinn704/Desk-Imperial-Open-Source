@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import nodemailer, { type Transporter } from 'nodemailer'
@@ -8,7 +9,7 @@ import {
   buildPasswordResetEmailContent,
 } from './mailer.templates'
 
-type DeliveryMode = 'brevo-api' | 'smtp' | 'log'
+type DeliveryMode = 'resend-api' | 'brevo-api' | 'smtp' | 'log'
 
 type DeliveryResult = {
   mode: DeliveryMode
@@ -130,14 +131,9 @@ export class MailerService {
   }
 
   private async sendTransactionalEmail(params: TransactionalEmailPayload): Promise<DeliveryResult> {
-    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim()
-    if (!fromEmail) {
-      if (this.isProduction()) {
-        throw new ServiceUnavailableException('O envio de email ainda nao esta configurado.')
-      }
-
-      this.logger.warn(params.fallbackLogMessage)
-      return { mode: 'log' }
+    const resendApiKey = this.getResendApiKey()
+    if (resendApiKey) {
+      return this.sendWithResendApi(params, resendApiKey)
     }
 
     const brevoApiKey = this.getBrevoApiKey()
@@ -157,13 +153,91 @@ export class MailerService {
     return { mode: 'log' }
   }
 
-  private async sendWithBrevoApi(
+  private async sendWithResendApi(
     params: TransactionalEmailPayload,
     apiKey: string,
   ): Promise<DeliveryResult> {
     const fromName = this.configService.get<string>('SMTP_FROM_NAME')?.trim() || this.getAppName()
-    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ?? ''
-    const replyTo = this.getReplyToEmail()
+    const fromEmail = this.getResendFromEmail()
+    const replyTo = this.getReplyToEmail(fromEmail)
+    const apiUrl =
+      this.configService.get<string>('RESEND_API_URL')?.trim() ?? 'https://api.resend.com/emails'
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': randomUUID(),
+          'User-Agent': 'desk-imperial/1.0',
+        },
+        body: JSON.stringify({
+          from: `${fromName} <${fromEmail}>`,
+          to: [params.to],
+          subject: params.subject,
+          html: params.html,
+          text: params.text,
+          reply_to: replyTo,
+        }),
+        signal: AbortSignal.timeout(15000),
+      })
+
+      if (!response.ok) {
+        const payload = await response.text()
+        const normalizedPayload = payload.toLowerCase()
+        this.logger.error(
+          `Falha na API da Resend ao enviar email para ${params.to}: ${response.status} ${payload}`,
+        )
+
+        if (response.status === 401) {
+          throw new ServiceUnavailableException(
+            'A chave da Resend foi rejeitada. Revise a configuracao do provedor de email.',
+          )
+        }
+
+        if (
+          response.status === 403 &&
+          (normalizedPayload.includes('verify a domain') ||
+            normalizedPayload.includes('only send testing emails') ||
+            normalizedPayload.includes('resend.dev domain'))
+        ) {
+          throw new ServiceUnavailableException(
+            'O provedor de email ainda esta em modo de teste. Verifique um dominio na Resend para liberar envios publicos.',
+          )
+        }
+
+        throw new ServiceUnavailableException(
+          'Nao foi possivel enviar o email agora. Tente novamente em instantes.',
+        )
+      }
+
+      const payload = (await response.json().catch(() => null)) as { id?: string } | null
+      return {
+        mode: 'resend-api',
+        messageId: payload?.id ?? null,
+      }
+    } catch (error) {
+      this.logger.error(
+        `Falha ao enviar email transacional via Resend para ${params.to}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+      if (error instanceof ServiceUnavailableException) {
+        throw error
+      }
+
+      throw new ServiceUnavailableException(
+        'O servico de email nao respondeu a tempo. Tente novamente em instantes.',
+      )
+    }
+  }
+
+  private async sendWithBrevoApi(
+    params: TransactionalEmailPayload,
+    apiKey: string,
+  ): Promise<DeliveryResult> {
+    const fromEmail = this.getSmtpFromEmail()
+    const fromName = this.configService.get<string>('SMTP_FROM_NAME')?.trim() || this.getAppName()
+    const replyTo = this.getReplyToEmail(fromEmail)
     const apiUrl =
       this.configService.get<string>('BREVO_API_URL')?.trim() ?? 'https://api.brevo.com/v3/smtp/email'
 
@@ -228,9 +302,9 @@ export class MailerService {
 
   private async sendWithSmtp(params: TransactionalEmailPayload): Promise<DeliveryResult> {
     const transporter = this.getTransporter()
+    const fromEmail = this.getSmtpFromEmail()
     const fromName = this.configService.get<string>('SMTP_FROM_NAME')?.trim() || this.getAppName()
-    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ?? ''
-    const replyTo = this.getReplyToEmail()
+    const replyTo = this.getReplyToEmail(fromEmail)
 
     try {
       const result = await transporter.sendMail({
@@ -263,27 +337,56 @@ export class MailerService {
   }
 
   private getAppName() {
-    return this.configService.get<string>('APP_NAME') ?? 'Desk Imperial'
+    return this.configService.get<string>('APP_NAME') ?? 'DESK IMPERIAL'
   }
 
   private getSupportEmail() {
     return (
       this.configService.get<string>('EMAIL_SUPPORT_ADDRESS')?.trim() ||
       this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
-      'suporte@imperialdesk.local'
+      this.configService.get<string>('RESEND_FROM_EMAIL')?.trim() ||
+      'suporte@deskimperial.local'
     )
   }
 
-  private getReplyToEmail() {
+  private getReplyToEmail(fallbackFromEmail?: string) {
     return (
       this.configService.get<string>('EMAIL_REPLY_TO')?.trim() ||
       this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
+      fallbackFromEmail ||
       this.getSupportEmail()
     )
   }
 
+  private getResendApiKey() {
+    return this.configService.get<string>('RESEND_API_KEY')?.trim() || null
+  }
+
   private getBrevoApiKey() {
     return this.configService.get<string>('BREVO_API_KEY')?.trim() || null
+  }
+
+  private getResendFromEmail() {
+    return (
+      this.configService.get<string>('RESEND_FROM_EMAIL')?.trim() ||
+      this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
+      'onboarding@resend.dev'
+    )
+  }
+
+  private getSmtpFromEmail() {
+    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim()
+    if (fromEmail) {
+      return fromEmail
+    }
+
+    if (this.isProduction()) {
+      throw new ServiceUnavailableException('O remetente de email ainda nao esta configurado.')
+    }
+
+    throw new ServiceUnavailableException(
+      'Defina SMTP_FROM_EMAIL para usar o envio transacional fora do modo de log.',
+    )
   }
 
   private getTransporter() {

@@ -1,4 +1,4 @@
-# Desk Imperial
+# DESK IMPERIAL
 
 Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticacao segura, LGPD, auditoria e operacao comercial.
 
@@ -42,7 +42,7 @@ Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticac
 - `PostgreSQL`
 - `argon2`
 - `nodemailer`
-- `Brevo Transactional API`
+- `Resend Email API`
 - `Pino`
 
 ## Estrutura do repositorio
@@ -134,6 +134,9 @@ Observacao:
 Para envio real de email de confirmacao e redefinicao:
 
 ```env
+RESEND_API_URL=https://api.resend.com/emails
+RESEND_API_KEY=sua-api-key-da-resend
+RESEND_FROM_EMAIL=onboarding@resend.dev
 BREVO_API_URL=https://api.brevo.com/v3/smtp/email
 BREVO_API_KEY=sua-api-key-da-brevo
 SMTP_HOST=smtp-relay.brevo.com
@@ -142,7 +145,7 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=seu-login-smtp
 SMTP_PASS=sua-smtp-key
-SMTP_FROM_NAME=Desk Imperial
+SMTP_FROM_NAME=DESK IMPERIAL
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
@@ -150,10 +153,11 @@ LOGIN_ALERT_EMAILS_ENABLED=false
 ```
 
 Observacao:
-- em producao, a API da Brevo e o caminho principal de envio; SMTP fica como fallback
-- na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `BREVO_API_KEY`
+- em producao, a API da Resend e o caminho principal de envio; Brevo API e SMTP ficam como fallback
+- para testes iniciais, `onboarding@resend.dev` so envia para o proprio email da conta Resend; para liberar envio publico, verifique um dominio no provedor
+- na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `RESEND_API_KEY` ou `BREVO_API_KEY`
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
-- para cair menos em spam, prefira remetente com dominio proprio e sender verificado no Brevo
+- para cair menos em spam, prefira remetente com dominio proprio e dominio verificado no provedor
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente
 - se quiser receber alerta a cada novo login, ative `LOGIN_ALERT_EMAILS_ENABLED=true`
 - a chave `GEMINI_API_KEY` deve ficar apenas no backend; nunca use `NEXT_PUBLIC_` para isso
