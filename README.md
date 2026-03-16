@@ -42,6 +42,7 @@ Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticac
 - `PostgreSQL`
 - `argon2`
 - `nodemailer`
+- `Brevo Transactional API`
 - `Pino`
 
 ## Estrutura do repositorio
@@ -133,19 +134,27 @@ Observacao:
 Para envio real de email de confirmacao e redefinicao:
 
 ```env
-SMTP_HOST=smtp.seuprovedor.com
+BREVO_API_URL=https://api.brevo.com/v3/smtp/email
+BREVO_API_KEY=sua-api-key-da-brevo
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
-SMTP_USER=seu-usuario
-SMTP_PASS=sua-senha-ou-app-password
+SMTP_USER=seu-login-smtp
+SMTP_PASS=sua-smtp-key
 SMTP_FROM_NAME=Imperial Desk
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
+EMAIL_REPLY_TO=suporte@suaempresa.com
+EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
+LOGIN_ALERT_EMAILS_ENABLED=false
 ```
 
 Observacao:
-- em desenvolvimento, se o SMTP nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
-- em producao, o envio de email exige SMTP configurado
+- em producao, a API da Brevo e o caminho principal de envio; SMTP fica como fallback
+- em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
+- para cair menos em spam, prefira remetente com dominio proprio e sender verificado no Brevo
+- configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente
+- se quiser receber alerta a cada novo login, ative `LOGIN_ALERT_EMAILS_ENABLED=true`
 - a chave `GEMINI_API_KEY` deve ficar apenas no backend; nunca use `NEXT_PUBLIC_` para isso
 
 ### 3. Suba o banco

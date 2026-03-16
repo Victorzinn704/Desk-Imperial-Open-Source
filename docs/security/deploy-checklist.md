@@ -6,6 +6,7 @@ Use esta lista antes de publicar o projeto em ambiente publico.
 
 - gere uma nova senha do banco no Neon
 - gere uma nova `SMTP key` no Brevo
+- gere ou rotacione a `API key` da Brevo para envio transacional
 - revogue as credenciais antigas
 - atualize os segredos no provedor de deploy
 
@@ -30,6 +31,8 @@ Somente no servidor:
 - `COOKIE_SECRET`
 - `CSRF_SECRET`
 - `ENCRYPTION_KEY`
+- `BREVO_API_URL`
+- `BREVO_API_KEY`
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_SECURE`
@@ -38,6 +41,9 @@ Somente no servidor:
 - `SMTP_PASS`
 - `SMTP_FROM_NAME`
 - `SMTP_FROM_EMAIL`
+- `EMAIL_REPLY_TO`
+- `EMAIL_SUPPORT_ADDRESS`
+- `LOGIN_ALERT_EMAILS_ENABLED`
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL`
 - `GEMINI_API_URL`
@@ -67,6 +73,8 @@ Regras:
 - valide login, logout e cadastro em producao
 - valide confirmacao de email antes do primeiro login
 - valide recuperacao e redefinicao de senha com email real
+- valide reenvio de codigo de confirmacao
+- valide o aviso de senha alterada
 - confirme que cookies estao `HttpOnly`, `SameSite` e `Secure` em producao
 - confirme que o modo demo continua limitado por IP e tempo
 
@@ -105,6 +113,7 @@ Fluxos minimos:
 - criar pedido
 - ver mapa e graficos
 - testar recuperar senha
+- conferir se os emails chegam fora do spam com sender verificado
 - testar consultor com IA, se `GEMINI_API_KEY` estiver ativo
 - testar banner de cookies
 

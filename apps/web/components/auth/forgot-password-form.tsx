@@ -92,6 +92,10 @@ export function ForgotPasswordForm() {
         </div>
       ) : null}
 
+      <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+        Nao chegou ainda? Verifique spam, promocoes e atualizacoes. O codigo sempre expira rapido para evitar abuso.
+      </div>
+
       <div className="mt-6 flex flex-col gap-3 text-sm text-[var(--text-soft)] sm:flex-row sm:items-center sm:justify-between">
         <span>Lembrou a senha ou quer voltar?</span>
         <Link className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/login">

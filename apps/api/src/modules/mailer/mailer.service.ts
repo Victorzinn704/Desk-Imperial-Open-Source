@@ -1,6 +1,28 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import nodemailer, { type Transporter } from 'nodemailer'
+import {
+  buildEmailVerificationContent,
+  buildLoginAlertEmailContent,
+  buildPasswordChangedEmailContent,
+  buildPasswordResetEmailContent,
+} from './mailer.templates'
+
+type DeliveryMode = 'brevo-api' | 'smtp' | 'log'
+
+type DeliveryResult = {
+  mode: DeliveryMode
+  messageId?: string | null
+}
+
+type TransactionalEmailPayload = {
+  to: string
+  subject: string
+  text: string
+  html: string
+  fallbackLogMessage: string
+  tags: string[]
+}
 
 @Injectable()
 export class MailerService {
@@ -15,12 +37,21 @@ export class MailerService {
     code: string
     expiresInMinutes: number
   }) {
+    const content = buildPasswordResetEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      code: params.code,
+      expiresInMinutes: params.expiresInMinutes,
+    })
+
     return this.sendTransactionalEmail({
       to: params.to,
-      subject: `${this.getAppName()} | Codigo para redefinir a senha`,
-      text: buildPasswordResetCodeText(params),
-      html: buildPasswordResetCodeHtml(params),
-      fallbackLogMessage: `SMTP nao configurado. Codigo de redefinicao para ${params.to}: ${params.code}`,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Codigo de redefinicao para ${params.to}: ${params.code}`,
     })
   }
 
@@ -30,59 +61,229 @@ export class MailerService {
     code: string
     expiresInMinutes: number
   }) {
+    const content = buildEmailVerificationContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      code: params.code,
+      expiresInMinutes: params.expiresInMinutes,
+    })
+
     return this.sendTransactionalEmail({
       to: params.to,
-      subject: `${this.getAppName()} | Confirmacao de email`,
-      text: buildEmailVerificationText(params),
-      html: buildEmailVerificationHtml(params),
-      fallbackLogMessage: `SMTP nao configurado. Codigo de verificacao para ${params.to}: ${params.code}`,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Codigo de verificacao para ${params.to}: ${params.code}`,
     })
   }
 
-  private async sendTransactionalEmail(params: {
+  async sendPasswordChangedEmail(params: {
     to: string
-    subject: string
-    text: string
-    html: string
-    fallbackLogMessage: string
+    fullName: string
+    changedAt: Date
+    ipAddress?: string | null
   }) {
-    if (!this.hasSmtpConfig()) {
+    const content = buildPasswordChangedEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      changedAt: params.changedAt,
+      ipAddress: params.ipAddress,
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Senha alterada para ${params.to} em ${params.changedAt.toISOString()}`,
+    })
+  }
+
+  async sendLoginAlertEmail(params: {
+    to: string
+    fullName: string
+    occurredAt: Date
+    ipAddress?: string | null
+    userAgent?: string | null
+  }) {
+    const content = buildLoginAlertEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      occurredAt: params.occurredAt,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Novo acesso detectado para ${params.to}.`,
+    })
+  }
+
+  private async sendTransactionalEmail(params: TransactionalEmailPayload): Promise<DeliveryResult> {
+    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim()
+    if (!fromEmail) {
       if (this.isProduction()) {
         throw new ServiceUnavailableException('O envio de email ainda nao esta configurado.')
       }
 
       this.logger.warn(params.fallbackLogMessage)
-      return {
-        mode: 'log' as const,
-      }
+      return { mode: 'log' }
     }
 
-    const transporter = this.getTransporter()
-    const fromName = this.configService.get<string>('SMTP_FROM_NAME') ?? this.getAppName()
-    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')
+    const brevoApiKey = this.getBrevoApiKey()
+    if (brevoApiKey) {
+      return this.sendWithBrevoApi(params, brevoApiKey)
+    }
 
-    await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: params.to,
-      subject: params.subject,
-      text: params.text,
-      html: params.html,
-    }).catch((error: unknown) => {
+    if (this.hasSmtpConfig()) {
+      return this.sendWithSmtp(params)
+    }
+
+    if (this.isProduction()) {
+      throw new ServiceUnavailableException('O envio de email ainda nao esta configurado.')
+    }
+
+    this.logger.warn(params.fallbackLogMessage)
+    return { mode: 'log' }
+  }
+
+  private async sendWithBrevoApi(
+    params: TransactionalEmailPayload,
+    apiKey: string,
+  ): Promise<DeliveryResult> {
+    const fromName = this.configService.get<string>('SMTP_FROM_NAME')?.trim() || this.getAppName()
+    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ?? ''
+    const replyTo = this.getReplyToEmail()
+    const apiUrl =
+      this.configService.get<string>('BREVO_API_URL')?.trim() ?? 'https://api.brevo.com/v3/smtp/email'
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          'api-key': apiKey,
+        },
+        body: JSON.stringify({
+          sender: {
+            name: fromName,
+            email: fromEmail,
+          },
+          to: [
+            {
+              email: params.to,
+            },
+          ],
+          replyTo: {
+            email: replyTo,
+            name: fromName,
+          },
+          subject: params.subject,
+          htmlContent: params.html,
+          textContent: params.text,
+          tags: params.tags,
+        }),
+        signal: AbortSignal.timeout(15000),
+      })
+
+      if (!response.ok) {
+        const payload = await response.text()
+        this.logger.error(
+          `Falha na API da Brevo ao enviar email para ${params.to}: ${response.status} ${payload}`,
+        )
+        throw new ServiceUnavailableException(
+          'Nao foi possivel enviar o email agora. Tente novamente em instantes.',
+        )
+      }
+
+      const payload = (await response.json().catch(() => null)) as { messageId?: string } | null
+      return {
+        mode: 'brevo-api',
+        messageId: payload?.messageId ?? null,
+      }
+    } catch (error) {
       this.logger.error(
-        `Falha ao enviar email transacional para ${params.to}: ${error instanceof Error ? error.message : 'unknown'}`,
+        `Falha ao enviar email transacional via Brevo para ${params.to}: ${error instanceof Error ? error.message : 'unknown'}`,
       )
+      if (error instanceof ServiceUnavailableException) {
+        throw error
+      }
+
       throw new ServiceUnavailableException(
         'O servico de email nao respondeu a tempo. Tente novamente em instantes.',
       )
-    })
+    }
+  }
 
-    return {
-      mode: 'smtp' as const,
+  private async sendWithSmtp(params: TransactionalEmailPayload): Promise<DeliveryResult> {
+    const transporter = this.getTransporter()
+    const fromName = this.configService.get<string>('SMTP_FROM_NAME')?.trim() || this.getAppName()
+    const fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ?? ''
+    const replyTo = this.getReplyToEmail()
+
+    try {
+      const result = await transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        replyTo,
+        to: params.to,
+        subject: params.subject,
+        text: params.text,
+        html: params.html,
+      })
+
+      return {
+        mode: 'smtp',
+        messageId: result.messageId,
+      }
+    } catch (error) {
+      const smtpHost = this.configService.get<string>('SMTP_HOST')?.trim().toLowerCase() ?? ''
+      this.logger.error(
+        `Falha ao enviar email transacional via SMTP para ${params.to}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+      if (smtpHost.includes('brevo.com')) {
+        this.logger.warn(
+          'SMTP da Brevo falhou. Para producao, prefira configurar BREVO_API_KEY e usar a API transacional em vez do relay SMTP.',
+        )
+      }
+      throw new ServiceUnavailableException(
+        'O servico de email nao respondeu a tempo. Tente novamente em instantes.',
+      )
     }
   }
 
   private getAppName() {
     return this.configService.get<string>('APP_NAME') ?? 'Imperial Desk'
+  }
+
+  private getSupportEmail() {
+    return (
+      this.configService.get<string>('EMAIL_SUPPORT_ADDRESS')?.trim() ||
+      this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
+      'suporte@imperialdesk.local'
+    )
+  }
+
+  private getReplyToEmail() {
+    return (
+      this.configService.get<string>('EMAIL_REPLY_TO')?.trim() ||
+      this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
+      this.getSupportEmail()
+    )
+  }
+
+  private getBrevoApiKey() {
+    return this.configService.get<string>('BREVO_API_KEY')?.trim() || null
   }
 
   private getTransporter() {
@@ -129,101 +330,4 @@ function parseBoolean(value: string | undefined) {
   }
 
   return value === 'true'
-}
-
-function buildPasswordResetCodeText(params: {
-  fullName: string
-  code: string
-  expiresInMinutes: number
-}) {
-  return [
-    `Ola, ${params.fullName}.`,
-    '',
-    'Recebemos uma solicitacao para redefinir a senha da sua conta.',
-    `Use o codigo abaixo dentro de ${params.expiresInMinutes} minuto(s):`,
-    '',
-    params.code,
-    '',
-    'Se voce nao fez esta solicitacao, ignore este email.',
-  ].join('\n')
-}
-
-function buildPasswordResetCodeHtml(params: {
-  fullName: string
-  code: string
-  expiresInMinutes: number
-}) {
-  return `
-    <div style="font-family:Segoe UI,Roboto,Arial,sans-serif;background:#0b0d10;padding:32px;color:#f3f4f6">
-      <div style="max-width:560px;margin:0 auto;background:#171c22;border:1px solid #262d36;border-radius:24px;padding:32px">
-        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#8fb7ff">Redefinicao de senha</p>
-        <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#ffffff">Ola, ${escapeHtml(params.fullName)}</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#c9d2dc">
-          Recebemos uma solicitacao para redefinir a senha da sua conta no portal.
-        </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#c9d2dc">
-          Use o codigo abaixo dentro de <strong>${params.expiresInMinutes} minuto(s)</strong>.
-        </p>
-        <div style="display:inline-block;padding:14px 22px;border-radius:16px;background:#d4b16a;color:#0b0d10;font-weight:800;font-size:28px;letter-spacing:0.25em">
-          ${params.code}
-        </div>
-        <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#9aa4b2">
-          Se voce nao fez esta solicitacao, ignore este email.
-        </p>
-      </div>
-    </div>
-  `
-}
-
-function buildEmailVerificationText(params: {
-  fullName: string
-  code: string
-  expiresInMinutes: number
-}) {
-  return [
-    `Ola, ${params.fullName}.`,
-    '',
-    'Confirme seu email para liberar o primeiro acesso a conta.',
-    `Use o codigo abaixo dentro de ${params.expiresInMinutes} minuto(s):`,
-    '',
-    params.code,
-    '',
-    'Se voce nao criou esta conta, ignore este email.',
-  ].join('\n')
-}
-
-function buildEmailVerificationHtml(params: {
-  fullName: string
-  code: string
-  expiresInMinutes: number
-}) {
-  return `
-    <div style="font-family:Segoe UI,Roboto,Arial,sans-serif;background:#0b0d10;padding:32px;color:#f3f4f6">
-      <div style="max-width:560px;margin:0 auto;background:#171c22;border:1px solid #262d36;border-radius:24px;padding:32px">
-        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#8fb7ff">Confirmacao de email</p>
-        <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#ffffff">Ola, ${escapeHtml(params.fullName)}</h1>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#c9d2dc">
-          Para liberar o primeiro acesso ao portal, confirme o seu email com o codigo abaixo.
-        </p>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#c9d2dc">
-          Este codigo expira em <strong>${params.expiresInMinutes} minuto(s)</strong>.
-        </p>
-        <div style="display:inline-block;padding:14px 22px;border-radius:16px;background:#d4b16a;color:#0b0d10;font-weight:800;font-size:28px;letter-spacing:0.25em">
-          ${params.code}
-        </div>
-        <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#9aa4b2">
-          Se voce nao criou esta conta, ignore este email.
-        </p>
-      </div>
-    </div>
-  `
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 }

@@ -75,7 +75,7 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
         </p>
         <h2 className="text-3xl font-semibold text-white">Valide o codigo enviado para o seu email.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          A conta so e liberada depois da confirmacao. Se precisar, voce tambem pode reenviar o codigo.
+          A conta so e liberada depois da confirmacao. Se precisar, voce tambem pode reenviar o codigo. Vale conferir tambem spam, promocoes e atualizacoes.
         </p>
       </div>
 
@@ -106,6 +106,10 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
             {errorMessage}
           </div>
         )}
+
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+          Dica: o codigo chega por email transacional. Se nao aparecer na caixa principal, procure por mensagens do Imperial Desk no spam ou na aba de promocoes.
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Button fullWidth loading={verifyMutation.isPending || isRouting} size="lg" type="submit">

@@ -12,7 +12,7 @@ Deixar o projeto rodando localmente com:
 
 1. Copie `.env.example` para `.env`.
 2. Ajuste `DATABASE_URL` e `DIRECT_URL` para seu PostgreSQL local.
-3. Se quiser envio real de confirmacao e redefinicao de senha, configure o bloco SMTP.
+3. Se quiser envio real de confirmacao, redefinicao e alertas de seguranca, configure o bloco de email.
 4. Se quiser ativar o consultor executivo com IA, configure `GEMINI_API_KEY`.
 
 Exemplo:
@@ -31,17 +31,22 @@ GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Exemplo de SMTP:
+Exemplo com Brevo:
 
 ```env
-SMTP_HOST=smtp.seuprovedor.com
+BREVO_API_URL=https://api.brevo.com/v3/smtp/email
+BREVO_API_KEY=sua-api-key-da-brevo
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
-SMTP_USER=seu-usuario
-SMTP_PASS=sua-senha-ou-app-password
+SMTP_USER=seu-login-smtp
+SMTP_PASS=sua-smtp-key
 SMTP_FROM_NAME=Imperial Desk
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
+EMAIL_REPLY_TO=suporte@suaempresa.com
+EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
+LOGIN_ALERT_EMAILS_ENABLED=false
 ```
 
 ## Banco de dados
@@ -73,6 +78,8 @@ npm --workspace @partner/web run dev
 - a migration inicial ja esta versionada em `apps/api/prisma/migrations/202603142300_init`
 - o seed prepara documentos legais, usuario demo e produtos base
 - sem PostgreSQL ativo, o front continua compilando, mas login/cadastro nao concluem o fluxo real
-- sem SMTP configurado, o backend registra os codigos de confirmacao e redefinicao no log em desenvolvimento
+- sem Brevo/API ou SMTP configurados, o backend registra os codigos de confirmacao e redefinicao no log em desenvolvimento
+- a API da Brevo e o caminho principal em producao; SMTP fica como fallback
+- para melhorar entregabilidade, use sender verificado e autentique SPF, DKIM e DMARC no dominio
 - sem `GEMINI_API_KEY`, o card de inteligencia de mercado fica indisponivel no dashboard
 - o backend usa a raiz `.env` como fonte principal de configuracao local

@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -36,6 +37,8 @@ import { DemoAccessService } from './demo-access.service'
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -107,14 +110,28 @@ export class AuthService {
       context,
     })
 
-    await this.sendEmailVerificationCode({
-      userId: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      context,
-      trigger: 'register',
-      bypassRateLimit: true,
-    })
+    try {
+      await this.sendEmailVerificationCode({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        context,
+        trigger: 'register',
+        bypassRateLimit: true,
+      })
+    } catch (error) {
+      if (isServiceUnavailable(error)) {
+        return {
+          success: true,
+          requiresEmailVerification: true,
+          email: user.email,
+          message:
+            'Cadastro concluido, mas o envio do codigo ainda nao respondeu. Abra a tela de confirmar email para reenviar em instantes.',
+        }
+      }
+
+      throw error
+    }
 
     await this.auditLogService.record({
       actorUserId: user.id,
@@ -232,6 +249,8 @@ export class AuthService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
+
+    void this.sendLoginAlertIfEnabled(activeUser, context)
 
     return {
       user: toAuthUser(activeUser, {
@@ -473,6 +492,7 @@ export class AuthService {
       userAgent: context.userAgent,
     })
 
+    void this.sendPasswordChangedNotice(user, context, now)
     await this.demoAccessService.closeGrantsForUser(user.id, now)
 
     return {
@@ -921,6 +941,10 @@ export class AuthService {
         return 'Seu email ainda nao foi confirmado. Aguarde alguns minutos antes de solicitar um novo codigo.'
       }
 
+      if (isServiceUnavailable(error)) {
+        return 'Seu email ainda nao foi confirmado. O portal abriu a validacao, mas o envio do codigo esta indisponivel no momento. Tente reenviar pela tela de confirmar email em alguns instantes.'
+      }
+
       throw error
     }
   }
@@ -1044,6 +1068,81 @@ export class AuthService {
       expiresAt,
     }
   }
+
+  private async sendPasswordChangedNotice(
+    user: {
+      id: string
+      email: string
+      fullName: string
+    },
+    context: RequestContext,
+    changedAt: Date,
+  ) {
+    try {
+      const delivery = await this.mailerService.sendPasswordChangedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        changedAt,
+        ipAddress: context.ipAddress,
+      })
+
+      await this.auditLogService.record({
+        actorUserId: user.id,
+        event: 'auth.password-reset.notification_sent',
+        resource: 'user',
+        resourceId: user.id,
+        metadata: {
+          email: user.email,
+          deliveryMode: delivery.mode,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+    } catch (error) {
+      this.logger.warn(
+        `Falha ao enviar notificacao de senha alterada para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+    }
+  }
+
+  private async sendLoginAlertIfEnabled(
+    user: {
+      id: string
+      email: string
+      fullName: string
+    },
+    context: RequestContext,
+  ) {
+    if (!parseBoolean(this.configService.get<string>('LOGIN_ALERT_EMAILS_ENABLED'))) {
+      return
+    }
+
+    try {
+      const delivery = await this.mailerService.sendLoginAlertEmail({
+        to: user.email,
+        fullName: user.fullName,
+        occurredAt: new Date(),
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+
+      await this.auditLogService.record({
+        actorUserId: user.id,
+        event: 'auth.login.notification_sent',
+        resource: 'session',
+        metadata: {
+          email: user.email,
+          deliveryMode: delivery.mode,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+    } catch (error) {
+      this.logger.warn(
+        `Falha ao enviar alerta de login para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+    }
+  }
 }
 
 const publicUserSelect = {
@@ -1101,4 +1200,16 @@ function toAuthUser(
 
 function generateNumericCode() {
   return randomInt(100000, 1000000).toString()
+}
+
+function parseBoolean(value: string | undefined) {
+  if (value == null) {
+    return false
+  }
+
+  return value === 'true'
+}
+
+function isServiceUnavailable(error: unknown) {
+  return error instanceof HttpException && error.getStatus() === HttpStatus.SERVICE_UNAVAILABLE
 }

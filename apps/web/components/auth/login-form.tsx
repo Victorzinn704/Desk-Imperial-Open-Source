@@ -36,6 +36,13 @@ export function LoginForm() {
         router.push('/dashboard')
       })
     },
+    onError: (error, variables) => {
+      if (error instanceof ApiError && error.status === 403) {
+        startTransition(() => {
+          router.push(`/verificar-email?email=${encodeURIComponent(variables.email)}`)
+        })
+      }
+    },
   })
 
   const onSubmit = handleSubmit((values) => {
@@ -43,7 +50,9 @@ export function LoginForm() {
   })
 
   const errorMessage =
-    loginMutation.error instanceof ApiError ? loginMutation.error.message : 'Use seu email corporativo para entrar.'
+    loginMutation.error instanceof ApiError
+      ? loginMutation.error.message
+      : 'Use seu email corporativo para entrar. Se o acesso ainda estiver pendente, o portal abre a validacao de email automaticamente.'
 
   return (
     <div>
