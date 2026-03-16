@@ -76,6 +76,7 @@ import { OrderForm } from '@/components/dashboard/order-form'
 import { ProductCard } from '@/components/dashboard/product-card'
 import { ProductForm } from '@/components/dashboard/product-form'
 import { ProductImportCard } from '@/components/dashboard/product-import-card'
+import { ProductSearchField } from '@/components/dashboard/product-search-field'
 import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 
 type DashboardSectionId =
@@ -914,12 +915,22 @@ function PortfolioEnvironment({
     updateProductMutation.isPending ||
     archiveProductMutation.isPending ||
     restoreProductMutation.isPending
+  const [searchQuery, setSearchQuery] = useState('')
   const handleDownloadTemplate = () => {
     downloadProductTemplateCsv()
   }
   const handleDownloadPortfolio = () => {
     downloadPortfolioCsv(products)
   }
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
+  const filteredProducts = normalizedSearch
+    ? products.filter((product) =>
+        [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
+          const normalizedValue = value.toLocaleLowerCase('pt-BR')
+          return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
+        }),
+      )
+    : products
 
   return (
     <section className="space-y-6">
@@ -996,7 +1007,7 @@ function PortfolioEnvironment({
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
             {productsTotals
-              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s)`
+              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockBaseUnits} und base`
               : 'Carregando portfolio...'}
           </div>
         </div>
@@ -1006,9 +1017,22 @@ function PortfolioEnvironment({
           <p className="mt-5 text-sm text-[var(--danger)]">{productMutationError.message}</p>
         ) : null}
 
+        <div className="mt-8">
+          <ProductSearchField
+            onChange={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+            value={searchQuery}
+          />
+          <p className="mt-3 text-sm text-[var(--text-soft)]">
+            {filteredProducts.length === products.length
+              ? 'Pesquise por nome, inicial, marca ou classe de cadastro para encontrar um item mais rapido.'
+              : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
+          </p>
+        </div>
+
         <div className="mt-8 space-y-4">
-          {products.length ? (
-            products.map((product) => (
+          {filteredProducts.length ? (
+            filteredProducts.map((product) => (
               <ProductCard
                 busy={productBusy}
                 key={product.id}
@@ -1020,9 +1044,13 @@ function PortfolioEnvironment({
             ))
           ) : (
             <div className="rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-12 text-center">
-              <p className="text-lg font-semibold text-white">Nenhum produto cadastrado ainda.</p>
+              <p className="text-lg font-semibold text-white">
+                {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
+              </p>
               <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                Use o formulario acima para criar os primeiros itens do portfolio.
+                {products.length
+                  ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
+                  : 'Use o formulario acima para criar os primeiros itens do portfolio.'}
               </p>
             </div>
           )}

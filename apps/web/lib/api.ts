@@ -89,7 +89,12 @@ export type ConsentOverview = {
 
 export type ProductPayload = {
   name: string
+  brand?: string
   category: string
+  packagingClass: string
+  measurementUnit: string
+  measurementValue: number
+  unitsPerPackage: number
   description?: string
   unitCost: number
   unitPrice: number

@@ -1,0 +1,6 @@
+ALTER TABLE "Product"
+ADD COLUMN "brand" TEXT,
+ADD COLUMN "packagingClass" TEXT NOT NULL DEFAULT 'Cadastro rapido',
+ADD COLUMN "measurementUnit" TEXT NOT NULL DEFAULT 'UN',
+ADD COLUMN "measurementValue" DECIMAL(10,2) NOT NULL DEFAULT 1,
+ADD COLUMN "unitsPerPackage" INTEGER NOT NULL DEFAULT 1;

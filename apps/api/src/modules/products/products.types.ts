@@ -5,7 +5,12 @@ type ProductLike = Pick<
   Product,
   | 'id'
   | 'name'
+  | 'brand'
   | 'category'
+  | 'packagingClass'
+  | 'measurementUnit'
+  | 'measurementValue'
+  | 'unitsPerPackage'
   | 'description'
   | 'unitCost'
   | 'unitPrice'
@@ -19,7 +24,12 @@ type ProductLike = Pick<
 export type ProductRecord = {
   id: string
   name: string
+  brand: string | null
   category: string
+  packagingClass: string
+  measurementUnit: string
+  measurementValue: number
+  unitsPerPackage: number
   description: string | null
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -37,6 +47,7 @@ export type ProductRecord = {
   originalInventoryCostValue: number
   originalInventorySalesValue: number
   originalPotentialProfit: number
+  stockBaseUnits: number
   marginPercent: number
 }
 
@@ -48,12 +59,13 @@ export type ProductsResponse = {
   items: ProductRecord[]
   totals: {
     totalProducts: number
-    activeProducts: number
-    inactiveProducts: number
-    stockUnits: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
+      activeProducts: number
+      inactiveProducts: number
+      stockUnits: number
+      stockBaseUnits: number
+      inventoryCostValue: number
+      inventorySalesValue: number
+      potentialProfit: number
     averageMarginPercent: number
     categories: string[]
   }
@@ -69,9 +81,11 @@ export function toProductRecord(
 ): ProductRecord {
   const originalUnitCost = toNumber(product.unitCost)
   const originalUnitPrice = toNumber(product.unitPrice)
+  const measurementValue = toNumber(product.measurementValue)
   const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
   const originalInventorySalesValue = roundCurrency(originalUnitPrice * product.stock)
   const originalPotentialProfit = roundCurrency(originalInventorySalesValue - originalInventoryCostValue)
+  const stockBaseUnits = product.stock * product.unitsPerPackage
 
   const unitCost = options.currencyService.convert(
     originalUnitCost,
@@ -103,7 +117,12 @@ export function toProductRecord(
   return {
     id: product.id,
     name: product.name,
+    brand: product.brand,
     category: product.category,
+    packagingClass: product.packagingClass,
+    measurementUnit: product.measurementUnit,
+    measurementValue,
+    unitsPerPackage: product.unitsPerPackage,
     description: product.description,
     currency: product.currency,
     displayCurrency: options.displayCurrency,
@@ -121,6 +140,7 @@ export function toProductRecord(
     originalInventoryCostValue,
     originalInventorySalesValue,
     originalPotentialProfit,
+    stockBaseUnits,
     marginPercent,
   }
 }
@@ -151,6 +171,7 @@ export function buildProductsResponse(
       activeProducts: activeItems.length,
       inactiveProducts: records.length - activeItems.length,
       stockUnits: records.reduce((total, item) => total + item.stock, 0),
+      stockBaseUnits: records.reduce((total, item) => total + item.stockBaseUnits, 0),
       inventoryCostValue,
       inventorySalesValue,
       potentialProfit,

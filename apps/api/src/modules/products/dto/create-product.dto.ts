@@ -10,11 +10,41 @@ export class CreateProductDto {
   @MaxLength(120)
   name!: string
 
+  @ApiPropertyOptional({ example: 'Coca-Cola' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  brand?: string
+
   @ApiProperty({ example: 'Bebidas' })
   @IsString()
   @MinLength(2)
   @MaxLength(80)
   category!: string
+
+  @ApiProperty({ example: 'Litrao - Caixa com 12 und de 1L' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  packagingClass!: string
+
+  @ApiProperty({ example: 'L' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(24)
+  measurementUnit!: string
+
+  @ApiProperty({ example: 1 })
+  @Transform(({ value }) => Number(value))
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  measurementValue!: number
+
+  @ApiProperty({ example: 12 })
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  unitsPerPackage!: number
 
   @ApiPropertyOptional({ example: 'Produto base para portfolio e simulacao financeira.' })
   @IsOptional()

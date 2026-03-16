@@ -26,7 +26,12 @@ export type EmployeesResponse = {
 export type ProductRecord = {
   id: string
   name: string
+  brand: string | null
   category: string
+  packagingClass: string
+  measurementUnit: string
+  measurementValue: number
+  unitsPerPackage: number
   description: string | null
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -44,6 +49,7 @@ export type ProductRecord = {
   originalInventoryCostValue: number
   originalInventorySalesValue: number
   originalPotentialProfit: number
+  stockBaseUnits: number
   marginPercent: number
 }
 
@@ -58,6 +64,7 @@ export type ProductsResponse = {
     activeProducts: number
     inactiveProducts: number
     stockUnits: number
+    stockBaseUnits: number
     inventoryCostValue: number
     inventorySalesValue: number
     potentialProfit: number

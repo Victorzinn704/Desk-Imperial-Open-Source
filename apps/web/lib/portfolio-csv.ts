@@ -1,12 +1,25 @@
 import type { ProductRecord } from '@contracts/contracts'
 
-const PRODUCT_CSV_HEADERS = ['name', 'category', 'description', 'unitCost', 'unitPrice', 'stock', 'currency']
+const PRODUCT_CSV_HEADERS = [
+  'name',
+  'brand',
+  'category',
+  'packagingClass',
+  'measurementUnit',
+  'measurementValue',
+  'unitsPerPackage',
+  'description',
+  'unitCost',
+  'unitPrice',
+  'stock',
+  'currency',
+]
 
 export function downloadProductTemplateCsv() {
   const csv = buildCsv([
     PRODUCT_CSV_HEADERS,
-    ['Refrigerante Cola 2L', 'Bebidas', 'Fardo com 6 unidades', '8.50', '12.90', '24', 'BRL'],
-    ['Suco Natural 1L', 'Bebidas', 'Caixa com 12 unidades', '5.20', '8.40', '36', 'BRL'],
+    ['Refrigerante Cola 2L', 'Coca-Cola', 'Bebidas', 'Fardo Refrigerante 2L - 6 und', 'L', '2', '6', 'Fardo com 6 unidades de 2 litros.', '8.50', '12.90', '24', 'BRL'],
+    ['Cerveja Lata 350ml', 'Brahma', 'Bebidas', 'Lata - 12 und de 350ml', 'ML', '350', '12', 'Caixa com latas de 350 ml para venda rapida.', '5.20', '8.40', '36', 'BRL'],
   ])
 
   downloadCsvFile('modelo-produtos-desk-imperial.csv', csv)
@@ -15,7 +28,12 @@ export function downloadProductTemplateCsv() {
 export function downloadPortfolioCsv(products: ProductRecord[]) {
   const rows = products.map((product) => [
     product.name,
+    product.brand ?? '',
     product.category,
+    product.packagingClass,
+    product.measurementUnit,
+    String(product.measurementValue),
+    String(product.unitsPerPackage),
     product.description ?? '',
     product.originalUnitCost.toFixed(2),
     product.originalUnitPrice.toFixed(2),

@@ -43,7 +43,9 @@ export class ProductsService {
           ? {
               OR: [
                 { name: { contains: query.search.trim(), mode: 'insensitive' } },
+                { brand: { contains: query.search.trim(), mode: 'insensitive' } },
                 { category: { contains: query.search.trim(), mode: 'insensitive' } },
+                { packagingClass: { contains: query.search.trim(), mode: 'insensitive' } },
                 { description: { contains: query.search.trim(), mode: 'insensitive' } },
               ],
             }
@@ -69,10 +71,24 @@ export class ProductsService {
             allowEmpty: false,
             rejectFormula: true,
           })!,
+          brand: sanitizePlainText(dto.brand, 'Marca', {
+            allowEmpty: true,
+            rejectFormula: true,
+          }),
           category: sanitizePlainText(dto.category, 'Categoria', {
             allowEmpty: false,
             rejectFormula: true,
           })!,
+          packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
+            allowEmpty: false,
+            rejectFormula: true,
+          })!,
+          measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
+            allowEmpty: false,
+            rejectFormula: true,
+          })!,
+          measurementValue: dto.measurementValue,
+          unitsPerPackage: dto.unitsPerPackage,
           description: sanitizePlainText(dto.description, 'Descricao', {
             allowEmpty: true,
             rejectFormula: true,
@@ -93,7 +109,12 @@ export class ProductsService {
         resourceId: product.id,
         metadata: {
           name: product.name,
+          brand: product.brand,
           category: product.category,
+          packagingClass: product.packagingClass,
+          measurementUnit: product.measurementUnit,
+          measurementValue: Number(product.measurementValue),
+          unitsPerPackage: product.unitsPerPackage,
           stock: product.stock,
           currency: product.currency,
         },
@@ -128,6 +149,14 @@ export class ProductsService {
                 })!,
               }
             : {}),
+          ...(dto.brand !== undefined
+            ? {
+                brand: sanitizePlainText(dto.brand, 'Marca', {
+                  allowEmpty: true,
+                  rejectFormula: true,
+                }),
+              }
+            : {}),
           ...(dto.category !== undefined
             ? {
                 category: sanitizePlainText(dto.category, 'Categoria', {
@@ -136,6 +165,24 @@ export class ProductsService {
                 })!,
               }
             : {}),
+          ...(dto.packagingClass !== undefined
+            ? {
+                packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
+                  allowEmpty: false,
+                  rejectFormula: true,
+                })!,
+              }
+            : {}),
+          ...(dto.measurementUnit !== undefined
+            ? {
+                measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
+                  allowEmpty: false,
+                  rejectFormula: true,
+                })!,
+              }
+            : {}),
+          ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
+          ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
           ...(dto.description !== undefined
             ? {
                 description: sanitizePlainText(dto.description, 'Descricao', {
@@ -158,9 +205,9 @@ export class ProductsService {
         event: 'product.updated',
         resource: 'product',
         resourceId: product.id,
-        metadata: {
-          updatedFields: Object.keys(dto),
-        },
+          metadata: {
+            updatedFields: Object.keys(dto),
+          },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       })
@@ -218,6 +265,22 @@ export class ProductsService {
           throw new Error('Informe uma categoria valida.')
         }
 
+        if (!row.packagingClass || row.packagingClass.length < 2) {
+          throw new Error('Informe uma classe de cadastro valida.')
+        }
+
+        if (!row.measurementUnit || row.measurementUnit.length < 1) {
+          throw new Error('Informe uma unidade de medida valida.')
+        }
+
+        if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0) {
+          throw new Error('A medida por item precisa ser numerica e maior que zero.')
+        }
+
+        if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1) {
+          throw new Error('A quantidade por caixa/fardo precisa ser um inteiro maior que zero.')
+        }
+
         if (Number.isNaN(row.unitCost) || row.unitCost < 0) {
           throw new Error('O custo unitario precisa ser numerico e nao negativo.')
         }
@@ -239,6 +302,18 @@ export class ProductsService {
           rejectFormula: true,
         })!
         const safeCategory = sanitizePlainText(row.category, 'Categoria', {
+          allowEmpty: false,
+          rejectFormula: true,
+        })!
+        const safeBrand = sanitizePlainText(row.brand, 'Marca', {
+          allowEmpty: true,
+          rejectFormula: true,
+        })
+        const safePackagingClass = sanitizePlainText(row.packagingClass, 'Classe de cadastro', {
+          allowEmpty: false,
+          rejectFormula: true,
+        })!
+        const safeMeasurementUnit = sanitizePlainText(row.measurementUnit, 'Unidade de medida', {
           allowEmpty: false,
           rejectFormula: true,
         })!
@@ -266,7 +341,12 @@ export class ProductsService {
           create: {
             userId: auth.userId,
             name: safeName,
+            brand: safeBrand,
             category: safeCategory,
+            packagingClass: safePackagingClass,
+            measurementUnit: safeMeasurementUnit,
+            measurementValue: row.measurementValue,
+            unitsPerPackage: row.unitsPerPackage,
             description: safeDescription,
             unitCost: row.unitCost,
             unitPrice: row.unitPrice,
@@ -275,7 +355,12 @@ export class ProductsService {
             active: true,
           },
           update: {
+            brand: safeBrand,
             category: safeCategory,
+            packagingClass: safePackagingClass,
+            measurementUnit: safeMeasurementUnit,
+            measurementValue: row.measurementValue,
+            unitsPerPackage: row.unitsPerPackage,
             description: safeDescription,
             unitCost: row.unitCost,
             unitPrice: row.unitPrice,

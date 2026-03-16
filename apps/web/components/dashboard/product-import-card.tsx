@@ -69,10 +69,12 @@ export function ProductImportCard({
       <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-soft)]">
         <p className="font-medium text-white">Colunas esperadas</p>
         <p className="mt-2">
-          `name`, `category`, `description`, `unitCost`, `unitPrice`, `stock`, `currency`
+          `name`, `brand`, `category`, `packagingClass`, `measurementUnit`, `measurementValue`,
+          `unitsPerPackage`, `description`, `unitCost`, `unitPrice`, `stock`, `currency`
         </p>
         <p className="mt-2 text-xs text-[var(--text-soft)]">
-          A coluna `currency` e opcional. Se nao for enviada, o sistema assume `BRL`.
+          `brand` e opcional. Se `packagingClass`, `measurementUnit`, `measurementValue` ou
+          `unitsPerPackage` nao forem enviados, o sistema usa um cadastro rapido com `UN`.
         </p>
       </div>
 

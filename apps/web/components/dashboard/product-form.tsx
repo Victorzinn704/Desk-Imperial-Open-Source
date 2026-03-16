@@ -1,10 +1,18 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
 import { currencyOptions } from '@/lib/currency'
+import {
+  customMeasurementOption,
+  findPackagingPresetByLabel,
+  getMeasurementOption,
+  manualPackagingOption,
+  measurementUnitOptions,
+  productPackagingPresets,
+} from '@/lib/product-packaging'
 import { productSchema, type ProductFormInputValues, type ProductFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
@@ -12,7 +20,12 @@ import { SelectField } from '@/components/shared/select-field'
 
 const emptyValues: ProductFormInputValues = {
   name: '',
+  brand: '',
   category: '',
+  packagingClass: '',
+  measurementUnit: 'UN',
+  measurementValue: 1,
+  unitsPerPackage: 1,
   description: '',
   unitCost: 0,
   unitPrice: 0,
@@ -31,32 +44,100 @@ export function ProductForm({
   onCancelEdit: () => void
   loading?: boolean
 }>) {
+  const [selectedPreset, setSelectedPreset] = useState('')
+  const [measurementMode, setMeasurementMode] = useState('UN')
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ProductFormInputValues, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
 
+  const packagingClassValue = watch('packagingClass')
+  const measurementUnitValue = watch('measurementUnit')
+  const selectedPresetIsManual = selectedPreset === manualPackagingOption
+  const manualMeasurementMode = measurementMode === customMeasurementOption
+
   useEffect(() => {
     if (!product) {
       reset(emptyValues)
+      setSelectedPreset('')
+      setMeasurementMode('UN')
       return
     }
 
+    const matchedPreset = findPackagingPresetByLabel(product.packagingClass)
+    const nextMeasurementMode = getMeasurementOption(product.measurementUnit)
+
     reset({
       name: product.name,
+      brand: product.brand ?? '',
       category: product.category,
+      packagingClass: product.packagingClass,
+      measurementUnit: product.measurementUnit,
+      measurementValue: product.measurementValue,
+      unitsPerPackage: product.unitsPerPackage,
       description: product.description ?? '',
       unitCost: product.originalUnitCost,
       unitPrice: product.originalUnitPrice,
       currency: product.currency,
       stock: product.stock,
     })
+    setSelectedPreset(matchedPreset?.key ?? manualPackagingOption)
+    setMeasurementMode(nextMeasurementMode)
   }, [product, reset])
+
+  const packagingPresetOptions = [
+    { label: 'Selecione uma classe padrao', value: '' },
+    ...productPackagingPresets.map((preset) => ({
+      label: preset.label,
+      value: preset.key,
+    })),
+    { label: 'Outro', value: manualPackagingOption },
+  ]
+
+  const handlePresetChange = (presetKey: string) => {
+    setSelectedPreset(presetKey)
+
+    if (!presetKey) {
+      setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
+      return
+    }
+
+    if (presetKey === manualPackagingOption) {
+      if (!packagingClassValue) {
+        setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
+      }
+      return
+    }
+
+    const preset = productPackagingPresets.find((entry) => entry.key === presetKey)
+    if (!preset) {
+      return
+    }
+
+    setValue('packagingClass', preset.label, { shouldDirty: true, shouldValidate: true })
+    setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
+    setValue('measurementValue', preset.measurementValue, { shouldDirty: true, shouldValidate: true })
+    setValue('unitsPerPackage', preset.unitsPerPackage, { shouldDirty: true, shouldValidate: true })
+    setMeasurementMode(preset.measurementUnit)
+  }
+
+  const handleMeasurementModeChange = (nextValue: string) => {
+    setMeasurementMode(nextValue)
+
+    if (nextValue === customMeasurementOption) {
+      setValue('measurementUnit', '', { shouldDirty: true, shouldValidate: true })
+      return
+    }
+
+    setValue('measurementUnit', nextValue, { shouldDirty: true, shouldValidate: true })
+  }
 
   return (
     <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
@@ -82,13 +163,83 @@ export function ProductForm({
           onSubmit(values)
           if (!product) {
             reset(emptyValues)
+            setSelectedPreset('')
+            setMeasurementMode('UN')
           }
         })}
       >
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
-          <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
+          <InputField error={errors.brand?.message} label="Marca" placeholder="Coca-Cola, Brahma, Guarana..." {...register('brand')} />
         </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
+          <SelectField
+            error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
+            hint="Escolha um perfil pronto ou use Outro para criar um formato proprio."
+            label="Classe de cadastro"
+            onChange={(event) => handlePresetChange(event.currentTarget.value)}
+            options={packagingPresetOptions}
+            value={selectedPreset}
+          />
+        </div>
+
+        {selectedPresetIsManual ? (
+          <InputField
+            error={errors.packagingClass?.message}
+            hint="Descreva como esse item entra no estoque: caixa, fardo, pacote ou outro formato."
+            label="Classe personalizada"
+            placeholder="Ex.: Caixa com 10 und de 1kg"
+            {...register('packagingClass')}
+          />
+        ) : (
+          <>
+            <div className="rounded-[24px] border border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.05)] px-4 py-4 text-sm text-[var(--text-soft)]">
+              <p className="font-medium text-white">Classe ativa</p>
+              <p className="mt-2">{packagingClassValue || 'Selecione um dos padroes para preencher automaticamente.'}</p>
+            </div>
+            <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
+          </>
+        )}
+
+        <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
+          <SelectField
+            error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
+            hint="Use ml, L, kg, g, unidade ou crie outra medida."
+            label="Medida"
+            onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
+            options={measurementUnitOptions}
+            value={measurementMode}
+          />
+          <InputField
+            error={errors.measurementValue?.message}
+            label="Valor por item"
+            placeholder="350"
+            step="0.01"
+            type="number"
+            {...register('measurementValue')}
+          />
+          <InputField
+            error={errors.unitsPerPackage?.message}
+            hint="Quantidade dentro da caixa, fardo ou pacote."
+            label="Qtde por caixa/fardo"
+            step="1"
+            type="number"
+            {...register('unitsPerPackage')}
+          />
+        </div>
+
+        {manualMeasurementMode ? (
+          <InputField
+            error={errors.measurementUnit?.message}
+            label="Outra unidade de medida"
+            placeholder="Ex.: pacote, saco, porcao"
+            {...register('measurementUnit')}
+          />
+        ) : (
+          <input type="hidden" value={measurementUnitValue} {...register('measurementUnit')} />
+        )}
 
         <InputField
           error={errors.description?.message}
@@ -105,7 +256,14 @@ export function ProductForm({
         </div>
 
         <div className="grid gap-5 sm:grid-cols-1">
-          <InputField error={errors.stock?.message} label="Estoque" step="1" type="number" {...register('stock')} />
+          <InputField
+            error={errors.stock?.message}
+            hint="Registre quantas caixas, fardos ou unidades desse cadastro existem no estoque."
+            label="Estoque"
+            step="1"
+            type="number"
+            {...register('stock')}
+          />
         </div>
 
         <Button fullWidth loading={loading} size="lg" type="submit">

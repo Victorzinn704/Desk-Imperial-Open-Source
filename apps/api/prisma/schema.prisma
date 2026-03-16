@@ -200,7 +200,12 @@ model Product {
   id          String   @id @default(cuid())
   userId      String
   name        String
+  brand       String?
   category    String
+  packagingClass String @default("Cadastro rapido")
+  measurementUnit String @default("UN")
+  measurementValue Decimal @default(1) @db.Decimal(10, 2)
+  unitsPerPackage Int @default(1)
   description String?
   unitCost    Decimal  @db.Decimal(10, 2)
   unitPrice   Decimal  @db.Decimal(10, 2)

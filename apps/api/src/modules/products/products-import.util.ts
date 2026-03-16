@@ -1,7 +1,12 @@
 export type ProductImportRow = {
   line: number
   name: string
+  brand: string | null
   category: string
+  packagingClass: string
+  measurementUnit: string
+  measurementValue: number
+  unitsPerPackage: number
   description: string | null
   unitCost: number
   unitPrice: number
@@ -12,7 +17,7 @@ export type ProductImportRow = {
 const requiredHeaders = ['name', 'category', 'description', 'unitcost', 'unitprice', 'stock']
 const MAX_IMPORT_ROWS = 500
 const MAX_LINE_LENGTH = 4000
-const MAX_COLUMNS = 7
+const MAX_COLUMNS = 12
 const MAX_CELL_LENGTH = 280
 
 export function parseProductImportCsv(content: string): ProductImportRow[] {
@@ -72,7 +77,12 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     return {
       line: index + 2,
       name: row.name,
+      brand: row.brand || null,
       category: row.category,
+      packagingClass: row.packagingclass || 'Cadastro rapido',
+      measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
+      measurementValue: Number.parseFloat(row.measurementvalue || '1'),
+      unitsPerPackage: Number.parseInt(row.unitsperpackage || '1', 10),
       description: row.description || null,
       unitCost: Number.parseFloat(row.unitcost),
       unitPrice: Number.parseFloat(row.unitprice),

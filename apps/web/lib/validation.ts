@@ -70,7 +70,24 @@ export const resetPasswordSchema = z
 
 export const productSchema = z.object({
   name: z.string().trim().min(2, 'Digite um nome de produto valido.').max(120, 'O nome ficou longo demais.'),
+  brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
   category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
+  packagingClass: z
+    .string()
+    .trim()
+    .min(2, 'Escolha ou cadastre uma classe de embalagem.')
+    .max(120, 'A classe de cadastro ficou longa demais.'),
+  measurementUnit: z
+    .string()
+    .trim()
+    .min(1, 'Informe a unidade de medida.')
+    .max(24, 'A unidade de medida ficou longa demais.'),
+  measurementValue: z.coerce.number().min(0.01, 'A medida por item precisa ser maior que zero.'),
+  unitsPerPackage: z
+    .coerce
+    .number()
+    .int('Use um numero inteiro para a quantidade por caixa/fardo.')
+    .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
   description: z.string().trim().max(280, 'A descricao ficou longa demais.').optional().or(z.literal('')),
   unitCost: z.coerce.number().min(0, 'O custo nao pode ser negativo.'),
   unitPrice: z.coerce.number().min(0, 'O preco nao pode ser negativo.'),

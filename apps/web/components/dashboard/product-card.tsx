@@ -3,6 +3,7 @@
 import { Archive, PencilLine, RotateCcw } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
+import { formatMeasurement } from '@/lib/product-packaging'
 import { Button } from '@/components/shared/button'
 
 export function ProductCard({
@@ -36,6 +37,11 @@ export function ProductCard({
     convertedValue: product.potentialProfit,
     displayCurrency: product.displayCurrency,
   })
+  const measurementLabel = formatMeasurement(product.measurementValue, product.measurementUnit)
+  const stockHelper =
+    product.unitsPerPackage > 1
+      ? `${product.stockBaseUnits} und totais no estoque`
+      : `${product.stockBaseUnits} und disponiveis`
 
   return (
     <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
@@ -51,7 +57,14 @@ export function ProductCard({
               {product.active ? 'ativo' : 'arquivado'}
             </span>
           </div>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">{product.category}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[var(--text-soft)]">
+            <span>{product.category}</span>
+            {product.brand ? <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs uppercase tracking-[0.18em]">{product.brand}</span> : null}
+            <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs uppercase tracking-[0.18em]">
+              {measurementLabel}
+            </span>
+          </div>
+          <p className="mt-3 text-sm font-medium text-white">{product.packagingClass}</p>
           <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
             {product.description || 'Produto sem descricao cadastrada.'}
           </p>
@@ -90,6 +103,7 @@ export function ProductCard({
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque</p>
           <p className="mt-2 text-lg font-semibold text-white">{product.stock}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">{stockHelper}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro potencial</p>
