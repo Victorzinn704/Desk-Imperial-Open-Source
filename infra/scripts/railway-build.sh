@@ -5,11 +5,11 @@ service_name="${RAILWAY_SERVICE_NAME:-}"
 
 case "$service_name" in
   imperial-desk-web)
-    npm ci
+    echo "Building Railway service: $service_name"
     npm run build --workspace @partner/web
     ;;
-  imperial-desk-api|"")
-    npm ci
+  imperial-desk-api)
+    echo "Building Railway service: $service_name"
     npm run build --workspace @partner/api
     ;;
   *)
