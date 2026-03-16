@@ -18,8 +18,10 @@ export default function RootLayout({
       <body>
         <QueryProvider>
           <div id="app-shell">{children}</div>
-          <CookieConsentBanner />
         </QueryProvider>
+        <div id="cookie-consent-root">
+          <CookieConsentBanner />
+        </div>
       </body>
     </html>
   )

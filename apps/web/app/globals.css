@@ -76,6 +76,11 @@ body.cookie-consent-open #app-shell {
   filter: blur(2px) saturate(0.82);
 }
 
+#cookie-consent-root {
+  position: relative;
+  z-index: 2147483645;
+}
+
 a {
   color: inherit;
   text-decoration: none;

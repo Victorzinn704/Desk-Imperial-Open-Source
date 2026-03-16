@@ -74,14 +74,37 @@ export function CookieConsentBanner() {
   }
 
   return (
-    <div
-      aria-labelledby="cookie-consent-title"
-      aria-modal="true"
-      className="fixed inset-0 z-[9999] flex items-end justify-center px-4 pb-4 pt-12 sm:px-6"
-      role="dialog"
-    >
-      <div className="absolute inset-0 bg-[rgba(5,7,10,0.44)] backdrop-blur-[2px]" />
-      <div className="relative z-[10000] w-full max-w-3xl rounded-[28px] border border-[rgba(255,255,255,0.1)] bg-[rgba(12,15,19,0.985)] p-5 shadow-[0_32px_120px_rgba(0,0,0,0.56)] backdrop-blur-xl">
+    <>
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2147483644,
+          background: 'rgba(5, 7, 10, 0.58)',
+          backdropFilter: 'blur(3px)',
+        }}
+      />
+      <section
+        aria-labelledby="cookie-consent-title"
+        aria-modal="true"
+        data-testid="cookie-consent-banner"
+        role="dialog"
+        style={{
+          position: 'fixed',
+          left: '50%',
+          bottom: '24px',
+          transform: 'translateX(-50%)',
+          width: 'min(920px, calc(100vw - 24px))',
+          zIndex: 2147483645,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '28px',
+          background: 'rgba(12, 15, 19, 0.985)',
+          boxShadow: '0 32px 120px rgba(0, 0, 0, 0.56)',
+          backdropFilter: 'blur(18px)',
+          padding: '20px',
+        }}
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-[18px] border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
@@ -122,7 +145,7 @@ export function CookieConsentBanner() {
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   )
 }
