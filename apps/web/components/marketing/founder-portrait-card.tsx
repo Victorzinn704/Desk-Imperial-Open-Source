@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { UserRound } from 'lucide-react'
 
 export function FounderPortraitCard() {
-  const [hasImage, setHasImage] = useState(true)
+  const [imageIndex, setImageIndex] = useState(0)
+  const imageCandidates = ['/founder-portrait.png', '/founder-portrait.jpg', '/founder-portrait.jpeg']
+  const currentImage = imageCandidates[imageIndex]
+  const hasImage = imageIndex < imageCandidates.length
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[-10.5rem] z-0 flex justify-center lg:top-[-13.5rem]">
@@ -15,8 +18,8 @@ export function FounderPortraitCard() {
             <img
               alt="Retrato profissional do fundador"
               className="block h-full w-full object-contain object-bottom drop-shadow-[0_40px_90px_rgba(0,0,0,0.52)]"
-              src="/founder-portrait.png"
-              onError={() => setHasImage(false)}
+              src={currentImage}
+              onError={() => setImageIndex((current) => current + 1)}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
