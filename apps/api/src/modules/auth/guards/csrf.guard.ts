@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config'
 import { timingSafeEqual } from 'node:crypto'
 import type { SessionRequest } from '../auth.types'
 import { AuthService } from '../auth.service'
+import { getAllowedOrigins, isAllowedOrigin } from '../../../common/utils/origin.util'
 
 @Injectable()
 export class CsrfGuard implements CanActivate {
@@ -44,18 +45,19 @@ export class CsrfGuard implements CanActivate {
   }
 
   private assertAllowedOrigin(request: SessionRequest) {
-    const allowedOrigin =
-      this.configService.get<string>('APP_URL') ??
-      this.configService.get<string>('NEXT_PUBLIC_APP_URL') ??
-      'http://localhost:3000'
+    const allowedOrigins = getAllowedOrigins(this.configService)
     const origin = request.get('origin')
     const referer = request.get('referer')
 
-    if (origin && origin !== allowedOrigin) {
+    if (origin && !isAllowedOrigin(origin, allowedOrigins)) {
       throw new ForbiddenException('Origem nao autorizada.')
     }
 
-    if (!origin && referer && !referer.startsWith(allowedOrigin)) {
+    if (
+      !origin &&
+      referer &&
+      !allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin))
+    ) {
       throw new ForbiddenException('Referer nao autorizado.')
     }
   }

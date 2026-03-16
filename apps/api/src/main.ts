@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
+import { getAllowedOrigins, isAllowedOrigin } from './common/utils/origin.util'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,10 +18,7 @@ async function bootstrap() {
   const cookieSecret = configService.get<string>('COOKIE_SECRET') ?? 'change-me'
   const csrfSecret = configService.get<string>('CSRF_SECRET') ?? 'change-me'
   const isProduction = configService.get<string>('NODE_ENV') === 'production'
-  const appUrl =
-    configService.get<string>('APP_URL') ??
-    configService.get<string>('NEXT_PUBLIC_APP_URL') ??
-    'http://localhost:3000'
+  const allowedOrigins = getAllowedOrigins(configService)
   const swaggerEnabled =
     configService.get<string>('ENABLE_SWAGGER') === 'true' || !isProduction
   const trustProxy = configService.get<string>('TRUST_PROXY')
@@ -36,7 +34,14 @@ async function bootstrap() {
     httpAdapter.set('trust proxy', Number.isFinite(parsed) ? parsed : trustProxy)
   }
   app.enableCors({
-    origin: appUrl,
+    origin: (origin, callback) => {
+      if (!origin || isAllowedOrigin(origin, allowedOrigins)) {
+        callback(null, true)
+        return
+      }
+
+      callback(new Error('Origin not allowed by CORS'), false)
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
