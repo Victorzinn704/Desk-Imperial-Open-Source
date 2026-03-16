@@ -103,7 +103,7 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-6 pt-[15.5rem] lg:pt-[17.5rem]"
+            className="relative space-y-6 pt-[20rem] lg:pt-[22.5rem]"
             initial={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
