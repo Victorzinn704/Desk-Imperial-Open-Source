@@ -41,8 +41,7 @@ Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticac
 - `Prisma`
 - `PostgreSQL`
 - `argon2`
-- `nodemailer`
-- `Resend Email API`
+- `Brevo Email API`
 - `Pino`
 
 ## Estrutura do repositorio
@@ -131,23 +130,14 @@ Observacao:
 - a geocodificacao do mapa usa Nominatim publico, com cache e tolerancia a falha no backend
 - em bancos hospedados como Neon, use `DATABASE_URL` para a conexao pooled do app e `DIRECT_URL` para migrations e seed
 
-Para envio real de email de confirmacao e redefinicao:
+Para envio real de email de confirmacao, redefinicao e alertas de seguranca:
 
 ```env
-EMAIL_PROVIDER=auto
-RESEND_API_URL=https://api.resend.com/emails
-RESEND_API_KEY=sua-api-key-da-resend
-RESEND_FROM_EMAIL=onboarding@resend.dev
+EMAIL_PROVIDER=brevo
 BREVO_API_URL=https://api.brevo.com/v3/smtp/email
 BREVO_API_KEY=sua-api-key-da-brevo
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_REQUIRE_TLS=true
-SMTP_USER=seu-login-smtp
-SMTP_PASS=sua-smtp-key
-SMTP_FROM_NAME=DESK IMPERIAL
-SMTP_FROM_EMAIL=no-reply@suaempresa.com
+EMAIL_FROM_NAME=DESK IMPERIAL
+EMAIL_FROM_EMAIL=no-reply@send.seudominio.com.br
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
@@ -156,34 +146,13 @@ FAILED_LOGIN_ALERT_THRESHOLD=3
 PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
-Exemplo com Gmail SMTP:
-
-```env
-EMAIL_PROVIDER=smtp
-SMTP_SERVICE=gmail
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_REQUIRE_TLS=true
-SMTP_IP_FAMILY=4
-SMTP_USER=seu-email@gmail.com
-SMTP_PASS=sua-senha-de-app
-SMTP_FROM_NAME=DESK IMPERIAL
-SMTP_FROM_EMAIL=seu-email@gmail.com
-EMAIL_REPLY_TO=seu-email@gmail.com
-EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
-LOGIN_ALERT_EMAILS_ENABLED=true
-FAILED_LOGIN_ALERTS_ENABLED=true
-FAILED_LOGIN_ALERT_THRESHOLD=3
-```
-
 Observacao:
-- `EMAIL_PROVIDER` aceita `auto`, `resend`, `brevo`, `smtp` ou `log`
-- em producao, a API da Resend e o caminho principal de envio; Brevo API e SMTP ficam como fallback
-- para testes iniciais, `onboarding@resend.dev` so envia para o proprio email da conta Resend; para liberar envio publico, verifique um dominio no provedor
-- na Railway, SMTP outbound nao funciona em `Free`, `Trial` e `Hobby`, entao o caminho certo e usar `RESEND_API_KEY` ou `BREVO_API_KEY`
+- `EMAIL_PROVIDER` aceita `brevo`, `auto` ou `log`
+- o fluxo publico de email usa a API HTTPS da Brevo; nao dependemos mais de Gmail SMTP nem de Resend
+- a chave da Brevo precisa ser uma `API key` real do painel `SMTP & API > API Keys`
+- o remetente configurado em `EMAIL_FROM_EMAIL` precisa existir como sender valido no Brevo
+- se o dominio de envio ainda nao estiver validado, a Brevo vai rejeitar o remetente e o cadastro cai no modo de apoio do portfolio
 - `PORTFOLIO_EMAIL_FALLBACK=true` libera um codigo de apoio no fluxo de confirmacao de email quando o provedor falha, evitando travar o cadastro publico do portfolio
-- para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
-- `SMTP_IP_FAMILY=4` ajuda hosts como Railway a evitar tentativa de conexao por IPv6 quando o relay responde melhor em IPv4
 - em desenvolvimento, se o email nao estiver configurado, o backend registra o codigo de confirmacao/redefinicao no log
 - para cair menos em spam, prefira remetente com dominio proprio e dominio verificado no provedor
 - configure SPF, DKIM e DMARC no dominio antes de divulgar o link publicamente
@@ -283,6 +252,6 @@ Antes de publicar:
 - `docs/architecture/overview.md`
 - `docs/architecture/local-development.md`
 - `docs/security/deploy-checklist.md`
-- `docs/security/resend-domain-setup.md`
+- `docs/security/brevo-domain-setup.md`
 - `docs/security/security-baseline.md`
 - `docs/security/observability-and-logs.md`

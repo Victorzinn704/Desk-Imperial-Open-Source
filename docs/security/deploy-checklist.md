@@ -5,9 +5,7 @@ Use esta lista antes de publicar o projeto em ambiente publico.
 ## 1. Rotacione todos os segredos expostos
 
 - gere uma nova senha do banco no Neon
-- gere uma nova `SMTP key` no Brevo
-- gere ou rotacione a `API key` da Resend
-- gere ou rotacione a `API key` da Brevo, se ela ainda ficar como fallback
+- gere ou rotacione a `API key` da Brevo
 - revogue as credenciais antigas
 - atualize os segredos no provedor de deploy
 
@@ -32,19 +30,10 @@ Somente no servidor:
 - `COOKIE_SECRET`
 - `CSRF_SECRET`
 - `ENCRYPTION_KEY`
-- `RESEND_API_URL`
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
 - `BREVO_API_URL`
 - `BREVO_API_KEY`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_SECURE`
-- `SMTP_REQUIRE_TLS`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `SMTP_FROM_NAME`
-- `SMTP_FROM_EMAIL`
+- `EMAIL_FROM_NAME`
+- `EMAIL_FROM_EMAIL`
 - `EMAIL_REPLY_TO`
 - `EMAIL_SUPPORT_ADDRESS`
 - `LOGIN_ALERT_EMAILS_ENABLED`
@@ -52,8 +41,8 @@ Somente no servidor:
 - `GEMINI_MODEL`
 
 Observacao:
-- se a API continuar na Railway em plano `Free`, `Trial` ou `Hobby`, nao dependa de `SMTP_*`
-- para email transacional funcionando em producao, configure `RESEND_API_KEY`
+- para email transacional funcionando em producao, configure `BREVO_API_KEY`
+- confirme no painel da Brevo que `EMAIL_FROM_EMAIL` existe como sender validado
 - `GEMINI_API_URL`
 
 Podem ser publicas:

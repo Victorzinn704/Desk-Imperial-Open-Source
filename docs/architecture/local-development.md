@@ -31,58 +31,30 @@ GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Exemplo com Resend:
+Exemplo com Brevo:
 
 ```env
-EMAIL_PROVIDER=auto
-RESEND_API_URL=https://api.resend.com/emails
-RESEND_API_KEY=sua-api-key-da-resend
-RESEND_FROM_EMAIL=onboarding@resend.dev
+EMAIL_PROVIDER=brevo
 BREVO_API_URL=https://api.brevo.com/v3/smtp/email
 BREVO_API_KEY=sua-api-key-da-brevo
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_REQUIRE_TLS=true
-SMTP_USER=seu-login-smtp
-SMTP_PASS=sua-smtp-key
-SMTP_FROM_NAME=DESK IMPERIAL
-SMTP_FROM_EMAIL=no-reply@suaempresa.com
+EMAIL_FROM_NAME=DESK IMPERIAL
+EMAIL_FROM_EMAIL=no-reply@send.seudominio.com.br
 EMAIL_REPLY_TO=suporte@suaempresa.com
 EMAIL_SUPPORT_ADDRESS=suporte@suaempresa.com
 LOGIN_ALERT_EMAILS_ENABLED=false
+FAILED_LOGIN_ALERTS_ENABLED=false
+FAILED_LOGIN_ALERT_THRESHOLD=3
 PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
-Exemplo com Gmail SMTP:
-
-```env
-EMAIL_PROVIDER=smtp
-SMTP_SERVICE=gmail
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_REQUIRE_TLS=true
-SMTP_IP_FAMILY=4
-SMTP_USER=seu-email@gmail.com
-SMTP_PASS=sua-senha-de-app
-SMTP_FROM_NAME=DESK IMPERIAL
-SMTP_FROM_EMAIL=seu-email@gmail.com
-EMAIL_REPLY_TO=seu-email@gmail.com
-EMAIL_SUPPORT_ADDRESS=seu-email@gmail.com
-LOGIN_ALERT_EMAILS_ENABLED=true
-FAILED_LOGIN_ALERTS_ENABLED=true
-FAILED_LOGIN_ALERT_THRESHOLD=3
-```
-
 Observacao:
-- no Railway, o envio SMTP nao funciona nos planos `Free`, `Trial` e `Hobby`
-- para Gmail, use `senha de app`; a senha normal da conta nao deve ser usada
+- o projeto agora usa a API HTTPS da Brevo como fluxo oficial de email
+- a chave configurada em `BREVO_API_KEY` precisa ser uma API key valida do painel `SMTP & API > API Keys`
+- `EMAIL_FROM_EMAIL` deve existir como sender validado na Brevo
 - `LOGIN_ALERT_EMAILS_ENABLED=true` envia alerta quando um novo dispositivo entra na conta
 - `FAILED_LOGIN_ALERTS_ENABLED=true` envia aviso quando a conta atinge o limite de tentativas suspeitas configurado
 - `PORTFOLIO_EMAIL_FALLBACK=true` mostra um codigo de apoio na verificacao de email quando o provedor falha e voce quer manter o portfolio utilizavel
-- para producao na Railway, use `RESEND_API_KEY` com a API HTTPS da Resend
-- `onboarding@resend.dev` serve apenas para teste e so envia para o proprio email da conta Resend
-- para envio publico, verifique um dominio no Resend e troque `RESEND_FROM_EMAIL` para esse dominio
+- para envio publico, valide o sender e o dominio na Brevo antes de desligar o fallback do portfolio
 
 ## Banco de dados
 
@@ -114,7 +86,7 @@ npm --workspace @partner/web run dev
 - o seed prepara documentos legais, usuario demo e produtos base
 - sem PostgreSQL ativo, o front continua compilando, mas login/cadastro nao concluem o fluxo real
 - sem API transacional ou SMTP configurados, o backend registra os codigos de confirmacao e redefinicao no log em desenvolvimento
-- a API da Resend e o caminho principal em producao; Brevo API e SMTP ficam como fallback
+- a API da Brevo e o caminho principal em producao
 - para melhorar entregabilidade, use dominio verificado e autentique SPF, DKIM e DMARC no dominio
 - sem `GEMINI_API_KEY`, o card de inteligencia de mercado fica indisponivel no dashboard
 - o backend usa a raiz `.env` como fonte principal de configuracao local
