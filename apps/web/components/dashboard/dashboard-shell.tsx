@@ -798,15 +798,44 @@ function SalesEnvironment({
         title="Modulo de vendas e pedidos"
       />
 
-      <div className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          hint="Pedidos concluidos"
+          icon={ShoppingCart}
+          label="Concluidos"
+          value={String(ordersTotals?.completedOrders ?? 0)}
+        />
+        <MetricCard
+          hint="Pedidos cancelados"
+          icon={LockKeyhole}
+          label="Cancelados"
+          value={String(ordersTotals?.cancelledOrders ?? 0)}
+        />
+        <MetricCard
+          hint="Unidades vendidas"
+          icon={Tags}
+          label="Itens vendidos"
+          value={String(ordersTotals?.soldUnits ?? 0)}
+        />
+        <MetricCard
+          hint="Funcionarios com vendas atribuidas"
+          icon={UserRound}
+          label="Equipe ativa"
+          value={String(employeesTotals?.activeEmployees ?? 0)}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
+        <div>
           <OrderForm
             employees={employees}
             loading={createOrderMutation.isPending}
             onSubmit={createOrderMutation.mutate}
             products={products.filter((product) => product.active)}
           />
+        </div>
 
+        <div>
           <EmployeeManagementCard
             busy={
               createEmployeeMutation.isPending ||
@@ -822,69 +851,41 @@ function SalesEnvironment({
             totals={employeesTotals}
           />
         </div>
-
-        <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <ShoppingCart className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Vendas recentes</p>
-              <h2 className="text-xl font-semibold text-white">Pedidos da operacao</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              hint="Pedidos concluidos"
-              icon={ShoppingCart}
-              label="Concluidos"
-              value={String(ordersTotals?.completedOrders ?? 0)}
-            />
-            <MetricCard
-              hint="Pedidos cancelados"
-              icon={LockKeyhole}
-              label="Cancelados"
-              value={String(ordersTotals?.cancelledOrders ?? 0)}
-            />
-            <MetricCard
-              hint="Unidades vendidas"
-              icon={Tags}
-              label="Itens vendidos"
-              value={String(ordersTotals?.soldUnits ?? 0)}
-            />
-            <MetricCard
-              hint="Funcionarios com vendas atribuidas"
-              icon={UserRound}
-              label="Equipe ativa"
-              value={String(employeesTotals?.activeEmployees ?? 0)}
-            />
-          </div>
-
-          {ordersError ? <p className="mt-4 text-sm text-[var(--danger)]">{ordersError}</p> : null}
-          {orderMutationError ? (
-            <p className="mt-4 text-sm text-[var(--danger)]">{orderMutationError.message}</p>
-          ) : null}
-
-          <div className="mt-6 space-y-4">
-            {orders.length ? (
-              orders.map((order) => (
-                <OrderCard
-                  busy={createOrderMutation.isPending || cancelOrderMutation.isPending}
-                  key={order.id}
-                  onCancel={cancelOrderMutation.mutate}
-                  order={order}
-                />
-              ))
-            ) : (
-              <p className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
-                Nenhuma venda registrada ainda. Use o formulario ao lado para criar o primeiro
-                pedido.
-              </p>
-            )}
-          </div>
-        </article>
       </div>
+
+      <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+            <ShoppingCart className="size-5" />
+          </span>
+          <div>
+            <p className="text-sm text-[var(--text-soft)]">Vendas recentes</p>
+            <h2 className="text-xl font-semibold text-white">Pedidos da operacao</h2>
+          </div>
+        </div>
+
+        {ordersError ? <p className="mt-4 text-sm text-[var(--danger)]">{ordersError}</p> : null}
+        {orderMutationError ? (
+          <p className="mt-4 text-sm text-[var(--danger)]">{orderMutationError.message}</p>
+        ) : null}
+
+        <div className="mt-6 space-y-4">
+          {orders.length ? (
+            orders.map((order) => (
+              <OrderCard
+                busy={createOrderMutation.isPending || cancelOrderMutation.isPending}
+                key={order.id}
+                onCancel={cancelOrderMutation.mutate}
+                order={order}
+              />
+            ))
+          ) : (
+            <p className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+              Nenhuma venda registrada ainda. Use o formulario acima para criar o primeiro pedido.
+            </p>
+          )}
+        </div>
+      </article>
     </section>
   )
 }
