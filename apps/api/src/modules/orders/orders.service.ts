@@ -95,20 +95,55 @@ export class OrdersService {
   }
 
   async createForUser(auth: AuthContext, dto: CreateOrderDto, context: RequestContext) {
-    const product = await this.prisma.product.findFirst({
+    const requestedItems = dto.items.map((item, index) => ({
+      ...item,
+      index,
+    }))
+
+    if (!requestedItems.length) {
+      throw new BadRequestException('Adicione pelo menos um produto ao pedido.')
+    }
+
+    const uniqueProductIds = [...new Set(requestedItems.map((item) => item.productId))]
+    const products = await this.prisma.product.findMany({
       where: {
-        id: dto.productId,
+        id: {
+          in: uniqueProductIds,
+        },
         userId: auth.userId,
         active: true,
       },
     })
+    const productsById = new Map(products.map((product) => [product.id, product]))
 
-    if (!product) {
-      throw new NotFoundException('Produto nao encontrado para esta conta.')
+    for (const item of requestedItems) {
+      const product = productsById.get(item.productId)
+
+      if (!product) {
+        throw new NotFoundException(`O item ${item.index + 1} referencia um produto que nao existe nesta conta.`)
+      }
     }
 
-    if (product.stock < dto.quantity) {
-      throw new BadRequestException('Estoque insuficiente para concluir a venda.')
+    const requestedStockByProduct = new Map<string, number>()
+    for (const item of requestedItems) {
+      requestedStockByProduct.set(
+        item.productId,
+        (requestedStockByProduct.get(item.productId) ?? 0) + item.quantity,
+      )
+    }
+
+    for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
+      const product = productsById.get(productId)
+
+      if (!product) {
+        continue
+      }
+
+      if (product.stock < requestedQuantity) {
+        throw new BadRequestException(
+          `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock} und. Solicitado: ${requestedQuantity} und.`,
+        )
+      }
     }
 
     const customerName = sanitizePlainText(dto.customerName, 'Comprador', {
@@ -140,22 +175,8 @@ export class OrdersService {
       allowEmpty: true,
       rejectFormula: false,
     })
-    const orderCurrency = dto.currency ?? product.currency
+    const orderCurrency = dto.currency ?? auth.preferredCurrency
     const snapshot = await this.currencyService.getSnapshot()
-    const unitCost = this.currencyService.convert(
-      Number(product.unitCost),
-      product.currency,
-      orderCurrency,
-      snapshot,
-    )
-    const unitPrice =
-      dto.unitPrice ??
-      this.currencyService.convert(
-        Number(product.unitPrice),
-        product.currency,
-        orderCurrency,
-        snapshot,
-      )
 
     if (dto.buyerType === BuyerType.PERSON && !isValidCpf(buyerDocument)) {
       throw new BadRequestException('Informe um CPF valido para a compra em nome de pessoa.')
@@ -185,19 +206,58 @@ export class OrdersService {
       state: buyerState,
       country: buyerCountry,
     })
-    const totalRevenue = roundCurrency(unitPrice * dto.quantity)
-    const totalCost = roundCurrency(unitCost * dto.quantity)
+    const preparedItems = requestedItems.map((item) => {
+      const product = productsById.get(item.productId)
+
+      if (!product) {
+        throw new NotFoundException(`Produto nao encontrado para o item ${item.index + 1}.`)
+      }
+
+      const unitCost = this.currencyService.convert(
+        Number(product.unitCost),
+        product.currency,
+        orderCurrency,
+        snapshot,
+      )
+      const defaultUnitPrice = this.currencyService.convert(
+        Number(product.unitPrice),
+        product.currency,
+        orderCurrency,
+        snapshot,
+      )
+      const unitPrice = item.unitPrice ?? defaultUnitPrice
+      const lineRevenue = roundCurrency(unitPrice * item.quantity)
+      const lineCost = roundCurrency(unitCost * item.quantity)
+      const lineProfit = roundCurrency(lineRevenue - lineCost)
+
+      return {
+        product,
+        quantity: item.quantity,
+        unitCost,
+        unitPrice,
+        lineRevenue,
+        lineCost,
+        lineProfit,
+      }
+    })
+    const totalRevenue = roundCurrency(
+      preparedItems.reduce((total, item) => total + item.lineRevenue, 0),
+    )
+    const totalCost = roundCurrency(preparedItems.reduce((total, item) => total + item.lineCost, 0))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
+    const totalItems = preparedItems.reduce((total, item) => total + item.quantity, 0)
 
     const order = await this.prisma.$transaction(async (transaction) => {
-      await transaction.product.update({
-        where: { id: product.id },
-        data: {
-          stock: {
-            decrement: dto.quantity,
+      for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
+        await transaction.product.update({
+          where: { id: productId },
+          data: {
+            stock: {
+              decrement: requestedQuantity,
+            },
           },
-        },
-      })
+        })
+      }
 
       return transaction.order.create({
         data: {
@@ -221,20 +281,20 @@ export class OrdersService {
           totalRevenue,
           totalCost,
           totalProfit,
-          totalItems: dto.quantity,
+          totalItems,
           items: {
-            create: {
-              productId: product.id,
-              productName: product.name,
-              category: product.category,
-              quantity: dto.quantity,
+            create: preparedItems.map((item) => ({
+              productId: item.product.id,
+              productName: item.product.name,
+              category: item.product.category,
+              quantity: item.quantity,
               currency: orderCurrency,
-              unitCost,
-              unitPrice,
-              lineRevenue: totalRevenue,
-              lineCost: totalCost,
-              lineProfit: totalProfit,
-            },
+              unitCost: item.unitCost,
+              unitPrice: item.unitPrice,
+              lineRevenue: item.lineRevenue,
+              lineCost: item.lineCost,
+              lineProfit: item.lineProfit,
+            })),
           },
         },
         include: {
@@ -249,11 +309,15 @@ export class OrdersService {
       resource: 'order',
       resourceId: order.id,
       metadata: {
-        productId: product.id,
-        productName: product.name,
-        quantity: dto.quantity,
+        itemCount: preparedItems.length,
+        items: preparedItems.map((item) => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+        })),
         totalRevenue,
         totalProfit,
+        totalItems,
         buyerType: dto.buyerType,
         currency: orderCurrency,
         buyerLocation:

@@ -87,8 +87,9 @@ export function OrderCard({
           {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Itens</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Unidades</p>
           <p className="mt-2 text-lg font-semibold text-white">{order.totalItems}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">{order.items.length} linha(s) no pedido</p>
         </div>
       </div>
 

@@ -1,9 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { BuyerType, CurrencyCode } from '@prisma/client'
-import { Transform } from 'class-transformer'
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator'
 
-export class CreateOrderDto {
+export class CreateOrderItemDto {
   @ApiProperty({ example: 'cm8orderproductid' })
   @IsString()
   productId!: string
@@ -13,6 +25,25 @@ export class CreateOrderDto {
   @IsInt()
   @Min(1)
   quantity!: number
+
+  @ApiPropertyOptional({ example: 42.9 })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value == null ? undefined : Number(value)))
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  unitPrice?: number
+}
+
+export class CreateOrderDto {
+  @ApiProperty({
+    type: [CreateOrderItemDto],
+    description: 'Lista de itens do pedido. Mantem o fluxo pronto para operacao multi-item.',
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items!: CreateOrderItemDto[]
 
   @ApiProperty({ example: 'Cliente Demo' })
   @IsString()
@@ -71,13 +102,6 @@ export class CreateOrderDto {
   @IsString()
   @MaxLength(280)
   notes?: string
-
-  @ApiPropertyOptional({ example: 42.9 })
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  unitPrice?: number
 
   @ApiPropertyOptional({ enum: CurrencyCode, example: CurrencyCode.USD })
   @IsOptional()

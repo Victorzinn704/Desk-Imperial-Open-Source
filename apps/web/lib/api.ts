@@ -103,8 +103,11 @@ export type ProductPayload = {
 }
 
 export type OrderPayload = {
-  productId: string
-  quantity: number
+  items: Array<{
+    productId: string
+    quantity: number
+    unitPrice?: number
+  }>
   customerName: string
   buyerType: 'PERSON' | 'COMPANY'
   buyerDocument: string
@@ -116,7 +119,6 @@ export type OrderPayload = {
   currency?: CurrencyCode
   channel?: string
   notes?: string
-  unitPrice?: number
 }
 
 export type EmployeeRecord = {

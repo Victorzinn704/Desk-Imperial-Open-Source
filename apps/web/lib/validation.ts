@@ -145,10 +145,18 @@ export const employeeSchema = z.object({
     .max(120, 'O nome do funcionario ficou longo demais.'),
 })
 
+export const orderItemSchema = z.object({
+  productId: z.string().min(1, 'Selecione um produto.'),
+  quantity: z.coerce.number().int('Use um numero inteiro.').min(1, 'A quantidade minima e 1.'),
+  unitPrice: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : Number(value)),
+    z.number().min(0, 'O valor unitario nao pode ser negativo.').optional(),
+  ),
+})
+
 export const orderSchema = z
   .object({
-    productId: z.string().min(1, 'Selecione um produto.'),
-    quantity: z.coerce.number().int('Use um numero inteiro.').min(1, 'A quantidade minima e 1.'),
+    items: z.array(orderItemSchema).min(1, 'Adicione pelo menos um produto ao pedido.'),
     customerName: z
       .string()
       .trim()
@@ -164,10 +172,6 @@ export const orderSchema = z
     currency: currencyCodeSchema,
     channel: z.string().trim().max(60, 'O canal ficou longo demais.').optional().or(z.literal('')),
     notes: z.string().trim().max(280, 'A observacao ficou longa demais.').optional().or(z.literal('')),
-    unitPrice: z.preprocess(
-      (value) => (value === '' || value === null || value === undefined ? undefined : Number(value)),
-      z.number().min(0, 'O valor unitario nao pode ser negativo.').optional(),
-    ),
   })
   .superRefine((values, context) => {
     const document = sanitizeDocument(values.buyerDocument)
