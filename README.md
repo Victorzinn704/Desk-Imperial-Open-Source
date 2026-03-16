@@ -1,4 +1,4 @@
-# Partner Portal
+# Imperial Desk
 
 Portal empresarial full-stack em monorepo, com foco em UX/UI premium, autenticacao segura, LGPD, auditoria e operacao comercial.
 
@@ -139,7 +139,7 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=seu-usuario
 SMTP_PASS=sua-senha-ou-app-password
-SMTP_FROM_NAME=Partner Portal
+SMTP_FROM_NAME=Imperial Desk
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
 ```
 

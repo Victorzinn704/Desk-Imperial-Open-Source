@@ -40,7 +40,7 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=seu-usuario
 SMTP_PASS=sua-senha-ou-app-password
-SMTP_FROM_NAME=Partner Portal
+SMTP_FROM_NAME=Imperial Desk
 SMTP_FROM_EMAIL=no-reply@suaempresa.com
 ```
 

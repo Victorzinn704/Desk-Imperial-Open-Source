@@ -75,7 +75,7 @@ export class MailerService {
   }
 
   private getAppName() {
-    return this.configService.get<string>('APP_NAME') ?? 'Partner Portal'
+    return this.configService.get<string>('APP_NAME') ?? 'Imperial Desk'
   }
 
   private getTransporter() {

@@ -4,8 +4,8 @@ import { QueryProvider } from '@/providers/query-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Partner Portal',
-  description: 'Portal empresarial moderno com UX/UI premium, seguranca e observabilidade.',
+  title: 'Imperial Desk',
+  description: 'Plataforma empresarial moderna com UX/UI premium, seguranca e observabilidade.',
 }
 
 export default function RootLayout({
