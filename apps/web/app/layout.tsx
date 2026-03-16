@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <QueryProvider>
-          {children}
+          <div id="app-shell">{children}</div>
           <CookieConsentBanner />
         </QueryProvider>
       </body>

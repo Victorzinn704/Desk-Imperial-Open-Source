@@ -67,6 +67,13 @@ export class MailerService {
       subject: params.subject,
       text: params.text,
       html: params.html,
+    }).catch((error: unknown) => {
+      this.logger.error(
+        `Falha ao enviar email transacional para ${params.to}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+      throw new ServiceUnavailableException(
+        'O servico de email nao respondeu a tempo. Tente novamente em instantes.',
+      )
     })
 
     return {
@@ -95,6 +102,9 @@ export class MailerService {
           }
         : undefined,
       requireTLS: parseBoolean(this.configService.get<string>('SMTP_REQUIRE_TLS')) ?? false,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     })
 
     return this.transporter

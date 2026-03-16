@@ -65,6 +65,17 @@ body > * {
   z-index: 1;
 }
 
+html.cookie-consent-open,
+body.cookie-consent-open {
+  overflow: hidden;
+}
+
+body.cookie-consent-open #app-shell {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(2px) saturate(0.82);
+}
+
 a {
   color: inherit;
   text-decoration: none;
