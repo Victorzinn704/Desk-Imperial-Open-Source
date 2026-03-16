@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Cookie, ShieldCheck } from 'lucide-react'
 import { fetchCurrentUser, updateCookiePreferences } from '@/lib/api'
 import {
@@ -14,10 +15,12 @@ export function CookieConsentBanner() {
   const [isReady, setIsReady] = useState(false)
   const [hasDecision, setHasDecision] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
     setHasDecision(Boolean(readCookieConsentChoice()))
     setIsReady(true)
+    setPortalTarget(document.body)
   }, [])
 
   const content = useMemo(
@@ -29,7 +32,7 @@ export function CookieConsentBanner() {
     [],
   )
 
-  if (!isReady || hasDecision) {
+  if (!isReady || hasDecision || !portalTarget) {
     return null
   }
 
@@ -57,9 +60,10 @@ export function CookieConsentBanner() {
     }
   }
 
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[80] flex justify-center px-4">
-      <div className="pointer-events-auto w-full max-w-3xl rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(12,15,19,0.94)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur">
+  return createPortal(
+    <div className="fixed inset-0 z-[140] flex items-end justify-center px-4 pb-4 pt-12 sm:px-6">
+      <div className="absolute inset-0 bg-[rgba(5,7,10,0.44)] backdrop-blur-[2px]" />
+      <div className="relative z-[141] w-full max-w-3xl rounded-[28px] border border-[rgba(255,255,255,0.1)] bg-[rgba(12,15,19,0.97)] p-5 shadow-[0_32px_120px_rgba(0,0,0,0.56)] backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-[18px] border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
@@ -96,6 +100,7 @@ export function CookieConsentBanner() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget,
   )
 }

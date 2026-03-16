@@ -8,7 +8,7 @@ type StoredCookieConsent = {
 
 export const CONSENT_STORAGE_KEY = 'partner-portal-cookie-consent'
 export const CONSENT_COOKIE_NAME = 'partner_portal_cookie_consent'
-export const CONSENT_VERSION = '2026.03.banner.v2'
+export const CONSENT_VERSION = '2026.03.banner.v3'
 
 export function readCookieConsentChoice() {
   if (typeof window === 'undefined') {
