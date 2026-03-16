@@ -35,8 +35,17 @@ const deliverables = [
 
 export function LandingPage() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
-      <section className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.22]"
+          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,12,0.92),rgba(11,13,16,0.78)_28%,rgba(11,13,16,0.88)_58%,rgba(11,13,16,0.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,177,106,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(143,183,255,0.12),transparent_20%)]" />
+      </div>
+
+      <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
         <header className="flex items-center justify-between gap-4 rounded-full border border-[var(--border)] bg-[rgba(18,22,27,0.78)] px-5 py-3 backdrop-blur">
           <BrandMark />
           <nav className="hidden items-center gap-3 md:flex">
@@ -132,7 +141,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-[var(--border)] bg-[rgba(18,22,27,0.74)]" id="fundacao">
+      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(18,22,27,0.74)]" id="fundacao">
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundacao</p>
@@ -161,7 +170,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
         <div className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.96),rgba(14,17,22,0.96))] p-8 shadow-[var(--shadow-panel-strong)] lg:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
