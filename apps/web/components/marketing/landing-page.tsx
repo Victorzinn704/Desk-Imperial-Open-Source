@@ -3,11 +3,10 @@
 import Link from 'next/link'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ArrowRight, ChartColumn, Radar, ScrollText } from 'lucide-react'
+import { ChartColumn, Radar, ScrollText } from 'lucide-react'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { BrandMark } from '@/components/shared/brand-mark'
-import { Button } from '@/components/shared/button'
 
 const metrics = [
   { label: 'Tempo de base', value: 'Monorepo pronto para web e API' },
@@ -123,7 +122,7 @@ export function LandingPage() {
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
             <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
-              Projeto principal em evolucao
+              Projeto em fase de Testes
             </span>
 
             <motion.div
@@ -173,17 +172,12 @@ export function LandingPage() {
               logs de auditoria e uma linguagem visual dark neutral premium pronta para crescer.
             </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link href="/cadastro">
-                <Button className="w-full sm:w-auto" size="lg">
-                  Criar conta
-                  <ArrowRight className="size-4" />
-                </Button>
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/cadastro">
+                <span className="sp">Cadastrar-se</span>
               </Link>
-              <Link href="/login">
-                <Button className="w-full sm:w-auto" size="lg" variant="secondary">
-                  Entrar no portal
-                </Button>
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/login">
+                <span className="sp">Login</span>
               </Link>
             </div>
 
@@ -267,25 +261,17 @@ export function LandingPage() {
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Proximo marco</p>
               <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                Fechar o fluxo real de autenticacao e abrir o caminho do dashboard operacional.
+                Testes estao sendo utilizados para melhorar o sistema de implementacao do projeto.
               </h2>
               <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
-                O foco agora sai do bootstrap e entra em experiencia real de uso: cadastro, login, sessao persistida e
-                uma area autenticada para gestao de conta, consentimento e operacao.
+                Cada ajuste desta fase busca deixar a experiencia mais estavel, intuitiva e preparada para a proxima
+                rodada de recursos do portal.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link href="/cadastro">
-                <Button className="w-full" size="lg">
-                  Abrir cadastro
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button className="w-full" size="lg" variant="secondary">
-                  Ver dashboard
-                </Button>
-              </Link>
+            <div className="rounded-[28px] border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+              Os acessos principais ja ficam no topo da pagina inicial para facilitar testes de cadastro e login sem
+              precisar rolar ate o fim do site.
             </div>
           </div>
         </div>
