@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Cookie, ShieldCheck } from 'lucide-react'
 import { fetchCurrentUser, updateCookiePreferences } from '@/lib/api'
 import {
@@ -15,12 +14,10 @@ export function CookieConsentBanner() {
   const [isReady, setIsReady] = useState(false)
   const [hasDecision, setHasDecision] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
     setHasDecision(Boolean(readCookieConsentChoice()))
     setIsReady(true)
-    setPortalTarget(document.body)
   }, [])
 
   useEffect(() => {
@@ -48,7 +45,7 @@ export function CookieConsentBanner() {
     [],
   )
 
-  if (!isReady || hasDecision || !portalTarget) {
+  if (!isReady || hasDecision) {
     return null
   }
 
@@ -76,7 +73,7 @@ export function CookieConsentBanner() {
     }
   }
 
-  return createPortal(
+  return (
     <div
       aria-labelledby="cookie-consent-title"
       aria-modal="true"
@@ -126,7 +123,6 @@ export function CookieConsentBanner() {
           </div>
         </div>
       </div>
-    </div>,
-    portalTarget,
+    </div>
   )
 }
