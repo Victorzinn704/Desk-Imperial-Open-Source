@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowRight, ChartColumn, Radar, ScrollText } from 'lucide-react'
+import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 
@@ -102,11 +103,13 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.95),rgba(11,13,16,0.95))] p-6 shadow-[var(--shadow-panel-strong)]"
+            className="space-y-6"
             initial={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
-            <div className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-6">
+            <FounderPortraitCard />
+
+            <div className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.95),rgba(11,13,16,0.95))] p-6 shadow-[var(--shadow-panel-strong)]">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-soft)]">Status atual</span>
                 <span className="rounded-full border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--success)]">
