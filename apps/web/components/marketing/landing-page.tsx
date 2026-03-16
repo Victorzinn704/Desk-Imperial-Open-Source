@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import type { MouseEvent as ReactMouseEvent } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { ArrowRight, ChartColumn, Radar, ScrollText } from 'lucide-react'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
@@ -41,6 +42,52 @@ const heroLines = [
 ]
 
 export function LandingPage() {
+  const pointerX = useMotionValue(0)
+  const pointerY = useMotionValue(0)
+
+  const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {
+    stiffness: 120,
+    damping: 20,
+    mass: 0.6,
+  })
+  const rotateY = useSpring(useTransform(pointerX, [-1, 1], [-5, 5]), {
+    stiffness: 120,
+    damping: 20,
+    mass: 0.6,
+  })
+
+  const primaryShift = useSpring(useTransform(pointerX, [-1, 1], [-16, 16]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+  const secondaryShift = useSpring(useTransform(pointerX, [-1, 1], [-10, 10]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+  const tertiaryShift = useSpring(useTransform(pointerX, [-1, 1], [-6, 6]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+
+  const lineShifts = [primaryShift, secondaryShift, tertiaryShift]
+
+  const handleHeroPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
+
+    pointerX.set(x)
+    pointerY.set(y)
+  }
+
+  const handleHeroPointerLeave = () => {
+    pointerX.set(0)
+    pointerY.set(0)
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="absolute inset-0 z-0">
@@ -83,27 +130,36 @@ export function LandingPage() {
               animate="visible"
               className="mt-8 space-y-1 sm:space-y-2"
               initial="hidden"
+              style={{ rotateX, rotateY, transformPerspective: 1200 }}
+              onMouseLeave={handleHeroPointerLeave}
+              onMouseMove={handleHeroPointerMove}
               variants={{
                 hidden: {},
                 visible: {
                   transition: {
-                    staggerChildren: 0.12,
-                    delayChildren: 0.1,
+                    staggerChildren: 0.2,
+                    delayChildren: 0.18,
                   },
                 },
               }}
             >
-              {heroLines.map((line) => (
+              {heroLines.map((line, index) => (
                 <motion.span
-                  className="block text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                  className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
                   key={line}
+                  style={{ x: lineShifts[index] }}
+                  whileHover={{
+                    scale: 1.015,
+                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
+                    filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
+                  }}
                   variants={{
-                    hidden: { opacity: 0, y: -34, filter: 'blur(12px)' },
+                    hidden: { opacity: 0, y: -52, filter: 'blur(16px)' },
                     visible: {
                       opacity: 1,
                       y: 0,
                       filter: 'blur(0px)',
-                      transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+                      transition: { duration: 1.15, ease: [0.22, 1, 0.36, 1] },
                     },
                   }}
                 >

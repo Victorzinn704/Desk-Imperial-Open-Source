@@ -12,9 +12,9 @@ const signals = [
 export function HeroFloatingCard() {
   return (
     <motion.aside
-      animate={{ y: [0, -12, 0], rotate: [0, -1.2, 0] }}
-      className="pointer-events-none absolute left-0 top-[8rem] z-20 hidden w-[290px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.76)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block"
-      transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+      animate={{ x: [0, 10, 0], y: [0, -10, 0], rotate: [0, -0.9, 0] }}
+      className="pointer-events-none absolute -left-10 top-[10.5rem] z-10 hidden w-[280px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:-left-14 xl:top-[11rem]"
+      transition={{ duration: 8.4, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
     >
       <div className="flex items-center justify-between">
         <div>

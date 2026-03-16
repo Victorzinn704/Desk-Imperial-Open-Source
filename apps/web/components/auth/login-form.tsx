@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { LockKeyhole, Mail } from 'lucide-react'
 import { ApiError, login } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
-import { InputField } from '@/components/shared/input-field'
 
 export function LoginForm() {
   const router = useRouter()
@@ -64,49 +64,75 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form className="mt-8 space-y-5" onSubmit={onSubmit}>
-        <InputField
-          autoComplete="email"
-          error={errors.email?.message}
-          label="Email"
-          placeholder="ceo@empresa.com"
-          {...registerField('email')}
-        />
+      <div className="group mt-8 rounded-[28px] border border-[rgba(255,255,255,0.06)] bg-[rgba(9,12,16,0.88)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_30px_70px_rgba(0,0,0,0.34)] transition duration-300 hover:scale-[1.01] hover:border-[rgba(212,177,106,0.2)]">
+        <form className="space-y-5" onSubmit={onSubmit}>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-[var(--text-muted)]">Email</span>
+            <span className="flex items-center gap-3 rounded-[22px] border border-[rgba(255,255,255,0.04)] bg-[rgba(23,23,23,0.94)] px-4 py-4 shadow-[inset_2px_5px_10px_rgba(5,5,5,0.42)] transition focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[rgba(212,177,106,0.16)]">
+              <Mail className="size-4 text-[var(--text-muted)]" />
+              <input
+                autoComplete="email"
+                className="w-full border-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-soft)]"
+                placeholder="ceo@empresa.com"
+                {...registerField('email')}
+              />
+            </span>
+            {errors.email?.message ? <p className="text-sm text-[var(--danger)]">{errors.email.message}</p> : null}
+          </label>
 
-        <InputField
-          autoComplete="current-password"
-          error={errors.password?.message}
-          label="Senha"
-          placeholder="Digite sua senha"
-          type="password"
-          {...registerField('password')}
-        />
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-[var(--text-muted)]">Senha</span>
+            <span className="flex items-center gap-3 rounded-[22px] border border-[rgba(255,255,255,0.04)] bg-[rgba(23,23,23,0.94)] px-4 py-4 shadow-[inset_2px_5px_10px_rgba(5,5,5,0.42)] transition focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[rgba(212,177,106,0.16)]">
+              <LockKeyhole className="size-4 text-[var(--text-muted)]" />
+              <input
+                autoComplete="current-password"
+                className="w-full border-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-soft)]"
+                placeholder="Digite sua senha"
+                type="password"
+                {...registerField('password')}
+              />
+            </span>
+            {errors.password?.message ? <p className="text-sm text-[var(--danger)]">{errors.password.message}</p> : null}
+          </label>
 
-        <div className="flex justify-end">
-          <div className="flex gap-4 text-sm font-semibold">
-            <Link className="text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/verificar-email">
-              Confirmar email
-            </Link>
-            <Link className="text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/recuperar-senha">
-              Esqueci minha senha
-            </Link>
+          <div className="flex justify-end">
+            <div className="flex flex-wrap gap-3 text-sm font-semibold">
+              <Link
+                className="rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-[var(--accent)] transition hover:border-[rgba(212,177,106,0.18)] hover:text-[var(--accent-strong)]"
+                href="/verificar-email"
+              >
+                Confirmar email
+              </Link>
+              <Link
+                className="rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-[var(--accent)] transition hover:border-[rgba(212,177,106,0.18)] hover:text-[var(--accent-strong)]"
+                href="/recuperar-senha"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
-          <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo para avaliacao:</span>{' '}
-          use <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span> com senha{' '}
-          <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Cada dispositivo tem ate 20 minutos por dia no modo demo, ou voce pode criar sua propria conta e testar tudo sem esse limite.
-        </div>
+          <div className="rounded-[24px] border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
+            <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo para avaliacao:</span>{' '}
+            use <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span> com senha{' '}
+            <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Cada dispositivo tem ate 20 minutos por dia no modo demo, ou voce pode criar sua propria conta e testar tudo sem esse limite.
+          </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
-          {errorMessage}
-        </div>
+          <div className="rounded-[24px] border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
+            {errorMessage}
+          </div>
 
-        <Button fullWidth loading={loginMutation.isPending || isRouting} size="lg" type="submit">
-          Entrar no portal
-        </Button>
-      </form>
+          <Button
+            className="rounded-[20px] bg-[linear-gradient(180deg,var(--accent),var(--accent-strong))] shadow-[0_18px_34px_rgba(212,177,106,0.24)]"
+            fullWidth
+            loading={loginMutation.isPending || isRouting}
+            size="lg"
+            type="submit"
+          >
+            Entrar no portal
+          </Button>
+        </form>
+      </div>
 
       <div className="mt-6 flex flex-col gap-3 text-sm text-[var(--text-soft)] sm:flex-row sm:items-center sm:justify-between">
         <span>Primeiro acesso ou ambiente novo?</span>
