@@ -147,7 +147,6 @@ export function LandingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
-      <HeroFloatingCard />
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
@@ -181,8 +180,11 @@ export function LandingPage() {
             </nav>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link className="rainbow-hover hero-entry-button" href="/login">
-                <span className="sp">Entrar</span>
+              <Link
+                className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--accent)] hover:scale-[1.04] hover:shadow-[0_0_14px_rgba(155,132,96,0.22)] active:scale-95"
+                href="/login"
+              >
+                Entrar
               </Link>
               <Link
                 className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.05)]"
@@ -307,6 +309,8 @@ export function LandingPage() {
                 ))}
               </div>
             </div>
+
+            <HeroFloatingCard />
           </motion.div>
         </div>
       </section>

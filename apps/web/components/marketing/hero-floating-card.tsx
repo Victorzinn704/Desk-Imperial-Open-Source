@@ -11,25 +11,17 @@ const signals = [
 
 export function HeroFloatingCard() {
   return (
-    <>
-      <motion.aside
-        animate={{ y: [0, -8, 0] }}
-        className="imperial-card-soft pointer-events-none fixed right-3 top-1/2 z-40 hidden w-[240px] -translate-y-1/2 p-4 backdrop-blur-xl lg:block xl:w-[256px]"
-        transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
-      >
-        <CardContent compact={false} />
-      </motion.aside>
-
-      <div className="lg:hidden">
-        <div className="imperial-card-soft p-3.5 backdrop-blur-xl">
-          <CardContent compact />
-        </div>
-      </div>
-    </>
+    <motion.div
+      animate={{ y: [0, -8, 0] }}
+      className="imperial-card-soft p-4 backdrop-blur-xl"
+      transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+    >
+      <CardContent />
+    </motion.div>
   )
 }
 
-function CardContent({ compact }: Readonly<{ compact: boolean }>) {
+function CardContent() {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -37,14 +29,14 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
             Leitura ao vivo
           </p>
-          <p className={`mt-2 font-semibold text-white ${compact ? 'text-base' : 'text-lg'}`}>Pulso executivo</p>
+          <p className="mt-2 text-lg font-semibold text-white">Pulso executivo</p>
         </div>
         <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(123,214,138,0.08)] text-[var(--success)]">
           <ShieldCheck className="size-4" />
         </span>
       </div>
 
-      <div className={`space-y-3 ${compact ? 'mt-4' : 'mt-5'}`}>
+      <div className="mt-5 space-y-3">
         {signals.map((signal) => (
           <div
             className="imperial-card-stat px-4 py-3"
@@ -58,7 +50,7 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
         ))}
       </div>
 
-      <div className={`imperial-card-stat px-4 py-4 ${compact ? 'mt-4' : 'mt-5'}`}>
+      <div className="imperial-card-stat mt-5 px-4 py-4">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Moedas</p>
           <ArrowUpRight className="size-4 text-[var(--accent)]" />
