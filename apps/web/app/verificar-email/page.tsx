@@ -12,9 +12,9 @@ export default async function VerifyEmailPage({
 
   return (
     <AuthShell
-      description="O primeiro acesso so e liberado depois da confirmacao do email com codigo de verificacao e expiracao curta."
-      eyebrow="Acesso controlado"
-      title="Confirme o seu email para liberar o portal."
+      description="Quase lá. Confirme seu email e comece a operar."
+      eyebrow="Confirmação"
+      title="Valide seu acesso"
     >
       <VerifyEmailForm email={email} />
     </AuthShell>

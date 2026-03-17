@@ -1,10 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowRight,
   Building2,
   CircleDot,
+  Cog,
   UserRound,
 } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
@@ -121,6 +123,16 @@ export function DashboardSidebar<TSection extends string>({
               {formatAccountStatus(status)}
             </div>
           </div>
+
+          <Link
+            className="group flex w-full items-center gap-3 rounded-[20px] border border-transparent bg-transparent px-4 py-3 text-[var(--text-soft)] transition-all duration-200 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-white"
+            href="/dashboard/configuracoes"
+          >
+            <span className="flex size-9 items-center justify-center rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-all duration-200 group-hover:text-white">
+              <Cog className="size-4" />
+            </span>
+            <span className="text-sm font-semibold">Configuracoes</span>
+          </Link>
         </div>
       </div>
     </aside>

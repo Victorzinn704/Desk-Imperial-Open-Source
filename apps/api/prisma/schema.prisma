@@ -218,6 +218,8 @@ model Product {
   orderItems  OrderItem[]
 
   @@index([userId, active])
+  @@index([userId, category])
+  @@index([userId, currency, createdAt])
   @@unique([userId, name])
 }
 
@@ -268,6 +270,7 @@ model Order {
 
   @@index([userId, createdAt])
   @@index([userId, status, createdAt])
+  @@index([userId, currency, createdAt])
   @@index([employeeId, createdAt])
 }
 

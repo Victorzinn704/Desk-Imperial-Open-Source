@@ -5,7 +5,7 @@ export class AppService {
   getHealth() {
     return {
       status: 'ok',
-      service: 'partner-api',
+      service: 'desk-imperial-api',
       timestamp: new Date().toISOString(),
     }
   }

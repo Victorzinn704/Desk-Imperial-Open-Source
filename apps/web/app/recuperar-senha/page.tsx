@@ -4,9 +4,9 @@ import { ForgotPasswordForm } from '@/components/auth/forgot-password-form'
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
-      description="Recuperacao de acesso com codigo de verificacao, expiracao curta e protecao contra abuso para manter o fluxo profissional e seguro."
-      eyebrow="Senha segura"
-      title="Esqueceu sua senha? Vamos enviar um codigo de redefinicao."
+      description="Esqueceu a senha? Acontece. Vamos resolver em 30 segundos."
+      eyebrow="Recuperar acesso"
+      title="Proteja seu comércio"
     >
       <ForgotPasswordForm />
     </AuthShell>

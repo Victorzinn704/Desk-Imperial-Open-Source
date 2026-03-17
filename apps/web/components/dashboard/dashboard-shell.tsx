@@ -9,6 +9,7 @@ import {
   Box,
   Boxes,
   ChartColumnIncreasing,
+  Clock,
   FileCheck2,
   LayoutDashboard,
   LockKeyhole,
@@ -71,6 +72,7 @@ import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-car
 import { FinanceChart } from '@/components/dashboard/finance-chart'
 import { MarketIntelligenceCard } from '@/components/dashboard/market-intelligence-card'
 import { MetricCard } from '@/components/dashboard/metric-card'
+import { PillarsExecutiveCard } from '@/components/dashboard/pillars-executive-card'
 import { OrderCard } from '@/components/dashboard/order-card'
 import { OrderForm } from '@/components/dashboard/order-form'
 import { ProductCard } from '@/components/dashboard/product-card'
@@ -79,6 +81,8 @@ import { ProductImportCard } from '@/components/dashboard/product-import-card'
 import { ProductSearchField } from '@/components/dashboard/product-search-field'
 import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
+import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
+import { useActivityTimeline } from '@/hooks/use-activity-timeline'
 
 type DashboardSectionId =
   | 'overview'
@@ -133,6 +137,7 @@ export function DashboardShell() {
   const [isRouting, startTransition] = useTransition()
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
   const [activeSection, setActiveSection] = useState<DashboardSectionId>('overview')
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
 
@@ -409,6 +414,14 @@ export function DashboardShell() {
                     <ArrowUpRight className="size-4" />
                   </Button>
                 </Link>
+                <Button
+                  size="lg"
+                  variant={isTimelineOpen ? 'default' : 'ghost'}
+                  onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                >
+                  <Clock className="size-4" />
+                  Atividades
+                </Button>
                 <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
                   <LogOut className="size-4" />
                   Encerrar sessão
@@ -474,6 +487,8 @@ export function DashboardShell() {
           })}
         </div>
       </div>
+
+      {isTimelineOpen && <ActivityTimeline />}
     </main>
   )
 }
@@ -691,6 +706,15 @@ function OverviewEnvironment({
           value={String(employeesTotals?.activeEmployees ?? 0)}
         />
       </div>
+
+      <article className="imperial-card p-7">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C9A84C]">
+          Cinco Pilares Executivos
+        </p>
+        <div className="mt-6">
+          <PillarsExecutiveCard />
+        </div>
+      </article>
 
       <article className="imperial-card p-7">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">

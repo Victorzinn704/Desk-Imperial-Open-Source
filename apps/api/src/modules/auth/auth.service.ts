@@ -858,8 +858,8 @@ export class AuthService {
   private getSessionCookieBaseOptions() {
     return {
       httpOnly: true,
-      secure: this.isProduction(),
-      sameSite: 'strict' as const,
+      secure: true,
+      sameSite: 'none' as const,
       path: '/',
     }
   }
@@ -867,8 +867,8 @@ export class AuthService {
   private getCsrfCookieBaseOptions() {
     return {
       httpOnly: false,
-      secure: this.isProduction(),
-      sameSite: 'strict' as const,
+      secure: true,
+      sameSite: 'none' as const,
       path: '/',
     }
   }

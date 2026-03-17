@@ -313,6 +313,18 @@ export async function fetchFinanceSummary() {
   })
 }
 
+export async function fetchPillars() {
+  return apiFetch<{
+    weeklyRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+    monthlyRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+    profit: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+    eventRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+    normalRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+  }>('/finance/pillars', {
+    method: 'GET',
+  })
+}
+
 export async function fetchMarketInsight(focus?: string) {
   const params = new URLSearchParams()
   if (focus?.trim()) {

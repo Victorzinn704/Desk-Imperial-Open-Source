@@ -1,0 +1,212 @@
+import { Injectable } from '@nestjs/common'
+import { PrismaService } from '../../database/prisma.service'
+import type { AuthContext } from '../auth/auth.types'
+
+export interface PillarMetric {
+  label: string
+  value: number
+  currency: string
+  previousValue: number
+  changePercent: number
+  trend: number[] // últimos 7 dias para sparkline
+}
+
+export interface PillarsResponse {
+  weeklyRevenue: PillarMetric
+  monthlyRevenue: PillarMetric
+  profit: PillarMetric
+  eventRevenue: PillarMetric
+  normalRevenue: PillarMetric
+}
+
+@Injectable()
+export class PillarsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getPillarsForUser(auth: AuthContext): Promise<PillarsResponse> {
+    const now = new Date()
+    const currentWeekStart = this.getWeekStart(now)
+    const previousWeekStart = new Date(currentWeekStart)
+    previousWeekStart.setDate(previousWeekStart.getDate() - 7)
+    const previousWeekEnd = new Date(currentWeekStart)
+
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const previousMonthEnd = currentMonthStart
+
+    const userId = auth.userId
+    const userPref = auth.preferredCurrency || 'BRL'
+
+    // Semana atual vs semana passada
+    const [currentWeekOrders, previousWeekOrders] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          createdAt: { gte: currentWeekStart },
+        },
+      }),
+      this.prisma.order.findMany({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          createdAt: { gte: previousWeekStart, lt: previousWeekEnd },
+        },
+      }),
+    ])
+
+    // Mês atual vs mês passado
+    const [currentMonthOrders, previousMonthOrders] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          createdAt: { gte: currentMonthStart },
+        },
+      }),
+      this.prisma.order.findMany({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          createdAt: { gte: previousMonthStart, lt: previousMonthEnd },
+        },
+      }),
+    ])
+
+    // Vendas em eventos vs vendas normais (semana atual)
+    const currentWeekEventOrders = currentWeekOrders.filter((order) => this.isEventHour(order.createdAt))
+    const currentWeekNormalOrders = currentWeekOrders.filter((order) => !this.isEventHour(order.createdAt))
+
+    // Calcular métricas
+    const currentWeekRevenue = this.sumRevenue(currentWeekOrders)
+    const previousWeekRevenue = this.sumRevenue(previousWeekOrders)
+    const currentMonthRevenue = this.sumRevenue(currentMonthOrders)
+    const previousMonthRevenue = this.sumRevenue(previousMonthOrders)
+    const currentWeekProfit = this.sumProfit(currentWeekOrders)
+    const eventRevenue = this.sumRevenue(currentWeekEventOrders)
+    const normalRevenue = this.sumRevenue(currentWeekNormalOrders)
+
+    // Sparkline (últimos 7 dias)
+    const last7DaysWeekly = this.getLast7DaysTrend(currentWeekOrders)
+    const last7DaysMonthly = this.getLast7DaysTrend(currentMonthOrders)
+    const last7DaysProfit = this.getLast7DaysProfitTrend(currentWeekOrders)
+    const last7DaysEvent = this.getLast7DaysTrend(currentWeekEventOrders)
+    const last7DaysNormal = this.getLast7DaysTrend(currentWeekNormalOrders)
+
+    return {
+      weeklyRevenue: {
+        label: 'Vendas Semanal',
+        value: Math.round(currentWeekRevenue * 100) / 100,
+        currency: userPref,
+        previousValue: Math.round(previousWeekRevenue * 100) / 100,
+        changePercent: previousWeekRevenue > 0 ? Math.round(((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100) : 0,
+        trend: last7DaysWeekly,
+      },
+      monthlyRevenue: {
+        label: 'Vendas Mensal',
+        value: Math.round(currentMonthRevenue * 100) / 100,
+        currency: userPref,
+        previousValue: Math.round(previousMonthRevenue * 100) / 100,
+        changePercent: previousMonthRevenue > 0 ? Math.round(((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100) : 0,
+        trend: last7DaysMonthly,
+      },
+      profit: {
+        label: 'Lucro',
+        value: Math.round(currentWeekProfit * 100) / 100,
+        currency: userPref,
+        previousValue: 0,
+        changePercent: 0,
+        trend: last7DaysProfit,
+      },
+      eventRevenue: {
+        label: 'Desempenho em Eventos',
+        value: Math.round(eventRevenue * 100) / 100,
+        currency: userPref,
+        previousValue: 0,
+        changePercent: 0,
+        trend: last7DaysEvent,
+      },
+      normalRevenue: {
+        label: 'Desempenho Normal',
+        value: Math.round(normalRevenue * 100) / 100,
+        currency: userPref,
+        previousValue: 0,
+        changePercent: 0,
+        trend: last7DaysNormal,
+      },
+    }
+  }
+
+  private getWeekStart(date: Date): Date {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day
+    return new Date(d.setDate(diff))
+  }
+
+  private isEventHour(timestamp: Date): boolean {
+    const date = new Date(timestamp)
+    const dayOfWeek = date.getDay()
+    const hour = date.getHours()
+
+    // Evento: Sexta, sábado, domingo a partir das 16h
+    const isEventDay = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0
+    return isEventDay && hour >= 16
+  }
+
+  private sumRevenue(orders: any[]): number {
+    return orders.reduce((sum, order) => sum + (order.totalRevenue || 0), 0)
+  }
+
+  private sumProfit(orders: any[]): number {
+    return orders.reduce((sum, order) => sum + (order.totalProfit || 0), 0)
+  }
+
+  private getLast7DaysTrend(orders: any[]): number[] {
+    const trend: number[] = []
+    const now = new Date()
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(date.getDate() - i)
+      date.setHours(0, 0, 0, 0)
+
+      const nextDate = new Date(date)
+      nextDate.setDate(nextDate.getDate() + 1)
+
+      const dayOrders = orders.filter((order) => {
+        const orderDate = new Date(order.createdAt)
+        return orderDate >= date && orderDate < nextDate
+      })
+
+      const dayRevenue = this.sumRevenue(dayOrders)
+      trend.push(Math.round(dayRevenue * 100) / 100)
+    }
+
+    return trend
+  }
+
+  private getLast7DaysProfitTrend(orders: any[]): number[] {
+    const trend: number[] = []
+    const now = new Date()
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(date.getDate() - i)
+      date.setHours(0, 0, 0, 0)
+
+      const nextDate = new Date(date)
+      nextDate.setDate(nextDate.getDate() + 1)
+
+      const dayOrders = orders.filter((order) => {
+        const orderDate = new Date(order.createdAt)
+        return orderDate >= date && orderDate < nextDate
+      })
+
+      const dayProfit = this.sumProfit(dayOrders)
+      trend.push(Math.round(dayProfit * 100) / 100)
+    }
+
+    return trend
+  }
+}

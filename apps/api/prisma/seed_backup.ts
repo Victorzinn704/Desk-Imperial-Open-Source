@@ -111,6 +111,18 @@ const vendedores = [
   'João Victor',
 ]
 
+// Eventos passados
+const eventos = [
+  { nome: 'Forró do Pedrão', tipo: 'forró', daysAgo: 45 },
+  { nome: 'Pagode das Antigas', tipo: 'pagode', daysAgo: 38 },
+  { nome: 'Forró Caipira', tipo: 'forró', daysAgo: 31 },
+  { nome: 'Pagode da Saudade', tipo: 'pagode', daysAgo: 24 },
+  { nome: 'Forró Nordestino', tipo: 'forró', daysAgo: 17 },
+  { nome: 'Pagode Raiz', tipo: 'pagode', daysAgo: 10 },
+  { nome: 'Jogo do Flamengo', tipo: 'jogo', daysAgo: 5 },
+  { nome: 'Forró da Festa', tipo: 'forró', daysAgo: 3 },
+]
+
 async function generateRandomOrders(userId: string, employees: any[], products: any[], days: number = 180) {
   const orders = []
   const now = new Date()
@@ -193,6 +205,7 @@ async function generateRandomOrders(userId: string, employees: any[], products: 
 }
 
 async function main() {
+  // Criar documentos de consentimento
   for (const document of documents) {
     await prisma.consentDocument.upsert({
       where: {
@@ -215,6 +228,7 @@ async function main() {
     })
   }
 
+  // Criar usuário demo (Bar do Pedrão)
   const email = 'demo@deskimperial.online'
   const passwordHash = await argon2.hash('Demo@123', { type: argon2.argon2id })
 
@@ -236,6 +250,7 @@ async function main() {
     },
   })
 
+  // Criar preferência de cookies
   await prisma.cookiePreference.upsert({
     where: { userId: user.id },
     update: {
@@ -273,7 +288,7 @@ async function main() {
     employees.push(emp)
   }
 
-  // Criar produtos do Bar do Pedrão
+  // Criar produtos
   const createdProducts = []
   for (const product of barProducts) {
     const created = await prisma.product.upsert({
@@ -308,9 +323,8 @@ async function main() {
   // Gerar pedidos aleatórios realistas
   const generatedOrders = await generateRandomOrders(user.id, employees, barProducts, 180)
   
-  // Criar pedidos no banco
-  let ordersCreated = 0
-  for (let i = 0; i < Math.min(generatedOrders.length, 80); i++) {
+  // Criar pedidos no banco (limite para não sobrecarregar)
+  for (let i = 0; i < Math.min(generatedOrders.length, 100); i++) {
     const orderData = generatedOrders[i]
     
     const orderItems = orderData.products.map((item: any) => {
@@ -328,31 +342,26 @@ async function main() {
       }
     })
     
-    try {
-      await prisma.order.create({
-        data: {
-          userId: user.id,
-          customerName: `Cliente ${i + 1}`,
-          buyerType: Math.random() > 0.7 ? BuyerType.COMPANY : BuyerType.PERSON,
-          employeeId: orderData.employee.id,
-          sellerCode: orderData.employee.employeeCode,
-          sellerName: orderData.employee.displayName,
-          channel: ['Balcão', 'Evento', 'Entrega'][Math.floor(Math.random() * 3)],
-          status: OrderStatus.COMPLETED,
-          totalRevenue: orderData.totalRevenue,
-          totalCost: orderData.totalCost,
-          totalProfit: orderData.totalProfit,
-          totalItems: orderData.products.length,
-          createdAt: orderData.createdAt,
-          items: {
-            create: orderItems,
-          },
+    await prisma.order.create({
+      data: {
+        userId: user.id,
+        customerName: `Cliente ${i + 1}`,
+        buyerType: Math.random() > 0.7 ? BuyerType.COMPANY : BuyerType.PERSON,
+        employeeId: orderData.employee.id,
+        sellerCode: orderData.employee.employeeCode,
+        sellerName: orderData.employee.displayName,
+        channel: ['Balcão', 'Evento', 'Entrega'][Math.floor(Math.random() * 3)],
+        status: OrderStatus.COMPLETED,
+        totalRevenue: orderData.totalRevenue,
+        totalCost: orderData.totalCost,
+        totalProfit: orderData.totalProfit,
+        totalItems: orderData.products.length,
+        createdAt: orderData.createdAt,
+        items: {
+          create: orderItems,
         },
-      })
-      ordersCreated++
-    } catch (error) {
-      // Ignorar erros de criação individual
-    }
+      },
+    })
   }
 
   // Registrar consentimentos
@@ -385,16 +394,15 @@ async function main() {
   }
 
   console.log(`✅ Seed concluído com sucesso!`)
-  console.log(`   📧 Email: ${user.email}`)
-  console.log(`   🍺 Estabelecimento: ${user.companyName}`)
+  console.log(`   📊 Usuário: ${user.email} (${user.companyName})`)
   console.log(`   👥 Vendedores: ${employees.length}`)
-  console.log(`   🍻 Produtos: ${createdProducts.length}`)
-  console.log(`   📝 Pedidos: ${ordersCreated} (últimos ~6 meses)`)
+  console.log(`   🍺 Produtos: ${createdProducts.length}`)
+  console.log(`   📝 Pedidos: ~100 (últimos 6 meses)`)
 }
 
 main()
   .catch((error) => {
-    console.error(error)
+    console.error('❌ Erro no seed:', error)
     process.exit(1)
   })
   .finally(async () => {

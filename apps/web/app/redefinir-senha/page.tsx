@@ -12,9 +12,9 @@ export default async function ResetPasswordPage({
 
   return (
     <AuthShell
-      description="A redefinicao valida o codigo enviado por email, troca a credencial e invalida as sessoes anteriores para manter o acesso seguro."
-      eyebrow="Nova credencial"
-      title="Defina uma nova senha para continuar no portal."
+      description="Crie uma nova senha forte e recomeçar a controlar."
+      eyebrow="Nova senha"
+      title="Redefina seu acesso"
     >
       <ResetPasswordForm email={email} />
     </AuthShell>

@@ -21,21 +21,21 @@ import { InteractionFlowCard } from '@/components/marketing/interaction-flow-car
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Operação', value: 'Web e API integradas em um único ambiente' },
-  { label: 'Sessão segura', value: 'Cookie HttpOnly com controle de consentimento' },
-  { label: 'Auditoria', value: 'Eventos essenciais registrados no sistema' },
+  { label: 'Seus números', value: 'Métricas de vendas, lucro e desempenho em um único lugar' },
+  { label: 'Seu controle', value: 'Produtos, pedidos, vendedores e estoque organizados' },
+  { label: 'Sua clareza', value: 'Relatórios e insights que fazem você decidir melhor' },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Operação orientada a negócio',
-    description: 'O ambiente centraliza vendas, produtos, financeiro e leitura operacional em uma única experiência.',
+    title: 'Sem complicação',
+    description: 'Você abre, vende, confere e fecha o dia — tudo aqui dentro.',
   },
   {
     icon: Radar,
-    title: 'UX/UI premium',
-    description: 'Linguagem visual escura, executiva e consistente para desktop e mobile.',
+    title: 'Com identidade',
+    description: 'Seu comércio tem nome, história e números que provam valor.',
   },
 ]
 
@@ -46,30 +46,30 @@ const capabilityCards: Array<{
 }> = [
   {
     icon: BadgeDollarSign,
-    title: 'Fluxo financeiro',
-    description: 'Receita, custo, lucro e margem aparecem com leitura clara para a operação diária.',
+    title: 'Seu dinheiro',
+    description: 'Receita, custo, lucro e margem aparecem claros. Você sabe quanto ganhou.',
   },
   {
     icon: Landmark,
-    title: 'Gestão comercial',
-    description: 'Produtos, pedidos, vendedores e estoque trabalham juntos em uma única camada.',
+    title: 'Seu time',
+    description: 'Vendedores, produtos, pedidos. Todos têm história, quota e desempenho.',
   },
   {
     icon: ChartColumn,
-    title: 'Leitura estatística',
-    description: 'Gráficos, ranking e totais ajudam a identificar desempenho, volume e tendência.',
+    title: 'Seus insights',
+    description: 'Gráficos que falam. Ranking de vendedores. Análise de eventos e lucro real.',
   },
   {
     icon: Scale,
-    title: 'Conformidade e controle',
-    description: 'Sessão segura, consentimento, cookies e rastreabilidade ficam integrados ao portal.',
+    title: 'Seu controle',
+    description: 'Dados auditados, histórico completo, segurança que você merece.',
   },
 ]
 
 const heroLines = [
-  'Portal empresarial moderno',
-  'para operar com segurança,',
-  'controle e identidade forte.',
+  'Não adianta ter o poder da caneta,',
+  'se você não sabe a mesa certa onde se sentar.',
+  'Isso não é sobre mesas... — Desk Imperial.',
 ]
 
 const footerColumns = [
@@ -292,9 +292,9 @@ export function LandingPage() {
 
             <div className="imperial-card relative z-10 p-6">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--text-soft)]">Status atual</span>
-                <span className="rounded-full border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--success)]">
-                  Em progresso
+                <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
+                <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
+                  Early Access
                 </span>
               </div>
 
@@ -316,15 +316,7 @@ export function LandingPage() {
       </section>
 
       <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.88)]" id="fundacao">
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-cover opacity-[0.045]"
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1920&q=60&auto=format&fit=crop"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,14,0.6),rgba(8,11,14,0.2)_40%,rgba(8,11,14,0.7))]" />
-        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundação</p>
@@ -356,13 +348,6 @@ export function LandingPage() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="relative overflow-hidden rounded-[1.75rem]">
-            <img
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.04]"
-              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=60&auto=format&fit=crop"
-            />
           <div className="imperial-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">

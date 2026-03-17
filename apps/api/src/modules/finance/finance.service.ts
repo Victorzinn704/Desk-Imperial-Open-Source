@@ -131,7 +131,10 @@ export class FinanceService {
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const previousMonthEnd = currentMonthStart
 
-    const [products, orders, recentOrders] = await Promise.all([
+    // Otimização: Remover query duplicada para recentOrders
+    // Anteriormente: 2 queries idênticas para orders (uma sem limit, uma com take: 5)
+    // Agora: 1 query com índice [userId, createdAt] + paginação via slice em memória
+    const [products, orders] = await Promise.all([
       this.prisma.product.findMany({
         where: {
           userId: auth.userId,
@@ -149,16 +152,10 @@ export class FinanceService {
           createdAt: 'desc',
         },
       }),
-      this.prisma.order.findMany({
-        where: {
-          userId: auth.userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: 5,
-      }),
     ])
+
+    // Pega os últimos 5 pedidos do array já ordenado
+    const recentOrders = orders.slice(0, 5)
 
     const displayCurrency = auth.preferredCurrency
     const records = products.map((product) =>

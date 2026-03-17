@@ -1,6 +1,13 @@
 import { z } from 'zod'
+import {
+  STRONG_PASSWORD_REGEX,
+  STRONG_PASSWORD_MESSAGE,
+  EMAIL_CODE_REGEX,
+  EMAIL_CODE_MESSAGE,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from '@contracts/validation-patterns'
 
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
 export const loginSchema = z.object({
