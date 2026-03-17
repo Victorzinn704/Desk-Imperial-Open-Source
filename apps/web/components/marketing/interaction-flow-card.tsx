@@ -21,7 +21,7 @@ const steps = [
   },
   {
     icon: ShoppingCart,
-    label: 'Operacao',
+    label: 'Operação',
     tone: 'text-[var(--success)]',
     activeBorder: 'border-[rgba(99,147,113,0.22)] bg-[rgba(99,147,113,0.05)]',
     description: 'Pedido multi-item, vendedor vinculado e mapa da venda.',
@@ -36,9 +36,9 @@ export function InteractionFlowCard() {
 
       <div className="relative">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fluxo guiado</p>
-        <h3 className="mt-2 text-xl font-semibold text-white">Entrada rapida na operacao</h3>
+        <h3 className="mt-2 text-xl font-semibold text-white">Entrada rápida na operação</h3>
         <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">
-          Cadastro, leitura e acao em uma experiencia sequencial.
+          Cadastro, leitura e ação em uma experiência sequencial.
         </p>
 
         <div className="mt-6 space-y-3">

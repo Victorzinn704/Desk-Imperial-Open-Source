@@ -20,7 +20,7 @@ async function bootstrap() {
   const isProduction = configService.get<string>('NODE_ENV') === 'production'
   const allowedOrigins = getAllowedOrigins(configService)
   const swaggerEnabled =
-    configService.get<string>('ENABLE_SWAGGER') === 'true' || !isProduction
+    configService.get<string>('ENABLE_SWAGGER') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
 
   app.use(helmet())

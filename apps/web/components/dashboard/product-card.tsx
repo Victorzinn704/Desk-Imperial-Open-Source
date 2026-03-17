@@ -67,7 +67,7 @@ export function ProductCard({
           </div>
           <p className="mt-3 text-sm font-medium text-white">{product.packagingClass}</p>
           <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
-            {product.description || 'Produto sem descricao cadastrada.'}
+            {product.description || 'Produto sem descrição cadastrada.'}
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export function ProductCard({
           {costValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{costValue.secondary}</p> : null}
         </div>
         <div className="imperial-card-stat px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Preco</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Preço</p>
           <p className="mt-2 text-lg font-semibold text-white">{priceValue.primary}</p>
           {priceValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{priceValue.secondary}</p> : null}
         </div>

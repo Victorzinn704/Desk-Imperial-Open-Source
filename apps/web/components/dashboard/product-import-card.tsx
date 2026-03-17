@@ -36,13 +36,13 @@ export function ProductImportCard({
     const isCsv = file.name.toLowerCase().endsWith('.csv') || file.type.includes('csv')
     if (!isCsv) {
       setSelectedFile(null)
-      setLocalError('Selecione um arquivo CSV valido para importar.')
+      setLocalError('Selecione um arquivo CSV válido para importar.')
       return
     }
 
     if (file.size > 256 * 1024) {
       setSelectedFile(null)
-      setLocalError('O arquivo excede 256 KB. Divida a importacao em partes menores.')
+      setLocalError('O arquivo excede 256 KB. Divida a importação em partes menores.')
       return
     }
 
@@ -56,13 +56,13 @@ export function ProductImportCard({
           <FileSpreadsheet className="size-5" />
         </span>
         <div>
-          <p className="text-sm text-[var(--text-soft)]">Importacao assistida</p>
-          <h2 className="text-xl font-semibold text-white">Suba o portfolio por CSV</h2>
+          <p className="text-sm text-[var(--text-soft)]">Importação assistida</p>
+          <h2 className="text-xl font-semibold text-white">Suba o portfólio por CSV</h2>
         </div>
       </div>
 
       <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
-        Comecamos pela importacao de produtos para destravar operacao real sem cadastro manual
+        Começamos pela importação de produtos para destravar a operação real sem cadastro manual
         item por item.
       </p>
 
@@ -74,9 +74,9 @@ export function ProductImportCard({
           `stockLooseUnits`, `stock`, `currency`
         </p>
         <p className="mt-2 text-xs text-[var(--text-soft)]">
-          `brand` e opcional. Se `packagingClass`, `measurementUnit`, `measurementValue` ou
-          `unitsPerPackage` nao forem enviados, o sistema usa um cadastro rapido com `UN`.
-          `stockPackages` e `stockLooseUnits` sao o formato recomendado; `stock` continua como
+          `brand` é opcional. Se `packagingClass`, `measurementUnit`, `measurementValue` ou
+          `unitsPerPackage` não forem enviados, o sistema usa um cadastro rápido com `UN`.
+          `stockPackages` e `stockLooseUnits` são o formato recomendado; `stock` continua como
           compatibilidade para total em unidades.
         </p>
       </div>
@@ -94,7 +94,7 @@ export function ProductImportCard({
           variant="ghost"
         >
           <Download className="size-4" />
-          Exportar portfolio atual
+          Exportar portfólio atual
         </Button>
       </div>
 
@@ -104,7 +104,7 @@ export function ProductImportCard({
           {selectedFile ? selectedFile.name : 'Escolha um arquivo CSV'}
         </span>
         <span className="mt-2 text-sm text-[var(--text-soft)]">
-          O arquivo e lido localmente e enviado para validacao da API.
+          O arquivo é lido localmente e enviado para validação da API.
         </span>
         <input
           accept=".csv,text/csv"
@@ -139,7 +139,7 @@ export function ProductImportCard({
       {lastImport ? (
         <div className="imperial-card-soft mt-5 p-4">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Ultima importacao
+            Última importação
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <ImportMetric label="Linhas lidas" value={String(lastImport.summary.totalRows)} />

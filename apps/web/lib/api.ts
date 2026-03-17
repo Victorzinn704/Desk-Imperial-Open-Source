@@ -467,7 +467,8 @@ function persistCsrfToken(value: string) {
     return
   }
 
-  window.localStorage.setItem(CSRF_STORAGE_KEY, value)
+  // sessionStorage: escopo de aba, limpo ao fechar — menos exposto a XSS persistente que localStorage
+  window.sessionStorage.setItem(CSRF_STORAGE_KEY, value)
 }
 
 function readPersistedCsrfToken() {
@@ -475,7 +476,7 @@ function readPersistedCsrfToken() {
     return null
   }
 
-  return window.localStorage.getItem(CSRF_STORAGE_KEY)
+  return window.sessionStorage.getItem(CSRF_STORAGE_KEY)
 }
 
 function clearPersistedCsrfToken() {
@@ -483,7 +484,7 @@ function clearPersistedCsrfToken() {
     return
   }
 
-  window.localStorage.removeItem(CSRF_STORAGE_KEY)
+  window.sessionStorage.removeItem(CSRF_STORAGE_KEY)
 }
 
 function hasCsrfToken(value: unknown): value is { csrfToken: string } {

@@ -50,7 +50,7 @@ export function AccountProfileCard({
       </p>
       <h2 className="mt-3 text-2xl font-semibold text-white">Edite o nome exibido no portal.</h2>
       <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-        Esse bloco alimenta a sidebar, o cabecalho executivo e a identificacao principal da conta.
+        Esse bloco alimenta a sidebar, o cabeçalho executivo e a identificação principal da conta.
       </p>
 
       <form className="mt-6 space-y-5" onSubmit={handleSubmit(onSubmit)}>
@@ -63,7 +63,7 @@ export function AccountProfileCard({
 
         <InputField
           error={errors.fullName?.message}
-          label="Responsavel pela conta"
+          label="Responsável pela conta"
           placeholder="Joao Vitor"
           {...register('fullName')}
         />

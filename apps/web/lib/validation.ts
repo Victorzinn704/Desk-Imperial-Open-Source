@@ -4,20 +4,20 @@ const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
 export const loginSchema = z.object({
-  email: z.string().trim().email('Digite um email valido.'),
-  password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
+  email: z.string().trim().email('Digite um e-mail válido.'),
+  password: z.string().min(12, 'A senha precisa ter pelo menos 12 caracteres.'),
 })
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().trim().email('Digite um email valido.'),
+  email: z.string().trim().email('Digite um e-mail válido.'),
 })
 
 export const verifyEmailSchema = z.object({
-  email: z.string().trim().email('Digite um email valido.'),
+  email: z.string().trim().email('Digite um e-mail válido.'),
   code: z
     .string()
     .trim()
-    .regex(/^\d{6}$/, 'Digite o codigo de 6 digitos enviado por email.'),
+    .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
 })
 
 export const registerSchema = z.object({
@@ -25,38 +25,40 @@ export const registerSchema = z.object({
     .string()
     .trim()
     .min(3, 'Digite seu nome completo.')
-    .max(120, 'O nome esta longo demais.'),
+    .max(120, 'O nome está longo demais.'),
   companyName: z
     .string()
     .trim()
-    .max(160, 'O nome da empresa esta longo demais.')
+    .max(160, 'O nome da empresa está longo demais.')
     .optional()
     .or(z.literal('')),
-  email: z.string().trim().email('Digite um email valido.'),
+  email: z.string().trim().email('Digite um e-mail válido.'),
   password: z
     .string()
-    .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
-    .regex(strongPasswordRegex, 'Use letra maiuscula, minuscula, numero e caractere especial.'),
+    .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
+    .max(128, 'A senha está longa demais.')
+    .regex(strongPasswordRegex, 'Use letra maiúscula, minúscula, número e caractere especial.'),
   acceptTerms: z.boolean().refine((value) => value, {
-    message: 'Voce precisa aceitar os termos de uso.',
+    message: 'Você precisa aceitar os termos de uso.',
   }),
   acceptPrivacy: z.boolean().refine((value) => value, {
-    message: 'Voce precisa aceitar o aviso de privacidade.',
+    message: 'Você precisa aceitar o aviso de privacidade.',
   }),
 })
 
 export const resetPasswordSchema = z
   .object({
-    email: z.string().trim().email('Digite um email valido.'),
+    email: z.string().trim().email('Digite um e-mail válido.'),
     code: z
       .string()
       .trim()
-      .regex(/^\d{6}$/, 'Digite o codigo de 6 digitos enviado por email.'),
+      .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
     password: z
       .string()
-      .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
-      .regex(strongPasswordRegex, 'Use letra maiuscula, minuscula, numero e caractere especial.'),
-    confirmPassword: z.string().min(8, 'Confirme a nova senha.'),
+      .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
+      .max(128, 'A senha está longa demais.')
+      .regex(strongPasswordRegex, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+    confirmPassword: z.string().min(12, 'Confirme a nova senha.'),
   })
   .superRefine((values, context) => {
     if (values.password !== values.confirmPassword) {
@@ -69,7 +71,7 @@ export const resetPasswordSchema = z
   })
 
 export const productSchema = z.object({
-  name: z.string().trim().min(2, 'Digite um nome de produto valido.').max(120, 'O nome ficou longo demais.'),
+  name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
   brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
   category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
   packagingClass: z
@@ -86,22 +88,22 @@ export const productSchema = z.object({
   unitsPerPackage: z
     .coerce
     .number()
-    .int('Use um numero inteiro para a quantidade por caixa/fardo.')
+    .int('Use um número inteiro para a quantidade por caixa/fardo.')
     .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
-  description: z.string().trim().max(280, 'A descricao ficou longa demais.').optional().or(z.literal('')),
-  unitCost: z.coerce.number().min(0, 'O custo nao pode ser negativo.'),
-  unitPrice: z.coerce.number().min(0, 'O preco nao pode ser negativo.'),
+  description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
+  unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),
+  unitPrice: z.coerce.number().min(0, 'O preço não pode ser negativo.'),
   currency: currencyCodeSchema,
   stockPackages: z
     .coerce
     .number()
-    .int('Use um numero inteiro para caixas/fardos.')
-    .min(0, 'A quantidade de caixas/fardos nao pode ser negativa.'),
+    .int('Use um número inteiro para caixas/fardos.')
+    .min(0, 'A quantidade de caixas/fardos não pode ser negativa.'),
   stockLooseUnits: z
     .coerce
     .number()
-    .int('Use um numero inteiro para unidades avulsas.')
-    .min(0, 'A quantidade de unidades avulsas nao pode ser negativa.'),
+    .int('Use um número inteiro para unidades avulsas.')
+    .min(0, 'A quantidade de unidades avulsas não pode ser negativa.'),
 })
   .superRefine((values, context) => {
     if (values.unitsPerPackage > 1 && values.stockLooseUnits >= values.unitsPerPackage) {
@@ -121,7 +123,7 @@ export const profileSchema = z.object({
   fullName: z
     .string()
     .trim()
-    .min(3, 'Digite o nome do responsavel.')
+    .min(3, 'Digite o nome do responsável.')
     .max(120, 'O nome ficou longo demais.'),
   companyName: z
     .string()
@@ -136,21 +138,21 @@ export const employeeSchema = z.object({
   employeeCode: z
     .string()
     .trim()
-    .min(2, 'Informe um ID de funcionario.')
-    .max(32, 'O ID do funcionario ficou longo demais.'),
+    .min(2, 'Informe um ID de funcionário.')
+    .max(32, 'O ID do funcionário ficou longo demais.'),
   displayName: z
     .string()
     .trim()
-    .min(3, 'Digite o nome do funcionario.')
-    .max(120, 'O nome do funcionario ficou longo demais.'),
+    .min(3, 'Digite o nome do funcionário.')
+    .max(120, 'O nome do funcionário ficou longo demais.'),
 })
 
 export const orderItemSchema = z.object({
   productId: z.string().min(1, 'Selecione um produto.'),
-  quantity: z.coerce.number().int('Use um numero inteiro.').min(1, 'A quantidade minima e 1.'),
+  quantity: z.coerce.number().int('Use um número inteiro.').min(1, 'A quantidade mínima é 1.'),
   unitPrice: z.preprocess(
     (value) => (value === '' || value === null || value === undefined ? undefined : Number(value)),
-    z.number().min(0, 'O valor unitario nao pode ser negativo.').optional(),
+    z.number().min(0, 'O valor unitário não pode ser negativo.').optional(),
   ),
 })
 
@@ -163,15 +165,15 @@ export const orderSchema = z
       .min(2, 'Informe o nome do comprador.')
       .max(120, 'O nome do comprador ficou longo demais.'),
     buyerType: z.enum(['PERSON', 'COMPANY']),
-    buyerDocument: z.string().trim().min(11, 'Informe um CPF ou CNPJ valido.'),
-    buyerDistrict: z.string().trim().max(120, 'O bairro/regiao ficou longo demais.').optional().or(z.literal('')),
+    buyerDocument: z.string().trim().min(11, 'Informe um CPF ou CNPJ válido.'),
+    buyerDistrict: z.string().trim().max(120, 'O bairro/região ficou longo demais.').optional().or(z.literal('')),
     buyerCity: z.string().trim().min(2, 'Informe a cidade da venda.').max(120, 'A cidade ficou longa demais.'),
     buyerState: z.string().trim().max(120, 'O estado ficou longo demais.').optional().or(z.literal('')),
-    buyerCountry: z.string().trim().min(2, 'Informe o pais da venda.').max(120, 'O pais ficou longo demais.'),
+    buyerCountry: z.string().trim().min(2, 'Informe o país da venda.').max(120, 'O país ficou longo demais.'),
     sellerEmployeeId: z.string().trim().optional().or(z.literal('')),
     currency: currencyCodeSchema,
     channel: z.string().trim().max(60, 'O canal ficou longo demais.').optional().or(z.literal('')),
-    notes: z.string().trim().max(280, 'A observacao ficou longa demais.').optional().or(z.literal('')),
+    notes: z.string().trim().max(280, 'A observação ficou longa demais.').optional().or(z.literal('')),
   })
   .superRefine((values, context) => {
     const document = sanitizeDocument(values.buyerDocument)
@@ -182,7 +184,7 @@ export const orderSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['buyerDocument'],
-        message: isPerson ? 'Informe um CPF valido.' : 'Informe um CNPJ valido.',
+        message: isPerson ? 'Informe um CPF válido.' : 'Informe um CNPJ válido.',
       })
     }
   })
@@ -202,7 +204,7 @@ export type OrderFormValues = z.output<typeof orderSchema>
 export function getPasswordStrength(password: string) {
   let score = 0
 
-  if (password.length >= 8) score += 1
+  if (password.length >= 12) score += 1
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
   if (/\d/.test(password)) score += 1
   if (/[^A-Za-z\d]/.test(password)) score += 1
@@ -212,7 +214,7 @@ export function getPasswordStrength(password: string) {
   }
 
   if (score === 2) {
-    return { score: 2, label: 'Razoavel' }
+    return { score: 2, label: 'Razoável' }
   }
 
   if (score === 3) {
@@ -232,19 +234,19 @@ export const fallbackConsentDocuments = [
   {
     key: 'privacy-policy',
     title: 'Aviso de privacidade',
-    description: 'Explica como os dados pessoais sao coletados, protegidos e utilizados.',
+    description: 'Explica como os dados pessoais são coletados, protegidos e utilizados.',
     required: true,
   },
   {
     key: 'cookie-analytics',
-    title: 'Cookies analiticos',
-    description: 'Ajudam a medir uso, desempenho e melhorias de navegacao.',
+    title: 'Cookies analíticos',
+    description: 'Ajudam a medir uso, desempenho e melhorias de navegação.',
     required: false,
   },
   {
     key: 'cookie-marketing',
     title: 'Cookies de marketing',
-    description: 'Permitem comunicacao promocional e personalizacao de campanhas.',
+    description: 'Permitem comunicação promocional e personalização de campanhas.',
     required: false,
   },
 ] as const

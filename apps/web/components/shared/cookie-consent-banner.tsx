@@ -40,7 +40,7 @@ export function CookieConsentBanner() {
     () => ({
       title: 'Este site usa cookies',
       description:
-        'Usamos cookies necessarios para seguranca e sessao. Os opcionais ajudam com analise e comunicacao. Voce pode aceitar ou rejeitar todos.',
+        'Usamos cookies necessários para segurança e sessão. Os opcionais ajudam com análise e comunicação. Você pode aceitar ou rejeitar todos.',
     }),
     [],
   )
@@ -111,7 +111,7 @@ export function CookieConsentBanner() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
                 <ShieldCheck className="size-3.5" />
-                Preferencias de cookies
+                Preferências de cookies
               </div>
               <h2 className="mt-3 text-xl font-semibold text-white" id="cookie-consent-title">
                 {content.title}
@@ -120,7 +120,7 @@ export function CookieConsentBanner() {
                 {content.description}
               </p>
               <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                O site so libera a navegacao depois da sua escolha.
+                O site só libera a navegação depois da sua escolha.
               </p>
             </div>
           </div>

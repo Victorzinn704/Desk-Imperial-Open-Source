@@ -57,12 +57,14 @@ export class ProductsController {
         files: 1,
       },
       fileFilter: (_request, file, callback) => {
-        const allowedMimeTypes = ['text/csv', 'application/csv', 'application/vnd.ms-excel']
-        const isCsvFile =
-          allowedMimeTypes.includes(file.mimetype) || file.originalname.toLowerCase().endsWith('.csv')
+        const allowedMimeTypes = ['text/csv', 'application/csv', 'application/vnd.ms-excel', 'text/plain']
+        const hasValidMime = allowedMimeTypes.includes(file.mimetype)
+        const hasValidExtension = file.originalname.toLowerCase().endsWith('.csv')
+        // Rejeita extensões duplas como "malware.exe.csv"
+        const hasSuspiciousExtension = /\.(exe|bat|sh|ps1|cmd|js|php|py)\./i.test(file.originalname)
 
-        if (!isCsvFile) {
-          callback(new BadRequestException('Envie um arquivo CSV valido.'), false)
+        if ((!hasValidMime && !hasValidExtension) || hasSuspiciousExtension) {
+          callback(new BadRequestException('Envie um arquivo CSV válido.'), false)
           return
         }
 

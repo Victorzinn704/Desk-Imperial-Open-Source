@@ -859,7 +859,7 @@ export class AuthService {
     return {
       httpOnly: true,
       secure: this.isProduction(),
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const,
       path: '/',
     }
   }
@@ -868,7 +868,7 @@ export class AuthService {
     return {
       httpOnly: false,
       secure: this.isProduction(),
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const,
       path: '/',
     }
   }

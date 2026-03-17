@@ -20,7 +20,7 @@ export function CompanySignatureCard() {
         </div>
 
         <p className="mt-6 text-sm leading-7 text-[var(--text-soft)]">
-          Operacao comercial, visao executiva e controle empresarial em uma camada unica e segura.
+          Operação comercial, visão executiva e controle empresarial em uma camada única e segura.
         </p>
 
         <div className="mt-6 space-y-2 border-t border-[var(--border)] pt-5">

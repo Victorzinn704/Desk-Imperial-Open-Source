@@ -25,7 +25,7 @@ export function EmployeeRankingCard({
             Performance comercial
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
-            Ranking de rendimento por funcionario
+            Ranking de rendimento por funcionário
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
             O painel cruza receita, lucro e ticket medio com base no vendedor vinculado em cada pedido.
@@ -35,7 +35,7 @@ export function EmployeeRankingCard({
         <div className="grid gap-3 sm:grid-cols-3">
           <TopMetric
             icon={UserRoundCog}
-            label="Funcionarios no ranking"
+            label="Funcionários no ranking"
             value={String(topEmployees.length)}
           />
           <TopMetric
@@ -48,7 +48,7 @@ export function EmployeeRankingCard({
           />
           <TopMetric
             icon={Target}
-            label="Lucro atribuido"
+            label="Lucro atribuído"
             value={formatCurrency(
               topEmployees.reduce((total, employee) => total + employee.profit, 0),
               displayCurrency,
@@ -107,14 +107,14 @@ export function EmployeeRankingCard({
                       value={formatCurrency(employee.profit, displayCurrency)}
                     />
                     <EmployeeStat
-                      label="Ticket medio"
+                      label="Ticket médio"
                       value={formatCurrency(employee.averageTicket, displayCurrency)}
                     />
                   </div>
                 </div>
 
                 <p className="mt-4 text-sm text-[var(--text-soft)]">
-                  {employee.orders} venda(s) vinculada(s) a este funcionario.
+                  {employee.orders} venda(s) vinculada(s) a este funcionário.
                 </p>
               </div>
             )
@@ -123,7 +123,7 @@ export function EmployeeRankingCard({
       ) : (
         <div className="imperial-card-soft mt-6 border-dashed px-5 py-14 text-center">
           <p className="text-sm leading-7 text-[var(--text-soft)]">
-            Vincule vendas a funcionarios para liberar o ranking executivo de rendimento.
+            Vincule vendas a funcionários para liberar o ranking executivo de rendimento.
           </p>
         </div>
       )}

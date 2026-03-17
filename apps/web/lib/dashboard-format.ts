@@ -21,12 +21,12 @@ export function formatBuyerType(type: 'PERSON' | 'COMPANY' | null | undefined) {
     return 'Empresa'
   }
 
-  return 'Nao informado'
+  return 'Não informado'
 }
 
 export function maskBuyerDocument(document: string | null | undefined) {
   if (!document) {
-    return 'Documento nao informado'
+    return 'Documento não informado'
   }
 
   const digits = document.replace(/\D/g, '')

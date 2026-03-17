@@ -53,7 +53,7 @@ export function EmployeeManagementCard({
         </span>
         <div>
           <p className="text-sm text-[var(--text-soft)]">Equipe comercial</p>
-          <h2 className="text-xl font-semibold text-white">Funcionarios vinculados a venda</h2>
+          <h2 className="text-xl font-semibold text-white">Funcionários vinculados à venda</h2>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export function EmployeeManagementCard({
         />
         <MiniEmployeeMetric
           icon={BadgeCheck}
-          label="Ativos na operacao"
+          label="Ativos na operação"
           value={String(totals?.activeEmployees ?? employees.filter((employee) => employee.active).length)}
         />
       </div>
@@ -80,14 +80,14 @@ export function EmployeeManagementCard({
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField
             error={errors.employeeCode?.message}
-            hint="Use um codigo curto, como VD-001."
-            label="ID do funcionario"
+            hint="Use um código curto, como VD-001."
+            label="ID do funcionário"
             placeholder="VD-001"
             {...register('employeeCode')}
           />
           <InputField
             error={errors.displayName?.message}
-            label="Nome do funcionario"
+            label="Nome do funcionário"
             placeholder="Ana Martins"
             {...register('displayName')}
           />
@@ -95,7 +95,7 @@ export function EmployeeManagementCard({
 
         <Button fullWidth loading={loading} type="submit">
           <UserPlus className="size-4" />
-          Cadastrar funcionario
+          Cadastrar funcionário
         </Button>
       </form>
 
@@ -147,7 +147,7 @@ export function EmployeeManagementCard({
         ) : (
           <div className="imperial-card-soft border-dashed px-5 py-8 text-center">
             <p className="text-sm leading-7 text-[var(--text-soft)]">
-              Cadastre IDs de funcionarios para associar vendas e liberar o ranking individual no dashboard.
+              Cadastre IDs de funcionários para associar vendas e liberar o ranking individual no dashboard.
             </p>
           </div>
         )}

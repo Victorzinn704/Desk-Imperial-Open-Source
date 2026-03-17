@@ -68,8 +68,18 @@ export class AuthRateLimitService {
     return `login:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
+  /** Chave só por email — protege contra IP spoofing em rate limit de login. */
+  buildLoginEmailKey(email: string) {
+    return `login:email:${email.trim().toLowerCase()}`
+  }
+
   buildPasswordResetKey(email: string, ipAddress: string | null) {
     return `password-reset:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+  }
+
+  /** Chave só por email — protege contra IP spoofing em rate limit de reset de senha. */
+  buildPasswordResetEmailKey(email: string) {
+    return `password-reset:email:${email.trim().toLowerCase()}`
   }
 
   buildPasswordResetCodeKey(email: string, ipAddress: string | null) {
@@ -138,7 +148,7 @@ export class AuthRateLimitService {
         Math.max(Number(this.configService.get<string>('LOGIN_LOCK_MINUTES') ?? 15), 1) *
         60 *
         1000,
-      message: 'Muitas tentativas de acesso.',
+      message: 'Muitas tentativas de acesso. Tente novamente mais tarde.',
     }
   }
 
@@ -162,7 +172,7 @@ export class AuthRateLimitService {
         ) *
         60 *
         1000,
-      message: 'Muitas solicitacoes de redefinicao.',
+      message: 'Muitas solicitações de redefinição. Tente novamente mais tarde.',
     }
   }
 
@@ -186,7 +196,7 @@ export class AuthRateLimitService {
         ) *
         60 *
         1000,
-      message: 'Muitas tentativas de validar o codigo de redefinicao.',
+      message: 'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
     }
   }
 
@@ -210,7 +220,7 @@ export class AuthRateLimitService {
         ) *
         60 *
         1000,
-      message: 'Muitas solicitacoes de verificacao de email.',
+      message: 'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
     }
   }
 
@@ -234,7 +244,7 @@ export class AuthRateLimitService {
         ) *
         60 *
         1000,
-      message: 'Muitas tentativas de validar o codigo de confirmacao.',
+      message: 'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
     }
   }
 }

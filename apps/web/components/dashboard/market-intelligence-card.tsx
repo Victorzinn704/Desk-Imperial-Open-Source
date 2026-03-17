@@ -8,10 +8,10 @@ import { Button } from '@/components/shared/button'
 import { cn } from '@/lib/utils'
 
 const quickFocuses = [
-  'Visao executiva geral',
-  'Como aumentar a margem nos proximos 30 dias?',
+  'Visão executiva geral',
+  'Como aumentar a margem nos próximos 30 dias?',
   'Quais canais merecem mais investimento comercial?',
-  'Onde esta o maior risco operacional agora?',
+  'Onde está o maior risco operacional agora?',
 ]
 
 export function MarketIntelligenceCard() {
@@ -26,7 +26,7 @@ export function MarketIntelligenceCard() {
   const errorMessage =
     insightQuery.error instanceof ApiError
       ? insightQuery.error.message
-      : 'A leitura executiva da IA ainda nao conseguiu responder a consulta.'
+      : 'A leitura executiva da IA ainda não conseguiu responder à consulta.'
 
   const handleApplyFocus = () => {
     if (!draftFocus.trim()) {
@@ -44,11 +44,11 @@ export function MarketIntelligenceCard() {
             Consultor com IA
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
-            Gemini Flash como copiloto de previsao e gestao comercial.
+            Gemini Flash como copiloto de previsão e gestão comercial.
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-            O motor consulta o panorama financeiro atual, cruza canais, clientes, equipe e regioes,
-            e devolve uma leitura executiva com previsao de curto prazo e proximos passos.
+            O motor consulta o panorama financeiro atual, cruza canais, clientes, equipe e regiões,
+            e devolve uma leitura executiva com previsão de curto prazo e próximos passos.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export function MarketIntelligenceCard() {
         <textarea
           className="min-h-28 rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-4 text-sm leading-7 text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
           maxLength={280}
-          placeholder="Ex.: Avalie se devo concentrar vendas no Centro de Araruama ou expandir para outras regioes."
+          placeholder="Ex.: Avalie se devo concentrar vendas no Centro de Araruama ou expandir para outras regiões."
           value={draftFocus}
           onChange={(event) => setDraftFocus(event.currentTarget.value)}
         />
@@ -134,7 +134,7 @@ export function MarketIntelligenceCard() {
               Processando leitura
             </p>
             <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-              O consultor esta montando a previsao executiva com base na operacao atual.
+              O consultor está montando a previsão executiva com base na operação atual.
             </p>
           </div>
         ) : insightQuery.error ? (
@@ -163,7 +163,7 @@ export function MarketIntelligenceCard() {
 
               <div className="mt-6 rounded-[22px] border border-[rgba(143,183,255,0.2)] bg-[rgba(143,183,255,0.08)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--info)]">
-                  Previsao de curto prazo
+                  Previsão de curto prazo
                 </p>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
                   {insightQuery.data.forecast}
@@ -180,7 +180,7 @@ export function MarketIntelligenceCard() {
               <InsightListCard
                 icon={Sparkles}
                 items={insightQuery.data.nextActions}
-                title="Proximos passos"
+                title="Próximos passos"
               />
             </div>
           </div>

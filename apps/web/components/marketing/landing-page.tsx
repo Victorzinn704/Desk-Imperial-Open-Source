@@ -21,16 +21,16 @@ import { InteractionFlowCard } from '@/components/marketing/interaction-flow-car
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Operacao', value: 'Web e API integradas em um unico ambiente' },
-  { label: 'Sessao segura', value: 'Cookie HttpOnly com controle de consentimento' },
+  { label: 'Operação', value: 'Web e API integradas em um único ambiente' },
+  { label: 'Sessão segura', value: 'Cookie HttpOnly com controle de consentimento' },
   { label: 'Auditoria', value: 'Eventos essenciais registrados no sistema' },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Operacao orientada a negocio',
-    description: 'O ambiente centraliza vendas, produtos, financeiro e leitura operacional em uma unica experiencia.',
+    title: 'Operação orientada a negócio',
+    description: 'O ambiente centraliza vendas, produtos, financeiro e leitura operacional em uma única experiência.',
   },
   {
     icon: Radar,
@@ -47,28 +47,28 @@ const capabilityCards: Array<{
   {
     icon: BadgeDollarSign,
     title: 'Fluxo financeiro',
-    description: 'Receita, custo, lucro e margem aparecem com leitura clara para a operacao diaria.',
+    description: 'Receita, custo, lucro e margem aparecem com leitura clara para a operação diária.',
   },
   {
     icon: Landmark,
-    title: 'Gestao comercial',
-    description: 'Produtos, pedidos, vendedores e estoque trabalham juntos em uma unica camada.',
+    title: 'Gestão comercial',
+    description: 'Produtos, pedidos, vendedores e estoque trabalham juntos em uma única camada.',
   },
   {
     icon: ChartColumn,
-    title: 'Leitura estatistica',
-    description: 'Graficos, ranking e totais ajudam a identificar desempenho, volume e tendencia.',
+    title: 'Leitura estatística',
+    description: 'Gráficos, ranking e totais ajudam a identificar desempenho, volume e tendência.',
   },
   {
     icon: Scale,
     title: 'Conformidade e controle',
-    description: 'Sessao segura, consentimento, cookies e rastreabilidade ficam integrados ao portal.',
+    description: 'Sessão segura, consentimento, cookies e rastreabilidade ficam integrados ao portal.',
   },
 ]
 
 const heroLines = [
   'Portal empresarial moderno',
-  'para operar com seguranca,',
+  'para operar com segurança,',
   'controle e identidade forte.',
 ]
 
@@ -169,7 +169,7 @@ export function LandingPage() {
 
             <nav className="hidden items-center gap-3 md:flex">
               <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#fundacao">
-                Fundacao
+                Fundação
               </Link>
               <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#entregas">
                 Entregas
@@ -250,8 +250,8 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              Um portal pensado para operar vendas, cadastro, autenticacao, conformidade e leitura executiva em um
-              fluxo continuo e seguro.
+              Um portal pensado para operar vendas, cadastro, autenticação, conformidade e leitura executiva em um
+              fluxo contínuo e seguro.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -327,12 +327,12 @@ export function LandingPage() {
         </div>
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundacao</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundação</p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
               Estrutura central para uma rotina comercial organizada.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
-              O ambiente combina autenticacao, controle operacional, produtos, pedidos e governanca em uma mesma
+              O ambiente combina autenticação, controle operacional, produtos, pedidos e governança em uma mesma
               camada de uso.
             </p>
           </div>
@@ -368,7 +368,7 @@ export function LandingPage() {
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
                 <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                  Acesso rapido para cadastro, login e entrada no painel.
+                  Acesso rápido para cadastro, login e entrada no painel.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
                   Os principais fluxos do portal ficam disponiveis logo na abertura da pagina para acelerar a entrada no
@@ -386,30 +386,30 @@ export function LandingPage() {
               <div className="imperial-card-tilt p-5">
                 <div className="flex items-center gap-3">
                   <Waypoints className="size-5 text-[var(--info)]" />
-                  <p className="text-sm font-semibold text-white">Fluxo continuo</p>
+                  <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Da autenticacao ate a venda registrada, o caminho fica organizado em poucas etapas.
+                  Da autenticação ate a venda registrada, o caminho fica organizado em poucas etapas.
                 </p>
               </div>
 
               <div className="imperial-card-tilt-alt p-5">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="size-5 text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-white">Governanca visivel</p>
+                  <p className="text-sm font-semibold text-white">Governança visível</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Sessao, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
+                  Sessão, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
                 </p>
               </div>
 
               <div className="imperial-card-soft p-5">
                 <div className="flex items-center gap-3">
                   <Globe2 className="size-5 text-[#8fffb9]" />
-                  <p className="text-sm font-semibold text-white">Dominio proprio</p>
+                  <p className="text-sm font-semibold text-white">Domínio próprio</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  O ambiente ja responde em dominio proprio, pronto para evoluir como produto de verdade.
+                  O ambiente ja responde em domínio próprio, pronto para evoluir como produto de verdade.
                 </p>
               </div>
             </div>

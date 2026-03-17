@@ -37,7 +37,7 @@ export function OrderCard({
           </span>
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-lg font-semibold text-white">{order.customerName || 'Cliente nao informado'}</h3>
+              <h3 className="text-lg font-semibold text-white">{order.customerName || 'Cliente não informado'}</h3>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
                 order.status === 'COMPLETED'
                   ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
@@ -47,22 +47,22 @@ export function OrderCard({
               </span>
             </div>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
-              {order.channel || 'Canal nao informado'} • {new Date(order.createdAt).toLocaleString('pt-BR')}
+              {order.channel || 'Canal não informado'} • {new Date(order.createdAt).toLocaleString('pt-BR')}
             </p>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
               {formatBuyerType(order.buyerType)} • {maskBuyerDocument(order.buyerDocument)}
             </p>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
               {[order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry].filter(Boolean).join(', ') ||
-                'Local da venda nao informado'}
+                'Local da venda não informado'}
             </p>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
               {order.sellerName
                 ? `Vendedor ${order.sellerName}${order.sellerCode ? ` • ID ${order.sellerCode}` : ''}`
-                : 'Venda sem funcionario vinculado'}
+                : 'Venda sem funcionário vinculado'}
             </p>
             <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-              {order.notes || 'Pedido sem observacoes adicionais.'}
+              {order.notes || 'Pedido sem observações adicionais.'}
             </p>
           </div>
         </div>

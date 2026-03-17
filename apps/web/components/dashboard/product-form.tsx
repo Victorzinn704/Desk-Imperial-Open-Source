@@ -101,7 +101,7 @@ export function ProductForm({
   }, [product, reset])
 
   const packagingPresetOptions = [
-    { label: 'Selecione uma classe padrao', value: '' },
+    { label: 'Selecione uma classe padrão', value: '' },
     ...productPackagingPresets.map((preset) => ({
       label: preset.label,
       value: preset.key,
@@ -155,7 +155,7 @@ export function ProductForm({
             {product ? 'Editar produto' : 'Novo produto'}
           </p>
           <h2 className="mt-3 text-2xl font-semibold text-white">
-            {product ? 'Atualize os dados do portfolio.' : 'Cadastre um item para o dashboard.'}
+            {product ? 'Atualize os dados do portfólio.' : 'Cadastre um item para o dashboard.'}
           </h2>
         </div>
         {product ? (
@@ -185,7 +185,7 @@ export function ProductForm({
           <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
           <SelectField
             error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
-            hint="Escolha um perfil pronto ou use Outro para criar um formato proprio."
+            hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
             label="Classe de cadastro"
             onChange={(event) => handlePresetChange(event.currentTarget.value)}
             options={packagingPresetOptions}
@@ -205,7 +205,7 @@ export function ProductForm({
           <>
             <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
               <p className="font-medium text-white">Classe ativa</p>
-              <p className="mt-2">{packagingClassValue || 'Selecione um dos padroes para preencher automaticamente.'}</p>
+              <p className="mt-2">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
             </div>
             <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
           </>
@@ -223,7 +223,7 @@ export function ProductForm({
           <InputField
             error={errors.measurementValue?.message}
             hint="Ex.: cada lata tem 350 ml, cada garrafa tem 2 L, cada pacote tem 1 kg."
-            label="Conteudo por unidade"
+            label="Conteúdo por unidade"
             placeholder="350"
             step="0.01"
             type="number"
@@ -240,7 +240,7 @@ export function ProductForm({
         </div>
 
         <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-          <p className="font-medium text-white">Leitura rapida do cadastro</p>
+          <p className="font-medium text-white">Leitura rápida do cadastro</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
@@ -263,7 +263,7 @@ export function ProductForm({
           <InputField
             error={errors.measurementUnit?.message}
             label="Outra unidade de medida"
-            placeholder="Ex.: pacote, saco, porcao"
+            placeholder="Ex.: pacote, saco, porção"
             {...register('measurementUnit')}
           />
         ) : (
@@ -272,15 +272,15 @@ export function ProductForm({
 
         <InputField
           error={errors.description?.message}
-          hint="Use uma descricao curta e objetiva."
-          label="Descricao"
-          placeholder="Produto base para operacao e simulacao financeira."
+          hint="Use uma descrição curta e objetiva."
+          label="Descrição"
+          placeholder="Produto base para operação e simulação financeira."
           {...register('description')}
         />
 
         <div className="grid gap-5 sm:grid-cols-3">
-          <InputField error={errors.unitCost?.message} label="Custo unitario" step="0.01" type="number" {...register('unitCost')} />
-          <InputField error={errors.unitPrice?.message} label="Preco unitario" step="0.01" type="number" {...register('unitPrice')} />
+          <InputField error={errors.unitCost?.message} label="Custo unitário" step="0.01" type="number" {...register('unitCost')} />
+          <InputField error={errors.unitPrice?.message} label="Preço unitário" step="0.01" type="number" {...register('unitPrice')} />
           <SelectField error={errors.currency?.message} label="Moeda" options={currencyOptions} {...register('currency')} />
         </div>
 
@@ -297,7 +297,7 @@ export function ProductForm({
             error={errors.stockLooseUnits?.message}
             hint={
               unitsPerPackage > 1
-                ? `Use para unidades soltas. Aqui o maximo natural e ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
+                ? `Use para unidades soltas. Aqui o máximo natural é ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
                 : 'Se esse item entra solto no estoque, deixe caixa/fardo em 0 e registre tudo aqui.'
             }
             label="Unidades avulsas em estoque"
@@ -308,7 +308,7 @@ export function ProductForm({
         </div>
 
         <Button fullWidth loading={loading} size="lg" type="submit">
-          {product ? 'Salvar alteracoes' : 'Cadastrar produto'}
+          {product ? 'Salvar alterações' : 'Cadastrar produto'}
         </Button>
       </form>
     </div>

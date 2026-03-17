@@ -19,11 +19,12 @@ export class RegisterDto {
   @IsEmail()
   email!: string
 
-  @ApiProperty({ example: 'Strong@123' })
+  @ApiProperty({ example: 'Strong@Pass123' })
   @IsString()
-  @MinLength(8)
+  @MinLength(12)
+  @MaxLength(128)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/, {
-    message: 'A senha precisa ter letra maiuscula, minuscula, numero e caractere especial.',
+    message: 'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.',
   })
   password!: string
 

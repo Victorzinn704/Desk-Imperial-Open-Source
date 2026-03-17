@@ -90,8 +90,8 @@ export function OrderForm({
       {
         label:
           activeEmployees.length > 0
-            ? 'Selecione o vendedor responsavel'
-            : 'Cadastre um funcionario para vincular a venda',
+            ? 'Selecione o vendedor responsável'
+            : 'Cadastre um funcionário para vincular a venda',
         value: '',
       },
       ...activeEmployees.map((employee) => ({
@@ -171,7 +171,7 @@ export function OrderForm({
     ) {
       setError('items', {
         type: 'manual',
-        message: 'O valor unitario precisa ser zero ou positivo.',
+        message: 'O valor unitário precisa ser zero ou positivo.',
       })
       return
     }
@@ -187,7 +187,7 @@ export function OrderForm({
     if (requestedForProduct + quantity > product.stock) {
       setError('items', {
         type: 'manual',
-        message: `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock} und.`,
+        message: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock} und.`,
       })
       return
     }
@@ -223,8 +223,8 @@ export function OrderForm({
           Monte a venda como um carrinho de mercado.
         </h2>
         <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-          Organizei a operacao em etapas para deixar o preenchimento mais claro: primeiro o carrinho,
-          depois a configuracao da venda e por fim os dados do comprador.
+          Organizei a operação em etapas para deixar o preenchimento mais claro: primeiro o carrinho,
+          depois a configuração da venda e por fim os dados do comprador.
         </p>
       </div>
 
@@ -234,7 +234,7 @@ export function OrderForm({
           if (activeEmployees.length > 0 && !values.sellerEmployeeId) {
             setError('sellerEmployeeId', {
               type: 'manual',
-              message: 'Selecione o vendedor responsavel por esta venda.',
+              message: 'Selecione o vendedor responsável por esta venda.',
             })
             return
           }
@@ -264,8 +264,8 @@ export function OrderForm({
                   Escolha os produtos e adicione cada linha ao pedido
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
-                  A quantidade sempre sai em unidade. O valor unitario e opcional e so serve quando
-                  voce precisa vender um item com preco diferente do cadastro.
+                  A quantidade sempre sai em unidade. O valor unitário é opcional e só serve quando
+                  você precisa vender um item com preço diferente do cadastro.
                 </p>
               </div>
             </div>
@@ -296,7 +296,7 @@ export function OrderForm({
             />
             <InputField
               hint="Opcional"
-              label="Valor unitario"
+              label="Valor unitário"
               onChange={(event) => setDraftUnitPrice(event.currentTarget.value)}
               placeholder="42.90"
               step="0.01"
@@ -317,7 +317,7 @@ export function OrderForm({
           {selectedDraftProduct ? (
             <div className="imperial-card-soft mt-4 px-4 py-3 text-sm leading-7 text-[var(--text-soft)]">
               <span className="font-medium text-white">{selectedDraftProduct.name}</span>
-              {` • ${selectedDraftProduct.category} • Estoque ${selectedStockLabel} • Preco base ${formatCurrency(selectedDraftProduct.unitPrice, selectedDraftProduct.displayCurrency)}`}
+              {` • ${selectedDraftProduct.category} • Estoque ${selectedStockLabel} • Preço base ${formatCurrency(selectedDraftProduct.unitPrice, selectedDraftProduct.displayCurrency)}`}
             </div>
           ) : null}
 
@@ -337,7 +337,7 @@ export function OrderForm({
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                       <div>
                         <p className="font-medium text-white">
-                          {product?.name ?? 'Produto removido do portfolio'}
+                          {product?.name ?? 'Produto removido do portfólio'}
                         </p>
                         <p className="mt-1 text-sm text-[var(--text-soft)]">
                           {product
@@ -352,8 +352,8 @@ export function OrderForm({
                         </div>
                         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-soft)]">
                           {currentItem?.unitPrice != null
-                            ? `Preco manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
-                            : 'Preco do cadastro'}
+                            ? `Preço manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
+                            : 'Preço do cadastro'}
                         </div>
                         <Button onClick={() => remove(index)} size="sm" type="button" variant="ghost">
                           <Trash2 className="size-4" />
@@ -366,9 +366,9 @@ export function OrderForm({
               })
             ) : (
               <div className="imperial-card-soft border-dashed px-4 py-6 text-center">
-                <p className="text-lg font-semibold text-white">Seu carrinho ainda esta vazio.</p>
+                <p className="text-lg font-semibold text-white">Seu carrinho ainda está vazio.</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-                  Adicione um ou mais produtos para transformar a operacao em pedido multi-item.
+                  Adicione um ou mais produtos para transformar a operação em pedido multi-item.
                 </p>
               </div>
             )}
@@ -379,14 +379,14 @@ export function OrderForm({
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                2. Configure a operacao
+                2. Configure a operação
               </p>
               <h3 className="mt-2 text-xl font-semibold text-white">
                 Defina moeda, vendedor e contexto da venda
               </h3>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
-              Essa etapa alimenta o ranking da equipe, a analise por canal e o comportamento do pedido
+              Essa etapa alimenta o ranking da equipe, a análise por canal e o comportamento do pedido
               dentro do painel.
             </p>
           </div>
@@ -402,10 +402,10 @@ export function OrderForm({
               error={errors.sellerEmployeeId?.message}
               hint={
                 activeEmployees.length > 0
-                  ? 'A venda alimenta ranking, ticket medio e desempenho individual.'
-                  : 'Cadastre pelo menos um funcionario ativo para atribuir vendas.'
+                  ? 'A venda alimenta ranking, ticket médio e desempenho individual.'
+                  : 'Cadastre pelo menos um funcionário ativo para atribuir vendas.'
               }
-              label="Funcionario responsavel"
+              label="Funcionário responsável"
               options={employeeOptions}
               {...register('sellerEmployeeId')}
             />
@@ -420,9 +420,9 @@ export function OrderForm({
             />
             <InputField
               error={errors.notes?.message}
-              hint="Campo opcional para observacoes rapidas do pedido."
-              label="Observacoes"
-              placeholder="Entrega rapida, pedido via app."
+              hint="Campo opcional para observações rápidas do pedido."
+              label="Observações"
+              placeholder="Entrega rápida, pedido via app."
               {...register('notes')}
             />
           </div>
@@ -454,7 +454,7 @@ export function OrderForm({
               error={errors.buyerType?.message}
               label="Tipo de comprador"
               options={[
-                { label: 'Pessoa fisica', value: 'PERSON' },
+                { label: 'Pessoa física', value: 'PERSON' },
                 { label: 'Empresa', value: 'COMPANY' },
               ]}
               {...register('buyerType')}
@@ -480,7 +480,7 @@ export function OrderForm({
             <InputField
               error={errors.buyerCity?.message}
               label="Cidade da venda"
-              placeholder="Sao Paulo"
+              placeholder="São Paulo"
               {...register('buyerCity')}
             />
             <InputField

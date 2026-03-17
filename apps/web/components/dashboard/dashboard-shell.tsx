@@ -86,9 +86,9 @@ type DashboardSectionId =
   | 'compliance'
 
 const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
-  { id: 'overview', label: 'Dashboard', description: 'Visao executiva', icon: LayoutDashboard },
-  { id: 'sales', label: 'Operacao', description: 'Pedidos e vendas', icon: ShoppingCart },
-  { id: 'portfolio', label: 'Portfolio', description: 'Produtos e margem', icon: Boxes },
+  { id: 'overview', label: 'Dashboard', description: 'Visão executiva', icon: LayoutDashboard },
+  { id: 'sales', label: 'Operação', description: 'Pedidos e vendas', icon: ShoppingCart },
+  { id: 'portfolio', label: 'Portfólio', description: 'Produtos e margem', icon: Boxes },
   { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
 ]
 
@@ -102,27 +102,27 @@ const sectionHeroCopy: Record<
 > = {
   overview: {
     badge: 'Ambiente executivo',
-    title: 'Visao consolidada da empresa em um unico ambiente.',
+    title: 'Visão consolidada da empresa em um único ambiente.',
     description:
-      'A camada principal cruza financeiro, indicadores, operacao e seguranca para uma leitura rapida e mais estrategica.',
+      'A camada principal cruza financeiro, indicadores, operação e segurança para uma leitura rápida e mais estratégica.',
   },
   sales: {
     badge: 'Ambiente comercial',
-    title: 'Pedidos e vendas em um modulo exclusivo da operacao.',
+    title: 'Pedidos e vendas em um módulo exclusivo da operação.',
     description:
       'Esse ambiente concentra o registro de vendas, leitura dos pedidos mais recentes e o pulso do resultado realizado.',
   },
   portfolio: {
-    badge: 'Ambiente de portfolio',
-    title: 'Produtos, estoque e margem organizados em um fluxo proprio.',
+    badge: 'Ambiente de portfólio',
+    title: 'Produtos, estoque e margem organizados em um fluxo próprio.',
     description:
-      'Aqui o foco sai da visao geral e entra no cadastro, na rentabilidade e na estrutura que sustenta o caixa.',
+      'Aqui o foco sai da visão geral e entra no cadastro, na rentabilidade e na estrutura que sustenta o caixa.',
   },
   compliance: {
     badge: 'Ambiente de conformidade',
-    title: 'Consentimento, cookies e governanca em um espaco dedicado.',
+    title: 'Consentimento, cookies e governança em um espaço dedicado.',
     description:
-      'Esse modulo deixa a camada de LGPD e seguranca visivel sem misturar com os blocos operacionais do dia a dia.',
+      'Esse módulo deixa a camada de LGPD e segurança visível sem misturar com os blocos operacionais do dia a dia.',
   },
 }
 
@@ -272,7 +272,7 @@ export function DashboardShell() {
   const sessionError =
     sessionQuery.error instanceof ApiError
       ? sessionQuery.error.message
-      : 'Conecte a API e autentique a sessao para ver o painel.'
+      : 'Conecte a API e autentique a sessão para ver o painel.'
 
   if (sessionQuery.isLoading) {
     return <LoadingState />
@@ -351,12 +351,12 @@ export function DashboardShell() {
     {
       label: 'Receita do mes',
       value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
-      helper: 'resultado bruto do periodo',
+      helper: 'resultado bruto do período',
     },
     {
       label: 'Estoque baixo',
       value: String(finance?.totals.lowStockItems ?? 0),
-      helper: 'itens para reposicao rapida',
+      helper: 'itens para reposição rápida',
     },
     {
       label: 'Documentos',
@@ -391,7 +391,7 @@ export function DashboardShell() {
                   {activeHero.badge}
                 </div>
                 <p className="mt-4 text-sm text-[var(--text-soft)]">
-                  Inicio / Painel operacional / {activeNavigation.label}
+                  Início / Painel operacional / {activeNavigation.label}
                 </p>
                 <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
                   {activeHero.title}
@@ -410,7 +410,7 @@ export function DashboardShell() {
                 </Link>
                 <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
                   <LogOut className="size-4" />
-                  Encerrar sessao
+                  Encerrar sessão
                 </SpotlightButton>
               </div>
             </div>
@@ -617,10 +617,10 @@ function OverviewEnvironment({
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="A camada executiva concentra status da conta, sinais de operacao e analytics para leitura rapida do negocio."
-        eyebrow="Visao executiva"
+        description="A camada executiva concentra status da conta, sinais de operação e analytics para leitura rápida do negócio."
+        eyebrow="Visão executiva"
         icon={LayoutDashboard}
-        title="Dashboard central da operacao"
+        title="Dashboard central da operação"
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -633,15 +633,15 @@ function OverviewEnvironment({
             {user.companyName || 'Sua empresa'} sob leitura unificada.
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-8 text-[var(--text-soft)]">
-            A sessao autenticada cruza portfolio, pedidos reais, resultado financeiro e dados de
-            consentimento em um painel unico.
+            A sessão autenticada cruza portfólio, pedidos reais, resultado financeiro e dados de
+            consentimento em um painel único.
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <MiniInfoCard hint={user.email} label="Operador responsavel" value={user.fullName} />
+            <MiniInfoCard hint={user.email} label="Operador responsável" value={user.fullName} />
             <MiniInfoCard
               hint="sincronizado com a base local"
-              label="Ultima leitura"
+              label="Última leitura"
               value={formatDateTime(new Date().toISOString())}
             />
           </div>
@@ -669,14 +669,14 @@ function OverviewEnvironment({
           value={formatAccountStatus(user.status)}
         />
         <MetricCard
-          hint="Produtos ativos com sessao autenticada"
+          hint="Produtos ativos com sessão autenticada"
           icon={Box}
-          label="Portfolio"
+          label="Portfólio"
           loading={financeQueryIsLoading}
           value={String(productsTotals?.activeProducts ?? 0)}
         />
         <MetricCard
-          hint="Pedidos concluidos considerados no financeiro"
+          hint="Pedidos concluídos considerados no financeiro"
           icon={ShoppingCart}
           label="Pedidos"
           loading={financeQueryIsLoading}
@@ -693,7 +693,7 @@ function OverviewEnvironment({
 
       <article className="imperial-card p-7">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-          Sinais da operacao
+          Sinais da operação
         </p>
 
         <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -769,17 +769,17 @@ function SalesEnvironment({
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="Pedidos concluidos alimentam o financeiro realizado. Aqui o operador registra vendas e acompanha o ritmo da operacao."
-        eyebrow="Gestao comercial"
+        description="Pedidos concluídos alimentam o financeiro realizado. Aqui o operador registra vendas e acompanha o ritmo da operação."
+        eyebrow="Gestão comercial"
         icon={ShoppingCart}
-        title="Modulo de vendas e pedidos"
+        title="Módulo de vendas e pedidos"
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          hint="Pedidos concluidos"
+          hint="Pedidos concluídos"
           icon={ShoppingCart}
-          label="Concluidos"
+          label="Concluídos"
           value={String(ordersTotals?.completedOrders ?? 0)}
         />
         <MetricCard
@@ -837,7 +837,7 @@ function SalesEnvironment({
           </span>
           <div>
             <p className="text-sm text-[var(--text-soft)]">Vendas recentes</p>
-            <h2 className="text-xl font-semibold text-white">Pedidos da operacao</h2>
+            <h2 className="text-xl font-semibold text-white">Pedidos da operação</h2>
           </div>
         </div>
 
@@ -928,10 +928,10 @@ function PortfolioEnvironment({
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="O portfolio alimenta estoque, potencial de lucro e o comportamento financeiro do painel."
+        description="O portfólio alimenta estoque, potencial de lucro e o comportamento financeiro do painel."
         eyebrow="Estoque e margem"
         icon={Boxes}
-        title="Modulo de portfolio e produtos"
+        title="Módulo de portfólio e produtos"
       />
 
       <section className="imperial-card p-6">
@@ -944,7 +944,7 @@ function PortfolioEnvironment({
               Busque por nome, inicial, marca ou classe de cadastro
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              A barra abaixo filtra o portfolio em tempo real para voce achar qualquer item sem
+              A barra abaixo filtra o portfólio em tempo real para voce achar qualquer item sem
               descer a tela inteira.
             </p>
             <div className="mt-5">
@@ -958,7 +958,7 @@ function PortfolioEnvironment({
 
           <div className="imperial-card-soft px-5 py-4 text-sm text-[var(--text-soft)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
-              Portfolio filtrado
+              Portfólio filtrado
             </p>
             <p className="mt-3 text-3xl font-semibold text-white">{filteredProducts.length}</p>
             <p className="mt-2 leading-7">
@@ -971,7 +971,7 @@ function PortfolioEnvironment({
 
         <p className="mt-4 text-sm text-[var(--text-soft)]">
           {filteredProducts.length === products.length
-            ? 'Digite apenas o nome, a inicial, a marca ou o tipo da embalagem para localizar um item mais rapido.'
+            ? 'Digite apenas o nome, a inicial, a marca ou o tipo da embalagem para localizar um item mais rápido.'
             : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
         </p>
       </section>
@@ -1030,10 +1030,10 @@ function PortfolioEnvironment({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Portfolio
+              Portfólio
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-white">
-              Produtos cadastrados na operacao
+              Produtos cadastrados na operação
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
               Aqui ficam os itens que alimentam o financeiro potencial e as vendas futuras.
@@ -1043,7 +1043,7 @@ function PortfolioEnvironment({
           <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
             {productsTotals
               ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockUnits} und disponiveis`
-              : 'Carregando portfolio...'}
+              : 'Carregando portfólio...'}
           </div>
         </div>
 
@@ -1072,7 +1072,7 @@ function PortfolioEnvironment({
               <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
                 {products.length
                   ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
-                  : 'Use o formulario acima para criar os primeiros itens do portfolio.'}
+                  : 'Use o formulario acima para criar os primeiros itens do portfólio.'}
               </p>
             </div>
           )}
@@ -1101,10 +1101,10 @@ function ComplianceEnvironment({
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="A camada de conformidade continua presente e visivel, com consentimento e preferencias do usuario."
-        eyebrow="Seguranca e LGPD"
+        description="A camada de conformidade continua presente e visível, com consentimento e preferências do usuário."
+        eyebrow="Segurança e LGPD"
         icon={ShieldCheck}
-        title="Modulo de conformidade e consentimento"
+        title="Módulo de conformidade e consentimento"
       />
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -1143,8 +1143,8 @@ function ComplianceEnvironment({
               <ChartColumnIncreasing className="size-5" />
             </span>
             <div>
-              <p className="text-sm text-[var(--text-soft)]">Preferencias</p>
-              <h2 className="text-xl font-semibold text-white">Gestao de cookies opcionais</h2>
+              <p className="text-sm text-[var(--text-soft)]">Preferências</p>
+              <h2 className="text-xl font-semibold text-white">Gestão de cookies opcionais</h2>
             </div>
           </div>
 
@@ -1153,7 +1153,7 @@ function ComplianceEnvironment({
               checked={cookiePreferences.analytics}
               description="Permite medir uso e desempenho da plataforma."
               disabled={preferenceMutation.isPending || consentQueryIsLoading}
-              label="Cookies analiticos"
+              label="Cookies analíticos"
               onChange={(event) =>
                 preferenceMutation.mutate({
                   analytics: event.currentTarget.checked,
@@ -1164,7 +1164,7 @@ function ComplianceEnvironment({
 
             <CheckboxField
               checked={cookiePreferences.marketing}
-              description="Mantem a base pronta para comunicacao promocional controlada."
+              description="Mantem a base pronta para comunicação promocional controlada."
               disabled={preferenceMutation.isPending || consentQueryIsLoading}
               label="Cookies de marketing"
               onChange={(event) =>
@@ -1190,7 +1190,7 @@ function LoadingState() {
     <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
       <div className="imperial-card mx-auto max-w-7xl p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Dashboard</p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">Carregando sessao autenticada...</h1>
+        <h1 className="mt-4 text-3xl font-semibold text-white">Carregando sessão autenticada...</h1>
       </div>
     </main>
   )
@@ -1212,13 +1212,13 @@ function EvaluationModeBanner({
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Sessao temporaria
+              Sessão temporária
             </p>
             <h2 className="mt-2 text-lg font-semibold text-white">
               Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-              Quando o tempo acabar, o portal encerra a sessao e retorna para a tela de login.
+              Quando o tempo acabar, o portal encerra a sessão e retorna para a tela de login.
             </p>
           </div>
         </div>
@@ -1240,7 +1240,7 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
       <div className="imperial-card mx-auto max-w-4xl p-8 sm:p-10">
         <BrandMark />
         <p className="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso necessario</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessao ainda nao esta ativa.</h1>
+        <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessão ainda não está ativa.</h1>
         <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--text-soft)]">{message}</p>
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
