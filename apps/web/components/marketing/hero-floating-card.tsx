@@ -14,7 +14,7 @@ export function HeroFloatingCard() {
     <>
       <motion.aside
         animate={{ x: [0, -34, -10, -26, 0], y: [0, -10, 0], rotate: [0, -0.65, 0.35, 0] }}
-        className="pointer-events-none absolute top-[2.35rem] z-10 hidden w-[248px] rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl lg:block xl:top-[2rem] xl:w-[264px]"
+        className="imperial-card-soft pointer-events-none absolute top-[2.35rem] z-10 hidden w-[248px] p-4 backdrop-blur-xl lg:block xl:top-[2rem] xl:w-[264px]"
         style={{ right: 'calc((100vw - min(100vw, 80rem)) / -2 - 4.1rem)' }}
         transition={{ duration: 10.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
       >

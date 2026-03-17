@@ -3,19 +3,19 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0b0d10;
-  --surface: #12161b;
-  --surface-muted: #171c22;
-  --surface-soft: #1d232b;
-  --border: #262d36;
-  --border-strong: #313b46;
-  --text-primary: #f3f4f6;
-  --text-soft: #99a3b1;
-  --text-muted: #b6beca;
+  --bg: #040914;
+  --surface: #091321;
+  --surface-muted: #0d1728;
+  --surface-soft: #122034;
+  --border: #19304b;
+  --border-strong: #2a496c;
+  --text-primary: #edf4ff;
+  --text-soft: #8da5c2;
+  --text-muted: #bfd1e7;
   --accent: #d4b16a;
   --accent-strong: #e4c27c;
   --accent-soft: rgba(212, 177, 106, 0.18);
-  --info: #8fb7ff;
+  --info: #77c9ff;
   --success: #7bd68a;
   --danger: #f58484;
   --shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.28);
@@ -36,8 +36,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(212, 177, 106, 0.16), transparent 25%),
-    radial-gradient(circle at bottom right, rgba(111, 144, 255, 0.12), transparent 22%),
+    radial-gradient(circle at top, rgba(16, 69, 127, 0.28), transparent 24%),
+    radial-gradient(circle at top right, rgba(212, 177, 106, 0.09), transparent 20%),
+    radial-gradient(circle at bottom right, rgba(39, 88, 153, 0.18), transparent 24%),
     var(--bg);
   font-family:
     "Manrope",
@@ -207,18 +208,18 @@ select {
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--card-radius, 1.75rem);
-  background-color: hsla(240, 15%, 9%, 0.94);
+  background-color: rgba(6, 12, 22, 0.96);
   background-image:
-    radial-gradient(at 88% 40%, hsla(240, 15%, 9%, 0.98) 0px, transparent 85%),
-    radial-gradient(at 49% 30%, hsla(240, 15%, 9%, 0.98) 0px, transparent 85%),
-    radial-gradient(at 14% 26%, hsla(240, 15%, 9%, 0.98) 0px, transparent 85%),
-    radial-gradient(at 0% 64%, rgba(0, 112, 122, 0.88) 0px, transparent 85%),
-    radial-gradient(at 41% 94%, rgba(0, 161, 173, 0.8) 0px, transparent 85%),
-    radial-gradient(at 100% 99%, rgba(3, 48, 59, 0.92) 0px, transparent 85%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+    radial-gradient(at 88% 40%, rgba(5, 10, 17, 0.98) 0px, transparent 85%),
+    radial-gradient(at 49% 30%, rgba(5, 10, 17, 0.98) 0px, transparent 85%),
+    radial-gradient(at 14% 26%, rgba(5, 10, 17, 0.98) 0px, transparent 85%),
+    radial-gradient(at 0% 64%, rgba(11, 68, 124, 0.74) 0px, transparent 85%),
+    radial-gradient(at 41% 94%, rgba(10, 100, 168, 0.56) 0px, transparent 85%),
+    radial-gradient(at 100% 99%, rgba(4, 28, 53, 0.95) 0px, transparent 85%);
+  border: 1px solid rgba(172, 210, 255, 0.08);
   box-shadow:
-    0 -16px 24px 0 rgba(255, 255, 255, 0.1) inset,
-    0 24px 80px rgba(0, 0, 0, 0.28);
+    0 -16px 24px 0 rgba(227, 239, 255, 0.06) inset,
+    0 24px 80px rgba(0, 0, 0, 0.34);
 }
 
 .imperial-card > *,
@@ -236,8 +237,8 @@ select {
   inset: -1px;
   z-index: 0;
   border-radius: inherit;
-  background-image: linear-gradient(0deg, rgba(255, 255, 255, 0.24) -50%, rgba(255, 255, 255, 0.02) 100%);
-  opacity: 0.75;
+  background-image: linear-gradient(0deg, rgba(196, 222, 255, 0.18) -50%, rgba(255, 255, 255, 0.02) 100%);
+  opacity: 0.62;
 }
 
 .imperial-card::after,
@@ -253,8 +254,8 @@ select {
   background-image: linear-gradient(
     0deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(51, 233, 255, var(--beam-opacity, 0.32)) 40%,
-    rgba(51, 233, 255, var(--beam-opacity, 0.32)) 60%,
+    rgba(74, 191, 255, var(--beam-opacity, 0.24)) 40%,
+    rgba(74, 191, 255, var(--beam-opacity, 0.24)) 60%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: translate(-50%, -50%) rotate(0deg);
@@ -278,6 +279,368 @@ select {
   --beam-opacity: 0.12;
   --beam-duration: 18s;
   --card-radius: 1.5rem;
+}
+
+.imperial-card-tilt,
+.imperial-card-tilt-alt {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 1.6rem;
+  background:
+    linear-gradient(rgba(7, 13, 24, 0.98), rgba(7, 13, 24, 0.98)) padding-box,
+    linear-gradient(145deg, transparent 20%, rgba(34, 148, 215, 0.92), rgba(17, 42, 74, 0.92)) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 22px 62px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.imperial-card-tilt:hover {
+  transform: translateY(-6px) rotate(-4deg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 28px 74px rgba(0, 0, 0, 0.34);
+}
+
+.imperial-card-tilt-alt {
+  background:
+    linear-gradient(rgba(7, 13, 24, 0.98), rgba(7, 13, 24, 0.98)) padding-box,
+    linear-gradient(145deg, transparent 22%, rgba(212, 177, 106, 0.88), rgba(33, 91, 154, 0.92)) border-box;
+}
+
+.imperial-card-tilt-alt:hover {
+  transform: translateY(-6px) rotate(5deg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 28px 74px rgba(0, 0, 0, 0.34);
+}
+
+.imperial-reveal-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 18rem;
+  border-radius: 1.5rem;
+  background: linear-gradient(-45deg, #112443 0%, #0a4f88 100%);
+  box-shadow: 0 22px 62px rgba(0, 0, 0, 0.32);
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.imperial-reveal-card:hover {
+  transform: rotate(-3deg) scale(1.02);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+}
+
+.imperial-reveal-card__shell {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.imperial-reveal-card__content {
+  position: absolute;
+  inset: 0;
+  padding: 1.25rem;
+  background: rgba(6, 13, 24, 0.96);
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(-24deg);
+  top: 50%;
+  left: 50%;
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.imperial-reveal-card:hover .imperial-reveal-card__shell {
+  opacity: 0;
+  transform: scale(0.72) rotate(-28deg);
+}
+
+.imperial-reveal-card:hover .imperial-reveal-card__content {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.imperial-signature-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: #10202f;
+  min-height: 16rem;
+  transition: all 0.5s ease-in-out;
+}
+
+.imperial-signature-card__border {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #bd9f67;
+  opacity: 0;
+  transform: rotate(10deg);
+  transition: all 0.5s ease-in-out;
+}
+
+.imperial-signature-card__content {
+  position: relative;
+  display: grid;
+  place-content: center;
+  min-height: 16rem;
+  text-align: center;
+  transition: all 0.5s ease-in-out;
+}
+
+.imperial-signature-card__crest {
+  position: relative;
+  overflow: hidden;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto;
+}
+
+.imperial-signature-card__crest-main,
+.imperial-signature-card__crest-second {
+  position: absolute;
+  top: 0;
+  display: grid;
+  place-content: center;
+  width: 4rem;
+  height: 4rem;
+  color: #bd9f67;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.imperial-signature-card__crest-main {
+  left: 0;
+}
+
+.imperial-signature-card__crest-second {
+  left: 4rem;
+}
+
+.imperial-signature-card__trail {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.imperial-signature-card__company {
+  margin-top: 1.5rem;
+  color: #bd9f67;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+.imperial-signature-card__summary {
+  margin: 0.75rem auto 0;
+  max-width: 18rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.imperial-signature-card__bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 0.9rem;
+  transform: translateX(-50%);
+  padding: 0 0.45rem 0 0.7rem;
+  background: #10202f;
+  color: #bd9f67;
+  font-size: 0.62rem;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+.imperial-signature-card:hover {
+  border-radius: 1rem;
+  transform: scale(1.03);
+}
+
+.imperial-signature-card:hover .imperial-signature-card__crest {
+  width: 8.2rem;
+}
+
+.imperial-signature-card:hover .imperial-signature-card__border {
+  inset: 1rem;
+  opacity: 1;
+  transform: rotate(0);
+}
+
+.imperial-signature-card:hover .imperial-signature-card__bottom {
+  opacity: 1;
+  letter-spacing: 0.25em;
+}
+
+.imperial-signature-card:hover .imperial-signature-card__trail {
+  animation: imperial-trail 1s ease-in-out;
+}
+
+.imperial-cursor-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  min-height: 16rem;
+  background:
+    linear-gradient(rgba(8, 13, 22, 0.96), rgba(8, 13, 22, 0.96)) padding-box,
+    linear-gradient(145deg, transparent 35%, #0a89a8, #243137) border-box;
+  border: 2px solid transparent;
+}
+
+.imperial-cursor-stage {
+  position: relative;
+  min-height: 14rem;
+  padding: 1.25rem;
+}
+
+.imperial-cursor-target {
+  position: absolute;
+  inset: 1.4rem 1.4rem auto auto;
+  width: 9.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(119, 201, 255, 0.18);
+  background: rgba(14, 25, 40, 0.82);
+  padding: 1rem;
+  color: var(--text-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+}
+
+.imperial-cursor-target--secondary {
+  top: 4.75rem;
+  right: auto;
+  left: 1.4rem;
+  width: 10.5rem;
+}
+
+.imperial-cursor-target--footer {
+  inset: auto 1.4rem 1.3rem auto;
+  width: 10.5rem;
+}
+
+.imperial-cursor-pointer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  animation: imperial-cursor-move 5s ease infinite alternate;
+}
+
+.imperial-cursor-pointer svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #e4f4ff;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+}
+
+.imperial-cursor-highlight {
+  opacity: 0;
+  animation: imperial-cursor-box 5s ease infinite alternate;
+}
+
+.imperial-topbar {
+  position: sticky;
+  top: 1rem;
+  z-index: 30;
+  backdrop-filter: blur(18px);
+}
+
+.imperial-topbar__shell {
+  border-radius: 1.6rem;
+}
+
+@keyframes imperial-cursor-move {
+  0% {
+    opacity: 0;
+    transform: translate3d(240px, -10px, 0) scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: translate3d(58px, 12px, 0) scale(1);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(-128px, -72px, 0) scale(1);
+  }
+  65% {
+    opacity: 1;
+    transform: translate3d(-128px, -72px, 0) scale(0.94);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(-128px, -72px, 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(148px, 86px, 0) scale(1);
+  }
+}
+
+@keyframes imperial-cursor-box {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  65%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes imperial-trail {
+  0% {
+    background: linear-gradient(90deg, rgba(189, 159, 103, 0) 90%, rgb(189, 159, 103) 100%);
+    opacity: 0;
+  }
+
+  30% {
+    background: linear-gradient(90deg, rgba(189, 159, 103, 0) 70%, rgb(189, 159, 103) 100%);
+    opacity: 1;
+  }
+
+  70% {
+    background: linear-gradient(90deg, rgba(189, 159, 103, 0) 70%, rgb(189, 159, 103) 100%);
+    opacity: 1;
+  }
+
+  95% {
+    background: linear-gradient(90deg, rgba(189, 159, 103, 0) 90%, rgb(189, 159, 103) 100%);
+    opacity: 0;
+  }
+}
+
+@media (hover: none) {
+  .imperial-card-tilt:hover,
+  .imperial-card-tilt-alt:hover,
+  .imperial-reveal-card:hover,
+  .imperial-signature-card:hover {
+    transform: none;
+  }
+
+  .imperial-reveal-card__shell {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  .imperial-reveal-card__content {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
 }
 
 @keyframes imperial-card-rotate {
