@@ -4,7 +4,7 @@ import { ShieldCheck } from 'lucide-react'
 
 export function CompanySignatureCard() {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
+    <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_60px_rgba(0,0,0,0.36)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(155,132,96,0.07),transparent_65%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(30,40,55,0.5),transparent_60%)]" />
 

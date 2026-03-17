@@ -147,6 +147,7 @@ export function LandingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <HeroFloatingCard />
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
@@ -286,7 +287,6 @@ export function LandingPage() {
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
-            <HeroFloatingCard />
 
             <div className="imperial-card relative z-10 p-6">
               <div className="flex items-center justify-between">

@@ -42,9 +42,9 @@ export function InteractionFlowCard() {
         </p>
 
         <div className="mt-6 space-y-3">
-          {steps.map((step) => (
+          {steps.map((step, i) => (
             <div
-              className={`flex items-start gap-4 rounded-2xl border p-4 transition-all ${
+              className={`flex items-start gap-4 rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.28)] ${
                 step.active
                   ? `${step.activeBorder} shadow-[0_0_20px_rgba(155,132,96,0.07)]`
                   : 'border-[var(--border)] bg-[var(--surface-muted)]'
