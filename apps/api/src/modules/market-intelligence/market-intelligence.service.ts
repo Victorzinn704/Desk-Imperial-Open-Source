@@ -100,58 +100,66 @@ export class MarketIntelligenceService {
     const rateLimitState = this.recordRequest(rateLimitKey)
     const finance = await this.financeService.getSummaryForUser(auth)
     const model = this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash'
-    const response = await fetch(this.buildModelUrl(model, apiKey), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: buildPrompt({
-                  auth,
-                  finance,
-                  focus: normalizedFocus,
-                }),
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.45,
-          topP: 0.9,
-          maxOutputTokens: this.getMaxOutputTokens(),
-          responseMimeType: 'application/json',
-          thinkingConfig: {
-            thinkingBudget: this.getThinkingBudget(),
-          },
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              summary: { type: 'STRING' },
-              forecast: { type: 'STRING' },
-              opportunities: {
-                type: 'ARRAY',
-                items: { type: 'STRING' },
-              },
-              risks: {
-                type: 'ARRAY',
-                items: { type: 'STRING' },
-              },
-              nextActions: {
-                type: 'ARRAY',
-                items: { type: 'STRING' },
-              },
-            },
-            required: ['summary', 'forecast', 'opportunities', 'risks', 'nextActions'],
-          },
+    let response: Response
+    try {
+      response = await fetch(this.buildModelUrl(model, apiKey), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    })
+        signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: buildPrompt({
+                    auth,
+                    finance,
+                    focus: normalizedFocus,
+                  }),
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.45,
+            topP: 0.9,
+            maxOutputTokens: this.getMaxOutputTokens(),
+            responseMimeType: 'application/json',
+            thinkingConfig: {
+              thinkingBudget: this.getThinkingBudget(),
+            },
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                summary: { type: 'STRING' },
+                forecast: { type: 'STRING' },
+                opportunities: {
+                  type: 'ARRAY',
+                  items: { type: 'STRING' },
+                },
+                risks: {
+                  type: 'ARRAY',
+                  items: { type: 'STRING' },
+                },
+                nextActions: {
+                  type: 'ARRAY',
+                  items: { type: 'STRING' },
+                },
+              },
+              required: ['summary', 'forecast', 'opportunities', 'risks', 'nextActions'],
+            },
+          },
+        }),
+      })
+    } catch (error) {
+      this.logger.warn(`Gemini nao respondeu: ${String(error)}`)
+      throw new ServiceUnavailableException(
+        'Nao foi possivel conectar ao servico de IA neste momento. Tente novamente em instantes.',
+      )
+    }
 
     if (!response.ok) {
       const errorText = await response.text()

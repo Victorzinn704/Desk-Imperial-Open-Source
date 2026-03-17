@@ -94,8 +94,16 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
       measurementValue: Number.parseFloat(row.measurementvalue || '1'),
       unitsPerPackage,
       description: row.description || null,
-      unitCost: Number.parseFloat(row.unitcost),
-      unitPrice: Number.parseFloat(row.unitprice),
+      unitCost: (() => {
+        const v = Number.parseFloat(row.unitcost)
+        if (Number.isNaN(v)) throw new Error(`Linha ${index + 2}: "unitcost" deve ser um numero valido.`)
+        return v
+      })(),
+      unitPrice: (() => {
+        const v = Number.parseFloat(row.unitprice)
+        if (Number.isNaN(v)) throw new Error(`Linha ${index + 2}: "unitprice" deve ser um numero valido.`)
+        return v
+      })(),
       currency: (row.currency || 'BRL').toUpperCase(),
       stockPackages: Number.isNaN(stockPackages) ? 0 : stockPackages,
       stockLooseUnits: Number.isNaN(stockLooseUnits) ? 0 : stockLooseUnits,
