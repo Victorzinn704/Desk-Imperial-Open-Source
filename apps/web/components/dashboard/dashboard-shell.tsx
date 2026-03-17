@@ -59,6 +59,7 @@ import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/li
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 import { CheckboxField } from '@/components/shared/checkbox-field'
+import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { AccountProfileCard } from '@/components/dashboard/account-profile-card'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import {
@@ -407,10 +408,10 @@ export function DashboardShell() {
                     <ArrowUpRight className="size-4" />
                   </Button>
                 </Link>
-                <Button loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()} size="lg" variant="secondary">
+                <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
                   <LogOut className="size-4" />
                   Encerrar sessao
-                </Button>
+                </SpotlightButton>
               </div>
             </div>
           </header>
@@ -671,18 +672,21 @@ function OverviewEnvironment({
           hint="Produtos ativos com sessao autenticada"
           icon={Box}
           label="Portfolio"
+          loading={financeQueryIsLoading}
           value={String(productsTotals?.activeProducts ?? 0)}
         />
         <MetricCard
           hint="Pedidos concluidos considerados no financeiro"
           icon={ShoppingCart}
           label="Pedidos"
+          loading={financeQueryIsLoading}
           value={String(ordersTotals?.completedOrders ?? 0)}
         />
         <MetricCard
           hint="Equipe apta a registrar vendas"
           icon={ShieldCheck}
           label="Equipe ativa"
+          loading={financeQueryIsLoading}
           value={String(employeesTotals?.activeEmployees ?? 0)}
         />
       </div>

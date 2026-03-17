@@ -13,8 +13,8 @@ export function InputField({ label, hint, error, className, ...props }: InputFie
       <span className="text-sm font-medium text-[var(--text-muted)]">{label}</span>
       <input
         className={cn(
-          'h-12 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]',
-          error && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[rgba(245,132,132,0.18)]',
+          'imperial-input h-12 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text-primary)] transition-[border-color] duration-200 placeholder:text-[var(--text-soft)]',
+          error && 'imperial-input--error border-[var(--danger)]',
           className,
         )}
         {...props}

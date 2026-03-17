@@ -468,6 +468,80 @@ select {
   color: #fff;
 }
 
+/* ─── Input focus glow ──────────────────────────────────────────────────────── */
+
+@keyframes input-focus-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(155, 132, 96, 0.14), 0 0 20px rgba(155, 132, 96, 0.10);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(155, 132, 96, 0.24), 0 0 32px rgba(155, 132, 96, 0.16);
+  }
+}
+
+.imperial-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  animation: input-focus-pulse 2.4s ease-in-out infinite;
+}
+
+.imperial-input.imperial-input--error:focus {
+  border-color: var(--danger);
+  animation: none;
+  box-shadow: 0 0 0 3px rgba(212, 115, 115, 0.18), 0 0 20px rgba(212, 115, 115, 0.10);
+}
+
+/* ─── Skeleton shimmer ──────────────────────────────────────────────────────── */
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-soft) 25%,
+    rgba(255, 255, 255, 0.055) 50%,
+    var(--surface-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.7s ease-in-out infinite;
+}
+
+/* ─── Spotlight button ──────────────────────────────────────────────────────── */
+
+.btn-spotlight {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.btn-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    rgba(155, 132, 96, 0.22) 0%,
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.btn-spotlight:hover::before {
+  opacity: 1;
+}
+
+.btn-spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
 @keyframes sales-map-pulse {
   0% {
     transform: scale(0.9);
