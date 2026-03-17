@@ -45,7 +45,7 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#d4b16a', '#8fb7ff', '#7bd68a', '#f58484', '#7df9d8', '#8c7dff']
+const palette = ['#9b8460', '#6b8fb5', '#639371', '#d47373', '#5baa94', '#6b5f9f']
 
 const chartViews: ChartViewOption[] = [
   {

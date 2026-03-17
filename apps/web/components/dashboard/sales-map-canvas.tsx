@@ -132,7 +132,7 @@ function syncMarkers(
     element.className = 'sales-map-marker'
     element.type = 'button'
     element.setAttribute('aria-label', `Abrir detalhes de ${point.label}`)
-    element.style.setProperty('--marker-size', `${Math.min(68, 24 + point.orders * 6)}px`)
+    element.style.setProperty('--marker-size', `${Math.min(80, 32 + Math.log2(Math.max(1, point.orders)) * 5)}px`)
 
     const pulse = document.createElement('span')
     pulse.className = 'sales-map-marker__pulse'

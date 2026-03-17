@@ -33,7 +33,7 @@ export function InteractionFlowCard() {
         </div>
 
         <div className="imperial-cursor-target imperial-cursor-target--footer">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">Operacao</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--success)]">Operacao</p>
           <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
             Pedido multi-item, vendedor vinculado e mapa da venda.
           </p>

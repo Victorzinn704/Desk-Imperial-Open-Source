@@ -21,7 +21,7 @@ export function EmployeeRankingCard({
     <article className="imperial-card p-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--success)]">
             Performance comercial
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
@@ -78,7 +78,7 @@ export function EmployeeRankingCard({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+                      <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(99,147,113,0.2)] bg-[rgba(99,147,113,0.08)] text-[var(--success)]">
                         {index === 0 ? <Trophy className="size-4" /> : <Award className="size-4" />}
                       </span>
                       <div className="min-w-0">
@@ -91,7 +91,7 @@ export function EmployeeRankingCard({
 
                     <div className="mt-4 h-2.5 rounded-full bg-[rgba(255,255,255,0.06)]">
                       <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,#2ff575,#97ffbf)] shadow-[0_0_20px_rgba(47,245,117,0.26)]"
+                        className="h-full rounded-full bg-[var(--success)] shadow-[0_0_8px_rgba(99,147,113,0.12)]"
                         style={{ width: `${Math.min(100, width)}%` }}
                       />
                     </div>

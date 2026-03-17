@@ -13,10 +13,10 @@ export function HeroFloatingCard() {
   return (
     <>
       <motion.aside
-        animate={{ x: [0, -34, -10, -26, 0], y: [0, -10, 0], rotate: [0, -0.65, 0.35, 0] }}
+        animate={{ y: [0, -8, 0] }}
         className="imperial-card-soft pointer-events-none absolute top-[2.35rem] z-10 hidden w-[248px] p-4 backdrop-blur-xl lg:block xl:top-[2rem] xl:w-[264px]"
         style={{ right: 'calc((100vw - min(100vw, 80rem)) / -2 - 4.1rem)' }}
-        transition={{ duration: 10.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+        transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
       >
         <CardContent compact={false} />
       </motion.aside>
@@ -46,23 +46,16 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
       </div>
 
       <div className={`space-y-3 ${compact ? 'mt-4' : 'mt-5'}`}>
-        {signals.map((signal, index) => (
-          <motion.div
-            animate={{ opacity: [0.72, 1, 0.72], x: [0, 3, 0] }}
+        {signals.map((signal) => (
+          <div
             className="imperial-card-stat px-4 py-3"
             key={signal.label}
-            transition={{
-              duration: 4.2,
-              delay: index * 0.45,
-              ease: 'easeInOut',
-              repeat: Number.POSITIVE_INFINITY,
-            }}
           >
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs font-medium text-[var(--text-soft)]">{signal.label}</span>
               <span className={`text-sm font-semibold ${signal.tone}`}>{signal.value}</span>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -73,20 +66,13 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
         </div>
 
         <div className="mt-4 flex items-center gap-2">
-          {['BRL', 'USD', 'EUR'].map((chip, index) => (
-            <motion.span
-              animate={{ y: [0, -2, 0] }}
+          {['BRL', 'USD', 'EUR'].map((chip) => (
+            <span
               className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]"
               key={chip}
-              transition={{
-                duration: 2.8,
-                delay: index * 0.18,
-                ease: 'easeInOut',
-                repeat: Number.POSITIVE_INFINITY,
-              }}
             >
               {chip}
-            </motion.span>
+            </span>
           ))}
         </div>
       </div>
