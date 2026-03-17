@@ -5,7 +5,7 @@ export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
 export const loginSchema = z.object({
   email: z.string().trim().email('Digite um e-mail válido.'),
-  password: z.string().min(12, 'A senha precisa ter pelo menos 12 caracteres.'),
+  password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
 })
 
 export const forgotPasswordSchema = z.object({
@@ -204,7 +204,7 @@ export type OrderFormValues = z.output<typeof orderSchema>
 export function getPasswordStrength(password: string) {
   let score = 0
 
-  if (password.length >= 12) score += 1
+  if (password.length >= 8) score += 1
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
   if (/\d/.test(password)) score += 1
   if (/[^A-Za-z\d]/.test(password)) score += 1
