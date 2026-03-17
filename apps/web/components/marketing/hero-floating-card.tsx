@@ -22,7 +22,7 @@ export function HeroFloatingCard() {
       </motion.aside>
 
       <div className="lg:hidden">
-        <div className="rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,13,18,0.72)] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl">
+        <div className="imperial-card-soft p-3.5 backdrop-blur-xl">
           <CardContent compact />
         </div>
       </div>
@@ -49,7 +49,7 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
         {signals.map((signal, index) => (
           <motion.div
             animate={{ opacity: [0.72, 1, 0.72], x: [0, 3, 0] }}
-            className="rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-3"
+            className="imperial-card-stat px-4 py-3"
             key={signal.label}
             transition={{
               duration: 4.2,
@@ -66,7 +66,7 @@ function CardContent({ compact }: Readonly<{ compact: boolean }>) {
         ))}
       </div>
 
-      <div className={`rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-4 py-4 ${compact ? 'mt-4' : 'mt-5'}`}>
+      <div className={`imperial-card-stat px-4 py-4 ${compact ? 'mt-4' : 'mt-5'}`}>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Moedas</p>
           <ArrowUpRight className="size-4 text-[var(--accent)]" />

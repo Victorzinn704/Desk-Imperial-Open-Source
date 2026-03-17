@@ -12,7 +12,7 @@ export function ProductSearchField({
   onClear: () => void
 }>) {
   return (
-    <div className="relative w-full overflow-hidden rounded-[26px] border border-[rgba(255,255,255,0.12)] bg-[linear-gradient(135deg,rgba(10,13,18,0.96),rgba(18,24,34,0.94))] p-[1px] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+    <div className="imperial-card-soft relative w-full p-[1px]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(52,242,127,0.18),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(143,183,255,0.16),transparent_38%)]" />
       <div className="relative flex items-center gap-3 rounded-[25px] bg-[rgba(7,10,14,0.92)] px-3 py-3">
         <div className="flex size-12 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)]">

@@ -50,7 +50,7 @@ export function ProductImportCard({
   }
 
   return (
-    <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <article className="imperial-card p-7">
       <div className="flex items-center gap-3">
         <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(143,183,255,0.22)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
           <FileSpreadsheet className="size-5" />
@@ -66,7 +66,7 @@ export function ProductImportCard({
         item por item.
       </p>
 
-      <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-soft)]">
+      <div className="imperial-card-soft mt-5 p-4 text-sm text-[var(--text-soft)]">
         <p className="font-medium text-white">Colunas esperadas</p>
         <p className="mt-2">
           `name`, `brand`, `category`, `packagingClass`, `measurementUnit`, `measurementValue`,
@@ -98,7 +98,7 @@ export function ProductImportCard({
         </Button>
       </div>
 
-      <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[rgba(255,255,255,0.02)] px-5 py-8 text-center transition hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
+      <label className="imperial-card-soft mt-5 flex cursor-pointer flex-col items-center justify-center border-dashed px-5 py-8 text-center transition hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
         <Upload className="size-6 text-[var(--accent)]" />
         <span className="mt-3 text-sm font-medium text-white">
           {selectedFile ? selectedFile.name : 'Escolha um arquivo CSV'}
@@ -137,7 +137,7 @@ export function ProductImportCard({
       </Button>
 
       {lastImport ? (
-        <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+        <div className="imperial-card-soft mt-5 p-4">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Ultima importacao
           </p>
@@ -165,7 +165,7 @@ export function ProductImportCard({
 
 function ImportMetric({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+    <div className="imperial-card-stat px-4 py-3">
       <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-white">{value}</p>
     </div>

@@ -187,7 +187,7 @@ export function FinanceChart({
             ]
 
   return (
-    <section className="rounded-[36px] border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-panel)]">
+    <section className="imperial-card p-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
@@ -237,7 +237,7 @@ export function FinanceChart({
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(16,20,26,0.95),rgba(11,13,16,0.98))] p-4 shadow-[var(--shadow-panel)]">
+        <div className="imperial-card-soft p-4">
           <div className="h-[380px]">
             {renderChart({
               activeView,
@@ -253,7 +253,7 @@ export function FinanceChart({
         </div>
 
         <div className="grid content-start gap-4">
-          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+          <div className="imperial-card-soft p-5">
             <div className="flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
                 <BarChart3 className="size-5" />
@@ -277,7 +277,7 @@ export function FinanceChart({
 
           {insightCards.map((insight) => (
             <div
-              className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5"
+              className="imperial-card-stat p-5"
               key={insight.label}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
@@ -344,7 +344,7 @@ function renderChart({
 }: RenderChartProps) {
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)]">
+      <div className="imperial-card-soft flex h-full items-center justify-center border-dashed">
         <p className="text-sm text-[var(--text-soft)]">Carregando indicadores visuais...</p>
       </div>
     )
@@ -507,7 +507,7 @@ function renderChart({
 
 function EmptyChartState({ message }: { message: string }) {
   return (
-    <div className="flex h-full items-center justify-center rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-6 text-center">
+    <div className="imperial-card-soft flex h-full items-center justify-center border-dashed px-6 text-center">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
           Dados insuficientes

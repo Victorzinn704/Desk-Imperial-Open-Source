@@ -38,7 +38,7 @@ export function AuthShell({
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <motion.aside
           animate={{ opacity: 1, x: 0 }}
-          className="relative overflow-hidden rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.98),rgba(11,13,16,0.98))] p-8 shadow-[var(--shadow-panel-strong)]"
+          className="imperial-card relative p-8"
           initial={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
@@ -54,7 +54,7 @@ export function AuthShell({
 
             <div className="mt-12 grid gap-5">
               {highlights.map((item) => (
-                <article className="rounded-[28px] border border-[var(--border)] bg-[rgba(23,28,34,0.82)] p-5" key={item.title}>
+                <article className="imperial-card-soft p-5" key={item.title}>
                   <div className="flex items-start gap-4">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
                       <item.icon className="size-5" />
@@ -68,7 +68,7 @@ export function AuthShell({
               ))}
             </div>
 
-            <div className="mt-8 rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5 lg:mt-auto lg:pt-6">
+            <div className="imperial-card-soft mt-8 p-5 lg:mt-auto lg:pt-6">
               <div className="flex items-center gap-3">
                 <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
                   <LockKeyhole className="size-5" />
@@ -84,11 +84,11 @@ export function AuthShell({
 
         <motion.section
           animate={{ opacity: 1, x: 0 }}
-          className="flex items-center justify-center rounded-[36px] border border-[var(--border)] bg-[rgba(18,22,27,0.82)] p-5 shadow-[var(--shadow-panel)] backdrop-blur lg:p-8"
+          className="imperial-card flex items-center justify-center p-5 lg:p-8"
           initial={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.5, ease: 'easeOut', delay: 0.08 }}
         >
-          <div className="w-full max-w-xl rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-panel)] sm:p-8">
+          <div className="imperial-card-soft w-full max-w-xl p-6 sm:p-8">
             {children}
           </div>
         </motion.section>

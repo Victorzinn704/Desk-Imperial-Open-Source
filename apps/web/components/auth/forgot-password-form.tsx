@@ -92,7 +92,7 @@ export function ForgotPasswordForm() {
         </div>
       ) : null}
 
-      <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+      <div className="imperial-card-soft mt-4 px-4 py-3 text-sm text-[var(--text-soft)]">
         Nao chegou ainda? Verifique spam, promocoes e atualizacoes. O codigo expira rapido para evitar abuso.
       </div>
 

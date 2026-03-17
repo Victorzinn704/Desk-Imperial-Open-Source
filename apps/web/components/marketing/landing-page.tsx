@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ChartColumn, Radar, ScrollText } from 'lucide-react'
+import { BadgeDollarSign, ChartColumn, Landmark, Radar, Scale } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -27,11 +28,31 @@ const pillars = [
   },
 ]
 
-const deliverables = [
-  'Home institucional com navegacao objetiva',
-  'Login e cadastro conectados a uma API segura',
-  'Dashboard com sessao, vendas, produtos e conformidade',
-  'Base pronta para financeiro, mapa comercial e operacao diaria',
+const capabilityCards: Array<{
+  icon: LucideIcon
+  title: string
+  description: string
+}> = [
+  {
+    icon: BadgeDollarSign,
+    title: 'Fluxo financeiro',
+    description: 'Receita, custo, lucro e margem aparecem com leitura clara para a operacao diaria.',
+  },
+  {
+    icon: Landmark,
+    title: 'Gestao comercial',
+    description: 'Produtos, pedidos, vendedores e estoque trabalham juntos em uma unica camada.',
+  },
+  {
+    icon: ChartColumn,
+    title: 'Leitura estatistica',
+    description: 'Graficos, ranking e totais ajudam a identificar desempenho, volume e tendencia.',
+  },
+  {
+    icon: Scale,
+    title: 'Conformidade e controle',
+    description: 'Sessao segura, consentimento, cookies e rastreabilidade ficam integrados ao portal.',
+  },
 ]
 
 const heroLines = [
@@ -184,7 +205,7 @@ export function LandingPage() {
             <div className="mt-12 grid gap-4 sm:grid-cols-3">
               {metrics.map((metric) => (
                 <div
-                  className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-panel)]"
+                  className="imperial-card-stat p-5"
                   key={metric.label}
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{metric.label}</p>
@@ -203,7 +224,7 @@ export function LandingPage() {
             <FounderPortraitCard />
             <HeroFloatingCard />
 
-            <div className="relative z-10 rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.95),rgba(11,13,16,0.95))] p-6 shadow-[var(--shadow-panel-strong)]">
+            <div className="imperial-card relative z-10 p-6">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-soft)]">Status atual</span>
                 <span className="rounded-full border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--success)]">
@@ -213,7 +234,7 @@ export function LandingPage() {
 
               <div className="mt-8 grid gap-4">
                 {pillars.map((pillar) => (
-                  <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5" key={pillar.title}>
+                  <article className="imperial-card-soft p-5" key={pillar.title}>
                     <div>
                       <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>
@@ -240,15 +261,13 @@ export function LandingPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {deliverables.map((item) => (
-              <div
-                className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 text-sm leading-7 text-[var(--text-soft)] shadow-[var(--shadow-panel)]"
-                key={item}
-              >
+            {capabilityCards.map((item) => (
+              <div className="imperial-card-soft p-5 text-sm leading-7 text-[var(--text-soft)]" key={item.title}>
                 <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
-                  <ScrollText className="size-4" />
+                  <item.icon className="size-4" />
                 </div>
-                {item}
+                <p className="font-semibold text-white">{item.title}</p>
+                <p className="mt-3">{item.description}</p>
               </div>
             ))}
           </div>
@@ -256,7 +275,7 @@ export function LandingPage() {
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
-        <div className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.96),rgba(14,17,22,0.96))] p-8 shadow-[var(--shadow-panel-strong)] lg:p-10">
+        <div className="imperial-card p-8 lg:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
@@ -269,7 +288,7 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+            <div className="imperial-card-soft px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
               Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
               experiencia.
             </div>

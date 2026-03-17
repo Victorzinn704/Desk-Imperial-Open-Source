@@ -44,7 +44,7 @@ export function AccountProfileCard({
   }, [reset, user.companyName, user.fullName, user.preferredCurrency])
 
   return (
-    <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <article className="imperial-card p-7">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
         Perfil da empresa
       </p>

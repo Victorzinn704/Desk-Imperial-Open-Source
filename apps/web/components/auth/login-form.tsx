@@ -64,7 +64,7 @@ export function LoginForm() {
         </p>
       </div>
 
-      <div className="group mt-8 rounded-[28px] border border-[rgba(255,255,255,0.06)] bg-[rgba(9,12,16,0.88)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_30px_70px_rgba(0,0,0,0.34)] transition duration-300 hover:scale-[1.01] hover:border-[rgba(212,177,106,0.2)]">
+      <div className="imperial-card-soft group mt-8 p-5 transition duration-300 hover:scale-[1.01]">
         <form className="space-y-5" onSubmit={onSubmit}>
           <label className="block space-y-2">
             <span className="text-sm font-medium text-[var(--text-muted)]">Email</span>

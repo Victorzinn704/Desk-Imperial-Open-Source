@@ -45,7 +45,7 @@ export function ProductCard({
       : 'Produto operado apenas por unidade'
 
   return (
-    <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <article className="imperial-card-soft p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -91,22 +91,22 @@ export function ProductCard({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Custo</p>
           <p className="mt-2 text-lg font-semibold text-white">{costValue.primary}</p>
           {costValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{costValue.secondary}</p> : null}
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Preco</p>
           <p className="mt-2 text-lg font-semibold text-white">{priceValue.primary}</p>
           {priceValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{priceValue.secondary}</p> : null}
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque</p>
           <p className="mt-2 text-lg font-semibold text-white">{stockBreakdown}</p>
           <p className="mt-1 text-xs text-[var(--text-soft)]">{product.stock} und totais • {packageHelper}</p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro potencial</p>
           <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
           {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}

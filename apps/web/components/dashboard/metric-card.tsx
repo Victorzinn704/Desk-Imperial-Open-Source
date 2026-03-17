@@ -12,7 +12,7 @@ export function MetricCard({
   hint: string
 }>) {
   return (
-    <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-panel)]">
+    <article className="imperial-card-stat p-5">
       <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
         <Icon className="size-5" />
       </span>

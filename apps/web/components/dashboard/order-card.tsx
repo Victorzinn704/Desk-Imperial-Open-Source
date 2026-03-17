@@ -29,7 +29,7 @@ export function OrderCard({
   })
 
   return (
-    <article className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <article className="imperial-card-soft p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
@@ -76,17 +76,17 @@ export function OrderCard({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Receita</p>
           <p className="mt-2 text-lg font-semibold text-white">{revenueValue.primary}</p>
           {revenueValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{revenueValue.secondary}</p> : null}
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro</p>
           <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
           {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Unidades</p>
           <p className="mt-2 text-lg font-semibold text-white">{order.totalItems}</p>
           <p className="mt-1 text-xs text-[var(--text-soft)]">{order.items.length} linha(s) no pedido</p>
@@ -103,7 +103,7 @@ export function OrderCard({
           })
 
           return (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3" key={item.id}>
+            <div className="imperial-card-stat px-4 py-3" key={item.id}>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium text-[var(--text-primary)]">{item.productName}</p>

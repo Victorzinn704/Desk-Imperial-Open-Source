@@ -11,7 +11,7 @@ const SalesMapCanvas = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-6 text-center">
+      <div className="imperial-card-soft flex h-full items-center justify-center border-dashed px-6 text-center">
         <p className="text-sm text-[var(--text-soft)]">Carregando mapa de vendas...</p>
       </div>
     ),
@@ -33,7 +33,7 @@ export function SalesMapCard({
 
   return (
     <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
-      <article className="rounded-[36px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+      <article className="imperial-card p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
@@ -47,7 +47,7 @@ export function SalesMapCard({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+          <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
             {points.length
               ? `${points.length} ponto(s) geocodificado(s)`
               : 'Adicione cidade e pais nos pedidos para preencher o mapa'}
@@ -80,7 +80,7 @@ export function SalesMapCard({
         </div>
       </article>
 
-      <article className="rounded-[36px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+      <article className="imperial-card p-7">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <MapPinned className="size-5" />
@@ -113,7 +113,7 @@ export function SalesMapCard({
           {topRegions.length ? (
             topRegions.map((region) => (
               <div
-                className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4"
+                className="imperial-card-soft p-4"
                 key={region.label}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -135,7 +135,7 @@ export function SalesMapCard({
               </div>
             ))
           ) : (
-            <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-8 text-center">
+            <div className="imperial-card-soft border-dashed px-5 py-8 text-center">
               <p className="text-sm leading-7 text-[var(--text-soft)]">
                 As regioes aparecem aqui conforme os pedidos forem sendo registrados com local da venda.
               </p>
@@ -159,7 +159,7 @@ function MapMetric({
   value: string
 }>) {
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+    <div className="imperial-card-stat p-4">
       <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
         <Icon className="size-4" />
       </span>

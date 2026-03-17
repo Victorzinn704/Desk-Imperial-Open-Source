@@ -166,7 +166,7 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+        <div className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
           Dica: o codigo chega por email transacional. Se nao aparecer na caixa principal, procure por mensagens do DESK IMPERIAL no spam ou na aba de promocoes.
         </div>
 

@@ -214,7 +214,7 @@ export function OrderForm({
   }
 
   return (
-    <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <div className="imperial-card p-7">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
           Pedido multi-item
@@ -250,7 +250,7 @@ export function OrderForm({
           setDraftUnitPrice('')
         })}
       >
-        <section className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(12,15,20,0.94),rgba(17,22,31,0.9))] p-5">
+        <section className="imperial-card-soft p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex items-start gap-4">
               <span className="mt-1 flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]">
@@ -315,7 +315,7 @@ export function OrderForm({
           </div>
 
           {selectedDraftProduct ? (
-            <div className="mt-4 rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm leading-7 text-[var(--text-soft)]">
+            <div className="imperial-card-soft mt-4 px-4 py-3 text-sm leading-7 text-[var(--text-soft)]">
               <span className="font-medium text-white">{selectedDraftProduct.name}</span>
               {` • ${selectedDraftProduct.category} • Estoque ${selectedStockLabel} • Preco base ${formatCurrency(selectedDraftProduct.unitPrice, selectedDraftProduct.displayCurrency)}`}
             </div>
@@ -331,7 +331,7 @@ export function OrderForm({
 
                 return (
                   <div
-                    className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-4"
+                    className="imperial-card-soft px-4 py-4"
                     key={field.id}
                   >
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -365,7 +365,7 @@ export function OrderForm({
                 )
               })
             ) : (
-              <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[rgba(255,255,255,0.03)] px-4 py-6 text-center">
+              <div className="imperial-card-soft border-dashed px-4 py-6 text-center">
                 <p className="text-lg font-semibold text-white">Seu carrinho ainda esta vazio.</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
                   Adicione um ou mais produtos para transformar a operacao em pedido multi-item.
@@ -375,7 +375,7 @@ export function OrderForm({
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-5">
+        <section className="imperial-card-soft p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
@@ -428,7 +428,7 @@ export function OrderForm({
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-5">
+        <section className="imperial-card-soft p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
@@ -508,7 +508,7 @@ export function OrderForm({
 
 function MiniInfo({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
+    <div className="imperial-card-stat px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-2 text-xl font-semibold text-white">{value}</p>
     </div>

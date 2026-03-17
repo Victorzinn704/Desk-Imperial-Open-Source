@@ -46,7 +46,7 @@ export function EmployeeManagementCard({
   })
 
   return (
-    <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <article className="imperial-card p-7">
       <div className="flex items-center gap-3">
         <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
           <ShieldUser className="size-5" />
@@ -105,7 +105,7 @@ export function EmployeeManagementCard({
         {employees.length ? (
           employees.map((employee) => (
             <div
-              className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4"
+              className="imperial-card-soft p-4"
               key={employee.id}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -145,7 +145,7 @@ export function EmployeeManagementCard({
             </div>
           ))
         ) : (
-          <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-8 text-center">
+          <div className="imperial-card-soft border-dashed px-5 py-8 text-center">
             <p className="text-sm leading-7 text-[var(--text-soft)]">
               Cadastre IDs de funcionarios para associar vendas e liberar o ranking individual no dashboard.
             </p>
@@ -166,7 +166,7 @@ function MiniEmployeeMetric({
   value: string
 }>) {
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+    <div className="imperial-card-stat p-4">
       <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
         <Icon className="size-4" />
       </span>

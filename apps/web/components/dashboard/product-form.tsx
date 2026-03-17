@@ -148,7 +148,7 @@ export function ProductForm({
   }
 
   return (
-    <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <div className="imperial-card p-7">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
@@ -203,7 +203,7 @@ export function ProductForm({
           />
         ) : (
           <>
-            <div className="rounded-[24px] border border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.05)] px-4 py-4 text-sm text-[var(--text-soft)]">
+            <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
               <p className="font-medium text-white">Classe ativa</p>
               <p className="mt-2">{packagingClassValue || 'Selecione um dos padroes para preencher automaticamente.'}</p>
             </div>
@@ -239,20 +239,20 @@ export function ProductForm({
           />
         </div>
 
-        <div className="rounded-[24px] border border-[rgba(143,183,255,0.18)] bg-[rgba(143,183,255,0.07)] px-4 py-4 text-sm text-[var(--text-soft)]">
+        <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
           <p className="font-medium text-white">Leitura rapida do cadastro</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(7,10,14,0.45)] px-4 py-3">
+            <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
               <p className="mt-2 text-base font-semibold text-white">
                 {formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
               </p>
             </div>
-            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(7,10,14,0.45)] px-4 py-3">
+            <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada caixa/fardo</p>
               <p className="mt-2 text-base font-semibold text-white">{unitsPerPackage} und</p>
             </div>
-            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(7,10,14,0.45)] px-4 py-3">
+            <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
               <p className="mt-2 text-base font-semibold text-white">{calculatedStockTotal} und</p>
             </div>

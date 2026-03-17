@@ -37,7 +37,7 @@ export function MarketIntelligenceCard() {
   }
 
   return (
-    <section className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(20,26,34,0.96),rgba(11,14,18,0.98))] p-8 shadow-[var(--shadow-panel)]">
+    <section className="imperial-card p-8">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
@@ -103,7 +103,7 @@ export function MarketIntelligenceCard() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-6">
+      <div className="imperial-card-soft mt-6 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(143,183,255,0.2)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
@@ -129,7 +129,7 @@ export function MarketIntelligenceCard() {
         </div>
 
         {insightQuery.isLoading ? (
-          <div className="mt-6 rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-12 text-center">
+          <div className="imperial-card-soft mt-6 border-dashed px-5 py-12 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
               Processando leitura
             </p>
@@ -146,7 +146,7 @@ export function MarketIntelligenceCard() {
           </div>
         ) : insightQuery.data ? (
           <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-            <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+            <article className="imperial-card-soft p-5">
               <div className="flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
                   <Bot className="size-4" />
@@ -210,7 +210,7 @@ function InsightListCard({
   title: string
 }>) {
   return (
-    <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <article className="imperial-card-soft p-5">
       <div className="flex items-center gap-3">
         <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)]">
           <Icon className="size-4" />
@@ -223,7 +223,7 @@ function InsightListCard({
 
       <div className="mt-4 space-y-3">
         {items.map((item) => (
-          <div className="rounded-[18px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3" key={item}>
+          <div className="imperial-card-stat px-4 py-3" key={item}>
             <p className="text-sm leading-7 text-[var(--text-soft)]">{item}</p>
           </div>
         ))}

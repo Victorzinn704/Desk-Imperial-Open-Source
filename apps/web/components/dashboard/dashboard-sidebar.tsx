@@ -37,10 +37,10 @@ export function DashboardSidebar<TSection extends string>({
 }>) {
   return (
     <aside className="xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)]">
-      <div className="flex max-h-[calc(100vh-3rem)] min-h-0 flex-col overflow-hidden rounded-[34px] border border-[rgba(52,242,127,0.12)] bg-[linear-gradient(180deg,rgba(11,14,18,0.98),rgba(9,11,15,0.98))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)]">
+      <div className="imperial-card flex max-h-[calc(100vh-3rem)] min-h-0 flex-col p-5">
         <BrandMark />
 
-        <div className="mt-6 rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+        <div className="imperial-card-soft mt-6 p-4">
           <div className="flex items-start gap-3">
             <span className="flex size-12 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,rgba(47,255,122,0.24),rgba(18,122,64,0.2))] text-[#36f57c] shadow-[0_0_30px_rgba(52,242,127,0.22)]">
               <Building2 className="size-5" />
@@ -104,7 +104,7 @@ export function DashboardSidebar<TSection extends string>({
         </nav>
 
         <div className="mt-4 space-y-4 border-t border-[rgba(255,255,255,0.06)] pt-4">
-          <div className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="imperial-card-soft p-4">
             <div className="flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-white">
                 <UserRound className="size-5" />

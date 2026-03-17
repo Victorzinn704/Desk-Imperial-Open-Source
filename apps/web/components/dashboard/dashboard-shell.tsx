@@ -382,7 +382,7 @@ export function DashboardShell() {
         />
 
         <div className="mt-6 space-y-6 xl:mt-0">
-          <header className="rounded-[34px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(18,22,27,0.94),rgba(11,14,18,0.98))] p-6 shadow-[var(--shadow-panel-strong)] md:p-8">
+          <header className="imperial-card p-6 md:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
@@ -623,7 +623,7 @@ function OverviewEnvironment({
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(14,18,23,0.96),rgba(9,11,15,0.98))] p-7 shadow-[var(--shadow-panel)]">
+        <article className="imperial-card p-7">
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
             <span className="size-2 rounded-full bg-[#36f57c]" />
             Centro de comando
@@ -687,7 +687,7 @@ function OverviewEnvironment({
         />
       </div>
 
-      <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+      <article className="imperial-card p-7">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
           Sinais da operacao
         </p>
@@ -826,7 +826,7 @@ function SalesEnvironment({
         </div>
       </div>
 
-      <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+      <article className="imperial-card p-7">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <ShoppingCart className="size-5" />
@@ -853,7 +853,7 @@ function SalesEnvironment({
               />
             ))
           ) : (
-            <p className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+            <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
               Nenhuma venda registrada ainda. Use o formulario acima para criar o primeiro pedido.
             </p>
           )}
@@ -930,7 +930,7 @@ function PortfolioEnvironment({
         title="Modulo de portfolio e produtos"
       />
 
-      <section className="rounded-[34px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(12,15,20,0.96),rgba(16,20,28,0.94))] p-6 shadow-[var(--shadow-panel)]">
+      <section className="imperial-card p-6">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
@@ -952,7 +952,7 @@ function PortfolioEnvironment({
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,10,14,0.7)] px-5 py-4 text-sm text-[var(--text-soft)]">
+          <div className="imperial-card-soft px-5 py-4 text-sm text-[var(--text-soft)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
               Portfolio filtrado
             </p>
@@ -992,7 +992,7 @@ function PortfolioEnvironment({
           />
         </div>
 
-        <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+        <article className="imperial-card p-7">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
               <Tags className="size-5" />
@@ -1014,7 +1014,7 @@ function PortfolioEnvironment({
                 />
               ))
             ) : (
-              <p className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
                 Cadastre produtos para destravar a leitura por categoria.
               </p>
             )}
@@ -1022,7 +1022,7 @@ function PortfolioEnvironment({
         </article>
       </div>
 
-      <section className="rounded-[36px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-8 shadow-[var(--shadow-panel)]">
+      <section className="imperial-card p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
@@ -1036,7 +1036,7 @@ function PortfolioEnvironment({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+          <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
             {productsTotals
               ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockUnits} und disponiveis`
               : 'Carregando portfolio...'}
@@ -1061,7 +1061,7 @@ function PortfolioEnvironment({
               />
             ))
           ) : (
-            <div className="rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-12 text-center">
+            <div className="imperial-card-soft border-dashed px-5 py-12 text-center">
               <p className="text-lg font-semibold text-white">
                 {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
               </p>
@@ -1104,7 +1104,7 @@ function ComplianceEnvironment({
       />
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+        <article className="imperial-card p-7">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
               <FileCheck2 className="size-5" />
@@ -1126,14 +1126,14 @@ function ComplianceEnvironment({
                 />
               ))
             ) : (
-              <p className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
                 Os documentos legais aparecerao aqui assim que houver consentimento registrado.
               </p>
             )}
           </div>
         </article>
 
-        <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+        <article className="imperial-card p-7">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
               <ChartColumnIncreasing className="size-5" />
@@ -1184,7 +1184,7 @@ function ComplianceEnvironment({
 function LoadingState() {
   return (
     <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
-      <div className="mx-auto max-w-7xl rounded-[36px] border border-[var(--border)] bg-[var(--surface)] p-10 shadow-[var(--shadow-panel)]">
+      <div className="imperial-card mx-auto max-w-7xl p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Dashboard</p>
         <h1 className="mt-4 text-3xl font-semibold text-white">Carregando sessao autenticada...</h1>
       </div>
@@ -1200,7 +1200,7 @@ function EvaluationModeBanner({
   remainingSeconds: number
 }>) {
   return (
-    <section className="rounded-[28px] border border-[rgba(212,177,106,0.24)] bg-[linear-gradient(135deg,rgba(212,177,106,0.12),rgba(212,177,106,0.04))] px-5 py-4 shadow-[var(--shadow-panel)]">
+    <section className="imperial-card-soft px-5 py-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.14)] text-[var(--accent)]">
@@ -1219,7 +1219,7 @@ function EvaluationModeBanner({
           </div>
         </div>
 
-        <div className="rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(11,14,18,0.68)] px-4 py-3 text-right">
+        <div className="imperial-card-stat px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
             Tempo restante
           </p>
@@ -1233,7 +1233,7 @@ function EvaluationModeBanner({
 function UnauthorizedState({ message }: Readonly<{ message: string }>) {
   return (
     <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
-      <div className="mx-auto max-w-4xl rounded-[36px] border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-panel-strong)] sm:p-10">
+      <div className="imperial-card mx-auto max-w-4xl p-8 sm:p-10">
         <BrandMark />
         <p className="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso necessario</p>
         <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessao ainda nao esta ativa.</h1>
@@ -1254,7 +1254,7 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
 
 function MiniInfoCard({ hint, label, value }: Readonly<{ hint: string; label: string; value: string }>) {
   return (
-    <div className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+    <div className="imperial-card-soft p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-3 text-xl font-semibold text-white">{value}</p>
       <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{hint}</p>
@@ -1264,7 +1264,7 @@ function MiniInfoCard({ hint, label, value }: Readonly<{ hint: string; label: st
 
 function MiniCategoryCard({ category, profit, subtitle }: Readonly<{ category: string; profit: string; subtitle: string }>) {
   return (
-    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+    <div className="imperial-card-soft p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-medium text-[var(--text-primary)]">{category}</p>

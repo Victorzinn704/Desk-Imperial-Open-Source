@@ -18,7 +18,7 @@ export function EmployeeRankingCard({
   const bestRevenue = topEmployees[0]?.revenue ?? 0
 
   return (
-    <article className="rounded-[36px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
+    <article className="imperial-card p-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
@@ -58,7 +58,7 @@ export function EmployeeRankingCard({
       </div>
 
       {isLoading ? (
-        <div className="mt-6 rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-14 text-center">
+        <div className="imperial-card-soft mt-6 border-dashed px-5 py-14 text-center">
           <p className="text-sm text-[var(--text-soft)]">Carregando ranking da equipe...</p>
         </div>
       ) : error ? (
@@ -72,7 +72,7 @@ export function EmployeeRankingCard({
 
             return (
               <div
-                className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-soft)] p-4"
+              className="imperial-card-soft p-4"
                 key={employee.employeeId ?? employee.employeeCode ?? `${employee.employeeName}-${index}`}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -121,7 +121,7 @@ export function EmployeeRankingCard({
           })}
         </div>
       ) : (
-        <div className="mt-6 rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-5 py-14 text-center">
+        <div className="imperial-card-soft mt-6 border-dashed px-5 py-14 text-center">
           <p className="text-sm leading-7 text-[var(--text-soft)]">
             Vincule vendas a funcionarios para liberar o ranking executivo de rendimento.
           </p>
@@ -141,7 +141,7 @@ function TopMetric({
   value: string
 }>) {
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+    <div className="imperial-card-stat p-4">
       <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
         <Icon className="size-4" />
       </span>
@@ -153,7 +153,7 @@ function TopMetric({
 
 function EmployeeStat({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="rounded-[20px] border border-[var(--border)] bg-[rgba(11,14,18,0.62)] px-4 py-3">
+    <div className="imperial-card-stat px-4 py-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
         {label}
       </p>

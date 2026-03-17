@@ -109,7 +109,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
           {...register('confirmPassword')}
         />
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+        <div className="imperial-card-soft p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-[var(--text-soft)]">Forca da senha</span>
             <span className="font-semibold text-[var(--text-primary)]">{passwordStrength.label}</span>
@@ -136,7 +136,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
           </div>
         )}
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-soft)]">
+        <div className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
           Se o codigo venceu ou nao chegou, volte para recuperar a senha e solicite um novo envio.
         </div>
 

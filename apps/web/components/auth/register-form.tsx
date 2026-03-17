@@ -135,7 +135,7 @@ export function RegisterForm() {
             {...registerField('password')}
           />
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+          <div className="imperial-card-soft p-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-[var(--text-soft)]">Forca da senha</span>
               <span className="font-semibold text-[var(--text-primary)]">{passwordStrength.label}</span>
@@ -153,7 +153,7 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+        <div className="imperial-card-soft space-y-4 p-5">
           <div>
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">Consentimento legal</h3>
             <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
