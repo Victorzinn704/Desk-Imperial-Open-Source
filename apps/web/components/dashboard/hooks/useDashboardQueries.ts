@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import type { AuthUser } from '@contracts/contracts'
 import {
   fetchConsentOverview,
   fetchCurrentUser,

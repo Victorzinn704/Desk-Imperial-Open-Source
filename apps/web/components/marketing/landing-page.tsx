@@ -399,10 +399,9 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-          </div>
-
-          <InteractionFlowCard />
         </div>
+
+        <InteractionFlowCard />
       </section>
 
       <footer className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]" id="rodape">

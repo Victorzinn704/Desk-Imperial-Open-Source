@@ -416,7 +416,7 @@ export function DashboardShell() {
                 </Link>
                 <Button
                   size="lg"
-                  variant={isTimelineOpen ? 'default' : 'ghost'}
+                  variant={isTimelineOpen ? 'primary' : 'ghost'}
                   onClick={() => setIsTimelineOpen(!isTimelineOpen)}
                 >
                   <Clock className="size-4" />

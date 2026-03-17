@@ -6,7 +6,7 @@ import {
   EMAIL_CODE_MESSAGE,
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
-} from '@contracts/validation-patterns'
+} from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
@@ -44,7 +44,7 @@ export const registerSchema = z.object({
     .string()
     .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
     .max(128, 'A senha está longa demais.')
-    .regex(strongPasswordRegex, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+    .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
   acceptTerms: z.boolean().refine((value) => value, {
     message: 'Você precisa aceitar os termos de uso.',
   }),
@@ -64,7 +64,7 @@ export const resetPasswordSchema = z
       .string()
       .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
       .max(128, 'A senha está longa demais.')
-      .regex(strongPasswordRegex, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+      .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
     confirmPassword: z.string().min(12, 'Confirme a nova senha.'),
   })
   .superRefine((values, context) => {
