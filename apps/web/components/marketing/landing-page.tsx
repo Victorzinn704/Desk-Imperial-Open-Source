@@ -311,7 +311,16 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.82)]" id="fundacao">
+      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.88)]" id="fundacao">
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover opacity-[0.045]"
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1920&q=60&auto=format&fit=crop"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,14,0.6),rgba(8,11,14,0.2)_40%,rgba(8,11,14,0.7))]" />
+        </div>
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundacao</p>
@@ -325,48 +334,31 @@ export function LandingPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {capabilityCards.map((item, index) => {
-              if (index === 2) {
-                return (
-                  <div className="imperial-reveal-card" key={item.title}>
-                    <div className="imperial-reveal-card__shell">
-                      <div className="text-center">
-                        <div className="mx-auto flex size-16 items-center justify-center rounded-3xl border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.1)] text-white">
-                          <item.icon className="size-7" />
-                        </div>
-                        <p className="mt-5 text-lg font-semibold text-white">{item.title}</p>
-                      </div>
-                    </div>
-                    <div className="imperial-reveal-card__content">
-                      <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
-                        <item.icon className="size-4" />
-                      </div>
-                      <p className="font-semibold text-white">{item.title}</p>
-                      <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{item.description}</p>
-                    </div>
-                  </div>
-                )
-              }
-
-              return (
-                <div
-                  className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
-                  key={item.title}
-                >
-                  <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
-                    <item.icon className="size-4" />
-                  </div>
-                  <p className="font-semibold text-white">{item.title}</p>
-                  <p className="mt-3">{item.description}</p>
+            {capabilityCards.map((item, index) => (
+              <div
+                className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
+                key={item.title}
+              >
+                <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
+                  <item.icon className="size-4" />
                 </div>
-              )
-            })}
+                <p className="font-semibold text-white">{item.title}</p>
+                <p className="mt-3">{item.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="relative overflow-hidden rounded-[1.75rem]">
+            <img
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.04]"
+              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=60&auto=format&fit=crop"
+            />
           <div className="imperial-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
@@ -417,6 +409,7 @@ export function LandingPage() {
                 </p>
               </div>
             </div>
+          </div>
           </div>
 
           <InteractionFlowCard />

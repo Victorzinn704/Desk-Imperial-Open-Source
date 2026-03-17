@@ -7,7 +7,7 @@ export function FounderPortraitCard() {
   const [hasImage, setHasImage] = useState(true)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[-6rem] z-0 flex justify-center overflow-hidden lg:top-[-9rem]">
+    <div className="pointer-events-none absolute inset-x-0 top-[-6rem] z-0 flex justify-end overflow-hidden lg:top-[-9rem]">
       <div className="relative w-full max-w-[560px] aspect-square lg:max-w-[620px]">
         <div className="absolute inset-x-6 top-20 h-56 rounded-full bg-[radial-gradient(circle,rgba(212,177,106,0.22),transparent_68%)] blur-3xl" />
         <div className="absolute inset-x-0 top-0 mx-auto h-[500px] w-full max-w-[520px] overflow-hidden lg:h-[600px] lg:max-w-[580px]">
