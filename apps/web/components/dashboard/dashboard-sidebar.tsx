@@ -53,7 +53,7 @@ export function DashboardSidebar<TSection extends string>({
                 {companyName || 'Painel corporativo'}
               </p>
               <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-                Ambiente seguro com vendas, portfolio e monitoramento da conta.
+                Ambiente principal para vendas, produtos, conformidade e conta.
               </p>
             </div>
           </div>

@@ -74,8 +74,8 @@ export function AuthShell({
                   <LockKeyhole className="size-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Direcao do projeto</p>
-                  <p className="text-sm text-[var(--text-soft)]">Produto premium, seguro e pronto para evoluir com boas praticas.</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Acesso protegido</p>
+                  <p className="text-sm text-[var(--text-soft)]">Area autenticada com foco em seguranca, controle e continuidade de sessao.</p>
                 </div>
               </div>
             </div>

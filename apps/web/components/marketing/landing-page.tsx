@@ -9,29 +9,29 @@ import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Tempo de base', value: 'Monorepo pronto para web e API' },
-  { label: 'Sessao segura', value: 'Cookie HttpOnly com consentimento versionado' },
-  { label: 'Observabilidade', value: 'Auditoria e logs pensados desde o inicio' },
+  { label: 'Operacao', value: 'Web e API integradas em um unico ambiente' },
+  { label: 'Sessao segura', value: 'Cookie HttpOnly com controle de consentimento' },
+  { label: 'Auditoria', value: 'Eventos essenciais registrados no sistema' },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Produto orientado a negocio',
-    description: 'A arquitetura ja nasce preparada para dashboard, produtos, financeiro e operacao do cliente.',
+    title: 'Operacao orientada a negocio',
+    description: 'O ambiente centraliza vendas, produtos, financeiro e leitura operacional em uma unica experiencia.',
   },
   {
     icon: Radar,
     title: 'UX/UI premium',
-    description: 'Linha visual dark neutral premium para fugir de template generico e posicionar melhor o portfolio.',
+    description: 'Linguagem visual escura, executiva e consistente para desktop e mobile.',
   },
 ]
 
 const deliverables = [
-  'Home institucional com linguagem de SaaS premium',
+  'Home institucional com navegacao objetiva',
   'Login e cadastro conectados a uma API segura',
-  'Dashboard inicial com sessao e preferencias de consentimento',
-  'Base pronta para produtos, financeiro, mapa e pendencias',
+  'Dashboard com sessao, vendas, produtos e conformidade',
+  'Base pronta para financeiro, mapa comercial e operacao diaria',
 ]
 
 const heroLines = [
@@ -122,7 +122,7 @@ export function LandingPage() {
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
             <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
-              Projeto em fase de Testes
+              Plataforma empresarial
             </span>
 
             <motion.div
@@ -168,8 +168,8 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              A base atual do sistema ja une monorepo, Next.js, NestJS, autenticacao segura, consentimento LGPD,
-              logs de auditoria e uma linguagem visual dark neutral premium pronta para crescer.
+              Um portal pensado para operar vendas, cadastro, autenticacao, conformidade e leitura executiva em um
+              fluxo continuo e seguro.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -231,11 +231,11 @@ export function LandingPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundacao</p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-              O sistema ja tem uma base melhor que muito CRUD de portfolio.
+              Estrutura central para uma rotina comercial organizada.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
-              A arquitetura ja contempla sessao segura por cookie, consentimento versionado, auditoria, Prisma,
-              monorepo e separacao clara entre front e API.
+              O ambiente combina autenticacao, controle operacional, produtos, pedidos e governanca em uma mesma
+              camada de uso.
             </p>
           </div>
 
@@ -259,19 +259,19 @@ export function LandingPage() {
         <div className="rounded-[36px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(18,22,27,0.96),rgba(14,17,22,0.96))] p-8 shadow-[var(--shadow-panel-strong)] lg:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Proximo marco</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
               <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                Testes estao sendo utilizados para melhorar o sistema de implementacao do projeto.
+                Acesso rapido para cadastro, login e entrada no painel.
               </h2>
               <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
-                Cada ajuste desta fase busca deixar a experiencia mais estavel, intuitiva e preparada para a proxima
-                rodada de recursos do portal.
+                Os principais fluxos do portal ficam disponiveis logo na abertura da pagina para acelerar a entrada no
+                sistema.
               </p>
             </div>
 
             <div className="rounded-[28px] border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
-              Os acessos principais ja ficam no topo da pagina inicial para facilitar testes de cadastro e login sem
-              precisar rolar ate o fim do site.
+              Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
+              experiencia.
             </div>
           </div>
         </div>

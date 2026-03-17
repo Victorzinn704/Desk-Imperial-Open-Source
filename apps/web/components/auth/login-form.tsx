@@ -60,7 +60,7 @@ export function LoginForm() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Entrar</p>
         <h2 className="text-3xl font-semibold text-white">Acesse sua operacao com seguranca.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          Este fluxo conversa com a API real do projeto e libera o caminho para produtos, financeiro e preferencias da conta.
+          Entre com seu email e senha para acessar vendas, produtos, preferencias da conta e o restante da operacao.
         </p>
       </div>
 
@@ -113,9 +113,9 @@ export function LoginForm() {
           </div>
 
           <div className="rounded-[24px] border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
-            <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo para avaliacao:</span>{' '}
+            <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo:</span>{' '}
             use <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span> com senha{' '}
-            <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Cada dispositivo tem ate 20 minutos por dia no modo demo, ou voce pode criar sua propria conta e testar tudo sem esse limite.
+            <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Se preferir, crie sua propria conta e entre direto no portal.
           </div>
 
           <div className="rounded-[24px] border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">

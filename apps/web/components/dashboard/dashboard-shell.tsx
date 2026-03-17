@@ -15,7 +15,6 @@ import {
   LogOut,
   ShieldCheck,
   ShoppingCart,
-  Sparkles,
   Tags,
   TimerReset,
   UserRound,
@@ -84,26 +83,12 @@ type DashboardSectionId =
   | 'sales'
   | 'portfolio'
   | 'compliance'
-  | 'roadmap'
 
 const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
   { id: 'overview', label: 'Dashboard', description: 'Visao executiva', icon: LayoutDashboard },
   { id: 'sales', label: 'Operacao', description: 'Pedidos e vendas', icon: ShoppingCart },
   { id: 'portfolio', label: 'Portfolio', description: 'Produtos e margem', icon: Boxes },
   { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
-  { id: 'roadmap', label: 'Recursos PRO', description: 'Proximos upgrades', icon: Sparkles },
-]
-
-const nextMilestones = [
-  'Filtros por periodo, canal e status no dashboard.',
-  'Pedidos multi-itens e alertas de estoque baixo.',
-  'Observabilidade externa e trilha visual de auditoria.',
-]
-
-const managerRecommendations = [
-  'Separar perfis por permissao de acesso.',
-  'Mostrar timeline de atividade por usuario.',
-  'Exibir alertas de margem ruim e cancelamento alto.',
 ]
 
 const sectionHeroCopy: Record<
@@ -137,12 +122,6 @@ const sectionHeroCopy: Record<
     title: 'Consentimento, cookies e governanca em um espaco dedicado.',
     description:
       'Esse modulo deixa a camada de LGPD e seguranca visivel sem misturar com os blocos operacionais do dia a dia.',
-  },
-  roadmap: {
-    badge: 'Ambiente de evolucao',
-    title: 'Proximos upgrades e linha do tempo do produto.',
-    description:
-      'A navegacao final abre um ambiente proprio para o roadmap, ajudando a manter prioridades e proxima fase bem claras.',
   },
 }
 
@@ -470,8 +449,6 @@ export function DashboardShell() {
             importProductsMutation,
             lastImport,
             legalAcceptances,
-            managerRecommendations,
-            nextMilestones,
             orderMutationError,
             orders,
             ordersError,
@@ -557,8 +534,6 @@ type EnvironmentRenderProps = {
     key: string
     acceptedAt: string
   }>
-  managerRecommendations: string[]
-  nextMilestones: string[]
   orderMutationError?: ApiError
   orders: OrderRecord[]
   ordersError: string | null
@@ -604,8 +579,6 @@ function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <PortfolioEnvironment {...props} />
     case 'compliance':
       return <ComplianceEnvironment {...props} />
-    case 'roadmap':
-      return <RoadmapEnvironment {...props} />
     case 'overview':
     default:
       return <OverviewEnvironment {...props} />
@@ -1208,27 +1181,6 @@ function ComplianceEnvironment({
   )
 }
 
-function RoadmapEnvironment({
-  managerRecommendations,
-  nextMilestones,
-}: Readonly<Pick<EnvironmentRenderProps, 'managerRecommendations' | 'nextMilestones'>>) {
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="A linha do tempo agora fica dentro do proprio painel para deixar o roadmap mais tangivel."
-        eyebrow="Linha do tempo"
-        icon={Sparkles}
-        title="Roadmap visual e proximos upgrades"
-      />
-
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <SurfaceListCard items={nextMilestones} title="Proximas entregas" />
-        <SurfaceListCard items={managerRecommendations} title="Olhar de gerente de projeto" />
-      </div>
-    </section>
-  )
-}
-
 function LoadingState() {
   return (
     <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
@@ -1256,13 +1208,13 @@ function EvaluationModeBanner({
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Modo avaliacao por IP
+              Sessao temporaria
             </p>
             <h2 className="mt-2 text-lg font-semibold text-white">
-              Este dispositivo pode usar a conta demo por ate {dailyLimitMinutes} minutos por dia.
+              Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-              Quando o tempo acabar, o portal encerra a avaliacao e retorna para a tela de login.
+              Quando o tempo acabar, o portal encerra a sessao e retorna para a tela de login.
             </p>
           </div>
         </div>
@@ -1324,23 +1276,6 @@ function MiniCategoryCard({ category, profit, subtitle }: Readonly<{ category: s
         </div>
       </div>
     </div>
-  )
-}
-
-function SurfaceListCard({ items, title }: Readonly<{ items: string[]; title: string }>) {
-  return (
-    <article className="rounded-[32px] border border-[rgba(255,255,255,0.08)] bg-[var(--surface)] p-7 shadow-[var(--shadow-panel)]">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">{title}</p>
-
-      <div className="mt-6 space-y-4">
-        {items.map((item, index) => (
-          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-4" key={item}>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">etapa {index + 1}</p>
-            <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{item}</p>
-          </div>
-        ))}
-      </div>
-    </article>
   )
 }
 

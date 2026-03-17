@@ -61,9 +61,7 @@ export function CookieConsentBanner() {
           analytics: choice === 'accepted',
           marketing: choice === 'accepted',
         })
-      } catch {
-        // Visitors sem sessao autenticada continuam com a preferencia guardada localmente.
-      }
+      } catch {}
 
       setHasDecision(true)
     } catch {
