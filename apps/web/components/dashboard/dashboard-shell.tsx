@@ -78,6 +78,7 @@ import { ProductForm } from '@/components/dashboard/product-form'
 import { ProductImportCard } from '@/components/dashboard/product-import-card'
 import { ProductSearchField } from '@/components/dashboard/product-search-field'
 import { SalesMapCard } from '@/components/dashboard/sales-map-card'
+import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 
 type DashboardSectionId =
   | 'overview'
@@ -707,6 +708,8 @@ function OverviewEnvironment({
           ))}
         </div>
       </article>
+
+      <SalesPerformanceCard finance={finance} isLoading={financeQueryIsLoading} />
 
       <MarketIntelligenceCard />
 
