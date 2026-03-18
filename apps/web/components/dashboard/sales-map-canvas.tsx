@@ -24,9 +24,16 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
       if (!containerRef.current || mapRef.current) return
 
       const L = (await import('leaflet')).default
-      await import('leaflet/dist/leaflet.css')
 
       if (!active || !containerRef.current) return
+
+      if (!document.querySelector('link[data-leaflet-css]')) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+        link.setAttribute('data-leaflet-css', '1')
+        document.head.appendChild(link)
+      }
 
       const map = L.map(containerRef.current, {
         center: DEFAULT_CENTER,
