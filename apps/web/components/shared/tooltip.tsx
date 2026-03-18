@@ -27,17 +27,17 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
       let top = 0
       let left = 0
       if (side === 'top') {
-        top = r.top + window.scrollY - GAP
-        left = r.left + window.scrollX + r.width / 2
+        top = r.top - GAP
+        left = r.left + r.width / 2
       } else if (side === 'bottom') {
-        top = r.bottom + window.scrollY + GAP
-        left = r.left + window.scrollX + r.width / 2
+        top = r.bottom + GAP
+        left = r.left + r.width / 2
       } else if (side === 'left') {
-        top = r.top + window.scrollY + r.height / 2
-        left = r.left + window.scrollX - GAP
+        top = r.top + r.height / 2
+        left = r.left - GAP
       } else {
-        top = r.top + window.scrollY + r.height / 2
-        left = r.right + window.scrollX + GAP
+        top = r.top + r.height / 2
+        left = r.right + GAP
       }
       setCoords({ top, left })
     }
