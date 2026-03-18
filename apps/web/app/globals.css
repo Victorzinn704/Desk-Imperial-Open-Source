@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "maplibre-gl/dist/maplibre-gl.css";
+/* leaflet CSS is loaded dynamically in sales-map-canvas.tsx */
 
 :root {
   color-scheme: dark;
@@ -343,90 +343,57 @@ select {
   }
 }
 
-.maplibregl-map {
-  position: relative;
-  z-index: 2;
+/* ─── Leaflet map controls ──────────────────────────────────────────────────── */
+
+.leaflet-container {
   background: #0f1318;
-  font-family:
-    "Manrope",
-    "Inter",
-    "Segoe UI",
-    sans-serif;
+  font-family: "Manrope", "Inter", "Segoe UI", sans-serif;
 }
 
-.maplibregl-canvas {
-  outline: none;
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(18, 22, 27, 0.92) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28) !important;
 }
 
-.maplibregl-popup-content,
-.maplibregl-popup-tip {
+.leaflet-control-zoom a {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(13, 16, 20, 0.75) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ─── Leaflet popup ─────────────────────────────────────────────────────────── */
+
+.sales-map-leaflet-popup .leaflet-popup-content-wrapper {
   background: rgba(18, 22, 27, 0.96);
-  color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.maplibregl-popup-content {
-  padding: 0;
+  border-radius: 12px;
   box-shadow: 0 18px 56px rgba(0, 0, 0, 0.34);
-}
-
-.maplibregl-ctrl-group {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(18, 22, 27, 0.92);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
-}
-
-.maplibregl-ctrl-group button {
-  background: transparent;
-}
-
-.maplibregl-ctrl-group button + button {
-  border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-.maplibregl-ctrl-icon {
-  filter: invert(1) brightness(1.4);
-}
-
-.sales-map-marker {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--marker-size, 36px);
-  height: var(--marker-size, 36px);
-  border: 0;
-  border-radius: 999px;
   padding: 0;
-  cursor: pointer;
-  background: transparent;
 }
 
-.sales-map-marker__pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(circle, rgba(80, 160, 100, 0.22), rgba(80, 160, 100, 0));
-  animation: sales-map-pulse 2.3s ease-in-out infinite;
+.sales-map-leaflet-popup .leaflet-popup-tip-container {
+  display: none;
 }
 
-.sales-map-marker__core {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--marker-size, 36px) - 12px);
-  height: calc(var(--marker-size, 36px) - 12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(65, 120, 80, 0.92), rgba(35, 75, 50, 0.96));
-  box-shadow:
-    0 0 0 6px rgba(80, 150, 100, 0.08),
-    0 18px 32px rgba(10, 30, 18, 0.40);
-  color: #f4fff8;
-  font-size: 0.8rem;
-  font-weight: 800;
+.sales-map-leaflet-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
 }
 
 .sales-map-popup {
