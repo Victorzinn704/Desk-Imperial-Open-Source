@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
 import { IsBoolean, IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator'
-import { STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@contracts/validation-patterns'
+import { STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../../common/constants/password'
 
 export class RegisterDto {
   @ApiProperty({ example: 'Lucia Helena' })
