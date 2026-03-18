@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -16,6 +16,7 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<import('leaflet').Map | null>(null)
   const markersRef = useRef<import('leaflet').CircleMarker[]>([])
+  const [mapReady, setMapReady] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -46,6 +47,8 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
         .addTo(map)
 
       mapRef.current = map
+      setTimeout(() => { map.invalidateSize() }, 0)
+      if (active) setMapReady(true)
     }
 
     initMap()
@@ -117,7 +120,7 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
     updateMarkers()
 
     return () => { active = false }
-  }, [displayCurrency, points])
+  }, [displayCurrency, points, mapReady])
 
   return <div className="h-full w-full" ref={containerRef} />
 }
