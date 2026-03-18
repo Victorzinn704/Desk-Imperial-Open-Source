@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Cog, Lock, Bell, Building2, Eye, EyeOff, Monitor, Smartphone, Plus, Trash2, Calendar } from 'lucide-react'
+import { Cog, Lock, Bell, Building2, Eye, EyeOff, Monitor, Smartphone, Calendar } from 'lucide-react'
 import { Button } from '@/components/shared/button'
 import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
+import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
 
 type DayKey = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom'
 
@@ -14,28 +15,9 @@ type DaySchedule = {
   close: string
 }
 
-type ActivityType = 'evento' | 'jogo' | 'promocao' | 'feriado' | 'black_friday' | 'data_especial'
-
-type CommercialActivity = {
-  id: string
-  name: string
-  type: ActivityType
-  startDate: string
-  endDate: string
-}
-
 const DAY_LABELS: Record<DayKey, string> = {
   seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb', dom: 'Dom',
 }
-
-const ACTIVITY_TYPES: { value: ActivityType; label: string; color: string }[] = [
-  { value: 'evento',       label: 'Evento',          color: '#a78bfa' },
-  { value: 'jogo',         label: 'Jogo',             color: '#38bdf8' },
-  { value: 'promocao',     label: 'Promoção',         color: '#36f57c' },
-  { value: 'feriado',      label: 'Feriado',          color: '#fb923c' },
-  { value: 'black_friday', label: 'Black Friday',     color: '#f04438' },
-  { value: 'data_especial',label: 'Data Especial',    color: '#C9A84C' },
-]
 
 const INITIAL_SCHEDULE: Record<DayKey, DaySchedule> = {
   seg: { enabled: true,  open: '09:00', close: '00:00' },
@@ -54,10 +36,6 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState('Bar do Pedrão')
   const [email, setEmail] = useState('demo@deskimperial.online')
   const [schedule, setSchedule] = useState<Record<DayKey, DaySchedule>>(INITIAL_SCHEDULE)
-  const [activities, setActivities] = useState<CommercialActivity[]>([])
-  const [newActivity, setNewActivity] = useState<Omit<CommercialActivity, 'id'>>({
-    name: '', type: 'evento', startDate: '', endDate: '',
-  })
   const [showPillars, setShowPillars] = useState({
     weekly: true,
     monthly: true,
@@ -332,101 +310,16 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Atividades comerciais */}
+          {/* Atividades comerciais — Calendário interativo */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="size-4 text-[var(--accent)]" />
-                <p className="text-sm font-semibold text-[var(--text-soft)]">Atividades Comerciais</p>
-              </div>
-              <span className="text-xs text-[var(--text-muted)]">Filtre vendas por período e tipo de evento</span>
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="size-4 text-[var(--accent)]" />
+              <p className="text-sm font-semibold text-[var(--text-soft)]">Calendário Comercial</p>
+              <span className="ml-2 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.07)] px-2.5 py-0.5 text-[11px] font-semibold text-[#8fffb9]">
+                Clique no dia para adicionar
+              </span>
             </div>
-
-            {/* lista */}
-            {activities.length > 0 && (
-              <div className="mb-4 space-y-2">
-                {activities.map((act) => {
-                  const typeInfo = ACTIVITY_TYPES.find((t) => t.value === act.type)
-                  return (
-                    <div key={act.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <span
-                        className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                        style={{ background: `${typeInfo?.color}22`, color: typeInfo?.color }}
-                      >
-                        {typeInfo?.label}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-white truncate">{act.name}</p>
-                        <p className="text-xs text-[var(--text-muted)]">
-                          {act.startDate && new Date(act.startDate).toLocaleDateString('pt-BR')}
-                          {act.endDate && act.endDate !== act.startDate && ` → ${new Date(act.endDate).toLocaleDateString('pt-BR')}`}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setActivities(activities.filter((a) => a.id !== act.id))}
-                        className="shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[rgba(244,67,54,0.1)] hover:text-[var(--danger)]"
-                        type="button"
-                        aria-label="Remover atividade"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* formulário de adição */}
-            <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] p-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Nova atividade</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white placeholder-[var(--text-muted)] col-span-full sm:col-span-1"
-                  placeholder="Nome (ex: Festa de Ano Novo)"
-                  value={newActivity.name}
-                  onChange={(e) => setNewActivity({ ...newActivity, name: e.target.value })}
-                />
-                <select
-                  className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white"
-                  value={newActivity.type}
-                  onChange={(e) => setNewActivity({ ...newActivity, type: e.target.value as ActivityType })}
-                >
-                  {ACTIVITY_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-                <div className="space-y-1">
-                  <label className="block text-xs text-[var(--text-muted)]">Início</label>
-                  <input
-                    type="date"
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white"
-                    value={newActivity.startDate}
-                    onChange={(e) => setNewActivity({ ...newActivity, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs text-[var(--text-muted)]">Fim</label>
-                  <input
-                    type="date"
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white"
-                    value={newActivity.endDate}
-                    onChange={(e) => setNewActivity({ ...newActivity, endDate: e.target.value })}
-                  />
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  if (!newActivity.name.trim() || !newActivity.startDate) return
-                  setActivities([...activities, { ...newActivity, id: crypto.randomUUID() }])
-                  setNewActivity({ name: '', type: 'evento', startDate: '', endDate: '' })
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.06)] py-2.5 text-sm font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(52,242,127,0.12)]"
-                type="button"
-              >
-                <Plus className="size-4" />
-                Adicionar atividade
-              </button>
-            </div>
+            <CommercialCalendar />
           </div>
 
           <Button className="w-full">Salvar Configurações</Button>

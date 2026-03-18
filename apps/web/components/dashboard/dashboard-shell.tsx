@@ -86,16 +86,19 @@ import { useActivityTimeline } from '@/hooks/use-activity-timeline'
 import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
 import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
 import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
+import { PdvBoard } from '@/components/pdv/pdv-board'
 
 type DashboardSectionId =
   | 'overview'
   | 'sales'
   | 'portfolio'
   | 'compliance'
+  | 'pdv'
 
 const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
   { id: 'overview', label: 'Dashboard', description: 'Visão executiva', icon: LayoutDashboard },
   { id: 'sales', label: 'Operação', description: 'Pedidos e vendas', icon: ShoppingCart },
+  { id: 'pdv', label: 'PDV / Comandas', description: 'Kanban em tempo real', icon: Tags },
   { id: 'portfolio', label: 'Portfólio', description: 'Produtos e margem', icon: Boxes },
   { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
 ]
@@ -131,6 +134,12 @@ const sectionHeroCopy: Record<
     title: 'Consentimento, cookies e governança em um espaço dedicado.',
     description:
       'Esse módulo deixa a camada de LGPD e segurança visível sem misturar com os blocos operacionais do dia a dia.',
+  },
+  pdv: {
+    badge: 'Ponto de venda',
+    title: 'Comandas e atendimento em tempo real.',
+    description:
+      'Gerencie as comandas do salão em um kanban visual. Mova os pedidos entre Aberta, Em Preparo, Pronta e Fechada com drag-and-drop.',
   },
 }
 
@@ -599,10 +608,34 @@ function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <PortfolioEnvironment {...props} />
     case 'compliance':
       return <ComplianceEnvironment {...props} />
+    case 'pdv':
+      return <PdvEnvironment products={props.products} />
     case 'overview':
     default:
       return <OverviewEnvironment {...props} />
   }
+}
+
+function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProps['products'] }>) {
+  const boardProducts = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    unitPrice: p.unitPrice,
+    currency: String(p.currency),
+  }))
+
+  return (
+    <section className="space-y-6">
+      <DashboardSectionHeading
+        description="Gerencie comandas abertas, em preparo e prontas. Arraste entre colunas para atualizar o status em tempo real."
+        eyebrow="Kanban de comandas"
+        icon={Tags}
+        title="PDV — Ponto de Venda"
+      />
+      <PdvBoard products={boardProducts} />
+    </section>
+  )
 }
 
 function OverviewEnvironment({
