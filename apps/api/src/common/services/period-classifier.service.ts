@@ -121,7 +121,7 @@ export class PeriodClassifierService {
 
     const daySettings = businessSettings.businessHours.find((bh) => bh.dayOfWeek === dayOfWeek)
 
-    if (!daySettings || daySettings.eventStart === undefined) {
+    if (!daySettings || daySettings.eventStart === undefined || daySettings.eventEnd === undefined) {
       return false
     }
 

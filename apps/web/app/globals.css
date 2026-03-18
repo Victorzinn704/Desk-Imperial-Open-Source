@@ -1,5 +1,5 @@
 @import "tailwindcss";
-/* leaflet CSS is loaded dynamically in sales-map-canvas.tsx */
+@import "leaflet/dist/leaflet.css";
 
 :root {
   color-scheme: dark;

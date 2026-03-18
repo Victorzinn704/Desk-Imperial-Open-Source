@@ -27,14 +27,6 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
 
       if (!active || !containerRef.current) return
 
-      if (!document.querySelector('link[data-leaflet-css]')) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-        link.setAttribute('data-leaflet-css', '1')
-        document.head.appendChild(link)
-      }
-
       const map = L.map(containerRef.current, {
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
@@ -44,12 +36,13 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         subdomains: 'abcd',
-        maxZoom: 19,
+        maxZoom: 20,
+        tileSize: 256,
       }).addTo(map)
 
       L.control.zoom({ position: 'topright' }).addTo(map)
       L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('© <a href="https://carto.com/">CARTO</a>')
+        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>')
         .addTo(map)
 
       mapRef.current = map

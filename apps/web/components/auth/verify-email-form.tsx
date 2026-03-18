@@ -17,11 +17,13 @@ import { type VerifyEmailFormValues, verifyEmailSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 
-export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
+export function VerifyEmailForm({ email, firstAccess }: Readonly<{ email?: string; firstAccess?: boolean }>) {
   const router = useRouter()
   const [isRouting, startTransition] = useTransition()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [previewChallenge, setPreviewChallenge] = useState<StoredEmailVerificationChallenge | null>(null)
+  // When coming directly from registration, show the "check inbox" screen first
+  const [showCheckInbox, setShowCheckInbox] = useState(Boolean(firstAccess && email))
   const {
     register,
     handleSubmit,
@@ -104,6 +106,40 @@ export function VerifyEmailForm({ email }: Readonly<{ email?: string }>) {
       : resendMutation.error instanceof ApiError
         ? resendMutation.error.message
         : 'Confirme o email para liberar o primeiro acesso ao portal.'
+
+  if (showCheckInbox) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center">
+          <span className="flex size-16 items-center justify-center rounded-[24px] border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+            <svg className="size-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+        <div className="space-y-2 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Verifique seu email</p>
+          <h2 className="text-2xl font-semibold text-white">Enviamos um código para você</h2>
+          <p className="text-sm leading-7 text-[var(--text-soft)]">
+            Procure na caixa de entrada de{' '}
+            <span className="font-semibold text-white">{email}</span>
+            . Se não encontrar, verifique spam e promoções.
+          </p>
+        </div>
+        <div className="imperial-card-soft space-y-3 px-4 py-4 text-sm text-[var(--text-soft)]">
+          <p>O código expira em alguns minutos. Após confirmar, você será redirecionado para o login.</p>
+        </div>
+        <Button fullWidth size="lg" type="button" onClick={() => setShowCheckInbox(false)}>
+          Já tenho o código →
+        </Button>
+        <div className="text-center">
+          <Link className="text-sm text-[var(--text-soft)] underline hover:text-white" href="/login">
+            Voltar para login
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

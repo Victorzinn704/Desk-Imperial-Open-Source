@@ -5,12 +5,16 @@ import type { MouseEvent as ReactMouseEvent } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import {
   BadgeDollarSign,
+  CalendarDays,
   ChartColumn,
+  FileDown,
   Globe2,
+  KeyRound,
   Landmark,
   Radar,
-  Scale,
   ShieldCheck,
+  Tags,
+  Users,
   Waypoints,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -21,9 +25,9 @@ import { InteractionFlowCard } from '@/components/marketing/interaction-flow-car
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Seus números', value: 'Métricas de vendas, lucro e desempenho em um único lugar' },
-  { label: 'Seu controle', value: 'Produtos, pedidos, vendedores e estoque organizados' },
-  { label: 'Sua clareza', value: 'Relatórios e insights que fazem você decidir melhor' },
+  { label: 'PDV em tempo real', value: 'Comandas abertas, em preparo e fechadas num kanban visual' },
+  { label: 'Folha de pagamento', value: 'Salário base + comissão calculados automaticamente' },
+  { label: 'Calendário comercial', value: 'Eventos, promoções e jogos com impacto em vendas' },
 ]
 
 const pillars = [
@@ -46,23 +50,43 @@ const capabilityCards: Array<{
 }> = [
   {
     icon: BadgeDollarSign,
-    title: 'Seu dinheiro',
-    description: 'Receita, custo, lucro e margem aparecem claros. Você sabe quanto ganhou.',
+    title: 'Financeiro executivo',
+    description: 'Receita, custo, lucro e margem. Sparklines de tendência em cada KPI.',
+  },
+  {
+    icon: Tags,
+    title: 'PDV / Comandas',
+    description: 'Kanban drag-and-drop com CPF/CNPJ, desconto e acréscimo por comanda.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Calendário comercial',
+    description: 'Arraste eventos, planeje promoções e correlacione com as vendas do dia.',
   },
   {
     icon: Landmark,
-    title: 'Seu time',
-    description: 'Vendedores, produtos, pedidos. Todos têm história, quota e desempenho.',
+    title: 'Folha de pagamento',
+    description: 'Salário base + comissão sobre vendas calculados por colaborador.',
   },
   {
-    icon: ChartColumn,
-    title: 'Seus insights',
-    description: 'Gráficos que falam. Ranking de vendedores. Análise de eventos e lucro real.',
+    icon: Users,
+    title: 'Gestão de equipe',
+    description: 'Ranking de vendedores, histórico e metas em um único painel.',
   },
   {
-    icon: Scale,
-    title: 'Seu controle',
-    description: 'Dados auditados, histórico completo, segurança que você merece.',
+    icon: KeyRound,
+    title: 'Admin PIN',
+    description: 'Proteja ações sensíveis com PIN de 4 dígitos e bloqueio anti brute-force.',
+  },
+  {
+    icon: FileDown,
+    title: 'Export CSV',
+    description: 'Exporte pedidos com encoding UTF-8 compatível com Excel e Planilhas.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Conformidade',
+    description: 'LGPD, consentimento de cookies e governança de dados visível.',
   },
 ]
 
@@ -82,18 +106,19 @@ const footerColumns = [
     ],
   },
   {
+    title: 'Módulos',
+    links: [
+      { label: 'PDV / Comandas', href: '#fundacao' },
+      { label: 'Calendário Comercial', href: '#fundacao' },
+      { label: 'Folha de Pagamento', href: '#fundacao' },
+      { label: 'Portfólio de Produtos', href: '#fundacao' },
+    ],
+  },
+  {
     title: 'Ambientes',
     links: [
       { label: 'app.deskimperial.online', href: 'https://app.deskimperial.online' },
       { label: 'api.deskimperial.online', href: 'https://api.deskimperial.online/api/health' },
-    ],
-  },
-  {
-    title: 'Capacidades',
-    links: [
-      { label: 'Pedidos multi-item', href: '#fundacao' },
-      { label: 'Portfolio inteligente', href: '#fundacao' },
-      { label: 'Controle operacional', href: '#entregas' },
     ],
   },
 ]
@@ -250,8 +275,8 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              Um portal pensado para operar vendas, cadastro, autenticação, conformidade e leitura executiva em um
-              fluxo contínuo e seguro.
+              PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
+              tudo em um único portal seguro para o seu negócio.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -319,17 +344,17 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundação</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Módulos</p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-              Estrutura central para uma rotina comercial organizada.
+              Oito módulos integrados para operar o seu negócio inteiro.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
-              O ambiente combina autenticação, controle operacional, produtos, pedidos e governança em uma mesma
-              camada de uso.
+              Do PDV ao financeiro, da folha de pagamento ao calendário de eventos — tudo construído sobre
+              dados reais da sua operação, sem mock e sem dependências ocultas.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {capabilityCards.map((item, index) => (
               <div
                 className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}

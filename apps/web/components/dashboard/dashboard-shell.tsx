@@ -162,6 +162,7 @@ export function DashboardShell() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
   const consentQuery = useQuery({
@@ -399,13 +400,17 @@ export function DashboardShell() {
 
   return (
     <main className="min-h-screen bg-[var(--bg)] px-4 py-6 text-[var(--text-primary)] sm:px-6">
-      <div className="mx-auto max-w-[1600px] xl:grid xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-6">
+      <div
+        className="mx-auto max-w-[1600px] xl:grid xl:gap-6"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
+      >
         <DashboardSidebar
           activeSection={activeSection}
           companyName={user.companyName}
           email={user.email}
           items={dashboardNavigation}
           onNavigate={handleSectionNavigate}
+          onCollapseChange={setSidebarCollapsed}
           status={user.status}
           userName={user.fullName}
         />
@@ -708,18 +713,21 @@ function OverviewEnvironment({
         return (
           <div className="grid gap-4 xl:grid-cols-5">
             <MetricCard
+              color="#60a5fa"
               hint={user.fullName}
               icon={UserRound}
               label="Conta"
               value={user.companyName || 'Conta Demo'}
             />
             <MetricCard
+              color="#36f57c"
               hint="Status da identidade no portal"
               icon={ShieldCheck}
               label="Status"
               value={formatAccountStatus(user.status)}
             />
             <MetricCard
+              color="#a78bfa"
               hint="Produtos ativos com sessão autenticada"
               icon={Box}
               label="Portfólio"
@@ -728,6 +736,7 @@ function OverviewEnvironment({
               value={String(productsTotals?.activeProducts ?? 0)}
             />
             <MetricCard
+              color="#fb923c"
               hint="Pedidos concluídos considerados no financeiro"
               icon={ShoppingCart}
               label="Pedidos"
@@ -736,6 +745,7 @@ function OverviewEnvironment({
               value={String(ordersTotals?.completedOrders ?? 0)}
             />
             <MetricCard
+              color="#fbbf24"
               hint="Equipe apta a registrar vendas"
               icon={ShieldCheck}
               label="Equipe ativa"
@@ -1250,10 +1260,60 @@ function ComplianceEnvironment({
 
 function LoadingState() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
-      <div className="imperial-card mx-auto max-w-7xl p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Dashboard</p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">Carregando sessão autenticada...</h1>
+    <main className="min-h-screen bg-[var(--bg)] px-4 py-6 text-[var(--text-primary)] sm:px-6">
+      <div className="mx-auto max-w-[1600px] xl:grid xl:gap-6" style={{ gridTemplateColumns: '260px minmax(0,1fr)' }}>
+        {/* Sidebar skeleton */}
+        <aside className="hidden xl:block">
+          <div className="imperial-card flex h-[calc(100vh-3rem)] flex-col gap-4 p-5">
+            <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
+            <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
+            <div className="mt-2 flex-1 space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div className="skeleton-shimmer h-12 rounded-[20px]" key={i} />
+              ))}
+            </div>
+            <div className="skeleton-shimmer h-20 rounded-2xl" />
+          </div>
+        </aside>
+
+        {/* Main content skeleton */}
+        <div className="mt-6 space-y-6 xl:mt-0">
+          {/* Header skeleton */}
+          <div className="imperial-card p-6 md:p-8">
+            <div className="skeleton-shimmer h-6 w-32 rounded-full" />
+            <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
+            <div className="skeleton-shimmer mt-4 h-12 w-3/4 rounded-2xl" />
+            <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
+          </div>
+
+          {/* Metric cards skeleton */}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div className="imperial-card-stat p-5" key={i}>
+                <div className="skeleton-shimmer size-11 rounded-2xl" />
+                <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
+                <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
+                <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+
+          {/* Chart area skeleton */}
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-32 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+            </div>
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-28 rounded-full" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   )

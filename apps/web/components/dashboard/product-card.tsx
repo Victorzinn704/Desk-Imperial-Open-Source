@@ -65,7 +65,9 @@ export function ProductCard({
               {measurementLabel}
             </span>
           </div>
-          <p className="mt-3 text-sm font-medium text-white">{product.packagingClass}</p>
+          {product.packagingClass && product.packagingClass !== 'UN' ? (
+            <p className="mt-3 text-sm font-medium text-white">{product.packagingClass}</p>
+          ) : null}
           <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
             {product.description || 'Produto sem descrição cadastrada.'}
           </p>

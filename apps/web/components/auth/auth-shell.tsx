@@ -1,8 +1,23 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Lock } from 'lucide-react'
+import {
+  CalendarDays,
+  Lock,
+  ShieldCheck,
+  Tags,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { BrandMark } from '@/components/shared/brand-mark'
+
+const features = [
+  { icon: TrendingUp, label: 'Financeiro em tempo real', description: 'Receita, lucro e margem num único painel.' },
+  { icon: Tags, label: 'PDV / Comandas Kanban', description: 'Gerencie pedidos com drag-and-drop.' },
+  { icon: CalendarDays, label: 'Calendário Comercial', description: 'Planeje eventos, promoções e jogos.' },
+  { icon: Users, label: 'Folha de Pagamento', description: 'Salário base + comissão por funcionário.' },
+  { icon: ShieldCheck, label: 'Admin PIN + Segurança', description: 'Proteja ações sensíveis com PIN de 4 dígitos.' },
+]
 
 export function AuthShell({
   eyebrow,
@@ -20,7 +35,7 @@ export function AuthShell({
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <motion.aside
           animate={{ opacity: 1, x: 0 }}
-          className="imperial-card relative p-8"
+          className="imperial-card relative hidden p-8 lg:flex lg:flex-col"
           initial={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
@@ -28,20 +43,37 @@ export function AuthShell({
           <div className="relative z-10 flex h-full flex-col">
             <BrandMark />
 
-            <div className="mt-16 max-w-xl">
+            <div className="mt-10">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{eyebrow}</p>
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{title}</h1>
-              <p className="mt-5 text-base leading-8 text-[var(--text-soft)]">{description}</p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{title}</h1>
+              <p className="mt-4 text-base leading-8 text-[var(--text-soft)]">{description}</p>
             </div>
 
-            <div className="mt-auto">
+            <div className="mt-8 space-y-3">
+              {features.map((f) => (
+                <div
+                  className="flex items-center gap-3 rounded-[16px] border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-4 py-3"
+                  key={f.label}
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.06)] text-[#36f57c]">
+                    <f.icon className="size-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{f.label}</p>
+                    <p className="text-xs text-[var(--text-soft)]">{f.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-auto pt-6">
               <div className="imperial-card-soft flex items-center gap-3 p-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-strong)] bg-[rgba(201,168,76,0.08)]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-strong)] bg-[rgba(201,168,76,0.08)]">
                   <Lock className="size-4 text-[var(--accent)]" />
                 </span>
-                <div className="text-sm text-[var(--text-soft)]">
-                  Seu acesso é protegido com segurança em camadas.
-                </div>
+                <p className="text-sm text-[var(--text-soft)]">
+                  Sessão protegida com cookie HttpOnly + CSRF Guard.
+                </p>
               </div>
             </div>
           </div>

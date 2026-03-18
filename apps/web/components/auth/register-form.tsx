@@ -53,7 +53,7 @@ export function RegisterForm() {
       }
 
       startTransition(() => {
-        router.push(`/verificar-email?email=${encodeURIComponent(data.email)}`)
+        router.push(`/verificar-email?email=${encodeURIComponent(data.email)}&new=1`)
       })
     },
   })

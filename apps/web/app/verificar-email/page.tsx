@@ -6,9 +6,10 @@ export default async function VerifyEmailPage({
 }: Readonly<{
   searchParams: Promise<{
     email?: string
+    new?: string
   }>
 }>) {
-  const { email } = await searchParams
+  const { email, new: isNew } = await searchParams
 
   return (
     <AuthShell
@@ -16,7 +17,7 @@ export default async function VerifyEmailPage({
       eyebrow="Confirmação"
       title="Valide seu acesso"
     >
-      <VerifyEmailForm email={email} />
+      <VerifyEmailForm email={email} firstAccess={isNew === '1'} />
     </AuthShell>
   )
 }

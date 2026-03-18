@@ -89,7 +89,7 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
       name: row.name,
       brand: row.brand || null,
       category: row.category,
-      packagingClass: row.packagingclass || 'Cadastro rapido',
+      packagingClass: row.packagingclass || 'UN',
       measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
       measurementValue: Number.parseFloat(row.measurementvalue || '1'),
       unitsPerPackage,
