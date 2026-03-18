@@ -9,11 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'border-transparent bg-[var(--accent)] px-5 py-3 text-[var(--bg)] shadow-[0_16px_36px_rgba(212,177,106,0.24)] hover:-translate-y-0.5 hover:bg-[var(--accent-strong)]',
+          'border-transparent bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-5 py-3 text-[var(--bg)] shadow-[0_16px_36px_rgba(212,177,106,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(212,177,106,0.44)] active:translate-y-0',
         secondary:
-          'border-[var(--border)] bg-[var(--surface-soft)] px-5 py-3 text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)]',
+          'border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-5 py-3 text-[var(--text-primary)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.09)] hover:text-white hover:shadow-[0_8px_24px_rgba(0,0,0,0.28)] active:scale-[0.98]',
         ghost:
-          'border-transparent bg-transparent px-4 py-2 text-[var(--text-soft)] hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]',
+          'border-[rgba(255,255,255,0.06)] bg-transparent px-4 py-2 text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.14)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white active:scale-[0.98]',
       },
       size: {
         sm: 'h-10 px-4 text-sm',

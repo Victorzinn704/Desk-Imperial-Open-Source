@@ -66,18 +66,53 @@ export function ProductImportCard({
         item por item.
       </p>
 
-      <div className="imperial-card-soft mt-5 p-4 text-sm text-[var(--text-soft)]">
-        <p className="font-medium text-white">Colunas esperadas</p>
-        <p className="mt-2">
-          `name`, `brand`, `category`, `packagingClass`, `measurementUnit`, `measurementValue`,
-          `unitsPerPackage`, `description`, `unitCost`, `unitPrice`, `stockPackages`,
-          `stockLooseUnits`, `stock`, `currency`
+      <div className="imperial-card-soft mt-5 space-y-4 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+          Colunas esperadas
         </p>
-        <p className="mt-2 text-xs text-[var(--text-soft)]">
-          `brand` é opcional. Se `packagingClass`, `measurementUnit`, `measurementValue` ou
-          `unitsPerPackage` não forem enviados, o sistema usa um cadastro rápido com `UN`.
-          `stockPackages` e `stockLooseUnits` são o formato recomendado; `stock` continua como
-          compatibilidade para total em unidades.
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            { col: 'name', note: 'Nome do produto', required: true },
+            { col: 'brand', note: 'Marca — opcional', required: false },
+            { col: 'category', note: 'Categoria', required: true },
+            { col: 'currency', note: 'BRL, USD ou EUR', required: true },
+            { col: 'unitCost', note: 'Custo unitário', required: true },
+            { col: 'unitPrice', note: 'Preço de venda', required: true },
+            { col: 'description', note: 'Descrição livre', required: true },
+            { col: 'packagingClass', note: 'Usa UN se omitido', required: false },
+            { col: 'measurementUnit', note: 'Usa UN se omitido', required: false },
+            { col: 'measurementValue', note: 'Usa UN se omitido', required: false },
+            { col: 'unitsPerPackage', note: 'Usa UN se omitido', required: false },
+            { col: 'stockPackages', note: 'Recomendado p/ estoque', required: false },
+            { col: 'stockLooseUnits', note: 'Recomendado p/ estoque', required: false },
+            { col: 'stock', note: 'Total em unidades — legado', required: false },
+          ].map(({ col, note, required }) => (
+            <div
+              key={col}
+              className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 py-2"
+            >
+              <code className="shrink-0 rounded-md bg-[rgba(143,183,255,0.1)] px-2 py-0.5 text-xs font-bold text-[var(--info)]">
+                {col}
+              </code>
+              <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-soft)]">{note}</span>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  required
+                    ? 'bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
+                    : 'bg-[rgba(255,255,255,0.05)] text-[var(--text-soft)]'
+                }`}
+              >
+                {required ? 'obrig.' : 'opc.'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs leading-6 text-[var(--text-soft)]">
+          Prefira <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockPackages</code> +{' '}
+          <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockLooseUnits</code> para controle por embalagem.{' '}
+          <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stock</code> aceita o total em unidades para compatibilidade.
         </p>
       </div>
 

@@ -112,11 +112,30 @@ export function LoginForm() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
-            <span className="font-semibold text-[var(--text-primary)]">Acesso demonstrativo:</span>{' '}
-            use <span className="font-semibold text-[var(--text-primary)]">demo@partnerportal.com</span> com senha{' '}
-            <span className="font-semibold text-[var(--text-primary)]">Demo@123</span>. Se preferir, crie sua propria conta e entre direto no portal.
-          </div>
+          <button
+            className="group relative w-full overflow-hidden rounded-[24px] border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.06)] px-5 py-4 text-left transition-all duration-300 hover:border-[rgba(52,242,127,0.5)] hover:bg-[rgba(52,242,127,0.12)] hover:shadow-[0_0_32px_rgba(52,242,127,0.14)]"
+            onClick={() => loginMutation.mutate({ email: 'demo@deskimperial.online', password: 'Demo@123' })}
+            type="button"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#36f57c]">
+                  Sessão demonstrativa
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white">
+                  Acessar conta demo
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-soft)]">
+                  Conheça o portal antes de criar sua conta
+                </p>
+              </div>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c] transition-transform duration-200 group-hover:translate-x-0.5">
+                <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+          </button>
 
           <div className="rounded-[24px] border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
             {errorMessage}

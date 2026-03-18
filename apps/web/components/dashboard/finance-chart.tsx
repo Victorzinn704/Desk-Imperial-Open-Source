@@ -45,7 +45,7 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#9b8460', '#6b8fb5', '#639371', '#d47373', '#5baa94', '#6b5f9f']
+const palette = ['#36f57c', '#38bdf8', '#C9A84C', '#f04438', '#a78bfa', '#fb923c', '#e879f9', '#2265d8']
 
 const chartViews: ChartViewOption[] = [
   {
@@ -385,12 +385,12 @@ function renderChart({
         <AreaChart data={timelineData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
           <defs>
             <linearGradient id="timelineRevenue" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="5%" stopColor="#8fb7ff" stopOpacity={0.34} />
-              <stop offset="95%" stopColor="#8fb7ff" stopOpacity={0} />
+              <stop offset="5%" stopColor="#36f57c" stopOpacity={0.36} />
+              <stop offset="95%" stopColor="#36f57c" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="timelineProfit" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="5%" stopColor="#d4b16a" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#d4b16a" stopOpacity={0} />
+              <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
@@ -410,8 +410,8 @@ function renderChart({
             }
           />
           <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
-          <Area dataKey="revenue" fill="url(#timelineRevenue)" name="Receita" stroke="#8fb7ff" strokeWidth={3} type="monotone" />
-          <Area dataKey="profit" fill="url(#timelineProfit)" name="Lucro" stroke="#d4b16a" strokeWidth={3} type="monotone" />
+          <Area dataKey="revenue" fill="url(#timelineRevenue)" name="Receita" stroke="#36f57c" strokeWidth={3} type="monotone" />
+          <Area dataKey="profit" fill="url(#timelineProfit)" name="Lucro" stroke="#38bdf8" strokeWidth={3} type="monotone" />
         </AreaChart>
       </ResponsiveContainer>
     )
@@ -438,8 +438,8 @@ function renderChart({
             }
           />
           <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
-          <Bar dataKey="revenue" fill="#8fb7ff" name="Receita" radius={[0, 14, 14, 0]} />
-          <Bar dataKey="profit" fill="#d4b16a" name="Lucro" radius={[0, 14, 14, 0]} />
+          <Bar dataKey="revenue" fill="#36f57c" name="Receita" radius={[0, 14, 14, 0]} />
+          <Bar dataKey="profit" fill="#38bdf8" name="Lucro" radius={[0, 14, 14, 0]} />
         </BarChart>
       </ResponsiveContainer>
     )
