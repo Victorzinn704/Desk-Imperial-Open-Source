@@ -83,6 +83,9 @@ import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 import { useActivityTimeline } from '@/hooks/use-activity-timeline'
+import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
+import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
+import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
 
 type DashboardSectionId =
   | 'overview'
@@ -633,43 +636,11 @@ function OverviewEnvironment({
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="A camada executiva concentra status da conta, sinais de operação e analytics para leitura rápida do negócio."
-        eyebrow="Visão executiva"
+        description="Receita realizada, pedidos por canal e distribuição de categorias em um painel financeiro detalhado."
+        eyebrow="Visão financeira"
         icon={LayoutDashboard}
-        title="Dashboard central da operação"
+        title="Dashboard financeiro da operação"
       />
-
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <article className="imperial-card p-7">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
-            <span className="size-2 rounded-full bg-[#36f57c]" />
-            Centro de comando
-          </div>
-          <h2 className="mt-5 text-3xl font-semibold text-white">
-            {user.companyName || 'Sua empresa'} sob leitura unificada.
-          </h2>
-          <p className="mt-4 max-w-2xl text-sm leading-8 text-[var(--text-soft)]">
-            A sessão autenticada cruza portfólio, pedidos reais, resultado financeiro e dados de
-            consentimento em um painel único.
-          </p>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <MiniInfoCard hint={user.email} label="Operador responsável" value={user.fullName} />
-            <MiniInfoCard
-              hint="sincronizado com a base local"
-              label="Última leitura"
-              value={formatDateTime(new Date().toISOString())}
-            />
-          </div>
-        </article>
-
-        <AccountProfileCard
-          error={profileMutationError}
-          loading={updateProfileMutation.isPending}
-          onSubmit={handleProfileSubmit}
-          user={user}
-        />
-      </div>
 
       <div className="grid gap-4 xl:grid-cols-5">
         <MetricCard
@@ -707,31 +678,24 @@ function OverviewEnvironment({
         />
       </div>
 
-      <article className="imperial-card p-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C9A84C]">
-          Cinco Pilares Executivos
-        </p>
-        <div className="mt-6">
-          <PillarsExecutiveCard />
-        </div>
-      </article>
+      {finance ? (
+        <>
+          <FinanceOverviewTotal finance={finance} isLoading={financeQueryIsLoading} />
 
-      <article className="imperial-card p-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-          Sinais da operação
-        </p>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          {signals.map((signal) => (
-            <MiniInfoCard
-              hint={signal.helper}
-              key={signal.label}
-              label={signal.label}
-              value={signal.value}
-            />
-          ))}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <FinanceChannelsPanel finance={finance} isLoading={financeQueryIsLoading} />
+            <FinanceCategoriesSidebar finance={finance} isLoading={financeQueryIsLoading} />
+          </div>
+        </>
+      ) : financeQueryIsLoading ? (
+        <div className="imperial-card flex animate-pulse items-center justify-center p-16">
+          <p className="text-sm text-[var(--text-soft)]">Carregando dados financeiros...</p>
         </div>
-      </article>
+      ) : financeError ? (
+        <div className="imperial-card p-8">
+          <p className="text-sm text-[var(--danger)]">{financeError}</p>
+        </div>
+      ) : null}
 
       <SalesPerformanceCard finance={finance} isLoading={financeQueryIsLoading} />
 

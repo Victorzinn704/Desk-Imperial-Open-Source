@@ -1,0 +1,158 @@
+'use client'
+
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { FinanceSummaryResponse } from '@contracts/contracts'
+import { formatCurrency } from '@/lib/currency'
+import { cn } from '@/lib/utils'
+
+type RecentOrder = FinanceSummaryResponse['recentOrders'][number]
+
+type Props = {
+  orders: RecentOrder[]
+  displayCurrency: FinanceSummaryResponse['displayCurrency']
+}
+
+const ROWS_PER_PAGE = 10
+
+function StatusBadge({ status }: { status: RecentOrder['status'] }) {
+  const isCompleted = status === 'COMPLETED'
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+        isCompleted
+          ? 'border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'
+          : 'border-[rgba(240,68,56,0.25)] bg-[rgba(240,68,56,0.08)] text-red-400',
+      )}
+    >
+      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[#36f57c]' : 'bg-red-400')} />
+      {isCompleted ? 'Concluído' : 'Cancelado'}
+    </span>
+  )
+}
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
+export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
+  const [page, setPage] = useState(1)
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / ROWS_PER_PAGE))
+  const start = (page - 1) * ROWS_PER_PAGE
+  const current = orders.slice(start, start + ROWS_PER_PAGE)
+
+  if (orders.length === 0) {
+    return (
+      <p className="imperial-card-soft px-4 py-6 text-center text-sm text-[var(--text-soft)]">
+        Nenhum pedido encontrado para este filtro.
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="overflow-x-auto rounded-2xl border border-[rgba(255,255,255,0.06)]">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+                Pedido
+              </th>
+              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+                Receita
+              </th>
+              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+                Lucro
+              </th>
+              <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+                Status
+              </th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+                Data
+              </th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+                Canal
+              </th>
+              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+                Itens
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {current.map((order, i) => {
+              const isCompleted = order.status === 'COMPLETED'
+              return (
+                <tr
+                  key={order.id}
+                  className={cn(
+                    'border-b border-[rgba(255,255,255,0.04)] transition-colors hover:bg-[rgba(255,255,255,0.02)]',
+                    i % 2 === 0 ? 'bg-transparent' : 'bg-[rgba(255,255,255,0.01)]',
+                  )}
+                >
+                  <td className="max-w-[180px] px-4 py-3">
+                    <p className="truncate font-semibold text-white">
+                      {order.customerName || 'Cliente não informado'}
+                    </p>
+                  </td>
+                  <td className={cn('px-4 py-3 text-right font-semibold', isCompleted ? 'text-[#36f57c]' : 'text-red-400')}>
+                    {isCompleted ? '' : '−'}
+                    {formatCurrency(order.totalRevenue, displayCurrency)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-[var(--text-soft)]">
+                    {formatCurrency(order.totalProfit, displayCurrency)}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <StatusBadge status={order.status} />
+                  </td>
+                  <td className="px-4 py-3 text-[var(--text-soft)] max-md:hidden">
+                    {formatDate(order.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 capitalize text-[var(--text-soft)] max-md:hidden">
+                    {order.channel || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-[var(--text-soft)] max-md:hidden">
+                    {order.totalItems}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs text-[var(--text-soft)]">
+            {start + 1}–{Math.min(start + ROWS_PER_PAGE, orders.length)} de {orders.length} pedidos
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <span className="text-xs text-[var(--text-soft)]">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
