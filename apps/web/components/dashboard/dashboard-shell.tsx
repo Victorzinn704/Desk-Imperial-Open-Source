@@ -88,6 +88,7 @@ import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-pa
 import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
 import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { PdvBoard } from '@/components/pdv/pdv-board'
+import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
 
 type DashboardSectionId =
   | 'overview'
@@ -95,11 +96,13 @@ type DashboardSectionId =
   | 'portfolio'
   | 'compliance'
   | 'pdv'
+  | 'calendario'
 
 const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
   { id: 'overview', label: 'Dashboard', description: 'Visão executiva', icon: LayoutDashboard },
   { id: 'sales', label: 'Operação', description: 'Pedidos e vendas', icon: ShoppingCart },
   { id: 'pdv', label: 'PDV / Comandas', description: 'Kanban em tempo real', icon: Tags },
+  { id: 'calendario', label: 'Calendário', description: 'Atividades comerciais', icon: TimerReset },
   { id: 'portfolio', label: 'Portfólio', description: 'Produtos e margem', icon: Boxes },
   { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
 ]
@@ -141,6 +144,12 @@ const sectionHeroCopy: Record<
     title: 'Comandas e atendimento em tempo real.',
     description:
       'Gerencie as comandas do salão em um kanban visual. Mova os pedidos entre Aberta, Em Preparo, Pronta e Fechada com drag-and-drop.',
+  },
+  calendario: {
+    badge: 'Agenda comercial',
+    title: 'Planeje eventos, promoções e jogos no calendário.',
+    description:
+      'Arraste atividades para mudar datas, redimensione para ajustar duração e acompanhe o impacto esperado em vendas de cada evento.',
   },
 }
 
@@ -611,10 +620,26 @@ function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <ComplianceEnvironment {...props} />
     case 'pdv':
       return <PdvEnvironment products={props.products} />
+    case 'calendario':
+      return <CalendarioEnvironment />
     case 'overview':
     default:
       return <OverviewEnvironment {...props} />
   }
+}
+
+function CalendarioEnvironment() {
+  return (
+    <section className="space-y-6">
+      <DashboardSectionHeading
+        description="Arraste eventos para trocar datas, redimensione para ajustar duração. Clique em um dia para criar nova atividade."
+        eyebrow="Agenda comercial"
+        icon={TimerReset}
+        title="Calendário de Atividades"
+      />
+      <CommercialCalendar />
+    </section>
+  )
 }
 
 function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProps['products'] }>) {
@@ -676,41 +701,51 @@ function OverviewEnvironment({
         title="Dashboard financeiro da operação"
       />
 
-      <div className="grid gap-4 xl:grid-cols-5">
-        <MetricCard
-          hint={user.fullName}
-          icon={UserRound}
-          label="Conta"
-          value={user.companyName || 'Conta Demo'}
-        />
-        <MetricCard
-          hint="Status da identidade no portal"
-          icon={ShieldCheck}
-          label="Status"
-          value={formatAccountStatus(user.status)}
-        />
-        <MetricCard
-          hint="Produtos ativos com sessão autenticada"
-          icon={Box}
-          label="Portfólio"
-          loading={financeQueryIsLoading}
-          value={String(productsTotals?.activeProducts ?? 0)}
-        />
-        <MetricCard
-          hint="Pedidos concluídos considerados no financeiro"
-          icon={ShoppingCart}
-          label="Pedidos"
-          loading={financeQueryIsLoading}
-          value={String(ordersTotals?.completedOrders ?? 0)}
-        />
-        <MetricCard
-          hint="Equipe apta a registrar vendas"
-          icon={ShieldCheck}
-          label="Equipe ativa"
-          loading={financeQueryIsLoading}
-          value={String(employeesTotals?.activeEmployees ?? 0)}
-        />
-      </div>
+      {(() => {
+        const revenueTrend = finance?.revenueTimeline.map((t) => t.revenue) ?? []
+        const profitTrend = finance?.revenueTimeline.map((t) => t.profit) ?? []
+        const ordersTrend = finance?.revenueTimeline.map((t) => t.orders) ?? []
+        return (
+          <div className="grid gap-4 xl:grid-cols-5">
+            <MetricCard
+              hint={user.fullName}
+              icon={UserRound}
+              label="Conta"
+              value={user.companyName || 'Conta Demo'}
+            />
+            <MetricCard
+              hint="Status da identidade no portal"
+              icon={ShieldCheck}
+              label="Status"
+              value={formatAccountStatus(user.status)}
+            />
+            <MetricCard
+              hint="Produtos ativos com sessão autenticada"
+              icon={Box}
+              label="Portfólio"
+              loading={financeQueryIsLoading}
+              trend={revenueTrend}
+              value={String(productsTotals?.activeProducts ?? 0)}
+            />
+            <MetricCard
+              hint="Pedidos concluídos considerados no financeiro"
+              icon={ShoppingCart}
+              label="Pedidos"
+              loading={financeQueryIsLoading}
+              trend={ordersTrend}
+              value={String(ordersTotals?.completedOrders ?? 0)}
+            />
+            <MetricCard
+              hint="Equipe apta a registrar vendas"
+              icon={ShieldCheck}
+              label="Equipe ativa"
+              loading={financeQueryIsLoading}
+              trend={profitTrend}
+              value={String(employeesTotals?.activeEmployees ?? 0)}
+            />
+          </div>
+        )
+      })()}
 
       {finance ? (
         <>

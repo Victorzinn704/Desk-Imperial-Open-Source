@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
@@ -41,12 +41,37 @@ function formatDate(iso: string) {
   }).format(new Date(iso))
 }
 
+function exportOrdersCsv(orders: RecentOrder[], currency: string) {
+  const header = ['Cliente', 'Canal', 'Receita', 'Lucro', 'Itens', 'Status', 'Data']
+  const rows = orders.map((o) => [
+    o.customerName ?? 'Anônimo',
+    o.channel ?? '—',
+    (o.totalRevenue / 100).toFixed(2),
+    (o.totalProfit / 100).toFixed(2),
+    String(o.totalItems),
+    o.status,
+    new Date(o.createdAt).toLocaleString('pt-BR'),
+  ])
+  const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `pedidos_${currency}_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
   const [page, setPage] = useState(1)
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ROWS_PER_PAGE))
   const start = (page - 1) * ROWS_PER_PAGE
   const current = orders.slice(start, start + ROWS_PER_PAGE)
+
+  const handleExport = useCallback(() => {
+    exportOrdersCsv(orders, displayCurrency)
+  }, [orders, displayCurrency])
 
   if (orders.length === 0) {
     return (
@@ -58,6 +83,16 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-all hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
+          type="button"
+          onClick={handleExport}
+        >
+          <Download className="size-3.5" />
+          Exportar CSV ({orders.length})
+        </button>
+      </div>
       <div className="overflow-x-auto rounded-2xl border border-[rgba(255,255,255,0.06)]">
         <table className="w-full text-sm">
           <thead>

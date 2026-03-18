@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Cog, Lock, Bell, Building2, Eye, EyeOff, Monitor, Smartphone, Calendar, ShieldCheck, KeyRound } from 'lucide-react'
 import { Button } from '@/components/shared/button'
 import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
-import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
+import Link from 'next/link'
 
 type DayKey = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom'
 
@@ -398,16 +398,23 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Atividades comerciais — Calendário interativo */}
+          {/* Atividades comerciais — Link para módulo dedicado */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <Calendar className="size-4 text-[var(--accent)]" />
               <p className="text-sm font-semibold text-[var(--text-soft)]">Calendário Comercial</p>
-              <span className="ml-2 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.07)] px-2.5 py-0.5 text-[11px] font-semibold text-[#8fffb9]">
-                Clique no dia para adicionar
-              </span>
             </div>
-            <CommercialCalendar />
+            <Link href="/dashboard">
+              <div className="flex items-center justify-between rounded-[16px] border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)] px-5 py-4 transition-all hover:bg-[rgba(52,242,127,0.1)]">
+                <div>
+                  <p className="text-sm font-semibold text-white">Acessar Calendário de Atividades</p>
+                  <p className="mt-1 text-xs text-[var(--text-soft)]">
+                    Arraste eventos, planeje promoções, jogos e datas especiais com impacto em vendas.
+                  </p>
+                </div>
+                <span className="ml-4 shrink-0 text-[#36f57c]">→</span>
+              </div>
+            </Link>
           </div>
 
           <Button className="w-full">Salvar Configurações</Button>
