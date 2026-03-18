@@ -349,6 +349,18 @@ export async function fetchEmployees() {
   })
 }
 
+export type LastLoginEntry = {
+  id: string
+  browser: string
+  os: string
+  ipAddress: string | null
+  createdAt: string
+}
+
+export async function fetchLastLogins() {
+  return apiFetch<LastLoginEntry[]>('/auth/activity', { method: 'GET' })
+}
+
 export async function createEmployee(payload: EmployeePayload) {
   return apiFetch<{ employee: EmployeeRecord }>('/employees', {
     method: 'POST',

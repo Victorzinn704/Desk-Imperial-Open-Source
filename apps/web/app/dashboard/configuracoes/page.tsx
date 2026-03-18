@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Cog, Lock, Bell, Building2, Eye, EyeOff } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Cog, Lock, Bell, Building2, Eye, EyeOff, Monitor, Smartphone } from 'lucide-react'
 import { Button } from '@/components/shared/button'
+import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
 
 export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('')
@@ -19,6 +21,12 @@ export default function SettingsPage() {
     profit: true,
     event: true,
     normal: true,
+  })
+
+  const activityQuery = useQuery({
+    queryKey: ['auth', 'activity'],
+    queryFn: fetchLastLogins,
+    staleTime: 5 * 60 * 1000,
   })
 
   const handlePasswordChange = () => {
@@ -119,10 +127,45 @@ export default function SettingsPage() {
 
           <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] p-4">
             <h3 className="text-sm font-semibold text-white">Últimos Acessos</h3>
-            <div className="mt-3 space-y-2 text-sm text-[var(--text-soft)]">
-              <div>📱 Chrome no Windows — Hoje às 14:30</div>
-              <div>🖥️ Safari no macOS — Ontem às 09:15</div>
-              <div>📊 Firefox no Linux — 3 dias atrás às 21:00</div>
+            <div className="mt-3 space-y-2">
+              {activityQuery.isLoading && (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-10 animate-pulse rounded-lg bg-[rgba(255,255,255,0.04)]" />
+                  ))}
+                </div>
+              )}
+              {activityQuery.error && (
+                <p className="text-xs text-[var(--danger)]">Não foi possível carregar o histórico.</p>
+              )}
+              {activityQuery.data?.length === 0 && (
+                <p className="text-sm text-[var(--text-soft)]">Nenhum acesso registrado ainda.</p>
+              )}
+              {activityQuery.data?.map((entry: LastLoginEntry) => {
+                const isMobile = ['iPhone', 'iPad', 'Android'].includes(entry.os)
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 rounded-lg border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                    {isMobile
+                      ? <Smartphone className="size-4 shrink-0 text-[var(--text-soft)]" />
+                      : <Monitor className="size-4 shrink-0 text-[var(--text-soft)]" />
+                    }
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white">
+                        {entry.browser} no {entry.os}
+                      </p>
+                      {entry.ipAddress && (
+                        <p className="text-xs text-[var(--text-soft)]">{entry.ipAddress}</p>
+                      )}
+                    </div>
+                    <p className="shrink-0 text-xs text-[var(--text-soft)]">
+                      {new Intl.DateTimeFormat('pt-BR', {
+                        day: '2-digit', month: 'short',
+                        hour: '2-digit', minute: '2-digit',
+                      }).format(new Date(entry.createdAt))}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>

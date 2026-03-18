@@ -13,11 +13,15 @@ import { VerifyEmailDto } from './dto/verify-email.dto'
 import { CsrfGuard } from './guards/csrf.guard'
 import { SessionGuard } from './guards/session.guard'
 import { AuthService } from './auth.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post('register')
   register(@Body() body: RegisterDto, @Req() request: Request) {
@@ -77,5 +81,11 @@ export class AuthController {
     @Req() request: Request,
   ) {
     return this.authService.updateProfile(auth, body, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard)
+  @Get('activity')
+  getActivity(@CurrentAuth() auth: AuthContext) {
+    return this.auditLogService.getLastLoginsForUser(auth.userId)
   }
 }

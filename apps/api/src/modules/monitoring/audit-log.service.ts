@@ -13,11 +13,62 @@ export type AuditLogInput = {
   userAgent?: string | null
 }
 
+export type LastLoginEntry = {
+  id: string
+  browser: string
+  os: string
+  ipAddress: string | null
+  createdAt: string
+}
+
+function parseUserAgent(ua: string | null): { browser: string; os: string } {
+  if (!ua) return { browser: 'Navegador desconhecido', os: 'Sistema desconhecido' }
+
+  let browser = 'Navegador'
+  let os = 'Sistema desconhecido'
+
+  if (ua.includes('Edg/')) browser = 'Edge'
+  else if (ua.includes('OPR/') || ua.includes('Opera/')) browser = 'Opera'
+  else if (ua.includes('Chrome/') && !ua.includes('Chromium/')) browser = 'Chrome'
+  else if (ua.includes('Chromium/')) browser = 'Chromium'
+  else if (ua.includes('Firefox/')) browser = 'Firefox'
+  else if (ua.includes('Safari/') && ua.includes('Version/')) browser = 'Safari'
+
+  if (ua.includes('Windows NT')) os = 'Windows'
+  else if (ua.includes('iPhone')) os = 'iPhone'
+  else if (ua.includes('iPad')) os = 'iPad'
+  else if (ua.includes('Android')) os = 'Android'
+  else if (ua.includes('Mac OS X')) os = 'macOS'
+  else if (ua.includes('Linux')) os = 'Linux'
+
+  return { browser, os }
+}
+
 @Injectable()
 export class AuditLogService {
   private readonly logger = new Logger(AuditLogService.name)
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async getLastLoginsForUser(userId: string, limit = 10): Promise<LastLoginEntry[]> {
+    const logs = await this.prisma.auditLog.findMany({
+      where: { actorUserId: userId, event: 'auth.login.succeeded' },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: { id: true, createdAt: true, ipAddress: true, userAgent: true },
+    })
+
+    return logs.map((log) => {
+      const { browser, os } = parseUserAgent(log.userAgent)
+      return {
+        id: log.id,
+        browser,
+        os,
+        ipAddress: log.ipAddress,
+        createdAt: log.createdAt.toISOString(),
+      }
+    })
+  }
 
   async record(input: AuditLogInput) {
     try {

@@ -1,16 +1,8 @@
 'use client'
 
-import { Clock, LogIn, Package, ShoppingCart, Cog, Star } from 'lucide-react'
-
-interface Activity {
-  id: string
-  type: 'login' | 'product_created' | 'order_placed' | 'config_change' | 'event_created'
-  title: string
-  description: string
-  timestamp: Date
-  icon: React.ReactNode
-  details?: string
-}
+import { Clock, LogIn, Monitor, Smartphone } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
 
 const getRelativeTime = (date: Date) => {
   const now = new Date()
@@ -19,126 +11,95 @@ const getRelativeTime = (date: Date) => {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
+  if (minutes < 1) return 'agora mesmo'
   if (minutes < 60) return `há ${minutes}m`
   if (hours < 24) return `há ${hours}h`
   if (days < 7) return `há ${days}d`
   return date.toLocaleDateString('pt-BR')
 }
 
-const getActivityIcon = (type: Activity['type']) => {
-  switch (type) {
-    case 'login':
-      return <LogIn className="size-4 text-blue-400" />
-    case 'product_created':
-      return <Package className="size-4 text-green-400" />
-    case 'order_placed':
-      return <ShoppingCart className="size-4 text-purple-400" />
-    case 'config_change':
-      return <Cog className="size-4 text-yellow-400" />
-    case 'event_created':
-      return <Star className="size-4 text-pink-400" />
-  }
-}
+const MOBILE_OS = ['iPhone', 'iPad', 'Android']
 
 export function ActivityTimeline() {
-  // Mock data - em produção vem do backend
-  const activities: Activity[] = [
-    {
-      id: '1',
-      type: 'login',
-      title: 'Acesso realizado',
-      description: 'Chrome no Windows',
-      timestamp: new Date(Date.now() - 30 * 60000), // 30 min atrás
-      icon: getActivityIcon('login'),
-      details: '14.30.45',
-    },
-    {
-      id: '2',
-      type: 'order_placed',
-      title: 'Novo pedido registrado',
-      description: 'Mesa 5 - Vendedor Ana Maria',
-      timestamp: new Date(Date.now() - 2 * 60 * 60000), // 2h atrás
-      icon: getActivityIcon('order_placed'),
-      details: 'R$ 47,50',
-    },
-    {
-      id: '3',
-      type: 'product_created',
-      title: 'Produto criado',
-      description: 'Whisky Premium - R$ 15,00',
-      timestamp: new Date(Date.now() - 5 * 60 * 60000), // 5h atrás
-      icon: getActivityIcon('product_created'),
-    },
-    {
-      id: '4',
-      type: 'config_change',
-      title: 'Configuração alterada',
-      description: 'Horário de eventos atualizado',
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60000), // ontem
-      icon: getActivityIcon('config_change'),
-    },
-    {
-      id: '5',
-      type: 'event_created',
-      title: 'Evento criado',
-      description: 'Noite Forró - Sexta',
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60000), // 2 dias atrás
-      icon: getActivityIcon('event_created'),
-      details: 'Evento especial',
-    },
-    {
-      id: '6',
-      type: 'login',
-      title: 'Acesso realizado',
-      description: 'Safari no macOS',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60000), // 3 dias atrás
-      icon: getActivityIcon('login'),
-    },
-  ]
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['auth', 'activity'],
+    queryFn: fetchLastLogins,
+    staleTime: 5 * 60 * 1000,
+  })
 
   return (
     <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-lg">
       <div className="mb-6 flex items-center gap-3">
         <Clock className="size-6 text-[var(--accent)]" />
-        <h2 className="text-xl font-semibold text-white">Atividades</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-white">Atividades</h2>
+          <p className="text-xs text-[var(--text-soft)]">Histórico real de acessos</p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {activities.map((activity, index) => (
-          <div key={activity.id} className="relative">
-            {/* Timeline line */}
-            {index !== activities.length - 1 && (
-              <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" />
-            )}
-
-            {/* Activity item */}
-            <div className="flex gap-4">
-              {/* Icon circle */}
-              <div className="relative z-10 flex size-8 items-center justify-center rounded-full bg-[var(--bg)] p-1.5">
-                {activity.icon}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pb-4">
-                <p className="text-sm font-semibold text-white">{activity.title}</p>
-                <p className="text-xs text-[var(--text-soft)]">{activity.description}</p>
-
-                {activity.details && (
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">{activity.details}</p>
-                )}
-
-                <time className="mt-1 block text-xs text-[var(--text-muted)]">
-                  {getRelativeTime(activity.timestamp)}
-                </time>
+      {isLoading && (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex gap-4">
+              <div className="size-8 animate-pulse rounded-full bg-[rgba(255,255,255,0.06)]" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-3 w-2/3 animate-pulse rounded bg-[rgba(255,255,255,0.06)]" />
+                <div className="h-2.5 w-1/2 animate-pulse rounded bg-[rgba(255,255,255,0.04)]" />
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Footer message */}
+      {error && (
+        <p className="text-sm text-[var(--danger)]">Não foi possível carregar o histórico.</p>
+      )}
+
+      {data && data.length === 0 && (
+        <p className="text-sm text-[var(--text-soft)]">Nenhum acesso registrado ainda.</p>
+      )}
+
+      {data && data.length > 0 && (
+        <div className="space-y-4">
+          {data.map((entry: LastLoginEntry, index: number) => {
+            const isMobile = MOBILE_OS.includes(entry.os)
+            const isLast = index === data.length - 1
+            return (
+              <div key={entry.id} className="relative">
+                {!isLast && (
+                  <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" />
+                )}
+                <div className="flex gap-4">
+                  <div className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full bg-[rgba(52,242,127,0.1)] border border-[rgba(52,242,127,0.2)]">
+                    {isMobile
+                      ? <Smartphone className="size-4 text-[#36f57c]" />
+                      : <Monitor className="size-4 text-[#36f57c]" />
+                    }
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <p className="text-sm font-semibold text-white">Acesso realizado</p>
+                    <p className="text-xs text-[var(--text-soft)]">
+                      {entry.browser} no {entry.os}
+                    </p>
+                    {entry.ipAddress && (
+                      <p className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">
+                        {entry.ipAddress}
+                      </p>
+                    )}
+                    <time className="mt-1 block text-xs text-[var(--text-muted)]">
+                      {getRelativeTime(new Date(entry.createdAt))}
+                    </time>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
-        Últimas atividades dos últimos 7 dias
+        <LogIn className="mx-auto mb-1 size-3.5" />
+        Últimos 10 acessos reais da sua conta
       </div>
     </aside>
   )
