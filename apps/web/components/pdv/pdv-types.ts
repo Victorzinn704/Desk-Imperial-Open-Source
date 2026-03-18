@@ -13,6 +13,7 @@ export type Comanda = {
   status: ComandaStatus
   mesa?: string
   clienteNome?: string
+  clienteDocumento?: string
   itens: ComandaItem[]
   desconto: number
   acrescimo: number

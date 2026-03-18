@@ -78,6 +78,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
   function handleNewComanda(data: {
     mesa: string
     clienteNome: string
+    clienteDocumento: string
     itens: ComandaItem[]
     desconto: number
     acrescimo: number
@@ -87,6 +88,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
       status: 'aberta',
       mesa: data.mesa || undefined,
       clienteNome: data.clienteNome || undefined,
+      clienteDocumento: data.clienteDocumento || undefined,
       itens: data.itens,
       desconto: data.desconto,
       acrescimo: data.acrescimo,
@@ -99,6 +101,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
   function handleEditComanda(data: {
     mesa: string
     clienteNome: string
+    clienteDocumento: string
     itens: ComandaItem[]
     desconto: number
     acrescimo: number
@@ -111,6 +114,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
               ...c,
               mesa: data.mesa || undefined,
               clienteNome: data.clienteNome || undefined,
+              clienteDocumento: data.clienteDocumento || undefined,
               itens: data.itens,
               desconto: data.desconto,
               acrescimo: data.acrescimo,

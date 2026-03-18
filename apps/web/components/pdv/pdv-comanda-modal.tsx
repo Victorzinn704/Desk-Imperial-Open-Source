@@ -5,6 +5,7 @@ import { Minus, Plus, Search, X } from 'lucide-react'
 import type { Comanda, ComandaItem } from './pdv-types'
 import { calcTotal } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
+import { maskDocument, validateDocument } from '@/lib/document-validation'
 
 type SimpleProduct = {
   id: string
@@ -17,7 +18,7 @@ type SimpleProduct = {
 type PdvComandaModalProps = {
   comanda?: Comanda | null
   products: SimpleProduct[]
-  onSave: (data: { mesa: string; clienteNome: string; itens: ComandaItem[]; desconto: number; acrescimo: number }) => void
+  onSave: (data: { mesa: string; clienteNome: string; clienteDocumento: string; itens: ComandaItem[]; desconto: number; acrescimo: number }) => void
   onClose: () => void
   onStatusChange?: (comanda: Comanda, status: Comanda['status']) => void
 }
@@ -26,7 +27,11 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
   const isEditing = Boolean(comanda)
   const [mesa, setMesa] = useState(comanda?.mesa ?? '')
   const [clienteNome, setClienteNome] = useState(comanda?.clienteNome ?? '')
+  const [clienteDocumento, setClienteDocumento] = useState(comanda?.clienteDocumento ?? '')
   const [itens, setItens] = useState<ComandaItem[]>(comanda?.itens ?? [])
+
+  const docValidation = validateDocument(clienteDocumento)
+  const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
   const [desconto, setDesconto] = useState(comanda?.desconto ?? 0)
   const [acrescimo, setAcrescimo] = useState(comanda?.acrescimo ?? 0)
   const [search, setSearch] = useState('')
@@ -79,7 +84,7 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
 
   function handleSave() {
     if (itens.length === 0) return
-    onSave({ mesa, clienteNome, itens, desconto, acrescimo })
+    onSave({ mesa, clienteNome, clienteDocumento, itens, desconto, acrescimo })
   }
 
   const STATUS_OPTIONS: Array<{ value: Comanda['status']; label: string; color: string }> = [
@@ -170,7 +175,7 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
           {/* Right — comanda summary */}
           <div className="flex w-[45%] flex-col">
             {/* Cliente / Mesa */}
-            <div className="grid grid-cols-2 gap-3 p-4">
+            <div className="grid grid-cols-2 gap-3 p-4 pb-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
                   Mesa
@@ -192,6 +197,49 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
                   value={clienteNome}
                   onChange={(e) => setClienteNome(e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* CPF / CNPJ */}
+            <div className="px-4 pb-3">
+              <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+                CPF / CNPJ
+                {clienteDocumento && (
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{
+                      background: docValidation.valid ? 'rgba(52,242,127,0.1)' : 'rgba(239,68,68,0.1)',
+                      color: docValidation.valid ? '#36f57c' : '#fca5a5',
+                    }}
+                  >
+                    {docValidation.valid ? `${docLabel} válido` : docValidation.message ?? `${docLabel} inválido`}
+                  </span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 rounded-[12px] border bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none transition-colors"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                  style={{
+                    borderColor: clienteDocumento
+                      ? docValidation.valid
+                        ? 'rgba(52,242,127,0.35)'
+                        : 'rgba(239,68,68,0.35)'
+                      : 'rgba(255,255,255,0.08)',
+                  }}
+                  value={clienteDocumento}
+                  onChange={(e) => setClienteDocumento(maskDocument(e.target.value))}
+                />
+                {clienteDocumento && (
+                  <button
+                    className="rounded-[12px] border border-[rgba(255,255,255,0.08)] px-2.5 text-[var(--text-soft)] hover:text-white"
+                    type="button"
+                    onClick={() => setClienteDocumento('')}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 

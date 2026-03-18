@@ -86,6 +86,7 @@ import { useActivityTimeline } from '@/hooks/use-activity-timeline'
 import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
 import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
 import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
+import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { PdvBoard } from '@/components/pdv/pdv-board'
 
 type DashboardSectionId =
@@ -765,6 +766,7 @@ function SalesEnvironment({
   employees,
   employeesError,
   employeesTotals,
+  finance,
   orderMutationError,
   orders,
   ordersError,
@@ -782,6 +784,7 @@ function SalesEnvironment({
     | 'employees'
     | 'employeesError'
     | 'employeesTotals'
+    | 'finance'
     | 'orderMutationError'
     | 'orders'
     | 'ordersError'
@@ -836,7 +839,7 @@ function SalesEnvironment({
           />
         </div>
 
-        <div>
+        <div className="space-y-4">
           <EmployeeManagementCard
             busy={
               createEmployeeMutation.isPending ||
@@ -851,6 +854,7 @@ function SalesEnvironment({
             onRestore={restoreEmployeeMutation.mutate}
             totals={employeesTotals}
           />
+          <EmployeePayrollCard employees={employees} finance={finance} />
         </div>
       </div>
 
