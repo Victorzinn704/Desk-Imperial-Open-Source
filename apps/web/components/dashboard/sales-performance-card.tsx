@@ -2,7 +2,17 @@
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-import { formatCurrency } from '@/lib/currency'
+import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 export function SalesPerformanceCard({
   finance,
@@ -17,8 +27,6 @@ export function SalesPerformanceCard({
   const profitGrowth = finance?.totals.profitGrowthPercent ?? 0
   const currentRevenue = finance?.totals.currentMonthRevenue ?? 0
   const currentProfit = finance?.totals.currentMonthProfit ?? 0
-
-  const maxRevenue = Math.max(...timeline.map((t) => t.revenue), 1)
 
   return (
     <div className="group relative flex w-full flex-col rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl transition-all duration-300 hover:scale-[1.01]">
@@ -42,9 +50,7 @@ export function SalesPerformanceCard({
           <div className="flex items-center gap-2.5">
             <div
               className="flex size-9 items-center justify-center rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, var(--accent), rgba(212,177,106,0.6))',
-              }}
+              style={{ background: 'linear-gradient(135deg, #36f57c, #38bdf8)' }}
             >
               <TrendingUp className="size-4 text-[var(--surface)]" />
             </div>
@@ -65,12 +71,14 @@ export function SalesPerformanceCard({
         {/* two metrics */}
         <div className="mb-5 grid grid-cols-2 gap-3">
           <MetricTile
+            color="#36f57c"
             growth={revenueGrowth}
             isLoading={isLoading}
             label="Receita do mês"
             value={isLoading ? '—' : formatCurrency(currentRevenue, displayCurrency)}
           />
           <MetricTile
+            color="#38bdf8"
             growth={profitGrowth}
             isLoading={isLoading}
             label="Lucro do mês"
@@ -78,62 +86,91 @@ export function SalesPerformanceCard({
           />
         </div>
 
-        {/* bar chart — 6 months revenue timeline */}
-        <div className="mb-5 h-24 w-full overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
+        {/* chart */}
+        <div className="mb-4 h-[188px] w-full">
           {isLoading ? (
-            <div className="flex h-full items-end justify-between gap-1">
+            <div className="flex h-full items-end justify-between gap-1.5 px-1">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   className="skeleton-shimmer flex-1 rounded-sm"
                   key={i}
-                  style={{ height: `${40 + Math.random() * 50}%` }}
+                  style={{ height: `${45 + (i % 3) * 18}%` }}
                 />
               ))}
             </div>
           ) : timeline.length > 0 ? (
-            <div className="flex h-full items-end justify-between gap-1">
-              {timeline.map((bucket) => {
-                const heightPct = maxRevenue > 0 ? Math.max(8, (bucket.revenue / maxRevenue) * 100) : 8
-                return (
-                  <div
-                    className="group/bar relative flex-1 rounded-sm"
-                    key={bucket.label}
-                    style={{
-                      height: `${heightPct}%`,
-                      background: 'rgba(212,177,106,0.15)',
-                    }}
-                    title={`${bucket.label}: ${formatCurrency(bucket.revenue, displayCurrency)}`}
-                  >
-                    <div
-                      className="h-full w-full rounded-sm transition-all duration-500"
-                      style={{
-                        background: 'linear-gradient(to top, var(--accent), rgba(212,177,106,0.5))',
-                        opacity: bucket.revenue > 0 ? 1 : 0.3,
-                      }}
-                    />
-                    {/* tooltip on hover */}
-                    <span className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[10px] text-[var(--text-soft)] group-hover/bar:block">
-                      {bucket.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+            <ResponsiveContainer height="100%" width="100%">
+              <ComposedChart
+                data={timeline}
+                margin={{ top: 4, right: 4, left: -14, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.05)"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                />
+                <XAxis
+                  axisLine={false}
+                  dataKey="label"
+                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
+                  tickLine={false}
+                />
+                <YAxis
+                  axisLine={false}
+                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
+                  tickFormatter={(v: number) => formatCompactCurrency(v, displayCurrency)}
+                  tickLine={false}
+                  width={68}
+                />
+                <Tooltip
+                  content={
+                    <PerformanceTooltip displayCurrency={displayCurrency} />
+                  }
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="url(#perfRevenue)"
+                  maxBarSize={32}
+                  name="Receita"
+                  radius={[6, 6, 2, 2]}
+                />
+                <Line
+                  dataKey="profit"
+                  dot={{ fill: '#38bdf8', r: 3, strokeWidth: 0 }}
+                  name="Lucro"
+                  stroke="#38bdf8"
+                  strokeWidth={2.5}
+                  type="monotone"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-soft)]">
               <p className="text-xs text-[var(--text-muted)]">Sem dados de vendas ainda</p>
             </div>
           )}
         </div>
 
-        {/* footer */}
+        {/* legend */}
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-[var(--text-soft)]">
+          <p className="text-[11px] font-medium text-[var(--text-soft)]">
             Últimos {timeline.length > 0 ? timeline.length : 6} meses
           </p>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-soft)]">
-            <span className="size-2 rounded-full" style={{ background: 'var(--accent)' }} />
-            Receita mensal
+          <div className="flex items-center gap-3 text-[11px] font-medium text-[var(--text-soft)]">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-3 rounded-sm bg-[#36f57c]" />
+              Receita
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-0.5 w-3 rounded-full bg-[#38bdf8]" />
+              Lucro
+            </span>
           </div>
         </div>
       </div>
@@ -142,21 +179,26 @@ export function SalesPerformanceCard({
 }
 
 function MetricTile({
+  color,
   growth,
   isLoading,
   label,
   value,
 }: Readonly<{
+  color: string
   growth: number
   isLoading: boolean
   label: string
   value: string
 }>) {
   const isPositive = growth >= 0
-  const GrowthIcon = isPositive ? TrendingUp : TrendingDown
+  const Icon = isPositive ? TrendingUp : TrendingDown
 
   return (
-    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] p-3">
+    <div
+      className="rounded-[16px] border bg-[var(--surface-soft)] p-3"
+      style={{ borderColor: `${color}22` }}
+    >
       <p className="text-[11px] font-medium text-[var(--text-soft)]">{label}</p>
       {isLoading ? (
         <div className="skeleton-shimmer mt-1.5 h-6 w-24 rounded-md" />
@@ -166,13 +208,46 @@ function MetricTile({
       {!isLoading && (
         <span
           className="mt-1 flex items-center gap-1 text-[11px] font-semibold"
-          style={{ color: isPositive ? 'var(--success)' : 'var(--danger)' }}
+          style={{ color: isPositive ? '#36f57c' : 'var(--danger)' }}
         >
-          <GrowthIcon className="size-3" />
+          <Icon className="size-3" />
           {isPositive ? '+' : ''}
           {growth.toFixed(1)}% vs mês anterior
         </span>
       )}
+    </div>
+  )
+}
+
+function PerformanceTooltip({
+  active,
+  displayCurrency,
+  label,
+  payload,
+}: {
+  active?: boolean
+  displayCurrency: string
+  label?: string
+  payload?: Array<{ name?: string; value?: number; color?: string }>
+}) {
+  if (!active || !payload?.length) return null
+
+  return (
+    <div className="min-w-[180px] rounded-[16px] border border-[var(--border-strong)] bg-[rgba(12,15,19,0.96)] p-3.5 shadow-[var(--shadow-panel)]">
+      <p className="mb-2.5 text-xs font-semibold text-[var(--text-soft)]">{label}</p>
+      <div className="space-y-1.5">
+        {payload.map((item) => (
+          <div className="flex items-center justify-between gap-4 text-sm" key={item.name}>
+            <span className="flex items-center gap-2 text-[var(--text-soft)]">
+              <span className="size-2 rounded-full" style={{ background: item.color }} />
+              {item.name}
+            </span>
+            <span className="font-semibold text-white">
+              {formatCurrency(item.value ?? 0, displayCurrency as 'BRL')}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
