@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+@import "tailwindcss";
 
 :root {
   color-scheme: dark;
@@ -348,6 +348,8 @@ select {
 .leaflet-container {
   background: #0f1318;
   font-family: "Manrope", "Inter", "Segoe UI", sans-serif;
+  height: 100% !important;
+  width: 100% !important;
 }
 
 .leaflet-control-zoom {

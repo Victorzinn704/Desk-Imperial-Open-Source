@@ -71,7 +71,8 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       const layerGroup = L.layerGroup().addTo(map)
       layerGroupRef.current = layerGroup
       mapRef.current = map
-      setTimeout(() => { map.invalidateSize() }, 0)
+      setTimeout(() => { map.invalidateSize() }, 100)
+      setTimeout(() => { map.invalidateSize() }, 300)
       if (active) setMapReady(true)
     }
 
@@ -171,7 +172,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
     return () => { active = false }
   }, [displayCurrency, points, tab, mapReady])
 
-  return <div className="h-full w-full" ref={containerRef} />
+  return <div className="h-full w-full min-h-[520px]" ref={containerRef} />
 }
 
 function escapeHtml(value: string) {
