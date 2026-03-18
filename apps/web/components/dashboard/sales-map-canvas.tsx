@@ -18,7 +18,7 @@ type MarkerHandle = {
 
 const DEFAULT_CENTER: [number, number] = [-52.0, -14.235]
 const MAP_STYLE_URL =
-  process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? 'https://tiles.openfreemap.org/styles/liberty'
+  process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 
 export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCanvasProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null)
