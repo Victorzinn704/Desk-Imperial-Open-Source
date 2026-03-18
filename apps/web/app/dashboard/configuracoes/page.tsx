@@ -41,6 +41,9 @@ export default function SettingsPage() {
   const [pinDigits, setPinDigits] = useState(['', '', '', ''])
   const [pinSaved, setPinSaved] = useState(false)
   const [pinActive, setPinActive] = useState(() => Boolean(typeof window !== 'undefined' && localStorage.getItem('desk_imperial_pin')))
+  const [confirmRemoveDigits, setConfirmRemoveDigits] = useState(['', '', '', ''])
+  const [confirmRemoveError, setConfirmRemoveError] = useState('')
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false)
 
   function handleSavePin() {
     const pin = pinDigits.join('')
@@ -52,10 +55,19 @@ export default function SettingsPage() {
     setTimeout(() => setPinSaved(false), 3000)
   }
 
-  function handleRemovePin() {
+  function handleConfirmRemove() {
+    const typed = confirmRemoveDigits.join('')
+    const stored = localStorage.getItem('desk_imperial_pin')
+    if (typed !== stored) {
+      setConfirmRemoveError('PIN incorreto. Tente novamente.')
+      setConfirmRemoveDigits(['', '', '', ''])
+      return
+    }
     localStorage.removeItem('desk_imperial_pin')
     setPinActive(false)
-    setPinDigits(['', '', '', ''])
+    setShowConfirmRemove(false)
+    setConfirmRemoveDigits(['', '', '', ''])
+    setConfirmRemoveError('')
   }
 
   const [showPillars, setShowPillars] = useState({
@@ -221,15 +233,89 @@ export default function SettingsPage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-4 flex items-center gap-3">
-                <p className="text-sm text-[var(--text-soft)]">PIN configurado e ativo no PDV.</p>
-                <button
-                  className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-1.5 text-xs font-semibold text-[#fca5a5] hover:bg-[rgba(239,68,68,0.14)]"
-                  type="button"
-                  onClick={handleRemovePin}
-                >
-                  Remover PIN
-                </button>
+              <div className="mt-4 space-y-3">
+                {!showConfirmRemove ? (
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-[var(--text-soft)]">PIN configurado e ativo no PDV.</p>
+                    <button
+                      className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-1.5 text-xs font-semibold text-[#fca5a5] transition-all hover:bg-[rgba(239,68,68,0.14)]"
+                      type="button"
+                      onClick={() => { setShowConfirmRemove(true); setConfirmRemoveError('') }}
+                    >
+                      Remover PIN
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-[14px] border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.05)] p-4 space-y-3">
+                    <p className="text-sm font-semibold text-white">Confirme o PIN atual para desativar</p>
+                    <p className="text-xs text-[var(--text-soft)]">
+                      Digite o PIN de 4 dígitos para confirmar a remoção.
+                    </p>
+                    <div className="flex gap-2">
+                      {confirmRemoveDigits.map((d, i) => (
+                        <input
+                          key={i}
+                          autoFocus={i === 0}
+                          className="size-12 rounded-[12px] border text-center text-lg font-bold text-white outline-none transition-all [appearance:textfield]"
+                          inputMode="numeric"
+                          maxLength={1}
+                          pattern="[0-9]"
+                          style={{
+                            background: d ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)',
+                            borderColor: confirmRemoveError
+                              ? 'rgba(239,68,68,0.5)'
+                              : d
+                                ? 'rgba(239,68,68,0.4)'
+                                : 'rgba(255,255,255,0.1)',
+                          }}
+                          type="password"
+                          value={d}
+                          onChange={(e) => {
+                            const v = e.target.value.replace(/\D/g, '').slice(-1)
+                            const next = [...confirmRemoveDigits]
+                            next[i] = v
+                            setConfirmRemoveDigits(next)
+                            setConfirmRemoveError('')
+                            if (v && i < 3) {
+                              const nextInput = e.target.parentElement?.children[i + 1] as HTMLInputElement
+                              nextInput?.focus()
+                            }
+                            if (next.every((x) => x !== '') && v) {
+                              const typed = next.join('')
+                              const stored = localStorage.getItem('desk_imperial_pin')
+                              if (typed !== stored) {
+                                setConfirmRemoveError('PIN incorreto. Tente novamente.')
+                                setConfirmRemoveDigits(['', '', '', ''])
+                              } else {
+                                localStorage.removeItem('desk_imperial_pin')
+                                setPinActive(false)
+                                setShowConfirmRemove(false)
+                                setConfirmRemoveDigits(['', '', '', ''])
+                                setConfirmRemoveError('')
+                              }
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace' && !d && i > 0) {
+                              const prev = e.currentTarget.parentElement?.children[i - 1] as HTMLInputElement
+                              prev?.focus()
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    {confirmRemoveError && (
+                      <p className="text-xs font-medium text-[#fca5a5]">{confirmRemoveError}</p>
+                    )}
+                    <button
+                      className="text-xs text-[var(--text-soft)] underline hover:text-white"
+                      type="button"
+                      onClick={() => { setShowConfirmRemove(false); setConfirmRemoveDigits(['', '', '', '']); setConfirmRemoveError('') }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
