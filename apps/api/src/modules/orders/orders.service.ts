@@ -163,10 +163,10 @@ export class OrdersService {
       allowEmpty: true,
       rejectFormula: true,
     })
-    const buyerCountry = sanitizePlainText(dto.buyerCountry, 'Pais da venda', {
+    const buyerCountry = sanitizePlainText(dto.buyerCountry ?? 'Brasil', 'Pais da venda', {
       allowEmpty: false,
       rejectFormula: true,
-    })!
+    }) ?? 'Brasil'
     const channel = sanitizePlainText(dto.channel, 'Canal', {
       allowEmpty: true,
       rejectFormula: true,

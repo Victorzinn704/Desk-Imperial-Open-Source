@@ -476,7 +476,7 @@ export function OrderForm({
             />
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-3">
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <InputField
               error={errors.buyerCity?.message}
               label="Cidade da venda"
@@ -485,15 +485,9 @@ export function OrderForm({
             />
             <InputField
               error={errors.buyerState?.message}
-              label="Estado / regiao"
+              label="Estado"
               placeholder="SP"
               {...register('buyerState')}
-            />
-            <InputField
-              error={errors.buyerCountry?.message}
-              label="Pais"
-              placeholder="Brasil"
-              {...register('buyerCountry')}
             />
           </div>
         </section>

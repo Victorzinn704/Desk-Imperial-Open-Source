@@ -79,11 +79,11 @@ export class CreateOrderDto {
   @MaxLength(120)
   buyerState?: string
 
-  @ApiProperty({ example: 'Brasil' })
+  @ApiPropertyOptional({ example: 'Brasil', default: 'Brasil' })
+  @IsOptional()
   @IsString()
-  @MinLength(2)
   @MaxLength(120)
-  buyerCountry!: string
+  buyerCountry?: string
 
   @ApiPropertyOptional({ example: 'cm8employeeid' })
   @IsOptional()

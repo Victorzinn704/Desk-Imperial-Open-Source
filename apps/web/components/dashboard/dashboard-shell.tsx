@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   LogOut,
+  MapPin,
   ShieldCheck,
   ShoppingCart,
   Tags,
@@ -89,6 +90,7 @@ import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categor
 import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { PdvBoard } from '@/components/pdv/pdv-board'
 import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
+import { MapSection } from '@/components/dashboard/map-section'
 
 type DashboardSectionId =
   | 'overview'
@@ -97,6 +99,7 @@ type DashboardSectionId =
   | 'compliance'
   | 'pdv'
   | 'calendario'
+  | 'map'
 
 const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
   { id: 'overview', label: 'Dashboard', description: 'Visão executiva', icon: LayoutDashboard },
@@ -105,6 +108,7 @@ const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
   { id: 'calendario', label: 'Calendário', description: 'Atividades comerciais', icon: TimerReset },
   { id: 'portfolio', label: 'Portfólio', description: 'Produtos e margem', icon: Boxes },
   { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
+  { id: 'map', label: 'Mapa', description: 'Território de guerra', icon: MapPin },
 ]
 
 const sectionHeroCopy: Record<
@@ -150,6 +154,12 @@ const sectionHeroCopy: Record<
     title: 'Planeje eventos, promoções e jogos no calendário.',
     description:
       'Arraste atividades para mudar datas, redimensione para ajustar duração e acompanhe o impacto esperado em vendas de cada evento.',
+  },
+  map: {
+    badge: 'Inteligência territorial',
+    title: 'Mapa de vendas — território de guerra.',
+    description:
+      'Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido.',
   },
 }
 
@@ -627,10 +637,40 @@ function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <PdvEnvironment products={props.products} />
     case 'calendario':
       return <CalendarioEnvironment />
+    case 'map':
+      return <MapEnvironment {...props} />
     case 'overview':
     default:
       return <OverviewEnvironment {...props} />
   }
+}
+
+function MapEnvironment({
+  finance,
+  financeError,
+  financeQueryIsLoading,
+  ordersTotals,
+  user,
+}: Readonly<Pick<EnvironmentRenderProps, 'finance' | 'financeError' | 'financeQueryIsLoading' | 'ordersTotals' | 'user'>>) {
+  const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
+
+  return (
+    <section className="space-y-6">
+      <DashboardSectionHeading
+        description="Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido."
+        eyebrow="Inteligência territorial"
+        icon={MapPin}
+        title="Mapa de Vendas — Território de Guerra"
+      />
+      <MapSection
+        displayCurrency={displayCurrency}
+        error={financeError}
+        finance={finance}
+        isLoading={financeQueryIsLoading}
+        totalOrderCount={ordersTotals?.completedOrders}
+      />
+    </section>
+  )
 }
 
 function CalendarioEnvironment() {
