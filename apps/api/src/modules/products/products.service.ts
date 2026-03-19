@@ -11,6 +11,7 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { ListProductsQueryDto } from './dto/list-products.query'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
+import { CacheService } from '../../common/services/cache.service'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -23,6 +24,7 @@ export class ProductsService {
     private readonly prisma: PrismaService,
     private readonly currencyService: CurrencyService,
     private readonly auditLogService: AuditLogService,
+    private readonly cache: CacheService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListProductsQueryDto) {
@@ -122,6 +124,8 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
+      void this.cache.del(this.cache.financeKey(auth.userId))
+
       return {
         product: toProductRecord(product, {
           displayCurrency: auth.preferredCurrency,
@@ -211,6 +215,8 @@ export class ProductsService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       })
+
+      void this.cache.del(this.cache.financeKey(auth.userId))
 
       return {
         product: toProductRecord(product, {
@@ -399,6 +405,8 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
+    void this.cache.del(this.cache.financeKey(auth.userId))
+
     return {
       summary: {
         totalRows: parsedRows.length,
@@ -431,6 +439,8 @@ export class ProductsService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
+
+    void this.cache.del(this.cache.financeKey(auth.userId))
 
     const snapshot = await this.currencyService.getSnapshot()
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from 'nestjs-pino'
 import { PrismaModule } from './database/prisma.module'
+import { CacheModule } from './cache/cache.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AdminPinModule } from './modules/admin-pin/admin-pin.module'
@@ -39,6 +40,7 @@ import { ProductsModule } from './modules/products/products.module'
       },
     }),
     PrismaModule,
+    CacheModule,
     CurrencyModule,
     EmployeesModule,
     GeocodingModule,

@@ -3,8 +3,11 @@ import { BuyerType, OrderStatus } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
+import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toProductRecord } from '../products/products.types'
+
+const FINANCE_SUMMARY_TTL = 60 // segundos
 
 export type FinanceSummaryResponse = {
   displayCurrency: 'BRL' | 'USD' | 'EUR'
@@ -124,9 +127,13 @@ export class FinanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly currencyService: CurrencyService,
+    private readonly cache: CacheService,
   ) {}
 
   async getSummaryForUser(auth: AuthContext): Promise<FinanceSummaryResponse> {
+    const cacheKey = this.cache.financeKey(auth.userId)
+    const cached = await this.cache.get<FinanceSummaryResponse>(cacheKey)
+    if (cached) return cached
     const snapshot = await this.currencyService.getSnapshot()
     const now = new Date()
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -309,7 +316,7 @@ export class FinanceService {
         }))
     }
 
-    return {
+    const result: FinanceSummaryResponse = {
       displayCurrency,
       ratesUpdatedAt: snapshot.updatedAt,
       ratesSource: snapshot.source,
@@ -389,6 +396,13 @@ export class FinanceService {
         snapshot,
       }),
     }
+
+    await this.cache.set(cacheKey, result, FINANCE_SUMMARY_TTL)
+    return result
+  }
+
+  async invalidateSummaryCache(userId: string): Promise<void> {
+    await this.cache.del(this.cache.financeKey(userId))
   }
 }
 

@@ -16,6 +16,7 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { ListOrdersQueryDto } from './dto/list-orders.query'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { toOrderRecord } from './orders.types'
+import { CacheService } from '../../common/services/cache.service'
 
 @Injectable()
 export class OrdersService {
@@ -24,6 +25,7 @@ export class OrdersService {
     private readonly currencyService: CurrencyService,
     private readonly geocodingService: GeocodingService,
     private readonly auditLogService: AuditLogService,
+    private readonly cache: CacheService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListOrdersQueryDto) {
@@ -331,6 +333,8 @@ export class OrdersService {
       userAgent: context.userAgent,
     })
 
+    void this.cache.del(this.cache.financeKey(auth.userId))
+
     return {
       order: toOrderRecord(order, {
         displayCurrency: auth.preferredCurrency,
@@ -400,6 +404,8 @@ export class OrdersService {
     })
 
     const snapshot = await this.currencyService.getSnapshot()
+
+    void this.cache.del(this.cache.financeKey(auth.userId))
 
     return {
       order: toOrderRecord(cancelledOrder, {
