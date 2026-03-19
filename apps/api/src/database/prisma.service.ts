@@ -43,8 +43,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         )
 
         if (attempt === maxRetries) {
-          this.logger.error('Maximum retries reached. Failing startup.');
-          throw error
+          this.logger.warn(
+            'Could not connect at startup — Prisma will connect lazily on first query.',
+            'PrismaService',
+          )
+          break
         }
 
         const delay = baseDelayMs * Math.pow(2, attempt - 1)
