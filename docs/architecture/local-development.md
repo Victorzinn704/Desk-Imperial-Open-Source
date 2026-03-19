@@ -51,7 +51,7 @@ Observacao:
 - se a AwesomeAPI devolver `429`, o backend reutiliza o ultimo cache valido e, se necessario, uma estimativa de contingencia
 - se voce tiver acesso a uma chave da AwesomeAPI, preencha `EXCHANGE_RATES_API_KEY` para reduzir limites do modo publico
 - o projeto agora usa a API HTTPS da Brevo como fluxo oficial de email
-- a chave configurada em `BREVO_API_KEY` precisa ser uma API key valida do painel `SMTP & API > API Keys`
+- a chave configurada em `BREVO_API_KEY` precisa ser uma API key valida do painel `Brevo API > API Keys`
 - `EMAIL_FROM_EMAIL` deve existir como sender validado na Brevo
 - `LOGIN_ALERT_EMAILS_ENABLED=true` envia alerta quando um novo dispositivo entra na conta
 - `FAILED_LOGIN_ALERTS_ENABLED=true` envia aviso quando a conta atinge o limite de tentativas suspeitas configurado
@@ -87,7 +87,7 @@ npm --workspace @partner/web run dev
 - a migration inicial ja esta versionada em `apps/api/prisma/migrations/202603142300_init`
 - o seed prepara documentos legais, usuario demo e produtos base
 - sem PostgreSQL ativo, o front continua compilando, mas login/cadastro nao concluem o fluxo real
-- sem API transacional ou SMTP configurados, o backend registra os codigos de confirmacao e redefinicao no log em desenvolvimento
+- sem API transacional da Brevo configurada, o backend registra os codigos de confirmacao e redefinicao no log em desenvolvimento
 - a API da Brevo e o caminho principal em producao
 - para melhorar entregabilidade, use dominio verificado e autentique SPF, DKIM e DMARC no dominio
 - sem `GEMINI_API_KEY`, o card de inteligencia de mercado fica indisponivel no dashboard

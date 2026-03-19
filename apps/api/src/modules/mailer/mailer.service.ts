@@ -199,7 +199,7 @@ export class MailerService {
     if (!brevoApiKey) {
       if (preferredMode === 'brevo-api' || this.isProduction()) {
         throw new ServiceUnavailableException(
-          'O envio de email da Brevo ainda nao esta configurado. Gere uma API key em SMTP & API > API Keys e salve em BREVO_API_KEY.',
+          'O envio de email da Brevo ainda nao esta configurado. Gere uma API key em Brevo API > API Keys e salve em BREVO_API_KEY.',
         )
       }
 
@@ -259,7 +259,7 @@ export class MailerService {
           (normalizedPayload.includes('key not found') || normalizedPayload.includes('unauthorized'))
         ) {
           throw new ServiceUnavailableException(
-            'A chave da API da Brevo foi rejeitada. Gere uma API key real em SMTP & API > API Keys e atualize BREVO_API_KEY no deploy.',
+            'A chave da API da Brevo foi rejeitada. Gere uma API key real em Brevo API > API Keys e atualize BREVO_API_KEY no deploy.',
           )
         }
 
@@ -330,7 +330,7 @@ export class MailerService {
     return (
       this.configService.get<string>('EMAIL_FROM_EMAIL')?.trim() ||
       this.configService.get<string>('BREVO_FROM_EMAIL')?.trim() ||
-      this.configService.get<string>('SMTP_FROM_EMAIL')?.trim() ||
+      this.configService.get<string>('BREVO_FROM_EMAIL')?.trim() ||
       null
     )
   }
@@ -350,7 +350,7 @@ export class MailerService {
   private getSenderName() {
     return (
       this.configService.get<string>('EMAIL_FROM_NAME')?.trim() ||
-      this.configService.get<string>('SMTP_FROM_NAME')?.trim() ||
+      this.configService.get<string>('BREVO_FROM_NAME')?.trim() ||
       this.getAppName()
     )
   }

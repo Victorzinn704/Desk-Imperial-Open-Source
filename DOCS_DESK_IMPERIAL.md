@@ -533,7 +533,7 @@ Todo novo componente deve ser avaliado em relação a esses dois antes de ser co
 | Prisma | ORM |
 | PostgreSQL | Banco de dados (Railway) |
 | bcrypt | Hash de senhas |
-| Nodemailer | Envio de emails |
+| Brevo Email API | Envio de emails |
 | class-validator | Validação de DTOs |
 
 ### Infra / Tooling

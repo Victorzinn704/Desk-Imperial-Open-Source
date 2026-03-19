@@ -6,7 +6,7 @@ O envio transacional do projeto agora depende da `API HTTPS` da Brevo.
 
 Para isso funcionar em producao, voce precisa de duas coisas no painel da Brevo:
 
-- uma `API key` valida em `SMTP & API > API Keys`
+- uma `API key` valida em `Brevo API > API Keys`
 - um `sender` valido para o email definido em `EMAIL_FROM_EMAIL`
 
 ## Estrutura recomendada
@@ -66,7 +66,7 @@ APP_NAME=DESK IMPERIAL
 
 Se o email nao sair, confira primeiro:
 
-- a chave configurada e realmente uma `API key` da Brevo, e nao login SMTP
+- a chave configurada e realmente uma `API key` da Brevo, e nao login Brevo
 - `EMAIL_FROM_EMAIL` existe como sender valido no painel
 - o dominio do sender passou na validacao DNS
 - a API key foi atualizada na Railway

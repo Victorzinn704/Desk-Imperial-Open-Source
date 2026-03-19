@@ -17,7 +17,7 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 9. recuperar senha com codigo temporario e uso unico
 10. invalidar sessoes ativas apos redefinicao de senha
 11. confirmar email antes de liberar o primeiro login
-12. manter chaves de IA e SMTP somente no backend
+12. manter chaves de IA e Brevo somente no backend
 
 ## Eventos para audit log
 

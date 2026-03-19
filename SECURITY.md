@@ -29,7 +29,7 @@ Antes de publicar em ambiente real:
 
 - definir `COOKIE_SECRET` e `CSRF_SECRET`
 - usar HTTPS
-- configurar SMTP real para recuperacao de senha
+- configurar Brevo para recuperacao de senha
 - revisar CORS e dominio oficial do front
 - proteger ou desabilitar Swagger em producao
 - mover rate limit para `Redis` se houver mais de uma instancia

@@ -416,9 +416,16 @@ async function apiFetch<T>(
   headers.set('Accept', 'application/json')
 
   if (shouldAttachCsrfToken(options.method)) {
+    // Try multiple CSRF token sources with priority:
+    // 1. Persisted token from sessionStorage (most reliable)
+    // 2. Token from cookie (httpOnly may block read)
     const csrfToken = readPersistedCsrfToken() ?? readCsrfToken()
+    
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken)
+    } else {
+      // If no token found, log warning (helps debug CSRF issues)
+      console.warn('[CSRF] No token found for request:', path, 'method:', options.method)
     }
   }
 

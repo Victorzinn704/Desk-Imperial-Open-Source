@@ -158,8 +158,8 @@ PORTFOLIO_EMAIL_FALLBACK=false
 
 Observação:
 - `EMAIL_PROVIDER` aceita `brevo`, `auto` ou `log`
-- o fluxo público de email usa a API HTTPS da Brevo; não dependemos mais de Gmail SMTP nem de Resend
-- a chave da Brevo precisa ser uma `API key` real do painel `SMTP & API > API Keys`
+- o fluxo público de email usa a API HTTPS da Brevo; não dependemos mais de Gmail Brevo nem de Resend
+- a chave da Brevo precisa ser uma `API key` real do painel `Brevo API > API Keys`
 - o remetente configurado em `EMAIL_FROM_EMAIL` precisa existir como sender válido no Brevo
 - se o domínio de envio ainda não estiver validado, a Brevo vai rejeitar o remetente e o cadastro cai no modo de apoio do portfólio
 - `PORTFOLIO_EMAIL_FALLBACK=true` libera um código de apoio no fluxo de confirmação de email quando o provedor falha, evitando travar o cadastro público do portfólio
@@ -255,7 +255,7 @@ Antes de publicar:
 
 1. confirme que nenhum `.env` real está versionado
 2. revise screenshots e nome do projeto, se quiser personalizar a vitrine
-3. configure secrets no provedor de deploy para banco, cookie, CSRF e SMTP
+3. configure secrets no provedor de deploy para banco, cookie, CSRF e Brevo
 
 ## Documentação complementar
 
