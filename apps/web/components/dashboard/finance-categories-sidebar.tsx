@@ -3,6 +3,7 @@
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCompactCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { CardSkeleton } from '@/components/shared/skeleton'
 
 type Props = {
   finance: FinanceSummaryResponse
@@ -24,13 +25,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
   const total = categoryBreakdown.reduce((sum, c) => sum + c.inventorySalesValue, 0)
 
   if (isLoading) {
-    return (
-      <div className="imperial-card animate-pulse space-y-4 p-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-14 rounded-xl bg-[rgba(255,255,255,0.04)]" />
-        ))}
-      </div>
-    )
+    return <CardSkeleton rows={4} />
   }
 
   return (

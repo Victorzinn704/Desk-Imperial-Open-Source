@@ -37,27 +37,27 @@ export function SalesMapCard({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Mapa de vendas
+              Inteligência Operacional
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-white">
-              Onde a operacao converte melhor por regiao
+              Mapa de Vendas — Monitoramento Geográfico
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              O mapa consolida vendas por bairro, cidade e estado para destacar concentracao geografica com leitura mais executiva.
+              Monitore a operação em tempo real através da geolocalização automática de cada venda. Cada ponto representa um pedido geocodificado por estado e cidade, permitindo análise de mercado, identificação de territórios de concentração e validação de padrões de cobertura.
             </p>
           </div>
 
           <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
             {points.length
-              ? `${points.length} ponto(s) geocodificado(s)`
-              : 'Adicione cidade e pais nos pedidos para preencher o mapa'}
+              ? `${points.length} região(ões) mapeada(s)`
+              : 'Complete a localização (cidade e país) nos pedidos para visualizar'}
           </div>
         </div>
 
         <div className="mt-6 h-[420px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-soft)]">
           {isLoading ? (
             <div className="flex h-full items-center justify-center px-6 text-center">
-              <p className="text-sm text-[var(--text-soft)]">Carregando vendas geograficas...</p>
+              <p className="text-sm text-[var(--text-soft)]">Carregando análise geográfica...</p>
             </div>
           ) : error ? (
             <div className="flex h-full items-center justify-center px-6 text-center">
@@ -69,10 +69,10 @@ export function SalesMapCard({
             <div className="flex h-full items-center justify-center px-6 text-center">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                  Sem pontos no mapa
+                  Dados não disponíveis
                 </p>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Registre pedidos com bairro/regiao, cidade e pais para liberar a leitura geografica do dashboard.
+                  Complete os dados de localização (bairro, cidade, estado e país) nos pedidos para gerar a análise geográfica.
                 </p>
               </div>
             </div>
@@ -86,14 +86,14 @@ export function SalesMapCard({
             <MapPinned className="size-5" />
           </span>
           <div>
-            <p className="text-sm text-[var(--text-soft)]">Ranking regional</p>
-            <h2 className="text-xl font-semibold text-white">Top regioes de venda</h2>
+            <p className="text-sm text-[var(--text-soft)]">Desempenho regional</p>
+            <h2 className="text-xl font-semibold text-white">Regiões de maior receita</h2>
           </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           <MapMetric
-            hint="Faturamento com coordenadas validas"
+            hint="Total de receita das regiões mapeadas"
             icon={Globe2}
             label="Receita mapeada"
             value={formatCurrency(
@@ -137,7 +137,7 @@ export function SalesMapCard({
           ) : (
             <div className="imperial-card-soft border-dashed px-5 py-8 text-center">
               <p className="text-sm leading-7 text-[var(--text-soft)]">
-                As regioes aparecem aqui conforme os pedidos forem sendo registrados com local da venda.
+                As regiões aparecem conforme os pedidos são registrados com dados completos de localização.
               </p>
             </div>
           )}

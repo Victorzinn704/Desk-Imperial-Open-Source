@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
+import { CardSkeleton } from '@/components/shared/skeleton'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
 
 type Props = {
@@ -50,16 +51,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
   const isPositive = growth >= 0
 
   if (isLoading) {
-    return (
-      <div className="imperial-card flex animate-pulse items-center gap-6 p-6 sm:p-8">
-        <div className="size-[120px] shrink-0 rounded-full bg-[rgba(255,255,255,0.05)]" />
-        <div className="space-y-3">
-          <div className="h-4 w-32 rounded bg-[rgba(255,255,255,0.06)]" />
-          <div className="h-9 w-48 rounded bg-[rgba(255,255,255,0.06)]" />
-          <div className="h-4 w-24 rounded bg-[rgba(255,255,255,0.06)]" />
-        </div>
-      </div>
-    )
+    return <CardSkeleton rows={1} />
   }
 
   return (

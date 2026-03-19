@@ -1,19 +1,14 @@
 'use client'
 
 import { TrendingDown, TrendingUp } from 'lucide-react'
+import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { usePillars } from '@/hooks/use-pillars'
 
 export function PillarsExecutiveCard() {
   const { data: pillars, isLoading, error } = usePillars()
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="imperial-card-soft h-24 animate-pulse" />
-        ))}
-      </div>
-    )
+    return <CardRowSkeleton rows={5} />
   }
 
   if (error || !pillars) {

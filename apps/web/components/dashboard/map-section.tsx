@@ -14,7 +14,7 @@ const MapCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-[var(--text-soft)]">Carregando território...</p>
+        <p className="text-sm text-[var(--text-soft)]">Carregando monitoramento geográfico...</p>
       </div>
     ),
   },
@@ -70,12 +70,11 @@ export function MapSection({
             ) : points.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                  Nenhum ponto no território
+                  Nenhuma venda mapeada
                 </p>
                 <p className="max-w-sm text-sm leading-7 text-[var(--text-soft)]">
                   Registre pedidos com <strong className="text-white">estado</strong> e{' '}
-                  <strong className="text-white">cidade</strong> preenchidos para que a operação
-                  apareça no mapa.
+                  <strong className="text-white">cidade</strong> informados para ativar o monitoramento geográfico e análise da cobertura de mercado.
                 </p>
               </div>
             ) : (

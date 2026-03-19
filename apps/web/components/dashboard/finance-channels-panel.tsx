@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { cn } from '@/lib/utils'
+import { TableSkeleton } from '@/components/shared/skeleton'
 import { FinanceOrdersTable } from './finance-orders-table'
 
 type Props = {
@@ -27,17 +28,7 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
       : recentOrders.filter((o) => o.channel === activeChannel)
 
   if (isLoading) {
-    return (
-      <div className="imperial-card animate-pulse space-y-4 p-6">
-        <div className="h-4 w-40 rounded bg-[rgba(255,255,255,0.06)]" />
-        <div className="flex gap-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-8 w-20 rounded-full bg-[rgba(255,255,255,0.05)]" />
-          ))}
-        </div>
-        <div className="h-64 rounded-2xl bg-[rgba(255,255,255,0.03)]" />
-      </div>
-    )
+    return <TableSkeleton rows={6} />
   }
 
   return (
