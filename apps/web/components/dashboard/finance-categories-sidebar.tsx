@@ -240,9 +240,9 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                 key={cat.category}
                 onClick={() => handleSelectCategory(cat.category)}
                 className={cn(
-                  'w-full cursor-pointer rounded-xl p-3 text-left transition-all duration-200',
+                  'w-full cursor-pointer rounded-xl border border-transparent p-3 text-left transition-all duration-200',
                   color.bg,
-                  'hover:border hover:border-[rgba(255,255,255,0.1)]',
+                  'hover:border-[rgba(255,255,255,0.1)]',
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
