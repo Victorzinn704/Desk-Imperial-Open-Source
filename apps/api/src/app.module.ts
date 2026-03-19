@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino'
 import { PrismaModule } from './database/prisma.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { AdminPinModule } from './modules/admin-pin/admin-pin.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { ConsentModule } from './modules/consent/consent.module'
 import { CurrencyModule } from './modules/currency/currency.module'
@@ -45,6 +46,7 @@ import { ProductsModule } from './modules/products/products.module'
     MonitoringModule,
     ConsentModule,
     AuthModule,
+    AdminPinModule,
     ProductsModule,
     OrdersModule,
     FinanceModule,
