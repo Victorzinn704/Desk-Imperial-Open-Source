@@ -187,6 +187,7 @@ export type FinanceSummaryResponse = {
     revenue: number
     profit: number
   }>
+  categoryTopProducts: Record<string, FinanceSummaryResponse['topProducts']>
 }
 
 export type MarketInsightResponse = {

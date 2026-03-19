@@ -55,7 +55,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
       : CATEGORY_COLORS[0]
 
   const categoryProducts = selectedCategory
-    ? topProducts.filter((p) => p.category === selectedCategory)
+    ? (finance.categoryTopProducts[selectedCategory] ?? [])
     : []
 
   // ── Detail view ─────────────────────────────────────────────────────────────

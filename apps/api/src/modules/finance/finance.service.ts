@@ -116,6 +116,7 @@ export type FinanceSummaryResponse = {
     revenue: number
     profit: number
   }>
+  categoryTopProducts: Record<string, FinanceSummaryResponse['topProducts']>
 }
 
 @Injectable()
@@ -260,6 +261,7 @@ export class FinanceService {
       totals.inventoryCostValue > 0 ? roundPercent((totals.potentialProfit / totals.inventoryCostValue) * 100) : 0
 
     const categoryMap = new Map<string, FinanceSummaryResponse['categoryBreakdown'][number]>()
+    const categoryProductsMap = new Map<string, typeof records>()
 
     for (const record of records) {
       const current =
@@ -279,6 +281,32 @@ export class FinanceService {
       current.potentialProfit = roundCurrency(current.potentialProfit + record.potentialProfit)
 
       categoryMap.set(record.category, current)
+
+      const catProducts = categoryProductsMap.get(record.category) ?? []
+      catProducts.push(record)
+      categoryProductsMap.set(record.category, catProducts)
+    }
+
+    const categoryTopProducts: FinanceSummaryResponse['categoryTopProducts'] = {}
+    for (const [category, products] of categoryProductsMap.entries()) {
+      categoryTopProducts[category] = products
+        .slice()
+        .sort((a, b) => b.potentialProfit - a.potentialProfit)
+        .slice(0, 5)
+        .map((record) => ({
+          id: record.id,
+          name: record.name,
+          category: record.category,
+          stock: record.stock,
+          currency: record.currency,
+          displayCurrency: record.displayCurrency,
+          originalInventorySalesValue: record.originalInventorySalesValue,
+          originalPotentialProfit: record.originalPotentialProfit,
+          inventoryCostValue: record.inventoryCostValue,
+          inventorySalesValue: record.inventorySalesValue,
+          potentialProfit: record.potentialProfit,
+          marginPercent: record.marginPercent,
+        }))
     }
 
     return {
@@ -288,6 +316,7 @@ export class FinanceService {
       ratesNotice: snapshot.notice,
       totals,
       categoryBreakdown: [...categoryMap.values()].sort((left, right) => right.potentialProfit - left.potentialProfit),
+      categoryTopProducts,
       topProducts: records
         .slice()
         .sort((left, right) => right.potentialProfit - left.potentialProfit)
