@@ -75,6 +75,20 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  isReady(): boolean {
+    return this.enabled && !!this.client
+  }
+
+  async ping(): Promise<boolean> {
+    if (!this.enabled || !this.client) return false
+    try {
+      const result = await this.client.ping()
+      return result === 'PONG' || result === 'pong'
+    } catch {
+      return false
+    }
+  }
+
   /** Chave padrão para o resumo financeiro de um usuário */
   financeKey(userId: string): string {
     return `finance:summary:${userId}`
