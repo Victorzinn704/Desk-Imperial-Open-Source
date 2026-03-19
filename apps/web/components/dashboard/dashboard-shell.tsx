@@ -1116,7 +1116,7 @@ function PortfolioEnvironment({
             </span>
             <div>
               <p className="text-sm text-[var(--text-soft)]">Categorias</p>
-              <h2 className="text-xl font-semibold text-white">Breakdown por carteira</h2>
+              <h2 className="text-xl font-semibold text-white">Registro de fluxo por categoria</h2>
             </div>
           </div>
 
