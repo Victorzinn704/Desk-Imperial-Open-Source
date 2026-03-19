@@ -169,7 +169,6 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
           </div>
         </section>
       )}
-      )}
     </div>
   )
 }
