@@ -173,17 +173,12 @@ export function LandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="absolute inset-0 z-0">
-        {/* Hero brand image — right-anchored, high presence */}
         <div
-          className="absolute inset-0 bg-cover opacity-[0.32]"
-          style={{ backgroundImage: "url('/hero-brand.png')", backgroundPosition: '72% center' }}
+          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
+          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
         />
-        {/* Left-to-right fade: dark on left (text), open on right (image) */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(4,8,14,0.98)_0%,rgba(4,8,14,0.96)_28%,rgba(4,8,14,0.80)_52%,rgba(4,8,14,0.30)_74%,rgba(4,8,14,0.10)_100%)]" />
-        {/* Top-to-bottom fade for section transition */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(4,8,14,0.0)_0%,rgba(4,8,14,0.0)_60%,rgba(4,8,14,0.98)_100%)]" />
-        {/* Color accents */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.18),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(212,177,106,0.07),transparent_30%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
       </div>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">

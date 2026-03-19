@@ -7,15 +7,15 @@ export function FounderPortraitCard() {
   const [hasImage, setHasImage] = useState(true)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[-4rem] z-0 flex justify-end overflow-hidden lg:top-[-7rem]">
-      <div className="relative w-full max-w-[580px] aspect-[3/4] lg:max-w-[660px]">
-        <div className="absolute inset-x-6 top-20 h-64 rounded-full bg-[radial-gradient(circle,rgba(212,177,106,0.18),transparent_60%)] blur-3xl" />
-        <div className="absolute inset-x-0 top-0 mx-auto h-[540px] w-full max-w-[560px] overflow-hidden lg:h-[680px] lg:max-w-[640px]">
+    <div className="pointer-events-none absolute inset-x-0 top-[-6rem] z-0 flex justify-end overflow-hidden lg:top-[-9rem]">
+      <div className="relative w-full max-w-[560px] aspect-square lg:max-w-[620px]">
+        <div className="absolute inset-x-6 top-20 h-56 rounded-full bg-[radial-gradient(circle,rgba(212,177,106,0.22),transparent_68%)] blur-3xl" />
+        <div className="absolute inset-x-0 top-0 mx-auto h-[500px] w-full max-w-[520px] overflow-hidden lg:h-[600px] lg:max-w-[580px]">
           {hasImage ? (
             <img
-              alt="Identidade visual Desk Imperial — caneta executiva com branding dourado"
-              className="block h-full w-full object-cover object-[center_20%] drop-shadow-[0_40px_100px_rgba(0,0,0,0.62)]"
-              src="/hero-brand.png"
+              alt="Retrato profissional do fundador"
+              className="block h-full w-full object-contain object-bottom drop-shadow-[0_40px_90px_rgba(0,0,0,0.52)]"
+              src="/founder-portrait.png"
               onError={() => setHasImage(false)}
             />
           ) : (
