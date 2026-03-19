@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { CurrencyCode } from '@prisma/client'
+import { roundCurrency } from '../../common/utils/number-rounding.util'
 import {
   DEFAULT_CURRENCY,
   DEFAULT_EXCHANGE_PAIRS,
@@ -258,9 +259,6 @@ function buildPairKey(from: CurrencyCode, to: CurrencyCode) {
   return `${from}_${to}`
 }
 
-function roundCurrency(value: number) {
-  return Math.round(value * 100) / 100
-}
 
 function extractErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Erro desconhecido ao consultar cotacoes.'

@@ -164,9 +164,6 @@ export function toOrderRecord(
   }
 }
 
-export function roundCurrency(value: number) {
-  return Math.round(value * 100) / 100
-}
 
 function toNumber(value: { toNumber(): number } | number) {
   return typeof value === 'number' ? value : value.toNumber()

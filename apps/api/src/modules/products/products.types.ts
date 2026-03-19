@@ -1,4 +1,5 @@
 import type { CurrencyCode, Product } from '@prisma/client'
+import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import type { CurrencyService, ExchangeRatesSnapshot } from '../currency/currency.service'
 
 type ProductLike = Pick<
@@ -191,13 +192,6 @@ export function buildProductsResponse(
   }
 }
 
-export function roundCurrency(value: number) {
-  return Math.round(value * 100) / 100
-}
-
-export function roundPercent(value: number) {
-  return Math.round(value * 100) / 100
-}
 
 function toNumber(value: { toNumber(): number } | number) {
   return typeof value === 'number' ? value : value.toNumber()

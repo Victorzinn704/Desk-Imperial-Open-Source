@@ -194,6 +194,7 @@ model AuditLog {
 
   @@index([event, createdAt])
   @@index([actorUserId, createdAt])
+  @@index([resourceId, event])
 }
 
 model Product {
@@ -272,6 +273,8 @@ model Order {
   @@index([userId, status, createdAt])
   @@index([userId, currency, createdAt])
   @@index([employeeId, createdAt])
+  @@index([buyerCity, buyerState])
+  @@index([buyerDocument])
 }
 
 model OrderItem {

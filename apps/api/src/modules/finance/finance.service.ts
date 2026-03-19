@@ -3,7 +3,8 @@ import { BuyerType, OrderStatus } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
-import { roundCurrency, roundPercent, toProductRecord } from '../products/products.types'
+import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
+import { toProductRecord } from '../products/products.types'
 
 export type FinanceSummaryResponse = {
   displayCurrency: 'BRL' | 'USD' | 'EUR'
@@ -131,31 +132,21 @@ export class FinanceService {
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const previousMonthEnd = currentMonthStart
 
-    // Otimização: Remover query duplicada para recentOrders
-    // Anteriormente: 2 queries idênticas para orders (uma sem limit, uma com take: 5)
-    // Agora: 1 query com índice [userId, createdAt] + paginação via slice em memória
-    const [products, orders] = await Promise.all([
+    const [products, completedOrders, recentOrders] = await Promise.all([
       this.prisma.product.findMany({
-        where: {
-          userId: auth.userId,
-          active: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        where: { userId: auth.userId, active: true },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.findMany({
-        where: {
-          userId: auth.userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        where: { userId: auth.userId, status: OrderStatus.COMPLETED },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.findMany({
+        where: { userId: auth.userId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
       }),
     ])
-
-    // Pega os últimos 5 pedidos do array já ordenado
-    const recentOrders = orders.slice(0, 5)
 
     const displayCurrency = auth.preferredCurrency
     const records = products.map((product) =>
@@ -166,7 +157,6 @@ export class FinanceService {
       }),
     )
 
-    const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED)
     const currentMonthOrders = completedOrders.filter((order) => order.createdAt >= currentMonthStart)
     const previousMonthOrders = completedOrders.filter(
       (order) => order.createdAt >= previousMonthStart && order.createdAt < previousMonthEnd,

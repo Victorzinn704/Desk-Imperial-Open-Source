@@ -14,7 +14,8 @@ import { GeocodingService } from '../geocoding/geocoding.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { ListOrdersQueryDto } from './dto/list-orders.query'
-import { roundCurrency, toOrderRecord } from './orders.types'
+import { roundCurrency } from '../../common/utils/number-rounding.util'
+import { toOrderRecord } from './orders.types'
 
 @Injectable()
 export class OrdersService {

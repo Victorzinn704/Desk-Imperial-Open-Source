@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
+import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { getAllowedOrigins, isAllowedOrigin } from './common/utils/origin.util'
 
 async function bootstrap() {
@@ -50,6 +51,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
   })
   app.setGlobalPrefix('api')
+  app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
