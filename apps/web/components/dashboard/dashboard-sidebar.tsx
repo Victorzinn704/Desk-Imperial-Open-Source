@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CircleDot,
   Cog,
+  Search,
   UserRound,
 } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
@@ -95,7 +96,19 @@ export function DashboardSidebar<TSection extends string>({
             </div>
           </div>
         )}
-
+        {/* Search Bar */}
+        {!collapsed && (
+          <div className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
+              <input
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                placeholder="Buscar no dashboard..."
+                type="text"
+              />
+            </div>
+          </div>
+        )}
         {/* Nav items */}
         <nav className={cn('mt-4 flex-1 overflow-y-auto', collapsed ? 'space-y-1' : 'space-y-1 pr-1')}>
           {items.map((item) => {
