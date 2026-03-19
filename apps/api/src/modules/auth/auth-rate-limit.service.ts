@@ -1,5 +1,6 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { PrismaService } from '../../database/prisma.service'
 
 type AttemptEntry = {
   count: number
@@ -14,54 +15,80 @@ type AttemptPolicy = {
   message: string
 }
 
+// Intervalo de limpeza de entradas expiradas (2 horas em ms)
+const CLEANUP_INTERVAL_MS = 2 * 60 * 60 * 1000
+// Entradas mais antigas que 2 horas sem atividade são removidas
+const STALE_ENTRY_AGE_MS = 2 * 60 * 60 * 1000
+
 @Injectable()
-export class AuthRateLimitService {
-  private readonly attempts = new Map<string, AttemptEntry>()
+export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(AuthRateLimitService.name)
+  private cleanupTimer: NodeJS.Timeout | null = null
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  assertLoginAllowed(key: string) {
-    this.assertAllowed(key, this.getLoginPolicy())
+  onModuleInit() {
+    this.cleanupTimer = setInterval(() => {
+      void this.cleanExpiredEntries()
+    }, CLEANUP_INTERVAL_MS)
   }
 
-  assertPasswordResetAllowed(key: string) {
-    this.assertAllowed(key, this.getPasswordResetPolicy())
+  onModuleDestroy() {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
   }
 
-  assertPasswordResetCodeAllowed(key: string) {
-    this.assertAllowed(key, this.getPasswordResetCodePolicy())
+  async assertLoginAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getLoginPolicy())
   }
 
-  assertEmailVerificationAllowed(key: string) {
-    this.assertAllowed(key, this.getEmailVerificationPolicy())
+  async assertPasswordResetAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getPasswordResetPolicy())
   }
 
-  assertEmailVerificationCodeAllowed(key: string) {
-    this.assertAllowed(key, this.getEmailVerificationCodePolicy())
+  async assertPasswordResetCodeAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getPasswordResetCodePolicy())
   }
 
-  recordFailure(key: string) {
+  async assertEmailVerificationAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getEmailVerificationPolicy())
+  }
+
+  async assertEmailVerificationCodeAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getEmailVerificationCodePolicy())
+  }
+
+  async recordFailure(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getLoginPolicy())
   }
 
-  recordPasswordResetAttempt(key: string) {
+  async recordPasswordResetAttempt(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getPasswordResetPolicy())
   }
 
-  recordPasswordResetCodeAttempt(key: string) {
+  async recordPasswordResetCodeAttempt(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getPasswordResetCodePolicy())
   }
 
-  recordEmailVerificationAttempt(key: string) {
+  async recordEmailVerificationAttempt(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getEmailVerificationPolicy())
   }
 
-  recordEmailVerificationCodeAttempt(key: string) {
+  async recordEmailVerificationCodeAttempt(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getEmailVerificationCodePolicy())
   }
 
-  clear(key: string) {
-    this.attempts.delete(key)
+  async clear(key: string): Promise<void> {
+    try {
+      await this.prisma.authRateLimit.deleteMany({ where: { key } })
+    } catch (error) {
+      this.logger.error(`AuthRateLimitService.clear failed for key="${key}"`, error)
+    }
   }
 
   buildLoginKey(email: string, ipAddress: string | null) {
@@ -94,47 +121,105 @@ export class AuthRateLimitService {
     return `email-verification-code:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
-  private assertAllowed(key: string, policy: AttemptPolicy) {
-    const entry = this.attempts.get(key)
-    if (!entry) {
-      return
-    }
+  private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
+    try {
+      const entry = await this.prisma.authRateLimit.findUnique({ where: { key } })
 
-    const now = Date.now()
-    if (entry.lockedUntil && entry.lockedUntil > now) {
-      const retryAfterSeconds = Math.ceil((entry.lockedUntil - now) / 1000)
-      throw new HttpException(
-        `${policy.message} Tente novamente em ${retryAfterSeconds} segundo(s).`,
-        HttpStatus.TOO_MANY_REQUESTS,
-      )
-    }
+      if (!entry) return
 
-    if (entry.firstAttemptAt + policy.windowMs <= now) {
-      this.attempts.delete(key)
+      const now = Date.now()
+
+      // Verificar se está bloqueado
+      if (entry.lockedUntil && entry.lockedUntil.getTime() > now) {
+        const retryAfterSeconds = Math.ceil((entry.lockedUntil.getTime() - now) / 1000)
+        throw new HttpException(
+          `${policy.message} Tente novamente em ${retryAfterSeconds} segundo(s).`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        )
+      }
+
+      // Janela de tempo expirou → limpar e permitir
+      const windowExpiredAt = entry.firstAttemptAt.getTime() + policy.windowMs
+      if (windowExpiredAt <= now) {
+        await this.prisma.authRateLimit.deleteMany({ where: { key } })
+        return
+      }
+    } catch (error) {
+      // Re-lançar erros HTTP (rate limit bloqueado) sem suprimir
+      if (error instanceof HttpException) throw error
+      // Erros de banco não devem derrubar o login — logar e deixar passar
+      this.logger.error(`AuthRateLimitService.assertAllowed failed for key="${key}"`, error)
     }
   }
 
-  private recordAttempt(key: string, policy: AttemptPolicy) {
-    const now = Date.now()
-    const current = this.attempts.get(key)
+  private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
+    try {
+      const now = new Date()
 
-    if (!current || current.firstAttemptAt + policy.windowMs <= now) {
-      const next: AttemptEntry = {
-        count: 1,
-        firstAttemptAt: now,
-        lockedUntil: null,
+      // Verificar se existe entrada e se a janela ainda é válida
+      const existing = await this.prisma.authRateLimit.findUnique({ where: { key } })
+
+      if (!existing || existing.firstAttemptAt.getTime() + policy.windowMs <= Date.now()) {
+        // Sem entrada ou janela expirada → criar nova
+        const created = await this.prisma.authRateLimit.upsert({
+          where: { key },
+          create: {
+            key,
+            attempts: 1,
+            firstAttemptAt: now,
+            lockedUntil: null,
+          },
+          update: {
+            attempts: 1,
+            firstAttemptAt: now,
+            lockedUntil: null,
+          },
+        })
+
+        return {
+          count: created.attempts,
+          firstAttemptAt: created.firstAttemptAt.getTime(),
+          lockedUntil: null,
+        }
       }
-      this.attempts.set(key, next)
-      return next
-    }
 
-    current.count += 1
-    if (current.count >= policy.maxAttempts) {
-      current.lockedUntil = now + policy.lockMs
-    }
+      // Janela válida → incrementar tentativas
+      const newAttempts = existing.attempts + 1
+      const shouldLock = newAttempts >= policy.maxAttempts
+      const lockedUntil = shouldLock ? new Date(Date.now() + policy.lockMs) : null
 
-    this.attempts.set(key, current)
-    return current
+      const updated = await this.prisma.authRateLimit.update({
+        where: { key },
+        data: {
+          attempts: newAttempts,
+          lockedUntil,
+        },
+      })
+
+      return {
+        count: updated.attempts,
+        firstAttemptAt: updated.firstAttemptAt.getTime(),
+        lockedUntil: updated.lockedUntil ? updated.lockedUntil.getTime() : null,
+      }
+    } catch (error) {
+      // Erros de banco não devem derrubar o login — retornar estado neutro
+      this.logger.error(`AuthRateLimitService.recordAttempt failed for key="${key}"`, error)
+      return { count: 0, firstAttemptAt: Date.now(), lockedUntil: null }
+    }
+  }
+
+  private async cleanExpiredEntries(): Promise<void> {
+    try {
+      const cutoff = new Date(Date.now() - STALE_ENTRY_AGE_MS)
+      const result = await this.prisma.authRateLimit.deleteMany({
+        where: { updatedAt: { lt: cutoff } },
+      })
+      if (result.count > 0) {
+        this.logger.log(`AuthRateLimitService: removidas ${result.count} entradas expiradas`)
+      }
+    } catch (error) {
+      this.logger.error('AuthRateLimitService.cleanExpiredEntries failed', error)
+    }
   }
 
   private getLoginPolicy(): AttemptPolicy {

@@ -1,7 +1,12 @@
+/** @deprecated Rate limiting movido para o servidor. Este arquivo não deve ser usado em código novo. */
+
 /**
  * PIN rate limiter — persisted in localStorage.
  * Max 3 failed attempts, then 5-minute block.
  * After 30 minutes of inactivity since last failure, resets automatically.
+ *
+ * @deprecated O rate limiting agora é gerenciado pelo backend (status 423).
+ * Consulte apps/web/lib/admin-pin.ts para as funções de PIN atuais.
  */
 
 const KEY_ATTEMPTS = 'desk_imperial_pin_attempts'

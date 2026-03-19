@@ -2,12 +2,13 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
-import { getPinRateStatus, recordPinFailure, recordPinSuccess, type PinRateStatus } from '@/lib/pin-rate-limiter'
+import { verifyAdminPin, storeAdminPinToken } from '@/lib/admin-pin'
+import { ApiError } from '@/lib/api'
 
 type AdminPinDialogProps = {
   title?: string
   description?: string
-  onConfirm: () => void
+  onConfirm: (adminPinToken: string) => void
   onCancel: () => void
 }
 
@@ -19,7 +20,9 @@ export function AdminPinDialog({
 }: Readonly<AdminPinDialogProps>) {
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState('')
-  const [status, setStatus] = useState<PinRateStatus>(() => getPinRateStatus())
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
   const refs = [
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -27,22 +30,28 @@ export function AdminPinDialog({
     useRef<HTMLInputElement>(null),
   ]
 
-  // Countdown interval when blocked
+  // Countdown interval when blocked by server (423)
   useEffect(() => {
-    if (!status.blocked) return
+    if (!isBlocked || secondsLeft <= 0) return
     const id = setInterval(() => {
-      const next = getPinRateStatus()
-      setStatus(next)
-      if (!next.blocked) clearInterval(id)
+      setSecondsLeft((prev) => {
+        const next = prev - 1
+        if (next <= 0) {
+          clearInterval(id)
+          setIsBlocked(false)
+          return 0
+        }
+        return next
+      })
     }, 1000)
     return () => clearInterval(id)
-  }, [status.blocked])
+  }, [isBlocked, secondsLeft])
 
   useEffect(() => {
-    if (!status.blocked) {
+    if (!isBlocked) {
       refs[0].current?.focus()
     }
-  }, [status.blocked])
+  }, [isBlocked])
 
   function handleChange(idx: number, value: string) {
     const digit = value.replace(/\D/g, '').slice(-1)
@@ -56,7 +65,7 @@ export function AdminPinDialog({
     }
 
     if (next.every((d) => d !== '') && digit) {
-      validatePin(next.join(''))
+      submitPin(next.join(''))
     }
   }
 
@@ -66,33 +75,44 @@ export function AdminPinDialog({
     }
   }
 
-  function validatePin(pin: string) {
-    const stored = localStorage.getItem('desk_imperial_pin')
-    if (!stored) {
-      recordPinSuccess()
-      onConfirm()
-      return
-    }
-    if (pin === stored) {
-      recordPinSuccess()
-      onConfirm()
-    } else {
-      const next = recordPinFailure()
-      setStatus(next)
-      if (next.blocked) {
-        setError('')
-      } else {
-        setError(`PIN incorreto. ${next.attemptsLeft} tentativa${next.attemptsLeft === 1 ? '' : 's'} restante${next.attemptsLeft === 1 ? '' : 's'}.`)
-      }
+  async function submitPin(pin: string) {
+    setIsLoading(true)
+    try {
+      const { adminPinToken } = await verifyAdminPin(pin)
+      storeAdminPinToken(adminPinToken)
+      onConfirm(adminPinToken)
+    } catch (err) {
       setDigits(['', '', '', ''])
-      if (!next.blocked) {
+
+      if (err instanceof ApiError) {
+        if (err.status === 423) {
+          // Rate-limited — server sends retry-after in seconds via message or
+          // we fall back to a default of 300 seconds (5 minutes).
+          const match = err.message.match(/(\d+)\s*s/i)
+          const secs = match ? Number(match[1]) : 300
+          setIsBlocked(true)
+          setSecondsLeft(secs)
+          setError('')
+        } else if (err.status === 404) {
+          // PIN not configured — allow action through without token
+          onConfirm('')
+        } else if (err.status === 401) {
+          setError(err.message || 'PIN incorreto. Tente novamente.')
+          setTimeout(() => refs[0].current?.focus(), 50)
+        } else {
+          setError(err.message || 'Erro ao verificar o PIN. Tente novamente.')
+          setTimeout(() => refs[0].current?.focus(), 50)
+        }
+      } else {
+        setError('Erro inesperado. Tente novamente.')
         setTimeout(() => refs[0].current?.focus(), 50)
       }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const filled = digits.filter((d) => d !== '').length
-  const isBlocked = status.blocked
 
   function formatCountdown(seconds: number) {
     const m = Math.floor(seconds / 60)
@@ -130,7 +150,7 @@ export function AdminPinDialog({
               <p className="text-sm font-semibold text-[#fca5a5]">Acesso bloqueado</p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">Muitas tentativas incorretas.</p>
               <p className="mt-4 text-3xl font-bold tabular-nums text-white">
-                {formatCountdown(status.secondsLeft)}
+                {formatCountdown(secondsLeft)}
               </p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">Aguarde para tentar novamente</p>
             </div>
@@ -144,6 +164,7 @@ export function AdminPinDialog({
                   key={idx}
                   ref={refs[idx]}
                   className="size-14 rounded-[16px] border text-center text-xl font-bold text-white outline-none transition-all"
+                  disabled={isLoading}
                   inputMode="numeric"
                   maxLength={1}
                   pattern="[0-9]"
@@ -154,6 +175,7 @@ export function AdminPinDialog({
                       : digit
                         ? 'rgba(52,242,127,0.4)'
                         : 'rgba(255,255,255,0.1)',
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                   type="password"
                   value={digit}
@@ -175,7 +197,7 @@ export function AdminPinDialog({
                 />
               </div>
               <p className="mt-2 text-center text-xs text-[var(--text-soft)]">
-                {filled}/4 dígitos
+                {isLoading ? 'Verificando...' : `${filled}/4 dígitos`}
               </p>
             </div>
           </>

@@ -48,7 +48,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Admin-Pin-Token'],
   })
   app.setGlobalPrefix('api')
   app.useGlobalFilters(new HttpExceptionFilter())
@@ -62,6 +62,14 @@ async function bootstrap() {
 
   if (isProduction && (cookieSecret === 'change-me' || csrfSecret === 'change-me')) {
     throw new Error('Defina COOKIE_SECRET e CSRF_SECRET antes de iniciar em producao.')
+  }
+
+  const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
+  if (isProduction && portfolioFallback === 'true') {
+    logger.warn(
+      '[SECURITY] PORTFOLIO_EMAIL_FALLBACK=true em producao expoe codigos de verificacao via HTTP. Desative esta variavel em ambiente real.',
+      'SecurityCheck',
+    )
   }
 
   if (swaggerEnabled) {

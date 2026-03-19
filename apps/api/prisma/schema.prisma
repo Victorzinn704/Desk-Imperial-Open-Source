@@ -51,6 +51,7 @@ model User {
   companyName         String?
   email               String               @unique
   passwordHash        String
+  adminPinHash        String?              // argon2id hash do PIN de 4 dígitos
   status              UserStatus           @default(ACTIVE)
   preferredCurrency   CurrencyCode         @default(BRL)
   emailVerifiedAt     DateTime?
@@ -296,4 +297,16 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId, createdAt])
+}
+
+model AuthRateLimit {
+  id             String    @id @default(cuid())
+  key            String    @unique
+  attempts       Int       @default(1)
+  firstAttemptAt DateTime  @default(now())
+  lockedUntil    DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@index([key])
+  @@index([lockedUntil])
 }

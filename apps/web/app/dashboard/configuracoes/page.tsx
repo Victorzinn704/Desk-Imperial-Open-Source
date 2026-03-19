@@ -6,7 +6,8 @@ import { Cog, Lock, Bell, Building2, Eye, EyeOff, Monitor, Smartphone, Calendar,
 import { Button } from '@/components/shared/button'
 import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
 import Link from 'next/link'
-import { getPinRateStatus, recordPinFailure, recordPinSuccess, type PinRateStatus } from '@/lib/pin-rate-limiter'
+import { setupAdminPin, removeAdminPin } from '@/lib/admin-pin'
+import { ApiError } from '@/lib/api'
 
 type DayKey = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom'
 
@@ -41,11 +42,16 @@ export default function SettingsPage() {
   // Admin PIN state
   const [pinDigits, setPinDigits] = useState(['', '', '', ''])
   const [pinSaved, setPinSaved] = useState(false)
-  const [pinActive, setPinActive] = useState(() => Boolean(typeof window !== 'undefined' && localStorage.getItem('desk_imperial_pin')))
+  const [pinSaving, setPinSaving] = useState(false)
+  const [pinSaveError, setPinSaveError] = useState('')
+  // pinActive is derived from the server — initially unknown (null), then resolved
+  const [pinActive, setPinActive] = useState<boolean | null>(null)
   const [confirmRemoveDigits, setConfirmRemoveDigits] = useState(['', '', '', ''])
   const [confirmRemoveError, setConfirmRemoveError] = useState('')
   const [showConfirmRemove, setShowConfirmRemove] = useState(false)
-  const [removeRateStatus, setRemoveRateStatus] = useState<PinRateStatus>({ blocked: false, attemptsLeft: 3 })
+  const [removeBlocked, setRemoveBlocked] = useState(false)
+  const [removeSecondsLeft, setRemoveSecondsLeft] = useState(0)
+  const [removing, setRemoving] = useState(false)
   const removeInputRefs = [
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -53,48 +59,112 @@ export default function SettingsPage() {
     useRef<HTMLInputElement>(null),
   ]
 
-  // Countdown when removal PIN is blocked
+  // Resolve initial pinActive from GET /api/auth/me
+  // The AuthUser response does not yet carry a `hasAdminPin` field — when the
+  // backend adds it we can use it here. For now we optimistically treat the
+  // unknown state as inactive and let the API calls reveal the truth.
   useEffect(() => {
-    if (!removeRateStatus.blocked) return
+    if (pinActive === null) {
+      // Default to false while we don't have a dedicated endpoint to check.
+      // The server will return 404 when PIN is not set, which is handled below.
+      setPinActive(false)
+    }
+  }, [])
+
+  // Countdown when removal PIN is blocked by server (423)
+  useEffect(() => {
+    if (!removeBlocked || removeSecondsLeft <= 0) return
     const id = setInterval(() => {
-      const next = getPinRateStatus()
-      setRemoveRateStatus(next)
-      if (!next.blocked) clearInterval(id)
+      setRemoveSecondsLeft((prev) => {
+        const next = prev - 1
+        if (next <= 0) {
+          clearInterval(id)
+          setRemoveBlocked(false)
+          return 0
+        }
+        return next
+      })
     }, 1000)
     return () => clearInterval(id)
-  }, [removeRateStatus.blocked])
+  }, [removeBlocked, removeSecondsLeft])
 
   // Focus first removal input when panel opens and not blocked
   useEffect(() => {
-    if (showConfirmRemove && !removeRateStatus.blocked) {
+    if (showConfirmRemove && !removeBlocked) {
       setTimeout(() => removeInputRefs[0].current?.focus(), 50)
     }
-  }, [showConfirmRemove, removeRateStatus.blocked])
+  }, [showConfirmRemove, removeBlocked])
 
-  function handleSavePin() {
+  async function handleSavePin() {
     const pin = pinDigits.join('')
     if (pin.length !== 4) return
-    localStorage.setItem('desk_imperial_pin', pin)
-    setPinSaved(true)
-    setPinActive(true)
-    setPinDigits(['', '', '', ''])
-    setTimeout(() => setPinSaved(false), 3000)
+    setPinSaving(true)
+    setPinSaveError('')
+    try {
+      await setupAdminPin(pin)
+      setPinSaved(true)
+      setPinActive(true)
+      setPinDigits(['', '', '', ''])
+      setTimeout(() => setPinSaved(false), 3000)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setPinSaveError(err.message || 'Erro ao salvar o PIN. Tente novamente.')
+      } else {
+        setPinSaveError('Erro inesperado. Tente novamente.')
+      }
+    } finally {
+      setPinSaving(false)
+    }
   }
 
-  function handleConfirmRemove() {
-    const typed = confirmRemoveDigits.join('')
-    const stored = localStorage.getItem('desk_imperial_pin')
-    if (typed !== stored) {
-      setConfirmRemoveError('PIN incorreto. Tente novamente.')
-      setConfirmRemoveDigits(['', '', '', ''])
-      return
-    }
-    recordPinSuccess()
-    localStorage.removeItem('desk_imperial_pin')
-    setPinActive(false)
-    setShowConfirmRemove(false)
-    setConfirmRemoveDigits(['', '', '', ''])
+  async function handleConfirmRemoveDigitChange(i: number, rawValue: string) {
+    const v = rawValue.replace(/\D/g, '').slice(-1)
+    const next = [...confirmRemoveDigits]
+    next[i] = v
+    setConfirmRemoveDigits(next)
     setConfirmRemoveError('')
+
+    if (v && i < 3) {
+      removeInputRefs[i + 1].current?.focus()
+    }
+
+    // Auto-submit when all 4 digits are filled
+    if (next.every((x) => x !== '') && v) {
+      await attemptRemovePin(next.join(''))
+    }
+  }
+
+  async function attemptRemovePin(pin: string) {
+    setRemoving(true)
+    try {
+      await removeAdminPin(pin)
+      setPinActive(false)
+      setShowConfirmRemove(false)
+      setConfirmRemoveDigits(['', '', '', ''])
+      setConfirmRemoveError('')
+    } catch (err) {
+      setConfirmRemoveDigits(['', '', '', ''])
+      if (err instanceof ApiError) {
+        if (err.status === 423) {
+          const match = err.message.match(/(\d+)\s*s/i)
+          const secs = match ? Number(match[1]) : 300
+          setRemoveBlocked(true)
+          setRemoveSecondsLeft(secs)
+          setConfirmRemoveError('')
+        } else if (err.status === 401) {
+          setConfirmRemoveError(err.message || 'PIN incorreto. Tente novamente.')
+          setTimeout(() => removeInputRefs[0].current?.focus(), 50)
+        } else {
+          setConfirmRemoveError(err.message || 'Erro ao remover o PIN. Tente novamente.')
+          setTimeout(() => removeInputRefs[0].current?.focus(), 50)
+        }
+      } else {
+        setConfirmRemoveError('Erro inesperado. Tente novamente.')
+        setTimeout(() => removeInputRefs[0].current?.focus(), 50)
+      }
+    } finally {
+      setRemoving(false)
+    }
   }
 
   function formatCountdown(seconds: number) {
@@ -238,6 +308,7 @@ export default function SettingsPage() {
                     <input
                       key={i}
                       className="size-12 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] text-center text-lg font-bold text-white outline-none focus:border-[rgba(52,242,127,0.4)] [appearance:textfield]"
+                      disabled={pinSaving}
                       inputMode="numeric"
                       maxLength={1}
                       pattern="[0-9]"
@@ -248,6 +319,7 @@ export default function SettingsPage() {
                         const next = [...pinDigits]
                         next[i] = v
                         setPinDigits(next)
+                        setPinSaveError('')
                         if (v && i < 3) {
                           const nextInput = e.target.parentElement?.children[i + 1] as HTMLInputElement
                           nextInput?.focus()
@@ -256,13 +328,16 @@ export default function SettingsPage() {
                     />
                   ))}
                 </div>
+                {pinSaveError && (
+                  <p className="text-xs font-medium text-[#fca5a5]">{pinSaveError}</p>
+                )}
                 <button
                   className="rounded-[12px] border border-[rgba(52,242,127,0.35)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={pinDigits.join('').length !== 4}
+                  disabled={pinDigits.join('').length !== 4 || pinSaving}
                   type="button"
                   onClick={handleSavePin}
                 >
-                  {pinSaved ? 'PIN salvo!' : 'Ativar PIN'}
+                  {pinSaving ? 'Salvando...' : pinSaved ? 'PIN salvo!' : 'Ativar PIN'}
                 </button>
               </div>
             ) : (
@@ -273,7 +348,7 @@ export default function SettingsPage() {
                     <button
                       className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-1.5 text-xs font-semibold text-[#fca5a5] transition-all hover:bg-[rgba(239,68,68,0.14)]"
                       type="button"
-                      onClick={() => { setShowConfirmRemove(true); setConfirmRemoveError(''); setRemoveRateStatus(getPinRateStatus()) }}
+                      onClick={() => { setShowConfirmRemove(true); setConfirmRemoveError(''); setRemoveBlocked(false) }}
                     >
                       Remover PIN
                     </button>
@@ -282,12 +357,12 @@ export default function SettingsPage() {
                   <div className="rounded-[14px] border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.05)] p-4 space-y-3">
                     <p className="text-sm font-semibold text-white">Confirme o PIN atual para desativar</p>
 
-                    {removeRateStatus.blocked ? (
+                    {removeBlocked ? (
                       <div className="rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-4 text-center">
                         <ShieldAlert className="mx-auto mb-2 size-5 text-red-400" />
                         <p className="text-sm font-semibold text-[#fca5a5]">Bloqueado</p>
                         <p className="text-2xl font-bold tabular-nums text-white mt-2">
-                          {formatCountdown(removeRateStatus.secondsLeft)}
+                          {formatCountdown(removeSecondsLeft)}
                         </p>
                         <p className="mt-1 text-xs text-[var(--text-soft)]">Aguarde para tentar novamente</p>
                       </div>
@@ -302,6 +377,7 @@ export default function SettingsPage() {
                               key={i}
                               ref={removeInputRefs[i]}
                               className="size-12 rounded-[12px] border text-center text-lg font-bold text-white outline-none transition-all [appearance:textfield]"
+                              disabled={removing}
                               inputMode="numeric"
                               maxLength={1}
                               pattern="[0-9]"
@@ -312,41 +388,11 @@ export default function SettingsPage() {
                                   : d
                                     ? 'rgba(239,68,68,0.4)'
                                     : 'rgba(255,255,255,0.1)',
+                                opacity: removing ? 0.5 : 1,
                               }}
                               type="password"
                               value={d}
-                              onChange={(e) => {
-                                const v = e.target.value.replace(/\D/g, '').slice(-1)
-                                const next = [...confirmRemoveDigits]
-                                next[i] = v
-                                setConfirmRemoveDigits(next)
-                                setConfirmRemoveError('')
-                                if (v && i < 3) {
-                                  removeInputRefs[i + 1].current?.focus()
-                                }
-                                if (next.every((x) => x !== '') && v) {
-                                  const typed = next.join('')
-                                  const stored = localStorage.getItem('desk_imperial_pin')
-                                  if (typed !== stored) {
-                                    const nextStatus = recordPinFailure()
-                                    setRemoveRateStatus(nextStatus)
-                                    if (!nextStatus.blocked) {
-                                      setConfirmRemoveError(`PIN incorreto. ${nextStatus.attemptsLeft} tentativa${nextStatus.attemptsLeft === 1 ? '' : 's'} restante${nextStatus.attemptsLeft === 1 ? '' : 's'}.`)
-                                      setConfirmRemoveDigits(['', '', '', ''])
-                                      setTimeout(() => removeInputRefs[0].current?.focus(), 50)
-                                    } else {
-                                      setConfirmRemoveDigits(['', '', '', ''])
-                                    }
-                                  } else {
-                                    recordPinSuccess()
-                                    localStorage.removeItem('desk_imperial_pin')
-                                    setPinActive(false)
-                                    setShowConfirmRemove(false)
-                                    setConfirmRemoveDigits(['', '', '', ''])
-                                    setConfirmRemoveError('')
-                                  }
-                                }
-                              }}
+                              onChange={(e) => handleConfirmRemoveDigitChange(i, e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Backspace' && !d && i > 0) {
                                   removeInputRefs[i - 1].current?.focus()

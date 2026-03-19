@@ -169,7 +169,7 @@ export class AuthService {
     const rateLimitKey = this.authRateLimitService.buildLoginKey(normalizedEmail, context.ipAddress)
 
     try {
-      this.authRateLimitService.assertLoginAllowed(rateLimitKey)
+      await this.authRateLimitService.assertLoginAllowed(rateLimitKey)
     } catch (error) {
       await this.auditLogService.record({
         event: 'auth.login.blocked',
@@ -214,12 +214,12 @@ export class AuthService {
     }
 
     if (!activeUser.emailVerifiedAt) {
-      this.authRateLimitService.clear(rateLimitKey)
+      await this.authRateLimitService.clear(rateLimitKey)
       const verificationMessage = await this.handleUnverifiedLogin(activeUser, context)
       throw new ForbiddenException(verificationMessage)
     }
 
-    this.authRateLimitService.clear(rateLimitKey)
+    await this.authRateLimitService.clear(rateLimitKey)
 
     let session: Awaited<ReturnType<AuthService['createSession']>>
 
@@ -285,8 +285,8 @@ export class AuthService {
       context.ipAddress,
     )
 
-    this.authRateLimitService.assertPasswordResetAllowed(rateLimitKey)
-    const rateLimitState = this.authRateLimitService.recordPasswordResetAttempt(rateLimitKey)
+    await this.authRateLimitService.assertPasswordResetAllowed(rateLimitKey)
+    const rateLimitState = await this.authRateLimitService.recordPasswordResetAttempt(rateLimitKey)
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
@@ -385,13 +385,13 @@ export class AuthService {
       context.ipAddress,
     )
 
-    this.authRateLimitService.assertPasswordResetCodeAllowed(rateLimitKey)
+    await this.authRateLimitService.assertPasswordResetCodeAllowed(rateLimitKey)
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
 
     if (!user || user.status !== UserStatus.ACTIVE) {
-      this.authRateLimitService.recordPasswordResetCodeAttempt(rateLimitKey)
+      await this.authRateLimitService.recordPasswordResetCodeAttempt(rateLimitKey)
       throw new BadRequestException('Email invalido ou nao cadastrado.')
     }
 
@@ -412,7 +412,7 @@ export class AuthService {
     })
 
     if (!resetCode) {
-      const rateLimitState = this.authRateLimitService.recordPasswordResetCodeAttempt(rateLimitKey)
+      const rateLimitState = await this.authRateLimitService.recordPasswordResetCodeAttempt(rateLimitKey)
 
       await this.auditLogService.record({
         actorUserId: user.id,
@@ -491,7 +491,7 @@ export class AuthService {
       }),
     ])
 
-    this.authRateLimitService.clear(rateLimitKey)
+    await this.authRateLimitService.clear(rateLimitKey)
 
     await this.auditLogService.record({
       actorUserId: user.id,
@@ -559,7 +559,7 @@ export class AuthService {
       context.ipAddress,
     )
 
-    this.authRateLimitService.assertEmailVerificationCodeAllowed(rateLimitKey)
+    await this.authRateLimitService.assertEmailVerificationCodeAllowed(rateLimitKey)
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
       include: {
@@ -568,12 +568,12 @@ export class AuthService {
     })
 
     if (!user || user.status !== UserStatus.ACTIVE) {
-      this.authRateLimitService.recordEmailVerificationCodeAttempt(rateLimitKey)
+      await this.authRateLimitService.recordEmailVerificationCodeAttempt(rateLimitKey)
       throw new BadRequestException('Email invalido ou nao cadastrado.')
     }
 
     if (user.emailVerifiedAt) {
-      this.authRateLimitService.clear(rateLimitKey)
+      await this.authRateLimitService.clear(rateLimitKey)
       return {
         success: true,
         message: 'Email ja confirmado. Agora voce pode entrar normalmente.',
@@ -597,7 +597,7 @@ export class AuthService {
     })
 
     if (!verificationCode) {
-      const rateLimitState = this.authRateLimitService.recordEmailVerificationCodeAttempt(rateLimitKey)
+      const rateLimitState = await this.authRateLimitService.recordEmailVerificationCodeAttempt(rateLimitKey)
 
       await this.auditLogService.record({
         actorUserId: user.id,
@@ -654,7 +654,7 @@ export class AuthService {
       }),
     ])
 
-    this.authRateLimitService.clear(rateLimitKey)
+    await this.authRateLimitService.clear(rateLimitKey)
 
     await this.auditLogService.record({
       actorUserId: user.id,
@@ -916,7 +916,7 @@ export class AuthService {
     rateLimitKey: string
     context: RequestContext
   }): Promise<never> {
-    const rateLimitState = this.authRateLimitService.recordFailure(params.rateLimitKey)
+    const rateLimitState = await this.authRateLimitService.recordFailure(params.rateLimitKey)
 
     await this.auditLogService.record({
       actorUserId: params.actorUserId,
@@ -1005,12 +1005,12 @@ export class AuthService {
     )
 
     if (!params.bypassRateLimit) {
-      this.authRateLimitService.assertEmailVerificationAllowed(rateLimitKey)
+      await this.authRateLimitService.assertEmailVerificationAllowed(rateLimitKey)
     }
 
     const rateLimitState = params.bypassRateLimit
       ? null
-      : this.authRateLimitService.recordEmailVerificationAttempt(rateLimitKey)
+      : await this.authRateLimitService.recordEmailVerificationAttempt(rateLimitKey)
 
     const verificationCode = await this.issueOneTimeCode({
       userId: params.userId,
@@ -1393,7 +1393,7 @@ function toAuthUser(
 }
 
 function generateNumericCode() {
-  return randomInt(100000, 1000000).toString()
+  return randomInt(10000000, 100000000).toString()
 }
 
 function parseBoolean(value: string | undefined) {
