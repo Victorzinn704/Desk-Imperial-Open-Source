@@ -154,7 +154,7 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-[#36f57c]">
-                          {formatCurrency(product.unitPrice, 'BRL')}
+                          {formatCurrency(product.unitPrice / 100, 'BRL')}
                         </span>
                         {inCart && (
                           <span className="flex size-6 items-center justify-center rounded-full bg-[rgba(52,242,127,0.16)] text-[11px] font-bold text-[#36f57c]">
@@ -259,7 +259,7 @@ export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusCh
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm text-white">{item.nome}</p>
                         <p className="text-xs text-[var(--text-soft)]">
-                          {formatCurrency(item.precoUnitario, 'BRL')} / un
+                          {formatCurrency(item.precoUnitario / 100, 'BRL')} / un
                         </p>
                       </div>
                       <div className="ml-3 flex items-center gap-2">
