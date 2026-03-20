@@ -492,6 +492,7 @@ export function DashboardShell() {
             employees,
             employeesError,
             employeesTotals: employeesQuery.data?.totals,
+            employeesQueryIsLoading: employeesQuery.isLoading,
             finance,
             financeError,
             financeQueryIsLoading: financeQuery.isLoading,
@@ -504,6 +505,7 @@ export function DashboardShell() {
             orderMutationError,
             orders,
             ordersError,
+            ordersQueryIsLoading: ordersQuery.isLoading,
             ordersTotals: ordersQuery.data?.totals,
             preferenceMutation,
             productMutationError,
@@ -568,6 +570,7 @@ type EnvironmentRenderProps = {
     updatedAt: string
   }>
   employeesError: string | null
+  employeesQueryIsLoading: boolean
   employeesTotals?: {
     totalEmployees: number
     activeEmployees: number
@@ -591,6 +594,7 @@ type EnvironmentRenderProps = {
   orderMutationError?: ApiError
   orders: OrderRecord[]
   ordersError: string | null
+  ordersQueryIsLoading: boolean
   ordersTotals?: OrdersResponse['totals']
   preferenceMutation: {
     error: unknown
@@ -711,11 +715,13 @@ function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProp
 
 function OverviewEnvironment({
   employeesTotals,
+  employeesQueryIsLoading,
   finance,
   financeError,
   financeQueryIsLoading,
   handleProfileSubmit,
   ordersTotals,
+  ordersQueryIsLoading,
   profileMutationError,
   productsTotals,
   signals,
@@ -725,11 +731,13 @@ function OverviewEnvironment({
   Pick<
     EnvironmentRenderProps,
     | 'employeesTotals'
+    | 'employeesQueryIsLoading'
     | 'finance'
     | 'financeError'
     | 'financeQueryIsLoading'
     | 'handleProfileSubmit'
     | 'ordersTotals'
+    | 'ordersQueryIsLoading'
     | 'profileMutationError'
     | 'productsTotals'
     | 'signals'
@@ -780,7 +788,7 @@ function OverviewEnvironment({
               hint="Pedidos concluídos considerados no financeiro"
               icon={ShoppingCart}
               label="Pedidos"
-              loading={financeQueryIsLoading}
+              loading={ordersQueryIsLoading}
               trend={ordersTrend}
               value={String(ordersTotals?.completedOrders ?? 0)}
             />
@@ -789,7 +797,7 @@ function OverviewEnvironment({
               hint="Equipe apta a registrar vendas"
               icon={ShieldCheck}
               label="Equipe ativa"
-              loading={financeQueryIsLoading}
+              loading={employeesQueryIsLoading}
               trend={profitTrend}
               value={String(employeesTotals?.activeEmployees ?? 0)}
             />
