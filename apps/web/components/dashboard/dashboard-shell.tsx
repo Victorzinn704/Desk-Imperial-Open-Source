@@ -525,7 +525,7 @@ export function DashboardShell() {
         </div>
       </div>
 
-      {isTimelineOpen && <ActivityTimeline />}
+      {isTimelineOpen && <ActivityTimeline onClose={() => setIsTimelineOpen(false)} />}
     </main>
   )
 }

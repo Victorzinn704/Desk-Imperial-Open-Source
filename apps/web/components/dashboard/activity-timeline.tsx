@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, LogIn, Monitor, Smartphone, Activity, TrendingUp, Users, Package, DollarSign, AlertTriangle } from 'lucide-react'
+import { LogIn, Monitor, Smartphone, Activity, TrendingUp, Users, Package, AlertTriangle, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
 
@@ -108,7 +108,7 @@ const generateMockActivities = (): SaaSActivity[] => {
   ]
 }
 
-export function ActivityTimeline() {
+export function ActivityTimeline({ onClose }: { onClose: () => void }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['auth', 'activity'],
     queryFn: fetchLastLogins,
@@ -130,16 +130,30 @@ export function ActivityTimeline() {
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 
   return (
-    <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-lg">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)]">
-          <Activity className="size-5 text-[var(--accent)]" />
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)]">
+            <Activity className="size-5 text-[var(--accent)]" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-white">Atividades do SaaS</h2>
+            <p className="text-xs text-[var(--text-soft)]">Histórico real de ações e eventos</p>
+          </div>
+          <button
+            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-all hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+            type="button"
+            onClick={onClose}
+          >
+            <X className="size-4" />
+          </button>
         </div>
-        <div>
-          <h2 className="text-xl font-semibold text-white">Atividades do SaaS</h2>
-          <p className="text-xs text-[var(--text-soft)]">Histórico real de ações e eventos</p>
-        </div>
-      </div>
 
       {isLoading && (
         <div className="space-y-4">
@@ -210,6 +224,7 @@ export function ActivityTimeline() {
           <span>Monitoramento em tempo real</span>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
