@@ -29,7 +29,7 @@ function buildInitialComandas(): Comanda[] {
       status: 'aberta',
       mesa: '3',
       clienteNome: 'João Silva',
-      itens: [{ produtoId: 'demo1', nome: 'Hamburguer', quantidade: 2, precoUnitario: 2500 }],
+      itens: [{ produtoId: 'demo1', nome: 'Hamburguer', quantidade: 2, precoUnitario: 25.00 }],
       desconto: 0,
       acrescimo: 10,
       abertaEm: new Date(Date.now() - 15 * 60000),
@@ -39,8 +39,8 @@ function buildInitialComandas(): Comanda[] {
       status: 'em_preparo',
       mesa: '7',
       itens: [
-        { produtoId: 'demo2', nome: 'Pizza Grande', quantidade: 1, precoUnitario: 4500 },
-        { produtoId: 'demo3', nome: 'Refrigerante', quantidade: 2, precoUnitario: 800 },
+        { produtoId: 'demo2', nome: 'Pizza Grande', quantidade: 1, precoUnitario: 45.00 },
+        { produtoId: 'demo3', nome: 'Refrigerante', quantidade: 2, precoUnitario: 8.00 },
       ],
       desconto: 5,
       acrescimo: 0,
@@ -51,7 +51,7 @@ function buildInitialComandas(): Comanda[] {
       status: 'pronta',
       mesa: '1',
       clienteNome: 'Maria Fernanda',
-      itens: [{ produtoId: 'demo4', nome: 'Sushi Combo', quantidade: 1, precoUnitario: 6800 }],
+      itens: [{ produtoId: 'demo4', nome: 'Sushi Combo', quantidade: 1, precoUnitario: 68.00 }],
       desconto: 0,
       acrescimo: 0,
       abertaEm: new Date(Date.now() - 50 * 60000),
@@ -148,12 +148,12 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
           currency: p.currency,
         }))
       : [
-          { id: 'demo1', name: 'Hamburguer', category: 'Lanches', unitPrice: 2500, currency: 'BRL' },
-          { id: 'demo2', name: 'Pizza Grande', category: 'Pizzas', unitPrice: 4500, currency: 'BRL' },
-          { id: 'demo3', name: 'Refrigerante', category: 'Bebidas', unitPrice: 800, currency: 'BRL' },
-          { id: 'demo4', name: 'Sushi Combo', category: 'Japonesa', unitPrice: 6800, currency: 'BRL' },
-          { id: 'demo5', name: 'Batata Frita', category: 'Acompanhamentos', unitPrice: 1200, currency: 'BRL' },
-          { id: 'demo6', name: 'Cerveja 600ml', category: 'Bebidas', unitPrice: 1500, currency: 'BRL' },
+          { id: 'demo1', name: 'Hamburguer', category: 'Lanches', unitPrice: 25.00, currency: 'BRL' },
+          { id: 'demo2', name: 'Pizza Grande', category: 'Pizzas', unitPrice: 45.00, currency: 'BRL' },
+          { id: 'demo3', name: 'Refrigerante', category: 'Bebidas', unitPrice: 8.00, currency: 'BRL' },
+          { id: 'demo4', name: 'Sushi Combo', category: 'Japonesa', unitPrice: 68.00, currency: 'BRL' },
+          { id: 'demo5', name: 'Batata Frita', category: 'Acompanhamentos', unitPrice: 12.00, currency: 'BRL' },
+          { id: 'demo6', name: 'Cerveja 600ml', category: 'Bebidas', unitPrice: 15.00, currency: 'BRL' },
         ]
 
   return (

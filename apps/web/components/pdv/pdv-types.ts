@@ -67,7 +67,7 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
 export function calcTotal(comanda: Comanda): number {
   const bruto = comanda.itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
   const comDesconto = bruto * (1 - comanda.desconto / 100)
-  return (comDesconto * (1 + comanda.acrescimo / 100)) / 100
+  return comDesconto * (1 + comanda.acrescimo / 100)
 }
 
 export function formatElapsed(abertaEm: Date): string {

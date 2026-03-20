@@ -42,7 +42,7 @@ export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnP
         </div>
         {total > 0 && (
           <span className="text-xs font-semibold text-[var(--text-soft)]">
-            R$ {(total / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         )}
       </div>
