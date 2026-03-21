@@ -68,7 +68,7 @@ export function MarketIntelligenceCard() {
         {quickFocuses.map((focus) => (
           <button
             className={cn(
-              'rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-200',
+              'rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors duration-200',
               activeFocus === focus
                 ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_12px_28px_rgba(212,177,106,0.16)]'
                 : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',

@@ -400,7 +400,7 @@ export class AuthService {
         userId: user.id,
         email: normalizedEmail,
         purpose: OneTimeCodePurpose.PASSWORD_RESET,
-        codeHash: hashToken(dto.code),
+        codeHash: hashToken(dto.code.trim()),
         usedAt: null,
         expiresAt: {
           gt: new Date(),
@@ -585,7 +585,7 @@ export class AuthService {
         userId: user.id,
         email: normalizedEmail,
         purpose: OneTimeCodePurpose.EMAIL_VERIFICATION,
-        codeHash: hashToken(dto.code),
+        codeHash: hashToken(dto.code.trim()),
         usedAt: null,
         expiresAt: {
           gt: new Date(),

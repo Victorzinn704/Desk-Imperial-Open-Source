@@ -28,6 +28,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Mapa de vendas geográfico com Leaflet + CARTO tiles — renderização por bairro, cidade e região
 - Ranking de funcionários por performance vinculada a pedidos reais
 - Consultor de mercado com Gemini Flash para leitura analítica e previsão operacional
+- **Premium UI with layout shift prevention** - hover states use CSS containment pattern (no scale/transform)
 
 ### Operação Comercial
 - PDV (Ponto de Venda) com sistema de comandas em Kanban
@@ -56,6 +57,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 | `Framer Motion` | Animações e transições |
 | `Recharts` | Gráficos financeiros e sparklines |
 | `Leaflet` + CARTO | Mapa de vendas geográfico |
+| `CSS Containment` | Performance optimization for hover states (no layout shift) |
 
 ### Backend
 | Tecnologia | Uso |
@@ -135,7 +137,9 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ### Senhas e OTP
 - Hash com `argon2id` (vencedor PHC, recomendação OWASP)
 - OTP de 8 dígitos gerado com `crypto.randomInt` — criptograficamente seguro
-- TTL configurável por tipo de código (verificação, redefinição)
+- **OTP validation with automatic whitespace trimming** (fix for copy-paste issues)
+- TTL configurável por tipo de código (verificação: 15min, redefinição: 30min)
+- Email templates in formal Portuguese via Brevo API
 
 ### Auditoria
 - Modelo `AuditLog` com `resourceId`, `event`, `userId`, `ip`, `userAgent`
@@ -318,7 +322,9 @@ npm --workspace @partner/web run dev
 | `npm run build` | Build de produção do monorepo |
 | `npm run lint` | ESLint em todos os workspaces |
 | `npm run typecheck` | TypeScript sem emitir arquivos |
-| `npm run test` | Jest em todos os workspaces |
+| `npm test` | Jest em todos os workspaces |
+| `npm test -- --coverage` | Run tests with coverage report (target: 80% for auth) |
+| `npm test -- --watch` | Run tests in watch mode |
 | `npm run db:up` | Sobe PostgreSQL local via Docker |
 | `npm run db:down` | Para e remove o container |
 | `npm run db:studio` | Abre Prisma Studio |
@@ -395,9 +401,25 @@ Swagger disponível em `/docs` em ambiente de desenvolvimento.
 
 ## Documentação Complementar
 
+### Architecture & Core
+- **[Authentication Flow](docs/architecture/authentication-flow.md)** - Complete auth system with OTP validation, rate limiting, session management, and CSRF protection
 - `docs/architecture/overview.md`
 - `docs/architecture/local-development.md`
-- `docs/security/deploy-checklist.md`
+
+### Email & Communications
+- **[Brevo Integration](docs/email/brevo-integration.md)** - Email provider setup, DNS configuration, formal Portuguese templates, and delivery troubleshooting
 - `docs/security/brevo-domain-setup.md`
+
+### Frontend Development
+- **[UI Guidelines](docs/frontend/ui-guidelines.md)** - Design system, hover states, layout shift prevention, responsive patterns, and accessibility
+
+### Testing
+- **[Testing Guide](docs/testing/testing-guide.md)** - Jest configuration, writing tests, coverage targets (80% for auth), and CI/CD integration
+
+### Security
+- `docs/security/deploy-checklist.md`
 - `docs/security/security-baseline.md`
 - `docs/security/observability-and-logs.md`
+
+### Troubleshooting
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Solutions for OTP validation, email delivery, dashboard issues, and performance problems

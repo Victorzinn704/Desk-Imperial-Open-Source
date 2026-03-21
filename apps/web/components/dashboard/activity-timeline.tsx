@@ -147,7 +147,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
             <p className="text-xs text-[var(--text-soft)]">Histórico real de ações e eventos</p>
           </div>
           <button
-            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-all hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
             type="button"
             onClick={onClose}
           >

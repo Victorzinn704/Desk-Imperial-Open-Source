@@ -38,11 +38,11 @@ export function MetricCard({
   const iconBg = `rgba(${r},${g},${b},0.1)`
 
   return (
-    <article className="imperial-card-stat p-5">
+    <article className="imperial-card-stat p-5 contain-layout">
       <div className="flex items-start justify-between gap-2">
         <Tooltip content={hint} side="top">
           <span
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border"
+            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
             style={{
               background: iconBg,
               borderColor: iconBorderColor,

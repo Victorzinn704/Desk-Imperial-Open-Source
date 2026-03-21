@@ -29,7 +29,7 @@ export function SalesPerformanceCard({
   const currentProfit = finance?.totals.currentMonthProfit ?? 0
 
   return (
-    <div className="group relative flex w-full flex-col rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl transition-all duration-300 hover:scale-[1.01]">
+    <div className="group relative flex w-full flex-col rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl transition-shadow duration-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.4)]">
       {/* gradient border glow */}
       <div
         aria-hidden="true"

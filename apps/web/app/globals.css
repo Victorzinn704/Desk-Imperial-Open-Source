@@ -219,6 +219,7 @@ select {
   box-shadow:
     0 -16px 24px 0 rgba(200, 210, 220, 0.03) inset,
     0 24px 80px rgba(0, 0, 0, 0.40);
+  contain: layout paint style;
 }
 
 .imperial-card > *,

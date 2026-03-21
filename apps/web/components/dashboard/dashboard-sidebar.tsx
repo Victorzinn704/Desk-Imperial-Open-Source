@@ -71,7 +71,7 @@ export function DashboardSidebar<TSection extends string>({
             </span>
           )}
           <button
-            className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.07)] hover:text-white"
+            className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors duration-200 hover:bg-[rgba(255,255,255,0.07)] hover:text-white"
             title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
             type="button"
             onClick={() => setCollapsed((v) => !v)}
@@ -119,7 +119,7 @@ export function DashboardSidebar<TSection extends string>({
               return (
                 <button
                   className={cn(
-                    'flex w-full cursor-pointer items-center justify-center rounded-[16px] border p-2.5 transition-all duration-200',
+                    'flex w-full cursor-pointer items-center justify-center rounded-[16px] border p-2.5 transition-colors duration-200',
                     isActive
                       ? 'border-[rgba(52,242,127,0.45)] bg-[linear-gradient(135deg,rgba(47,255,122,0.18),rgba(14,85,45,0.22))] text-[#36f57c]'
                       : 'border-transparent text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-white',
@@ -137,7 +137,7 @@ export function DashboardSidebar<TSection extends string>({
             return (
               <button
                 className={cn(
-                  'group flex w-full cursor-pointer items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition-all duration-200',
+                  'group flex w-full cursor-pointer items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition-colors duration-200',
                   isActive
                     ? 'border-[rgba(52,242,127,0.45)] bg-[linear-gradient(135deg,rgba(47,255,122,0.18),rgba(14,85,45,0.22))] text-white shadow-[0_0_34px_rgba(52,242,127,0.12)]'
                     : 'border-transparent bg-transparent text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-white',
@@ -148,7 +148,7 @@ export function DashboardSidebar<TSection extends string>({
               >
                 <span
                   className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-[14px] border transition-all duration-200',
+                    'flex size-9 shrink-0 items-center justify-center rounded-[14px] border transition-colors duration-200',
                     isActive
                       ? 'border-[rgba(52,242,127,0.28)] bg-[rgba(52,242,127,0.12)] text-[#36f57c]'
                       : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] group-hover:text-white',
@@ -167,14 +167,14 @@ export function DashboardSidebar<TSection extends string>({
           {collapsed ? (
             <>
               <button
-                className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-all hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-white"
+                className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-white"
                 title={userName}
                 type="button"
               >
                 <UserRound className="size-5" />
               </button>
               <Link
-                className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-all hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-white"
+                className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] hover:text-white"
                 href="/dashboard/configuracoes"
                 title="Configurações"
               >
@@ -200,10 +200,10 @@ export function DashboardSidebar<TSection extends string>({
               </div>
 
               <Link
-                className="group flex w-full items-center gap-3 rounded-[18px] border border-transparent px-3 py-2.5 text-[var(--text-soft)] transition-all duration-200 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-white"
+                className="group flex w-full items-center gap-3 rounded-[18px] border border-transparent px-3 py-2.5 text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.03)] hover:text-white"
                 href="/dashboard/configuracoes"
               >
-                <span className="flex size-8 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-all duration-200 group-hover:text-white">
+                <span className="flex size-8 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors duration-200 group-hover:text-white">
                   <Cog className="size-4" />
                 </span>
                 <span className="text-sm font-semibold">Configurações</span>

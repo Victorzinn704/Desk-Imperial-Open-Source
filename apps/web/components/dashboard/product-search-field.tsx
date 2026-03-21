@@ -35,7 +35,7 @@ export function ProductSearchField({
 
         {value ? (
           <button
-            className="inline-flex size-11 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition hover:border-[rgba(52,242,127,0.28)] hover:text-white"
+            className="inline-flex size-11 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.28)] hover:text-white"
             onClick={onClear}
             type="button"
           >

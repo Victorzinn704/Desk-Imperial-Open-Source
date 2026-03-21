@@ -85,7 +85,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
     <div className="space-y-3">
       <div className="flex justify-end">
         <button
-          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-all hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
+          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
           type="button"
           onClick={handleExport}
         >

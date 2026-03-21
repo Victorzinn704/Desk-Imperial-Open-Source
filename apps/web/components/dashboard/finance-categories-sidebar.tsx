@@ -102,7 +102,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-200',
+                'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors duration-200',
                 activeTab === id
                   ? 'bg-[rgba(255,255,255,0.08)] text-white shadow-sm'
                   : 'text-[var(--text-soft)] hover:text-white',
@@ -240,9 +240,9 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                 key={cat.category}
                 onClick={() => handleSelectCategory(cat.category)}
                 className={cn(
-                  'w-full cursor-pointer rounded-xl border border-transparent p-3 text-left transition-all duration-200',
+                  'w-full cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200',
                   color.bg,
-                  'hover:border-[rgba(255,255,255,0.1)]',
+                  'border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)]',
                 )}
               >
                 <div className="flex items-center justify-between gap-2">

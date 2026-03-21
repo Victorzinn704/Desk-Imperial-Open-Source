@@ -147,7 +147,7 @@ export function ProductImportCard({
         </Button>
       </div>
 
-      <label className="imperial-card-soft mt-5 flex cursor-pointer flex-col items-center justify-center border-dashed px-5 py-8 text-center transition hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
+      <label className="imperial-card-soft mt-5 flex cursor-pointer flex-col items-center justify-center border-dashed px-5 py-8 text-center transition-colors duration-200 hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
         <Upload className="size-6 text-[var(--accent)]" />
         <span className="mt-3 text-sm font-medium text-white">
           {selectedFile ? selectedFile.name : 'Escolha um arquivo CSV'}
