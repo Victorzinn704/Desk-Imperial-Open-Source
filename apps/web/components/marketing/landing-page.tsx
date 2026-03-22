@@ -2,19 +2,22 @@
 
 import Link from 'next/link'
 import type { MouseEvent as ReactMouseEvent } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from 'framer-motion'
 import {
   BadgeDollarSign,
-  CalendarDays,
   ChartColumn,
-  FileDown,
   Globe2,
-  KeyRound,
   Landmark,
   Radar,
+  Scale,
   ShieldCheck,
-  Tags,
-  Users,
   Waypoints,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -25,9 +28,9 @@ import { InteractionFlowCard } from '@/components/marketing/interaction-flow-car
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'PDV em tempo real', value: 'Comandas abertas, em preparo e fechadas num kanban visual' },
-  { label: 'Folha de pagamento', value: 'Salário base + comissão calculados automaticamente' },
-  { label: 'Calendário comercial', value: 'Eventos, promoções e jogos com impacto em vendas' },
+  { label: 'Seus números', value: 'Métricas de vendas, lucro e desempenho em um único lugar' },
+  { label: 'Seu controle', value: 'Produtos, pedidos, vendedores e estoque organizados' },
+  { label: 'Sua clareza', value: 'Relatórios e insights que fazem você decidir melhor' },
 ]
 
 const pillars = [
@@ -50,43 +53,23 @@ const capabilityCards: Array<{
 }> = [
   {
     icon: BadgeDollarSign,
-    title: 'Financeiro executivo',
-    description: 'Receita, custo, lucro e margem. Sparklines de tendência em cada KPI.',
-  },
-  {
-    icon: Tags,
-    title: 'PDV / Comandas',
-    description: 'Kanban drag-and-drop com CPF/CNPJ, desconto e acréscimo por comanda.',
-  },
-  {
-    icon: CalendarDays,
-    title: 'Calendário comercial',
-    description: 'Arraste eventos, planeje promoções e correlacione com as vendas do dia.',
+    title: 'Seu dinheiro',
+    description: 'Receita, custo, lucro e margem aparecem claros. Você sabe quanto ganhou.',
   },
   {
     icon: Landmark,
-    title: 'Folha de pagamento',
-    description: 'Salário base + comissão sobre vendas calculados por colaborador.',
+    title: 'Seu time',
+    description: 'Vendedores, produtos, pedidos. Todos têm história, quota e desempenho.',
   },
   {
-    icon: Users,
-    title: 'Gestão de equipe',
-    description: 'Ranking de vendedores, histórico e metas em um único painel.',
+    icon: ChartColumn,
+    title: 'Seus insights',
+    description: 'Gráficos que falam. Ranking de vendedores. Análise de eventos e lucro real.',
   },
   {
-    icon: KeyRound,
-    title: 'Admin PIN',
-    description: 'Proteja ações sensíveis com PIN de 4 dígitos e bloqueio anti brute-force.',
-  },
-  {
-    icon: FileDown,
-    title: 'Export CSV',
-    description: 'Exporte pedidos com encoding UTF-8 compatível com Excel e Planilhas.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Conformidade',
-    description: 'LGPD, consentimento de cookies e governança de dados visível.',
+    icon: Scale,
+    title: 'Seu controle',
+    description: 'Dados auditados, histórico completo, segurança que você merece.',
   },
 ]
 
@@ -106,26 +89,28 @@ const footerColumns = [
     ],
   },
   {
-    title: 'Módulos',
-    links: [
-      { label: 'PDV / Comandas', href: '#fundacao' },
-      { label: 'Calendário Comercial', href: '#fundacao' },
-      { label: 'Folha de Pagamento', href: '#fundacao' },
-      { label: 'Portfólio de Produtos', href: '#fundacao' },
-    ],
-  },
-  {
     title: 'Ambientes',
     links: [
       { label: 'app.deskimperial.online', href: 'https://app.deskimperial.online' },
       { label: 'api.deskimperial.online', href: 'https://api.deskimperial.online/api/health' },
     ],
   },
+  {
+    title: 'Capacidades',
+    links: [
+      { label: 'Pedidos multi-item', href: '#fundacao' },
+      { label: 'Portfolio inteligente', href: '#fundacao' },
+      { label: 'Controle operacional', href: '#entregas' },
+    ],
+  },
 ]
 
 export function LandingPage() {
+  const shouldReduceMotion = useReducedMotion()
   const pointerX = useMotionValue(0)
   const pointerY = useMotionValue(0)
+  const cursorX = useMotionValue(0)
+  const cursorY = useMotionValue(0)
 
   const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {
     stiffness: 120,
@@ -153,10 +138,38 @@ export function LandingPage() {
     damping: 16,
     mass: 0.8,
   })
+  const heroPanelX = useSpring(useTransform(pointerX, [-1, 1], [-12, 12]), {
+    stiffness: 70,
+    damping: 14,
+    mass: 0.8,
+  })
+  const heroPanelY = useSpring(useTransform(pointerY, [-1, 1], [-10, 10]), {
+    stiffness: 70,
+    damping: 14,
+    mass: 0.8,
+  })
+  const cursorGlowX = useSpring(cursorX, { stiffness: 110, damping: 22, mass: 0.7 })
+  const cursorGlowY = useSpring(cursorY, { stiffness: 110, damping: 22, mass: 0.7 })
+  const cursorGlow = useMotionTemplate`radial-gradient(520px circle at ${cursorGlowX}px ${cursorGlowY}px, rgba(195,164,111,0.14), rgba(90,149,196,0.08) 28%, transparent 62%)`
+  const cursorGridGlow = useMotionTemplate`radial-gradient(340px circle at ${cursorGlowX}px ${cursorGlowY}px, rgba(255,255,255,0.06), transparent 70%)`
 
   const lineShifts = [primaryShift, secondaryShift, tertiaryShift]
 
+  const handlePagePointerMove = (event: ReactMouseEvent<HTMLElement>) => {
+    if (shouldReduceMotion) {
+      return
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    cursorX.set(event.clientX - rect.left)
+    cursorY.set(event.clientY - rect.top)
+  }
+
   const handleHeroPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (shouldReduceMotion) {
+      return
+    }
+
     const rect = event.currentTarget.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
     const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
@@ -171,7 +184,10 @@ export function LandingPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <main
+      className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
+      onMouseMove={handlePagePointerMove}
+    >
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
@@ -179,6 +195,20 @@ export function LandingPage() {
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
+        {!shouldReduceMotion ? (
+          <>
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 hidden md:block"
+              style={{ backgroundImage: cursorGlow }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 hidden md:block mix-blend-soft-light"
+              style={{ backgroundImage: cursorGridGlow }}
+            />
+          </>
+        ) : null}
       </div>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
@@ -275,8 +305,8 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
-              tudo em um único portal seguro para o seu negócio.
+              Um portal pensado para operar vendas, cadastro, autenticação, conformidade e leitura executiva em um
+              fluxo contínuo e seguro.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -311,6 +341,14 @@ export function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
             initial={{ opacity: 0, x: 24 }}
+            style={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    x: heroPanelX,
+                    y: heroPanelY,
+                  }
+            }
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
@@ -344,19 +382,28 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Módulos</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundação</p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-              Oito módulos integrados para operar o seu negócio inteiro.
+              Estrutura central para uma rotina comercial organizada.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
-              Do PDV ao financeiro, da folha de pagamento ao calendário de eventos — tudo construído sobre
-              dados reais da sua operação, sem mock e sem dependências ocultas.
+              O ambiente combina autenticação, controle operacional, produtos, pedidos e governança em uma mesma
+              camada de uso.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {capabilityCards.map((item, index) => (
-              <div
+              <motion.div
+                whileHover={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        y: -6,
+                        scale: 1.01,
+                        transition: { duration: 0.22, ease: 'easeOut' },
+                      }
+                }
                 className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
                 key={item.title}
               >
@@ -365,7 +412,7 @@ export function LandingPage() {
                 </div>
                 <p className="font-semibold text-white">{item.title}</p>
                 <p className="mt-3">{item.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

@@ -30,6 +30,8 @@ export function SalesMapCard({
   const points = finance?.salesMap ?? []
   const topRegions = finance?.topRegions ?? []
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
+  const mappedRevenue = points.reduce((total, point) => total + point.revenue, 0)
+  const mappedOrders = points.reduce((total, point) => total + point.orders, 0)
 
   return (
     <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
@@ -96,16 +98,13 @@ export function SalesMapCard({
             hint="Total de receita das regiões mapeadas"
             icon={Globe2}
             label="Receita mapeada"
-            value={formatCurrency(
-              points.reduce((total, point) => total + point.revenue, 0),
-              displayCurrency,
-            )}
+            value={formatCurrency(mappedRevenue, displayCurrency)}
           />
           <MapMetric
             hint="Pedidos usados no mapa"
             icon={MapPinned}
             label="Pedidos mapeados"
-            value={String(points.reduce((total, point) => total + point.orders, 0))}
+            value={String(mappedOrders)}
           />
         </div>
 
@@ -159,13 +158,17 @@ function MapMetric({
   value: string
 }>) {
   return (
-    <div className="imperial-card-stat p-4">
-      <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
-        <Icon className="size-4" />
-      </span>
-      <p className="mt-4 text-sm text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-[var(--text-soft)]">{hint}</p>
+    <div className="rounded-[24px] border border-white/6 bg-[rgba(255,255,255,0.025)] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+          <p className="mt-3 truncate text-2xl font-semibold text-white">{value}</p>
+        </div>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
+          <Icon className="size-4" />
+        </span>
+      </div>
+      <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{hint}</p>
     </div>
   )
 }

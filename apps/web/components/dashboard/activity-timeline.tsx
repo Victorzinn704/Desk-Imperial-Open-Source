@@ -1,6 +1,6 @@
 'use client'
 
-import { LogIn, Monitor, Smartphone, Activity, TrendingUp, Users, Package, AlertTriangle, X } from 'lucide-react'
+import { LogIn, Activity, TrendingUp, Users, Package, AlertTriangle, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
 
@@ -18,8 +18,6 @@ const getRelativeTime = (date: Date) => {
   return date.toLocaleDateString('pt-BR')
 }
 
-const MOBILE_OS = ['iPhone', 'iPad', 'Android']
-
 // Tipos de atividades do SaaS
 type ActivityType = 'login' | 'order_created' | 'product_updated' | 'finance_alert' | 'user_action'
 
@@ -29,7 +27,9 @@ interface SaaSActivity {
   title: string
   description: string
   timestamp: Date
-  metadata?: Record<string, any>
+  metadata?: {
+    ipAddress?: string
+  }
 }
 
 const getActivityIcon = (type: ActivityType) => {
@@ -180,7 +180,6 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
       {combinedActivities.length > 0 && (
         <div className="space-y-4">
           {combinedActivities.map((activity, index) => {
-            const isMobile = activity.type === 'login' && activity.metadata?.ipAddress
             const isLast = index === combinedActivities.length - 1
             const IconComponent = getActivityIcon(activity.type)
             const iconColor = getActivityColor(activity.type)

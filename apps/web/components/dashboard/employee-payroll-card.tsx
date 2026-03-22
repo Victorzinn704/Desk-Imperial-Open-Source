@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { BadgeCheck, ChevronDown, ChevronUp, DollarSign, Percent, TrendingUp, Users, Wallet } from 'lucide-react'
 import type { EmployeeRecord } from '@/lib/api'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
@@ -34,12 +34,14 @@ export function EmployeePayrollCard({
   employees: EmployeeRecord[]
   finance?: FinanceSummaryResponse
 }>) {
-  const [payroll, setPayroll] = useState<PayrollMap>({})
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [payroll, setPayroll] = useState<PayrollMap>(() => {
+    if (typeof window === 'undefined') {
+      return {}
+    }
 
-  useEffect(() => {
-    setPayroll(loadPayroll())
-  }, [])
+    return loadPayroll()
+  })
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   function updateConfig(employeeId: string, field: keyof SalaryConfig, value: number) {
     setPayroll((prev) => {

@@ -12,7 +12,7 @@ export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
 export const loginSchema = z.object({
   email: z.string().trim().email('Digite um e-mail válido.'),
-  password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
+  password: z.string().min(PASSWORD_MIN_LENGTH, `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`),
 })
 
 export const forgotPasswordSchema = z.object({
@@ -24,7 +24,7 @@ export const verifyEmailSchema = z.object({
   code: z
     .string()
     .trim()
-    .regex(/^\d{8}$/, 'Digite o código de 8 dígitos enviado por e-mail.'),
+    .regex(EMAIL_CODE_REGEX, EMAIL_CODE_MESSAGE),
 })
 
 export const registerSchema = z.object({
@@ -43,8 +43,8 @@ export const registerSchema = z.object({
   password: z
     .string()
     .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
-    .max(128, 'A senha está longa demais.')
-    .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+    .max(PASSWORD_MAX_LENGTH, 'A senha está longa demais.')
+    .regex(STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE),
   acceptTerms: z.boolean().refine((value) => value, {
     message: 'Você precisa aceitar os termos de uso.',
   }),
@@ -59,12 +59,12 @@ export const resetPasswordSchema = z
     code: z
       .string()
       .trim()
-      .regex(/^\d{8}$/, 'Digite o código de 8 dígitos enviado por e-mail.'),
+      .regex(EMAIL_CODE_REGEX, EMAIL_CODE_MESSAGE),
     password: z
       .string()
       .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
-      .max(128, 'A senha está longa demais.')
-      .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+      .max(PASSWORD_MAX_LENGTH, 'A senha está longa demais.')
+      .regex(STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE),
     confirmPassword: z.string().min(12, 'Confirme a nova senha.'),
   })
   .superRefine((values, context) => {
@@ -175,8 +175,8 @@ export const orderSchema = z
     buyerDocument: z.string().trim().min(11, 'Informe um CPF ou CNPJ válido.'),
     buyerDistrict: z.string().trim().max(120, 'O bairro/região ficou longo demais.').optional().or(z.literal('')),
     buyerCity: z.string().trim().min(2, 'Informe a cidade da venda.').max(120, 'A cidade ficou longa demais.'),
-    buyerState: z.string().trim().min(2, 'Informe o estado da venda.').max(120, 'O estado ficou longo demais.'),
-    buyerCountry: z.string().trim().max(120, 'O país ficou longo demais.').optional().or(z.literal('')).transform((v) => (!v || v.trim() === '') ? 'Brasil' : v),
+    buyerState: z.string().trim().max(120, 'O estado ficou longo demais.').optional().or(z.literal('')),
+    buyerCountry: z.string().trim().min(2, 'Informe o país da venda.').max(120, 'O país ficou longo demais.'),
     sellerEmployeeId: z.string().trim().optional().or(z.literal('')),
     currency: currencyCodeSchema,
     channel: z.string().trim().max(60, 'O canal ficou longo demais.').optional().or(z.literal('')),

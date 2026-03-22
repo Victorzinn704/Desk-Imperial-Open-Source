@@ -61,7 +61,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
         displayCurrency={displayCurrency}
       />
 
-      <div className="flex flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
           Receita realizada total
         </p>
@@ -89,7 +89,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
           </span>
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid gap-3 border-t border-white/6 pt-4 sm:grid-cols-2 xl:grid-cols-4">
           <MiniStat label="Pedidos" value={String(totals.completedOrders)} />
           <MiniStat label="Lucro realizado" value={formatCurrency(totals.realizedProfit, displayCurrency)} />
           <MiniStat label="Margem média" value={`${totals.averageMarginPercent.toFixed(1)}%`} />
@@ -102,9 +102,9 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="imperial-card-soft rounded-xl px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+    <div className="min-w-0 border-l border-white/6 pl-4 first:border-l-0 first:pl-0">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-2 truncate text-base font-semibold text-white">{value}</p>
     </div>
   )
 }

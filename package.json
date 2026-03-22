@@ -20,7 +20,8 @@
     "seed": "npm --workspace @partner/api run prisma:seed",
     "gulp:images": "gulp images",
     "gulp:clean": "gulp clean",
-    "gulp:watch": "gulp watch"
+    "gulp:watch": "gulp watch",
+    "refactor:desk-styles": "node scripts/refactor-desk-tailwind.mjs"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

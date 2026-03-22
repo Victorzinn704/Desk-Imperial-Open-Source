@@ -2,11 +2,12 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { BadgeCheck, BadgeMinus, IdCard, ShieldUser, UserPlus, Users, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, BadgeMinus, IdCard, ShieldUser, UserPlus } from 'lucide-react'
 import type { EmployeeRecord } from '@/lib/api'
 import { employeeSchema, type EmployeeFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
+import { ListEmptyState, ListMetric, ListRow } from '@/components/shared/list-primitives'
 
 const emptyValues: EmployeeFormValues = {
   employeeCode: '',
@@ -58,13 +59,8 @@ export function EmployeeManagementCard({
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <MiniEmployeeMetric
-          icon={Users}
-          label="Equipe cadastrada"
-          value={String(totals?.totalEmployees ?? employees.length)}
-        />
-        <MiniEmployeeMetric
-          icon={BadgeCheck}
+        <ListMetric label="Equipe cadastrada" value={String(totals?.totalEmployees ?? employees.length)} />
+        <ListMetric
           label="Ativos na operação"
           value={String(totals?.activeEmployees ?? employees.filter((employee) => employee.active).length)}
         />
@@ -104,33 +100,9 @@ export function EmployeeManagementCard({
       <div className="mt-6 space-y-3">
         {employees.length ? (
           employees.map((employee) => (
-            <div
-              className="imperial-card-soft p-4"
-              key={employee.id}
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
-                    <IdCard className="size-4" />
-                  </span>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <p className="font-medium text-white">{employee.displayName}</p>
-                      <span
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                          employee.active
-                            ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
-                            : 'border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)]'
-                        }`}
-                      >
-                        {employee.active ? 'ativo' : 'inativo'}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-[var(--text-soft)]">ID {employee.employeeCode}</p>
-                  </div>
-                </div>
-
-                {employee.active ? (
+            <ListRow
+              actions={
+                employee.active ? (
                   <Button disabled={busy} onClick={() => onArchive(employee.id)} size="sm" variant="ghost">
                     <BadgeMinus className="size-4" />
                     Arquivar
@@ -140,38 +112,37 @@ export function EmployeeManagementCard({
                     <BadgeCheck className="size-4" />
                     Reativar
                   </Button>
-                )}
-              </div>
-            </div>
+                )
+              }
+              key={employee.id}
+              leading={
+                <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
+                  <IdCard className="size-4" />
+                </span>
+              }
+              meta={`ID ${employee.employeeCode}`}
+              status={
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                    employee.active
+                      ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
+                      : 'border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)]'
+                  }`}
+                >
+                  {employee.active ? 'ativo' : 'inativo'}
+                </span>
+              }
+              subtitle="Vínculo comercial para vendas, ranking e operação."
+              title={<p className="font-medium text-white">{employee.displayName}</p>}
+            />
           ))
         ) : (
-          <div className="imperial-card-soft border-dashed px-5 py-8 text-center">
-            <p className="text-sm leading-7 text-[var(--text-soft)]">
-              Cadastre IDs de funcionários para associar vendas e liberar o ranking individual no dashboard.
-            </p>
-          </div>
+          <ListEmptyState
+            description="Cadastre IDs de funcionários para associar vendas e liberar o ranking individual no dashboard."
+            title="Nenhum funcionário cadastrado"
+          />
         )}
       </div>
     </article>
-  )
-}
-
-function MiniEmployeeMetric({
-  icon: Icon,
-  label,
-  value,
-}: Readonly<{
-  icon: LucideIcon
-  label: string
-  value: string
-}>) {
-  return (
-    <div className="imperial-card-stat p-4">
-      <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
-        <Icon className="size-4" />
-      </span>
-      <p className="mt-4 text-sm text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-    </div>
   )
 }

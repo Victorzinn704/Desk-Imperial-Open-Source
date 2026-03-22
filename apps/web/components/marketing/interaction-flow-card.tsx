@@ -21,7 +21,7 @@ const steps = [
   },
   {
     icon: ShoppingCart,
-    label: 'Operação',
+    label: 'Operacao',
     tone: 'text-[var(--success)]',
     activeBorder: 'border-[rgba(99,147,113,0.22)] bg-[rgba(99,147,113,0.05)]',
     description: 'Pedido multi-item, vendedor vinculado e mapa da venda.',
@@ -36,13 +36,13 @@ export function InteractionFlowCard() {
 
       <div className="relative">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fluxo guiado</p>
-        <h3 className="mt-2 text-xl font-semibold text-white">Entrada rápida na operação</h3>
+        <h3 className="mt-2 text-xl font-semibold text-white">Entrada rapida na operacao</h3>
         <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">
-          Cadastro, leitura e ação em uma experiência sequencial.
+          Cadastro, leitura e acao em uma experiencia sequencial.
         </p>
 
         <div className="mt-6 space-y-3">
-          {steps.map((step, i) => (
+          {steps.map((step) => (
             <div
               className={`flex items-start gap-4 rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.28)] ${
                 step.active

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { createRef, useEffect, useRef, useState } from 'react'
 import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
 import { verifyAdminPin, storeAdminPinToken } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
@@ -23,12 +23,12 @@ export function AdminPinDialog({
   const [isBlocked, setIsBlocked] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-  const refs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ]
+  const refs = useRef([
+    createRef<HTMLInputElement>(),
+    createRef<HTMLInputElement>(),
+    createRef<HTMLInputElement>(),
+    createRef<HTMLInputElement>(),
+  ]).current
 
   // Countdown interval when blocked by server (423)
   useEffect(() => {
@@ -51,7 +51,7 @@ export function AdminPinDialog({
     if (!isBlocked) {
       refs[0].current?.focus()
     }
-  }, [isBlocked])
+  }, [isBlocked, refs])
 
   function handleChange(idx: number, value: string) {
     const digit = value.replace(/\D/g, '').slice(-1)

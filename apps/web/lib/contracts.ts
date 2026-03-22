@@ -281,7 +281,7 @@ export type ProductImportResponse = {
 export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/
 export const STRONG_PASSWORD_MESSAGE =
   'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
-export const EMAIL_CODE_REGEX = /^\d{8}$/
-export const EMAIL_CODE_MESSAGE = 'Digite o código de 8 dígitos enviado por e-mail.'
+export const EMAIL_CODE_REGEX = /^\d{6}$/
+export const EMAIL_CODE_MESSAGE = 'Digite o código de 6 dígitos enviado por e-mail.'
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
