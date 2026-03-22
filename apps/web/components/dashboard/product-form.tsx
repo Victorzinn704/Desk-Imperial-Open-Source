@@ -217,9 +217,9 @@ export function ProductForm({
             />
           ) : (
             <>
-              <div className="rounded-[22px] border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-4 text-sm text-[var(--text-soft)]">
-                <p className="font-medium text-white">Classe ativa</p>
-                <p className="mt-2">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
+              <div className="rounded-lg border border-border bg-background px-4 py-4 text-sm text-muted-foreground shadow-sm">
+                <p className="font-medium text-foreground">Classe ativa</p>
+                <p className="mt-1">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
               </div>
               <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
             </>
@@ -259,20 +259,20 @@ export function ProductForm({
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
-              <p className="mt-2 text-base font-semibold text-white">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-background px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Cada unidade</p>
+              <p className="mt-1 text-base font-semibold text-foreground">
                 {formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
               </p>
             </div>
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada caixa/fardo</p>
-              <p className="mt-2 text-base font-semibold text-white">{unitsPerPackage} und</p>
+            <div className="rounded-lg border border-border bg-background px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Cada caixa/fardo</p>
+              <p className="mt-1 text-base font-semibold text-foreground">{unitsPerPackage} und</p>
             </div>
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
-              <p className="mt-2 text-base font-semibold text-white">{calculatedStockTotal} und</p>
+            <div className="rounded-lg border border-border bg-background px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Estoque calculado</p>
+              <p className="mt-1 text-base font-semibold text-foreground">{calculatedStockTotal} und</p>
             </div>
           </div>
 

@@ -19,17 +19,17 @@ export function FormShell({
   id?: string
 }>) {
   return (
-    <article className={cn('imperial-card p-7 md:p-8', className)} id={id}>
-      <div className="flex flex-col gap-5 border-b border-white/6 pb-6 lg:flex-row lg:items-start lg:justify-between">
+    <article className={cn('bg-card border border-border rounded-xl p-6 md:p-8 shadow-sm', className)} id={id}>
+      <div className="flex flex-col gap-6 border-b border-border pb-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">{eyebrow}</p>
-          <h2 className="mt-3 text-2xl font-semibold text-white md:text-[2rem]">{title}</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{description}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{eyebrow}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
         {aside ? <div className="lg:w-[320px]">{aside}</div> : null}
       </div>
 
-      <div className="mt-6 space-y-6">{children}</div>
+      <div className="mt-8 space-y-8">{children}</div>
     </article>
   )
 }
@@ -46,20 +46,20 @@ export function FormSection({
   children: ReactNode
 }>) {
   return (
-    <section className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.025)] p-5 md:p-6">
-      <div className="flex flex-col gap-3 border-b border-white/6 pb-4 md:flex-row md:items-start md:justify-between">
+    <section className="rounded-xl border border-border bg-background/50 p-5 md:p-6 transition-colors hover:bg-background/80">
+      <div className="flex flex-col gap-3 border-b border-border/50 pb-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <span className="inline-flex min-w-10 items-center justify-center rounded-full border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.08)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+            <span className="inline-flex size-6 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-foreground">
               {index}
             </span>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <h3 className="text-base font-semibold text-foreground tracking-tight">{title}</h3>
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{description}</p>
+          <p className="mt-2.5 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">{children}</div>
+      <div className="mt-6 space-y-5">{children}</div>
     </section>
   )
 }
@@ -74,10 +74,10 @@ export function FormStat({
   hint?: string
 }>) {
   return (
-    <div className="rounded-[22px] border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-3 text-lg font-semibold text-white">{value}</p>
-      {hint ? <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">{hint}</p> : null}
+    <div className="rounded-lg border border-border bg-background p-4">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">{value}</p>
+      {hint ? <p className="mt-1 text-xs leading-5 text-muted-foreground/70">{hint}</p> : null}
     </div>
   )
 }

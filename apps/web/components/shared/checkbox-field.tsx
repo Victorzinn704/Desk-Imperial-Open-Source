@@ -9,23 +9,30 @@ type CheckboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & 
 
 export function CheckboxField({ label, description, error, className, ...props }: CheckboxFieldProps) {
   return (
-    <label
+    <div
       className={cn(
-        'flex gap-3 rounded-2xl border border-border bg-surface-soft p-4 transition hover:border-border-strong',
+        'flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border bg-card p-4 transition-colors hover:border-muted-foreground/30',
         error && 'border-destructive',
         className,
       )}
     >
       <input
-        className="mt-1 size-4 rounded border-border-strong bg-card text-accent accent-accent"
+        className="mt-[2px] h-4 w-4 shrink-0 rounded-sm border border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none items-center justify-center checked:bg-primary checked:text-primary-foreground 
+        before:content-[''] before:hidden checked:before:block before:w-[10px] before:h-[10px] before:bg-white before:rounded-sm transition-all"
+        style={{
+          backgroundImage: props.checked || props.defaultChecked ? `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")` : 'none',
+          backgroundSize: '80%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
         type="checkbox"
         {...props}
       />
-      <span className="space-y-1">
-        <span className="block text-sm font-medium text-foreground">{label}</span>
-        {description ? <span className="block text-sm leading-6 text-muted-foreground">{description}</span> : null}
-        {error ? <span className="block text-sm text-destructive">{error}</span> : null}
-      </span>
-    </label>
+      <label className="flex flex-col space-y-1" style={{ cursor: 'pointer' }} htmlFor={props.id}>
+        <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">{label}</span>
+        {description ? <span className="text-sm text-muted-foreground">{description}</span> : null}
+        {error ? <span className="text-[11px] font-medium text-destructive">{error}</span> : null}
+      </label>
+    </div>
   )
 }

@@ -4,17 +4,17 @@ import { motion } from 'framer-motion'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
 
 const signals = [
-  { label: 'Receita prevista', value: '+18.4%', tone: 'text-[var(--success)]' },
-  { label: 'Margem media', value: '32.8%', tone: 'text-[var(--accent-strong)]' },
-  { label: 'Risco operacional', value: 'Controlado', tone: 'text-[var(--info)]' },
+  { label: 'Receita projetada', value: '+18.4%', tone: 'text-emerald-500 font-semibold' },
+  { label: 'Margem média', value: '32.8%', tone: 'text-indigo-400 font-semibold' },
+  { label: 'Risco sistêmico', value: 'Baixo', tone: 'text-sky-400 font-semibold' },
 ]
 
 export function HeroFloatingCard() {
   return (
     <motion.div
-      animate={{ y: [0, -8, 0] }}
-      className="imperial-card-soft p-4 backdrop-blur-xl"
-      transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+      animate={{ y: [0, -6, 0] }}
+      className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-5 shadow-2xl"
+      transition={{ duration: 7, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
     >
       <CardContent />
     </motion.div>
@@ -26,40 +26,38 @@ function CardContent() {
     <>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-            Leitura ao vivo
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Leitura em Tempo Real
           </p>
-          <p className="mt-2 text-lg font-semibold text-white">Pulso executivo</p>
+          <p className="mt-1.5 text-base font-semibold text-foreground tracking-tight">Painel Executivo</p>
         </div>
-        <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(123,214,138,0.08)] text-[var(--success)]">
+        <span className="flex size-10 items-center justify-center rounded-xl border border-border/50 bg-background/50 text-foreground">
           <ShieldCheck className="size-4" />
         </span>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-6 space-y-2">
         {signals.map((signal) => (
           <div
-            className="imperial-card-stat px-4 py-3"
+            className="flex items-center justify-between gap-4 rounded-lg border border-border/40 bg-background/30 px-4 py-3"
             key={signal.label}
           >
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-xs font-medium text-[var(--text-soft)]">{signal.label}</span>
-              <span className={`text-sm font-semibold ${signal.tone}`}>{signal.value}</span>
-            </div>
+            <span className="text-xs font-medium text-muted-foreground">{signal.label}</span>
+            <span className={`text-[13px] ${signal.tone}`}>{signal.value}</span>
           </div>
         ))}
       </div>
 
-      <div className="imperial-card-stat mt-5 px-4 py-4">
+      <div className="mt-4 rounded-lg border border-border/40 bg-background/30 px-4 py-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Moedas</p>
-          <ArrowUpRight className="size-4 text-[var(--accent)]" />
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Opções de Câmbio</p>
+          <ArrowUpRight className="size-4 text-muted-foreground" />
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2">
           {['BRL', 'USD', 'EUR'].map((chip) => (
             <span
-              className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]"
+              className="rounded-md border border-border/50 bg-background/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
               key={chip}
             >
               {chip}

@@ -1,23 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import {
-  CalendarDays,
-  Lock,
-  ShieldCheck,
-  Tags,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
 import { BrandMark } from '@/components/shared/brand-mark'
-
-const features = [
-  { icon: TrendingUp, label: 'Financeiro em tempo real', description: 'Receita, lucro e margem num único painel.' },
-  { icon: Tags, label: 'PDV / Comandas Kanban', description: 'Gerencie pedidos com drag-and-drop.' },
-  { icon: CalendarDays, label: 'Calendário Comercial', description: 'Planeje eventos, promoções e jogos.' },
-  { icon: Users, label: 'Folha de Pagamento', description: 'Salário base + comissão por funcionário.' },
-  { icon: ShieldCheck, label: 'Admin PIN + Segurança', description: 'Proteja ações sensíveis com PIN de 4 dígitos.' },
-]
+import { Quote } from 'lucide-react'
 
 export function AuthShell({
   eyebrow,
@@ -31,64 +16,82 @@ export function AuthShell({
   children: React.ReactNode
 }>) {
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <motion.aside
-          animate={{ opacity: 1, x: 0 }}
-          className="imperial-card relative hidden p-6 lg:flex lg:flex-col"
-          initial={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgb(143_183_255/0.14),transparent_55%)]" />
-          <div className="relative z-10 flex h-full flex-col">
+    <main className="min-h-screen w-full lg:grid lg:grid-cols-2 bg-background">
+      {/* ── Esquerda: Branding & Exclusividade ── */}
+      <div className="relative hidden w-full flex-col bg-zinc-950 text-white lg:flex border-r border-border">
+        {/* Abstract Background Noise / Gradient */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-[500px] bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.03),transparent_50%)]" />
+          <div className="absolute bottom-0 right-0 w-full h-[500px] bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.02),transparent_50%)]" />
+          <div 
+            className="absolute inset-0 opacity-[0.015]"
+            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"%3E%3Cfilter id=\\"noiseFilter\\"%3E%3CfeTurbulence type=\\"fractalNoise\\" baseFrequency=\\"0.65\\" numOctaves=\\"3\\" stitchTiles=\\"stitch\\"/%3E%3C/filter%3E%3Crect width=\\"100%25\\" height=\\"100%25\\" filter=\\"url(%23noiseFilter)\\"/%3E%3C/svg%3E")' }}
+          />
+        </div>
+
+        <div className="relative z-10 flex h-full flex-col p-10 xl:p-14">
+          <div className="flex items-center gap-2">
             <BrandMark />
+          </div>
 
-            <div className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">{eyebrow}</p>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{title}</h1>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-            </div>
+          <div className="my-auto max-w-md">
+            <h1 className="text-3xl font-medium tracking-tight text-white/90">
+              Operação sob demanda.
+              <br />
+              <span className="text-white/40">Controle em tempo real.</span>
+            </h1>
+            <p className="mt-6 text-sm leading-6 text-white/50">
+              {description} O Desk Imperial eleva a sua gestão comercial combinando
+              precisão tática e autoridade.
+            </p>
+          </div>
 
-            <div className="mt-6 space-y-2">
-              {features.map((f) => (
-                <div
-                  className="flex items-center gap-2 rounded-[12px] border border-white/5 bg-white/[0.02] px-3 py-2"
-                  key={f.label}
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-emerald-400/20 bg-emerald-400/10 text-emerald-400">
-                    <f.icon className="size-3.5" />
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-white">{f.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{f.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-4">
-              <div className="imperial-card-soft flex items-center gap-2 p-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border-strong bg-accent/10">
-                  <Lock className="size-3.5 text-accent" />
-                </span>
-                <p className="text-xs text-muted-foreground">
-                  Sessão protegida com cookie HttpOnly + CSRF Guard.
-                </p>
+          <div className="mt-auto">
+            <div className="flex flex-col gap-4">
+              <Quote className="size-6 text-white/20" />
+              <p className="text-sm font-medium leading-relaxed text-white/70 max-w-sm">
+                "A excelência operacional não é um diferencial competitivo, é a fundação para escalar modelos de negócio complexos."
+              </p>
+              <div className="flex items-center gap-3 mt-2 text-xs text-white/40">
+                <span className="font-semibold text-white/70">Desk Imperial</span>
+                <span>•</span>
+                <span>Enterprise Suite</span>
               </div>
             </div>
           </div>
-        </motion.aside>
+        </div>
+      </div>
 
-        <motion.section
-          animate={{ opacity: 1, x: 0 }}
-          className="imperial-card flex items-center justify-center p-4 lg:p-6"
-          initial={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.08 }}
-        >
-          <div className="imperial-card-soft w-full max-w-lg p-5 sm:p-6">
-            {children}
-          </div>
-        </motion.section>
+      {/* ── Direita: Formulário Limpo ── */}
+      <div className="flex flex-col flex-1 p-6 md:p-10 lg:p-14 min-h-screen">
+        <div className="lg:hidden mb-8">
+          <BrandMark />
+        </div>
+        
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-md"
+            initial={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.
+              </p>
+            </div>
+
+            {/* O children entra limpo, o fundo branco/preto sem card será usado */}
+            <div className="w-full">
+              {children}
+            </div>
+            
+            <p className="mt-10 text-center text-[11px] text-muted-foreground/60 w-full max-w-sm mx-auto">
+              Ao acessar, você atesta compromisso com os guias de uso restrito interno de Governança e Operação.
+            </p>
+          </motion.div>
+        </div>
       </div>
     </main>
   )

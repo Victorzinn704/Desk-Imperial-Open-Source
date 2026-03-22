@@ -43,7 +43,10 @@
       "WebFetch(domain:www.syncfusion.com)",
       "WebFetch(domain:ej2.syncfusion.com)",
       "Bash(/dev/null echo:*)",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"\"/^Co-Authored-By: Claude Sonnet 4\\\\.6 <noreply@anthropic\\\\.com>$/d\"\"' -- --all)",
+      "Bash(node -e \"const f = require\\(''''fs''''\\); const b = f.readFileSync\\(''''apps/web/components/shared/button.tsx'''',''''utf8''''\\); console.log\\(b.includes\\(''''destructive''''\\) ? ''''button: destructive OK'''' : ''''MISSING destructive''''\\)\")",
+      "Bash(node -e \"const f = require\\(''''fs''''\\); const b = f.readFileSync\\(''''apps/web/components/auth/login-form.tsx'''',''''utf8''''\\); console.log\\(b.includes\\(''''showPassword''''\\) ? ''''login: show/hide OK'''' : ''''MISSING show/hide''''\\)\")"
     ]
   }
 }

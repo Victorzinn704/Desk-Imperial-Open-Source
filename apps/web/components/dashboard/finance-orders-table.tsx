@@ -20,13 +20,13 @@ function StatusBadge({ status }: { status: RecentOrder['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+        'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
         isCompleted
-          ? 'border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'
-          : 'border-[rgba(240,68,56,0.25)] bg-[rgba(240,68,56,0.08)] text-red-400',
+          ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
+          : 'bg-destructive/10 text-destructive dark:text-red-400',
       )}
     >
-      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[#36f57c]' : 'bg-red-400')} />
+      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-emerald-500' : 'bg-destructive')} />
       {isCompleted ? 'Concluído' : 'Cancelado'}
     </span>
   )
@@ -75,17 +75,17 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
 
   if (orders.length === 0) {
     return (
-      <p className="imperial-card-soft px-4 py-6 text-center text-sm text-[var(--text-soft)]">
-        Nenhum pedido encontrado para este filtro.
-      </p>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center bg-background/50">
+        <p className="text-sm text-muted-foreground">Nenhum pedido encontrado para este filtro.</p>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex justify-end">
         <button
-          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
+          className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground hover:border-muted-foreground/30 shadow-sm"
           type="button"
           onClick={handleExport}
         >
@@ -93,29 +93,29 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
           Exportar CSV ({orders.length})
         </button>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-[rgba(255,255,255,0.06)]">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+            <tr className="border-b border-border bg-muted/20">
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground">
                 Pedido
               </th>
-              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+              <th className="px-5 py-3.5 text-right text-xs font-semibold text-muted-foreground">
                 Receita
               </th>
-              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+              <th className="px-5 py-3.5 text-right text-xs font-semibold text-muted-foreground">
                 Lucro
               </th>
-              <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
+              <th className="px-5 py-3.5 text-center text-xs font-semibold text-muted-foreground">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground max-md:hidden">
                 Data
               </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground max-md:hidden">
                 Canal
               </th>
-              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)] max-md:hidden">
+              <th className="px-5 py-3.5 text-right text-xs font-semibold text-muted-foreground max-md:hidden">
                 Itens
               </th>
             </tr>
@@ -127,32 +127,31 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                 <tr
                   key={order.id}
                   className={cn(
-                    'border-b border-[rgba(255,255,255,0.04)] transition-colors hover:bg-[rgba(255,255,255,0.02)]',
-                    i % 2 === 0 ? 'bg-transparent' : 'bg-[rgba(255,255,255,0.01)]',
+                    'border-b border-border/50 transition-colors hover:bg-muted/50 last:border-0'
                   )}
                 >
-                  <td className="max-w-[180px] px-4 py-3">
-                    <p className="truncate font-semibold text-white">
+                  <td className="max-w-[180px] px-5 py-4">
+                    <p className="truncate font-medium text-foreground">
                       {order.customerName || 'Cliente não informado'}
                     </p>
                   </td>
-                  <td className={cn('px-4 py-3 text-right font-semibold', isCompleted ? 'text-[#36f57c]' : 'text-red-400')}>
+                  <td className={cn('px-5 py-4 text-right font-medium', isCompleted ? 'text-foreground' : 'text-muted-foreground')}>
                     {isCompleted ? '' : '−'}
                     {formatCurrency(order.totalRevenue, displayCurrency)}
                   </td>
-                  <td className="px-4 py-3 text-right text-[var(--text-soft)]">
+                  <td className="px-5 py-4 text-right text-muted-foreground">
                     {formatCurrency(order.totalProfit, displayCurrency)}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-5 py-4 text-center">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3 text-[var(--text-soft)] max-md:hidden">
+                  <td className="px-5 py-4 text-muted-foreground max-md:hidden">
                     {formatDate(order.createdAt)}
                   </td>
-                  <td className="px-4 py-3 capitalize text-[var(--text-soft)] max-md:hidden">
+                  <td className="px-5 py-4 capitalize text-muted-foreground max-md:hidden">
                     {order.channel || '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-[var(--text-soft)] max-md:hidden">
+                  <td className="px-5 py-4 text-right text-muted-foreground max-md:hidden">
                     {order.totalItems}
                   </td>
                 </tr>
@@ -163,25 +162,25 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-[var(--text-soft)]">
-            {start + 1}–{Math.min(start + ROWS_PER_PAGE, orders.length)} de {orders.length} pedidos
+        <div className="flex items-center justify-between px-1 pt-2">
+          <p className="text-xs text-muted-foreground">
+            {start + 1}–{Math.min(start + ROWS_PER_PAGE, orders.length)} de <span className="font-medium text-foreground">{orders.length}</span> pedidos
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50 shadow-sm"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="text-xs text-[var(--text-soft)]">
+            <span className="min-w-[40px] text-center text-xs font-medium text-muted-foreground">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50 shadow-sm"
             >
               <ChevronRight className="size-4" />
             </button>

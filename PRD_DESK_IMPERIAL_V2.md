@@ -1,6 +1,6 @@
 # PRD — DESK IMPERIAL v2.0
 **Product Requirements Document**
-**Tech Lead:** Claude · **Data:** 2026-03-18 · **Status:** Aprovado para implementação
+**Data:** 2026-03-18 · **Status:** Aprovado para implementação
 
 ---
 

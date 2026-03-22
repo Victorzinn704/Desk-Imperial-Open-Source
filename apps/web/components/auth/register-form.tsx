@@ -86,32 +86,24 @@ export function RegisterForm() {
   const errorMessage =
     registerMutation.error instanceof ApiError
       ? registerMutation.error.message
-      : 'Seu cadastro cria a conta, registra os consentimentos e envia um codigo para confirmar o email antes do primeiro acesso.'
+      : 'Seu cadastro compila a conta e envia uma verificação por e-mail instantes após o término.'
 
   return (
-    <div>
-      <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Cadastro</p>
-        <h2 className="text-3xl font-semibold text-white">Crie uma conta pronta para operar com seguranca.</h2>
-        <p className="text-sm leading-7 text-[var(--text-soft)]">
-          O cadastro ja considera os documentos legais e a base de sessao por cookie HttpOnly.
-        </p>
-      </div>
-
-      <form className="mt-8 space-y-5" onSubmit={onSubmit}>
-        <div className="grid gap-5 sm:grid-cols-2">
+    <div className="w-full">
+      <form className="space-y-6" onSubmit={onSubmit}>
+        <div className="grid gap-4 sm:grid-cols-2">
           <InputField
             autoComplete="name"
             error={errors.fullName?.message}
             label="Nome completo"
-            placeholder="Lucia Helena"
+            placeholder="John Doe"
             {...registerField('fullName')}
           />
           <InputField
             autoComplete="organization"
             error={errors.companyName?.message}
             label="Empresa"
-            placeholder="Portal da sua empresa"
+            placeholder="Nome do seu negócio"
             {...registerField('companyName')}
           />
         </div>
@@ -119,7 +111,7 @@ export function RegisterForm() {
         <InputField
           autoComplete="email"
           error={errors.email?.message}
-          label="Email"
+          label="Email Corporativo"
           placeholder="ceo@empresa.com"
           {...registerField('email')}
         />
@@ -128,40 +120,43 @@ export function RegisterForm() {
           <InputField
             autoComplete="new-password"
             error={errors.password?.message}
-            hint="Minimo de 8 caracteres com maiuscula, minuscula, numero e caractere especial."
+            hint="Mínimo de 8 caracteres contendo maiúscula, minúscula, número e símbolo."
             label="Senha"
             placeholder="Defina uma senha forte"
             type="password"
             {...registerField('password')}
           />
 
-          <div className="imperial-card-soft p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--text-soft)]">Forca da senha</span>
-              <span className="font-semibold text-[var(--text-primary)]">{passwordStrength.label}</span>
+          {password.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">Força da senha estimado:</span>
+                <span className="font-semibold text-foreground tracking-wide">{passwordStrength.label}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <span
+                    className={`h-1.5 rounded-full transition-colors ${
+                      index < passwordStrength.score ? 'bg-primary' : 'bg-muted'
+                    }`}
+                    key={index}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <span
-                  className={`h-2 rounded-full ${
-                    index < passwordStrength.score ? 'bg-[var(--accent)]' : 'bg-[rgba(255,255,255,0.08)]'
-                  }`}
-                  key={index}
-                />
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
-        <div className="imperial-card-soft space-y-4 p-5">
+        <div className="rounded-md border border-border bg-background p-5 space-y-4 shadow-sm">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Consentimento legal</h3>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-              Para criar a conta, os documentos obrigatorios precisam ser aceitos. As preferencias de cookies ficam no banner do site.
+            <h3 className="text-sm font-semibold text-foreground tracking-tight">Consentimentos e Segurança</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Sua conta opera sob os protocolos restritos do Desk Imperial. Ao prosseguir, 
+              você está ciente da arquitetura baseada em cookies HttpOnly e proteções avançadas.
             </p>
           </div>
 
-          <div className="grid gap-3">
+          <div className="grid gap-3 pt-2">
             {documents.map((document) => {
               if (document.key === 'terms-of-use') {
                 return (
@@ -192,19 +187,19 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
+        <div className="rounded-md border border-muted bg-muted/30 px-4 py-3 text-xs text-muted-foreground leading-relaxed text-center">
           {errorMessage}
         </div>
 
-        <Button fullWidth loading={registerMutation.isPending || isRouting} size="lg" type="submit">
-          Criar conta e confirmar email
+        <Button className="w-full" loading={registerMutation.isPending || isRouting} size="md" variant="primary" type="submit">
+          Solicitar Conta e Enviar Confirmação
         </Button>
       </form>
 
-      <div className="mt-6 flex flex-col gap-3 text-sm text-[var(--text-soft)] sm:flex-row sm:items-center sm:justify-between">
-        <span>Ja existe uma conta criada?</span>
-        <Link className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent-strong)]" href="/login">
-          Voltar para login
+      <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <span>Já possui uma governança ativa?</span>
+        <Link className="font-medium text-foreground hover:underline" href="/login">
+          Ir para o Portal
         </Link>
       </div>
     </div>

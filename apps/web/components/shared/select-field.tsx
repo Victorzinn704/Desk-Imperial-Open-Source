@@ -15,12 +15,14 @@ type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
 
 export function SelectField({ label, options, error, hint, className, ...props }: SelectFieldProps) {
   return (
-    <label className="block space-y-2">
-      <span className="text-sm font-medium text-label">{label}</span>
+    <div className="flex flex-col space-y-2">
+      <label className="text-sm font-medium text-foreground">
+        {label}
+      </label>
       <select
         className={cn(
-          'h-12 w-full rounded-2xl border border-border bg-surface-soft px-4 text-sm text-foreground outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/20',
-          error && 'border-destructive focus:border-destructive focus:ring-destructive/20',
+          'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+          error && 'border-destructive focus:ring-destructive',
           className,
         )}
         {...props}
@@ -31,8 +33,8 @@ export function SelectField({ label, options, error, hint, className, ...props }
           </option>
         ))}
       </select>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {!error && hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
-    </label>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {!error && hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
   )
 }

@@ -1,49 +1,61 @@
-/* Desk Imperial — tokens (Tailwind v4 @theme). Fonte única para cores, sombra e raio. */
+/* Desk Imperial — Premium Dark Theme (Linear / Vercel style) */
 
 @theme {
-  --font-sans: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif;
 
-  --color-desk-ink: #07090c;
-  --color-desk-surface-base: #0d1116;
-  --color-desk-surface-raised: #11161c;
-  --color-desk-surface-soft: #171d25;
+  /* Core Colors */
+  --color-background: #000000;
+  --color-foreground: #ededed;
+  
+  --color-card: #0a0a0a;
+  --color-card-foreground: #ededed;
+  
+  --color-popover: #0a0a0a;
+  --color-popover-foreground: #ededed;
+  
+  --color-primary: #ededed;
+  --color-primary-foreground: #000000;
+  
+  --color-secondary: #27272a;
+  --color-secondary-foreground: #ededed;
+  
+  --color-muted: #171717;
+  --color-muted-foreground: #a1a1aa;
+  
+  --color-accent: #171717;
+  --color-accent-foreground: #ededed;
+  
+  --color-destructive: #7f1d1d;
+  --color-destructive-foreground: #fef2f2;
+  
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-ring: #d4d4d8;
 
-  --color-desk-line: #202730;
-  --color-desk-line-strong: #303947;
+  /* Legacy Desk Colors (mapped to clean neutral for gradual refactoring) */
+  --color-desk-ink: var(--color-background);
+  --color-desk-surface-base: var(--color-card);
+  --color-desk-surface-raised: var(--color-muted);
+  --color-desk-surface-soft: var(--color-accent);
+  --color-desk-line: var(--color-border);
+  --color-desk-line-strong: #3f3f46;
+  --color-desk-fg: var(--color-foreground);
+  --color-desk-fg-muted: var(--color-muted-foreground);
+  --color-desk-fg-soft: #888888;
+  --color-desk-accent: #ededed;
+  --color-desk-accent-strong: #ffffff;
+  --color-desk-info: #3b82f6;
+  --color-desk-success: #22c55e;
+  --color-desk-danger: #ef4444;
 
-  --color-desk-fg: #e0e6ec;
-  --color-desk-fg-muted: #a7b2be;
-  --color-desk-fg-soft: #7d8a99;
+  --shadow-desk-panel: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-desk-panel-strong: 0 16px 40px rgba(0, 0, 0, 0.6);
 
-  --color-desk-accent: #c3a46f;
-  --color-desk-accent-strong: #d8bb86;
-  --color-desk-accent-soft: rgb(195 164 111 / 0.14);
-  --color-desk-info: #5a95c4;
-  --color-desk-success: #639371;
-  --color-desk-danger: #d47373;
-
-  --color-background: var(--color-desk-ink);
-  --color-foreground: var(--color-desk-fg);
-  --color-card: var(--color-desk-surface-base);
-  --color-muted: var(--color-desk-surface-raised);
-  --color-muted-foreground: var(--color-desk-fg-soft);
-  --color-border: var(--color-desk-line);
-  --color-accent: var(--color-desk-accent);
-  --color-accent-strong: var(--color-desk-accent-strong);
-  --color-accent-foreground: var(--color-desk-ink);
-  --color-destructive: var(--color-desk-danger);
-
-  /* Superfícies e rótulos (formulários, inputs, sidebar) */
-  --color-label: var(--color-desk-fg-muted);
-  --color-surface-soft: var(--color-desk-surface-soft);
-  --color-border-strong: var(--color-desk-line-strong);
-  --color-info: var(--color-desk-info);
-  --color-success: var(--color-desk-success);
-
-  --shadow-desk-panel: 0 24px 80px rgb(0 0 0 / 0.28);
-  --shadow-desk-panel-strong: 0 32px 100px rgb(0 0 0 / 0.38);
-
-  --radius-desk-card: 1.75rem;
-  --radius-desk-control: 1.2rem;
-  --radius-desk-sidebar: 1.4rem;
+  --radius-desk-card: 12px;
+  --radius-desk-control: 8px;
+  --radius-desk-sidebar: 8px;
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }

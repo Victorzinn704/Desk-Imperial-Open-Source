@@ -345,10 +345,10 @@ export function DashboardShell() {
   const activeHero = sectionHeroCopy[activeSection]
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
+    <main className="min-h-screen bg-background text-foreground">
       <div
-        className="mx-auto max-w-[1600px] xl:grid xl:gap-6"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
+        className="mx-auto xl:grid"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)', minHeight: '100vh' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
@@ -363,26 +363,23 @@ export function DashboardShell() {
           userName={user.fullName}
         />
 
-        <div className="mt-6 space-y-6 xl:mt-0">
-          <header className="imperial-card p-6 md:p-8" id="workspace-header">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                  <span className="size-2 rounded-full bg-[var(--accent)]" />
+        <div className="space-y-6">
+          <header className="border-b border-border bg-card px-6 py-8 md:px-10" id="workspace-header">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between max-w-[1600px] mx-auto">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  <span className="size-1.5 rounded-full bg-foreground" />
                   {activeHero.badge}
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Início / Painel operacional / {activeNavigation.label}
-                </p>
-                <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
+                <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                   {activeHero.title}
                 </h1>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
+                <p className="mt-3 text-base text-muted-foreground">
                   {activeHero.description}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-4 xl:max-w-[520px]">
+              <div className="flex flex-col gap-5 xl:min-w-[420px]">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {signals.map((signal) => (
                     <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
@@ -417,29 +414,38 @@ export function DashboardShell() {
                   })}
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/">
-                  <Button size="lg" variant="ghost">
-                    Ver site
-                    <ArrowUpRight className="size-4" />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Link href="/">
+                    <Button size="sm" variant="ghost" className="w-full sm:w-auto text-muted-foreground hover:text-foreground">
+                      Site externo
+                      <ArrowUpRight className="ml-2 size-3" />
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant={isTimelineOpen ? 'primary' : 'secondary'}
+                    onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                    className="w-full sm:w-auto"
+                  >
+                    <Clock className="mr-2 size-3.5" />
+                    Histórico
                   </Button>
-                </Link>
-                <Button
-                  size="lg"
-                  variant={isTimelineOpen ? 'primary' : 'ghost'}
-                  onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-                >
-                  <Clock className="size-4" />
-                  Atividades
-                </Button>
-                <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
-                  <LogOut className="size-4" />
-                  Encerrar sessão
-                </SpotlightButton>
+                  <Button 
+                    size="sm" 
+                    variant="primary"
+                    disabled={logoutMutation.isPending || isRouting} 
+                    onClick={() => logoutMutation.mutate()}
+                    className="w-full sm:w-auto"
+                  >
+                    <LogOut className="mr-2 size-3.5" />
+                    Sair
+                  </Button>
                 </div>
               </div>
             </div>
           </header>
+
+          <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-12 space-y-6">
 
           {user.evaluationAccess ? (
             <EvaluationModeBanner
@@ -494,6 +500,7 @@ export function DashboardShell() {
             cancelOrderMutation,
             user,
           })}
+          </div>
         </div>
       </div>
 
