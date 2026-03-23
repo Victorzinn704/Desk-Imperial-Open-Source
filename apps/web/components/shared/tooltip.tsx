@@ -40,7 +40,7 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
         top = r.top + window.scrollY + r.height / 2
         left = r.right + GAP
       }
-      setCoords({ top, left })
+      setCoords({ top, left: Math.min(left, window.innerWidth - 8) })
     }
     setVisible(true)
   }
@@ -76,7 +76,7 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
           role="tooltip"
           className={cn(
             'pointer-events-none fixed z-[9999] whitespace-nowrap rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(23,28,34,0.98)] px-3.5 py-2 text-xs font-medium text-[rgba(255,255,255,0.95)] shadow-[0_12px_48px_rgba(0,0,0,0.48)] backdrop-blur-sm',
-            'transition-all duration-200 ease-out',
+            'transition-[opacity,transform] duration-200 ease-out',
             visible 
               ? 'opacity-100 scale-100 pointer-events-auto' 
               : 'opacity-0 scale-90 pointer-events-none',

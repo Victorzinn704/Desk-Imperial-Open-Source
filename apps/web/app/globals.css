@@ -1,3 +1,4 @@
+/* build: 20260323-1 */
 @import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
 
@@ -35,6 +36,7 @@ body {
   isolation: isolate;
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top, rgba(20, 28, 38, 0.55), transparent 28%),
     radial-gradient(circle at bottom right, rgba(22, 30, 40, 0.30), transparent 28%),
@@ -539,4 +541,170 @@ select {
     transform: scale(1.22);
     opacity: 0;
   }
+}
+
+/* ─── AI Thinking animation ─────────────────────────────────────────────────── */
+
+@keyframes ai-dot-pulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40%            { transform: scale(1);   opacity: 1;   }
+}
+
+.ai-dot:nth-child(1) { animation: ai-dot-pulse 1.2s ease-in-out infinite 0s;    }
+.ai-dot:nth-child(2) { animation: ai-dot-pulse 1.2s ease-in-out infinite 0.2s;  }
+.ai-dot:nth-child(3) { animation: ai-dot-pulse 1.2s ease-in-out infinite 0.4s;  }
+
+/* ─── AI Glyph pulse ────────────────────────────────────────────────────────── */
+
+@keyframes ai-glyph-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(195,164,111,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(195,164,111,0.12), 0 0 32px rgba(195,164,111,0.16); }
+}
+
+.ai-glyph-pulse {
+  animation: ai-glyph-breathe 3s ease-in-out infinite;
+}
+
+/* ─── Fade slide in ─────────────────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s ease-out forwards;
+}
+
+/* ─── Workspace sidebar & navigation ───────────────────────────────────────── */
+
+@layer components {
+  .workspace-sidebar {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace-sidebar__surface {
+    padding: 0.875rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: rgba(255, 255, 255, 0.022);
+  }
+
+  .workspace-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .workspace-nav-group__label {
+    padding: 0 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(125, 138, 153, 0.55);
+    margin-bottom: 0.25rem;
+    user-select: none;
+  }
+
+  .workspace-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 1.125rem;
+    border: 1px solid transparent;
+    padding: 0.55rem 0.625rem;
+    color: var(--text-soft);
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+    background: transparent;
+    text-decoration: none;
+    text-align: left;
+  }
+
+  .workspace-nav-item:hover {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--text-primary);
+  }
+
+  .workspace-nav-item--active {
+    border-color: rgba(195, 164, 111, 0.22);
+    background: rgba(195, 164, 111, 0.085);
+    color: #fff;
+  }
+
+  .workspace-nav-item__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.028);
+    color: inherit;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+  }
+
+  .workspace-nav-item--active .workspace-nav-item__icon {
+    border-color: rgba(195, 164, 111, 0.22);
+    background: rgba(195, 164, 111, 0.1);
+    color: var(--accent);
+  }
+
+  .workspace-quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    border-radius: 1.125rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.022);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease;
+    text-align: left;
+  }
+
+  .workspace-quick-action:hover {
+    border-color: rgba(195, 164, 111, 0.22);
+    background: rgba(195, 164, 111, 0.045);
+  }
+
+  .workspace-quick-action--compact {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .workspace-quick-action__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.028);
+    color: var(--accent);
+    transition: color 180ms ease;
+  }
+}
+
+/* ─── AI output typography ──────────────────────────────────────────────────── */
+
+.ai-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.ai-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
 }
