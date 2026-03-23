@@ -181,12 +181,12 @@ export function EmployeePayrollCard({
                       <input
                         className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
                         min="0"
-                        step="100"
+                        step="1"
                         type="number"
-                        value={config.salarioBase / 100}
-                        onChange={(e) => updateConfig(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))}
+                        value={config.salarioBase}
+                        onChange={(e) => updateConfig(emp.id, 'salarioBase', Number(e.target.value))}
                       />
-                      <p className="mt-1 text-[11px] text-[var(--text-soft)]">em centavos internamente</p>
+                      <p className="mt-1 text-[11px] text-[var(--text-soft)]">valor em reais (R$)</p>
                     </div>
 
                     {/* Commission % */}
