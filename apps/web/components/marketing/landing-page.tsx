@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
 import {
   motion,
   useMotionTemplate,
@@ -19,7 +19,6 @@ import {
   Scale,
   ShieldCheck,
   Waypoints,
-  ArrowRight
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { CompanySignatureCard } from '@/components/marketing/company-signature-card'
@@ -29,21 +28,21 @@ import { InteractionFlowCard } from '@/components/marketing/interaction-flow-car
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Seus números', value: 'Métricas de vendas, lucro e desempenho em um único lugar.' },
-  { label: 'Seu controle', value: 'Produtos, pedidos, vendedores e estoque meticulosamente organizados.' },
-  { label: 'Sua clareza', value: 'Relatórios avançados e insights de alto impacto gerencial.' },
+  { label: 'Seus números', value: 'Métricas de vendas, lucro e desempenho em um único lugar' },
+  { label: 'Seu controle', value: 'Produtos, pedidos, vendedores e estoque organizados' },
+  { label: 'Sua clareza', value: 'Relatórios e insights que fazem você decidir melhor' },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Engenharia Operacional',
-    description: 'Venda, gerencie fluxo de caixa e supervisione o dia de forma incrivelmente rápida.',
+    title: 'Sem complicação',
+    description: 'Você abre, vende, confere e fecha o dia — tudo aqui dentro.',
   },
   {
     icon: Radar,
-    title: 'Governança Visível',
-    description: 'Sua empresa ganha métricas auditáveis que atestam valor perante o mercado.',
+    title: 'Com identidade',
+    description: 'Seu comércio tem nome, história e números que provam valor.',
   },
 ]
 
@@ -54,56 +53,78 @@ const capabilityCards: Array<{
 }> = [
   {
     icon: BadgeDollarSign,
-    title: 'Gestão Financeira Ativa',
-    description: 'Receita, custos, margem de contribuição. Um painel impecável com a saúde real do negócio.',
+    title: 'Seu dinheiro',
+    description: 'Receita, custo, lucro e margem aparecem claros. Você sabe quanto ganhou.',
   },
   {
     icon: Landmark,
-    title: 'Controle de Times & Ativos',
-    description: 'Organização estruturada de portfólio, metas por equipe e controle sistêmico de todas as pontas.',
+    title: 'Seu time',
+    description: 'Vendedores, produtos, pedidos. Todos têm história, quota e desempenho.',
   },
   {
     icon: ChartColumn,
-    title: 'Monitoramento & Insights',
-    description: 'Gráficos elegantes. Rankings automatizados. Detecção de tendências antes de virarem gargalos.',
+    title: 'Seus insights',
+    description: 'Gráficos que falam. Ranking de vendedores. Análise de eventos e lucro real.',
   },
   {
     icon: Scale,
-    title: 'Arquitetura de Segurança',
-    description: 'Histórico criptografado, dados rigorosamente auditados e compliance por design.',
+    title: 'Seu controle',
+    description: 'Dados auditados, histórico completo, segurança que você merece.',
   },
 ]
 
 const heroLines = [
-  'Comande sua operação',
-  'com o rigor, clareza e autoridade',
-  'de um verdadeiro líder.',
+  'Não adianta ter o poder da caneta,',
+  'se você não sabe a mesa certa onde se sentar.',
+  'Isso não é sobre mesas... — Desk Imperial.',
 ]
 
 const footerColumns = [
   {
     title: 'Plataforma',
     links: [
-      { label: 'Cadastro Institucional', href: '/cadastro' },
-      { label: 'Portal de Acesso', href: '/login' },
+      { label: 'Cadastro', href: '/cadastro' },
+      { label: 'Login', href: '/login' },
+      { label: 'Dashboard', href: '/dashboard' },
     ],
   },
   {
-    title: 'Engenharia',
+    title: 'Ambientes',
     links: [
-      { label: 'Status do Sistema', href: 'https://api.deskimperial.online/api/health' },
-      { label: 'Arquitetura', href: '#fundacao' },
+      { label: 'app.deskimperial.online', href: 'https://app.deskimperial.online' },
+      { label: 'api.deskimperial.online', href: 'https://api.deskimperial.online/api/health' },
     ],
   },
   {
-    title: 'Soluções',
+    title: 'Capacidades',
     links: [
-      { label: 'Gestão de Múltiplos Itens', href: '#fundacao' },
-      { label: 'Governança de Portfólio', href: '#fundacao' },
-      { label: 'Controle Estratégico', href: '#entregas' },
+      { label: 'Pedidos multi-item', href: '#fundacao' },
+      { label: 'Portfolio inteligente', href: '#fundacao' },
+      { label: 'Controle operacional', href: '#entregas' },
     ],
   },
 ]
+
+const legacyThemeVariables = {
+  '--bg': '#07090c',
+  '--surface': '#0d1116',
+  '--surface-muted': '#11161c',
+  '--surface-soft': '#171d25',
+  '--border': '#202730',
+  '--border-strong': '#303947',
+  '--text-primary': '#e0e6ec',
+  '--text-soft': '#a7b2be',
+  '--text-muted': '#7d8a99',
+  '--accent': '#c3a46f',
+  '--accent-strong': '#d8bb86',
+  '--accent-soft': 'rgb(195 164 111 / 0.14)',
+  '--info': '#5a95c4',
+  '--success': '#639371',
+  '--danger': '#d47373',
+  '--radius-desk-card': '1.75rem',
+  '--radius-desk-control': '1.2rem',
+  '--radius-desk-sidebar': '1.4rem',
+} as CSSProperties
 
 export function LandingPage() {
   const shouldReduceMotion = useReducedMotion()
@@ -112,62 +133,68 @@ export function LandingPage() {
   const cursorX = useMotionValue(0)
   const cursorY = useMotionValue(0)
 
-  const rotateX = useSpring(useTransform(pointerY, [-1, 1], [2, -2]), {
+  const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {
     stiffness: 120,
     damping: 20,
     mass: 0.6,
   })
-  const rotateY = useSpring(useTransform(pointerX, [-1, 1], [-3, 3]), {
+  const rotateY = useSpring(useTransform(pointerX, [-1, 1], [-5, 5]), {
     stiffness: 120,
     damping: 20,
     mass: 0.6,
   })
 
-  const primaryShift = useSpring(useTransform(pointerX, [-1, 1], [-8, 8]), {
+  const primaryShift = useSpring(useTransform(pointerX, [-1, 1], [-16, 16]), {
     stiffness: 90,
     damping: 16,
     mass: 0.8,
   })
-  const secondaryShift = useSpring(useTransform(pointerX, [-1, 1], [-5, 5]), {
+  const secondaryShift = useSpring(useTransform(pointerX, [-1, 1], [-10, 10]), {
     stiffness: 90,
     damping: 16,
     mass: 0.8,
   })
-  const tertiaryShift = useSpring(useTransform(pointerX, [-1, 1], [-3, 3]), {
+  const tertiaryShift = useSpring(useTransform(pointerX, [-1, 1], [-6, 6]), {
     stiffness: 90,
     damping: 16,
     mass: 0.8,
   })
-  const heroPanelX = useSpring(useTransform(pointerX, [-1, 1], [-8, 8]), {
+  const heroPanelX = useSpring(useTransform(pointerX, [-1, 1], [-12, 12]), {
     stiffness: 70,
     damping: 14,
     mass: 0.8,
   })
-  const heroPanelY = useSpring(useTransform(pointerY, [-1, 1], [-6, 6]), {
+  const heroPanelY = useSpring(useTransform(pointerY, [-1, 1], [-10, 10]), {
     stiffness: 70,
     damping: 14,
     mass: 0.8,
   })
   const cursorGlowX = useSpring(cursorX, { stiffness: 110, damping: 22, mass: 0.7 })
   const cursorGlowY = useSpring(cursorY, { stiffness: 110, damping: 22, mass: 0.7 })
-  
-  // Sleek subtle glow, replacing the aggressive radial shapes
-  const cursorGridGlow = useMotionTemplate`radial-gradient(400px circle at ${cursorGlowX}px ${cursorGlowY}px, rgba(255,255,255,0.03), transparent 80%)`
+  const cursorGlow = useMotionTemplate`radial-gradient(520px circle at ${cursorGlowX}px ${cursorGlowY}px, rgba(195,164,111,0.14), rgba(90,149,196,0.08) 28%, transparent 62%)`
+  const cursorGridGlow = useMotionTemplate`radial-gradient(340px circle at ${cursorGlowX}px ${cursorGlowY}px, rgba(255,255,255,0.06), transparent 70%)`
 
   const lineShifts = [primaryShift, secondaryShift, tertiaryShift]
 
   const handlePagePointerMove = (event: ReactMouseEvent<HTMLElement>) => {
-    if (shouldReduceMotion) return
+    if (shouldReduceMotion) {
+      return
+    }
+
     const rect = event.currentTarget.getBoundingClientRect()
     cursorX.set(event.clientX - rect.left)
     cursorY.set(event.clientY - rect.top)
   }
 
   const handleHeroPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (shouldReduceMotion) return
+    if (shouldReduceMotion) {
+      return
+    }
+
     const rect = event.currentTarget.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
     const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
+
     pointerX.set(x)
     pointerY.set(y)
   }
@@ -179,69 +206,82 @@ export function LandingPage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden bg-background text-foreground selection:bg-primary/30"
+      className="landing-legacy relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
       onMouseMove={handlePagePointerMove}
+      style={legacyThemeVariables}
     >
-      <div className="absolute inset-0 z-0 bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.03)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
+          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
         {!shouldReduceMotion ? (
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 hidden md:block"
-            style={{ backgroundImage: cursorGridGlow }}
-          />
+          <>
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 hidden md:block"
+              style={{ backgroundImage: cursorGlow }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 hidden md:block mix-blend-soft-light"
+              style={{ backgroundImage: cursorGridGlow }}
+            />
+          </>
         ) : null}
       </div>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
-        <header className="rounded-2xl border border-white/5 bg-black/40 backdrop-blur-md shadow-2xl overflow-hidden ring-1 ring-white/10">
-          <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between px-6">
-            <div className="flex items-center gap-6">
+        <header className="imperial-topbar">
+          <div className="imperial-card-soft imperial-topbar__shell flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
               <BrandMark />
-              <div className="hidden items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary lg:inline-flex">
-                <Globe2 className="size-3" />
-                SaaS Edition
+              <div className="hidden items-center gap-2 rounded-full border border-[rgba(119,201,255,0.16)] bg-[rgba(119,201,255,0.08)] px-3 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--info)] lg:inline-flex">
+                <Globe2 className="size-3.5" />
+                app.deskimperial.online
               </div>
             </div>
 
-            <nav className="hidden items-center gap-2 md:flex">
-              <Link className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground" href="#fundacao">
-                Plataforma
+            <nav className="hidden items-center gap-3 md:flex">
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#fundacao">
+                Fundação
               </Link>
-              <Link className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground" href="#entregas">
-                Arquitetura
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#entregas">
+                Entregas
+              </Link>
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#rodape">
+                Estrutura
               </Link>
             </nav>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-4 py-2"
+                className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--accent)] hover:scale-[1.04] hover:shadow-[0_0_14px_rgba(155,132,96,0.22)] active:scale-95"
                 href="/login"
               >
                 Entrar
               </Link>
               <Link
-                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105"
-                href="/cadastro"
+                className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.05)]"
+                href="/dashboard"
               >
-                Solicitar Acesso
-                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                Abrir painel
               </Link>
             </div>
           </div>
         </header>
 
-        <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
+        <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
             initial={{ opacity: 0, y: 30 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground shadow-sm">
-              <span className="size-1.5 rounded-full bg-primary" />
-              Desk Imperial
+            <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[rgba(14,28,45,0.78)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
+              Plataforma empresarial
             </span>
 
             <motion.div
@@ -254,61 +294,66 @@ export function LandingPage() {
               variants={{
                 hidden: {},
                 visible: {
-                  transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+                  transition: {
+                    staggerChildren: 0.26,
+                    delayChildren: 0.26,
+                  },
                 },
               }}
             >
               {heroLines.map((line, index) => (
                 <motion.span
-                  className="block origin-left text-5xl font-semibold tracking-tight text-foreground sm:text-6xl lg:text-[4.5rem] lg:leading-[1.1]"
+                  className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
                   key={line}
                   style={{ x: lineShifts[index] }}
+                  whileHover={{
+                    scale: 1.015,
+                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
+                    filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
+                  }}
                   variants={{
-                    hidden: { opacity: 0, y: 20, filter: 'blur(8px)' },
+                    hidden: { opacity: 0, y: -52, filter: 'blur(16px)' },
                     visible: {
                       opacity: 1,
                       y: 0,
                       filter: 'blur(0px)',
-                      transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
+                      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] },
                     },
                   }}
                 >
-                  <span className={index === heroLines.length - 1 ? "text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/50" : ""}>
-                    {line}
-                  </span>
+                  <span className="text-flag-brazil">{line}</span>
                 </motion.span>
               ))}
             </motion.div>
 
-            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              O sistema operacional corporativo para gestão de alta performance. 
-              Substitua dezenas de ferramentas amadoras por um único portal de governança incrivelmente rápido e elegante.
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
+              Um portal pensado para operar vendas, cadastro, autenticação, conformidade e leitura executiva em um
+              fluxo contínuo e seguro.
             </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link
-                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-4 text-sm font-semibold text-background transition-all hover:bg-foreground/90 hover:scale-[1.02]"
-                href="/cadastro"
-              >
-                Iniciar Implantação Gratuita
-                <ArrowRight className="size-4" />
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/cadastro">
+                <span className="sp">Cadastrar-se</span>
               </Link>
-              <Link
-                className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
-                href="/login"
-              >
-                Acessar Operação
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/login">
+                <span className="sp">Login</span>
               </Link>
             </div>
 
-            <div className="mt-16 grid gap-4 sm:grid-cols-3">
+            <div className="mt-12 grid gap-4 sm:grid-cols-3">
               {metrics.map((metric, index) => (
                 <div
-                  className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-border/80 hover:shadow-md"
+                  className={
+                    index === 1
+                      ? 'imperial-card-tilt-alt p-5'
+                      : index === 2
+                        ? 'imperial-card-tilt p-5'
+                        : 'imperial-card-stat p-5'
+                  }
                   key={metric.label}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{metric.label}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-foreground">{metric.value}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{metric.label}</p>
+                  <p className="mt-3 text-base leading-7 text-[var(--text-primary)]">{metric.value}</p>
                 </div>
               ))}
             </div>
@@ -316,8 +361,8 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-4 pt-[10rem] sm:space-y-6 sm:pt-[12rem] lg:pt-[14rem]"
-            initial={{ opacity: 0, x: 40 }}
+            className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
+            initial={{ opacity: 0, x: 24 }}
             style={
               shouldReduceMotion
                 ? undefined
@@ -326,24 +371,24 @@ export function LandingPage() {
                     y: heroPanelY,
                   }
             }
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
 
-            <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md p-6 shadow-2xl relative z-10">
+            <div className="imperial-card relative z-10 p-6">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Governança</span>
-                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary">
-                  Premium
+                <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
+                <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
+                  Early Access
                 </span>
               </div>
 
               <div className="mt-8 grid gap-4">
-                {pillars.map((pillar) => (
-                  <article className="rounded-xl border border-border/50 bg-background/50 p-5 transition-colors hover:bg-muted/30" key={pillar.title}>
+                {pillars.map((pillar, index) => (
+                  <article className={index % 2 === 0 ? 'imperial-card-soft p-5' : 'imperial-card-tilt p-5'} key={pillar.title}>
                     <div>
-                      <h2 className="text-base font-semibold text-foreground tracking-tight">{pillar.title}</h2>
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{pillar.description}</p>
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>
                     </div>
                   </article>
                 ))}
@@ -355,117 +400,118 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10 border-y border-border bg-muted/10" id="fundacao">
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-24 lg:grid-cols-[0.8fr_1.2fr] lg:px-12 lg:py-32">
+      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.88)]" id="fundacao">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 mb-6">
-              <Scale className="size-5 text-primary" />
-            </span>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Arquitetura corporativa impenetrável.
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Fundação</p>
+            <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+              Estrutura central para uma rotina comercial organizada.
             </h2>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Projetado detalhadamente para suportar operações de alto volume. Sem travamentos. Sem perda de dados.
-              Cada clique é intencional e instantâneo.
+            <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
+              O ambiente combina autenticação, controle operacional, produtos, pedidos e governança em uma mesma
+              camada de uso.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {capabilityCards.map((item) => (
+          <div className="grid gap-4 md:grid-cols-2">
+            {capabilityCards.map((item, index) => (
               <motion.div
                 whileHover={
                   shouldReduceMotion
                     ? undefined
                     : {
-                        y: -4,
-                        transition: { duration: 0.2 },
+                        y: -6,
+                        scale: 1.01,
+                        transition: { duration: 0.22, ease: 'easeOut' },
                       }
                 }
-                className="rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
+                className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
                 key={item.title}
               >
-                <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                  <item.icon className="size-5" />
+                <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
+                  <item.icon className="size-4" />
                 </div>
-                <h3 className="font-semibold text-foreground tracking-tight">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                <p className="font-semibold text-white">{item.title}</p>
+                <p className="mt-3">{item.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-12 lg:py-32" id="entregas">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-3xl border border-border bg-card p-8 shadow-sm lg:p-12">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-xl">
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-secondary mb-6 text-foreground">
-                  <Radar className="size-5" />
-                </span>
-                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                  Experiência meticulosa de ponta a ponta.
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="imperial-card p-8 lg:p-10">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
+                <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+                  Acesso rápido para cadastro, login e entrada no painel.
                 </h2>
-                <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-                  Diferente de sistemas genéricos de mercado, o Desk Imperial entrega uma experiência visual inspirada
-                  nos melhores softwares do mundo. A gestão deve ser um prazer visual e tático.
+                <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
+                  Os principais fluxos do portal ficam disponiveis logo na abertura da pagina para acelerar a entrada no
+                  sistema.
                 </p>
+              </div>
+
+              <div className="imperial-card-soft px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+                Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
+                experiencia.
               </div>
             </div>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-xl border border-border/50 bg-background/50 p-6">
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="imperial-card-tilt p-5">
                 <div className="flex items-center gap-3">
-                  <Waypoints className="size-5 text-sky-400" />
-                  <p className="text-sm font-semibold text-foreground">Fluxo Minimalista</p>
+                  <Waypoints className="size-5 text-[var(--info)]" />
+                  <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Tudo a 2 cliques de distância. Menos páginas, mais potência operacional.
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  Da autenticação ate a venda registrada, o caminho fica organizado em poucas etapas.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border/50 bg-background/50 p-6">
+              <div className="imperial-card-tilt-alt p-5">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="size-5 text-emerald-400" />
-                  <p className="text-sm font-semibold text-foreground">Auditabilidade Total</p>
+                  <ShieldCheck className="size-5 text-[var(--accent)]" />
+                  <p className="text-sm font-semibold text-white">Governança visível</p>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Você enxerga rastros transacionais e sessões em vez de relatórios mortos.
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  Sessão, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border/50 bg-background/50 p-6 sm:col-span-2 lg:col-span-1">
+              <div className="imperial-card-soft p-5">
                 <div className="flex items-center gap-3">
-                  <Globe2 className="size-5 text-indigo-400" />
-                  <p className="text-sm font-semibold text-foreground">SaaS Premium</p>
+                  <Globe2 className="size-5 text-[#8fffb9]" />
+                  <p className="text-sm font-semibold text-white">Domínio próprio</p>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Branding corporativo impecável e velocidade absurda impulsionada pela borda.
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  O ambiente ja responde em domínio próprio, pronto para evoluir como produto de verdade.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4">
-           <InteractionFlowCard />
-        </div>
+        <InteractionFlowCard />
       </section>
 
-      <footer className="relative z-10 border-t border-border bg-card/50 backdrop-blur-md" id="rodape">
+      <footer className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]" id="rodape">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
-          <div className="grid gap-12 xl:grid-cols-[1.5fr_1fr_1fr_1fr]">
+          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
             <CompanySignatureCard />
 
             {footerColumns.map((group) => (
-              <div className="flex flex-col" key={group.title}>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground">
+              <div className="imperial-card-soft p-6" key={group.title}>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
                   {group.title}
                 </p>
-                <div className="mt-6 flex flex-col gap-3">
+                <div className="mt-5 space-y-3">
                   {group.links.map((link) => (
                     <Link
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="block text-sm leading-7 text-[var(--text-soft)] transition hover:text-white"
                       href={link.href}
                       key={link.label}
                     >
@@ -477,19 +523,155 @@ export function LandingPage() {
             ))}
           </div>
 
-          <div className="mt-16 flex flex-col gap-4 border-t border-border/50 pt-8 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-            <p>Desk Imperial © 2026. A nova engenharia da governança.</p>
-            <div className="flex flex-wrap gap-6 font-medium">
-              <Link className="transition hover:text-foreground" href="https://app.deskimperial.online">
-                Aplicativo Comercial
+          <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
+            <p>DESK IMPERIAL © 2026. Plataforma comercial com leitura executiva, portfolio e conformidade.</p>
+            <div className="flex flex-wrap gap-4">
+              <Link className="transition hover:text-white" href="https://app.deskimperial.online">
+                app.deskimperial.online
               </Link>
-              <Link className="transition hover:text-foreground" href="https://api.deskimperial.online/api/health">
-                APIs do Ecossistema
+              <Link className="transition hover:text-white" href="https://api.deskimperial.online/api/health">
+                api.deskimperial.online
               </Link>
             </div>
           </div>
         </div>
       </footer>
+
+      <style jsx global>{`
+        .landing-legacy .imperial-card,
+        .landing-legacy .imperial-card-soft,
+        .landing-legacy .imperial-card-stat,
+        .landing-legacy .imperial-card-tilt,
+        .landing-legacy .imperial-card-tilt-alt {
+          position: relative;
+          border-radius: var(--radius-desk-card);
+          background-color: #0d1116;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+          transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+        }
+
+        .landing-legacy .imperial-card-soft {
+          background-color: #11161c;
+          border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .landing-legacy .imperial-card-stat {
+          border-radius: 1.5rem;
+          background-color: #11161c;
+        }
+
+        .landing-legacy .imperial-card-tilt:hover,
+        .landing-legacy .imperial-card-tilt-alt:hover {
+          border-color: rgba(255, 255, 255, 0.15);
+          background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .landing-legacy .imperial-topbar {
+          position: sticky;
+          top: 1rem;
+          z-index: 30;
+          backdrop-filter: blur(18px);
+        }
+
+        .landing-legacy .imperial-topbar__shell {
+          border-radius: 1.6rem;
+        }
+
+        .landing-legacy .text-flag-brazil {
+          display: inline-block;
+          color: transparent;
+          background-image:
+            radial-gradient(circle at 50% 54%, rgb(0 39 118 / 0.98) 0 13%, transparent 13.5%),
+            linear-gradient(135deg, transparent 0 31%, rgb(255 223 0 / 0.98) 31% 69%, transparent 69%),
+            linear-gradient(180deg, #009739 0%, #009739 100%);
+          background-repeat: no-repeat;
+          background-size: 100% 100%;
+          background-position: center;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 12px 26px rgb(0 0 0 / 0.28));
+        }
+
+        .landing-legacy .rainbow-hover {
+          --button-bg: #10151b;
+          --button-border: rgb(255 255 255 / 0.08);
+          --button-shadow: rgb(0 0 0 / 0.32);
+          --button-glow: rgb(0 156 59 / 0.2);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 56px;
+          padding: 0.85rem 1.5rem;
+          border: 1px solid var(--button-border);
+          border-radius: 14px;
+          background:
+            linear-gradient(180deg, rgb(255 255 255 / 0.02), transparent),
+            var(--button-bg);
+          box-shadow:
+            0 1px 2px rgb(5 10 16 / 0.5),
+            0 12px 28px var(--button-shadow),
+            0 0 0 1px rgb(255 255 255 / 0.02) inset;
+          cursor: pointer;
+          transform-style: preserve-3d;
+          transform: perspective(700px) translateY(0) scale(1);
+          transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .landing-legacy .rainbow-hover:hover {
+          border-color: rgb(255 223 0 / 0.18);
+          box-shadow:
+            0 1px 2px rgb(5 10 16 / 0.5),
+            0 18px 36px rgb(0 0 0 / 0.4),
+            0 0 30px var(--button-glow);
+          transform: perspective(700px) translateY(-2px) scale(1.02);
+        }
+
+        .landing-legacy .rainbow-hover:active {
+          transform: perspective(700px) translateY(1px) scale(0.98);
+        }
+
+        .landing-legacy .rainbow-hover .sp {
+          background: linear-gradient(90deg, #009c3b, #23b35a, #ffdf00, #0a46a0, #009c3b);
+          background-size: 180% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+          display: block;
+          font-size: 0.98rem;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          transition: background-position 0.35s ease;
+        }
+
+        .landing-legacy .rainbow-hover:hover .sp {
+          background-position: 100% 50%;
+        }
+
+        .landing-legacy .hero-entry-button {
+          width: 100%;
+          text-align: center;
+        }
+
+        @media (min-width: 640px) {
+          .landing-legacy .hero-entry-button {
+            width: auto;
+            min-width: 210px;
+          }
+        }
+      `}</style>
     </main>
   )
 }

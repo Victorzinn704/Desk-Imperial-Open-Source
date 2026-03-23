@@ -13,7 +13,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { cn } from '@/lib/utils'
 
 export function SalesPerformanceCard({
   finance,
@@ -30,56 +29,70 @@ export function SalesPerformanceCard({
   const currentProfit = finance?.totals.currentMonthProfit ?? 0
 
   return (
-    <div className="group relative flex w-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md">
+    <div className="group relative flex w-full flex-col rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl transition-shadow duration-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.4)]">
+      {/* gradient border glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[28px] opacity-20 blur-sm transition-opacity duration-300 group-hover:opacity-35"
+        style={{
+          background: 'linear-gradient(135deg, var(--accent), rgba(52,242,127,0.8), rgba(143,183,255,0.9))',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-px rounded-[27px]"
+        style={{ background: 'var(--surface)' }}
+      />
+
       <div className="relative">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        {/* header */}
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <div
-              className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10"
+              className="flex size-9 items-center justify-center rounded-2xl"
+              style={{ background: 'linear-gradient(135deg, #36f57c, #38bdf8)' }}
             >
-              <TrendingUp className="size-4 text-emerald-500" />
+              <TrendingUp className="size-4 text-[var(--surface)]" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
                 Performance comercial
               </p>
-              <h3 className="text-sm font-semibold text-foreground">Receita &amp; lucro</h3>
+              <h3 className="text-sm font-semibold text-white">Receita &amp; lucro</h3>
             </div>
           </div>
 
-          <span className="flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 flex-shrink-0 text-[10px] font-semibold text-emerald-500">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+          <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[#8fffb9]">
+            <span className="size-1.5 animate-pulse rounded-full bg-[#36f57c]" />
             Ao vivo
           </span>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-4">
+        {/* two metrics */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
           <MetricTile
-            color="#10b981"
+            color="#36f57c"
             growth={revenueGrowth}
             isLoading={isLoading}
             label="Receita do mês"
             value={isLoading ? '—' : formatCurrency(currentRevenue, displayCurrency)}
-            isPositiveColor="text-emerald-500"
-            negativeColor="text-destructive"
           />
           <MetricTile
-            color="#0ea5e9"
+            color="#38bdf8"
             growth={profitGrowth}
             isLoading={isLoading}
             label="Lucro do mês"
             value={isLoading ? '—' : formatCurrency(currentProfit, displayCurrency)}
-            isPositiveColor="text-sky-500"
-            negativeColor="text-destructive"
           />
         </div>
 
-        <div className="mb-2 h-[188px] w-full">
+        {/* chart */}
+        <div className="mb-4 h-[188px] w-full">
           {isLoading ? (
-            <div className="flex h-full items-end justify-between gap-2 px-1">
+            <div className="flex h-full items-end justify-between gap-1.5 px-1">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
-                  className="w-full flex-1 rounded-sm bg-muted animate-pulse"
+                  className="skeleton-shimmer flex-1 rounded-sm"
                   key={i}
                   style={{ height: `${45 + (i % 3) * 18}%` }}
                 />
@@ -93,73 +106,69 @@ export function SalesPerformanceCard({
               >
                 <defs>
                   <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.2} />
+                    <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
-                  stroke="var(--border)"
+                  stroke="rgba(255,255,255,0.05)"
                   strokeDasharray="3 3"
                   vertical={false}
-                  opacity={0.5}
                 />
                 <XAxis
                   axisLine={false}
                   dataKey="label"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
                   tickLine={false}
-                  dy={10}
                 />
                 <YAxis
                   axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
                   tickFormatter={(v: number) => formatCompactCurrency(v, displayCurrency)}
                   tickLine={false}
                   width={68}
-                  dx={-10}
                 />
                 <Tooltip
                   content={
                     <PerformanceTooltip displayCurrency={displayCurrency} />
                   }
-                  cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
                 />
                 <Bar
                   dataKey="revenue"
                   fill="url(#perfRevenue)"
                   maxBarSize={32}
                   name="Receita"
-                  radius={[4, 4, 0, 0]}
+                  radius={[6, 6, 2, 2]}
                 />
                 <Line
                   dataKey="profit"
-                  dot={{ fill: '#0ea5e9', r: 3, strokeWidth: 0 }}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  dot={{ fill: '#38bdf8', r: 3, strokeWidth: 0 }}
                   name="Lucro"
-                  stroke="#0ea5e9"
-                  strokeWidth={2}
+                  stroke="#38bdf8"
+                  strokeWidth={2.5}
                   type="monotone"
                 />
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-background/50">
-              <p className="text-xs text-muted-foreground">Sem dados de vendas ainda</p>
+            <div className="flex h-full items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-soft)]">
+              <p className="text-xs text-[var(--text-muted)]">Sem dados de vendas ainda</p>
             </div>
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        {/* legend */}
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-[var(--text-soft)]">
             Últimos {timeline.length > 0 ? timeline.length : 6} meses
           </p>
-          <div className="flex items-center gap-4 text-[11px] font-medium text-muted-foreground">
+          <div className="flex items-center gap-3 text-[11px] font-medium text-[var(--text-soft)]">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-emerald-500" />
+              <span className="h-2.5 w-3 rounded-sm bg-[#36f57c]" />
               Receita
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-sky-500" />
+              <span className="h-0.5 w-3 rounded-full bg-[#38bdf8]" />
               Lucro
             </span>
           </div>
@@ -175,33 +184,31 @@ function MetricTile({
   isLoading,
   label,
   value,
-  isPositiveColor,
-  negativeColor,
 }: Readonly<{
   color: string
   growth: number
   isLoading: boolean
   label: string
   value: string
-  isPositiveColor: string
-  negativeColor: string
 }>) {
   const isPositive = growth >= 0
   const Icon = isPositive ? TrendingUp : TrendingDown
 
   return (
     <div
-      className="rounded-lg border border-border bg-background p-4 shadow-sm"
+      className="rounded-[16px] border bg-[var(--surface-soft)] p-3"
+      style={{ borderColor: `${color}22` }}
     >
-      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-medium text-[var(--text-soft)]">{label}</p>
       {isLoading ? (
-        <div className="mt-2 h-7 w-24 rounded-md bg-muted animate-pulse" />
+        <div className="skeleton-shimmer mt-1.5 h-6 w-24 rounded-md" />
       ) : (
-        <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{value}</p>
+        <p className="mt-1 text-base font-semibold text-white">{value}</p>
       )}
       {!isLoading && (
         <span
-          className={cn('mt-2 flex items-center gap-1 text-[11px] font-medium', isPositive ? isPositiveColor : negativeColor)}
+          className="mt-1 flex items-center gap-1 text-[11px] font-semibold"
+          style={{ color: isPositive ? '#36f57c' : 'var(--danger)' }}
         >
           <Icon className="size-3" />
           {isPositive ? '+' : ''}
@@ -226,16 +233,16 @@ function PerformanceTooltip({
   if (!active || !payload?.length) return null
 
   return (
-    <div className="min-w-[180px] rounded-lg border border-border bg-card p-4 shadow-md">
-      <p className="mb-3 text-xs font-semibold text-muted-foreground">{label}</p>
-      <div className="space-y-2.5">
+    <div className="min-w-[180px] rounded-[16px] border border-[var(--border-strong)] bg-[rgba(12,15,19,0.96)] p-3.5 shadow-[var(--shadow-panel)]">
+      <p className="mb-2.5 text-xs font-semibold text-[var(--text-soft)]">{label}</p>
+      <div className="space-y-1.5">
         {payload.map((item) => (
           <div className="flex items-center justify-between gap-4 text-sm" key={item.name}>
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <span className="size-2 rounded-full" style={{ background: item.name === 'Receita' ? '#10b981' : '#0ea5e9' }} />
+            <span className="flex items-center gap-2 text-[var(--text-soft)]">
+              <span className="size-2 rounded-full" style={{ background: item.color }} />
               {item.name}
             </span>
-            <span className="font-semibold text-foreground">
+            <span className="font-semibold text-white">
               {formatCurrency(item.value ?? 0, displayCurrency as 'BRL')}
             </span>
           </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
+import { RouteThemeSync } from '@/components/shared/route-theme-sync'
 import { QueryProvider } from '@/providers/query-provider'
 import './globals.css'
 
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
+        <RouteThemeSync />
         <QueryProvider>
           <div id="app-shell">{children}</div>
         </QueryProvider>

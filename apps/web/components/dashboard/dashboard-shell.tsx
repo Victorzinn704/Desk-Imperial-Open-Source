@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   Clock,
@@ -19,6 +19,12 @@ import {
   createEmployee,
   createOrder,
   createProduct,
+  fetchConsentOverview,
+  fetchCurrentUser,
+  fetchEmployees,
+  fetchFinanceSummary,
+  fetchOrders,
+  fetchProducts,
   importProducts,
   logout,
   restoreEmployee,
@@ -40,7 +46,6 @@ import {
   type DashboardSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
-import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 
 const sectionHeroCopy: Record<
   DashboardSectionId,
@@ -102,9 +107,36 @@ export function DashboardShell() {
   const [activeSection, setActiveSection] = useState<DashboardSectionId>('overview')
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
+  const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
+  const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
+  const consentQuery = useQuery({
+    queryKey: ['consent', 'me'],
+    queryFn: fetchConsentOverview,
+    enabled: Boolean(sessionQuery.data?.user.userId),
+    retry: false,
+  })
+  const productsQuery = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+    enabled: Boolean(sessionQuery.data?.user.userId),
+  })
+  const ordersQuery = useQuery({
+    queryKey: ['orders'],
+    queryFn: fetchOrders,
+    enabled: Boolean(sessionQuery.data?.user.userId),
+  })
+  const employeesQuery = useQuery({
+    queryKey: ['employees'],
+    queryFn: fetchEmployees,
+    enabled: Boolean(sessionQuery.data?.user.userId),
+  })
+  const financeQuery = useQuery({
+    queryKey: ['finance', 'summary'],
+    queryFn: fetchFinanceSummary,
+    enabled: Boolean(sessionQuery.data?.user.userId),
+  })
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
 
   useEffect(() => {
@@ -113,6 +145,9 @@ export function DashboardShell() {
     }
 
     const expirationTime = new Date(evaluationAccess.sessionExpiresAt).getTime()
+    const intervalId = window.setInterval(() => {
+      setCountdownNow(Date.now())
+    }, 1000)
     const timeoutId = window.setTimeout(() => {
       queryClient.clear()
       startTransition(() => {
@@ -121,6 +156,7 @@ export function DashboardShell() {
     }, Math.max(0, expirationTime - Date.now()) + 150)
 
     return () => {
+      window.clearInterval(intervalId)
       window.clearTimeout(timeoutId)
     }
   }, [evaluationAccess, queryClient, router, startTransition])
@@ -309,10 +345,10 @@ export function DashboardShell() {
   const activeHero = sectionHeroCopy[activeSection]
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
       <div
-        className="mx-auto xl:grid"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)', minHeight: '100vh' }}
+        className="mx-auto max-w-[1600px] xl:grid xl:gap-6"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
@@ -327,23 +363,26 @@ export function DashboardShell() {
           userName={user.fullName}
         />
 
-        <div className="space-y-6">
-          <header className="border-b border-border bg-card px-6 py-8 md:px-10" id="workspace-header">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between max-w-[1600px] mx-auto">
-              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  <span className="size-1.5 rounded-full bg-foreground" />
+        <div className="mt-6 space-y-6 xl:mt-0">
+          <header className="imperial-card p-6 md:p-8" id="workspace-header">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                  <span className="size-2 rounded-full bg-[var(--accent)]" />
                   {activeHero.badge}
                 </div>
-                <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Início / Painel operacional / {activeNavigation.label}
+                </p>
+                <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
                   {activeHero.title}
                 </h1>
-                <p className="mt-3 text-base text-muted-foreground">
+                <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
                   {activeHero.description}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-5 xl:min-w-[420px]">
+              <div className="flex flex-col gap-4 xl:max-w-[520px]">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {signals.map((signal) => (
                     <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
@@ -378,41 +417,40 @@ export function DashboardShell() {
                   })}
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Link href="/">
-                    <Button size="sm" variant="ghost" className="w-full sm:w-auto text-muted-foreground hover:text-foreground">
-                      Site externo
-                      <ArrowUpRight className="ml-2 size-3" />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant={isTimelineOpen ? 'primary' : 'secondary'}
-                    onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-                    className="w-full sm:w-auto"
-                  >
-                    <Clock className="mr-2 size-3.5" />
-                    Histórico
+                <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/">
+                  <Button size="lg" variant="ghost">
+                    Ver site
+                    <ArrowUpRight className="size-4" />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="primary"
-                    disabled={logoutMutation.isPending || isRouting} 
-                    onClick={() => logoutMutation.mutate()}
-                    className="w-full sm:w-auto"
-                  >
-                    <LogOut className="mr-2 size-3.5" />
-                    Sair
-                  </Button>
+                </Link>
+                <Button
+                  size="lg"
+                  variant={isTimelineOpen ? 'primary' : 'ghost'}
+                  onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                >
+                  <Clock className="size-4" />
+                  Atividades
+                </Button>
+                <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
+                  <LogOut className="size-4" />
+                  Encerrar sessão
+                </SpotlightButton>
                 </div>
               </div>
             </div>
           </header>
 
-          <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-12 space-y-6">
-
           {user.evaluationAccess ? (
-            <SessionCountdown evaluationAccess={user.evaluationAccess} />
+            <EvaluationModeBanner
+              dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
+              remainingSeconds={Math.max(
+                0,
+                Math.ceil(
+                  (new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000,
+                ),
+              )}
+            />
           ) : null}
 
           {renderActiveEnvironment({
@@ -456,7 +494,6 @@ export function DashboardShell() {
             cancelOrderMutation,
             user,
           })}
-          </div>
         </div>
       </div>
 
@@ -523,39 +560,6 @@ function LoadingState() {
         </div>
       </div>
     </main>
-  )
-}
-
-function SessionCountdown({
-  evaluationAccess,
-}: Readonly<{
-  evaluationAccess: {
-    sessionExpiresAt: string
-    dailyLimitMinutes: number
-  }
-}>) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-
-    return () => {
-      window.clearInterval(intervalId)
-    }
-  }, [])
-
-  const remainingSeconds = Math.max(
-    0,
-    Math.ceil((new Date(evaluationAccess.sessionExpiresAt).getTime() - now) / 1000),
-  )
-
-  return (
-    <EvaluationModeBanner
-      dailyLimitMinutes={evaluationAccess.dailyLimitMinutes}
-      remainingSeconds={remainingSeconds}
-    />
   )
 }
 

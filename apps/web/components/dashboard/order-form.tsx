@@ -237,7 +237,7 @@ export function OrderForm({
       id="order-form"
       title="Registre uma venda com estrutura operacional"
     >
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-sm leading-7 text-[var(--text-soft)]">
         O objetivo aqui é reduzir erro operacional e deixar a venda pronta para alimentar financeiro, mapa, ranking de equipe e histórico.
       </p>
 
@@ -305,13 +305,13 @@ export function OrderForm({
           </div>
 
           {selectedDraftProduct ? (
-            <div className="rounded-lg border border-border bg-background mt-4 px-4 py-3 text-sm leading-7 text-muted-foreground shadow-sm">
-              <span className="font-medium text-foreground">{selectedDraftProduct.name}</span>
+            <div className="imperial-card-soft mt-4 px-4 py-3 text-sm leading-7 text-[var(--text-soft)]">
+              <span className="font-medium text-white">{selectedDraftProduct.name}</span>
               {` • ${selectedDraftProduct.category} • Estoque ${selectedStockLabel} • Preço base ${formatCurrency(selectedDraftProduct.unitPrice, selectedDraftProduct.displayCurrency)}`}
             </div>
           ) : null}
 
-          {itemsError ? <p className="mt-4 text-sm text-destructive">{itemsError}</p> : null}
+          {itemsError ? <p className="mt-4 text-sm text-[var(--danger)]">{itemsError}</p> : null}
 
           <div className="mt-5 space-y-3">
             {fields.length ? (
@@ -321,15 +321,15 @@ export function OrderForm({
 
                 return (
                   <div
-                    className="rounded-lg border border-border bg-background px-4 py-4 shadow-sm"
+                    className="imperial-card-soft px-4 py-4"
                     key={field.id}
                   >
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                       <div>
-                        <p className="font-medium text-foreground">
+                        <p className="font-medium text-white">
                           {product?.name ?? 'Produto removido do portfólio'}
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="mt-1 text-sm text-[var(--text-soft)]">
                           {product
                             ? `${product.category} • ${formatStockBreakdown(product.stock, product.unitsPerPackage)}`
                             : 'Revisar item antes de concluir a venda.'}
@@ -337,10 +337,10 @@ export function OrderForm({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3">
-                        <div className="rounded-md border border-border bg-muted/50 px-4 py-2 text-sm text-muted-foreground">
+                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-soft)]">
                           {currentItem?.quantity ?? field.quantity} und
                         </div>
-                        <div className="rounded-md border border-border bg-muted/50 px-4 py-2 text-sm text-muted-foreground">
+                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-soft)]">
                           {currentItem?.unitPrice != null
                             ? `Preço manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
                             : 'Preço do cadastro'}
@@ -355,9 +355,9 @@ export function OrderForm({
                 )
               })
             ) : (
-              <div className="rounded-lg border-2 border-dashed border-border bg-background/50 px-4 py-6 text-center">
-                <p className="text-lg font-semibold text-foreground">Seu carrinho ainda está vazio.</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              <div className="imperial-card-soft border-dashed px-4 py-6 text-center">
+                <p className="text-lg font-semibold text-white">Seu carrinho ainda está vazio.</p>
+                <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
                   Adicione um ou mais produtos para transformar a operação em pedido multi-item.
                 </p>
               </div>
