@@ -24,7 +24,7 @@ export const verifyEmailSchema = z.object({
   code: z
     .string()
     .trim()
-    .regex(/^\d{8}$/, 'Digite o código de 8 dígitos enviado por e-mail.'),
+    .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
 })
 
 export const registerSchema = z.object({
@@ -59,7 +59,7 @@ export const resetPasswordSchema = z
     code: z
       .string()
       .trim()
-      .regex(/^\d{8}$/, 'Digite o código de 8 dígitos enviado por e-mail.'),
+      .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
     password: z
       .string()
       .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
