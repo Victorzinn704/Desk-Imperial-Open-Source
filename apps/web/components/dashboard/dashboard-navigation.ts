@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
+  CalendarRange,
   LayoutDashboard,
   Map,
   ShieldCheck,
