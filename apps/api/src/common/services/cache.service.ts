@@ -93,4 +93,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   financeKey(userId: string): string {
     return `finance:summary:${userId}`
   }
+
+  /** Chave para rate limiting genérico — prefixo identifica o domínio */
+  ratelimitKey(prefix: string, key: string): string {
+    return `ratelimit:${prefix}:${key}`
+  }
+
+  /** Chave para cache de insight do Gemini por usuário, moeda e foco */
+  geminiKey(userId: string, currency: string, focus: string): string {
+    return `gemini:insight:${userId}:${currency}:${focus.toLowerCase()}`
+  }
 }

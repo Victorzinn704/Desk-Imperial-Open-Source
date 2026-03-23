@@ -11,11 +11,18 @@ import { ConfigService } from '@nestjs/config'
 import * as argon2 from 'argon2'
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { PrismaService } from '../../database/prisma.service'
+import { CacheService } from '../../common/services/cache.service'
 
 const PIN_MAX_ATTEMPTS = 3
-const PIN_WINDOW_MS = 5 * 60 * 1000  // 5 minutos
-const PIN_LOCK_MS = 5 * 60 * 1000   // 5 minutos de bloqueio
-const ADMIN_PIN_TOKEN_TTL_MS = 10 * 60 * 1000 // 10 minutos
+const PIN_WINDOW_MS = 5 * 60 * 1000
+const PIN_LOCK_MS = 5 * 60 * 1000
+const ADMIN_PIN_TOKEN_TTL_MS = 10 * 60 * 1000
+
+type PinAttemptEntry = {
+  count: number
+  firstAttemptAt: number
+  lockedUntil: number | null
+}
 
 @Injectable()
 export class AdminPinService {
@@ -24,6 +31,7 @@ export class AdminPinService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly cache: CacheService,
   ) {}
 
   // ─── Setup / Change PIN ──────────────────────────────────────────────────────
@@ -38,7 +46,6 @@ export class AdminPinService {
       throw new UnauthorizedException('Usuário não encontrado.')
     }
 
-    // Se já existe PIN configurado, precisa confirmar o atual
     if (user.adminPinHash) {
       if (!currentPin) {
         throw new ForbiddenException('PIN atual é necessário para alterar o PIN.')
@@ -108,8 +115,7 @@ export class AdminPinService {
       return false
     }
 
-    // PIN correto — limpa tentativas
-    await this.prisma.authRateLimit.deleteMany({ where: { key: rateLimitKey } })
+    await this.cache.del(this.cache.ratelimitKey('admin-pin', rateLimitKey))
     return true
   }
 
@@ -174,56 +180,48 @@ export class AdminPinService {
     }
   }
 
-  // ─── Rate limit via AuthRateLimit (PostgreSQL) ───────────────────────────────
+  // ─── Rate limit via Redis ─────────────────────────────────────────────────────
 
   private async assertPinAllowed(key: string): Promise<void> {
-    try {
-      const entry = await this.prisma.authRateLimit.findUnique({ where: { key } })
-      if (!entry) return
+    const redisKey = this.cache.ratelimitKey('admin-pin', key)
+    const entry = await this.cache.get<PinAttemptEntry>(redisKey)
+    if (!entry) return
 
-      const now = Date.now()
+    const now = Date.now()
 
-      if (entry.lockedUntil && entry.lockedUntil.getTime() > now) {
-        const retryAfterMinutes = Math.ceil((entry.lockedUntil.getTime() - now) / 60000)
-        throw new HttpException(
-          `Muitas tentativas. Tente em ${retryAfterMinutes} minuto(s).`,
-          HttpStatus.LOCKED,
-        )
-      }
+    if (entry.lockedUntil && entry.lockedUntil > now) {
+      const retryAfterMinutes = Math.ceil((entry.lockedUntil - now) / 60000)
+      throw new HttpException(
+        `Muitas tentativas. Tente em ${retryAfterMinutes} minuto(s).`,
+        HttpStatus.LOCKED,
+      )
+    }
 
-      if (entry.firstAttemptAt.getTime() + PIN_WINDOW_MS <= now) {
-        await this.prisma.authRateLimit.deleteMany({ where: { key } })
-      }
-    } catch (error) {
-      if (error instanceof HttpException) throw error
-      this.logger.error(`AdminPinService.assertPinAllowed failed for key="${key}"`, error)
+    if (entry.firstAttemptAt + PIN_WINDOW_MS <= now) {
+      await this.cache.del(redisKey)
     }
   }
 
   private async recordPinFailure(key: string): Promise<void> {
-    try {
-      const now = new Date()
-      const existing = await this.prisma.authRateLimit.findUnique({ where: { key } })
+    const redisKey = this.cache.ratelimitKey('admin-pin', key)
+    const now = Date.now()
+    const existing = await this.cache.get<PinAttemptEntry>(redisKey)
 
-      if (!existing || existing.firstAttemptAt.getTime() + PIN_WINDOW_MS <= Date.now()) {
-        await this.prisma.authRateLimit.upsert({
-          where: { key },
-          create: { key, attempts: 1, firstAttemptAt: now, lockedUntil: null },
-          update: { attempts: 1, firstAttemptAt: now, lockedUntil: null },
-        })
-        return
-      }
-
-      const newAttempts = existing.attempts + 1
-      const lockedUntil = newAttempts >= PIN_MAX_ATTEMPTS ? new Date(Date.now() + PIN_LOCK_MS) : null
-
-      await this.prisma.authRateLimit.update({
-        where: { key },
-        data: { attempts: newAttempts, lockedUntil },
-      })
-    } catch (error) {
-      this.logger.error(`AdminPinService.recordPinFailure failed for key="${key}"`, error)
+    if (!existing || existing.firstAttemptAt + PIN_WINDOW_MS <= now) {
+      const fresh: PinAttemptEntry = { count: 1, firstAttemptAt: now, lockedUntil: null }
+      await this.cache.set(redisKey, fresh, Math.ceil(PIN_WINDOW_MS / 1000))
+      return
     }
+
+    const newCount = existing.count + 1
+    const lockedUntil = newCount >= PIN_MAX_ATTEMPTS ? now + PIN_LOCK_MS : null
+    const updated: PinAttemptEntry = { count: newCount, firstAttemptAt: existing.firstAttemptAt, lockedUntil }
+
+    const ttlSeconds = lockedUntil
+      ? Math.ceil(PIN_LOCK_MS / 1000)
+      : Math.ceil((existing.firstAttemptAt + PIN_WINDOW_MS - now) / 1000)
+
+    await this.cache.set(redisKey, updated, Math.max(ttlSeconds, 1))
   }
 
   private getAdminPinSecret(): string {

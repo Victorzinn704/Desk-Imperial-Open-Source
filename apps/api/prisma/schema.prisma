@@ -299,14 +299,3 @@ model OrderItem {
   @@index([productId, createdAt])
 }
 
-model AuthRateLimit {
-  id             String    @id @default(cuid())
-  key            String    @unique
-  attempts       Int       @default(1)
-  firstAttemptAt DateTime  @default(now())
-  lockedUntil    DateTime?
-  updatedAt      DateTime  @updatedAt
-
-  @@index([key])
-  @@index([lockedUntil])
-}

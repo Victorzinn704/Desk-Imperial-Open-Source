@@ -1,6 +1,6 @@
-import { HttpException, HttpStatus, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { PrismaService } from '../../database/prisma.service'
+import { CacheService } from '../../common/services/cache.service'
 
 type AttemptEntry = {
   count: number
@@ -15,33 +15,14 @@ type AttemptPolicy = {
   message: string
 }
 
-// Intervalo de limpeza de entradas expiradas (2 horas em ms)
-const CLEANUP_INTERVAL_MS = 2 * 60 * 60 * 1000
-// Entradas mais antigas que 2 horas sem atividade são removidas
-const STALE_ENTRY_AGE_MS = 2 * 60 * 60 * 1000
-
 @Injectable()
-export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
+export class AuthRateLimitService {
   private readonly logger = new Logger(AuthRateLimitService.name)
-  private cleanupTimer: NodeJS.Timeout | null = null
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
   ) {}
-
-  onModuleInit() {
-    this.cleanupTimer = setInterval(() => {
-      void this.cleanExpiredEntries()
-    }, CLEANUP_INTERVAL_MS)
-  }
-
-  onModuleDestroy() {
-    if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer)
-      this.cleanupTimer = null
-    }
-  }
 
   async assertLoginAllowed(key: string): Promise<void> {
     await this.assertAllowed(key, this.getLoginPolicy())
@@ -84,18 +65,13 @@ export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
   }
 
   async clear(key: string): Promise<void> {
-    try {
-      await this.prisma.authRateLimit.deleteMany({ where: { key } })
-    } catch (error) {
-      this.logger.error(`AuthRateLimitService.clear failed for key="${key}"`, error)
-    }
+    await this.cache.del(this.cache.ratelimitKey('auth', key))
   }
 
   buildLoginKey(email: string, ipAddress: string | null) {
     return `login:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
-  /** Chave só por email — protege contra IP spoofing em rate limit de login. */
   buildLoginEmailKey(email: string) {
     return `login:email:${email.trim().toLowerCase()}`
   }
@@ -104,7 +80,6 @@ export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
     return `password-reset:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
-  /** Chave só por email — protege contra IP spoofing em rate limit de reset de senha. */
   buildPasswordResetEmailKey(email: string) {
     return `password-reset:email:${email.trim().toLowerCase()}`
   }
@@ -134,213 +109,92 @@ export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
-    try {
-      const entry = await this.prisma.authRateLimit.findUnique({ where: { key } })
+    const redisKey = this.cache.ratelimitKey('auth', key)
+    const entry = await this.cache.get<AttemptEntry>(redisKey)
 
-      if (!entry) return
+    if (!entry) return
 
-      const now = Date.now()
+    const now = Date.now()
 
-      // Verificar se está bloqueado
-      if (entry.lockedUntil && entry.lockedUntil.getTime() > now) {
-        const retryAfterSeconds = Math.ceil((entry.lockedUntil.getTime() - now) / 1000)
-        throw new HttpException(
-          `${policy.message} Tente novamente em ${retryAfterSeconds} segundo(s).`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        )
-      }
+    if (entry.lockedUntil && entry.lockedUntil > now) {
+      const retryAfterSeconds = Math.ceil((entry.lockedUntil - now) / 1000)
+      throw new HttpException(
+        `${policy.message} Tente novamente em ${retryAfterSeconds} segundo(s).`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      )
+    }
 
-      // Janela de tempo expirou → limpar e permitir
-      const windowExpiredAt = entry.firstAttemptAt.getTime() + policy.windowMs
-      if (windowExpiredAt <= now) {
-        await this.prisma.authRateLimit.deleteMany({ where: { key } })
-        return
-      }
-    } catch (error) {
-      // Re-lançar erros HTTP (rate limit bloqueado) sem suprimir
-      if (error instanceof HttpException) throw error
-      // Erros de banco não devem derrubar o login — logar e deixar passar
-      this.logger.error(`AuthRateLimitService.assertAllowed failed for key="${key}"`, error)
+    if (entry.firstAttemptAt + policy.windowMs <= now) {
+      await this.cache.del(redisKey)
     }
   }
 
   private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
-    try {
-      const now = new Date()
+    const redisKey = this.cache.ratelimitKey('auth', key)
+    const now = Date.now()
 
-      // Verificar se existe entrada e se a janela ainda é válida
-      const existing = await this.prisma.authRateLimit.findUnique({ where: { key } })
+    const existing = await this.cache.get<AttemptEntry>(redisKey)
 
-      if (!existing || existing.firstAttemptAt.getTime() + policy.windowMs <= Date.now()) {
-        // Sem entrada ou janela expirada → criar nova
-        const created = await this.prisma.authRateLimit.upsert({
-          where: { key },
-          create: {
-            key,
-            attempts: 1,
-            firstAttemptAt: now,
-            lockedUntil: null,
-          },
-          update: {
-            attempts: 1,
-            firstAttemptAt: now,
-            lockedUntil: null,
-          },
-        })
-
-        return {
-          count: created.attempts,
-          firstAttemptAt: created.firstAttemptAt.getTime(),
-          lockedUntil: null,
-        }
-      }
-
-      // Janela válida → incrementar tentativas
-      const newAttempts = existing.attempts + 1
-      const shouldLock = newAttempts >= policy.maxAttempts
-      const lockedUntil = shouldLock ? new Date(Date.now() + policy.lockMs) : null
-
-      const updated = await this.prisma.authRateLimit.update({
-        where: { key },
-        data: {
-          attempts: newAttempts,
-          lockedUntil,
-        },
-      })
-
-      return {
-        count: updated.attempts,
-        firstAttemptAt: updated.firstAttemptAt.getTime(),
-        lockedUntil: updated.lockedUntil ? updated.lockedUntil.getTime() : null,
-      }
-    } catch (error) {
-      // Erros de banco não devem derrubar o login — retornar estado neutro
-      this.logger.error(`AuthRateLimitService.recordAttempt failed for key="${key}"`, error)
-      return { count: 0, firstAttemptAt: Date.now(), lockedUntil: null }
+    if (!existing || existing.firstAttemptAt + policy.windowMs <= now) {
+      const fresh: AttemptEntry = { count: 1, firstAttemptAt: now, lockedUntil: null }
+      await this.cache.set(redisKey, fresh, Math.ceil(policy.windowMs / 1000))
+      return fresh
     }
-  }
 
-  private async cleanExpiredEntries(): Promise<void> {
-    try {
-      const cutoff = new Date(Date.now() - STALE_ENTRY_AGE_MS)
-      const result = await this.prisma.authRateLimit.deleteMany({
-        where: { updatedAt: { lt: cutoff } },
-      })
-      if (result.count > 0) {
-        this.logger.log(`AuthRateLimitService: removidas ${result.count} entradas expiradas`)
-      }
-    } catch (error) {
-      this.logger.error('AuthRateLimitService.cleanExpiredEntries failed', error)
-    }
+    const newCount = existing.count + 1
+    const shouldLock = newCount >= policy.maxAttempts
+    const lockedUntil = shouldLock ? now + policy.lockMs : null
+    const updated: AttemptEntry = { count: newCount, firstAttemptAt: existing.firstAttemptAt, lockedUntil }
+
+    const ttlSeconds = shouldLock
+      ? Math.ceil(policy.lockMs / 1000)
+      : Math.ceil((existing.firstAttemptAt + policy.windowMs - now) / 1000)
+
+    await this.cache.set(redisKey, updated, Math.max(ttlSeconds, 1))
+    return updated
   }
 
   private getLoginPolicy(): AttemptPolicy {
     return {
       maxAttempts: Math.max(Number(this.configService.get<string>('LOGIN_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs:
-        Math.max(Number(this.configService.get<string>('LOGIN_WINDOW_MINUTES') ?? 15), 1) *
-        60 *
-        1000,
-      lockMs:
-        Math.max(Number(this.configService.get<string>('LOGIN_LOCK_MINUTES') ?? 15), 1) *
-        60 *
-        1000,
+      windowMs: Math.max(Number(this.configService.get<string>('LOGIN_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs: Math.max(Number(this.configService.get<string>('LOGIN_LOCK_MINUTES') ?? 15), 1) * 60 * 1000,
       message: 'Muitas tentativas de acesso. Tente novamente mais tarde.',
     }
   }
 
   private getPasswordResetPolicy(): AttemptPolicy {
     return {
-      maxAttempts: Math.max(
-        Number(this.configService.get<string>('PASSWORD_RESET_MAX_ATTEMPTS') ?? 3),
-        1,
-      ),
-      windowMs:
-        Math.max(
-          Number(this.configService.get<string>('PASSWORD_RESET_WINDOW_MINUTES') ?? 15),
-          1,
-        ) *
-        60 *
-        1000,
-      lockMs:
-        Math.max(
-          Number(this.configService.get<string>('PASSWORD_RESET_LOCK_MINUTES') ?? 30),
-          1,
-        ) *
-        60 *
-        1000,
+      maxAttempts: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_MAX_ATTEMPTS') ?? 3), 1),
+      windowMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas solicitações de redefinição. Tente novamente mais tarde.',
     }
   }
 
   private getPasswordResetCodePolicy(): AttemptPolicy {
     return {
-      maxAttempts: Math.max(
-        Number(this.configService.get<string>('PASSWORD_RESET_CODE_MAX_ATTEMPTS') ?? 5),
-        1,
-      ),
-      windowMs:
-        Math.max(
-          Number(this.configService.get<string>('PASSWORD_RESET_CODE_WINDOW_MINUTES') ?? 15),
-          1,
-        ) *
-        60 *
-        1000,
-      lockMs:
-        Math.max(
-          Number(this.configService.get<string>('PASSWORD_RESET_CODE_LOCK_MINUTES') ?? 30),
-          1,
-        ) *
-        60 *
-        1000,
+      maxAttempts: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_MAX_ATTEMPTS') ?? 5), 1),
+      windowMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
     }
   }
 
   private getEmailVerificationPolicy(): AttemptPolicy {
     return {
-      maxAttempts: Math.max(
-        Number(this.configService.get<string>('EMAIL_VERIFICATION_MAX_ATTEMPTS') ?? 3),
-        1,
-      ),
-      windowMs:
-        Math.max(
-          Number(this.configService.get<string>('EMAIL_VERIFICATION_WINDOW_MINUTES') ?? 15),
-          1,
-        ) *
-        60 *
-        1000,
-      lockMs:
-        Math.max(
-          Number(this.configService.get<string>('EMAIL_VERIFICATION_LOCK_MINUTES') ?? 30),
-          1,
-        ) *
-        60 *
-        1000,
+      maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_MAX_ATTEMPTS') ?? 3), 1),
+      windowMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
     }
   }
 
   private getEmailVerificationCodePolicy(): AttemptPolicy {
     return {
-      maxAttempts: Math.max(
-        Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_MAX_ATTEMPTS') ?? 5),
-        1,
-      ),
-      windowMs:
-        Math.max(
-          Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_WINDOW_MINUTES') ?? 15),
-          1,
-        ) *
-        60 *
-        1000,
-      lockMs:
-        Math.max(
-          Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_LOCK_MINUTES') ?? 30),
-          1,
-        ) *
-        60 *
-        1000,
+      maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_MAX_ATTEMPTS') ?? 5), 1),
+      windowMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
     }
   }
