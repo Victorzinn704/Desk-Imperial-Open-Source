@@ -345,9 +345,9 @@ export function DashboardShell() {
   const activeHero = sectionHeroCopy[activeSection]
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
+    <main className="min-h-screen bg-background text-foreground">
       <div
-        className="mx-auto max-w-[1600px] xl:grid xl:gap-6"
+        className="mx-auto xl:grid"
         style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
       >
         <DashboardSidebar
@@ -363,7 +363,7 @@ export function DashboardShell() {
           userName={user.fullName}
         />
 
-        <div className="mt-6 space-y-6 xl:mt-0">
+        <div className="space-y-6 px-4 py-6 sm:px-6">
           <header className="imperial-card p-6 md:p-8" id="workspace-header">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div>
