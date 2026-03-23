@@ -22,11 +22,6 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
     .filter((c) => c.orders > 0)
     .map((c) => c.channel)
 
-  const visibleOrderCountByChannel = channels.reduce<Record<string, number>>((accumulator, channel) => {
-    accumulator[channel] = recentOrders.filter((order) => order.channel === channel).length
-    return accumulator
-  }, {})
-
   const filteredOrders =
     activeChannel === ALL_TAB
       ? recentOrders
@@ -57,12 +52,13 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
             onClick={() => setActiveChannel(ALL_TAB)}
           />
           {channels.map((channel) => {
+            const entry = salesByChannel.find((c) => c.channel === channel)
             return (
               <Tab
                 key={channel}
                 label={channel}
                 active={activeChannel === channel}
-                count={visibleOrderCountByChannel[channel] ?? 0}
+                count={entry?.orders ?? 0}
                 onClick={() => setActiveChannel(channel)}
               />
             )

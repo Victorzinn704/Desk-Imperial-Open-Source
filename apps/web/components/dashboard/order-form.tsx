@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, ShoppingBasket, Trash2 } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import type { EmployeeRecord } from '@/lib/api'
 import { currencyOptions, formatCurrency } from '@/lib/currency'
 import { formatStockBreakdown } from '@/lib/product-packaging'
 import { orderSchema, type OrderFormInputValues, type OrderFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
-import { FormSection, FormShell, FormStat } from '@/components/shared/form-layout'
 import { InputField } from '@/components/shared/input-field'
 import { SelectField } from '@/components/shared/select-field'
 
@@ -113,16 +112,24 @@ export function OrderForm({
     [products],
   )
 
-  const resolvedDraftProductId =
-    draftProductId && products.some((product) => product.id === draftProductId)
-      ? draftProductId
-      : (products[0]?.id ?? '')
-  const selectedDraftProduct = products.find((product) => product.id === resolvedDraftProductId) ?? null
+  const selectedDraftProduct = products.find((product) => product.id === draftProductId) ?? null
   const itemsError = typeof errors.items?.message === 'string' ? errors.items.message : undefined
   const totalCartUnits = currentItems.reduce((total, item) => total + Number(item.quantity ?? 0), 0)
   const selectedStockLabel = selectedDraftProduct
     ? formatStockBreakdown(selectedDraftProduct.stock, selectedDraftProduct.unitsPerPackage)
     : 'Selecione um produto'
+
+  useEffect(() => {
+    if (!products.length) {
+      setDraftProductId('')
+      return
+    }
+
+    const draftStillExists = products.some((product) => product.id === draftProductId)
+    if (!draftProductId || !draftStillExists) {
+      setDraftProductId(products[0]?.id ?? '')
+    }
+  }, [draftProductId, products])
 
   useEffect(() => {
     if (!selectedDraftProduct || currentItems.length > 0) {
@@ -136,7 +143,7 @@ export function OrderForm({
   }, [currentItems.length, selectedDraftProduct, setValue])
 
   const handleAddItem = () => {
-    const product = products.find((item) => item.id === resolvedDraftProductId)
+    const product = products.find((item) => item.id === draftProductId)
 
     if (!product) {
       setError('items', {
@@ -207,42 +214,22 @@ export function OrderForm({
   }
 
   return (
-    <FormShell
-      aside={
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <FormStat
-            hint="Quantidade de linhas adicionadas"
-            label="Linhas no carrinho"
-            value={String(currentItems.length)}
-          />
-          <FormStat
-            hint="Volume total previsto para a venda"
-            label="Unidades totais"
-            value={String(totalCartUnits)}
-          />
-          <FormStat
-            hint="Moeda do pedido em construção"
-            label="Moeda"
-            value={orderCurrency}
-          />
-          <FormStat
-            hint="Produto atualmente em foco"
-            label="Estoque em foco"
-            value={selectedStockLabel}
-          />
-        </div>
-      }
-      description="Estruture o registro comercial em etapas claras: carrinho, contexto operacional e identificação do comprador. A lógica continua a mesma, mas a experiência fica mais legível e escalável."
-      eyebrow="Pedido multi-item"
-      id="order-form"
-      title="Registre uma venda com estrutura operacional"
-    >
-      <p className="text-sm leading-7 text-[var(--text-soft)]">
-        O objetivo aqui é reduzir erro operacional e deixar a venda pronta para alimentar financeiro, mapa, ranking de equipe e histórico.
-      </p>
+    <div className="imperial-card p-7">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+          Pedido multi-item
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold text-white">
+          Monte a venda como um carrinho de mercado.
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+          Organizei a operação em etapas para deixar o preenchimento mais claro: primeiro o carrinho,
+          depois a configuração da venda e por fim os dados do comprador.
+        </p>
+      </div>
 
       <form
-        className="space-y-6"
+        className="mt-6 space-y-6"
         onSubmit={handleSubmit((values) => {
           if (activeEmployees.length > 0 && !values.sellerEmployeeId) {
             setError('sellerEmployeeId', {
@@ -263,17 +250,40 @@ export function OrderForm({
           setDraftUnitPrice('')
         })}
       >
-        <FormSection
-          description="Adicione os itens da venda primeiro. Esse passo concentra quantidade, preço manual quando necessário e validação de estoque."
-          index="01"
-          title="Monte o carrinho"
-        >
+        <section className="imperial-card-soft p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="mt-1 flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]">
+                <ShoppingBasket className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
+                  1. Monte o carrinho
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-white">
+                  Escolha os produtos e adicione cada linha ao pedido
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
+                  A quantidade sempre sai em unidade. O valor unitário é opcional e só serve quando
+                  você precisa vender um item com preço diferente do cadastro.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:w-[360px]">
+              <MiniInfo label="Linhas no carrinho" value={String(currentItems.length)} />
+              <MiniInfo label="Unidades totais" value={String(totalCartUnits)} />
+              <MiniInfo label="Moeda do pedido" value={orderCurrency} />
+              <MiniInfo label="Estoque em foco" value={selectedStockLabel} />
+            </div>
+          </div>
+
           <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.35fr)_150px_180px_auto] 2xl:items-end">
             <SelectField
               label="Produto"
               onChange={(event) => setDraftProductId(event.currentTarget.value)}
               options={productOptions}
-              value={resolvedDraftProductId}
+              value={draftProductId}
             />
             <InputField
               hint="Sempre em und."
@@ -363,13 +373,24 @@ export function OrderForm({
               </div>
             )}
           </div>
-        </FormSection>
+        </section>
 
-        <FormSection
-          description="Vincule contexto comercial, moeda e responsável pela venda. Esses dados sustentam ranking, performance e leitura gerencial."
-          index="02"
-          title="Configure a operação"
-        >
+        <section className="imperial-card-soft p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                2. Configure a operação
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                Defina moeda, vendedor e contexto da venda
+              </h3>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
+              Essa etapa alimenta o ranking da equipe, a análise por canal e o comportamento do pedido
+              dentro do painel.
+            </p>
+          </div>
+
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <SelectField
               error={errors.currency?.message}
@@ -405,13 +426,23 @@ export function OrderForm({
               {...register('notes')}
             />
           </div>
-        </FormSection>
+        </section>
 
-        <FormSection
-          description="Feche o fluxo com os dados do comprador e da localização. Isso deixa a venda pronta para mapa, auditoria, análise regional e histórico."
-          index="03"
-          title="Identifique o comprador"
-        >
+        <section className="imperial-card-soft p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                3. Identifique o comprador
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                Registre quem comprou e de onde saiu a venda
+              </h3>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
+              Esses dados sustentam mapa de vendas, compliance e leitura do cliente no financeiro.
+            </p>
+          </div>
+
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <InputField
               error={errors.customerName?.message}
@@ -459,12 +490,21 @@ export function OrderForm({
               {...register('buyerState')}
             />
           </div>
-        </FormSection>
+        </section>
 
         <Button disabled={!products.length} fullWidth loading={loading} size="lg" type="submit">
           Registrar pedido
         </Button>
       </form>
-    </FormShell>
+    </div>
+  )
+}
+
+function MiniInfo({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="imperial-card-stat px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+    </div>
   )
 }

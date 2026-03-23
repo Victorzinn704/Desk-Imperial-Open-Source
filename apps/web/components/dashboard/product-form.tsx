@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
 import { currencyOptions } from '@/lib/currency'
@@ -16,7 +16,6 @@ import {
 } from '@/lib/product-packaging'
 import { productSchema, type ProductFormInputValues, type ProductFormValues } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
-import { FormSection, FormShell, FormStat } from '@/components/shared/form-layout'
 import { InputField } from '@/components/shared/input-field'
 import { SelectField } from '@/components/shared/select-field'
 
@@ -47,38 +46,40 @@ export function ProductForm({
   onCancelEdit: () => void
   loading?: boolean
 }>) {
+  const [selectedPreset, setSelectedPreset] = useState('')
+  const [measurementMode, setMeasurementMode] = useState('UN')
   const {
-    control,
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ProductFormInputValues, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
 
-  const packagingClassValue = useWatch({ control, name: 'packagingClass' }) ?? ''
-  const measurementUnitValue = useWatch({ control, name: 'measurementUnit' }) ?? 'UN'
-  const measurementValue = Number(useWatch({ control, name: 'measurementValue' }) ?? 1)
-  const unitsPerPackage = Number(useWatch({ control, name: 'unitsPerPackage' }) ?? 1)
-  const stockPackages = Number(useWatch({ control, name: 'stockPackages' }) ?? 0)
-  const stockLooseUnits = Number(useWatch({ control, name: 'stockLooseUnits' }) ?? 0)
-  const selectedPreset = findPackagingPresetByLabel(packagingClassValue)?.key ?? (packagingClassValue ? manualPackagingOption : '')
-  const measurementMode = getMeasurementOption(measurementUnitValue)
+  const packagingClassValue = watch('packagingClass')
+  const measurementUnitValue = watch('measurementUnit')
+  const measurementValue = Number(watch('measurementValue') ?? 1)
+  const unitsPerPackage = Number(watch('unitsPerPackage') ?? 1)
+  const stockPackages = Number(watch('stockPackages') ?? 0)
+  const stockLooseUnits = Number(watch('stockLooseUnits') ?? 0)
   const selectedPresetIsManual = selectedPreset === manualPackagingOption
   const manualMeasurementMode = measurementMode === customMeasurementOption
   const calculatedStockTotal = buildStockTotalUnits(stockPackages, stockLooseUnits, unitsPerPackage)
-  const selectedPresetLabel =
-    productPackagingPresets.find((preset) => preset.key === selectedPreset)?.label ??
-    (selectedPresetIsManual ? packagingClassValue || 'Classe personalizada' : 'Sem classe definida')
 
   useEffect(() => {
     if (!product) {
       reset(emptyValues)
+      setSelectedPreset('')
+      setMeasurementMode('UN')
       return
     }
+
+    const matchedPreset = findPackagingPresetByLabel(product.packagingClass)
+    const nextMeasurementMode = getMeasurementOption(product.measurementUnit)
 
     reset({
       name: product.name,
@@ -95,6 +96,8 @@ export function ProductForm({
       stockPackages: product.stockPackages,
       stockLooseUnits: product.stockLooseUnits,
     })
+    setSelectedPreset(matchedPreset?.key ?? manualPackagingOption)
+    setMeasurementMode(nextMeasurementMode)
   }, [product, reset])
 
   const packagingPresetOptions = [
@@ -107,6 +110,8 @@ export function ProductForm({
   ]
 
   const handlePresetChange = (presetKey: string) => {
+    setSelectedPreset(presetKey)
+
     if (!presetKey) {
       setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
       return
@@ -128,9 +133,12 @@ export function ProductForm({
     setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
     setValue('measurementValue', preset.measurementValue, { shouldDirty: true, shouldValidate: true })
     setValue('unitsPerPackage', preset.unitsPerPackage, { shouldDirty: true, shouldValidate: true })
+    setMeasurementMode(preset.measurementUnit)
   }
 
   const handleMeasurementModeChange = (nextValue: string) => {
+    setMeasurementMode(nextValue)
+
     if (nextValue === customMeasurementOption) {
       setValue('measurementUnit', '', { shouldDirty: true, shouldValidate: true })
       return
@@ -140,35 +148,16 @@ export function ProductForm({
   }
 
   return (
-    <FormShell
-      aside={
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <FormStat
-            hint="Classe operacional aplicada ao item"
-            label="Classe ativa"
-            value={selectedPresetLabel || 'Sem classe'}
-          />
-          <FormStat
-            hint="Cada unidade vendida"
-            label="Conteúdo"
-            value={formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
-          />
-          <FormStat
-            hint="Caixas e unidades soltas somadas"
-            label="Estoque calculado"
-            value={`${calculatedStockTotal} und`}
-          />
-        </div>
-      }
-      description="Estruture o portfólio com padrão operacional, leitura financeira e consistência de estoque. O cadastro agora fica organizado por identidade, logística, preço e disponibilidade."
-      eyebrow={product ? 'Editar produto' : 'Novo produto'}
-      id="product-form"
-      title={product ? 'Atualize um item do portfólio' : 'Cadastre um item para a operação'}
-    >
+    <div className="imperial-card p-7">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm leading-7 text-[var(--text-soft)]">
-          Esse formulário alimenta estoque, margem, rentabilidade e leitura executiva do Desk Imperial.
-        </p>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+            {product ? 'Editar produto' : 'Novo produto'}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold text-white">
+            {product ? 'Atualize os dados do portfólio.' : 'Cadastre um item para o dashboard.'}
+          </h2>
+        </div>
         {product ? (
           <Button onClick={onCancelEdit} size="sm" type="button" variant="ghost">
             Cancelar
@@ -177,89 +166,82 @@ export function ProductForm({
       </div>
 
       <form
-        className="space-y-6"
+        className="mt-6 space-y-5"
         onSubmit={handleSubmit((values) => {
-        onSubmit(values)
-        if (!product) {
-          reset(emptyValues)
-        }
-      })}
+          onSubmit(values)
+          if (!product) {
+            reset(emptyValues)
+            setSelectedPreset('')
+            setMeasurementMode('UN')
+          }
+        })}
       >
-        <FormSection
-          description="Defina como o item será encontrado, classificado e reconhecido pela equipe no dia a dia."
-          index="01"
-          title="Identidade comercial"
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
-            <InputField error={errors.brand?.message} label="Marca" placeholder="Coca-Cola, Brahma, Guarana..." {...register('brand')} />
-          </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
+          <InputField error={errors.brand?.message} label="Marca" placeholder="Coca-Cola, Brahma, Guarana..." {...register('brand')} />
+        </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
-            <SelectField
-              error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
-              hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
-              label="Classe de cadastro"
-              onChange={(event) => handlePresetChange(event.currentTarget.value)}
-              options={packagingPresetOptions}
-              value={selectedPreset}
-            />
-          </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
+          <SelectField
+            error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
+            hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
+            label="Classe de cadastro"
+            onChange={(event) => handlePresetChange(event.currentTarget.value)}
+            options={packagingPresetOptions}
+            value={selectedPreset}
+          />
+        </div>
 
-          {selectedPresetIsManual ? (
-            <InputField
-              error={errors.packagingClass?.message}
-              hint="Descreva como esse item entra no estoque: caixa, fardo, pacote ou outro formato."
-              label="Classe personalizada"
-              placeholder="Ex.: Caixa com 10 und de 1kg"
-              {...register('packagingClass')}
-            />
-          ) : (
-            <>
-              <div className="rounded-[22px] border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-4 text-sm text-[var(--text-soft)]">
-                <p className="font-medium text-white">Classe ativa</p>
-                <p className="mt-2">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
-              </div>
-              <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
-            </>
-          )}
-        </FormSection>
+        {selectedPresetIsManual ? (
+          <InputField
+            error={errors.packagingClass?.message}
+            hint="Descreva como esse item entra no estoque: caixa, fardo, pacote ou outro formato."
+            label="Classe personalizada"
+            placeholder="Ex.: Caixa com 10 und de 1kg"
+            {...register('packagingClass')}
+          />
+        ) : (
+          <>
+            <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
+              <p className="font-medium text-white">Classe ativa</p>
+              <p className="mt-2">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
+            </div>
+            <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
+          </>
+        )}
 
-        <FormSection
-          description="Padronize unidade de medida, conteúdo e composição por caixa para garantir estoque, importação e leitura financeira consistentes."
-          index="02"
-          title="Estrutura logística"
-        >
-          <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
-            <SelectField
-              error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
-              hint="Use ml, L, kg, g, unidade ou crie outra medida."
-              label="Medida"
-              onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
-              options={measurementUnitOptions}
-              value={measurementMode}
-            />
-            <InputField
-              error={errors.measurementValue?.message}
-              hint="Ex.: cada lata tem 350 ml, cada garrafa tem 2 L, cada pacote tem 1 kg."
-              label="Conteúdo por unidade"
-              placeholder="350"
-              step="0.01"
-              type="number"
-              {...register('measurementValue')}
-            />
-            <InputField
-              error={errors.unitsPerPackage?.message}
-              hint="Quantidade dentro da caixa, fardo ou pacote."
-              label="Qtde por caixa/fardo"
-              step="1"
-              type="number"
-              {...register('unitsPerPackage')}
-            />
-          </div>
+        <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
+          <SelectField
+            error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
+            hint="Use ml, L, kg, g, unidade ou crie outra medida."
+            label="Medida"
+            onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
+            options={measurementUnitOptions}
+            value={measurementMode}
+          />
+          <InputField
+            error={errors.measurementValue?.message}
+            hint="Ex.: cada lata tem 350 ml, cada garrafa tem 2 L, cada pacote tem 1 kg."
+            label="Conteúdo por unidade"
+            placeholder="350"
+            step="0.01"
+            type="number"
+            {...register('measurementValue')}
+          />
+          <InputField
+            error={errors.unitsPerPackage?.message}
+            hint="Quantidade dentro da caixa, fardo ou pacote."
+            label="Qtde por caixa/fardo"
+            step="1"
+            type="number"
+            {...register('unitsPerPackage')}
+          />
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+        <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
+          <p className="font-medium text-white">Leitura rápida do cadastro</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
               <p className="mt-2 text-base font-semibold text-white">
@@ -275,72 +257,60 @@ export function ProductForm({
               <p className="mt-2 text-base font-semibold text-white">{calculatedStockTotal} und</p>
             </div>
           </div>
+        </div>
 
-          {manualMeasurementMode ? (
-            <InputField
-              error={errors.measurementUnit?.message}
-              label="Outra unidade de medida"
-              placeholder="Ex.: pacote, saco, porção"
-              {...register('measurementUnit')}
-            />
-          ) : (
-            <input type="hidden" value={measurementUnitValue} {...register('measurementUnit')} />
-          )}
-        </FormSection>
-
-        <FormSection
-          description="Registre valores de referência para abastecer margem, comparativos e potencial de caixa."
-          index="03"
-          title="Precificação"
-        >
+        {manualMeasurementMode ? (
           <InputField
-            error={errors.description?.message}
-            hint="Use uma descrição curta e objetiva."
-            label="Descrição"
-            placeholder="Produto base para operação e simulação financeira."
-            {...register('description')}
+            error={errors.measurementUnit?.message}
+            label="Outra unidade de medida"
+            placeholder="Ex.: pacote, saco, porção"
+            {...register('measurementUnit')}
           />
+        ) : (
+          <input type="hidden" value={measurementUnitValue} {...register('measurementUnit')} />
+        )}
 
-          <div className="grid gap-5 sm:grid-cols-3">
-            <InputField error={errors.unitCost?.message} label="Custo unitário" step="0.01" type="number" {...register('unitCost')} />
-            <InputField error={errors.unitPrice?.message} label="Preço unitário" step="0.01" type="number" {...register('unitPrice')} />
-            <SelectField error={errors.currency?.message} label="Moeda" options={currencyOptions} {...register('currency')} />
-          </div>
-        </FormSection>
+        <InputField
+          error={errors.description?.message}
+          hint="Use uma descrição curta e objetiva."
+          label="Descrição"
+          placeholder="Produto base para operação e simulação financeira."
+          {...register('description')}
+        />
 
-        <FormSection
-          description="Separe estoque fechado e avulso para manter o cadastro compatível com compra, venda e controle interno."
-          index="04"
-          title="Disponibilidade"
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <InputField
-              error={errors.stockPackages?.message}
-              hint="Se comprou uma caixa ou fardo fechado, registre aqui."
-              label="Caixas / fardos em estoque"
-              step="1"
-              type="number"
-              {...register('stockPackages')}
-            />
-            <InputField
-              error={errors.stockLooseUnits?.message}
-              hint={
-                unitsPerPackage > 1
-                  ? `Use para unidades soltas. Aqui o máximo natural é ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
-                  : 'Se esse item entra solto no estoque, deixe caixa/fardo em 0 e registre tudo aqui.'
-              }
-              label="Unidades avulsas em estoque"
-              step="1"
-              type="number"
-              {...register('stockLooseUnits')}
-            />
-          </div>
-        </FormSection>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <InputField error={errors.unitCost?.message} label="Custo unitário" step="0.01" type="number" {...register('unitCost')} />
+          <InputField error={errors.unitPrice?.message} label="Preço unitário" step="0.01" type="number" {...register('unitPrice')} />
+          <SelectField error={errors.currency?.message} label="Moeda" options={currencyOptions} {...register('currency')} />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <InputField
+            error={errors.stockPackages?.message}
+            hint="Se comprou uma caixa ou fardo fechado, registre aqui."
+            label="Caixas / fardos em estoque"
+            step="1"
+            type="number"
+            {...register('stockPackages')}
+          />
+          <InputField
+            error={errors.stockLooseUnits?.message}
+            hint={
+              unitsPerPackage > 1
+                ? `Use para unidades soltas. Aqui o máximo natural é ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
+                : 'Se esse item entra solto no estoque, deixe caixa/fardo em 0 e registre tudo aqui.'
+            }
+            label="Unidades avulsas em estoque"
+            step="1"
+            type="number"
+            {...register('stockLooseUnits')}
+          />
+        </div>
 
         <Button fullWidth loading={loading} size="lg" type="submit">
           {product ? 'Salvar alterações' : 'Cadastrar produto'}
         </Button>
       </form>
-    </FormShell>
+    </div>
   )
 }

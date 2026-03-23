@@ -38,7 +38,7 @@ export function MetricCard({
   const iconBg = `rgba(${r},${g},${b},0.1)`
 
   return (
-    <article className="imperial-card-stat min-w-0 max-w-full p-5 contain-layout">
+    <article className="imperial-card-stat p-5 contain-layout">
       <div className="flex items-start justify-between gap-2">
         <Tooltip content={hint} side="top">
           <span
@@ -55,7 +55,7 @@ export function MetricCard({
         </Tooltip>
 
         {sparkData && sparkData.length > 1 && (
-          <div className="h-12 w-24 shrink-0 overflow-hidden pointer-events-none">
+          <div className="h-12 w-24 shrink-0">
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={sparkData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                 <Line

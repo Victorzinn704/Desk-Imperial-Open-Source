@@ -14,6 +14,7 @@ import {
   updateCookiePreferences,
   updateProduct,
 } from '@/lib/api'
+import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 
 /**
  * Hook centralizado para todas as mutations do dashboard

@@ -31,12 +31,13 @@ export function MapRankingPanel({
   const maxValue = Math.max(1, ...regions.map(getValue))
 
   return (
-    <article className="imperial-card flex min-w-0 flex-col p-6">
-      <div className="grid grid-cols-3 gap-1 rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
+    <article className="imperial-card flex flex-col p-6">
+      {/* Tabs */}
+      <div className="flex gap-1.5 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
         {TABS.map((t) => (
           <button
             className={cn(
-              'min-w-0 cursor-pointer rounded-[14px] border px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200',
+              'flex-1 cursor-pointer rounded-[14px] border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors duration-200',
               tab === t.id
                 ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
                 : 'border-transparent text-[var(--text-soft)] hover:text-white',
@@ -68,7 +69,7 @@ export function MapRankingPanel({
                 : formatCurrency(value, displayCurrency)
 
             return (
-              <div className="rounded-[24px] border border-white/6 bg-[rgba(255,255,255,0.025)] p-4" key={region.label}>
+              <div className="imperial-card-soft p-4" key={region.label}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

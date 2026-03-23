@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Clock, Package, Percent, User } from 'lucide-react'
 import type { Comanda, KanbanColumn } from './pdv-types'
@@ -15,19 +14,9 @@ type PdvComandaCardProps = {
 }
 
 export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<PdvComandaCardProps>) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNow(Date.now())
-    }, 60_000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
-
   const total = calcTotal(comanda)
   const elapsed = formatElapsed(comanda.abertaEm)
-  const isOld = now - comanda.abertaEm.getTime() > 30 * 60 * 1000
+  const isOld = Date.now() - comanda.abertaEm.getTime() > 30 * 60 * 1000
   const itemCount = comanda.itens.reduce((sum, i) => sum + i.quantidade, 0)
 
   return (

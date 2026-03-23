@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -15,7 +15,10 @@ type TooltipProps = {
 export function Tooltip({ content, children, side = 'top', className }: Readonly<TooltipProps>) {
   const [visible, setVisible] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
+  const [mounted, setMounted] = useState(false)
   const ref = useRef<HTMLSpanElement | null>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   function handleShow() {
     if (ref.current) {
@@ -67,7 +70,7 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
     >
       {children}
 
-      {typeof document !== 'undefined' && createPortal(
+      {mounted && createPortal(
         <span
           aria-hidden={!visible}
           role="tooltip"

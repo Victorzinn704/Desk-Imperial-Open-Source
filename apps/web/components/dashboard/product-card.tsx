@@ -5,7 +5,6 @@ import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
 import { formatMeasurement, formatStockBreakdown } from '@/lib/product-packaging'
 import { Button } from '@/components/shared/button'
-import { ListMetric, ListRow } from '@/components/shared/list-primitives'
 
 export function ProductCard({
   product,
@@ -46,9 +45,35 @@ export function ProductCard({
       : 'Produto operado apenas por unidade'
 
   return (
-    <ListRow
-      actions={
-        <>
+    <article className="imperial-card-soft p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+              product.active
+                ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
+                : 'border border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)]'
+            }`}>
+              {product.active ? 'ativo' : 'arquivado'}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[var(--text-soft)]">
+            <span>{product.category}</span>
+            {product.brand ? <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs uppercase tracking-[0.18em]">{product.brand}</span> : null}
+            <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs uppercase tracking-[0.18em]">
+              {measurementLabel}
+            </span>
+          </div>
+          {product.packagingClass && product.packagingClass !== 'UN' ? (
+            <p className="mt-3 text-sm font-medium text-white">{product.packagingClass}</p>
+          ) : null}
+          <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
+            {product.description || 'Produto sem descrição cadastrada.'}
+          </p>
+        </div>
+
+        <div className="flex gap-2">
           <Button disabled={busy} onClick={() => onEdit(product)} size="sm" variant="secondary">
             <PencilLine className="size-4" />
             Editar
@@ -64,50 +89,31 @@ export function ProductCard({
               Reativar
             </Button>
           )}
-        </>
-      }
-      details={
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <ListMetric label="Custo" value={costValue.primary} hint={costValue.secondary ?? undefined} />
-          <ListMetric label="Preço" value={priceValue.primary} hint={priceValue.secondary ?? undefined} />
-          <ListMetric
-            label="Estoque"
-            value={stockBreakdown}
-            hint={`${product.stock} und totais • ${packageHelper}`}
-          />
-          <ListMetric
-            label="Lucro potencial"
-            value={profitValue.primary}
-            hint={profitValue.secondary ?? undefined}
-          />
         </div>
-      }
-      leading={
-        <div className="flex size-12 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--accent)]">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em]">{product.name.slice(0, 2)}</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        <div className="imperial-card-stat px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Custo</p>
+          <p className="mt-2 text-lg font-semibold text-white">{costValue.primary}</p>
+          {costValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{costValue.secondary}</p> : null}
         </div>
-      }
-      meta={`${product.category} · ${measurementLabel}${product.brand ? ` · ${product.brand}` : ''}`}
-      status={
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-            product.active
-              ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
-              : 'border border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)]'
-          }`}
-        >
-          {product.active ? 'ativo' : 'arquivado'}
-        </span>
-      }
-      subtitle={
-        <div className="space-y-2">
-          {product.packagingClass && product.packagingClass !== 'UN' ? (
-            <p className="text-sm font-medium text-white">{product.packagingClass}</p>
-          ) : null}
-          <p>{product.description || 'Produto sem descrição cadastrada.'}</p>
+        <div className="imperial-card-stat px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Preço</p>
+          <p className="mt-2 text-lg font-semibold text-white">{priceValue.primary}</p>
+          {priceValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{priceValue.secondary}</p> : null}
         </div>
-      }
-      title={<h3 className="text-lg font-semibold text-white">{product.name}</h3>}
-    />
+        <div className="imperial-card-stat px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque</p>
+          <p className="mt-2 text-lg font-semibold text-white">{stockBreakdown}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">{product.stock} und totais • {packageHelper}</p>
+        </div>
+        <div className="imperial-card-stat px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro potencial</p>
+          <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
+          {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
+        </div>
+      </div>
+    </article>
   )
 }

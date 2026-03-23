@@ -40,6 +40,7 @@ export function CardRowSkeleton({ rows = 3 }: Readonly<{ rows?: number }>) {
   return (
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <div className="imperial-card-soft flex items-center gap-4 px-4 py-3" key={i}>
           <Skeleton className="size-12 shrink-0 rounded-xl" />
           <div className="flex-1 space-y-2">
