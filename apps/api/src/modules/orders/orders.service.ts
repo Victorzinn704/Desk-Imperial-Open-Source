@@ -36,7 +36,7 @@ export class OrdersService {
       ...(query.includeCancelled ? {} : { status: OrderStatus.COMPLETED }),
     }
 
-    const [orders, totalsBase] = await Promise.all([
+    const [orders, completedAgg, cancelledCount, soldUnitsAgg] = await Promise.all([
       this.prisma.order.findMany({
         where,
         include: {
@@ -47,15 +47,33 @@ export class OrdersService {
         },
         take: limit,
       }),
-      this.prisma.order.findMany({
+      this.prisma.order.aggregate({
         where: {
           userId: auth.userId,
+          status: OrderStatus.COMPLETED,
         },
-        include: {
-          items: true,
+        _count: true,
+        _sum: {
+          totalRevenue: true,
+          totalProfit: true,
+          totalItems: true,
         },
-        orderBy: {
-          createdAt: 'desc',
+      }),
+      this.prisma.order.count({
+        where: {
+          userId: auth.userId,
+          status: OrderStatus.CANCELLED,
+        },
+      }),
+      this.prisma.orderItem.aggregate({
+        where: {
+          order: {
+            userId: auth.userId,
+            status: OrderStatus.COMPLETED,
+          },
+        },
+        _sum: {
+          quantity: true,
         },
       }),
     ])
@@ -67,32 +85,15 @@ export class OrdersService {
         snapshot,
       }),
     )
-    const completedOrderRecords = totalsBase
-      .filter((order) => order.status === OrderStatus.COMPLETED)
-      .map((order) =>
-        toOrderRecord(order, {
-          displayCurrency: auth.preferredCurrency,
-          currencyService: this.currencyService,
-          snapshot,
-        }),
-      )
-    const cancelledOrders = totalsBase.filter((order) => order.status === OrderStatus.CANCELLED)
 
     return {
       items: orderRecords,
       totals: {
-        completedOrders: completedOrderRecords.length,
-        cancelledOrders: cancelledOrders.length,
-        realizedRevenue: roundCurrency(
-          completedOrderRecords.reduce((total, order) => total + order.totalRevenue, 0),
-        ),
-        realizedProfit: roundCurrency(
-          completedOrderRecords.reduce((total, order) => total + order.totalProfit, 0),
-        ),
-        soldUnits: completedOrderRecords.reduce(
-          (total, order) => total + order.items.reduce((subtotal, item) => subtotal + item.quantity, 0),
-          0,
-        ),
+        completedOrders: completedAgg._count,
+        cancelledOrders: cancelledCount,
+        realizedRevenue: roundCurrency(Number(completedAgg._sum.totalRevenue ?? 0)),
+        realizedProfit: roundCurrency(Number(completedAgg._sum.totalProfit ?? 0)),
+        soldUnits: soldUnitsAgg._sum.quantity ?? 0,
       },
     }
   }

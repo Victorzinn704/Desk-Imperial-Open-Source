@@ -107,7 +107,6 @@ export function DashboardShell() {
   const [activeSection, setActiveSection] = useState<DashboardSectionId>('overview')
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
-  const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
@@ -145,9 +144,6 @@ export function DashboardShell() {
     }
 
     const expirationTime = new Date(evaluationAccess.sessionExpiresAt).getTime()
-    const intervalId = window.setInterval(() => {
-      setCountdownNow(Date.now())
-    }, 1000)
     const timeoutId = window.setTimeout(() => {
       queryClient.clear()
       startTransition(() => {
@@ -156,7 +152,6 @@ export function DashboardShell() {
     }, Math.max(0, expirationTime - Date.now()) + 150)
 
     return () => {
-      window.clearInterval(intervalId)
       window.clearTimeout(timeoutId)
     }
   }, [evaluationAccess, queryClient, router, startTransition])
@@ -448,15 +443,7 @@ export function DashboardShell() {
           <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-12 space-y-6">
 
           {user.evaluationAccess ? (
-            <EvaluationModeBanner
-              dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
-              remainingSeconds={Math.max(
-                0,
-                Math.ceil(
-                  (new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000,
-                ),
-              )}
-            />
+            <SessionCountdown evaluationAccess={user.evaluationAccess} />
           ) : null}
 
           {renderActiveEnvironment({
@@ -567,6 +554,39 @@ function LoadingState() {
         </div>
       </div>
     </main>
+  )
+}
+
+function SessionCountdown({
+  evaluationAccess,
+}: Readonly<{
+  evaluationAccess: {
+    sessionExpiresAt: string
+    dailyLimitMinutes: number
+  }
+}>) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const remainingSeconds = Math.max(
+    0,
+    Math.ceil((new Date(evaluationAccess.sessionExpiresAt).getTime() - now) / 1000),
+  )
+
+  return (
+    <EvaluationModeBanner
+      dailyLimitMinutes={evaluationAccess.dailyLimitMinutes}
+      remainingSeconds={remainingSeconds}
+    />
   )
 }
 

@@ -7,7 +7,7 @@ import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toProductRecord } from '../products/products.types'
 
-const FINANCE_SUMMARY_TTL = 60 // segundos
+const FINANCE_SUMMARY_TTL = 120 // segundos
 
 export type FinanceSummaryResponse = {
   displayCurrency: 'BRL' | 'USD' | 'EUR'
