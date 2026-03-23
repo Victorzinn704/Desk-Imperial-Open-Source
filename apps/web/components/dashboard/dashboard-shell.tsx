@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   Clock,
@@ -19,12 +19,6 @@ import {
   createEmployee,
   createOrder,
   createProduct,
-  fetchConsentOverview,
-  fetchCurrentUser,
-  fetchEmployees,
-  fetchFinanceSummary,
-  fetchOrders,
-  fetchProducts,
   importProducts,
   logout,
   restoreEmployee,
@@ -46,6 +40,7 @@ import {
   type DashboardSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
+import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 
 const sectionHeroCopy: Record<
   DashboardSectionId,
@@ -109,33 +104,7 @@ export function DashboardShell() {
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
-  const consentQuery = useQuery({
-    queryKey: ['consent', 'me'],
-    queryFn: fetchConsentOverview,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-    retry: false,
-  })
-  const productsQuery = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
-  const ordersQuery = useQuery({
-    queryKey: ['orders'],
-    queryFn: fetchOrders,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
-  const employeesQuery = useQuery({
-    queryKey: ['employees'],
-    queryFn: fetchEmployees,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
-  const financeQuery = useQuery({
-    queryKey: ['finance', 'summary'],
-    queryFn: fetchFinanceSummary,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
+  const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
 
   useEffect(() => {
