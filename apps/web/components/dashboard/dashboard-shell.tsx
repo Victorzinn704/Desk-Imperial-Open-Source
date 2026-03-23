@@ -6,34 +6,13 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
-  Box,
-  Boxes,
-  ChartColumnIncreasing,
   Clock,
-  FileCheck2,
-  LayoutDashboard,
-  LockKeyhole,
   LogOut,
-  MapPin,
-  ShieldCheck,
-  ShoppingCart,
-  Tags,
   TimerReset,
-  UserRound,
 } from 'lucide-react'
-import type {
-  FinanceSummaryResponse,
-  OrderRecord,
-  OrdersResponse,
-  ProductImportResponse,
-  ProductRecord,
-  ProductsResponse,
-} from '@contracts/contracts'
+import type { ProductImportResponse, ProductRecord } from '@contracts/contracts'
 import {
   ApiError,
-  type AuthUser,
-  type CookiePreferencePayload,
-  type CookiePreferences,
   archiveEmployee,
   archiveProduct,
   cancelOrder,
@@ -50,66 +29,23 @@ import {
   logout,
   restoreEmployee,
   restoreProduct,
-  updateProfile,
   updateCookiePreferences,
   updateProduct,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
-import { formatAccountStatus } from '@/lib/dashboard-format'
-import { downloadPortfolioCsv, downloadProductTemplateCsv } from '@/lib/portfolio-csv'
-import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
+import type { ProductFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
-import { CheckboxField } from '@/components/shared/checkbox-field'
 import { SpotlightButton } from '@/components/shared/spotlight-button'
-import { AccountProfileCard } from '@/components/dashboard/account-profile-card'
-import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
+import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import {
-  DashboardSidebar,
-  type DashboardSidebarItem,
-} from '@/components/dashboard/dashboard-sidebar'
-import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
-import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-card'
-import { FinanceChart } from '@/components/dashboard/finance-chart'
-import { MarketIntelligenceCard } from '@/components/dashboard/market-intelligence-card'
-import { MetricCard } from '@/components/dashboard/metric-card'
-import { PillarsExecutiveCard } from '@/components/dashboard/pillars-executive-card'
-import { OrderCard } from '@/components/dashboard/order-card'
-import { OrderForm } from '@/components/dashboard/order-form'
-import { ProductCard } from '@/components/dashboard/product-card'
-import { ProductForm } from '@/components/dashboard/product-form'
-import { ProductImportCard } from '@/components/dashboard/product-import-card'
-import { ProductSearchField } from '@/components/dashboard/product-search-field'
-import { SalesMapCard } from '@/components/dashboard/sales-map-card'
-import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
+  dashboardNavigationGroups,
+  dashboardQuickActions,
+  type DashboardQuickAction,
+  type DashboardSectionId,
+} from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
-import { useActivityTimeline } from '@/hooks/use-activity-timeline'
-import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
-import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
-import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
-import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
-import { PdvBoard } from '@/components/pdv/pdv-board'
-import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
-import { MapSection } from '@/components/dashboard/map-section'
-
-type DashboardSectionId =
-  | 'overview'
-  | 'sales'
-  | 'portfolio'
-  | 'compliance'
-  | 'pdv'
-  | 'calendario'
-  | 'map'
-
-const dashboardNavigation: DashboardSidebarItem<DashboardSectionId>[] = [
-  { id: 'overview', label: 'Dashboard', description: 'Visão executiva', icon: LayoutDashboard },
-  { id: 'sales', label: 'Operação', description: 'Pedidos e vendas', icon: ShoppingCart },
-  { id: 'pdv', label: 'PDV / Comandas', description: 'Kanban em tempo real', icon: Tags },
-  { id: 'calendario', label: 'Calendário', description: 'Atividades comerciais', icon: TimerReset },
-  { id: 'portfolio', label: 'Portfólio', description: 'Produtos e margem', icon: Boxes },
-  { id: 'compliance', label: 'Conformidade', description: 'LGPD e cookies', icon: ShieldCheck },
-  { id: 'map', label: 'Mapa', description: 'Território de guerra', icon: MapPin },
-]
 
 const sectionHeroCopy: Record<
   DashboardSectionId,
@@ -242,14 +178,6 @@ export function DashboardShell() {
     },
   })
 
-  const updateProfileMutation = useMutation({
-    mutationFn: updateProfile,
-    onSuccess: (payload) => {
-      queryClient.setQueryData(['auth', 'me'], payload)
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-    },
-  })
-
   const createProductMutation = useMutation({
     mutationFn: createProduct,
     onSuccess: () => invalidateCatalog(queryClient),
@@ -348,8 +276,6 @@ export function DashboardShell() {
     restoreProductMutation.error,
   ].find((error) => error instanceof ApiError)
   const importMutationError = importProductsMutation.error instanceof ApiError ? importProductsMutation.error.message : null
-  const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error.message : null
-
   const handleProductSubmit = (values: ProductFormValues) => {
     const payload: Parameters<typeof createProduct>[0] = {
       name: values.name,
@@ -374,15 +300,24 @@ export function DashboardShell() {
     createProductMutation.mutate(payload)
   }
 
-  const handleProfileSubmit = (values: ProfileFormValues) => {
-    updateProfileMutation.mutate(values)
-  }
-
   const handleSectionNavigate = (sectionId: DashboardSectionId) => {
     setActiveSection(sectionId)
     if (sectionId !== 'portfolio') {
       setEditingProduct(null)
     }
+  }
+
+  const handleQuickAction = (action: DashboardQuickAction) => {
+    handleSectionNavigate(action.target)
+
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    window.setTimeout(() => {
+      const targetElement = action.anchorId ? document.getElementById(action.anchorId) : document.getElementById('workspace-header')
+      targetElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
   }
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
 
@@ -405,11 +340,12 @@ export function DashboardShell() {
   ]
 
   const activeNavigation =
-    dashboardNavigation.find((item) => item.id === activeSection) ?? dashboardNavigation[0]
+    dashboardNavigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
+    dashboardNavigationGroups[0]?.items[0]
   const activeHero = sectionHeroCopy[activeSection]
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] px-4 py-6 text-[var(--text-primary)] sm:px-6">
+    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
       <div
         className="mx-auto max-w-[1600px] xl:grid xl:gap-6"
         style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
@@ -418,33 +354,70 @@ export function DashboardShell() {
           activeSection={activeSection}
           companyName={user.companyName}
           email={user.email}
-          items={dashboardNavigation}
+          groups={dashboardNavigationGroups}
+          quickActions={dashboardQuickActions}
           onNavigate={handleSectionNavigate}
+          onQuickAction={handleQuickAction}
           onCollapseChange={setSidebarCollapsed}
           status={user.status}
           userName={user.fullName}
         />
 
         <div className="mt-6 space-y-6 xl:mt-0">
-          <header className="imperial-card p-6 md:p-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <header className="imperial-card p-6 md:p-8" id="workspace-header">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
-                  <span className="size-2 rounded-full bg-[#36f57c]" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                  <span className="size-2 rounded-full bg-[var(--accent)]" />
                   {activeHero.badge}
                 </div>
-                <p className="mt-4 text-sm text-[var(--text-soft)]">
+                <p className="mt-4 text-sm text-muted-foreground">
                   Início / Painel operacional / {activeNavigation.label}
                 </p>
                 <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
                   {activeHero.title}
                 </h1>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--text-soft)]">
+                <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
                   {activeHero.description}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-4 xl:max-w-[520px]">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {signals.map((signal) => (
+                    <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {signal.label}
+                      </p>
+                      <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
+                      <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  {dashboardQuickActions.map((action) => {
+                    const Icon = action.icon
+                    return (
+                      <button
+                        className="workspace-quick-action flex-1 sm:min-w-[150px]"
+                        key={action.id}
+                        onClick={() => handleQuickAction(action)}
+                        type="button"
+                      >
+                        <span className="workspace-quick-action__icon">
+                          <Icon className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1 text-left">
+                          <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
                 <Link href="/">
                   <Button size="lg" variant="ghost">
                     Ver site
@@ -463,6 +436,7 @@ export function DashboardShell() {
                   <LogOut className="size-4" />
                   Encerrar sessão
                 </SpotlightButton>
+                </div>
               </div>
             </div>
           </header>
@@ -496,7 +470,6 @@ export function DashboardShell() {
             finance,
             financeError,
             financeQueryIsLoading: financeQuery.isLoading,
-            handleProfileSubmit,
             handleProductSubmit,
             importMutationError,
             importProductsMutation,
@@ -512,17 +485,14 @@ export function DashboardShell() {
             products,
             productsError,
             productsTotals: productsQuery.data?.totals,
-            profileMutationError,
             restoreProductMutation,
             restoreEmployeeMutation,
             archiveProductMutation,
             archiveEmployeeMutation,
             updateProductMutation,
-            updateProfileMutation,
             setEditingProduct,
             cancelOrderMutation,
             user,
-            signals,
           })}
         </div>
       </div>
@@ -532,783 +502,9 @@ export function DashboardShell() {
   )
 }
 
-type EnvironmentRenderProps = {
-  activeSection: DashboardSectionId
-  archiveEmployeeMutation: {
-    isPending: boolean
-    mutate: (employeeId: string) => void
-  }
-  archiveProductMutation: {
-    isPending: boolean
-    mutate: (productId: string) => void
-  }
-  cancelOrderMutation: {
-    isPending: boolean
-    mutate: (orderId: string) => void
-  }
-  consentQueryIsLoading: boolean
-  cookiePreferences: CookiePreferences
-  createOrderMutation: {
-    isPending: boolean
-    mutate: (values: OrderFormValues) => void
-  }
-  createEmployeeMutation: {
-    isPending: boolean
-    mutate: (values: { employeeCode: string; displayName: string }) => void
-  }
-  createProductMutation: {
-    isPending: boolean
-  }
-  documentTitles: Map<string, string>
-  employeeMutationError?: ApiError
-  employees: Array<{
-    id: string
-    employeeCode: string
-    displayName: string
-    active: boolean
-    createdAt: string
-    updatedAt: string
-  }>
-  employeesError: string | null
-  employeesQueryIsLoading: boolean
-  employeesTotals?: {
-    totalEmployees: number
-    activeEmployees: number
-  }
-  editingProduct: ProductRecord | null
-  finance?: FinanceSummaryResponse
-  financeError: string | null
-  financeQueryIsLoading: boolean
-  handleProfileSubmit: (values: ProfileFormValues) => void
-  handleProductSubmit: (values: ProductFormValues) => void
-  importMutationError: string | null
-  importProductsMutation: {
-    isPending: boolean
-    mutate: (file: File) => void
-  }
-  lastImport: ProductImportResponse | null
-  legalAcceptances: Array<{
-    key: string
-    acceptedAt: string
-  }>
-  orderMutationError?: ApiError
-  orders: OrderRecord[]
-  ordersError: string | null
-  ordersQueryIsLoading: boolean
-  ordersTotals?: OrdersResponse['totals']
-  preferenceMutation: {
-    error: unknown
-    isPending: boolean
-    mutate: (payload: CookiePreferencePayload) => void
-  }
-  productMutationError?: ApiError
-  products: ProductRecord[]
-  productsError: string | null
-  productsTotals?: ProductsResponse['totals']
-  profileMutationError: string | null
-  restoreProductMutation: {
-    isPending: boolean
-    mutate: (productId: string) => void
-  }
-  restoreEmployeeMutation: {
-    isPending: boolean
-    mutate: (employeeId: string) => void
-  }
-  setEditingProduct: (product: ProductRecord | null) => void
-  signals: Array<{
-    helper: string
-    label: string
-    value: string
-  }>
-  updateProductMutation: {
-    isPending: boolean
-  }
-  updateProfileMutation: {
-    isPending: boolean
-  }
-  user: AuthUser
-}
-
-function renderActiveEnvironment(props: EnvironmentRenderProps) {
-  switch (props.activeSection) {
-    case 'sales':
-      return <SalesEnvironment {...props} />
-    case 'portfolio':
-      return <PortfolioEnvironment {...props} />
-    case 'compliance':
-      return <ComplianceEnvironment {...props} />
-    case 'pdv':
-      return <PdvEnvironment products={props.products} />
-    case 'calendario':
-      return <CalendarioEnvironment />
-    case 'map':
-      return <MapEnvironment {...props} />
-    case 'overview':
-    default:
-      return <OverviewEnvironment {...props} />
-  }
-}
-
-function MapEnvironment({
-  finance,
-  financeError,
-  financeQueryIsLoading,
-  ordersTotals,
-  user,
-}: Readonly<Pick<EnvironmentRenderProps, 'finance' | 'financeError' | 'financeQueryIsLoading' | 'ordersTotals' | 'user'>>) {
-  const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
-
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido."
-        eyebrow="Inteligência territorial"
-        icon={MapPin}
-        title="Mapa de Vendas — Território de Guerra"
-      />
-      <MapSection
-        displayCurrency={displayCurrency}
-        error={financeError}
-        finance={finance}
-        isLoading={financeQueryIsLoading}
-        totalOrderCount={ordersTotals?.completedOrders}
-      />
-    </section>
-  )
-}
-
-function CalendarioEnvironment() {
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Arraste eventos para trocar datas, redimensione para ajustar duração. Clique em um dia para criar nova atividade."
-        eyebrow="Agenda comercial"
-        icon={TimerReset}
-        title="Calendário de Atividades"
-      />
-      <CommercialCalendar />
-    </section>
-  )
-}
-
-function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProps['products'] }>) {
-  const boardProducts = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    unitPrice: p.unitPrice,
-    currency: String(p.currency),
-  }))
-
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Gerencie comandas abertas, em preparo e prontas. Arraste entre colunas para atualizar o status em tempo real."
-        eyebrow="Kanban de comandas"
-        icon={Tags}
-        title="PDV — Ponto de Venda"
-      />
-      <PdvBoard products={boardProducts} />
-    </section>
-  )
-}
-
-function OverviewEnvironment({
-  employeesTotals,
-  employeesQueryIsLoading,
-  finance,
-  financeError,
-  financeQueryIsLoading,
-  handleProfileSubmit,
-  ordersTotals,
-  ordersQueryIsLoading,
-  profileMutationError,
-  productsTotals,
-  signals,
-  updateProfileMutation,
-  user,
-}: Readonly<
-  Pick<
-    EnvironmentRenderProps,
-    | 'employeesTotals'
-    | 'employeesQueryIsLoading'
-    | 'finance'
-    | 'financeError'
-    | 'financeQueryIsLoading'
-    | 'handleProfileSubmit'
-    | 'ordersTotals'
-    | 'ordersQueryIsLoading'
-    | 'profileMutationError'
-    | 'productsTotals'
-    | 'signals'
-    | 'updateProfileMutation'
-    | 'user'
-  >
->) {
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Receita realizada, pedidos por canal e distribuição de categorias em um painel financeiro detalhado."
-        eyebrow="Visão financeira"
-        icon={LayoutDashboard}
-        title="Dashboard financeiro da operação"
-      />
-
-      {(() => {
-        const revenueTrend = finance?.revenueTimeline.map((t) => t.revenue) ?? []
-        const profitTrend = finance?.revenueTimeline.map((t) => t.profit) ?? []
-        const ordersTrend = finance?.revenueTimeline.map((t) => t.orders) ?? []
-        return (
-          <div className="grid gap-4 xl:grid-cols-5">
-            <MetricCard
-              color="#60a5fa"
-              hint={user.fullName}
-              icon={UserRound}
-              label="Conta"
-              value={user.companyName || 'Conta Demo'}
-            />
-            <MetricCard
-              color="#36f57c"
-              hint="Status da identidade no portal"
-              icon={ShieldCheck}
-              label="Status"
-              value={formatAccountStatus(user.status)}
-            />
-            <MetricCard
-              color="#a78bfa"
-              hint="Produtos ativos com sessão autenticada"
-              icon={Box}
-              label="Portfólio"
-              loading={financeQueryIsLoading}
-              trend={revenueTrend}
-              value={String(productsTotals?.activeProducts ?? 0)}
-            />
-            <MetricCard
-              color="#fb923c"
-              hint="Pedidos concluídos considerados no financeiro"
-              icon={ShoppingCart}
-              label="Pedidos"
-              loading={ordersQueryIsLoading}
-              trend={ordersTrend}
-              value={String(ordersTotals?.completedOrders ?? 0)}
-            />
-            <MetricCard
-              color="#fbbf24"
-              hint="Equipe apta a registrar vendas"
-              icon={ShieldCheck}
-              label="Equipe ativa"
-              loading={employeesQueryIsLoading}
-              trend={profitTrend}
-              value={String(employeesTotals?.activeEmployees ?? 0)}
-            />
-          </div>
-        )
-      })()}
-
-      {finance ? (
-        <>
-          <FinanceOverviewTotal finance={finance} isLoading={financeQueryIsLoading} />
-
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <FinanceChannelsPanel finance={finance} isLoading={financeQueryIsLoading} />
-            <FinanceCategoriesSidebar finance={finance} isLoading={financeQueryIsLoading} />
-          </div>
-        </>
-      ) : financeQueryIsLoading ? (
-        <div className="imperial-card flex animate-pulse items-center justify-center p-16">
-          <p className="text-sm text-[var(--text-soft)]">Carregando dados financeiros...</p>
-        </div>
-      ) : financeError ? (
-        <div className="imperial-card p-8">
-          <p className="text-sm text-[var(--danger)]">{financeError}</p>
-        </div>
-      ) : null}
-
-      <SalesPerformanceCard finance={finance} isLoading={financeQueryIsLoading} />
-
-      <MarketIntelligenceCard />
-
-      <FinanceChart
-        error={financeError}
-        finance={finance}
-        isLoading={financeQueryIsLoading}
-        ordersTotals={ordersTotals}
-      />
-
-      <EmployeeRankingCard
-        error={financeError}
-        finance={finance}
-        isLoading={financeQueryIsLoading}
-      />
-
-      <SalesMapCard
-        error={financeError}
-        finance={finance}
-        isLoading={financeQueryIsLoading}
-      />
-    </section>
-  )
-}
-
-function SalesEnvironment({
-  archiveEmployeeMutation,
-  cancelOrderMutation,
-  createEmployeeMutation,
-  createOrderMutation,
-  employeeMutationError,
-  employees,
-  employeesError,
-  employeesTotals,
-  finance,
-  orderMutationError,
-  orders,
-  ordersError,
-  ordersTotals,
-  products,
-  restoreEmployeeMutation,
-}: Readonly<
-  Pick<
-    EnvironmentRenderProps,
-    | 'archiveEmployeeMutation'
-    | 'cancelOrderMutation'
-    | 'createEmployeeMutation'
-    | 'createOrderMutation'
-    | 'employeeMutationError'
-    | 'employees'
-    | 'employeesError'
-    | 'employeesTotals'
-    | 'finance'
-    | 'orderMutationError'
-    | 'orders'
-    | 'ordersError'
-    | 'ordersTotals'
-    | 'products'
-    | 'restoreEmployeeMutation'
-  >
->) {
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Pedidos concluídos alimentam o financeiro realizado. Aqui o operador registra vendas e acompanha o ritmo da operação."
-        eyebrow="Gestão comercial"
-        icon={ShoppingCart}
-        title="Módulo de vendas e pedidos"
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          hint="Pedidos concluídos"
-          icon={ShoppingCart}
-          label="Concluídos"
-          value={String(ordersTotals?.completedOrders ?? 0)}
-        />
-        <MetricCard
-          hint="Pedidos cancelados"
-          icon={LockKeyhole}
-          label="Cancelados"
-          value={String(ordersTotals?.cancelledOrders ?? 0)}
-        />
-        <MetricCard
-          hint="Unidades vendidas"
-          icon={Tags}
-          label="Itens vendidos"
-          value={String(ordersTotals?.soldUnits ?? 0)}
-        />
-        <MetricCard
-          hint="Funcionarios com vendas atribuidas"
-          icon={UserRound}
-          label="Equipe ativa"
-          value={String(employeesTotals?.activeEmployees ?? 0)}
-        />
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
-        <div>
-          <OrderForm
-            employees={employees}
-            loading={createOrderMutation.isPending}
-            onSubmit={createOrderMutation.mutate}
-            products={products.filter((product) => product.active)}
-          />
-        </div>
-
-        <div className="space-y-4">
-          <EmployeeManagementCard
-            busy={
-              createEmployeeMutation.isPending ||
-              archiveEmployeeMutation.isPending ||
-              restoreEmployeeMutation.isPending
-            }
-            employees={employees}
-            error={employeeMutationError?.message ?? employeesError}
-            loading={createEmployeeMutation.isPending}
-            onArchive={archiveEmployeeMutation.mutate}
-            onCreate={createEmployeeMutation.mutate}
-            onRestore={restoreEmployeeMutation.mutate}
-            totals={employeesTotals}
-          />
-          <EmployeePayrollCard employees={employees} finance={finance} />
-        </div>
-      </div>
-
-      <article className="imperial-card p-7">
-        <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-            <ShoppingCart className="size-5" />
-          </span>
-          <div>
-            <p className="text-sm text-[var(--text-soft)]">Vendas recentes</p>
-            <h2 className="text-xl font-semibold text-white">Pedidos da operação</h2>
-          </div>
-        </div>
-
-        {ordersError ? <p className="mt-4 text-sm text-[var(--danger)]">{ordersError}</p> : null}
-        {orderMutationError ? (
-          <p className="mt-4 text-sm text-[var(--danger)]">{orderMutationError.message}</p>
-        ) : null}
-
-        <div className="mt-6 space-y-4">
-          {orders.length ? (
-            orders.map((order) => (
-              <OrderCard
-                busy={createOrderMutation.isPending || cancelOrderMutation.isPending}
-                key={order.id}
-                onCancel={cancelOrderMutation.mutate}
-                order={order}
-              />
-            ))
-          ) : (
-            <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-              Nenhuma venda registrada ainda. Use o formulario acima para criar o primeiro pedido.
-            </p>
-          )}
-        </div>
-      </article>
-    </section>
-  )
-}
-
-function PortfolioEnvironment({
-  archiveProductMutation,
-  createProductMutation,
-  editingProduct,
-  finance,
-  handleProductSubmit,
-  importMutationError,
-  importProductsMutation,
-  lastImport,
-  productMutationError,
-  products,
-  productsError,
-  productsTotals,
-  restoreProductMutation,
-  setEditingProduct,
-  updateProductMutation,
-}: Readonly<
-  Pick<
-    EnvironmentRenderProps,
-    | 'archiveProductMutation'
-    | 'createProductMutation'
-    | 'editingProduct'
-    | 'finance'
-    | 'handleProductSubmit'
-    | 'importMutationError'
-    | 'importProductsMutation'
-    | 'lastImport'
-    | 'productMutationError'
-    | 'products'
-    | 'productsError'
-    | 'productsTotals'
-    | 'restoreProductMutation'
-    | 'setEditingProduct'
-    | 'updateProductMutation'
-  >
->) {
-  const productBusy =
-    createProductMutation.isPending ||
-    updateProductMutation.isPending ||
-    archiveProductMutation.isPending ||
-    restoreProductMutation.isPending
-  const [searchQuery, setSearchQuery] = useState('')
-  const handleDownloadTemplate = () => {
-    downloadProductTemplateCsv()
-  }
-  const handleDownloadPortfolio = () => {
-    downloadPortfolioCsv(products)
-  }
-  const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
-  const filteredProducts = normalizedSearch
-    ? products.filter((product) =>
-        [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
-          const normalizedValue = value.toLocaleLowerCase('pt-BR')
-          return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
-        }),
-      )
-    : products
-
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="O portfólio alimenta estoque, potencial de lucro e o comportamento financeiro do painel."
-        eyebrow="Estoque e margem"
-        icon={Boxes}
-        title="Módulo de portfólio e produtos"
-      />
-
-      <section className="imperial-card p-6">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Localize um produto
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">
-              Busque por nome, inicial, marca ou classe de cadastro
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              A barra abaixo filtra o portfólio em tempo real para voce achar qualquer item sem
-              descer a tela inteira.
-            </p>
-            <div className="mt-5">
-              <ProductSearchField
-                onChange={setSearchQuery}
-                onClear={() => setSearchQuery('')}
-                value={searchQuery}
-              />
-            </div>
-          </div>
-
-          <div className="imperial-card-soft px-5 py-4 text-sm text-[var(--text-soft)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
-              Portfólio filtrado
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-white">{filteredProducts.length}</p>
-            <p className="mt-2 leading-7">
-              {productsTotals
-                ? `${productsTotals.totalProducts} produto(s) no total e ${productsTotals.stockUnits} und disponiveis.`
-                : 'Carregando produtos cadastrados...'}
-            </p>
-          </div>
-        </div>
-
-        <p className="mt-4 text-sm text-[var(--text-soft)]">
-          {filteredProducts.length === products.length
-            ? 'Digite apenas o nome, a inicial, a marca ou o tipo da embalagem para localizar um item mais rápido.'
-            : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
-        </p>
-      </section>
-
-      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
-        <div className="space-y-4">
-          <ProductForm
-            loading={createProductMutation.isPending || updateProductMutation.isPending}
-            onCancelEdit={() => setEditingProduct(null)}
-            onSubmit={handleProductSubmit}
-            product={editingProduct}
-          />
-
-          <ProductImportCard
-            error={importMutationError}
-            hasProducts={products.length > 0}
-            lastImport={lastImport}
-            loading={importProductsMutation.isPending}
-            onDownloadPortfolio={handleDownloadPortfolio}
-            onDownloadTemplate={handleDownloadTemplate}
-            onImport={importProductsMutation.mutate}
-          />
-        </div>
-
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <Tags className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Categorias</p>
-              <h2 className="text-xl font-semibold text-white">Registro de fluxo por categoria</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {finance?.categoryBreakdown.length ? (
-              finance.categoryBreakdown.map((item) => (
-                <MiniCategoryCard
-                  category={item.category}
-                  key={item.category}
-                  profit={formatCurrency(item.potentialProfit, finance.displayCurrency)}
-                  subtitle={`${item.products} produto(s), ${item.units} unidade(s) e ${formatCurrency(item.inventorySalesValue, finance.displayCurrency)} em venda potencial`}
-                />
-              ))
-            ) : (
-              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-                Cadastre produtos para destravar a leitura por categoria.
-              </p>
-            )}
-          </div>
-        </article>
-      </div>
-
-      <section className="imperial-card p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Portfólio
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">
-              Produtos cadastrados na operação
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
-              Aqui ficam os itens que alimentam o financeiro potencial e as vendas futuras.
-            </p>
-          </div>
-
-          <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
-            {productsTotals
-              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockUnits} und disponiveis`
-              : 'Carregando portfólio...'}
-          </div>
-        </div>
-
-        {productsError ? <p className="mt-5 text-sm text-[var(--danger)]">{productsError}</p> : null}
-        {productMutationError ? (
-          <p className="mt-5 text-sm text-[var(--danger)]">{productMutationError.message}</p>
-        ) : null}
-
-        <div className="mt-8 space-y-4">
-          {filteredProducts.length ? (
-            filteredProducts.map((product) => (
-              <ProductCard
-                busy={productBusy}
-                key={product.id}
-                onArchive={archiveProductMutation.mutate}
-                onEdit={setEditingProduct}
-                onRestore={restoreProductMutation.mutate}
-                product={product}
-              />
-            ))
-          ) : (
-            <div className="imperial-card-soft border-dashed px-5 py-12 text-center">
-              <p className="text-lg font-semibold text-white">
-                {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
-              </p>
-              <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                {products.length
-                  ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
-                  : 'Use o formulario acima para criar os primeiros itens do portfólio.'}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-    </section>
-  )
-}
-
-function ComplianceEnvironment({
-  consentQueryIsLoading,
-  cookiePreferences,
-  documentTitles,
-  legalAcceptances,
-  preferenceMutation,
-}: Readonly<
-  Pick<
-    EnvironmentRenderProps,
-    | 'consentQueryIsLoading'
-    | 'cookiePreferences'
-    | 'documentTitles'
-    | 'legalAcceptances'
-    | 'preferenceMutation'
-  >
->) {
-  return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="A camada de conformidade continua presente e visível, com consentimento e preferências do usuário."
-        eyebrow="Segurança e LGPD"
-        icon={ShieldCheck}
-        title="Módulo de conformidade e consentimento"
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <FileCheck2 className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Consentimento</p>
-              <h2 className="text-xl font-semibold text-white">Documentos aceitos</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {legalAcceptances.length ? (
-              legalAcceptances.map((acceptance) => (
-                <MiniInfoCard
-                  hint={`Aceito em ${new Date(acceptance.acceptedAt).toLocaleString('pt-BR')}`}
-                  key={acceptance.key}
-                  label={documentTitles.get(acceptance.key) ?? acceptance.key}
-                  value="Aceito"
-                />
-              ))
-            ) : (
-              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-                Os documentos legais aparecerao aqui assim que houver consentimento registrado.
-              </p>
-            )}
-          </div>
-        </article>
-
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <ChartColumnIncreasing className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Preferências</p>
-              <h2 className="text-xl font-semibold text-white">Gestão de cookies opcionais</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            <CheckboxField
-              checked={cookiePreferences.analytics}
-              description="Permite medir uso e desempenho da plataforma."
-              disabled={preferenceMutation.isPending || consentQueryIsLoading}
-              label="Cookies analíticos"
-              onChange={(event) =>
-                preferenceMutation.mutate({
-                  analytics: event.currentTarget.checked,
-                  marketing: cookiePreferences.marketing,
-                })
-              }
-            />
-
-            <CheckboxField
-              checked={cookiePreferences.marketing}
-              description="Mantem a base pronta para comunicação promocional controlada."
-              disabled={preferenceMutation.isPending || consentQueryIsLoading}
-              label="Cookies de marketing"
-              onChange={(event) =>
-                preferenceMutation.mutate({
-                  analytics: cookiePreferences.analytics,
-                  marketing: event.currentTarget.checked,
-                })
-              }
-            />
-          </div>
-
-          {preferenceMutation.error instanceof ApiError ? (
-            <p className="mt-4 text-sm text-[var(--danger)]">{preferenceMutation.error.message}</p>
-          ) : null}
-        </article>
-      </div>
-    </section>
-  )
-}
-
 function LoadingState() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] px-4 py-6 text-[var(--text-primary)] sm:px-6">
+    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
       <div className="mx-auto max-w-[1600px] xl:grid xl:gap-6" style={{ gridTemplateColumns: '260px minmax(0,1fr)' }}>
         {/* Sidebar skeleton */}
         <aside className="hidden xl:block">
@@ -1388,14 +584,14 @@ function EvaluationModeBanner({
             <h2 className="mt-2 text-lg font-semibold text-white">
               Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
             </h2>
-            <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
               Quando o tempo acabar, o portal encerra a sessão e retorna para a tela de login.
             </p>
           </div>
         </div>
 
         <div className="imperial-card-stat px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Tempo restante
           </p>
           <p className="mt-2 text-2xl font-semibold text-white">{formatDuration(remainingSeconds)}</p>
@@ -1412,7 +608,7 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
         <BrandMark />
         <p className="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso necessario</p>
         <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessão ainda não está ativa.</h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--text-soft)]">{message}</p>
+        <p className="mt-4 max-w-2xl text-base leading-8 text-muted-foreground">{message}</p>
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
           <Link href="/login">
@@ -1424,33 +620,6 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
         </div>
       </div>
     </main>
-  )
-}
-
-function MiniInfoCard({ hint, label, value }: Readonly<{ hint: string; label: string; value: string }>) {
-  return (
-    <div className="imperial-card-soft p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-3 text-xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{hint}</p>
-    </div>
-  )
-}
-
-function MiniCategoryCard({ category, profit, subtitle }: Readonly<{ category: string; profit: string; subtitle: string }>) {
-  return (
-    <div className="imperial-card-soft p-4">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-medium text-[var(--text-primary)]">{category}</p>
-          <p className="mt-1 text-sm text-[var(--text-soft)]">{subtitle}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-[var(--text-primary)]">{profit}</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">lucro potencial</p>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -1468,15 +637,6 @@ function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
 function invalidateEmployees(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['employees'] })
   queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
 }
 
 function formatDuration(totalSeconds: number) {
