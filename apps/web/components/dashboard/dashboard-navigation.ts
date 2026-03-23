@@ -1,11 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
-  CalendarRange,
-  CirclePlus,
   LayoutDashboard,
   Map,
-  ReceiptText,
   ShieldCheck,
   ShoppingCart,
   Tags,
@@ -111,28 +108,4 @@ export const dashboardNavigationGroups: DashboardNavigationGroup[] = [
   },
 ]
 
-export const dashboardQuickActions: DashboardQuickAction[] = [
-  {
-    id: 'new-sale',
-    label: 'Nova venda',
-    description: 'Abrir fluxo comercial',
-    icon: ReceiptText,
-    target: 'sales',
-    anchorId: 'order-form',
-  },
-  {
-    id: 'new-product',
-    label: 'Novo item',
-    description: 'Cadastrar no portfólio',
-    icon: CirclePlus,
-    target: 'portfolio',
-    anchorId: 'product-form',
-  },
-  {
-    id: 'new-event',
-    label: 'Novo evento',
-    description: 'Ir para agenda comercial',
-    icon: CalendarRange,
-    target: 'calendario',
-  },
-]
+export const dashboardQuickActions: DashboardQuickAction[] = []
