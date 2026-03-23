@@ -345,7 +345,7 @@ export function DashboardShell() {
   const activeHero = sectionHeroCopy[activeSection]
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
       <div
         className="mx-auto xl:grid"
         style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
