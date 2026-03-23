@@ -2,8 +2,10 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
   CalendarRange,
+  CirclePlus,
   LayoutDashboard,
   Map,
+  ReceiptText,
   ShieldCheck,
   ShoppingCart,
   Tags,
