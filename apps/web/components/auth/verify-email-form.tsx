@@ -165,7 +165,7 @@ export function VerifyEmailForm({ email, firstAccess }: Readonly<{ email?: strin
         <InputField
           autoComplete="one-time-code"
           error={errors.code?.message}
-          hint="Digite o codigo de 8 digitos recebido por email."
+          hint="Digite o codigo de 6 digitos recebido por email."
           label="Codigo de confirmacao"
           placeholder="482931"
           {...register('code')}
