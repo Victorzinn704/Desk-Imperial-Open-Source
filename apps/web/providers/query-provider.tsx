@@ -14,8 +14,6 @@ export function QueryProvider({
         defaultOptions: {
           queries: {
             retry: 1,
-            staleTime: 30_000,
-            gcTime: 300_000,
             refetchOnWindowFocus: false,
           },
           mutations: {

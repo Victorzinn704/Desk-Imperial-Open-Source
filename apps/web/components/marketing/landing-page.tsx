@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import {
   motion,
   useMotionTemplate,
@@ -105,27 +105,6 @@ const footerColumns = [
   },
 ]
 
-const legacyThemeVariables = {
-  '--bg': '#07090c',
-  '--surface': '#0d1116',
-  '--surface-muted': '#11161c',
-  '--surface-soft': '#171d25',
-  '--border': '#202730',
-  '--border-strong': '#303947',
-  '--text-primary': '#e0e6ec',
-  '--text-soft': '#a7b2be',
-  '--text-muted': '#7d8a99',
-  '--accent': '#c3a46f',
-  '--accent-strong': '#d8bb86',
-  '--accent-soft': 'rgb(195 164 111 / 0.14)',
-  '--info': '#5a95c4',
-  '--success': '#639371',
-  '--danger': '#d47373',
-  '--radius-desk-card': '1.75rem',
-  '--radius-desk-control': '1.2rem',
-  '--radius-desk-sidebar': '1.4rem',
-} as CSSProperties
-
 export function LandingPage() {
   const shouldReduceMotion = useReducedMotion()
   const pointerX = useMotionValue(0)
@@ -206,9 +185,8 @@ export function LandingPage() {
 
   return (
     <main
-      className="landing-legacy relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
+      className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
       onMouseMove={handlePagePointerMove}
-      style={legacyThemeVariables}
     >
       <div className="absolute inset-0 z-0">
         <div
@@ -536,142 +514,6 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
-
-      <style jsx global>{`
-        .landing-legacy .imperial-card,
-        .landing-legacy .imperial-card-soft,
-        .landing-legacy .imperial-card-stat,
-        .landing-legacy .imperial-card-tilt,
-        .landing-legacy .imperial-card-tilt-alt {
-          position: relative;
-          border-radius: var(--radius-desk-card);
-          background-color: #0d1116;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-          overflow: hidden;
-          transition:
-            background-color 0.2s ease,
-            border-color 0.2s ease,
-            box-shadow 0.2s ease,
-            transform 0.2s ease;
-        }
-
-        .landing-legacy .imperial-card-soft {
-          background-color: #11161c;
-          border-color: rgba(255, 255, 255, 0.06);
-        }
-
-        .landing-legacy .imperial-card-stat {
-          border-radius: 1.5rem;
-          background-color: #11161c;
-        }
-
-        .landing-legacy .imperial-card-tilt:hover,
-        .landing-legacy .imperial-card-tilt-alt:hover {
-          border-color: rgba(255, 255, 255, 0.15);
-          background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .landing-legacy .imperial-topbar {
-          position: sticky;
-          top: 1rem;
-          z-index: 30;
-          backdrop-filter: blur(18px);
-        }
-
-        .landing-legacy .imperial-topbar__shell {
-          border-radius: 1.6rem;
-        }
-
-        .landing-legacy .text-flag-brazil {
-          display: inline-block;
-          color: transparent;
-          background-image:
-            radial-gradient(circle at 50% 54%, rgb(0 39 118 / 0.98) 0 13%, transparent 13.5%),
-            linear-gradient(135deg, transparent 0 31%, rgb(255 223 0 / 0.98) 31% 69%, transparent 69%),
-            linear-gradient(180deg, #009739 0%, #009739 100%);
-          background-repeat: no-repeat;
-          background-size: 100% 100%;
-          background-position: center;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 12px 26px rgb(0 0 0 / 0.28));
-        }
-
-        .landing-legacy .rainbow-hover {
-          --button-bg: #10151b;
-          --button-border: rgb(255 255 255 / 0.08);
-          --button-shadow: rgb(0 0 0 / 0.32);
-          --button-glow: rgb(0 156 59 / 0.2);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 56px;
-          padding: 0.85rem 1.5rem;
-          border: 1px solid var(--button-border);
-          border-radius: 14px;
-          background:
-            linear-gradient(180deg, rgb(255 255 255 / 0.02), transparent),
-            var(--button-bg);
-          box-shadow:
-            0 1px 2px rgb(5 10 16 / 0.5),
-            0 12px 28px var(--button-shadow),
-            0 0 0 1px rgb(255 255 255 / 0.02) inset;
-          cursor: pointer;
-          transform-style: preserve-3d;
-          transform: perspective(700px) translateY(0) scale(1);
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            border-color 0.18s ease,
-            background 0.18s ease;
-        }
-
-        .landing-legacy .rainbow-hover:hover {
-          border-color: rgb(255 223 0 / 0.18);
-          box-shadow:
-            0 1px 2px rgb(5 10 16 / 0.5),
-            0 18px 36px rgb(0 0 0 / 0.4),
-            0 0 30px var(--button-glow);
-          transform: perspective(700px) translateY(-2px) scale(1.02);
-        }
-
-        .landing-legacy .rainbow-hover:active {
-          transform: perspective(700px) translateY(1px) scale(0.98);
-        }
-
-        .landing-legacy .rainbow-hover .sp {
-          background: linear-gradient(90deg, #009c3b, #23b35a, #ffdf00, #0a46a0, #009c3b);
-          background-size: 180% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          color: transparent;
-          display: block;
-          font-size: 0.98rem;
-          font-weight: 800;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          transition: background-position 0.35s ease;
-        }
-
-        .landing-legacy .rainbow-hover:hover .sp {
-          background-position: 100% 50%;
-        }
-
-        .landing-legacy .hero-entry-button {
-          width: 100%;
-          text-align: center;
-        }
-
-        @media (min-width: 640px) {
-          .landing-legacy .hero-entry-button {
-            width: auto;
-            min-width: 210px;
-          }
-        }
-      `}</style>
     </main>
   )
 }

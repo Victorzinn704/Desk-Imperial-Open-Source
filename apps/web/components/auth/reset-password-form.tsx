@@ -84,7 +84,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
         <InputField
           autoComplete="one-time-code"
           error={errors.code?.message}
-          hint="Digite o codigo de 6 digitos enviado para o email cadastrado."
+          hint="Digite o codigo de 8 digitos enviado para o email cadastrado."
           label="Codigo de verificacao"
           placeholder="482931"
           {...register('code')}
