@@ -111,8 +111,36 @@ const vendedores = [
   'João Victor',
 ]
 
-async function generateRandomOrders(userId: string, employees: any[], products: any[], days: number = 180) {
-  const orders = []
+type SeedProduct = (typeof barProducts)[number]
+type SeedEmployee = {
+  id: string
+  employeeCode: string
+  displayName: string
+}
+
+type GeneratedOrder = {
+  userId: string
+  employee: SeedEmployee
+  products: Array<{
+    product: SeedProduct
+    quantity: number
+    revenue: number
+    cost: number
+  }>
+  totalRevenue: number
+  totalCost: number
+  totalProfit: number
+  createdAt: Date
+  isEventHour: boolean
+}
+
+async function generateRandomOrders(
+  userId: string,
+  employees: SeedEmployee[],
+  products: SeedProduct[],
+  days: number = 180,
+) {
+  const orders: GeneratedOrder[] = []
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   
@@ -129,7 +157,6 @@ async function generateRandomOrders(userId: string, employees: any[], products: 
       // Fim de semana
       if (Math.random() > 0.5) {
         // Possível evento
-        const hour = 16 + Math.floor(Math.random() * 8) // 16h-23h
         isEventHour = true
         ordersPerDay = Math.floor(Math.random() * 8) + 6 // 6-14 vendas em evento
       } else {
@@ -313,8 +340,8 @@ async function main() {
   for (let i = 0; i < Math.min(generatedOrders.length, 80); i++) {
     const orderData = generatedOrders[i]
     
-    const orderItems = orderData.products.map((item: any) => {
-      const product = createdProducts.find(p => p.name === item.product.name)
+    const orderItems = orderData.products.map((item) => {
+      const product = createdProducts.find((candidate) => candidate.name === item.product.name)
       return {
         productId: product?.id || createdProducts[0].id,
         productName: item.product.name,
@@ -350,7 +377,7 @@ async function main() {
         },
       })
       ordersCreated++
-    } catch (error) {
+    } catch {
       // Ignorar erros de criação individual
     }
   }

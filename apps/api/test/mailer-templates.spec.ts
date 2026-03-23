@@ -397,7 +397,7 @@ describe('Mailer Templates', () => {
         buildFeedbackReceiptEmailContent(feedbackParams),
       ]
 
-      templates.forEach((template, index) => {
+      templates.forEach((template) => {
         expect(template.text).toContain('Prezado(a)')
         expect(template.text).not.toContain('Olá')
       })

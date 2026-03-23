@@ -40,6 +40,9 @@ export function AuthShell({
               <br />
               <span className="text-white/40">Controle em tempo real.</span>
             </h1>
+            <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/35">
+              {eyebrow}
+            </p>
             <p className="mt-6 text-sm leading-6 text-white/50">
               {description} O Desk Imperial eleva a sua gestão comercial combinando
               precisão tática e autoridade.
@@ -50,7 +53,7 @@ export function AuthShell({
             <div className="flex flex-col gap-4">
               <Quote className="size-6 text-white/20" />
               <p className="text-sm font-medium leading-relaxed text-white/70 max-w-sm">
-                "A excelência operacional não é um diferencial competitivo, é a fundação para escalar modelos de negócio complexos."
+                &ldquo;A excelência operacional não é um diferencial competitivo, é a fundação para escalar modelos de negócio complexos.&rdquo;
               </p>
               <div className="flex items-center gap-3 mt-2 text-xs text-white/40">
                 <span className="font-semibold text-white/70">Desk Imperial</span>

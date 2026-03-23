@@ -105,9 +105,9 @@ export function LoginForm() {
               {...registerField('password')}
             />
             <button
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               className="ml-auto shrink-0 text-muted-foreground transition hover:text-foreground"
               onClick={() => setShowPassword((v) => !v)}
-              tabIndex={-1}
               type="button"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -145,7 +145,7 @@ export function LoginForm() {
           type="button"
         >
           <div>
-            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Acessar Sessão Demo</p>
+            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Acessar Sessao Demo</p>
             <p className="text-xs text-muted-foreground">Experimente sem compromisso</p>
           </div>
           <ArrowRight className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
