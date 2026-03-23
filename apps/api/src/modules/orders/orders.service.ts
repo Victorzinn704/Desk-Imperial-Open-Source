@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { AuditSeverity, BuyerType, OrderStatus } from '@prisma/client'
+import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import {
   isValidCnpj,
   isValidCpf,
@@ -136,19 +136,7 @@ export class OrdersService {
       )
     }
 
-    for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
-      const product = productsById.get(productId)
-
-      if (!product) {
-        continue
-      }
-
-      if (product.stock < requestedQuantity) {
-        throw new BadRequestException(
-          `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock} und. Solicitado: ${requestedQuantity} und.`,
-        )
-      }
-    }
+    this.assertRequestedStockAvailability(productsById, requestedStockByProduct)
 
     const customerName = sanitizePlainText(dto.customerName, 'Comprador', {
       allowEmpty: false,
@@ -205,6 +193,7 @@ export class OrdersService {
     }
 
     const geocodedLocation = await this.resolveBuyerLocation({
+      userId: auth.userId,
       district: buyerDistrict,
       city: buyerCity,
       state: buyerState,
@@ -253,14 +242,28 @@ export class OrdersService {
 
     const order = await this.prisma.$transaction(async (transaction) => {
       for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
-        await transaction.product.update({
-          where: { id: productId },
+        const product = productsById.get(productId)
+        const stockUpdate = await transaction.product.updateMany({
+          where: {
+            id: productId,
+            userId: auth.userId,
+            active: true,
+            stock: {
+              gte: requestedQuantity,
+            },
+          },
           data: {
             stock: {
               decrement: requestedQuantity,
             },
           },
         })
+
+        if (stockUpdate.count !== 1) {
+          throw new BadRequestException(
+            `Estoque insuficiente para ${product?.name ?? 'o produto selecionado'}. Revise a quantidade e tente novamente.`,
+          )
+        }
       }
 
       return transaction.order.create({
@@ -305,6 +308,8 @@ export class OrdersService {
           items: true,
         },
       })
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     })
 
     await this.auditLogService.record({
@@ -417,7 +422,27 @@ export class OrdersService {
     }
   }
 
+  private assertRequestedStockAvailability(
+    productsById: Map<string, { name: string; stock: number }>,
+    requestedStockByProduct: Map<string, number>,
+  ) {
+    for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
+      const product = productsById.get(productId)
+
+      if (!product) {
+        continue
+      }
+
+      if (product.stock < requestedQuantity) {
+        throw new BadRequestException(
+          `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock} und. Solicitado: ${requestedQuantity} und.`,
+        )
+      }
+    }
+  }
+
   private async resolveBuyerLocation(input: {
+    userId: string
     district: string | null
     city: string
     state: string | null
@@ -425,6 +450,7 @@ export class OrdersService {
   }) {
     const existingOrder = await this.prisma.order.findFirst({
       where: {
+        userId: input.userId,
         buyerDistrict: input.district,
         buyerCity: input.city,
         buyerState: input.state,

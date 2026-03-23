@@ -22,6 +22,8 @@ async function bootstrap() {
   const allowedOrigins = getAllowedOrigins(configService)
   const swaggerEnabled =
     configService.get<string>('ENABLE_SWAGGER') === 'true'
+  const swaggerAllowedInProduction =
+    configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
 
   app.use(helmet())
@@ -66,9 +68,14 @@ async function bootstrap() {
 
   const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
   if (isProduction && portfolioFallback === 'true') {
-    logger.warn(
-      '[SECURITY] PORTFOLIO_EMAIL_FALLBACK=true em producao expoe codigos de verificacao via HTTP. Desative esta variavel em ambiente real.',
-      'SecurityCheck',
+    throw new Error(
+      'PORTFOLIO_EMAIL_FALLBACK=true em producao expoe codigos de verificacao via HTTP. Desative esta variavel antes de iniciar a API.',
+    )
+  }
+
+  if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
+    throw new Error(
+      'ENABLE_SWAGGER=true em producao exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
     )
   }
 

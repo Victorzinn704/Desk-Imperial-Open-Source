@@ -1,6 +1,9 @@
+import { CurrencyCode, type Order } from '@prisma/client'
 import { Injectable } from '@nestjs/common'
+import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
+import { CurrencyService } from '../currency/currency.service'
 
 export interface PillarMetric {
   label: string
@@ -21,7 +24,10 @@ export interface PillarsResponse {
 
 @Injectable()
 export class PillarsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly currencyService: CurrencyService,
+  ) {}
 
   async getPillarsForUser(auth: AuthContext): Promise<PillarsResponse> {
     const now = new Date()
@@ -35,7 +41,8 @@ export class PillarsService {
     const previousMonthEnd = currentMonthStart
 
     const userId = auth.userId
-    const userPref = auth.preferredCurrency || 'BRL'
+    const userPref = auth.preferredCurrency || CurrencyCode.BRL
+    const snapshot = await this.currencyService.getSnapshot()
 
     // Semana atual vs semana passada
     const [currentWeekOrders, previousWeekOrders] = await Promise.all([
@@ -78,20 +85,20 @@ export class PillarsService {
     const currentWeekNormalOrders = currentWeekOrders.filter((order) => !this.isEventHour(order.createdAt))
 
     // Calcular métricas
-    const currentWeekRevenue = this.sumRevenue(currentWeekOrders)
-    const previousWeekRevenue = this.sumRevenue(previousWeekOrders)
-    const currentMonthRevenue = this.sumRevenue(currentMonthOrders)
-    const previousMonthRevenue = this.sumRevenue(previousMonthOrders)
-    const currentWeekProfit = this.sumProfit(currentWeekOrders)
-    const eventRevenue = this.sumRevenue(currentWeekEventOrders)
-    const normalRevenue = this.sumRevenue(currentWeekNormalOrders)
+    const currentWeekRevenue = this.sumRevenue(currentWeekOrders, userPref, snapshot)
+    const previousWeekRevenue = this.sumRevenue(previousWeekOrders, userPref, snapshot)
+    const currentMonthRevenue = this.sumRevenue(currentMonthOrders, userPref, snapshot)
+    const previousMonthRevenue = this.sumRevenue(previousMonthOrders, userPref, snapshot)
+    const currentWeekProfit = this.sumProfit(currentWeekOrders, userPref, snapshot)
+    const eventRevenue = this.sumRevenue(currentWeekEventOrders, userPref, snapshot)
+    const normalRevenue = this.sumRevenue(currentWeekNormalOrders, userPref, snapshot)
 
     // Sparkline (últimos 7 dias)
-    const last7DaysWeekly = this.getLast7DaysTrend(currentWeekOrders)
-    const last7DaysMonthly = this.getLast7DaysTrend(currentMonthOrders)
-    const last7DaysProfit = this.getLast7DaysProfitTrend(currentWeekOrders)
-    const last7DaysEvent = this.getLast7DaysTrend(currentWeekEventOrders)
-    const last7DaysNormal = this.getLast7DaysTrend(currentWeekNormalOrders)
+    const last7DaysWeekly = this.getLast7DaysTrend(currentWeekOrders, userPref, snapshot)
+    const last7DaysMonthly = this.getLast7DaysTrend(currentMonthOrders, userPref, snapshot)
+    const last7DaysProfit = this.getLast7DaysProfitTrend(currentWeekOrders, userPref, snapshot)
+    const last7DaysEvent = this.getLast7DaysTrend(currentWeekEventOrders, userPref, snapshot)
+    const last7DaysNormal = this.getLast7DaysTrend(currentWeekNormalOrders, userPref, snapshot)
 
     return {
       weeklyRevenue: {
@@ -154,15 +161,51 @@ export class PillarsService {
     return isEventDay && hour >= 16
   }
 
-  private sumRevenue(orders: any[]): number {
-    return orders.reduce((sum, order) => sum + (order.totalRevenue || 0), 0)
+  private sumRevenue(
+    orders: Order[],
+    displayCurrency: CurrencyCode,
+    snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>,
+  ): number {
+    return roundCurrency(
+      orders.reduce(
+        (sum, order) =>
+          sum +
+          this.currencyService.convert(
+            Number(order.totalRevenue ?? 0),
+            order.currency,
+            displayCurrency,
+            snapshot,
+          ),
+        0,
+      ),
+    )
   }
 
-  private sumProfit(orders: any[]): number {
-    return orders.reduce((sum, order) => sum + (order.totalProfit || 0), 0)
+  private sumProfit(
+    orders: Order[],
+    displayCurrency: CurrencyCode,
+    snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>,
+  ): number {
+    return roundCurrency(
+      orders.reduce(
+        (sum, order) =>
+          sum +
+          this.currencyService.convert(
+            Number(order.totalProfit ?? 0),
+            order.currency,
+            displayCurrency,
+            snapshot,
+          ),
+        0,
+      ),
+    )
   }
 
-  private getLast7DaysTrend(orders: any[]): number[] {
+  private getLast7DaysTrend(
+    orders: Order[],
+    displayCurrency: CurrencyCode,
+    snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>,
+  ): number[] {
     const trend: number[] = []
     const now = new Date()
 
@@ -179,14 +222,18 @@ export class PillarsService {
         return orderDate >= date && orderDate < nextDate
       })
 
-      const dayRevenue = this.sumRevenue(dayOrders)
+      const dayRevenue = this.sumRevenue(dayOrders, displayCurrency, snapshot)
       trend.push(Math.round(dayRevenue * 100) / 100)
     }
 
     return trend
   }
 
-  private getLast7DaysProfitTrend(orders: any[]): number[] {
+  private getLast7DaysProfitTrend(
+    orders: Order[],
+    displayCurrency: CurrencyCode,
+    snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>,
+  ): number[] {
     const trend: number[] = []
     const now = new Date()
 
@@ -203,7 +250,7 @@ export class PillarsService {
         return orderDate >= date && orderDate < nextDate
       })
 
-      const dayProfit = this.sumProfit(dayOrders)
+      const dayProfit = this.sumProfit(dayOrders, displayCurrency, snapshot)
       trend.push(Math.round(dayProfit * 100) / 100)
     }
 

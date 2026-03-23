@@ -113,12 +113,24 @@ export class AuthRateLimitService implements OnModuleInit, OnModuleDestroy {
     return `password-reset-code:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
+  buildPasswordResetCodeEmailKey(email: string) {
+    return `password-reset-code:email:${email.trim().toLowerCase()}`
+  }
+
   buildEmailVerificationKey(email: string, ipAddress: string | null) {
     return `email-verification:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
   }
 
+  buildEmailVerificationEmailKey(email: string) {
+    return `email-verification:email:${email.trim().toLowerCase()}`
+  }
+
   buildEmailVerificationCodeKey(email: string, ipAddress: string | null) {
     return `email-verification-code:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+  }
+
+  buildEmailVerificationCodeEmailKey(email: string) {
+    return `email-verification-code:email:${email.trim().toLowerCase()}`
   }
 
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
