@@ -589,7 +589,7 @@ export function LandingPage() {
           </div>
 
           {/* ── Carta ocupando largura total ── */}
-          <div className="w-full">
+          <div className="w-full mt-20">
             <LetterCard />
           </div>
 

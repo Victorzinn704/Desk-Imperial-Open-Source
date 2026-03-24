@@ -5,10 +5,10 @@ import { Crown } from 'lucide-react'
 export function LetterCard() {
   return (
     <div className="flex items-center justify-center w-full py-4">
-      <div className="relative w-full max-w-[900px] group transition-all duration-700 aspect-[16/7] flex items-center justify-center mx-auto">
+      <div className="relative w-full max-w-[900px] group transition-all duration-700 aspect-[16/8] flex items-center justify-center mx-auto overflow-visible">
 
         {/* ── Carta interna (abre ao hover) ─────────────────────── */}
-        <div className="transition-all flex flex-col items-center px-16 py-10 justify-center duration-300 group-hover:duration-1000 bg-[#1a1d24] border border-[rgba(195,164,111,0.18)] w-full h-full absolute group-hover:-translate-y-[7rem] rounded-sm">
+        <div className="transition-all flex flex-col items-center px-16 py-12 justify-center duration-300 group-hover:duration-1000 bg-[#1a1d24] border border-[rgba(195,164,111,0.18)] w-full absolute inset-0 group-hover:-translate-y-[8rem] rounded-sm">
           <p className="text-xl font-semibold tracking-[0.08em] text-[var(--accent)] font-serif">
             Obrigado pela visita
           </p>
