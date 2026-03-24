@@ -395,21 +395,29 @@ export function LandingPage() {
 
       <section className="relative z-10" id="fundacao">
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-12">
-          {/* Section header */}
-          <motion.div
-            className="mb-16 flex flex-col gap-2"
-            initial={{ opacity: 0, y: 28 }}
-            viewport={{ once: false, margin: '-10%' }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Módulos</p>
-            <h2 className="mt-1 max-w-2xl text-4xl font-semibold leading-tight text-white sm:text-5xl">
+          {/* Section header — texto emerge da galáxia */}
+          <div className="mb-16 flex flex-col gap-2">
+            <motion.p
+              className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]"
+              initial={{ opacity: 0, scale: 0.6, filter: 'blur(18px)' }}
+              viewport={{ once: false, amount: 0.3 }}
+              whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+            >
+              Módulos
+            </motion.p>
+            <motion.h2
+              className="mt-1 max-w-2xl text-4xl font-semibold leading-tight text-white sm:text-5xl"
+              initial={{ opacity: 0, scale: 0.72, filter: 'blur(28px)', y: 10 }}
+              viewport={{ once: false, amount: 0.3 }}
+              whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
+              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            >
               Oito módulos integrados para operar o seu negócio inteiro.
-            </h2>
-          </motion.div>
+            </motion.h2>
+          </div>
 
-          {/* 8 cards — stack sobrepostos, saindo um de dentro do outro */}
+          {/* 8 cards — stack sobrepostos centralizados */}
           <div className="stackrow" style={{ perspective: '1000px' }}>
             {capabilityCards.map((item) => (
               <div className="stackcard" key={item.title}>

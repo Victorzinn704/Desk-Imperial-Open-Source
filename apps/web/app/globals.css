@@ -741,9 +741,10 @@ select {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
+  justify-content: center;
   overflow-x: auto;
   padding-bottom: 8px;
-  /* hide scrollbar */
+  padding-left: 100px; /* compensa o margin-left negativo do primeiro card */
   scrollbar-width: none;
 }
 .stackrow::-webkit-scrollbar { display: none; }
@@ -754,7 +755,7 @@ select {
   height: 280px;
   width: 200px;
   flex-shrink: 0;
-  background-color: #2b223f;
+  background-color: #32363b;  /* chumbo */
   border-radius: 10px;
   box-shadow: -1rem 0 3rem #00000044;
   transition: 0.4s ease-out;
@@ -812,7 +813,7 @@ select {
 }
 
 .stackcard__emptybar {
-  background-color: #201c29;
+  background-color: #1e2124;
   width: 100%;
   height: 100%;
 }
