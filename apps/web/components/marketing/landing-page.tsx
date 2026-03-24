@@ -441,6 +441,60 @@ export function LandingPage() {
             })}
           </div>
         </div>
+
+        {/* ── S-pattern full-width feature cards ───────────────────────────── */}
+        {[
+          {
+            side: 'left' as const,
+            tag: 'PDV & Kanban',
+            title: 'Cada comanda no lugar certo, em tempo real.',
+            body: 'Abra comandas com CPF, CNPJ ou nome, arraste entre as colunas — Aberto, Em preparo e Fechado — e aplique desconto ou acréscimo por item. O kanban reflete a operação do salão sem delay e sem papel.',
+            stat: { label: 'Colunas kanban', value: '3' },
+            icon: Tags,
+          },
+          {
+            side: 'right' as const,
+            tag: 'Financeiro & Folha',
+            title: 'Receita, custo e salário calculados sozinhos.',
+            body: 'O financeiro consolida entradas e saídas por dia, semana ou mês com sparklines de tendência. A folha de pagamento aplica salário base mais comissão sobre vendas por colaborador — sem planilha, sem fórmula manual.',
+            stat: { label: 'Cálculo automático', value: '100%' },
+            icon: Landmark,
+          },
+          {
+            side: 'left' as const,
+            tag: 'Calendário & Eventos',
+            title: 'Planeje, promova e correlacione com as vendas.',
+            body: 'Arraste eventos para qualquer dia do calendário comercial — promoções, jogos, datas especiais — e veja o impacto direto nas vendas daquele período. Decisão com contexto, não com achismo.',
+            stat: { label: 'Visão unificada', value: '360°' },
+            icon: CalendarDays,
+          },
+        ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
+          <motion.div
+            key={tag}
+            className="s-feature-card"
+            data-side={side}
+            initial={{ opacity: 0, x: side === 'left' ? -100 : 100 }}
+            viewport={{ once: true, margin: '-80px' }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: i * 0.04 }}
+          >
+            <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
+              <div className="s-feature-card__text">
+                <span className="s-feature-card__tag">
+                  <Icon className="size-3.5" />
+                  {tag}
+                </span>
+                <h3 className="s-feature-card__title">{title}</h3>
+                <p className="s-feature-card__body">{body}</p>
+              </div>
+              <div className="s-feature-card__stat">
+                <span className="s-feature-card__stat-value">{stat.value}</span>
+                <span className="s-feature-card__stat-label">{stat.label}</span>
+              </div>
+            </div>
+            <div className="s-feature-card__bar" />
+          </motion.div>
+        ))}
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12 lg:max-w-none" id="entregas">

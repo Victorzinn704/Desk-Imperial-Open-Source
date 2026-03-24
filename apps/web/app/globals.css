@@ -855,3 +855,151 @@ select {
     transform: scaleX(1);
   }
 }
+
+/* ─── S-pattern feature cards (full-width alternating) ───────────────────────── */
+
+.s-feature-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgba(11, 13, 18, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  box-shadow: 0 12px 56px rgba(0, 0, 0, 0.5);
+  margin: 0 1.5rem 1.25rem;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.s-feature-card:hover {
+  border-color: rgba(155, 132, 96, 0.25);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(155, 132, 96, 0.1);
+}
+
+/* Right-side card is offset to visually create the S */
+.s-feature-card[data-side="right"] {
+  margin-left: 4rem;
+  margin-right: 0;
+  border-top-left-radius: 0;
+}
+
+.s-feature-card[data-side="left"] {
+  margin-right: 4rem;
+  margin-left: 0;
+  border-top-right-radius: 0;
+}
+
+.s-feature-card__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem 3rem;
+}
+
+.s-feature-card__inner--right {
+  flex-direction: row-reverse;
+}
+
+.s-feature-card__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.s-feature-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.s-feature-card__title {
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.s-feature-card__body {
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--text-soft);
+  max-width: 56ch;
+  margin: 0;
+}
+
+/* Big stat on the right/left side */
+.s-feature-card__stat {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 2rem;
+  border-radius: 14px;
+  border: 1px solid rgba(155, 132, 96, 0.15);
+  background: rgba(155, 132, 96, 0.05);
+}
+
+.s-feature-card__stat-value {
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #fff;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 30%, #c3a46f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.s-feature-card__stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+/* Accent bar that grows left→right on hover */
+.s-feature-card__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, rgba(104, 49, 207, 0.7), #c3a46f);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.s-feature-card[data-side="right"] .s-feature-card__bar {
+  left: auto;
+  right: 0;
+  background: linear-gradient(270deg, rgba(104, 49, 207, 0.7), #c3a46f);
+}
+
+.s-feature-card:hover .s-feature-card__bar {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .s-feature-card[data-side="right"],
+  .s-feature-card[data-side="left"] {
+    margin: 0 0 1.25rem;
+    border-radius: 18px;
+  }
+  .s-feature-card__inner {
+    flex-direction: column;
+    padding: 1.75rem;
+  }
+  .s-feature-card__inner--right {
+    flex-direction: column;
+  }
+}
