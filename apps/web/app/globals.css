@@ -13,9 +13,9 @@
   --text-primary: #dde2e8;
   --text-soft: #7a8896;
   --text-muted: #9faab5;
-  --accent: #9b8460;
-  --accent-strong: #b39a75;
-  --accent-soft: rgba(155, 132, 96, 0.14);
+  --accent: #c3a46f;
+  --accent-strong: #d8bb86;
+  --accent-soft: rgba(195, 164, 111, 0.14);
   --info: #5a95c4;
   --success: #639371;
   --danger: #d47373;
@@ -296,9 +296,9 @@ select {
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 22px 62px rgba(0, 0, 0, 0.28);
   transition:
-    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1),
-    border-color 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    transform 0.85s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.85s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.85s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .imperial-card-tilt:hover {
@@ -311,7 +311,7 @@ select {
 .imperial-card-tilt-alt {
   background:
     linear-gradient(rgba(10, 13, 17, 0.98), rgba(10, 13, 17, 0.98)) padding-box,
-    linear-gradient(145deg, transparent 22%, rgba(155, 132, 96, 0.55), rgba(35, 50, 70, 0.60)) border-box;
+    linear-gradient(145deg, transparent 22%, rgba(195, 164, 111, 0.55), rgba(35, 50, 70, 0.60)) border-box;
 }
 
 .imperial-card-tilt-alt:hover {
@@ -707,4 +707,59 @@ select {
 .ai-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+}
+
+/* ─── New animations: warm-breath, cinematic-reveal ─────────────────────────── */
+
+@keyframes warm-breath {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(195, 164, 111, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(195, 164, 111, 0.10), 0 0 24px rgba(195, 164, 111, 0.06); }
+}
+
+@keyframes cinematic-reveal {
+  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+
+.animate-cinematic {
+  animation: cinematic-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Dashboard preview card variant ────────────────────────────────────────── */
+
+.imperial-card-preview {
+  --beam-opacity: 0.07;
+  --beam-duration: 16s;
+  animation: warm-breath 4s ease-in-out infinite;
+}
+
+/* ─── Ghost CTA button ───────────────────────────────────────────────────────── */
+
+.hero-entry-button--ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color 0.22s ease,
+    color 0.22s ease,
+    background 0.22s ease;
+}
+
+.hero-entry-button--ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(195, 164, 111, 0.06);
+}
+
+.hero-entry-button--ghost:active {
+  transform: scale(0.98);
 }

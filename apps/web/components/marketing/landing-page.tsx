@@ -6,20 +6,19 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import {
   BadgeDollarSign,
   CalendarDays,
-  ChartColumn,
   FileDown,
   Globe2,
   KeyRound,
   Landmark,
-  Radar,
   ShieldCheck,
   Tags,
   Users,
   Waypoints,
+  Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { CompanySignatureCard } from '@/components/marketing/company-signature-card'
-import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
+import { DashboardPreviewCard } from '@/components/marketing/dashboard-preview-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -28,19 +27,6 @@ const metrics = [
   { label: 'PDV em tempo real', value: 'Comandas abertas, em preparo e fechadas num kanban visual' },
   { label: 'Folha de pagamento', value: 'Salário base + comissão calculados automaticamente' },
   { label: 'Calendário comercial', value: 'Eventos, promoções e jogos com impacto em vendas' },
-]
-
-const pillars = [
-  {
-    icon: ChartColumn,
-    title: 'Sem complicação',
-    description: 'Você abre, vende, confere e fecha o dia — tudo aqui dentro.',
-  },
-  {
-    icon: Radar,
-    title: 'Com identidade',
-    description: 'Seu comércio tem nome, história e números que provam valor.',
-  },
 ]
 
 const capabilityCards: Array<{
@@ -91,9 +77,8 @@ const capabilityCards: Array<{
 ]
 
 const heroLines = [
-  'Não adianta ter o poder da caneta,',
-  'se você não sabe a mesa certa onde se sentar.',
-  'Isso não é sobre mesas... — Desk Imperial.',
+  'Gestão que não',
+  'deixa nada passar.',
 ]
 
 const footerColumns = [
@@ -173,12 +158,8 @@ export function LandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
-          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(195,164,111,0.10),transparent_24%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(195,164,111,0.04),transparent_60%)]" />
       </div>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
@@ -228,8 +209,9 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
-            <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[rgba(14,28,45,0.78)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
-              Plataforma empresarial
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[rgba(14,28,45,0.78)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
+              <Zap className="size-3.5 text-[var(--accent)]" />
+              Plataforma de gestão comercial
             </span>
 
             <motion.div
@@ -251,12 +233,12 @@ export function LandingPage() {
             >
               {heroLines.map((line, index) => (
                 <motion.span
-                  className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                  className="block origin-left text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl"
                   key={line}
                   style={{ x: lineShifts[index] }}
                   whileHover={{
                     scale: 1.015,
-                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
+                    x: index === 0 ? 10 : 8,
                     filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
                   }}
                   variants={{
@@ -269,22 +251,22 @@ export function LandingPage() {
                     },
                   }}
                 >
-                  <span className="text-flag-brazil">{line}</span>
+                  {line}
                 </motion.span>
               ))}
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
-              tudo em um único portal seguro para o seu negócio.
+              PDV com kanban, folha de pagamento automática, calendário de eventos e financeiro em tempo real —
+              em um portal seguro com identidade própria.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
               <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/cadastro">
-                <span className="sp">Cadastrar-se</span>
+                <span className="sp">Começar agora</span>
               </Link>
-              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/login">
-                <span className="sp">Login</span>
+              <Link className="hero-entry-button hero-entry-button--ghost w-full sm:w-auto" href="/login">
+                Entrar
               </Link>
             </div>
 
@@ -309,32 +291,11 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
+            className="relative space-y-10 pb-8 pt-4 lg:pt-10"
             initial={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
-            <FounderPortraitCard />
-
-            <div className="imperial-card relative z-10 p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
-                <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
-                  Early Access
-                </span>
-              </div>
-
-              <div className="mt-8 grid gap-4">
-                {pillars.map((pillar, index) => (
-                  <article className={index % 2 === 0 ? 'imperial-card-soft p-5' : 'imperial-card-tilt p-5'} key={pillar.title}>
-                    <div>
-                      <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-
+            <DashboardPreviewCard />
             <HeroFloatingCard />
           </motion.div>
         </div>
@@ -354,20 +315,30 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <motion.div
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+            initial="hidden"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+            viewport={{ once: true, margin: '-80px' }}
+            whileInView="visible"
+          >
             {capabilityCards.map((item, index) => (
-              <div
+              <motion.div
                 className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
                 key={item.title}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
+                }}
               >
                 <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
                   <item.icon className="size-4" />
                 </div>
                 <p className="font-semibold text-white">{item.title}</p>
                 <p className="mt-3">{item.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -392,8 +363,17 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="imperial-card-tilt p-5">
+            <motion.div
+              className="mt-8 grid gap-4 md:grid-cols-3"
+              initial="hidden"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+              viewport={{ once: true, margin: '-60px' }}
+              whileInView="visible"
+            >
+              <motion.div
+                className="imperial-card-tilt p-5"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } }}
+              >
                 <div className="flex items-center gap-3">
                   <Waypoints className="size-5 text-[var(--info)]" />
                   <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
@@ -401,9 +381,12 @@ export function LandingPage() {
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
                   Da autenticação ate a venda registrada, o caminho fica organizado em poucas etapas.
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="imperial-card-tilt-alt p-5">
+              <motion.div
+                className="imperial-card-tilt-alt p-5"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } }}
+              >
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="size-5 text-[var(--accent)]" />
                   <p className="text-sm font-semibold text-white">Governança visível</p>
@@ -411,9 +394,12 @@ export function LandingPage() {
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
                   Sessão, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="imperial-card-soft p-5">
+              <motion.div
+                className="imperial-card-soft p-5"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } }}
+              >
                 <div className="flex items-center gap-3">
                   <Globe2 className="size-5 text-[#8fffb9]" />
                   <p className="text-sm font-semibold text-white">Domínio próprio</p>
@@ -421,8 +407,8 @@ export function LandingPage() {
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
                   O ambiente ja responde em domínio próprio, pronto para evoluir como produto de verdade.
                 </p>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
 
