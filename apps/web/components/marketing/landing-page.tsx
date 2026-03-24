@@ -49,46 +49,64 @@ const capabilityCards: Array<{
   icon: LucideIcon
   title: string
   description: string
+  tags: string[]
+  stars: number
 }> = [
   {
     icon: BadgeDollarSign,
     title: 'Financeiro executivo',
     description: 'Receita, custo, lucro e margem. Sparklines de tendência em cada KPI.',
+    tags: ['KPI', 'Margem'],
+    stars: 5,
   },
   {
     icon: Tags,
     title: 'PDV / Comandas',
     description: 'Kanban drag-and-drop com CPF/CNPJ, desconto e acréscimo por comanda.',
+    tags: ['Kanban', 'Vendas'],
+    stars: 5,
   },
   {
     icon: CalendarDays,
     title: 'Calendário comercial',
     description: 'Arraste eventos, planeje promoções e correlacione com as vendas do dia.',
+    tags: ['Agenda', 'Eventos'],
+    stars: 4,
   },
   {
     icon: Landmark,
     title: 'Folha de pagamento',
     description: 'Salário base + comissão sobre vendas calculados por colaborador.',
+    tags: ['RH', 'Comissão'],
+    stars: 5,
   },
   {
     icon: Users,
     title: 'Gestão de equipe',
     description: 'Ranking de vendedores, histórico e metas em um único painel.',
+    tags: ['Equipe', 'Metas'],
+    stars: 4,
   },
   {
     icon: KeyRound,
     title: 'Admin PIN',
     description: 'Proteja ações sensíveis com PIN de 4 dígitos e bloqueio anti brute-force.',
+    tags: ['Segurança', 'PIN'],
+    stars: 5,
   },
   {
     icon: FileDown,
     title: 'Export CSV',
     description: 'Exporte pedidos com encoding UTF-8 compatível com Excel e Planilhas.',
+    tags: ['Relatório', 'Excel'],
+    stars: 4,
   },
   {
     icon: ShieldCheck,
     title: 'Conformidade',
     description: 'LGPD, consentimento de cookies e governança de dados visível.',
+    tags: ['LGPD', 'Dados'],
+    stars: 5,
   },
 ]
 
@@ -391,54 +409,50 @@ export function LandingPage() {
             </h2>
           </motion.div>
 
-          {/* S-pattern grid — 2 colunas, 4 linhas */}
-          <div className="grid gap-5 sm:grid-cols-2">
-            {capabilityCards.map((item, index) => {
-              const isLeft = index % 2 === 0
-              const row = Math.floor(index / 2)
-              return (
-                <motion.div
-                  className="magazine-card group"
-                  key={item.title}
-                  initial={{ opacity: 0, x: isLeft ? -72 : 72 }}
-                  viewport={{ once: false, margin: '-10%' }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: 0.65,
-                    ease: [0.22, 1, 0.36, 1],
-                    delay: row * 0.08,
-                  }}
-                >
-                  {/* Card header — always visible */}
-                  <div className="magazine-card__header">
-                    <span className="magazine-card__index">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <span className="magazine-card__icon">
-                        <item.icon className="size-4" />
-                      </span>
-                      <p className="text-base font-bold tracking-tight text-white">
-                        {item.title}
-                      </p>
-                    </div>
-                    <div className="magazine-card__rule" />
+          {/* 8 cards — estilo UI reference */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {capabilityCards.map((item, index) => (
+              <motion.div
+                className="uicard group"
+                key={item.title}
+                initial={{ opacity: 0, y: 32 }}
+                viewport={{ once: false, margin: '-8%' }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: (index % 4) * 0.06 }}
+              >
+                {/* dark bg layer */}
+                <div className="absolute inset-0 bg-[#111111] rounded-[1.5em]" />
+
+                <div className="uicard__body">
+                  {/* icon */}
+                  <div className="uicard__icon">
+                    <item.icon className="size-5" />
                   </div>
 
-                  {/* Description — pergaminho/calendar reveal on hover */}
-                  <div className="magazine-card__body">
-                    <p className="text-sm leading-7 text-[var(--text-soft)]">
-                      {item.description}
-                    </p>
+                  {/* title with stroke glow */}
+                  <h3 className="uicard__title">{item.title}</h3>
+
+                  {/* stars */}
+                  <div className="uicard__stars">
+                    {Array.from({ length: 5 }).map((_, si) => (
+                      <svg key={si} viewBox="0 0 576 512" className="uicard__star" fill={si < item.stars ? 'white' : 'rgba(255,255,255,0.2)'}>
+                        <path d="M316.7 17.8l65.43 132.4l146.4 21.29c26.27 3.796 36.79 36.09 17.75 54.59l-105.9 102.1l25.05 145.5c4.508 26.31-23.23 45.9-46.49 33.7L288 439.6l-130.9 68.7C133.8 520.5 106.1 500.9 110.6 474.6l25.05-145.5L29.72 226.1c-19.03-18.5-8.516-50.79 17.75-54.59l146.4-21.29l65.43-132.4C271.1-6.083 305-5.786 316.7 17.8z" />
+                      </svg>
+                    ))}
                   </div>
 
-                  {/* Bottom fill bar */}
-                  <div className="magazine-card__bar">
-                    <div className="magazine-card__bar-fill" />
+                  {/* tags */}
+                  <div className="uicard__tags">
+                    {item.tags.map((tag) => (
+                      <span key={tag} className="uicard__tag">{tag}</span>
+                    ))}
                   </div>
-                </motion.div>
-              )
-            })}
+
+                  {/* description — expands on hover */}
+                  <p className="uicard__desc">{item.description}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
 
@@ -469,19 +483,16 @@ export function LandingPage() {
             icon: CalendarDays,
           },
         ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
-          <div
+          <motion.div
             key={tag}
-            className="s-carpet-wrap"
+            className="s-feature-card"
             data-side={side}
+            initial={{ scaleX: 0, opacity: 0 }}
+            viewport={{ once: false, margin: '-8%' }}
+            whileInView={{ scaleX: 1, opacity: 1 }}
+            style={{ transformOrigin: side === 'left' ? 'left center' : 'right center' }}
+            transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.2 }}
           >
-            <motion.div
-              className="s-feature-card"
-              data-side={side}
-              initial={{ x: side === 'left' ? '-100%' : '100%' }}
-              viewport={{ once: false, margin: '-8%' }}
-              whileInView={{ x: '0%' }}
-              transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.18 }}
-            >
               <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
                 <div className="s-feature-card__text">
                   <span className="s-feature-card__tag">
@@ -497,8 +508,7 @@ export function LandingPage() {
                 </div>
               </div>
               <div className="s-feature-card__bar" />
-            </motion.div>
-          </div>
+          </motion.div>
         ))}
       </section>
 
