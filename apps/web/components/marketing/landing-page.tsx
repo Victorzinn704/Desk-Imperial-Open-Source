@@ -561,9 +561,8 @@ export function LandingPage() {
 
       <footer className="relative z-10" id="rodape">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
-          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
-            <LetterCard />
-
+          {/* ── 3 cards flutuantes centralizados ── */}
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
             {footerColumns.map((group, gi) => (
               <div className="fcard-wrap" key={group.title}>
                 <div className="fcard-obj">
@@ -587,6 +586,11 @@ export function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ── Carta ocupando largura total ── */}
+          <div className="w-full">
+            <LetterCard />
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
