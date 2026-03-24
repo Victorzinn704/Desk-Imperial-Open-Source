@@ -172,48 +172,46 @@ export function LandingPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
 
-      {/* ── Sidebar vertical fixa ─────────────────────────────────────────────── */}
-      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-52 flex-col border-r border-[rgba(255,255,255,0.04)] bg-black px-5 py-8 lg:flex">
-        <BrandMark />
+      {/* ── Topbar fixa full-width ────────────────────────────────────────────── */}
+      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.85)] px-6 py-4 backdrop-blur-xl lg:px-12">
+        <div className="flex items-center gap-6">
+          <BrandMark />
+          <nav className="hidden items-center gap-1 md:flex">
+            {[
+              { label: 'Fundação', href: '#fundacao' },
+              { label: 'Entregas', href: '#entregas' },
+              { label: 'Estrutura', href: '#rodape' },
+            ].map(({ label, href }) => (
+              <Link
+                key={label}
+                className="rounded-lg px-3 py-1.5 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
+                href={href}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-        <nav className="mt-10 flex flex-col gap-1">
-          {[
-            { label: 'Fundação', href: '#fundacao' },
-            { label: 'Entregas', href: '#entregas' },
-            { label: 'Estrutura', href: '#rodape' },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              className="rounded-lg px-3 py-2 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
-              href={href}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-auto flex flex-col gap-2">
+        <div className="flex items-center gap-2">
           <Link
-            className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-center text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:shadow-[0_0_14px_rgba(155,132,96,0.18)]"
+            className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:shadow-[0_0_14px_rgba(155,132,96,0.18)]"
             href="/login"
           >
             Entrar
           </Link>
           <Link
-            className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.05)]"
+            className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.05)]"
             href="/dashboard"
           >
             Abrir painel
           </Link>
         </div>
-      </aside>
+      </header>
 
-      {/* ── Conteúdo principal ────────────────────────────────────────────────── */}
-      <main className="relative min-h-screen w-full overflow-hidden lg:pl-52">
-
-      <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-16 lg:px-12">
+      <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 pt-24 lg:px-12">
         <div className="grid flex-1 items-center gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
@@ -459,7 +457,6 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
-      </main>
-    </div>
+    </main>
   )
 }
