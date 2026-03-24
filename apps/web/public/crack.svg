@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <!-- Ponto de impacto -->
+  <circle cx="158" cy="112" r="4.5" fill="rgba(255,255,255,0.92)"/>
+  <circle cx="158" cy="112" r="11"  fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="0.9"/>
+  <circle cx="158" cy="112" r="19"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+
+  <!-- Trinca 1 — topo esquerdo -->
+  <polyline points="158,112 138,84 112,56 88,28"
+    stroke="rgba(255,255,255,0.72)" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 1a -->
+  <polyline points="122,68 100,60 78,68"
+    stroke="rgba(255,255,255,0.42)" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+  <!-- Galho 1b -->
+  <polyline points="100,44 88,36 72,40"
+    stroke="rgba(255,255,255,0.28)" stroke-width="0.55" fill="none" stroke-linecap="round"/>
+
+  <!-- Trinca 2 — topo direito -->
+  <polyline points="158,112 188,78 214,48 240,18"
+    stroke="rgba(255,255,255,0.66)" stroke-width="1.05" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 2a -->
+  <polyline points="202,62 228,54 256,64"
+    stroke="rgba(255,255,255,0.38)" stroke-width="0.65" fill="none" stroke-linecap="round"/>
+
+  <!-- Trinca 3 — direita -->
+  <polyline points="158,112 224,108 292,112 360,104"
+    stroke="rgba(255,255,255,0.70)" stroke-width="1.15" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 3a -->
+  <polyline points="258,110 272,136 296,150"
+    stroke="rgba(255,255,255,0.40)" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+  <!-- Galho 3b -->
+  <polyline points="316,107 330,92 352,88"
+    stroke="rgba(255,255,255,0.28)" stroke-width="0.55" fill="none" stroke-linecap="round"/>
+
+  <!-- Trinca 4 — baixo direito -->
+  <polyline points="158,112 192,158 228,200 258,248"
+    stroke="rgba(255,255,255,0.64)" stroke-width="1.0" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 4a -->
+  <polyline points="212,178 244,172 268,180"
+    stroke="rgba(255,255,255,0.36)" stroke-width="0.62" fill="none" stroke-linecap="round"/>
+
+  <!-- Trinca 5 — baixo esquerdo -->
+  <polyline points="158,112 126,158 94,204 62,256"
+    stroke="rgba(255,255,255,0.68)" stroke-width="1.05" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 5a -->
+  <polyline points="108,182 80,188 58,182"
+    stroke="rgba(255,255,255,0.38)" stroke-width="0.62" fill="none" stroke-linecap="round"/>
+  <!-- Galho 5b -->
+  <polyline points="78,224 58,232 38,226"
+    stroke="rgba(255,255,255,0.24)" stroke-width="0.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Trinca 6 — esquerda -->
+  <polyline points="158,112 88,120 30,128"
+    stroke="rgba(255,255,255,0.60)" stroke-width="0.95" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Galho 6a -->
+  <polyline points="62,122 46,106 28,110"
+    stroke="rgba(255,255,255,0.32)" stroke-width="0.55" fill="none" stroke-linecap="round"/>
+
+  <!-- Microtrincas ao redor do epicentro -->
+  <line x1="148" y1="90" x2="140" y2="80" stroke="rgba(255,255,255,0.32)" stroke-width="0.5" stroke-linecap="round"/>
+  <line x1="172" y1="94" x2="180" y2="84" stroke="rgba(255,255,255,0.28)" stroke-width="0.5" stroke-linecap="round"/>
+  <line x1="178" y1="128" x2="190" y2="120" stroke="rgba(255,255,255,0.26)" stroke-width="0.45" stroke-linecap="round"/>
+  <line x1="142" y1="130" x2="130" y2="140" stroke="rgba(255,255,255,0.24)" stroke-width="0.45" stroke-linecap="round"/>
+</svg>

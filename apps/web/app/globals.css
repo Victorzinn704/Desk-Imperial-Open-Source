@@ -747,7 +747,7 @@ select {
   border-radius: inherit;
 }
 
-/* Crack lines — appear on hover */
+/* Crack — SVG com ponto de impacto real, aparece no hover */
 .glass-card::after {
   content: "";
   position: absolute;
@@ -755,21 +755,14 @@ select {
   z-index: 2;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.22s ease;
   border-radius: inherit;
   background-image:
-    /* main crack diagonal */
-    linear-gradient(52deg,  transparent 40%,   rgba(255,255,255,0.65) 40.5%, rgba(255,255,255,0.65) 41%,   transparent 41.5%),
-    /* branch 1 */
-    linear-gradient(128deg, transparent 26%,   rgba(255,255,255,0.45) 26.5%, rgba(255,255,255,0.45) 27.5%, transparent 28%),
-    /* branch 2 */
-    linear-gradient(82deg,  transparent 56%,   rgba(255,255,255,0.40) 56.5%, rgba(255,255,255,0.40) 57.5%, transparent 58%),
-    /* hairline 1 */
-    linear-gradient(158deg, transparent 36%,   rgba(255,255,255,0.30) 36.5%, rgba(255,255,255,0.30) 38.5%, transparent 39%),
-    /* hairline 2 */
-    linear-gradient(34deg,  transparent 63%,   rgba(255,255,255,0.38) 63.5%, rgba(255,255,255,0.38) 64.5%, transparent 65%),
-    /* hairline 3 */
-    linear-gradient(96deg,  transparent 19%,   rgba(255,255,255,0.28) 19.5%, rgba(255,255,255,0.28) 20.5%, transparent 21%);
+    radial-gradient(circle 22px at 39.5% 37.3%, rgba(255,255,255,0.38) 0%, transparent 100%),
+    url('/crack.svg');
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 
 .glass-card:hover {
