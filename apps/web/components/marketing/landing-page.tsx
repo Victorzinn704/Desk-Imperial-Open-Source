@@ -185,7 +185,6 @@ export function LandingPage() {
         <header className="imperial-topbar">
           <div className="imperial-card-soft imperial-topbar__shell flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <BrandMark />
               <div className="hidden items-center gap-2 rounded-full border border-[rgba(119,201,255,0.16)] bg-[rgba(119,201,255,0.08)] px-3 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--info)] lg:inline-flex">
                 <Globe2 className="size-3.5" />
                 app.deskimperial.online
@@ -274,7 +273,11 @@ export function LandingPage() {
               ))}
             </motion.div>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
+            <div className="mt-6">
+              <BrandMark />
+            </div>
+
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
               PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
               tudo em um único portal seguro para o seu negócio.
             </p>
