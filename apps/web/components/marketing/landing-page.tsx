@@ -281,10 +281,6 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
-            <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[rgba(14,28,45,0.78)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
-              Plataforma empresarial
-            </span>
-
             <motion.div
               animate="visible"
               className="mt-8 space-y-1 sm:space-y-2"
@@ -362,7 +358,7 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
+            className="relative space-y-4 pt-[10rem] sm:space-y-5 sm:pt-[11rem] lg:space-y-6 lg:pt-[13rem]"
             initial={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
@@ -372,7 +368,7 @@ export function LandingPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
                 <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
-                  Early Access
+                  Versão Beta
                 </span>
               </div>
 

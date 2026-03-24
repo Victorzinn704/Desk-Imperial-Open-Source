@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ShieldCheck } from 'lucide-react'
+import { Crown } from 'lucide-react'
 
 export function BrandMark({ size = 'md' }: Readonly<{ size?: 'sm' | 'md' }>) {
   return (
@@ -8,10 +8,10 @@ export function BrandMark({ size = 'md' }: Readonly<{ size?: 'sm' | 'md' }>) {
       href="/"
     >
       <span
-        className="flex shrink-0 items-center justify-center rounded-[14px] border border-[rgba(195,164,111,0.28)] bg-[rgba(195,164,111,0.1)] text-[var(--accent)] shadow-[0_8px_24px_rgba(0,0,0,0.22),0_0_18px_rgba(195,164,111,0.12)]"
-        style={{ width: size === 'sm' ? 36 : 42, height: size === 'sm' ? 36 : 42 }}
+        className="flex shrink-0 items-center justify-center rounded-[10px] border border-[rgba(195,164,111,0.35)] bg-gradient-to-br from-[rgba(195,164,111,0.18)] to-[rgba(195,164,111,0.06)] text-[var(--accent)] shadow-[0_4px_16px_rgba(195,164,111,0.15)]"
+        style={{ width: size === 'sm' ? 34 : 38, height: size === 'sm' ? 34 : 38 }}
       >
-        <ShieldCheck style={{ width: size === 'sm' ? 16 : 19, height: size === 'sm' ? 16 : 19 }} />
+        <Crown style={{ width: size === 'sm' ? 15 : 17, height: size === 'sm' ? 15 : 17 }} />
       </span>
       DESK IMPERIAL
     </Link>
