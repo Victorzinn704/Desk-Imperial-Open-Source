@@ -473,10 +473,28 @@ export function LandingPage() {
             key={tag}
             className="s-feature-card"
             data-side={side}
-            initial={{ opacity: 0, x: side === 'left' ? -100 : 100 }}
-            viewport={{ once: false, margin: '-10%' }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: i * 0.04 }}
+            initial={{
+              clipPath: side === 'left'
+                ? 'inset(0 100% 0 0 round 22px)'
+                : 'inset(0 0 0 100% round 22px)',
+              opacity: 0,
+            }}
+            viewport={{ once: false, margin: '-8%' }}
+            whileInView={{
+              clipPath: 'inset(0 0% 0 0% round 22px)',
+              opacity: 1,
+            }}
+            transition={{
+              clipPath: {
+                duration: 1.4,
+                ease: [0.16, 1, 0.3, 1],
+                delay: i * 0.18,
+              },
+              opacity: {
+                duration: 0.3,
+                delay: i * 0.18,
+              },
+            }}
           >
             <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
               <div className="s-feature-card__text">
