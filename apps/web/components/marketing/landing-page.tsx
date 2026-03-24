@@ -172,57 +172,49 @@ export function LandingPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
-      <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
-          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
-      </div>
+    <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
 
-      <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
-        <header className="imperial-topbar">
-          <div className="imperial-card-soft imperial-topbar__shell flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <BrandMark />
-              <div className="hidden items-center gap-2 rounded-full border border-[rgba(119,201,255,0.16)] bg-[rgba(119,201,255,0.08)] px-3 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--info)] lg:inline-flex">
-                <Globe2 className="size-3.5" />
-                app.deskimperial.online
-              </div>
-            </div>
+      {/* ── Sidebar vertical fixa ─────────────────────────────────────────────── */}
+      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-52 flex-col border-r border-[rgba(255,255,255,0.04)] bg-black px-5 py-8 lg:flex">
+        <BrandMark />
 
-            <nav className="hidden items-center gap-3 md:flex">
-              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#fundacao">
-                Fundação
-              </Link>
-              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#entregas">
-                Entregas
-              </Link>
-              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#rodape">
-                Estrutura
-              </Link>
-            </nav>
+        <nav className="mt-10 flex flex-col gap-1">
+          {[
+            { label: 'Fundação', href: '#fundacao' },
+            { label: 'Entregas', href: '#entregas' },
+            { label: 'Estrutura', href: '#rodape' },
+          ].map(({ label, href }) => (
+            <Link
+              key={label}
+              className="rounded-lg px-3 py-2 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
+              href={href}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--accent)] hover:scale-[1.04] hover:shadow-[0_0_14px_rgba(155,132,96,0.22)] active:scale-95"
-                href="/login"
-              >
-                Entrar
-              </Link>
-              <Link
-                className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.05)]"
-                href="/dashboard"
-              >
-                Abrir painel
-              </Link>
-            </div>
-          </div>
-        </header>
+        <div className="mt-auto flex flex-col gap-2">
+          <Link
+            className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-center text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:shadow-[0_0_14px_rgba(155,132,96,0.18)]"
+            href="/login"
+          >
+            Entrar
+          </Link>
+          <Link
+            className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.05)]"
+            href="/dashboard"
+          >
+            Abrir painel
+          </Link>
+        </div>
+      </aside>
 
-        <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
+      {/* ── Conteúdo principal ────────────────────────────────────────────────── */}
+      <main className="relative min-h-screen w-full overflow-hidden lg:pl-52">
+
+      <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-16 lg:px-12">
+        <div className="grid flex-1 items-center gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
@@ -341,8 +333,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.88)]" id="fundacao">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
+      <section className="relative z-10" id="fundacao">
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Módulos</p>
@@ -372,7 +363,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12 lg:max-w-none" id="entregas">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
           <div className="imperial-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -430,7 +421,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]" id="rodape">
+      <footer className="relative z-10" id="rodape">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
             <CompanySignatureCard />
@@ -468,6 +459,7 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
-    </main>
+      </main>
+    </div>
   )
 }

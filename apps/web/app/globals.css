@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  --bg: #080b0e;
+  --bg: #000000;
   --surface: #0d1014;
   --surface-muted: #111518;
   --surface-soft: #161b20;
@@ -37,10 +37,7 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at top, rgba(20, 28, 38, 0.55), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(22, 30, 40, 0.30), transparent 28%),
-    var(--bg);
+  background: var(--bg);
   font-family:
     "Manrope",
     "Inter",
