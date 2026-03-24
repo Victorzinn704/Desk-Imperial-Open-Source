@@ -5,20 +5,20 @@ import { Crown } from 'lucide-react'
 export function LetterCard() {
   return (
     <div className="flex items-center justify-center w-full h-full py-4">
-      <div className="relative w-full max-w-[380px] group transition-all duration-700 aspect-video flex items-center justify-center mx-auto">
+      <div className="relative w-full max-w-[480px] group transition-all duration-700 aspect-[4/3] flex items-center justify-center mx-auto">
 
         {/* ── Carta interna (abre ao hover) ─────────────────────── */}
-        <div className="transition-all flex flex-col items-center py-6 justify-start duration-300 group-hover:duration-1000 bg-[#1a1d24] border border-[rgba(195,164,111,0.18)] w-full h-full absolute group-hover:-translate-y-[4.5rem] rounded-sm">
-          <p className="text-base font-semibold tracking-[0.08em] text-[var(--accent)] font-serif">
+        <div className="transition-all flex flex-col items-center px-10 py-8 justify-start duration-300 group-hover:duration-1000 bg-[#1a1d24] border border-[rgba(195,164,111,0.18)] w-full h-full absolute group-hover:-translate-y-[6rem] rounded-sm">
+          <p className="text-lg font-semibold tracking-[0.08em] text-[var(--accent)] font-serif">
             Obrigado
           </p>
-          <p className="px-8 mt-2 text-[11px] leading-5 text-center text-[var(--text-soft)]">
+          <p className="mt-3 text-[12px] leading-6 text-center text-[var(--text-soft)]">
             É muito especial que você tenha dedicado seu tempo para conhecer a Desk Imperial.
           </p>
-          <p className="px-8 mt-1 text-[11px] leading-5 text-center text-[var(--text-soft)]">
+          <p className="mt-2 text-[12px] leading-6 text-center text-[var(--text-soft)]">
             Que sua operação cresça cada vez mais — com clareza, controle e identidade.
           </p>
-          <p className="mt-4 text-[10px] uppercase tracking-[0.22em] text-[var(--accent)] opacity-60">
+          <p className="mt-5 text-[10px] uppercase tracking-[0.22em] text-[var(--accent)] opacity-60">
             — Desk Imperial
           </p>
         </div>
