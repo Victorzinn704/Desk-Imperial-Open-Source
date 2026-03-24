@@ -309,12 +309,12 @@ export function LandingPage() {
                     filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
                   }}
                   variants={{
-                    hidden: { opacity: 0, y: -52, filter: 'blur(16px)' },
+                    hidden: { opacity: 0, filter: 'blur(28px)', scale: 0.82 },
                     visible: {
                       opacity: 1,
-                      y: 0,
                       filter: 'blur(0px)',
-                      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] },
+                      scale: 1,
+                      transition: { duration: 1.6, ease: [0.22, 1, 0.36, 1] },
                     },
                   }}
                 >
