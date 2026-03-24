@@ -93,7 +93,8 @@ const capabilityCards: Array<{
 const heroLines = [
   'Não adianta ter o poder da caneta,',
   'se você não sabe a mesa certa onde se sentar.',
-  'Isso não é sobre mesas... — Desk Imperial.',
+  'Isso não é sobre mesas...',
+  '— Desk Imperial.',
 ]
 
 const footerColumns = [
@@ -253,7 +254,7 @@ export function LandingPage() {
                 <motion.span
                   className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
                   key={line}
-                  style={{ x: lineShifts[index] }}
+                  style={{ x: lineShifts[index] ?? lineShifts[lineShifts.length - 1] }}
                   whileHover={{
                     scale: 1.015,
                     x: index === 0 ? 10 : index === 1 ? 8 : 6,
