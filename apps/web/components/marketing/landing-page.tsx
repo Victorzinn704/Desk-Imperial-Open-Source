@@ -1,47 +1,99 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import {
+  BadgeDollarSign,
+  CalendarDays,
+  ChartColumn,
+  FileDown,
+  Globe2,
+  KeyRound,
+  Landmark,
+  Radar,
+  ShieldCheck,
+  Tags,
+  Users,
+  Waypoints,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { CompanySignatureCard } from '@/components/marketing/company-signature-card'
-import { OrderTicket } from '@/components/marketing/order-ticket'
-import { PayrollRecord } from '@/components/marketing/payroll-record'
+import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
+import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
+import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
 import { BrandMark } from '@/components/shared/brand-mark'
 
-/* ─── Data ───────────────────────────────────────────────────────────────────── */
+const metrics = [
+  { label: 'PDV em tempo real', value: 'Comandas abertas, em preparo e fechadas num kanban visual' },
+  { label: 'Folha de pagamento', value: 'Salário base + comissão calculados automaticamente' },
+  { label: 'Calendário comercial', value: 'Eventos, promoções e jogos com impacto em vendas' },
+]
+
+const pillars = [
+  {
+    icon: ChartColumn,
+    title: 'Sem complicação',
+    description: 'Você abre, vende, confere e fecha o dia — tudo aqui dentro.',
+  },
+  {
+    icon: Radar,
+    title: 'Com identidade',
+    description: 'Seu comércio tem nome, história e números que provam valor.',
+  },
+]
+
+const capabilityCards: Array<{
+  icon: LucideIcon
+  title: string
+  description: string
+}> = [
+  {
+    icon: BadgeDollarSign,
+    title: 'Financeiro executivo',
+    description: 'Receita, custo, lucro e margem. Sparklines de tendência em cada KPI.',
+  },
+  {
+    icon: Tags,
+    title: 'PDV / Comandas',
+    description: 'Kanban drag-and-drop com CPF/CNPJ, desconto e acréscimo por comanda.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Calendário comercial',
+    description: 'Arraste eventos, planeje promoções e correlacione com as vendas do dia.',
+  },
+  {
+    icon: Landmark,
+    title: 'Folha de pagamento',
+    description: 'Salário base + comissão sobre vendas calculados por colaborador.',
+  },
+  {
+    icon: Users,
+    title: 'Gestão de equipe',
+    description: 'Ranking de vendedores, histórico e metas em um único painel.',
+  },
+  {
+    icon: KeyRound,
+    title: 'Admin PIN',
+    description: 'Proteja ações sensíveis com PIN de 4 dígitos e bloqueio anti brute-force.',
+  },
+  {
+    icon: FileDown,
+    title: 'Export CSV',
+    description: 'Exporte pedidos com encoding UTF-8 compatível com Excel e Planilhas.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Conformidade',
+    description: 'LGPD, consentimento de cookies e governança de dados visível.',
+  },
+]
 
 const heroLines = [
-  { text: 'A gestão', bold: false },
-  { text: 'que fecha', bold: false },
-  { text: 'o dia com', bold: false },
-  { text: 'clareza.', bold: true },
-]
-
-const manifestoLines = [
-  'Desk Imperial não é uma planilha melhorada.',
-  'É o painel de controle de quem leva o negócio a sério.',
-  'Do PDV à folha de pagamento, tudo em um único lugar.',
-]
-
-const proofLines = [
-  {
-    number: '8',
-    label: 'Módulos integrados',
-    description:
-      'PDV, financeiro, folha de pagamento, calendário, portfólio, equipe, exportação e conformidade.',
-  },
-  {
-    number: '1',
-    label: 'Portal seguro',
-    description:
-      'Autenticação, PIN admin, rastreabilidade e conformidade LGPD em um único ambiente.',
-  },
-  {
-    number: '0',
-    label: 'Dependências externas',
-    description:
-      'Sem mock, sem planilha auxiliar, sem integração frágil. Tudo roda dentro do portal.',
-  },
+  'Não adianta ter o poder da caneta,',
+  'se você não sabe a mesa certa onde se sentar.',
+  'Isso não é sobre mesas... — Desk Imperial.',
 ]
 
 const footerColumns = [
@@ -56,10 +108,10 @@ const footerColumns = [
   {
     title: 'Módulos',
     links: [
-      { label: 'PDV / Comandas', href: '#produto' },
-      { label: 'Calendário Comercial', href: '#produto' },
-      { label: 'Folha de Pagamento', href: '#produto' },
-      { label: 'Portfólio de Produtos', href: '#produto' },
+      { label: 'PDV / Comandas', href: '#fundacao' },
+      { label: 'Calendário Comercial', href: '#fundacao' },
+      { label: 'Folha de Pagamento', href: '#fundacao' },
+      { label: 'Portfólio de Produtos', href: '#fundacao' },
     ],
   },
   {
@@ -71,306 +123,322 @@ const footerColumns = [
   },
 ]
 
-/* ─── Framer Motion variants ─────────────────────────────────────────────────── */
-
-const ease = [0.22, 1, 0.36, 1] as const
-
-const heroContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } },
-}
-
-const heroLine = {
-  hidden: { opacity: 0, y: -28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease } },
-}
-
-const scrollReveal = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease } },
-}
-
-const manifestoContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.22 } },
-}
-
-const manifestoLine = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease } },
-}
-
-const proofContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
-}
-
-const proofItem = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease } },
-}
-
-/* ─── Component ──────────────────────────────────────────────────────────────── */
-
 export function LandingPage() {
+  const pointerX = useMotionValue(0)
+  const pointerY = useMotionValue(0)
+
+  const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {
+    stiffness: 120,
+    damping: 20,
+    mass: 0.6,
+  })
+  const rotateY = useSpring(useTransform(pointerX, [-1, 1], [-5, 5]), {
+    stiffness: 120,
+    damping: 20,
+    mass: 0.6,
+  })
+
+  const primaryShift = useSpring(useTransform(pointerX, [-1, 1], [-16, 16]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+  const secondaryShift = useSpring(useTransform(pointerX, [-1, 1], [-10, 10]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+  const tertiaryShift = useSpring(useTransform(pointerX, [-1, 1], [-6, 6]), {
+    stiffness: 90,
+    damping: 16,
+    mass: 0.8,
+  })
+
+  const lineShifts = [primaryShift, secondaryShift, tertiaryShift]
+
+  const handleHeroPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
+
+    pointerX.set(x)
+    pointerY.set(y)
+  }
+
+  const handleHeroPointerLeave = () => {
+    pointerX.set(0)
+    pointerY.set(0)
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
+          style={{ backgroundImage: "url('/founder-portrait.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,14,0.94),rgba(7,13,24,0.84)_28%,rgba(7,13,24,0.9)_58%,rgba(4,8,14,0.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,91,160,0.2),transparent_24%),radial-gradient(circle_at_top_right,rgba(212,177,106,0.08),transparent_20%)]" />
+      </div>
 
-      {/* ── Section 1: Hero ──────────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-10 lg:px-12">
-
-        {/* Topbar */}
         <header className="imperial-topbar">
           <div className="imperial-card-soft imperial-topbar__shell flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <BrandMark />
-            <nav className="hidden items-center gap-6 md:flex">
-              <Link className="section-index hover:text-[var(--accent)] transition-colors" href="#manifesto">
-                Plataforma
+            <div className="flex items-center gap-4">
+              <BrandMark />
+              <div className="hidden items-center gap-2 rounded-full border border-[rgba(119,201,255,0.16)] bg-[rgba(119,201,255,0.08)] px-3 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--info)] lg:inline-flex">
+                <Globe2 className="size-3.5" />
+                app.deskimperial.online
+              </div>
+            </div>
+
+            <nav className="hidden items-center gap-3 md:flex">
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#fundacao">
+                Fundação
               </Link>
-              <Link className="section-index hover:text-[var(--accent)] transition-colors" href="#produto">
-                Produto
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#entregas">
+                Entregas
               </Link>
-              <Link className="section-index hover:text-[var(--accent)] transition-colors" href="#acesso">
-                Acesso
+              <Link className="text-sm text-[var(--text-soft)] transition hover:text-[var(--text-primary)]" href="#rodape">
+                Estrutura
               </Link>
             </nav>
-            <Link className="editorial-link--muted self-start md:self-auto" href="/login">
-              Entrar
-            </Link>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--accent)] hover:scale-[1.04] hover:shadow-[0_0_14px_rgba(155,132,96,0.22)] active:scale-95"
+                href="/login"
+              >
+                Entrar
+              </Link>
+              <Link
+                className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-center text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.05)]"
+                href="/dashboard"
+              >
+                Abrir painel
+              </Link>
+            </div>
           </div>
         </header>
 
-        {/* Hero grid */}
-        <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:py-28">
-
-          {/* Left: editorial headline */}
+        <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            initial={{ opacity: 0, y: 24 }}
-            transition={{ duration: 1.0, ease }}
+            className="max-w-3xl"
+            initial={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
           >
-            <span className="section-index">01 — Gestão comercial</span>
+            <span className="inline-flex rounded-full border border-[var(--border-strong)] bg-[rgba(14,28,45,0.78)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
+              Plataforma empresarial
+            </span>
 
             <motion.div
               animate="visible"
-              className="mt-8"
+              className="mt-8 space-y-1 sm:space-y-2"
               initial="hidden"
-              variants={heroContainer}
+              style={{ rotateX, rotateY, transformPerspective: 1200 }}
+              onMouseLeave={handleHeroPointerLeave}
+              onMouseMove={handleHeroPointerMove}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.26,
+                    delayChildren: 0.26,
+                  },
+                },
+              }}
             >
-              {heroLines.map(({ text, bold }) => (
+              {heroLines.map((line, index) => (
                 <motion.span
-                  className="block"
-                  key={text}
-                  style={{
-                    fontSize: 'clamp(3.5rem, 7vw, 7rem)',
-                    lineHeight: bold ? 1.0 : 0.92,
-                    letterSpacing: '-0.025em',
-                    fontWeight: bold ? 800 : 300,
-                    color: bold ? 'var(--accent)' : 'var(--text-primary)',
+                  className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                  key={line}
+                  style={{ x: lineShifts[index] }}
+                  whileHover={{
+                    scale: 1.015,
+                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
+                    filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
                   }}
-                  variants={heroLine}
+                  variants={{
+                    hidden: { opacity: 0, y: -52, filter: 'blur(16px)' },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      filter: 'blur(0px)',
+                      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] },
+                    },
+                  }}
                 >
-                  {text}
+                  <span className="text-flag-brazil">{line}</span>
                 </motion.span>
               ))}
             </motion.div>
 
-            <hr className="imperial-rule--left mt-10" />
-
-            <p className="mt-6 max-w-md text-base leading-7 text-[var(--text-soft)]">
-              PDV com comanda real, folha de pagamento calculada por pedido,
-              calendário de eventos e visão executiva — sem planilha, sem mock.
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
+              PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
+              tudo em um único portal seguro para o seu negócio.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link className="editorial-link" href="/cadastro">
-                Acessar a plataforma <ArrowRight size={15} />
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/cadastro">
+                <span className="sp">Cadastrar-se</span>
               </Link>
-              <Link className="editorial-link--muted" href="/login">
-                ou entrar
+              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/login">
+                <span className="sp">Login</span>
               </Link>
+            </div>
+
+            <div className="mt-12 grid gap-4 sm:grid-cols-3">
+              {metrics.map((metric, index) => (
+                <div
+                  className={
+                    index === 1
+                      ? 'imperial-card-tilt-alt p-5'
+                      : index === 2
+                        ? 'imperial-card-tilt p-5'
+                        : 'imperial-card-stat p-5'
+                  }
+                  key={metric.label}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{metric.label}</p>
+                  <p className="mt-3 text-base leading-7 text-[var(--text-primary)]">{metric.value}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
 
-          {/* Right: real order ticket */}
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col gap-3"
+            className="relative space-y-4 pt-[17rem] sm:space-y-5 sm:pt-[18.5rem] lg:space-y-6 lg:pt-[22.5rem]"
             initial={{ opacity: 0, x: 24 }}
-            transition={{ duration: 0.9, ease, delay: 0.2 }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
-            <span className="section-index hidden lg:block">Comanda em tempo real</span>
-            <OrderTicket animate />
-            <p className="text-xs text-[var(--text-soft)] opacity-60">
-              Mesa 12 · João Pedro · 14h32 — operação ativa
-            </p>
-          </motion.div>
-        </div>
-      </section>
+            <FounderPortraitCard />
 
-      {/* ── Section 2: Manifesto ─────────────────────────────────────────────── */}
-      <section
-        className="relative z-10 border-y border-[var(--border)] py-24 lg:py-32"
-        id="manifesto"
-      >
-        <div className="mx-auto max-w-4xl px-6 text-center lg:px-0">
-          <span className="section-index">02 — Por que Desk Imperial</span>
+            <div className="imperial-card relative z-10 p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
+                <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
+                  Early Access
+                </span>
+              </div>
 
-          <hr className="imperial-rule mx-auto mt-6 mb-10 max-w-xs" />
-
-          <motion.div
-            initial="hidden"
-            variants={manifestoContainer}
-            viewport={{ once: true, margin: '-100px' }}
-            whileInView="visible"
-          >
-            {manifestoLines.map((line) => (
-              <motion.p
-                className="mt-3 text-xl font-light leading-9 text-[var(--text-primary)] first:mt-0 lg:text-2xl"
-                key={line}
-                variants={manifestoLine}
-              >
-                {line}
-              </motion.p>
-            ))}
-          </motion.div>
-
-          <hr className="imperial-rule mx-auto mt-10 mb-14 max-w-xs" />
-
-          <motion.div
-            className="mx-auto max-w-2xl text-left"
-            initial="hidden"
-            variants={proofContainer}
-            viewport={{ once: true, margin: '-80px' }}
-            whileInView="visible"
-          >
-            {proofLines.map((item) => (
-              <motion.div className="proof-line" key={item.number} variants={proofItem}>
-                <span className="proof-line__number">{item.number}</span>
-                <div>
-                  <span className="proof-line__label">{item.label}</span>
-                  <span className="proof-line__desc">{item.description}</span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Section 3: Produto real ───────────────────────────────────────────── */}
-      <section
-        className="relative z-10 border-b border-[var(--border)] bg-[var(--surface)] py-24 lg:py-32"
-        id="produto"
-      >
-        <div className="mx-auto max-w-7xl px-6 lg:px-12">
-          <span className="section-index">03 — Produto real</span>
-
-          <div className="mt-12 grid items-center gap-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24">
-
-            {/* Copy */}
-            <motion.div
-              initial="hidden"
-              variants={scrollReveal}
-              viewport={{ once: true, margin: '-80px' }}
-              whileInView="visible"
-            >
-              <span className="section-index">Folha de pagamento</span>
-              <h2
-                className="mt-4 text-[var(--text-primary)]"
-                style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 300, lineHeight: 1.15 }}
-              >
-                Cada real,{' '}
-                <strong className="font-extrabold" style={{ color: 'var(--accent)' }}>
-                  calculado.
-                </strong>
-              </h2>
-
-              <hr className="imperial-rule--left mt-6 w-24" />
-
-              <p className="mt-6 max-w-xs text-sm leading-7 text-[var(--text-soft)]">
-                Salário base, comissão calculada por pedidos reais e total líquido. Sem planilha,
-                sem fórmula manual. A folha fecha com o movimento do mês.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                {[
-                  'Comissão baseada em pedidos registrados no PDV',
-                  'Aprovação manual com PIN de administrador',
-                  'Exportação CSV compatível com contabilidade',
-                ].map((point) => (
-                  <p
-                    className="border-l border-[rgba(195,164,111,0.3)] pl-4 text-sm leading-6 text-[var(--text-soft)]"
-                    key={point}
-                  >
-                    {point}
-                  </p>
+              <div className="mt-8 grid gap-4">
+                {pillars.map((pillar, index) => (
+                  <article className={index % 2 === 0 ? 'imperial-card-soft p-5' : 'imperial-card-tilt p-5'} key={pillar.title}>
+                    <div>
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>
+                    </div>
+                  </article>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
-            {/* Payroll record */}
-            <motion.div
-              className="flex flex-col gap-3"
-              initial={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.9, ease, delay: 0.2 }}
-              viewport={{ once: true, margin: '-80px' }}
-              whileInView={{ opacity: 1, x: 0 }}
-            >
-              <span className="section-index hidden lg:block">Competência: março 2026</span>
-              <PayrollRecord animate />
-            </motion.div>
+            <HeroFloatingCard />
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="relative z-10 border-y border-[var(--border)] bg-[rgba(8,15,26,0.88)]" id="fundacao">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(201,168,76,0.03),transparent_50%)]" />
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Módulos</p>
+            <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+              Oito módulos integrados para operar o seu negócio inteiro.
+            </h2>
+            <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
+              Do PDV ao financeiro, da folha de pagamento ao calendário de eventos — tudo construído sobre
+              dados reais da sua operação, sem mock e sem dependências ocultas.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {capabilityCards.map((item, index) => (
+              <div
+                className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
+                key={item.title}
+              >
+                <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
+                  <item.icon className="size-4" />
+                </div>
+                <p className="font-semibold text-white">{item.title}</p>
+                <p className="mt-3">{item.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Section 4: CTA final ──────────────────────────────────────────────── */}
-      <section
-        className="relative z-10 py-24 text-center lg:py-32"
-        id="acesso"
-      >
-        <motion.div
-          className="mx-auto max-w-2xl px-6"
-          initial="hidden"
-          variants={scrollReveal}
-          viewport={{ once: true, margin: '-60px' }}
-          whileInView="visible"
-        >
-          <div className="flex justify-center">
-            <BrandMark />
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="imperial-card p-8 lg:p-10">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
+                <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+                  Acesso rápido para cadastro, login e entrada no painel.
+                </h2>
+                <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
+                  Os principais fluxos do portal ficam disponiveis logo na abertura da pagina para acelerar a entrada no
+                  sistema.
+                </p>
+              </div>
+
+              <div className="imperial-card-soft px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+                Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
+                experiencia.
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="imperial-card-tilt p-5">
+                <div className="flex items-center gap-3">
+                  <Waypoints className="size-5 text-[var(--info)]" />
+                  <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  Da autenticação ate a venda registrada, o caminho fica organizado em poucas etapas.
+                </p>
+              </div>
+
+              <div className="imperial-card-tilt-alt p-5">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="size-5 text-[var(--accent)]" />
+                  <p className="text-sm font-semibold text-white">Governança visível</p>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  Sessão, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
+                </p>
+              </div>
+
+              <div className="imperial-card-soft p-5">
+                <div className="flex items-center gap-3">
+                  <Globe2 className="size-5 text-[#8fffb9]" />
+                  <p className="text-sm font-semibold text-white">Domínio próprio</p>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                  O ambiente ja responde em domínio próprio, pronto para evoluir como produto de verdade.
+                </p>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <hr className="imperial-rule mx-auto mt-8 mb-10 max-w-xs" />
-
-          <p
-            className="text-[var(--text-primary)]"
-            style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 300, lineHeight: 1.3 }}
-          >
-            Seu portal comercial está pronto.
-          </p>
-
-          <div className="mt-8 flex items-center justify-center gap-8">
-            <Link className="editorial-link" href="/cadastro">
-              Criar conta <ArrowRight size={14} />
-            </Link>
-            <Link className="editorial-link--muted" href="/login">
-              Acessar
-            </Link>
-          </div>
-        </motion.div>
+        <InteractionFlowCard />
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer
-        className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]"
-        id="rodape"
-      >
+      <footer className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]" id="rodape">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
             <CompanySignatureCard />
 
             {footerColumns.map((group) => (
-              <div className="p-6" key={group.title}>
-                <p className="section-index">{group.title}</p>
+              <div className="imperial-card-soft p-6" key={group.title}>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+                  {group.title}
+                </p>
                 <div className="mt-5 space-y-3">
                   {group.links.map((link) => (
                     <Link
@@ -387,7 +455,7 @@ export function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-            <p>DESK IMPERIAL © 2026. Plataforma comercial com leitura executiva, portfólio e conformidade.</p>
+            <p>DESK IMPERIAL © 2026. Plataforma comercial com leitura executiva, portfolio e conformidade.</p>
             <div className="flex flex-wrap gap-4">
               <Link className="transition hover:text-white" href="https://app.deskimperial.online">
                 app.deskimperial.online
