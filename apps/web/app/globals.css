@@ -116,6 +116,24 @@ select {
   filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.28));
 }
 
+/* Vasco da Gama — listras diagonais preto e branco */
+.text-flag-vasco {
+  display: inline-block;
+  color: transparent;
+  background-image: repeating-linear-gradient(
+    -52deg,
+    #ffffff 0px,
+    #ffffff 10px,
+    #1a1a1a 10px,
+    #1a1a1a 20px
+  );
+  background-size: 28px 28px;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.52));
+}
+
 .rainbow-hover {
   --button-bg: #10151b;
   --button-border: rgba(255, 255, 255, 0.08);
