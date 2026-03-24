@@ -12,7 +12,7 @@ import {
   KeyRound,
   Landmark,
   Radar,
-  ShieldCheck,
+  Crown,
   Tags,
   Users,
   Waypoints,
@@ -102,7 +102,7 @@ const capabilityCards: Array<{
     stars: 4,
   },
   {
-    icon: ShieldCheck,
+    icon: Crown,
     title: 'Conformidade',
     description: 'LGPD, consentimento de cookies e governança de dados visível.',
     tags: ['LGPD', 'Dados'],
@@ -489,6 +489,12 @@ export function LandingPage() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12 lg:max-w-none" id="entregas">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
+          <motion.div
+            initial={{ opacity: 0, filter: 'blur(24px)', scale: 0.88 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+            viewport={{ once: false, amount: 0.12 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
           <div className="glass-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
@@ -521,7 +527,7 @@ export function LandingPage() {
 
               <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="size-5 text-[var(--accent)]" />
+                  <Crown className="size-5 text-[var(--accent)]" />
                   <p className="text-sm font-semibold text-white">Governança visível</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
@@ -540,8 +546,16 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+          </motion.div>
 
-          <InteractionFlowCard />
+          <motion.div
+            initial={{ opacity: 0, filter: 'blur(24px)', scale: 0.88 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+            viewport={{ once: false, amount: 0.12 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
+          >
+            <InteractionFlowCard />
+          </motion.div>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldCheck } from 'lucide-react'
+import { Crown } from 'lucide-react'
 
 export function CompanySignatureCard() {
   return (
@@ -10,12 +10,12 @@ export function CompanySignatureCard() {
 
       <div className="relative">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(155,132,96,0.28)] bg-[rgba(155,132,96,0.09)] text-[var(--accent)]">
-            <ShieldCheck className="size-5" />
+          <span className="flex size-11 items-center justify-center rounded-[10px] border border-[rgba(195,164,111,0.35)] bg-gradient-to-br from-[rgba(195,164,111,0.18)] to-[rgba(195,164,111,0.06)] text-[var(--accent)] shadow-[0_4px_16px_rgba(195,164,111,0.15)]">
+            <Crown className="size-5" />
           </span>
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-[var(--accent)]">Desk Imperial</p>
-            <p className="text-[11px] text-[var(--text-soft)]">Portal empresarial</p>
+            <p className="text-[11px] text-[var(--text-soft)]">Plataforma imperial</p>
           </div>
         </div>
 
