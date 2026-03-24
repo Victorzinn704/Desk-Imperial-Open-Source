@@ -409,49 +409,20 @@ export function LandingPage() {
             </h2>
           </motion.div>
 
-          {/* 8 cards — estilo UI reference */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {capabilityCards.map((item, index) => (
-              <motion.div
-                className="uicard group"
-                key={item.title}
-                initial={{ opacity: 0, y: 24 }}
-                viewport={{ once: false, amount: 0.1 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: (index % 4) * 0.07 }}
-              >
-                {/* dark bg layer */}
-                <div className="absolute inset-0 bg-[#111111] rounded-[1.5em]" />
-
-                <div className="uicard__body">
-                  {/* icon */}
-                  <div className="uicard__icon">
-                    <item.icon className="size-5" />
-                  </div>
-
-                  {/* title with stroke glow */}
-                  <h3 className="uicard__title">{item.title}</h3>
-
-                  {/* stars */}
-                  <div className="uicard__stars">
-                    {Array.from({ length: 5 }).map((_, si) => (
-                      <svg key={si} viewBox="0 0 576 512" className="uicard__star" fill={si < item.stars ? 'white' : 'rgba(255,255,255,0.2)'}>
-                        <path d="M316.7 17.8l65.43 132.4l146.4 21.29c26.27 3.796 36.79 36.09 17.75 54.59l-105.9 102.1l25.05 145.5c4.508 26.31-23.23 45.9-46.49 33.7L288 439.6l-130.9 68.7C133.8 520.5 106.1 500.9 110.6 474.6l25.05-145.5L29.72 226.1c-19.03-18.5-8.516-50.79 17.75-54.59l146.4-21.29l65.43-132.4C271.1-6.083 305-5.786 316.7 17.8z" />
-                      </svg>
-                    ))}
-                  </div>
-
-                  {/* tags */}
-                  <div className="uicard__tags">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="uicard__tag">{tag}</span>
-                    ))}
-                  </div>
-
-                  {/* description — expands on hover */}
-                  <p className="uicard__desc">{item.description}</p>
+          {/* 8 cards — stack sobrepostos, saindo um de dentro do outro */}
+          <div className="stackrow" style={{ perspective: '1000px' }}>
+            {capabilityCards.map((item) => (
+              <div className="stackcard" key={item.title}>
+                <div className="stackcard__title">
+                  <item.icon className="size-4 inline-block mr-2 opacity-70" />
+                  {item.title}
                 </div>
-              </motion.div>
+                <div className="stackcard__content">{item.description}</div>
+                <div className="stackcard__bar">
+                  <div className="stackcard__emptybar" />
+                  <div className="stackcard__filledbar" />
+                </div>
+              </div>
             ))}
           </div>
         </div>

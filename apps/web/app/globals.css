@@ -735,6 +735,108 @@ select {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+/* ─── Stack cards — 8 módulos sobrepostos (fiel ao código de referência) ─────── */
+
+.stackrow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  /* hide scrollbar */
+  scrollbar-width: none;
+}
+.stackrow::-webkit-scrollbar { display: none; }
+
+.stackcard {
+  display: flex;
+  flex-direction: column;
+  height: 280px;
+  width: 200px;
+  flex-shrink: 0;
+  background-color: #2b223f;
+  border-radius: 10px;
+  box-shadow: -1rem 0 3rem #00000044;
+  transition: 0.4s ease-out;
+  position: relative;
+  left: 0;
+}
+
+.stackcard:not(:first-child) {
+  margin-left: -50px;
+}
+
+.stackcard:hover {
+  transform: translateY(-20px);
+  transition: 0.4s ease-out;
+  text-shadow: 2px 2px 8px #6e5b94;
+  z-index: 10;
+}
+
+/* cards DEPOIS do hovered se abrem para a direita */
+.stackcard:hover ~ .stackcard {
+  position: relative;
+  left: 50px;
+  transform: rotateX(-15deg) rotateY(10deg);
+  transition: 0.4s ease-out;
+}
+
+.stackcard__title {
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 800;
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  right: 14px;
+  line-height: 1.3;
+}
+
+.stackcard__content {
+  position: absolute;
+  padding: 12px 14px;
+  top: 68px;
+  color: #eae0fd;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.stackcard__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 5px;
+  width: 100%;
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+
+.stackcard__emptybar {
+  background-color: #201c29;
+  width: 100%;
+  height: 100%;
+}
+
+.stackcard__filledbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #6831cfab, #a777ff 100%);
+  transition: width 0.4s ease-out;
+}
+
+.stackcard:hover .stackcard__filledbar {
+  width: 100%;
+}
+
+@media (hover: none) {
+  .stackcard:hover { transform: none; }
+  .stackcard:hover ~ .stackcard { left: 0; transform: none; }
+}
+
 /* ─── UI Reference cards (8 módulos) ────────────────────────────────────────── */
 
 .uicard {
