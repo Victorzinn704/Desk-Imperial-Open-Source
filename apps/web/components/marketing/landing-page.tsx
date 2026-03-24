@@ -373,7 +373,7 @@ export function LandingPage() {
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12" id="entregas">
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
           <div className="imperial-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
@@ -425,9 +425,9 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <InteractionFlowCard />
+          <InteractionFlowCard />
+        </div>
       </section>
 
       <footer className="relative z-10 border-t border-[var(--border)] bg-[rgba(5,11,20,0.9)]" id="rodape">
