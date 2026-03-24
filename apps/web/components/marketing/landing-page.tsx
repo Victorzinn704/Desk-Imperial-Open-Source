@@ -396,7 +396,7 @@ export function LandingPage() {
       <section className="relative z-10" id="fundacao">
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-12">
           {/* Section header — texto emerge da galáxia */}
-          <div className="mb-16 flex flex-col gap-2">
+          <div className="mb-16 flex flex-col items-center gap-2 text-center">
             <motion.p
               className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]"
               initial={{ opacity: 0, scale: 0.6, filter: 'blur(18px)' }}
@@ -407,7 +407,7 @@ export function LandingPage() {
               Módulos
             </motion.p>
             <motion.h2
-              className="mt-1 max-w-2xl text-4xl font-semibold leading-tight text-white sm:text-5xl"
+              className="mt-1 max-w-2xl text-center text-4xl font-semibold leading-tight text-white sm:text-5xl"
               initial={{ opacity: 0, scale: 0.72, filter: 'blur(28px)', y: 10 }}
               viewport={{ once: false, amount: 0.3 }}
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}

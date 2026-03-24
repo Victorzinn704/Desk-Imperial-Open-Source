@@ -742,12 +742,10 @@ select {
   flex-direction: row;
   align-items: flex-end;
   justify-content: center;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  padding-left: 100px; /* compensa o margin-left negativo do primeiro card */
-  scrollbar-width: none;
+  /* overflow visible para não cortar o shift hover dos cards */
+  overflow: visible;
+  padding: 24px 70px 16px; /* espaço lateral para o shift de 50px */
 }
-.stackrow::-webkit-scrollbar { display: none; }
 
 .stackcard {
   display: flex;
