@@ -709,6 +709,197 @@ select {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
 }
 
+/* ─── Editorial design system ───────────────────────────────────────────────── */
+
+.imperial-rule {
+  display: block;
+  height: 1px;
+  border: none;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.30;
+  width: 100%;
+}
+
+.imperial-rule--left {
+  display: block;
+  height: 1px;
+  border: none;
+  background: linear-gradient(90deg, var(--accent), rgba(195, 164, 111, 0.08), transparent);
+  opacity: 0.45;
+  width: 100%;
+}
+
+.editorial-type {
+  font-family: "Manrope", sans-serif;
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.section-index {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(195, 164, 111, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Data record (comanda / folha) ─────────────────────────────────────────── */
+
+.data-record {
+  position: relative;
+  border: 1px solid var(--border);
+  border-top: 1px solid rgba(195, 164, 111, 0.28);
+  background: var(--surface);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.data-record__header {
+  padding: 0.875rem 1.125rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.data-record__body {
+  padding: 0.75rem 1.125rem 1rem;
+}
+
+.data-record__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.25rem 0;
+  color: var(--text-soft);
+}
+
+.data-record__row--sub {
+  font-size: 0.72rem;
+  color: rgba(122, 136, 150, 0.7);
+  padding: 0 0 0.25rem 0;
+  flex-wrap: wrap;
+}
+
+.data-record__row--total {
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.625rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.data-record__footer {
+  padding: 0.625rem 1.125rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: rgba(122, 136, 150, 0.55);
+  letter-spacing: 0.04em;
+}
+
+.data-record__status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(195, 164, 111, 0.7);
+  animation: data-record-pulse 2s ease-in-out infinite;
+}
+
+@keyframes data-record-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(195, 164, 111, 0.7); }
+  50%       { opacity: 0.55; box-shadow: 0 0 12px rgba(195, 164, 111, 0.35); }
+}
+
+/* ─── Proof lines (manifesto section) ───────────────────────────────────────── */
+
+.proof-line {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 0 1.5rem;
+  align-items: baseline;
+  padding: 1.125rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.proof-line:last-child {
+  border-bottom: none;
+}
+
+.proof-line__number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.proof-line__label {
+  display: block;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.proof-line__desc {
+  display: block;
+  grid-column: 2;
+  margin-top: 0.125rem;
+  color: var(--text-soft);
+  font-size: 0.875rem;
+}
+
+/* ─── Editorial CTA links ────────────────────────────────────────────────────── */
+
+.editorial-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(195, 164, 111, 0.35);
+  padding-bottom: 0.125rem;
+  transition: color 0.22s ease, border-color 0.22s ease;
+}
+
+.editorial-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.editorial-link--muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color 0.22s ease;
+}
+
+.editorial-link--muted:hover {
+  color: var(--text-primary);
+}
+
 /* ─── New animations: warm-breath, cinematic-reveal ─────────────────────────── */
 
 @keyframes warm-breath {
