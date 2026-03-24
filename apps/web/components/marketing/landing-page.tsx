@@ -18,7 +18,7 @@ import {
   Waypoints,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { CompanySignatureCard } from '@/components/marketing/company-signature-card'
+import { LetterCard } from '@/components/marketing/letter-card'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
@@ -562,7 +562,7 @@ export function LandingPage() {
       <footer className="relative z-10" id="rodape">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
-            <CompanySignatureCard />
+            <LetterCard />
 
             {footerColumns.map((group, gi) => (
               <div className="fcard-wrap" key={group.title}>
