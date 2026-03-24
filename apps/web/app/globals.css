@@ -856,6 +856,23 @@ select {
   }
 }
 
+/* ─── Carpet wrapper — clips the sliding card ───────────────────────────────── */
+
+.s-carpet-wrap {
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.s-carpet-wrap[data-side="right"] {
+  margin-left: 4rem;
+  border-top-left-radius: 0;
+}
+
+.s-carpet-wrap[data-side="left"] {
+  margin-right: 4rem;
+  border-top-right-radius: 0;
+}
+
 /* ─── S-pattern feature cards (full-width alternating) ───────────────────────── */
 
 .s-feature-card {
@@ -865,7 +882,6 @@ select {
   background: rgba(11, 13, 18, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.065);
   box-shadow: 0 12px 56px rgba(0, 0, 0, 0.5);
-  margin: 0 1.5rem 1.25rem;
   transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
@@ -876,15 +892,9 @@ select {
 
 /* Right-side card is offset to visually create the S */
 .s-feature-card[data-side="right"] {
-  margin-left: 4rem;
-  margin-right: 0;
-  border-top-left-radius: 0;
 }
 
 .s-feature-card[data-side="left"] {
-  margin-right: 4rem;
-  margin-left: 0;
-  border-top-right-radius: 0;
 }
 
 .s-feature-card__inner {
@@ -1006,65 +1016,67 @@ select {
 
 /* ─── Footer floating 3D cards ───────────────────────────────────────────────── */
 
-.footer-float-wrap {
-  position: relative;
-  perspective: 700px;
-  perspective-origin: center 60%;
+.fcard-wrap {
+  perspective: 900px;
+  perspective-origin: center 55%;
 }
 
-.footer-float-card {
+.fcard-obj {
   position: relative;
-  background: rgb(15, 15, 15);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 18px;
+  width: 100%;
+  height: 220px;
   transform-style: preserve-3d;
-  transform: rotateX(-14deg) rotateY(8deg);
-  animation: footer-float 4.5s ease-in-out infinite;
-  transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.3s ease;
-  will-change: transform;
+  transform: rotateX(-25deg) rotateY(20deg);
+  transition: transform 0.5s ease;
 }
 
-.footer-float-card:hover {
-  transform: rotateX(-6deg) rotateY(2deg) translateY(-8px);
-  border-color: rgba(155, 132, 96, 0.22);
+.fcard-obj:hover {
+  transform: rotateX(-12deg) rotateY(8deg);
 }
 
-/* Glow floor — igual ao .objchild::after do código original */
-.footer-float-card::after {
+/* spinning child — carries the glow halo */
+.fcard-spin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: fcard-rotate 4s linear infinite;
+}
+
+.fcard-spin::after {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  filter: blur(20px);
+  box-shadow: 0 0 200px 15px rgba(255, 255, 255, 0.55);
+  transform: rotateX(90deg) scale(1.1) translateZ(-120px);
   pointer-events: none;
-  filter: blur(22px);
-  box-shadow: 0 0 120px 8px rgba(255, 255, 255, 0.07);
-  transform: rotateX(90deg) scaleX(1.1) translateZ(-90px);
-  opacity: 0.7;
-  transition: opacity 0.4s ease;
 }
 
-.footer-float-card:hover::after {
-  opacity: 1.4;
-  box-shadow: 0 0 120px 12px rgba(195, 164, 111, 0.12);
+/* the visible face — bobs up-down, content is here */
+.fcard-face {
+  position: absolute;
+  inset: 0;
+  background: rgb(21, 21, 21);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 1.5rem;
+  transform: translateZ(4px);
+  animation: fcard-updown 4s ease-in-out infinite;
+  overflow: hidden;
 }
 
-/* Each card floats at its own phase */
-.footer-float-card:nth-child(1) { animation-delay: 0s; }
-.footer-float-card:nth-child(2) { animation-delay: 0.6s; }
-.footer-float-card:nth-child(3) { animation-delay: 1.2s; }
+@keyframes fcard-rotate {
+  0%   { transform: rotate3d(0, 1, 0, 0deg); }
+  100% { transform: rotate3d(0, 1, 0, 360deg); }
+}
 
-@keyframes footer-float {
-  0%, 100% {
-    transform: rotateX(-14deg) rotateY(8deg) translateY(0px);
-  }
-  50% {
-    transform: rotateX(-14deg) rotateY(-4deg) translateY(-14px);
-  }
+@keyframes fcard-updown {
+  0%   { transform: translateZ(4px) translateY(0px); }
+  50%  { transform: translateZ(4px) translateY(-18px); }
+  100% { transform: translateZ(4px) translateY(0px); }
 }
 
 @media (hover: none) {
-  .footer-float-card {
-    animation: none;
-    transform: none;
-  }
+  .fcard-obj { transform: rotateX(-10deg) rotateY(8deg); animation: none; }
+  .fcard-face { animation: none; }
 }

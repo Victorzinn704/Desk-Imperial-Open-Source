@@ -469,49 +469,36 @@ export function LandingPage() {
             icon: CalendarDays,
           },
         ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
-          <motion.div
+          <div
             key={tag}
-            className="s-feature-card"
+            className="s-carpet-wrap"
             data-side={side}
-            initial={{
-              clipPath: side === 'left'
-                ? 'inset(0 100% 0 0 round 22px)'
-                : 'inset(0 0 0 100% round 22px)',
-              opacity: 0,
-            }}
-            viewport={{ once: false, margin: '-8%' }}
-            whileInView={{
-              clipPath: 'inset(0 0% 0 0% round 22px)',
-              opacity: 1,
-            }}
-            transition={{
-              clipPath: {
-                duration: 1.4,
-                ease: [0.16, 1, 0.3, 1],
-                delay: i * 0.18,
-              },
-              opacity: {
-                duration: 0.3,
-                delay: i * 0.18,
-              },
-            }}
           >
-            <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
-              <div className="s-feature-card__text">
-                <span className="s-feature-card__tag">
-                  <Icon className="size-3.5" />
-                  {tag}
-                </span>
-                <h3 className="s-feature-card__title">{title}</h3>
-                <p className="s-feature-card__body">{body}</p>
+            <motion.div
+              className="s-feature-card"
+              data-side={side}
+              initial={{ x: side === 'left' ? '-100%' : '100%' }}
+              viewport={{ once: false, margin: '-8%' }}
+              whileInView={{ x: '0%' }}
+              transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.18 }}
+            >
+              <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
+                <div className="s-feature-card__text">
+                  <span className="s-feature-card__tag">
+                    <Icon className="size-3.5" />
+                    {tag}
+                  </span>
+                  <h3 className="s-feature-card__title">{title}</h3>
+                  <p className="s-feature-card__body">{body}</p>
+                </div>
+                <div className="s-feature-card__stat">
+                  <span className="s-feature-card__stat-value">{stat.value}</span>
+                  <span className="s-feature-card__stat-label">{stat.label}</span>
+                </div>
               </div>
-              <div className="s-feature-card__stat">
-                <span className="s-feature-card__stat-value">{stat.value}</span>
-                <span className="s-feature-card__stat-label">{stat.label}</span>
-              </div>
-            </div>
-            <div className="s-feature-card__bar" />
-          </motion.div>
+              <div className="s-feature-card__bar" />
+            </motion.div>
+          </div>
         ))}
       </section>
 
@@ -578,22 +565,25 @@ export function LandingPage() {
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
             <CompanySignatureCard />
 
-            {footerColumns.map((group) => (
-              <div className="footer-float-wrap" key={group.title}>
-                <div className="footer-float-card p-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-                    {group.title}
-                  </p>
-                  <div className="mt-5 space-y-3">
-                    {group.links.map((link) => (
-                      <Link
-                        className="block text-sm leading-7 text-[var(--text-soft)] transition hover:text-white"
-                        href={link.href}
-                        key={link.label}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+            {footerColumns.map((group, gi) => (
+              <div className="fcard-wrap" key={group.title}>
+                <div className="fcard-obj">
+                  <div className="fcard-spin" />
+                  <div className="fcard-face" style={{ animationDelay: `${gi * 0.5}s` }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+                      {group.title}
+                    </p>
+                    <div className="mt-5 space-y-3">
+                      {group.links.map((link) => (
+                        <Link
+                          className="block text-sm leading-7 text-[var(--text-soft)] transition hover:text-white"
+                          href={link.href}
+                          key={link.label}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
