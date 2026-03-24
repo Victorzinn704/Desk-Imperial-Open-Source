@@ -30,13 +30,13 @@ export function LetterCard() {
 
         {/* ── Faces do envelope ─────────────────────────────────── */}
         {/* Tampa (topo triangular — abre ao hover) */}
-        <div className="tp transition-all duration-1000 group-hover:duration-100 bg-[#1e222c] absolute group-hover:[clip-path:polygon(50%_0%,_100%_0,_0_0)] w-full h-full [clip-path:polygon(50%_50%,_100%_0,_0_0)]" />
+        <div className="tp transition-all duration-1000 group-hover:duration-100 bg-[#0e1018] absolute group-hover:[clip-path:polygon(50%_0%,_100%_0,_0_0)] w-full h-full [clip-path:polygon(50%_50%,_100%_0,_0_0)]" />
         {/* Lateral esquerda */}
-        <div className="lft transition-all duration-700 absolute w-full h-full bg-[#181b24] [clip-path:polygon(50%_50%,_0_0,_0_100%)]" />
+        <div className="lft transition-all duration-700 absolute w-full h-full bg-[#090b10] [clip-path:polygon(50%_50%,_0_0,_0_100%)]" />
         {/* Lateral direita */}
-        <div className="rgt transition-all duration-700 absolute w-full h-full bg-[#1e222c] [clip-path:polygon(50%_50%,_100%_0,_100%_100%)]" />
+        <div className="rgt transition-all duration-700 absolute w-full h-full bg-[#0e1018] [clip-path:polygon(50%_50%,_100%_0,_100%_100%)]" />
         {/* Base */}
-        <div className="btm transition-all duration-700 absolute w-full h-full bg-[#181b24] [clip-path:polygon(50%_50%,_100%_100%,_0_100%)]" />
+        <div className="btm transition-all duration-700 absolute w-full h-full bg-[#090b10] [clip-path:polygon(50%_50%,_100%_100%,_0_100%)]" />
 
         {/* Borda dourada sutil no envelope */}
         <div className="absolute inset-0 rounded-sm ring-1 ring-[rgba(195,164,111,0.12)] pointer-events-none" />

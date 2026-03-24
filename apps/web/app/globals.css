@@ -1221,11 +1221,13 @@ select {
 .fcard-wrap {
   perspective: 900px;
   perspective-origin: center 55%;
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .fcard-obj {
   position: relative;
-  width: 100%;
+  width: 220px;
   height: 220px;
   transform-style: preserve-3d;
   transform: rotateX(-25deg) rotateY(20deg);
