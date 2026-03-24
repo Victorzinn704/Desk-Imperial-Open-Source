@@ -46,6 +46,12 @@ body {
   color: var(--text-primary);
 }
 
+/* Custom cursor active on landing page */
+body.cursor-none,
+body.cursor-none * {
+  cursor: none !important;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -706,79 +712,25 @@ select {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
 }
 
-/* ─── Glass card + crack on hover ───────────────────────────────────────────── */
+/* ─── Dark card — substitui o antigo glass-card ──────────────────────────────── */
 
 .glass-card {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
   border-radius: 1.75rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(12, 14, 18, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
-    background 0.35s ease,
-    border-color 0.35s ease,
-    box-shadow 0.4s ease;
-}
-
-.glass-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Glass sheen — top-left highlight */
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.01) 50%,
-    transparent 100%
-  );
-  border-radius: inherit;
-}
-
-/* Crack — SVG com ponto de impacto real, aparece no hover */
-.glass-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.22s ease;
-  border-radius: inherit;
-  background-image:
-    radial-gradient(circle 22px at 39.5% 37.3%, rgba(255,255,255,0.38) 0%, transparent 100%),
-    url('/crack.svg');
-  background-size: cover, cover;
-  background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(155, 132, 96, 0.22);
   box-shadow:
-    0 16px 56px rgba(0, 0, 0, 0.52),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.glass-card:hover::after {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .glass-card:hover::after {
-    opacity: 0;
-  }
+    0 14px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }

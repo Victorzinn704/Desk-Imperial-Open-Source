@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, type MouseEvent as ReactMouseEvent } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import {
   BadgeDollarSign,
@@ -23,6 +23,7 @@ import { FounderPortraitCard } from '@/components/marketing/founder-portrait-car
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
 import { SpaceBackground } from '@/components/marketing/space-background'
+import { CustomCursor } from '@/components/marketing/custom-cursor'
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
@@ -125,9 +126,42 @@ const footerColumns = [
   },
 ]
 
+async function fireConfetti(x: number, y: number) {
+  const confetti = (await import('canvas-confetti')).default
+  const origin = { x: x / window.innerWidth, y: y / window.innerHeight }
+  confetti({
+    particleCount: 90,
+    spread: 80,
+    startVelocity: 28,
+    decay: 0.88,
+    origin,
+    colors: ['#c3a46f', '#d4b86a', '#ffffff', '#ffe066', '#9b8460', '#f0d080'],
+    scalar: 1.1,
+    ticks: 180,
+    gravity: 0.7,
+  })
+  confetti({
+    particleCount: 30,
+    spread: 120,
+    startVelocity: 14,
+    decay: 0.82,
+    origin,
+    colors: ['#5a8cf5', '#8fffb9', '#ffffff'],
+    scalar: 0.7,
+    ticks: 120,
+    gravity: 0.5,
+  })
+}
+
 export function LandingPage() {
   const pointerX = useMotionValue(0)
   const pointerY = useMotionValue(0)
+
+  // Cursor none class on body while on landing page
+  useEffect(() => {
+    document.body.classList.add('cursor-none')
+    return () => document.body.classList.remove('cursor-none')
+  }, [])
 
   const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {
     stiffness: 120,
@@ -172,8 +206,16 @@ export function LandingPage() {
     pointerY.set(0)
   }
 
+  const handlePageClick = (e: ReactMouseEvent<HTMLElement>) => {
+    void fireConfetti(e.clientX, e.clientY)
+  }
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <main
+      className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
+      onClick={handlePageClick}
+    >
+      <CustomCursor />
       <SpaceBackground />
 
       {/* ── Topbar fixa full-width ────────────────────────────────────────────── */}
