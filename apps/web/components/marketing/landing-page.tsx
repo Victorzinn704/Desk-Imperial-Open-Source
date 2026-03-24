@@ -579,20 +579,22 @@ export function LandingPage() {
             <CompanySignatureCard />
 
             {footerColumns.map((group) => (
-              <div className="glass-card p-6" key={group.title}>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-                  {group.title}
-                </p>
-                <div className="mt-5 space-y-3">
-                  {group.links.map((link) => (
-                    <Link
-                      className="block text-sm leading-7 text-[var(--text-soft)] transition hover:text-white"
-                      href={link.href}
-                      key={link.label}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+              <div className="footer-float-wrap" key={group.title}>
+                <div className="footer-float-card p-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+                    {group.title}
+                  </p>
+                  <div className="mt-5 space-y-3">
+                    {group.links.map((link) => (
+                      <Link
+                        className="block text-sm leading-7 text-[var(--text-soft)] transition hover:text-white"
+                        href={link.href}
+                        key={link.label}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}

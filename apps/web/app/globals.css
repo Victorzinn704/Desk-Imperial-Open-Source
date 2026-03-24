@@ -1003,3 +1003,68 @@ select {
     flex-direction: column;
   }
 }
+
+/* ─── Footer floating 3D cards ───────────────────────────────────────────────── */
+
+.footer-float-wrap {
+  position: relative;
+  perspective: 700px;
+  perspective-origin: center 60%;
+}
+
+.footer-float-card {
+  position: relative;
+  background: rgb(15, 15, 15);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  transform-style: preserve-3d;
+  transform: rotateX(-14deg) rotateY(8deg);
+  animation: footer-float 4.5s ease-in-out infinite;
+  transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.3s ease;
+  will-change: transform;
+}
+
+.footer-float-card:hover {
+  transform: rotateX(-6deg) rotateY(2deg) translateY(-8px);
+  border-color: rgba(155, 132, 96, 0.22);
+}
+
+/* Glow floor — igual ao .objchild::after do código original */
+.footer-float-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  filter: blur(22px);
+  box-shadow: 0 0 120px 8px rgba(255, 255, 255, 0.07);
+  transform: rotateX(90deg) scaleX(1.1) translateZ(-90px);
+  opacity: 0.7;
+  transition: opacity 0.4s ease;
+}
+
+.footer-float-card:hover::after {
+  opacity: 1.4;
+  box-shadow: 0 0 120px 12px rgba(195, 164, 111, 0.12);
+}
+
+/* Each card floats at its own phase */
+.footer-float-card:nth-child(1) { animation-delay: 0s; }
+.footer-float-card:nth-child(2) { animation-delay: 0.6s; }
+.footer-float-card:nth-child(3) { animation-delay: 1.2s; }
+
+@keyframes footer-float {
+  0%, 100% {
+    transform: rotateX(-14deg) rotateY(8deg) translateY(0px);
+  }
+  50% {
+    transform: rotateX(-14deg) rotateY(-4deg) translateY(-14px);
+  }
+}
+
+@media (hover: none) {
+  .footer-float-card {
+    animation: none;
+    transform: none;
+  }
+}
