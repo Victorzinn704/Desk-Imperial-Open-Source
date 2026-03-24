@@ -388,17 +388,26 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {capabilityCards.map((item, index) => (
-              <div
-                className={`${index % 2 === 0 ? 'glass-card' : 'glass-card'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
-                key={item.title}
-              >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
+          <div className="module-stack" style={{ perspective: '900px' }}>
+            {capabilityCards.map((item) => (
+              <div className="module-stack-card" key={item.title}>
+                {/* Icon */}
+                <div className="absolute left-4 top-5 flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--accent)]">
                   <item.icon className="size-4" />
                 </div>
-                <p className="font-semibold text-white">{item.title}</p>
-                <p className="mt-3">{item.description}</p>
+                {/* Title */}
+                <p className="absolute left-4 top-[3.8rem] text-sm font-bold leading-tight text-white">
+                  {item.title}
+                </p>
+                {/* Description */}
+                <p className="absolute left-4 right-4 top-[6.2rem] text-[0.68rem] leading-[1.55] text-[var(--text-soft)]">
+                  {item.description}
+                </p>
+                {/* Hover bar */}
+                <div className="module-stack-bar">
+                  <div className="module-stack-bar__empty" />
+                  <div className="module-stack-bar__fill" />
+                </div>
               </div>
             ))}
           </div>

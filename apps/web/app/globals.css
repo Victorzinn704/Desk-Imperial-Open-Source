@@ -734,3 +734,85 @@ select {
     0 14px 48px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
+
+/* ─── Module stack cards ─────────────────────────────────────────────────────── */
+
+.module-stack {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  overflow: visible;
+}
+
+.module-stack-card {
+  position: relative;
+  flex-shrink: 0;
+  width: 180px;
+  height: 260px;
+  border-radius: 14px;
+  background: rgba(14, 16, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.5);
+  margin-left: -52px;
+  transition: transform 0.4s ease-out, left 0.4s ease-out, box-shadow 0.4s ease-out;
+  left: 0;
+  overflow: hidden;
+}
+
+.module-stack-card:first-child {
+  margin-left: 0;
+}
+
+.module-stack-card:hover {
+  transform: translateY(-22px);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.55), 0 0 24px rgba(155, 132, 96, 0.15);
+  z-index: 10;
+  border-color: rgba(155, 132, 96, 0.3);
+}
+
+/* Cards AFTER hovered card shift right and tilt */
+.module-stack-card:hover ~ .module-stack-card {
+  left: 52px;
+  transform: rotateX(-12deg) rotateY(8deg);
+}
+
+/* Bar at bottom */
+.module-stack-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.module-stack-bar__empty {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.module-stack-bar__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(104, 49, 207, 0.7), #c3a46f);
+  transition: width 0.4s ease-out;
+}
+
+.module-stack-card:hover .module-stack-bar__fill {
+  width: 100%;
+}
+
+@media (hover: none) {
+  .module-stack-card:hover {
+    transform: none;
+  }
+  .module-stack-card:hover ~ .module-stack-card {
+    left: 0;
+    transform: none;
+  }
+}
