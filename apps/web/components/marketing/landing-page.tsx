@@ -375,41 +375,70 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10" id="fundacao">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Módulos</p>
-            <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+      <section className="relative z-10 overflow-hidden" id="fundacao">
+        <div className="mx-auto max-w-7xl px-6 py-24 lg:px-12">
+          {/* Section header */}
+          <motion.div
+            className="mb-16 flex flex-col gap-2"
+            initial={{ opacity: 0, y: 28 }}
+            viewport={{ once: true, margin: '-80px' }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Módulos</p>
+            <h2 className="mt-1 max-w-2xl text-4xl font-semibold leading-tight text-white sm:text-5xl">
               Oito módulos integrados para operar o seu negócio inteiro.
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-soft)]">
-              Do PDV ao financeiro, da folha de pagamento ao calendário de eventos — tudo construído sobre
-              dados reais da sua operação, sem mock e sem dependências ocultas.
-            </p>
-          </div>
+          </motion.div>
 
-          <div className="module-stack" style={{ perspective: '900px' }}>
-            {capabilityCards.map((item) => (
-              <div className="module-stack-card" key={item.title}>
-                {/* Icon */}
-                <div className="absolute left-4 top-5 flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--accent)]">
-                  <item.icon className="size-4" />
-                </div>
-                {/* Title */}
-                <p className="absolute left-4 top-[3.8rem] text-sm font-bold leading-tight text-white">
-                  {item.title}
-                </p>
-                {/* Description */}
-                <p className="absolute left-4 right-4 top-[6.2rem] text-[0.68rem] leading-[1.55] text-[var(--text-soft)]">
-                  {item.description}
-                </p>
-                {/* Hover bar */}
-                <div className="module-stack-bar">
-                  <div className="module-stack-bar__empty" />
-                  <div className="module-stack-bar__fill" />
-                </div>
-              </div>
-            ))}
+          {/* S-pattern grid — 2 colunas, 4 linhas */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            {capabilityCards.map((item, index) => {
+              const isLeft = index % 2 === 0
+              const row = Math.floor(index / 2)
+              return (
+                <motion.div
+                  className="magazine-card group"
+                  key={item.title}
+                  initial={{ opacity: 0, x: isLeft ? -72 : 72 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.65,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: row * 0.08,
+                  }}
+                >
+                  {/* Card header — always visible */}
+                  <div className="magazine-card__header">
+                    <span className="magazine-card__index">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="magazine-card__icon">
+                        <item.icon className="size-4" />
+                      </span>
+                      <p className="text-base font-bold tracking-tight text-white">
+                        {item.title}
+                      </p>
+                    </div>
+                    <div className="magazine-card__rule" />
+                  </div>
+
+                  {/* Description — pergaminho/calendar reveal on hover */}
+                  <div className="magazine-card__body">
+                    <p className="text-sm leading-7 text-[var(--text-soft)]">
+                      {item.description}
+                    </p>
+                  </div>
+
+                  {/* Bottom fill bar */}
+                  <div className="magazine-card__bar">
+                    <div className="magazine-card__bar-fill" />
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>

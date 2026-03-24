@@ -735,84 +735,123 @@ select {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* ─── Module stack cards ─────────────────────────────────────────────────────── */
+/* ─── Magazine card — S-pattern + pergaminho reveal ────────────────────────── */
 
-.module-stack {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: flex-end;
-  overflow: visible;
-}
-
-.module-stack-card {
+.magazine-card {
   position: relative;
-  flex-shrink: 0;
-  width: 180px;
-  height: 260px;
-  border-radius: 14px;
-  background: rgba(14, 16, 22, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.5);
-  margin-left: -52px;
-  transition: transform 0.4s ease-out, left 0.4s ease-out, box-shadow 0.4s ease-out;
-  left: 0;
   overflow: hidden;
+  border-radius: 18px;
+  background: rgba(11, 13, 18, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+  transition:
+    border-color 0.4s ease,
+    box-shadow 0.4s ease,
+    transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  perspective: 800px;
 }
 
-.module-stack-card:first-child {
-  margin-left: 0;
+.magazine-card:hover {
+  border-color: rgba(155, 132, 96, 0.28);
+  box-shadow: 0 18px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(155, 132, 96, 0.12);
+  transform: translateY(-4px);
 }
 
-.module-stack-card:hover {
-  transform: translateY(-22px);
-  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.55), 0 0 24px rgba(155, 132, 96, 0.15);
-  z-index: 10;
-  border-color: rgba(155, 132, 96, 0.3);
+/* ── Header — always visible ─────────────────────────── */
+
+.magazine-card__header {
+  padding: 1.5rem 1.5rem 0;
 }
 
-/* Cards AFTER hovered card shift right and tilt */
-.module-stack-card:hover ~ .module-stack-card {
-  left: 52px;
-  transform: rotateX(-12deg) rotateY(8deg);
+.magazine-card__index {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  opacity: 0.7;
 }
 
-/* Bar at bottom */
-.module-stack-bar {
+.magazine-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Divider line that grows on hover */
+.magazine-card__rule {
+  margin-top: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(155, 132, 96, 0.5), transparent);
+  transform-origin: left center;
+  transform: scaleX(0.18);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.magazine-card:hover .magazine-card__rule {
+  transform: scaleX(1);
+}
+
+/* ── Body — pergaminho/calendar reveal ───────────────── */
+
+.magazine-card__body {
+  padding: 1rem 1.5rem 1.5rem;
+  transform-origin: top center;
+  transform: perspective(600px) rotateX(-62deg) translateY(-12px);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.42s ease,
+    max-height 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.magazine-card:hover .magazine-card__body {
+  transform: perspective(600px) rotateX(0deg) translateY(0);
+  opacity: 1;
+  max-height: 200px;
+}
+
+/* ── Bottom fill bar ─────────────────────────────────── */
+
+.magazine-card__bar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.module-stack-bar__empty {
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.module-stack-bar__fill {
+.magazine-card__bar-fill {
   position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 3;
+  inset: 0;
   width: 0;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(104, 49, 207, 0.7), #c3a46f);
-  transition: width 0.4s ease-out;
+  background: linear-gradient(90deg, rgba(104, 49, 207, 0.65), #c3a46f 80%);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.module-stack-card:hover .module-stack-bar__fill {
+.magazine-card:hover .magazine-card__bar-fill {
   width: 100%;
 }
 
 @media (hover: none) {
-  .module-stack-card:hover {
+  .magazine-card__body {
     transform: none;
+    opacity: 1;
+    max-height: none;
   }
-  .module-stack-card:hover ~ .module-stack-card {
-    left: 0;
-    transform: none;
+  .magazine-card__rule {
+    transform: scaleX(1);
   }
 }
