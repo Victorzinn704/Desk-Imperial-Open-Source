@@ -269,7 +269,7 @@ export function LandingPage() {
                     },
                   }}
                 >
-                  <span className="text-flag-vasco">{line}</span>
+                  <span className="text-flag-brazil">{line}</span>
                 </motion.span>
               ))}
             </motion.div>
