@@ -381,7 +381,7 @@ export function LandingPage() {
           <motion.div
             className="mb-16 flex flex-col gap-2"
             initial={{ opacity: 0, y: 28 }}
-            viewport={{ once: true, margin: '-80px' }}
+            viewport={{ once: false, margin: '-10%' }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
@@ -401,7 +401,7 @@ export function LandingPage() {
                   className="magazine-card group"
                   key={item.title}
                   initial={{ opacity: 0, x: isLeft ? -72 : 72 }}
-                  viewport={{ once: true, margin: '-60px' }}
+                  viewport={{ once: false, margin: '-10%' }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{
                     duration: 0.65,
@@ -474,7 +474,7 @@ export function LandingPage() {
             className="s-feature-card"
             data-side={side}
             initial={{ opacity: 0, x: side === 'left' ? -100 : 100 }}
-            viewport={{ once: true, margin: '-80px' }}
+            viewport={{ once: false, margin: '-10%' }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: i * 0.04 }}
           >
