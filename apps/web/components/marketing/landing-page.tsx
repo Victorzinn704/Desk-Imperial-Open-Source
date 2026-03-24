@@ -416,7 +416,7 @@ export function LandingPage() {
                 className="uicard group"
                 key={item.title}
                 initial={{ opacity: 0, y: 24 }}
-                viewport={{ once: true, amount: 0.1 }}
+                viewport={{ once: false, amount: 0.1 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: (index % 4) * 0.07 }}
               >
@@ -488,7 +488,7 @@ export function LandingPage() {
             className="s-feature-card"
             data-side={side}
             initial={{ scaleX: 0, opacity: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
+            viewport={{ once: false, amount: 0.15 }}
             whileInView={{ scaleX: 1, opacity: 1 }}
             style={{ transformOrigin: side === 'left' ? 'left center' : 'right center' }}
             transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.2 }}
