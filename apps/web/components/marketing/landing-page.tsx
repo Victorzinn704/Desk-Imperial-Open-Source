@@ -393,7 +393,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative z-10 overflow-hidden" id="fundacao">
+      <section className="relative z-10" id="fundacao">
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-12">
           {/* Section header */}
           <motion.div
@@ -415,10 +415,10 @@ export function LandingPage() {
               <motion.div
                 className="uicard group"
                 key={item.title}
-                initial={{ opacity: 0, y: 32 }}
-                viewport={{ once: false, margin: '-8%' }}
+                initial={{ opacity: 0, y: 24 }}
+                viewport={{ once: true, amount: 0.1 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: (index % 4) * 0.06 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: (index % 4) * 0.07 }}
               >
                 {/* dark bg layer */}
                 <div className="absolute inset-0 bg-[#111111] rounded-[1.5em]" />
@@ -488,7 +488,7 @@ export function LandingPage() {
             className="s-feature-card"
             data-side={side}
             initial={{ scaleX: 0, opacity: 0 }}
-            viewport={{ once: false, margin: '-8%' }}
+            viewport={{ once: true, amount: 0.15 }}
             whileInView={{ scaleX: 1, opacity: 1 }}
             style={{ transformOrigin: side === 'left' ? 'left center' : 'right center' }}
             transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.2 }}

@@ -979,7 +979,6 @@ select {
 
 .s-feature-card {
   position: relative;
-  overflow: hidden;
   border-radius: 22px;
   background: rgba(11, 13, 18, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.065);
