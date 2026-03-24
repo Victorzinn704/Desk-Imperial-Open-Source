@@ -22,6 +22,7 @@ import { CompanySignatureCard } from '@/components/marketing/company-signature-c
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
+import { SpaceBackground } from '@/components/marketing/space-background'
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
@@ -173,6 +174,7 @@ export function LandingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <SpaceBackground />
 
       {/* ── Topbar fixa full-width ────────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.85)] px-6 py-4 backdrop-blur-xl lg:px-12">
@@ -284,10 +286,10 @@ export function LandingPage() {
                 <div
                   className={
                     index === 1
-                      ? 'imperial-card-tilt-alt p-5'
+                      ? 'glass-card p-5'
                       : index === 2
-                        ? 'imperial-card-tilt p-5'
-                        : 'imperial-card-stat p-5'
+                        ? 'glass-card p-5'
+                        : 'glass-card p-5'
                   }
                   key={metric.label}
                 >
@@ -306,7 +308,7 @@ export function LandingPage() {
           >
             <FounderPortraitCard />
 
-            <div className="imperial-card relative z-10 p-6">
+            <div className="glass-card relative z-10 p-6">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-soft)]">Status</span>
                 <span className="rounded-full border border-[rgba(201,168,76,0.28)] bg-[rgba(201,168,76,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A84C]">
@@ -316,7 +318,7 @@ export function LandingPage() {
 
               <div className="mt-8 grid gap-4">
                 {pillars.map((pillar, index) => (
-                  <article className={index % 2 === 0 ? 'imperial-card-soft p-5' : 'imperial-card-tilt p-5'} key={pillar.title}>
+                  <article className={index % 2 === 0 ? 'glass-card p-5' : 'glass-card p-5'} key={pillar.title}>
                     <div>
                       <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>
@@ -347,7 +349,7 @@ export function LandingPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {capabilityCards.map((item, index) => (
               <div
-                className={`${index % 2 === 0 ? 'imperial-card-tilt' : 'imperial-card-tilt-alt'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
+                className={`${index % 2 === 0 ? 'glass-card' : 'glass-card'} p-5 text-sm leading-7 text-[var(--text-soft)]`}
                 key={item.title}
               >
                 <div className="mb-4 flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-soft)] text-[var(--accent)]">
@@ -363,7 +365,7 @@ export function LandingPage() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-12 lg:max-w-none" id="entregas">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
-          <div className="imperial-card p-8 lg:p-10">
+          <div className="glass-card p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
@@ -376,14 +378,14 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="imperial-card-soft px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+              <div className="glass-card px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
                 Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
                 experiencia.
               </div>
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="imperial-card-tilt p-5">
+              <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
                   <Waypoints className="size-5 text-[var(--info)]" />
                   <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
@@ -393,7 +395,7 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="imperial-card-tilt-alt p-5">
+              <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="size-5 text-[var(--accent)]" />
                   <p className="text-sm font-semibold text-white">Governança visível</p>
@@ -403,7 +405,7 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="imperial-card-soft p-5">
+              <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
                   <Globe2 className="size-5 text-[#8fffb9]" />
                   <p className="text-sm font-semibold text-white">Domínio próprio</p>
@@ -425,7 +427,7 @@ export function LandingPage() {
             <CompanySignatureCard />
 
             {footerColumns.map((group) => (
-              <div className="imperial-card-soft p-6" key={group.title}>
+              <div className="glass-card p-6" key={group.title}>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
                   {group.title}
                 </p>
