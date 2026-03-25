@@ -163,6 +163,7 @@ function MesaCard({
   onClickOcupada: (c: Comanda) => void
 }) {
   const [showGarcomSel, setShowGarcomSel] = useState(false)
+  const [showConfirm, setShowConfirm]     = useState(false)
   const cfg = STATUS_CONFIG[mesa.status]
   const garcom = garcons.find(g => g.id === mesa.garcomId)
   const urgency = urgencyLevel(mesa, comanda, now)
@@ -179,7 +180,16 @@ function MesaCard({
 
   function handleClick() {
     if (showGarcomSel) { setShowGarcomSel(false); return }
-    if (isAssignTarget) { onAssign(mesa.id, assigningGarcomId!); return }
+    if (showConfirm)   { setShowConfirm(false);   return }
+    if (isAssignTarget) {
+      // Mesa já tem garçom diferente do selecionado → pede confirmação
+      if (mesa.garcomId && mesa.garcomId !== assigningGarcomId) {
+        setShowConfirm(true)
+        return
+      }
+      onAssign(mesa.id, assigningGarcomId!)
+      return
+    }
     if (mesa.status === 'ocupada' && comanda) { onClickOcupada(comanda); return }
     onClickLivre(mesa)
   }
@@ -208,11 +218,48 @@ function MesaCard({
       )}
 
       {/* Assignment mode: badge leve no canto, sem bloquear drag */}
-      {isAssignTarget && (
+      {isAssignTarget && !showConfirm && (
         <span className="absolute left-2 top-2 z-10 rounded-full bg-[rgba(52,242,127,0.18)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-[#36f57c] pointer-events-none">
           ✓ atribuir
         </span>
       )}
+
+      {/* Confirmação: substituir garçom existente */}
+      {showConfirm && (() => {
+        const novoGarcom = garcons.find(g => g.id === assigningGarcomId)
+        return (
+          <div
+            className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] bg-[rgba(14,16,24,0.92)] px-3 backdrop-blur-sm"
+            onClick={e => e.stopPropagation()}
+          >
+            <AlertCircle className="size-4 text-[#fbbf24]" />
+            <p className="text-center text-[11px] font-semibold leading-snug text-white">
+              Mesa já tem garçom.<br />
+              <span className="text-[10px] text-[var(--text-soft)]">
+                Substituir por{' '}
+                <span style={{ color: novoGarcom?.cor ?? '#36f57c' }}>{novoGarcom?.nome ?? '?'}</span>?
+              </span>
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="rounded-[8px] border border-[rgba(255,255,255,0.1)] px-3 py-1 text-[11px] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => { onAssign(mesa.id, assigningGarcomId!); setShowConfirm(false) }}
+                className="rounded-[8px] px-3 py-1 text-[11px] font-bold text-black transition-opacity hover:opacity-90"
+                style={{ background: novoGarcom?.cor ?? '#36f57c' }}
+              >
+                Substituir
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
