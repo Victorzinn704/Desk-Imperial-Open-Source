@@ -22,6 +22,7 @@ Este projeto ja considera:
 - reset de senha com token temporario
 - trilha de auditoria
 - separacao entre cookies necessarios e opcionais
+- prova do Admin PIN protegida fora do JavaScript, com referencia em [docs/security/admin-pin-hardening.md](docs/security/admin-pin-hardening.md)
 
 ## Production checklist
 
@@ -33,3 +34,4 @@ Antes de publicar em ambiente real:
 - revisar CORS e dominio oficial do front
 - proteger ou desabilitar Swagger em producao
 - mover rate limit para `Redis` se houver mais de uma instancia
+- manter a verificacao sensivel do Admin PIN fora de `localStorage` e fora de tokens reutilizaveis no frontend

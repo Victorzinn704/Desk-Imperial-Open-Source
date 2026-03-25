@@ -1,15 +1,21 @@
-/**
- * Admin PIN — API client functions.
- * PIN verification and management are handled server-side.
- * The resulting adminPinToken is stored in sessionStorage (not localStorage)
- * so it expires automatically when the browser tab/session is closed.
- */
-
 import { ApiError } from '@/lib/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-const ADMIN_TOKEN_KEY = 'desk_imperial_admin_token'
+const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
+const DEFAULT_ADMIN_PIN_HINT_TTL_MS = 10 * 60 * 1000
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
+
+export type AdminPinVerificationResponse = {
+  valid?: boolean
+  verifiedAt?: string
+  verifiedUntil?: string
+  message?: string
+}
+
+type AdminPinHint = {
+  verifiedAt: string
+  verifiedUntil: string
+}
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -96,12 +102,10 @@ async function adminApiFetch<T>(
 
 /**
  * Verify the admin PIN with the server.
- * Returns an adminPinToken (JWT, valid for 10 minutes) on success.
- * Throws ApiError with status 401 (wrong PIN), 423 (rate-limited), or 404
- * (PIN not configured).
+ * The server is expected to set the short-lived proof via HttpOnly cookie.
  */
-export async function verifyAdminPin(pin: string): Promise<{ adminPinToken: string }> {
-  return adminApiFetch<{ adminPinToken: string }>('/admin/verify-pin', 'POST', { pin })
+export async function verifyAdminPin(pin: string): Promise<AdminPinVerificationResponse> {
+  return adminApiFetch<AdminPinVerificationResponse>('/admin/verify-pin', 'POST', { pin })
 }
 
 /**
@@ -114,6 +118,7 @@ export async function setupAdminPin(pin: string, currentPin?: string): Promise<v
     body.currentPin = currentPin
   }
   await adminApiFetch<void>('/admin/pin', 'POST', body)
+  clearAdminPinVerification()
 }
 
 /**
@@ -122,63 +127,63 @@ export async function setupAdminPin(pin: string, currentPin?: string): Promise<v
  */
 export async function removeAdminPin(pin: string): Promise<void> {
   await adminApiFetch<void>('/admin/pin', 'DELETE', { pin })
+  clearAdminPinVerification()
 }
 
-// ---------------------------------------------------------------------------
-// adminPinToken — sessionStorage helpers
-// ---------------------------------------------------------------------------
-
 /**
- * Decode the expiration claim from a JWT without verifying the signature.
- * Returns the `exp` timestamp in milliseconds, or null if not present.
+ * Store a non-sensitive hint that the PIN was recently verified.
+ * This is UX only and does not carry authorization.
  */
-function getJwtExp(token: string): number | null {
+export function rememberAdminPinVerification(verifiedUntil?: string | Date | null): void {
+  if (typeof window === 'undefined') return
+
+  const verifiedAt = new Date().toISOString()
+  const expiryDate =
+    verifiedUntil instanceof Date
+      ? verifiedUntil
+      : typeof verifiedUntil === 'string'
+        ? new Date(verifiedUntil)
+        : new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
+
+  const resolvedVerifiedUntil = Number.isNaN(expiryDate.getTime())
+    ? new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
+    : expiryDate
+
+  const hint: AdminPinHint = {
+    verifiedAt,
+    verifiedUntil: resolvedVerifiedUntil.toISOString(),
+  }
+
+  window.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
+}
+
+export function clearAdminPinVerification(): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+}
+
+export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL_MS): boolean {
+  if (typeof window === 'undefined') return false
+
+  const rawHint = window.sessionStorage.getItem(ADMIN_PIN_HINT_KEY)
+  if (!rawHint) return false
+
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    // Base64url decode the payload
-    const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
-    const payload = JSON.parse(payloadJson) as { exp?: number }
-    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
+    const hint = JSON.parse(rawHint) as Partial<AdminPinHint>
+    const verifiedAt = hint.verifiedAt ? new Date(hint.verifiedAt).getTime() : NaN
+    const verifiedUntil = hint.verifiedUntil ? new Date(hint.verifiedUntil).getTime() : NaN
+    const now = Date.now()
+
+    if (!Number.isNaN(verifiedUntil) && now < verifiedUntil) {
+      return true
+    }
+
+    if (!Number.isNaN(verifiedAt) && now - verifiedAt < ttlMs) {
+      return true
+    }
   } catch {
-    return null
-  }
-}
-
-/**
- * Returns the stored adminPinToken if it exists and has not expired.
- * Returns null if absent or expired.
- */
-export function getStoredAdminPinToken(): string | null {
-  if (typeof window === 'undefined') return null
-
-  const token = window.sessionStorage.getItem(ADMIN_TOKEN_KEY)
-  if (!token) return null
-
-  const exp = getJwtExp(token)
-  if (exp !== null && Date.now() >= exp) {
-    // Token expired — clean up eagerly
-    window.sessionStorage.removeItem(ADMIN_TOKEN_KEY)
-    return null
+    window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
   }
 
-  return token
-}
-
-/**
- * Persist the adminPinToken in sessionStorage.
- * sessionStorage is scoped to the browser tab and cleared when the session ends —
- * safer than localStorage for short-lived security tokens.
- */
-export function storeAdminPinToken(token: string): void {
-  if (typeof window === 'undefined') return
-  window.sessionStorage.setItem(ADMIN_TOKEN_KEY, token)
-}
-
-/**
- * Remove the adminPinToken from sessionStorage.
- */
-export function clearAdminPinToken(): void {
-  if (typeof window === 'undefined') return
-  window.sessionStorage.removeItem(ADMIN_TOKEN_KEY)
+  return false
 }

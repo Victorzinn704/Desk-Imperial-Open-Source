@@ -199,7 +199,7 @@ desk-imperial/
 │  │  │  ├─ common/                 # filtros, guards, utils, pipes globais
 │  │  │  ├─ database/               # PrismaService com monitoring
 │  │  │  └─ modules/
-│  │  │     ├─ admin-pin/           # PIN server-side, JWT, rate limit
+│  │  │     ├─ admin-pin/           # PIN server-side, Redis challenge, rate limit
 │  │  │     ├─ auth/                # login, OTP, sessão, CSRF
 │  │  │     ├─ finance/             # summary, breakdown, cache Redis
 │  │  │     ├─ products/            # portfólio, importação CSV
@@ -258,7 +258,6 @@ APP_URL=http://localhost:3000
 # Segurança
 COOKIE_SECRET=change-me-min-32-chars
 CSRF_SECRET=change-me-min-32-chars
-ADMIN_PIN_JWT_SECRET=change-me-min-64-chars
 
 # Cache (opcional em desenvolvimento)
 REDIS_URL=redis://localhost:6379
@@ -337,7 +336,6 @@ npm --workspace @partner/web run dev
 
 ```env
 NODE_ENV=production
-ADMIN_PIN_JWT_SECRET=<64+ bytes hex — gerar com crypto.randomBytes(64).toString('hex')>
 REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}
 DATABASE_URL=<neon-pooler-url com -pooler no hostname>
 PORTFOLIO_EMAIL_FALLBACK=false

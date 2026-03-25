@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { getStoredAdminPinToken } from '@/lib/admin-pin'
+import { hasRecentAdminPinVerification } from '@/lib/admin-pin'
 
 type AdminPinState = {
   isOpen: boolean
   title: string
   description: string
-  onConfirmCallback: ((adminPinToken: string) => void) | null
+  onConfirmCallback: (() => void) | null
 }
 
 export function useAdminPin() {
@@ -19,20 +19,16 @@ export function useAdminPin() {
   })
 
   /**
-   * Open the PIN dialog, or skip it entirely if a valid token is already cached
-   * in sessionStorage (token not expired).
-   * The callback receives the adminPinToken string so the caller can forward it
-   * to the API action that requires admin authorization.
+   * Open the PIN dialog, or skip it entirely if we recently verified the PIN.
+   * The callback does not receive a bearer token anymore.
    */
   const requirePin = useCallback(
     (
-      onConfirm: (adminPinToken: string) => void,
+      onConfirm: () => void,
       options?: { title?: string; description?: string },
     ) => {
-      // Reuse an already-valid session token — avoids re-prompting on every action
-      const cached = getStoredAdminPinToken()
-      if (cached) {
-        onConfirm(cached)
+      if (hasRecentAdminPinVerification()) {
+        onConfirm()
         return
       }
 
@@ -46,8 +42,8 @@ export function useAdminPin() {
     [],
   )
 
-  function handleConfirm(adminPinToken: string) {
-    state.onConfirmCallback?.(adminPinToken)
+  function handleConfirm() {
+    state.onConfirmCallback?.()
     setState((prev) => ({ ...prev, isOpen: false, onConfirmCallback: null }))
   }
 

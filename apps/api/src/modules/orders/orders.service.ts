@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
+import type { Request } from 'express'
 import {
   isValidCnpj,
   isValidCpf,
@@ -128,7 +129,7 @@ export class OrdersService {
     auth: AuthContext,
     dto: CreateOrderDto,
     context: RequestContext,
-    adminPinToken?: string,
+    request: Request,
   ) {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const requestedItems = dto.items.map((item, index) => ({
@@ -292,7 +293,7 @@ export class OrdersService {
       workspaceUserId,
       auth,
       preparedItems,
-      adminPinToken,
+      request,
     })
     const totalRevenue = roundCurrency(
       preparedItems.reduce((total, item) => total + item.lineRevenue, 0),
@@ -571,6 +572,7 @@ export class OrdersService {
   private async assertDiscountAuthorization(params: {
     workspaceUserId: string
     auth: AuthContext
+    request: Request
     preparedItems: Array<{
       product: {
         id: string
@@ -582,7 +584,6 @@ export class OrdersService {
       discounted: boolean
       discountPercent: number
     }>
-    adminPinToken?: string
   }) {
     const discountedItems = params.preparedItems.filter((item) => item.discounted)
 
@@ -613,11 +614,10 @@ export class OrdersService {
       }
     }
 
-    const validatedOwnerUserId = params.adminPinToken
-      ? this.adminPinService.validateAdminPinToken(params.adminPinToken)
-      : null
+    const proof = this.adminPinService.extractVerificationProof(params.request)
+    const valid = await this.adminPinService.validateVerificationProof(params.auth, proof)
 
-    if (validatedOwnerUserId !== params.workspaceUserId) {
+    if (!valid) {
       throw new ForbiddenException('Confirme o PIN do dono para aplicar desconto nesta venda.')
     }
 

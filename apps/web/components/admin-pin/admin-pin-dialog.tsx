@@ -2,13 +2,13 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
-import { verifyAdminPin, storeAdminPinToken } from '@/lib/admin-pin'
+import { rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
 
 type AdminPinDialogProps = {
   title?: string
   description?: string
-  onConfirm: (adminPinToken: string) => void
+  onConfirm: () => void
   onCancel: () => void
 }
 
@@ -23,11 +23,15 @@ export function AdminPinDialog({
   const [isBlocked, setIsBlocked] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const ref0 = useRef<HTMLInputElement>(null)
+  const ref1 = useRef<HTMLInputElement>(null)
+  const ref2 = useRef<HTMLInputElement>(null)
+  const ref3 = useRef<HTMLInputElement>(null)
   const refs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
+    ref0,
+    ref1,
+    ref2,
+    ref3,
   ]
 
   // Countdown interval when blocked by server (423)
@@ -49,9 +53,9 @@ export function AdminPinDialog({
 
   useEffect(() => {
     if (!isBlocked) {
-      refs[0].current?.focus()
+      ref0.current?.focus()
     }
-  }, [isBlocked])
+  }, [isBlocked, ref0])
 
   function handleChange(idx: number, value: string) {
     const digit = value.replace(/\D/g, '').slice(-1)
@@ -78,9 +82,9 @@ export function AdminPinDialog({
   async function submitPin(pin: string) {
     setIsLoading(true)
     try {
-      const { adminPinToken } = await verifyAdminPin(pin)
-      storeAdminPinToken(adminPinToken)
-      onConfirm(adminPinToken)
+      const response = await verifyAdminPin(pin)
+      rememberAdminPinVerification(response.verifiedUntil)
+      onConfirm()
     } catch (err) {
       setDigits(['', '', '', ''])
 
@@ -94,8 +98,8 @@ export function AdminPinDialog({
           setSecondsLeft(secs)
           setError('')
         } else if (err.status === 404) {
-          // PIN not configured — allow action through without token
-          onConfirm('')
+          // PIN not configured — allow the action through
+          onConfirm()
         } else if (err.status === 401) {
           setError(err.message || 'PIN incorreto. Tente novamente.')
           setTimeout(() => refs[0].current?.focus(), 50)

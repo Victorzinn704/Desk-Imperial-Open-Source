@@ -18,6 +18,7 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 10. invalidar sessoes ativas apos redefinicao de senha
 11. confirmar email antes de liberar o primeiro login
 12. manter chaves de IA e Brevo somente no backend
+13. manter o Admin PIN fora de tokens reutilizaveis no browser, usando apenas prova curta no servidor e hint nao sensivel no frontend
 
 ## Eventos para audit log
 
@@ -27,6 +28,7 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 - troca de senha
 - solicitacao de redefinicao de senha
 - conclusao de redefinicao de senha
+- verificacao do Admin PIN
 - aceite de termos
 - alteracao de preferencia de cookies
 - exportacao de dados
