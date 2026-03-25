@@ -1,5 +1,15 @@
 export type ComandaStatus = 'aberta' | 'em_preparo' | 'pronta' | 'fechada'
 
+export type MesaStatus = 'livre' | 'ocupada' | 'reservada'
+
+export type Mesa = {
+  id: string
+  numero: string
+  capacidade: number
+  status: MesaStatus
+  comandaId?: string  // comanda vinculada (quando ocupada)
+}
+
 export type ComandaItem = {
   produtoId: string
   nome: string

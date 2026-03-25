@@ -18,14 +18,15 @@ type SimpleProduct = {
 type PdvComandaModalProps = {
   comanda?: Comanda | null
   products: SimpleProduct[]
+  initialMesa?: string
   onSave: (data: { mesa: string; clienteNome: string; clienteDocumento: string; itens: ComandaItem[]; desconto: number; acrescimo: number }) => void
   onClose: () => void
   onStatusChange?: (comanda: Comanda, status: Comanda['status']) => void
 }
 
-export function PdvComandaModal({ comanda, products, onSave, onClose, onStatusChange }: Readonly<PdvComandaModalProps>) {
+export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClose, onStatusChange }: Readonly<PdvComandaModalProps>) {
   const isEditing = Boolean(comanda)
-  const [mesa, setMesa] = useState(comanda?.mesa ?? '')
+  const [mesa, setMesa] = useState(comanda?.mesa ?? initialMesa ?? '')
   const [clienteNome, setClienteNome] = useState(comanda?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(comanda?.clienteDocumento ?? '')
   const [itens, setItens] = useState<ComandaItem[]>(comanda?.itens ?? [])
