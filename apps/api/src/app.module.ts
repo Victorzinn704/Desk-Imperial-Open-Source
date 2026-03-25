@@ -14,6 +14,8 @@ import { FinanceModule } from './modules/finance/finance.module'
 import { GeocodingModule } from './modules/geocoding/geocoding.module'
 import { MarketIntelligenceModule } from './modules/market-intelligence/market-intelligence.module'
 import { MonitoringModule } from './modules/monitoring/monitoring.module'
+import { OperationsModule } from './modules/operations/operations.module'
+import { OperationsRealtimeModule } from './modules/operations-realtime.module'
 import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
 
@@ -31,6 +33,20 @@ import { ProductsModule } from './modules/products/products.module'
           paths: [
             'req.headers.authorization',
             'req.headers.cookie',
+            'req.body.fullName',
+            'req.body.companyName',
+            'req.body.email',
+            'req.body.companyStreetLine1',
+            'req.body.companyStreetNumber',
+            'req.body.companyAddressComplement',
+            'req.body.companyDistrict',
+            'req.body.companyCity',
+            'req.body.companyState',
+            'req.body.companyPostalCode',
+            'req.body.postalCode',
+            'req.body.companyCountry',
+            'req.body.hasEmployees',
+            'req.body.employeeCount',
             'req.body.password',
             'req.body.confirmPassword',
             'req.body.token',
@@ -51,6 +67,8 @@ import { ProductsModule } from './modules/products/products.module'
     AdminPinModule,
     ProductsModule,
     OrdersModule,
+    OperationsModule,
+    OperationsRealtimeModule,
     FinanceModule,
   ],
   controllers: [AppController],
