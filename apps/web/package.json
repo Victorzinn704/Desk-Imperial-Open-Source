@@ -16,7 +16,6 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/react-big-calendar": "^1.16.3",
     "ag-grid-community": "^35.1.0",
-    "ag-grid-enterprise": "^35.1.0",
     "ag-grid-react": "^35.1.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

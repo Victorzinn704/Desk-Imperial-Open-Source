@@ -37,7 +37,7 @@ export function MapRankingPanel({
         {TABS.map((t) => (
           <button
             className={cn(
-              'flex-1 cursor-pointer rounded-[14px] border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors duration-200',
+              'flex-1 cursor-pointer rounded-[14px] border px-1.5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors duration-200',
               tab === t.id
                 ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
                 : 'border-transparent text-[var(--text-soft)] hover:text-white',

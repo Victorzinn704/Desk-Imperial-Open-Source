@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { LoaderCircle, Minus, Plus, Printer, RefreshCw, Search, X } from 'lucide-react'
 import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
@@ -99,7 +99,14 @@ export function PdvComandaModal({
     )
   }
 
-  const bruto = itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
+  const bruto = useMemo(
+    () => itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0),
+    [itens],
+  )
+  const itemCount = useMemo(
+    () => itens.reduce((sum, item) => sum + item.quantidade, 0),
+    [itens],
+  )
   const draftComanda: Comanda = {
     id: comanda?.id ?? '',
     status: comanda?.status ?? 'aberta',
@@ -154,17 +161,30 @@ export function PdvComandaModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
       <div
-        className="imperial-card relative flex w-full max-w-3xl flex-col gap-0 overflow-hidden"
+        className="imperial-card relative flex w-full max-w-6xl flex-col gap-0 overflow-hidden"
         style={{ maxHeight: '90vh' }}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">
-              {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-xl font-semibold text-white">
+                {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
+              </h2>
+              {isEditing ? (
+                <span className="rounded-full border border-[rgba(251,146,60,0.24)] bg-[rgba(251,146,60,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#fb923c]">
+                  Modo edicao
+                </span>
+              ) : (
+                <span className="rounded-full border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#36f57c]">
+                  Abrir comanda
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-[var(--text-soft)]">
-              {isEditing ? 'Editar itens, desconto e status' : 'Adicione itens, confirme e imprima a comanda'}
+              {isEditing
+                ? 'Edite os itens dentro do PDV e acompanhe a tela lateral da comanda em tempo real.'
+                : 'Adicione itens, confirme os dados e acompanhe a tela lateral antes de abrir a comanda.'}
             </p>
           </div>
           <button
@@ -176,8 +196,8 @@ export function PdvComandaModal({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div className="flex w-[55%] flex-col border-r border-[rgba(255,255,255,0.06)]">
+        <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
+          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
             <div className="p-4">
               <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
                 <Search className="size-4 text-[var(--text-soft)]" />
@@ -226,7 +246,7 @@ export function PdvComandaModal({
             </div>
           </div>
 
-          <div className="flex w-[45%] flex-col">
+          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
             <div className="grid grid-cols-2 gap-3 p-4 pb-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
@@ -294,49 +314,6 @@ export function PdvComandaModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4">
-              {itens.length === 0 ? (
-                <div className="flex h-24 items-center justify-center rounded-[14px] border border-dashed border-[rgba(255,255,255,0.08)]">
-                  <p className="text-xs text-[var(--text-soft)]">Adicione produtos ao lado</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {itens.map((item) => (
-                    <div
-                      key={item.produtoId}
-                      className="flex items-center justify-between rounded-[12px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-2"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-white">{item.nome}</p>
-                        <p className="text-xs text-[var(--text-soft)]">
-                          {formatCurrency(item.precoUnitario, 'BRL')} / un
-                        </p>
-                      </div>
-                      <div className="ml-3 flex items-center gap-2">
-                        <button
-                          className="flex size-6 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] hover:text-white"
-                          type="button"
-                          onClick={() => changeQty(item.produtoId, -1)}
-                        >
-                          <Minus className="size-3" />
-                        </button>
-                        <span className="w-5 text-center text-sm font-semibold text-white">
-                          {item.quantidade}
-                        </span>
-                        <button
-                          className="flex size-6 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] hover:text-white"
-                          type="button"
-                          onClick={() => changeQty(item.produtoId, 1)}
-                        >
-                          <Plus className="size-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <div className="grid grid-cols-2 gap-3 px-4 pt-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
@@ -376,7 +353,7 @@ export function PdvComandaModal({
                 <p className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</p>
               </div>
               <p className="text-xs text-[var(--text-soft)]">
-                {itens.reduce((sum, item) => sum + item.quantidade, 0)} itens
+                {itemCount} itens
               </p>
             </div>
 
@@ -475,6 +452,124 @@ export function PdvComandaModal({
                   {connectionState === 'printing' ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
                   {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
+            <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+                Tela da comanda
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-white">
+                Itens ao vivo da mesa {mesa || 'sem numero'}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
+                Sempre que abrir ou editar uma comanda, esta coluna mostra os itens que vao sair para o atendimento.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
+              <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
+                <p className="mt-2 truncate text-sm font-medium text-white">
+                  {clienteNome || 'Nao identificado'}
+                </p>
+              </div>
+              <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Status</p>
+                <p className="mt-2 text-sm font-medium text-white">
+                  {draftComanda.status === 'aberta'
+                    ? 'Aberta'
+                    : draftComanda.status === 'em_preparo'
+                      ? 'Em preparo'
+                      : draftComanda.status === 'pronta'
+                        ? 'Pronta'
+                        : 'Fechada'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {itens.length === 0 ? (
+                <div className="flex h-full min-h-52 flex-col items-center justify-center rounded-[18px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
+                  <p className="text-sm font-semibold text-white">Nenhum item ainda</p>
+                  <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
+                    Toque em um produto na coluna da esquerda para montar a comanda e acompanhar tudo por aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {itens.map((item) => {
+                    const lineTotal = item.quantidade * item.precoUnitario
+
+                    return (
+                      <div
+                        key={item.produtoId}
+                        className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.025)] px-4 py-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-white">{item.nome}</p>
+                            <p className="mt-1 text-xs text-[var(--text-soft)]">
+                              {formatCurrency(item.precoUnitario, 'BRL')} por unidade
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-sm font-semibold text-[#36f57c]">
+                            {formatCurrency(lineTotal, 'BRL')}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
+                              type="button"
+                              onClick={() => changeQty(item.produtoId, -1)}
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
+                            <span className="min-w-8 text-center text-sm font-semibold text-white">
+                              {item.quantidade}
+                            </span>
+                            <button
+                              className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
+                              type="button"
+                              onClick={() => changeQty(item.produtoId, 1)}
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+
+                          <span className="rounded-full border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8fffb9]">
+                            {item.quantidade} und
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[rgba(255,255,255,0.06)] px-4 py-4">
+              <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] p-4">
+                <div className="flex items-center justify-between text-sm text-[var(--text-soft)]">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(bruto, 'BRL')}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
+                  <span>Desconto</span>
+                  <span>{desconto}%</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
+                  <span>Acrescimo</span>
+                  <span>{acrescimo}%</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.08)] pt-4">
+                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Total final</span>
+                  <span className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</span>
+                </div>
               </div>
             </div>
           </div>
