@@ -207,13 +207,11 @@ function MesaCard({
         </span>
       )}
 
-      {/* Assignment overlay */}
+      {/* Assignment mode: badge leve no canto, sem bloquear drag */}
       {isAssignTarget && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[16px] bg-[rgba(52,242,127,0.04)]">
-          <span className="rounded-full bg-[rgba(0,0,0,0.7)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#36f57c]">
-            Clique para atribuir
-          </span>
-        </div>
+        <span className="absolute left-2 top-2 z-10 rounded-full bg-[rgba(52,242,127,0.18)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-[#36f57c] pointer-events-none">
+          ✓ atribuir
+        </span>
       )}
 
       {/* Header */}
@@ -710,9 +708,11 @@ export function SalaoUnificado({
     return () => window.removeEventListener('keydown', handler)
   }, [assigningGarcomId])
 
+  // Modo persistente: atribui e mantém o garçom selecionado para continuar atribuindo
+  // ESC ou clicar novamente no garçom na strip cancela o modo
   const handleAssign = useCallback((mesaId: string, garcomId: string | undefined) => {
     onAssignGarcom(mesaId, garcomId)
-    setAssigning(null)
+    // não limpa o assigningGarcomId — modo permanece ativo
   }, [onAssignGarcom])
 
   // Stats
@@ -762,7 +762,7 @@ export function SalaoUnificado({
 
       {view === 'salao' && (
         <p className="text-xs text-[var(--text-soft)]">
-          Arraste mesas entre zonas · selecione um garçom abaixo para atribuir rapidamente · passe o mouse sobre a comanda para ver os itens
+          Arraste mesas entre zonas · selecione um garçom para atribuir (persiste até ESC) · hover na comanda para ver os itens
         </p>
       )}
 
