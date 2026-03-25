@@ -1,22 +1,26 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import {
   isValidCnpj,
   isValidCpf,
   sanitizeDocument,
 } from '../../common/utils/document-validation.util'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
+import { AdminPinService } from '../admin-pin/admin-pin.service'
 import { CurrencyService } from '../currency/currency.service'
 import { GeocodingService } from '../geocoding/geocoding.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { CreateOrderDto } from './dto/create-order.dto'
 import { ListOrdersQueryDto } from './dto/list-orders.query'
-import { roundCurrency } from '../../common/utils/number-rounding.util'
+import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toOrderRecord } from './orders.types'
 import { CacheService } from '../../common/services/cache.service'
+
+const MAX_STAFF_DISCOUNT_PERCENT = 15
 
 @Injectable()
 export class OrdersService {
@@ -25,14 +29,25 @@ export class OrdersService {
     private readonly currencyService: CurrencyService,
     private readonly geocodingService: GeocodingService,
     private readonly auditLogService: AuditLogService,
+    private readonly adminPinService: AdminPinService,
     private readonly cache: CacheService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListOrdersQueryDto) {
-    const snapshot = await this.currencyService.getSnapshot()
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const limit = query.limit ?? 10
+    const hasFilters = !!(query.includeCancelled || (query.limit && query.limit !== 10))
+
+    if (!hasFilters) {
+      const cached = await this.cache.get<{ items: ReturnType<typeof toOrderRecord>[]; totals: { completedOrders: number; cancelledOrders: number; realizedRevenue: number; realizedProfit: number; soldUnits: number } }>(
+        CacheService.ordersKey(workspaceUserId),
+      )
+      if (cached) return cached
+    }
+
+    const snapshot = await this.currencyService.getSnapshot()
     const where = {
-      userId: auth.userId,
+      userId: workspaceUserId,
       ...(query.includeCancelled ? {} : { status: OrderStatus.COMPLETED }),
     }
 
@@ -49,7 +64,7 @@ export class OrdersService {
       }),
       this.prisma.order.aggregate({
         where: {
-          userId: auth.userId,
+          userId: workspaceUserId,
           status: OrderStatus.COMPLETED,
         },
         _count: true,
@@ -61,14 +76,14 @@ export class OrdersService {
       }),
       this.prisma.order.count({
         where: {
-          userId: auth.userId,
+          userId: workspaceUserId,
           status: OrderStatus.CANCELLED,
         },
       }),
       this.prisma.orderItem.aggregate({
         where: {
           order: {
-            userId: auth.userId,
+            userId: workspaceUserId,
             status: OrderStatus.COMPLETED,
           },
         },
@@ -86,7 +101,7 @@ export class OrdersService {
       }),
     )
 
-    return {
+    const result = {
       items: orderRecords,
       totals: {
         completedOrders: completedAgg._count,
@@ -96,9 +111,26 @@ export class OrdersService {
         soldUnits: soldUnitsAgg._sum.quantity ?? 0,
       },
     }
+
+    if (!hasFilters) {
+      void this.cache.set(CacheService.ordersKey(workspaceUserId), result, 90)
+    }
+
+    return result
   }
 
-  async createForUser(auth: AuthContext, dto: CreateOrderDto, context: RequestContext) {
+  async invalidateOrdersCache(userId: string) {
+    await this.cache.del(CacheService.ordersKey(userId))
+  }
+
+
+  async createForUser(
+    auth: AuthContext,
+    dto: CreateOrderDto,
+    context: RequestContext,
+    adminPinToken?: string,
+  ) {
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const requestedItems = dto.items.map((item, index) => ({
       ...item,
       index,
@@ -114,7 +146,7 @@ export class OrdersService {
         id: {
           in: uniqueProductIds,
         },
-        userId: auth.userId,
+        userId: workspaceUserId,
         active: true,
       },
     })
@@ -178,22 +210,37 @@ export class OrdersService {
       throw new BadRequestException('Informe um CNPJ valido para a compra em nome de empresa.')
     }
 
-    const seller = dto.sellerEmployeeId
-      ? await this.prisma.employee.findFirst({
-          where: {
-            id: dto.sellerEmployeeId,
-            userId: auth.userId,
-            active: true,
-          },
-        })
-      : null
+    const seller =
+      auth.role === 'STAFF'
+        ? await this.prisma.employee.findFirst({
+            where: {
+              userId: workspaceUserId,
+              loginUserId: auth.userId,
+              active: true,
+            },
+          })
+        : dto.sellerEmployeeId
+          ? await this.prisma.employee.findFirst({
+              where: {
+                id: dto.sellerEmployeeId,
+                userId: workspaceUserId,
+                active: true,
+              },
+            })
+          : null
 
-    if (dto.sellerEmployeeId && !seller) {
+    if (auth.role === 'STAFF' && !seller) {
+      throw new ForbiddenException(
+        'Seu acesso de funcionario precisa estar vinculado a um colaborador ativo para registrar vendas.',
+      )
+    }
+
+    if (auth.role !== 'STAFF' && dto.sellerEmployeeId && !seller) {
       throw new BadRequestException('Selecione um funcionario ativo para registrar esta venda.')
     }
 
     const geocodedLocation = await this.resolveBuyerLocation({
-      userId: auth.userId,
+      userId: workspaceUserId,
       district: buyerDistrict,
       city: buyerCity,
       state: buyerState,
@@ -219,6 +266,11 @@ export class OrdersService {
         snapshot,
       )
       const unitPrice = item.unitPrice ?? defaultUnitPrice
+      const discounted = unitPrice < defaultUnitPrice
+      const discountPercent =
+        discounted && defaultUnitPrice > 0
+          ? roundPercent(((defaultUnitPrice - unitPrice) / defaultUnitPrice) * 100)
+          : 0
       const lineRevenue = roundCurrency(unitPrice * item.quantity)
       const lineCost = roundCurrency(unitCost * item.quantity)
       const lineProfit = roundCurrency(lineRevenue - lineCost)
@@ -227,11 +279,20 @@ export class OrdersService {
         product,
         quantity: item.quantity,
         unitCost,
+        defaultUnitPrice,
         unitPrice,
+        discounted,
+        discountPercent,
         lineRevenue,
         lineCost,
         lineProfit,
       }
+    })
+    const discountAuthorization = await this.assertDiscountAuthorization({
+      workspaceUserId,
+      auth,
+      preparedItems,
+      adminPinToken,
     })
     const totalRevenue = roundCurrency(
       preparedItems.reduce((total, item) => total + item.lineRevenue, 0),
@@ -246,7 +307,7 @@ export class OrdersService {
         const stockUpdate = await transaction.product.updateMany({
           where: {
             id: productId,
-            userId: auth.userId,
+            userId: workspaceUserId,
             active: true,
             stock: {
               gte: requestedQuantity,
@@ -268,7 +329,7 @@ export class OrdersService {
 
       return transaction.order.create({
         data: {
-          userId: auth.userId,
+          userId: workspaceUserId,
           customerName,
           buyerType: dto.buyerType,
           buyerDocument,
@@ -323,12 +384,18 @@ export class OrdersService {
           productId: item.product.id,
           productName: item.product.name,
           quantity: item.quantity,
+          discounted: item.discounted,
+          discountPercent: item.discountPercent,
         })),
         totalRevenue,
         totalProfit,
         totalItems,
         buyerType: dto.buyerType,
         currency: orderCurrency,
+        initiatedByRole: auth.role,
+        adminPinValidated: discountAuthorization.adminPinValidated,
+        discountItemCount: discountAuthorization.discountedItems.length,
+        maxDiscountPercent: discountAuthorization.maxDiscountPercent,
         buyerLocation:
           geocodedLocation?.label ??
           [buyerDistrict, buyerCity, buyerState, buyerCountry].filter(Boolean).join(', '),
@@ -339,7 +406,8 @@ export class OrdersService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(auth.userId))
+    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.invalidateOrdersCache(workspaceUserId)
 
     return {
       order: toOrderRecord(order, {
@@ -351,10 +419,12 @@ export class OrdersService {
   }
 
   async cancelForUser(auth: AuthContext, orderId: string, context: RequestContext) {
+    assertOwnerRole(auth, 'Apenas o dono pode cancelar vendas ja registradas.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
-        userId: auth.userId,
+        userId: workspaceUserId,
       },
       include: {
         items: true,
@@ -371,8 +441,11 @@ export class OrdersService {
 
     const cancelledOrder = await this.prisma.$transaction(async (transaction) => {
       for (const item of order.items) {
-        await transaction.product.update({
-          where: { id: item.productId },
+        await transaction.product.updateMany({
+          where: {
+            id: item.productId,
+            userId: workspaceUserId,
+          },
           data: {
             stock: {
               increment: item.quantity,
@@ -411,7 +484,8 @@ export class OrdersService {
 
     const snapshot = await this.currencyService.getSnapshot()
 
-    void this.cache.del(this.cache.financeKey(auth.userId))
+    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.invalidateOrdersCache(workspaceUserId)
 
     return {
       order: toOrderRecord(cancelledOrder, {
@@ -492,5 +566,65 @@ export class OrdersService {
     }
 
     return this.geocodingService.geocodeCityLocation(input)
+  }
+
+  private async assertDiscountAuthorization(params: {
+    workspaceUserId: string
+    auth: AuthContext
+    preparedItems: Array<{
+      product: {
+        id: string
+        name: string
+      }
+      quantity: number
+      defaultUnitPrice: number
+      unitPrice: number
+      discounted: boolean
+      discountPercent: number
+    }>
+    adminPinToken?: string
+  }) {
+    const discountedItems = params.preparedItems.filter((item) => item.discounted)
+
+    if (!discountedItems.length) {
+      return {
+        discountedItems,
+        maxDiscountPercent: 0,
+        adminPinValidated: false,
+      }
+    }
+
+    const maxDiscountPercent = discountedItems.reduce(
+      (current, item) => Math.max(current, item.discountPercent),
+      0,
+    )
+
+    if (params.auth.role !== 'OWNER' && maxDiscountPercent > MAX_STAFF_DISCOUNT_PERCENT) {
+      throw new ForbiddenException('Descontos acima de 15% so podem ser autorizados pelo dono da empresa.')
+    }
+
+    const ownerHasPin = await this.adminPinService.hasPinConfigured(params.workspaceUserId)
+
+    if (!ownerHasPin) {
+      return {
+        discountedItems,
+        maxDiscountPercent,
+        adminPinValidated: false,
+      }
+    }
+
+    const validatedOwnerUserId = params.adminPinToken
+      ? this.adminPinService.validateAdminPinToken(params.adminPinToken)
+      : null
+
+    if (validatedOwnerUserId !== params.workspaceUserId) {
+      throw new ForbiddenException('Confirme o PIN do dono para aplicar desconto nesta venda.')
+    }
+
+    return {
+      discountedItems,
+      maxDiscountPercent,
+      adminPinValidated: true,
+    }
   }
 }

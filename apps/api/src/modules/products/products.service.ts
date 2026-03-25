@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { CurrencyCode, Prisma } from '@prisma/client'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -28,11 +29,22 @@ export class ProductsService {
   ) {}
 
   async listForUser(auth: AuthContext, query: ListProductsQueryDto) {
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const includeInactive = auth.role === 'OWNER' && query.includeInactive
+    const hasFilters = !!(query.category || query.search || includeInactive)
+
+    if (!hasFilters) {
+      const cached = await this.cache.get<ReturnType<typeof buildProductsResponse>>(
+        CacheService.productsKey(workspaceUserId),
+      )
+      if (cached) return cached
+    }
+
     const snapshot = await this.currencyService.getSnapshot()
     const items = await this.prisma.product.findMany({
       where: {
-        userId: auth.userId,
-        ...(query.includeInactive ? {} : { active: true }),
+        userId: workspaceUserId,
+        ...(includeInactive ? {} : { active: true }),
         ...(query.category
           ? {
               category: {
@@ -56,19 +68,31 @@ export class ProductsService {
       orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
     })
 
-    return buildProductsResponse(items, {
+    const result = buildProductsResponse(items, {
       displayCurrency: auth.preferredCurrency,
       currencyService: this.currencyService,
       snapshot,
       ratesUpdatedAt: snapshot.updatedAt,
     })
+
+    if (!hasFilters) {
+      void this.cache.set(CacheService.productsKey(workspaceUserId), result, 300)
+    }
+
+    return result
+  }
+
+  async invalidateProductsCache(userId: string) {
+    await this.cache.del(CacheService.productsKey(userId))
   }
 
   async createForUser(auth: AuthContext, dto: CreateProductDto, context: RequestContext) {
+    assertOwnerRole(auth, 'Apenas o dono pode cadastrar produtos.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     try {
       const product = await this.prisma.product.create({
         data: {
-          userId: auth.userId,
+          userId: workspaceUserId,
           name: sanitizePlainText(dto.name, 'Nome do produto', {
             allowEmpty: false,
             rejectFormula: true,
@@ -124,7 +148,8 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(this.cache.financeKey(auth.userId))
+      void this.cache.del(this.cache.financeKey(workspaceUserId))
+      void this.invalidateProductsCache(workspaceUserId)
 
       return {
         product: toProductRecord(product, {
@@ -139,7 +164,9 @@ export class ProductsService {
   }
 
   async updateForUser(auth: AuthContext, productId: string, dto: UpdateProductDto, context: RequestContext) {
-    const existingProduct = await this.requireOwnedProduct(auth.userId, productId)
+    assertOwnerRole(auth, 'Apenas o dono pode editar produtos.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
 
     try {
       const product = await this.prisma.product.update({
@@ -216,7 +243,8 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(this.cache.financeKey(auth.userId))
+      void this.cache.del(this.cache.financeKey(workspaceUserId))
+      void this.invalidateProductsCache(workspaceUserId)
 
       return {
         product: toProductRecord(product, {
@@ -243,6 +271,8 @@ export class ProductsService {
     file: UploadedCsvFile | undefined,
     context: RequestContext,
   ) {
+    assertOwnerRole(auth, 'Apenas o dono pode importar produtos.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     if (!file) {
       throw new BadRequestException('Envie um arquivo CSV para importar os produtos.')
     }
@@ -331,7 +361,7 @@ export class ProductsService {
         const existing = await this.prisma.product.findUnique({
           where: {
             userId_name: {
-              userId: auth.userId,
+              userId: workspaceUserId,
               name: safeName,
             },
           },
@@ -340,12 +370,12 @@ export class ProductsService {
         await this.prisma.product.upsert({
           where: {
             userId_name: {
-              userId: auth.userId,
+              userId: workspaceUserId,
               name: safeName,
             },
           },
           create: {
-            userId: auth.userId,
+            userId: workspaceUserId,
             name: safeName,
             brand: safeBrand,
             category: safeCategory,
@@ -405,7 +435,8 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(auth.userId))
+    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.invalidateProductsCache(workspaceUserId)
 
     return {
       summary: {
@@ -419,7 +450,9 @@ export class ProductsService {
   }
 
   private async toggleActiveState(auth: AuthContext, productId: string, active: boolean, context: RequestContext) {
-    const existingProduct = await this.requireOwnedProduct(auth.userId, productId)
+    assertOwnerRole(auth, 'Apenas o dono pode alterar o status dos produtos.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
     const product = await this.prisma.product.update({
       where: { id: existingProduct.id },
       data: {
@@ -440,7 +473,8 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(auth.userId))
+    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.invalidateProductsCache(workspaceUserId)
 
     const snapshot = await this.currencyService.getSnapshot()
 
