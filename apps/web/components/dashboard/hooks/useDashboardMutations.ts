@@ -14,7 +14,7 @@ import {
   updateCookiePreferences,
   updateProduct,
 } from '@/lib/api'
-import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
+import { clearAdminPinVerification } from '@/lib/admin-pin'
 
 /**
  * Hook centralizado para todas as mutations do dashboard
@@ -44,6 +44,7 @@ export function useDashboardMutations() {
     onSuccess: async () => {
       await queryClient.cancelQueries()
       queryClient.clear()
+      clearAdminPinVerification()
     },
   })
 
@@ -90,7 +91,7 @@ export function useDashboardMutations() {
   })
 
   const createOrderMutation = useMutation({
-    mutationFn: createOrder,
+    mutationFn: ({ values }: { values: Parameters<typeof createOrder>[0] }) => createOrder(values),
     onSuccess: () => invalidateOrders(),
   })
 

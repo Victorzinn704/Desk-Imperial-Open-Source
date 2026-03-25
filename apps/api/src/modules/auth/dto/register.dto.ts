@@ -1,7 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator'
-import { STRONG_PASSWORD_REGEX, STRONG_PASSWORD_MESSAGE, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../../common/constants/password'
+import {
+  IsBoolean,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator'
+import {
+  STRONG_PASSWORD_REGEX,
+  STRONG_PASSWORD_MESSAGE,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from '../../../common/constants/password'
 
 export class RegisterDto {
   @ApiProperty({ example: 'Lucia Helena' })
@@ -19,6 +35,73 @@ export class RegisterDto {
   @ApiProperty({ example: 'ceo@empresa.com' })
   @IsEmail()
   email!: string
+
+  @ApiProperty({ example: 'Rua das Palmeiras' })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(160)
+  companyStreetLine1!: string
+
+  @ApiProperty({ example: '123' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20)
+  companyStreetNumber!: string
+
+  @ApiPropertyOptional({ example: 'Sala 4' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  companyAddressComplement?: string
+
+  @ApiProperty({ example: 'Centro' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  companyDistrict!: string
+
+  @ApiProperty({ example: 'Sao Paulo' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  companyCity!: string
+
+  @ApiProperty({ example: 'SP' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  companyState!: string
+
+  @ApiProperty({ example: '01310-100' })
+  @IsString()
+  @Matches(/^\d{5}-?\d{3}$/, {
+    message: 'Informe um CEP valido.',
+  })
+  companyPostalCode!: string
+
+  @ApiProperty({ example: 'Brasil' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  companyCountry!: string
+
+  @ApiProperty({ example: false })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  hasEmployees!: boolean
+
+  @ApiProperty({ example: 0 })
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) {
+      return 0
+    }
+
+    return Number(value)
+  })
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  employeeCount!: number
 
   @ApiProperty({ example: 'Strong@Pass123' })
   @IsString()

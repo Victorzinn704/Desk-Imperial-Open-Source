@@ -1,19 +1,47 @@
 import { z } from 'zod'
 import {
   STRONG_PASSWORD_REGEX,
-  STRONG_PASSWORD_MESSAGE,
-  EMAIL_CODE_REGEX,
-  EMAIL_CODE_MESSAGE,
-  PASSWORD_MIN_LENGTH,
-  PASSWORD_MAX_LENGTH,
 } from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
-export const loginSchema = z.object({
-  email: z.string().trim().email('Digite um e-mail válido.'),
-  password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
-})
+export const loginSchema = z
+  .object({
+    loginMode: z.enum(['OWNER', 'STAFF']),
+    email: z.string().trim().optional().or(z.literal('')),
+    companyEmail: z.string().trim().optional().or(z.literal('')),
+    employeeCode: z.string().trim().optional().or(z.literal('')),
+    password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
+  })
+  .superRefine((values, context) => {
+    if (values.loginMode === 'OWNER') {
+      if (!values.email || !z.string().email().safeParse(values.email).success) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['email'],
+          message: 'Digite um e-mail válido.',
+        })
+      }
+
+      return
+    }
+
+    if (!values.companyEmail || !z.string().email().safeParse(values.companyEmail).success) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['companyEmail'],
+        message: 'Digite o e-mail principal da empresa.',
+      })
+    }
+
+    if (!values.employeeCode || values.employeeCode.trim().length < 2) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['employeeCode'],
+        message: 'Informe o ID do funcionário.',
+      })
+    }
+  })
 
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().email('Digite um e-mail válido.'),
@@ -27,31 +55,90 @@ export const verifyEmailSchema = z.object({
     .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
 })
 
-export const registerSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(3, 'Digite seu nome completo.')
-    .max(120, 'O nome está longo demais.'),
-  companyName: z
-    .string()
-    .trim()
-    .max(160, 'O nome da empresa está longo demais.')
-    .optional()
-    .or(z.literal('')),
-  email: z.string().trim().email('Digite um e-mail válido.'),
-  password: z
-    .string()
-    .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
-    .max(128, 'A senha está longa demais.')
-    .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
-  acceptTerms: z.boolean().refine((value) => value, {
-    message: 'Você precisa aceitar os termos de uso.',
-  }),
-  acceptPrivacy: z.boolean().refine((value) => value, {
-    message: 'Você precisa aceitar o aviso de privacidade.',
-  }),
-})
+const postalCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{5}-?\d{3}$/, 'Digite um CEP válido.')
+
+export const registerSchema = z
+  .object({
+    fullName: z
+      .string()
+      .trim()
+      .min(3, 'Digite seu nome completo.')
+      .max(120, 'O nome está longo demais.'),
+    companyName: z
+      .string()
+      .trim()
+      .max(160, 'O nome da empresa está longo demais.')
+      .optional()
+      .or(z.literal('')),
+    email: z.string().trim().email('Digite um e-mail válido.'),
+    companyStreetLine1: z
+      .string()
+      .trim()
+      .min(3, 'Informe a rua ou avenida da empresa.')
+      .max(160, 'O endereço ficou longo demais.'),
+    companyStreetNumber: z
+      .string()
+      .trim()
+      .min(1, 'Informe o número do endereço.')
+      .max(20, 'O número ficou longo demais.'),
+    companyAddressComplement: z
+      .string()
+      .trim()
+      .max(120, 'O complemento ficou longo demais.')
+      .optional()
+      .or(z.literal('')),
+    companyDistrict: z
+      .string()
+      .trim()
+      .min(2, 'Informe o bairro ou a região.')
+      .max(120, 'O bairro/região ficou longo demais.'),
+    companyCity: z
+      .string()
+      .trim()
+      .min(2, 'Informe a cidade.')
+      .max(120, 'A cidade ficou longa demais.'),
+    companyState: z
+      .string()
+      .trim()
+      .min(2, 'Informe o estado.')
+      .max(120, 'O estado ficou longo demais.'),
+    companyPostalCode: postalCodeSchema,
+    companyCountry: z
+      .string()
+      .trim()
+      .min(2, 'Informe o país.')
+      .max(120, 'O país ficou longo demais.'),
+    hasEmployees: z.boolean(),
+    employeeCount: z.coerce.number().int('Use um número inteiro.').min(0, 'Informe zero ou mais funcionários.'),
+    password: z
+      .string()
+      .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
+      .max(128, 'A senha está longa demais.')
+      .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+    acceptTerms: z.boolean().refine((value) => value, {
+      message: 'Você precisa aceitar os termos de uso.',
+    }),
+    acceptPrivacy: z.boolean().refine((value) => value, {
+      message: 'Você precisa aceitar o aviso de privacidade.',
+    }),
+  })
+  .superRefine((values, context) => {
+    if (values.hasEmployees && values.employeeCount < 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['employeeCount'],
+        message: 'Informe quantos funcionários a empresa possui.',
+      })
+    }
+  })
+  .transform((values) => ({
+    ...values,
+    companyCountry: values.companyCountry.trim() || 'Brasil',
+    employeeCount: values.hasEmployees ? values.employeeCount : 0,
+  }))
 
 export const resetPasswordSchema = z
   .object({
@@ -152,6 +239,11 @@ export const employeeSchema = z.object({
     .trim()
     .min(3, 'Digite o nome do funcionário.')
     .max(120, 'O nome do funcionário ficou longo demais.'),
+  temporaryPassword: z
+    .string()
+    .min(12, 'A senha provisória precisa ter pelo menos 12 caracteres.')
+    .max(128, 'A senha provisória está longa demais.')
+    .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
 })
 
 export const orderItemSchema = z.object({
@@ -199,7 +291,8 @@ export const orderSchema = z
 export type LoginFormValues = z.infer<typeof loginSchema>
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
 export type VerifyEmailFormValues = z.infer<typeof verifyEmailSchema>
-export type RegisterFormValues = z.infer<typeof registerSchema>
+export type RegisterFormInputValues = z.input<typeof registerSchema>
+export type RegisterFormValues = z.output<typeof registerSchema>
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>
 export type ProductFormInputValues = z.input<typeof productSchema>
 export type ProductFormValues = z.output<typeof productSchema>

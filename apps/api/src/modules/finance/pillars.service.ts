@@ -1,5 +1,6 @@
 import { CurrencyCode, type Order } from '@prisma/client'
 import { Injectable } from '@nestjs/common'
+import { assertOwnerRole } from '../../common/utils/workspace-access.util'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -30,6 +31,7 @@ export class PillarsService {
   ) {}
 
   async getPillarsForUser(auth: AuthContext): Promise<PillarsResponse> {
+    assertOwnerRole(auth, 'Apenas o dono pode acessar os indicadores executivos.')
     const now = new Date()
     const currentWeekStart = this.getWeekStart(now)
     const previousWeekStart = new Date(currentWeekStart)

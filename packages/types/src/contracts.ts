@@ -274,3 +274,99 @@ export type ProductImportResponse = {
     message: string
   }>
 }
+
+export type CashSessionStatus = 'OPEN' | 'CLOSED' | 'FORCE_CLOSED'
+export type CashMovementType = 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | 'ADJUSTMENT'
+export type CashClosureStatus = 'OPEN' | 'PENDING_EMPLOYEE_CLOSE' | 'CLOSED' | 'FORCE_CLOSED'
+export type ComandaStatus = 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' | 'CANCELLED'
+
+export type CashMovementRecord = {
+  id: string
+  cashSessionId: string
+  employeeId: string | null
+  type: CashMovementType
+  amount: number
+  note: string | null
+  createdAt: string
+}
+
+export type CashSessionRecord = {
+  id: string
+  companyOwnerId: string
+  employeeId: string | null
+  status: CashSessionStatus
+  businessDate: string
+  openingCashAmount: number
+  countedCashAmount: number | null
+  expectedCashAmount: number
+  differenceAmount: number | null
+  grossRevenueAmount: number
+  realizedProfitAmount: number
+  notes: string | null
+  openedAt: string
+  closedAt: string | null
+  movements: CashMovementRecord[]
+}
+
+export type ComandaItemRecord = {
+  id: string
+  productId: string | null
+  productName: string
+  quantity: number
+  unitPrice: number
+  totalAmount: number
+  notes: string | null
+}
+
+export type ComandaRecord = {
+  id: string
+  companyOwnerId: string
+  cashSessionId: string | null
+  currentEmployeeId: string | null
+  tableLabel: string
+  customerName: string | null
+  customerDocument: string | null
+  participantCount: number
+  status: ComandaStatus
+  subtotalAmount: number
+  discountAmount: number
+  serviceFeeAmount: number
+  totalAmount: number
+  notes: string | null
+  openedAt: string
+  closedAt: string | null
+  items: ComandaItemRecord[]
+}
+
+export type EmployeeOperationsRecord = {
+  employeeId: string | null
+  employeeCode: string | null
+  displayName: string
+  active: boolean
+  cashSession: CashSessionRecord | null
+  comandas: ComandaRecord[]
+  metrics: {
+    openTables: number
+    closedTables: number
+    grossRevenueAmount: number
+    realizedProfitAmount: number
+    expectedCashAmount: number
+  }
+}
+
+export type OperationsLiveResponse = {
+  businessDate: string
+  companyOwnerId: string
+  closure: {
+    status: CashClosureStatus
+    expectedCashAmount: number
+    countedCashAmount: number | null
+    differenceAmount: number | null
+    grossRevenueAmount: number
+    realizedProfitAmount: number
+    openSessionsCount: number
+    openComandasCount: number
+  } | null
+  employees: EmployeeOperationsRecord[]
+  unassigned: EmployeeOperationsRecord
+}

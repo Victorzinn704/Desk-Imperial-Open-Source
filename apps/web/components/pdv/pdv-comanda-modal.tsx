@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Minus, Plus, Search, X } from 'lucide-react'
-import type { Comanda, ComandaItem } from './pdv-types'
-import { calcTotal } from './pdv-types'
+import { LoaderCircle, Minus, Plus, Printer, RefreshCw, Search, X } from 'lucide-react'
+import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
 import { maskDocument, validateDocument } from '@/lib/document-validation'
+import type { Comanda, ComandaItem } from './pdv-types'
+import { calcTotal } from './pdv-types'
+import { useThermalPrinting } from './use-thermal-printing'
 
 type SimpleProduct = {
   id: string
@@ -15,27 +17,53 @@ type SimpleProduct = {
   currency: string
 }
 
+type SaveComandaPayload = {
+  mesa: string
+  clienteNome: string
+  clienteDocumento: string
+  itens: ComandaItem[]
+  desconto: number
+  acrescimo: number
+}
+
 type PdvComandaModalProps = {
   comanda?: Comanda | null
   products: SimpleProduct[]
   initialMesa?: string
-  onSave: (data: { mesa: string; clienteNome: string; clienteDocumento: string; itens: ComandaItem[]; desconto: number; acrescimo: number }) => void
+  onSave: (data: SaveComandaPayload) => Comanda
   onClose: () => void
   onStatusChange?: (comanda: Comanda, status: Comanda['status']) => void
 }
 
-export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClose, onStatusChange }: Readonly<PdvComandaModalProps>) {
+export function PdvComandaModal({
+  comanda,
+  products,
+  initialMesa,
+  onSave,
+  onClose,
+  onStatusChange,
+}: Readonly<PdvComandaModalProps>) {
   const isEditing = Boolean(comanda)
   const [mesa, setMesa] = useState(comanda?.mesa ?? initialMesa ?? '')
   const [clienteNome, setClienteNome] = useState(comanda?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(comanda?.clienteDocumento ?? '')
   const [itens, setItens] = useState<ComandaItem[]>(comanda?.itens ?? [])
-
-  const docValidation = validateDocument(clienteDocumento)
-  const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
   const [desconto, setDesconto] = useState(comanda?.desconto ?? 0)
   const [acrescimo, setAcrescimo] = useState(comanda?.acrescimo ?? 0)
   const [search, setSearch] = useState('')
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const {
+    printers,
+    selectedPrinterName,
+    connectionState,
+    statusMessage,
+    choosePrinter,
+    refreshPrinters,
+    printComanda,
+  } = useThermalPrinting()
+
+  const docValidation = validateDocument(clienteDocumento)
+  const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,12 +72,13 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
 
   function addItem(product: SimpleProduct) {
     setItens((prev) => {
-      const existing = prev.find((i) => i.produtoId === product.id)
+      const existing = prev.find((item) => item.produtoId === product.id)
       if (existing) {
-        return prev.map((i) =>
-          i.produtoId === product.id ? { ...i, quantidade: i.quantidade + 1 } : i,
+        return prev.map((item) =>
+          item.produtoId === product.id ? { ...item, quantidade: item.quantidade + 1 } : item,
         )
       }
+
       return [
         ...prev,
         {
@@ -65,30 +94,55 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
   function changeQty(produtoId: string, delta: number) {
     setItens((prev) =>
       prev
-        .map((i) => (i.produtoId === produtoId ? { ...i, quantidade: i.quantidade + delta } : i))
-        .filter((i) => i.quantidade > 0),
+        .map((item) => (item.produtoId === produtoId ? { ...item, quantidade: item.quantidade + delta } : item))
+        .filter((item) => item.quantidade > 0),
     )
   }
 
-  const bruto = itens.reduce((sum, i) => sum + i.quantidade * i.precoUnitario, 0)
-  const mockComanda: Comanda = {
-    id: '',
-    status: 'aberta',
+  const bruto = itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
+  const draftComanda: Comanda = {
+    id: comanda?.id ?? '',
+    status: comanda?.status ?? 'aberta',
     mesa,
     clienteNome,
+    clienteDocumento,
     itens,
     desconto,
     acrescimo,
     abertaEm: comanda?.abertaEm ?? new Date(),
   }
-  const total = calcTotal(mockComanda)
+  const total = calcTotal(draftComanda)
 
-  function handleSave() {
-    if (itens.length === 0) return
-    onSave({ mesa, clienteNome, clienteDocumento, itens, desconto, acrescimo })
+  async function handleSave(options?: { printAfterSave?: boolean }) {
+    if (itens.length === 0) {
+      return
+    }
+
+    setSaveError(null)
+
+    const savedComanda = onSave({
+      mesa,
+      clienteNome,
+      clienteDocumento,
+      itens,
+      desconto,
+      acrescimo,
+    })
+
+    if (!options?.printAfterSave) {
+      onClose()
+      return
+    }
+
+    try {
+      await printComanda(buildPrintableComanda(savedComanda))
+      onClose()
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Nao foi possivel imprimir a comanda.')
+    }
   }
 
-  const STATUS_OPTIONS: Array<{ value: Comanda['status']; label: string; color: string }> = [
+  const statusOptions: Array<{ value: Comanda['status']; label: string; color: string }> = [
     { value: 'aberta', label: 'Aberta', color: '#60a5fa' },
     { value: 'em_preparo', label: 'Em Preparo', color: '#fb923c' },
     { value: 'pronta', label: 'Pronta', color: '#36f57c' },
@@ -102,16 +156,15 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
       <div
         className="imperial-card relative flex w-full max-w-3xl flex-col gap-0 overflow-hidden"
         style={{ maxHeight: '90vh' }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Modal header */}
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-6">
           <div>
             <h2 className="text-xl font-semibold text-white">
               {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
             </h2>
             <p className="mt-1 text-sm text-[var(--text-soft)]">
-              {isEditing ? 'Editar itens, desconto e status' : 'Adicione itens e confirme a comanda'}
+              {isEditing ? 'Editar itens, desconto e status' : 'Adicione itens, confirme e imprima a comanda'}
             </p>
           </div>
           <button
@@ -124,7 +177,6 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
         </div>
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          {/* Left — product picker */}
           <div className="flex w-[55%] flex-col border-r border-[rgba(255,255,255,0.06)]">
             <div className="p-4">
               <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
@@ -133,7 +185,7 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   className="flex-1 bg-transparent text-sm text-white placeholder-[var(--text-soft)] outline-none"
                   placeholder="Buscar produto..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
             </div>
@@ -141,7 +193,7 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               <div className="grid grid-cols-1 gap-2">
                 {filteredProducts.map((product) => {
-                  const inCart = itens.find((i) => i.produtoId === product.id)
+                  const inCart = itens.find((item) => item.produtoId === product.id)
                   return (
                     <button
                       key={product.id}
@@ -157,25 +209,24 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                         <span className="text-sm font-semibold text-[#36f57c]">
                           {formatCurrency(product.unitPrice, 'BRL')}
                         </span>
-                        {inCart && (
+                        {inCart ? (
                           <span className="flex size-6 items-center justify-center rounded-full bg-[rgba(52,242,127,0.16)] text-[11px] font-bold text-[#36f57c]">
                             {inCart.quantidade}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </button>
                   )
                 })}
-                {filteredProducts.length === 0 && (
+
+                {filteredProducts.length === 0 ? (
                   <p className="py-8 text-center text-sm text-[var(--text-soft)]">Nenhum produto encontrado</p>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
 
-          {/* Right — comanda summary */}
           <div className="flex w-[45%] flex-col">
-            {/* Cliente / Mesa */}
             <div className="grid grid-cols-2 gap-3 p-4 pb-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
@@ -185,7 +236,7 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
                   placeholder="Ex: 4"
                   value={mesa}
-                  onChange={(e) => setMesa(e.target.value)}
+                  onChange={(event) => setMesa(event.target.value)}
                 />
               </div>
               <div>
@@ -196,16 +247,15 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
                   placeholder="Nome (opcional)"
                   value={clienteNome}
-                  onChange={(e) => setClienteNome(e.target.value)}
+                  onChange={(event) => setClienteNome(event.target.value)}
                 />
               </div>
             </div>
 
-            {/* CPF / CNPJ */}
             <div className="px-4 pb-3">
               <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
                 CPF / CNPJ
-                {clienteDocumento && (
+                {clienteDocumento ? (
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                     style={{
@@ -213,9 +263,9 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                       color: docValidation.valid ? '#36f57c' : '#fca5a5',
                     }}
                   >
-                    {docValidation.valid ? `${docLabel} válido` : docValidation.message ?? `${docLabel} inválido`}
+                    {docValidation.valid ? `${docLabel} valido` : docValidation.message ?? `${docLabel} invalido`}
                   </span>
-                )}
+                ) : null}
               </label>
               <div className="flex gap-2">
                 <input
@@ -230,9 +280,9 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                       : 'rgba(255,255,255,0.08)',
                   }}
                   value={clienteDocumento}
-                  onChange={(e) => setClienteDocumento(maskDocument(e.target.value))}
+                  onChange={(event) => setClienteDocumento(maskDocument(event.target.value))}
                 />
-                {clienteDocumento && (
+                {clienteDocumento ? (
                   <button
                     className="rounded-[12px] border border-[rgba(255,255,255,0.08)] px-2.5 text-[var(--text-soft)] hover:text-white"
                     type="button"
@@ -240,11 +290,10 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   >
                     <X className="size-3.5" />
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
 
-            {/* Itens */}
             <div className="flex-1 overflow-y-auto px-4">
               {itens.length === 0 ? (
                 <div className="flex h-24 items-center justify-center rounded-[14px] border border-dashed border-[rgba(255,255,255,0.08)]">
@@ -288,7 +337,6 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
               )}
             </div>
 
-            {/* Desconto / Acréscimo */}
             <div className="grid grid-cols-2 gap-3 px-4 pt-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
@@ -300,12 +348,12 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   min="0"
                   type="number"
                   value={desconto}
-                  onChange={(e) => setDesconto(Math.min(100, Math.max(0, Number(e.target.value))))}
+                  onChange={(event) => setDesconto(Math.min(100, Math.max(0, Number(event.target.value))))}
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-                  Acréscimo %
+                  Acrescimo %
                 </label>
                 <input
                   className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
@@ -313,61 +361,149 @@ export function PdvComandaModal({ comanda, products, initialMesa, onSave, onClos
                   min="0"
                   type="number"
                   value={acrescimo}
-                  onChange={(e) => setAcrescimo(Math.min(100, Math.max(0, Number(e.target.value))))}
+                  onChange={(event) => setAcrescimo(Math.min(100, Math.max(0, Number(event.target.value))))}
                 />
               </div>
             </div>
 
-            {/* Total */}
             <div className="m-4 flex items-center justify-between rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
               <div>
-                {bruto !== total && (
+                {bruto !== total ? (
                   <p className="text-xs text-[var(--text-soft)] line-through">
                     {formatCurrency(bruto, 'BRL')}
                   </p>
-                )}
+                ) : null}
                 <p className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</p>
               </div>
               <p className="text-xs text-[var(--text-soft)]">
-                {itens.reduce((s, i) => s + i.quantidade, 0)} itens
+                {itens.reduce((sum, item) => sum + item.quantidade, 0)} itens
               </p>
             </div>
 
-            {/* Status (somente quando editando) */}
-            {isEditing && onStatusChange && comanda && (
+            {isEditing && onStatusChange && comanda ? (
               <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-                {STATUS_OPTIONS.filter((s) => s.value !== comanda.status).map((opt) => (
+                {statusOptions.filter((option) => option.value !== comanda.status).map((option) => (
                   <button
-                    key={opt.value}
+                    key={option.value}
                     className="rounded-[12px] border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
                     style={{
-                      borderColor: `${opt.color}44`,
-                      background: `${opt.color}11`,
-                      color: opt.color,
+                      borderColor: `${option.color}44`,
+                      background: `${option.color}11`,
+                      color: option.color,
                     }}
                     type="button"
-                    onClick={() => { onStatusChange(comanda, opt.value); onClose() }}
+                    onClick={() => {
+                      onStatusChange(comanda, option.value)
+                      onClose()
+                    }}
                   >
-                    {opt.label}
+                    {option.label}
                   </button>
                 ))}
               </div>
-            )}
+            ) : null}
 
-            {/* Footer */}
             <div className="border-t border-[rgba(255,255,255,0.06)] p-4">
-              <button
-                className="w-full rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={itens.length === 0}
-                type="button"
-                onClick={handleSave}
-              >
-                {isEditing ? 'Salvar Alterações' : 'Abrir Comanda'}
-              </button>
+              <div className="rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)]">
+                      <Printer className="size-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Comanda termica</p>
+                      <p className="mt-1 text-sm text-white">QZ Tray agora. PrintNode fica como segunda via.</p>
+                    </div>
+                  </div>
+
+                  <button
+                    className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
+                    type="button"
+                    onClick={() => void refreshPrinters()}
+                  >
+                    <RefreshCw className={`size-3.5 ${connectionState === 'discovering' ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </button>
+                </div>
+
+                <div className="mt-3 grid gap-3">
+                  <select
+                    className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                    value={selectedPrinterName}
+                    onChange={(event) => choosePrinter(event.target.value)}
+                  >
+                    <option value="">Selecione uma impressora termica</option>
+                    {printers.map((printer) => (
+                      <option key={printer.id} value={printer.name}>
+                        {printer.name}{printer.isDefault ? ' (padrao)' : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  <p
+                    className={`text-xs leading-6 ${
+                      connectionState === 'error'
+                        ? 'text-[#fca5a5]'
+                        : connectionState === 'connected'
+                          ? 'text-[#86efac]'
+                          : 'text-[var(--text-soft)]'
+                    }`}
+                  >
+                    {statusMessage}
+                  </p>
+                </div>
+              </div>
+
+              {saveError ? <p className="mt-3 text-xs text-[#fca5a5]">{saveError}</p> : null}
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-white transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={itens.length === 0 || connectionState === 'printing'}
+                  type="button"
+                  onClick={() => void handleSave()}
+                >
+                  {isEditing ? 'Salvar alteracoes' : 'Abrir comanda'}
+                </button>
+
+                <button
+                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing'}
+                  type="button"
+                  onClick={() => void handleSave({ printAfterSave: true })}
+                >
+                  {connectionState === 'printing' ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
+                  {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+function buildPrintableComanda(comanda: Comanda): PrintableComanda {
+  const subtotalAmount = comanda.itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
+
+  return {
+    id: comanda.id,
+    tableLabel: comanda.mesa,
+    customerName: comanda.clienteNome,
+    customerDocument: comanda.clienteDocumento,
+    items: comanda.itens.map((item) => ({
+      name: item.nome,
+      quantity: item.quantidade,
+      unitPrice: item.precoUnitario,
+      note: item.observacao,
+    })),
+    discountPercent: comanda.desconto,
+    additionalPercent: comanda.acrescimo,
+    openedAtIso: comanda.abertaEm.toISOString(),
+    subtotalAmount,
+    totalAmount: calcTotal(comanda),
+    currency: 'BRL',
+    operatorLabel: 'PDV',
+  }
 }

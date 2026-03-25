@@ -34,6 +34,7 @@ import {
   updateProduct,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
+import { clearAdminPinVerification } from '@/lib/admin-pin'
 import type { OrderFormValues, ProductFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
@@ -184,6 +185,7 @@ export function DashboardShell() {
     onSuccess: async () => {
       await queryClient.cancelQueries()
       queryClient.clear()
+      clearAdminPinVerification()
       startTransition(() => router.push('/login'))
     },
   })
@@ -227,13 +229,7 @@ export function DashboardShell() {
     },
   })
   const createOrderMutation = useMutation({
-    mutationFn: ({
-      values,
-      adminPinToken,
-    }: {
-      values: OrderFormValues
-      adminPinToken?: string
-    }) => createOrder(values, { adminPinToken }),
+    mutationFn: ({ values }: { values: OrderFormValues }) => createOrder(values),
     onSuccess: () => invalidateOrders(queryClient),
   })
   const cancelOrderMutation = useMutation({

@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserStatus } from '@prisma/client'
+import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
@@ -18,8 +18,13 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import { ConsentService } from '../consent/consent.service'
+import { GeocodingService } from '../geocoding/geocoding.service'
 import { MailerService } from '../mailer/mailer.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
+import {
+  getAdminPinVerificationCookieName,
+  getAdminPinVerificationCookieOptions,
+} from '../admin-pin/admin-pin.constants'
 import { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   DEV_CSRF_COOKIE_NAME,
@@ -29,7 +34,7 @@ import {
 } from './auth.constants'
 import type { AuthContext } from './auth.types'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
-import { LoginDto } from './dto/login.dto'
+import { LoginDto, LoginModeDto } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
@@ -44,6 +49,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly consentService: ConsentService,
+    private readonly geocodingService: GeocodingService,
     private readonly mailerService: MailerService,
     private readonly auditLogService: AuditLogService,
     private readonly authRateLimitService: AuthRateLimitService,
@@ -67,6 +73,10 @@ export class AuthService {
       throw new BadRequestException('Voce precisa aceitar os termos de uso e o aviso de privacidade.')
     }
 
+    if (dto.hasEmployees && dto.employeeCount < 1) {
+      throw new BadRequestException('Informe quantos funcionarios a empresa possui.')
+    }
+
     const normalizedEmail = normalizeEmail(dto.email)
     const existingUser = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -76,17 +86,79 @@ export class AuthService {
       throw new ConflictException('Nao foi possivel concluir o cadastro com os dados informados.')
     }
 
+    const fullName = sanitizePlainText(dto.fullName, 'Nome completo', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyName = sanitizePlainText(dto.companyName, 'Empresa', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const companyStreetLine1 = sanitizePlainText(dto.companyStreetLine1, 'Rua ou avenida', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyStreetNumber = sanitizePlainText(dto.companyStreetNumber, 'Numero', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyAddressComplement = sanitizePlainText(dto.companyAddressComplement, 'Complemento', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const companyDistrict = sanitizePlainText(dto.companyDistrict, 'Bairro ou regiao', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyCity = sanitizePlainText(dto.companyCity, 'Cidade', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyState = sanitizePlainText(dto.companyState, 'Estado', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const companyPostalCode = sanitizePostalCode(dto.companyPostalCode)
+    const companyCountry = sanitizePlainText(dto.companyCountry, 'Pais', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const employeeCount = dto.hasEmployees ? dto.employeeCount : 0
+    const companyLocation = await this.geocodingService.geocodeAddressLocation({
+      streetLine1: companyStreetLine1,
+      streetNumber: companyStreetNumber,
+      district: companyDistrict,
+      city: companyCity,
+      state: companyState,
+      postalCode: companyPostalCode,
+      country: companyCountry,
+    })
+
+    if (!companyLocation) {
+      throw new BadRequestException(
+        'Nao foi possivel validar o endereco da empresa com precisao. Revise rua, numero, bairro, cidade, estado e CEP.',
+      )
+    }
+
     const passwordHash = await argon2.hash(dto.password, { type: argon2.argon2id })
     const user = await this.prisma.user.create({
       data: {
-        fullName: sanitizePlainText(dto.fullName, 'Nome completo', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!,
-        companyName: sanitizePlainText(dto.companyName, 'Empresa', {
-          allowEmpty: true,
-          rejectFormula: true,
-        }),
+        fullName,
+        companyOwnerId: null,
+        companyName,
+        companyStreetLine1: companyLocation.streetLine1 ?? companyStreetLine1,
+        companyStreetNumber: companyLocation.streetNumber ?? companyStreetNumber,
+        companyAddressComplement,
+        companyDistrict: companyLocation.district ?? companyDistrict,
+        companyCity: companyLocation.city ?? companyCity,
+        companyState: companyLocation.state ?? companyState,
+        companyPostalCode: companyLocation.postalCode ?? companyPostalCode,
+        companyCountry: companyLocation.country ?? companyCountry,
+        companyLatitude: companyLocation.latitude,
+        companyLongitude: companyLocation.longitude,
+        hasEmployees: dto.hasEmployees,
+        employeeCount,
+        role: UserRole.OWNER,
         email: normalizedEmail,
         passwordHash,
         preferredCurrency: CurrencyCode.BRL,
@@ -117,7 +189,7 @@ export class AuthService {
       verificationDelivery = await this.sendEmailVerificationCode({
         userId: user.id,
         email: user.email,
-        fullName: user.fullName,
+        fullName,
         context,
         trigger: 'register',
         bypassRateLimit: true,
@@ -145,6 +217,13 @@ export class AuthService {
       resourceId: user.id,
       metadata: {
         email: user.email,
+        role: user.role,
+        locationCaptured: true,
+        locationPrecision: companyLocation.precision,
+        companyCity: user.companyCity,
+        companyState: user.companyState,
+        hasEmployees: user.hasEmployees,
+        employeeCount: user.employeeCount,
       },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -165,7 +244,10 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, response: Response, context: RequestContext) {
-    const normalizedEmail = normalizeEmail(dto.email)
+    const normalizedEmail =
+      dto.loginMode === LoginModeDto.STAFF
+        ? `staff:${normalizeEmail(dto.companyEmail ?? '')}:${sanitizeEmployeeCodeForLogin(dto.employeeCode ?? '')}`
+        : normalizeEmail(dto.email ?? '')
     const rateLimitKeys = [
       this.authRateLimitService.buildLoginKey(normalizedEmail, context.ipAddress),
       this.authRateLimitService.buildLoginEmailKey(normalizedEmail),
@@ -188,12 +270,7 @@ export class AuthService {
       throw error
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      include: {
-        cookiePreference: true,
-      },
-    })
+    const user = await this.resolveLoginUser(dto)
 
     if (!user || user.status !== UserStatus.ACTIVE) {
       await this.handleFailedLogin({
@@ -262,7 +339,7 @@ export class AuthService {
       event: 'auth.login.succeeded',
       resource: 'session',
       resourceId: session.sessionId,
-      metadata: { email: normalizedEmail },
+      metadata: { email: normalizedEmail, loginMode: dto.loginMode },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
@@ -281,6 +358,55 @@ export class AuthService {
         expiresAt: session.expiresAt,
       },
     }
+  }
+
+  private async resolveLoginUser(dto: LoginDto) {
+    if (dto.loginMode === LoginModeDto.STAFF) {
+      const companyEmail = normalizeEmail(dto.companyEmail ?? '')
+      const employeeCode = sanitizeEmployeeCodeForLogin(dto.employeeCode ?? '')
+
+      const owner = await this.prisma.user.findFirst({
+        where: {
+          email: companyEmail,
+          companyOwnerId: null,
+          role: UserRole.OWNER,
+        },
+        select: {
+          id: true,
+        },
+      })
+
+      if (!owner) {
+        return null
+      }
+
+      const employee = await this.prisma.employee.findFirst({
+        where: {
+          userId: owner.id,
+          employeeCode,
+          active: true,
+          loginUser: {
+            status: UserStatus.ACTIVE,
+          },
+        },
+        include: {
+          loginUser: {
+            include: {
+              cookiePreference: true,
+            },
+          },
+        },
+      })
+
+      return employee?.loginUser ?? null
+    }
+
+    return this.prisma.user.findUnique({
+      where: { email: normalizeEmail(dto.email ?? '') },
+      include: {
+        cookiePreference: true,
+      },
+    })
   }
 
   async requestPasswordReset(dto: ForgotPasswordDto, context: RequestContext) {
@@ -716,6 +842,13 @@ export class AuthService {
 
     response.clearCookie(this.getSessionCookieName(), this.getSessionCookieBaseOptions())
     response.clearCookie(this.getCsrfCookieName(), this.getCsrfCookieBaseOptions())
+    response.clearCookie(
+      getAdminPinVerificationCookieName(this.isProduction()),
+      getAdminPinVerificationCookieOptions({
+        secure: this.shouldUseSecureCookies(),
+        sameSite: this.getCookieSameSitePolicy(),
+      }),
+    )
 
     await this.auditLogService.record({
       actorUserId: auth.userId,
@@ -1433,8 +1566,22 @@ export class AuthService {
 
 const publicUserSelect = {
   id: true,
+  companyOwnerId: true,
   fullName: true,
   companyName: true,
+  companyStreetLine1: true,
+  companyStreetNumber: true,
+  companyAddressComplement: true,
+  companyDistrict: true,
+  companyCity: true,
+  companyState: true,
+  companyPostalCode: true,
+  companyCountry: true,
+  companyLatitude: true,
+  companyLongitude: true,
+  hasEmployees: true,
+  employeeCount: true,
+  role: true,
   email: true,
   emailVerifiedAt: true,
   preferredCurrency: true,
@@ -1445,6 +1592,10 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
+function sanitizeEmployeeCodeForLogin(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, '-')
+}
+
 function hashToken(rawToken: string) {
   return createHash('sha256').update(rawToken).digest('hex')
 }
@@ -1452,8 +1603,22 @@ function hashToken(rawToken: string) {
 function toAuthUser(
   user: {
     id: string
+    companyOwnerId: string | null
     fullName: string
     companyName: string | null
+    companyStreetLine1?: string | null
+    companyStreetNumber?: string | null
+    companyAddressComplement?: string | null
+    companyDistrict?: string | null
+    companyCity?: string | null
+    companyState?: string | null
+    companyPostalCode?: string | null
+    companyCountry?: string | null
+    companyLatitude?: number | null
+    companyLongitude?: number | null
+    hasEmployees?: boolean
+    employeeCount?: number
+    role?: UserRole
     email: string
     emailVerifiedAt?: Date | null
     preferredCurrency: CurrencyCode
@@ -1469,9 +1634,28 @@ function toAuthUser(
   return {
     userId: user.id,
     sessionId: options.sessionId ?? '',
+    role: user.role ?? UserRole.OWNER,
+    companyOwnerUserId: user.companyOwnerId,
     email: user.email,
     fullName: user.fullName,
     companyName: user.companyName,
+    companyLocation: {
+      streetLine1: user.companyStreetLine1 ?? null,
+      streetNumber: user.companyStreetNumber ?? null,
+      addressComplement: user.companyAddressComplement ?? null,
+      district: user.companyDistrict ?? null,
+      city: user.companyCity ?? null,
+      state: user.companyState ?? null,
+      postalCode: user.companyPostalCode ?? null,
+      country: user.companyCountry ?? null,
+      latitude: user.companyLatitude ?? null,
+      longitude: user.companyLongitude ?? null,
+      precision: user.companyLatitude != null && user.companyLongitude != null ? 'address' : 'city',
+    },
+    workforce: {
+      hasEmployees: user.hasEmployees ?? false,
+      employeeCount: user.employeeCount ?? 0,
+    },
     emailVerified: Boolean((user as { emailVerifiedAt?: Date | null }).emailVerifiedAt),
     preferredCurrency: user.preferredCurrency,
     status: user.status,
@@ -1494,6 +1678,20 @@ function parseBoolean(value: string | undefined) {
   }
 
   return value === 'true'
+}
+
+function sanitizePostalCode(value: string) {
+  const normalized = sanitizePlainText(value, 'CEP', {
+    allowEmpty: false,
+    rejectFormula: true,
+  })!
+  const digits = normalized.replace(/\D/g, '')
+
+  if (digits.length !== 8) {
+    throw new BadRequestException('Informe um CEP valido para localizar a empresa com precisao.')
+  }
+
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
 }
 
 function normalizeComparableValue(value: string | null | undefined) {

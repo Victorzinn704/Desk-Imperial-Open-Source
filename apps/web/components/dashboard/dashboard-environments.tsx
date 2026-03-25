@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import type {
   FinanceSummaryResponse,
+  OperationsLiveResponse,
   OrderRecord,
   OrdersResponse,
   ProductImportResponse,
@@ -49,8 +50,10 @@ import { ProductImportCard } from '@/components/dashboard/product-import-card'
 import { ProductSearchField } from '@/components/dashboard/product-search-field'
 import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
+import { OperationsExecutiveGrid, OperationsTimeline } from '@/components/operations'
 import { PdvBoard } from '@/components/pdv/pdv-board'
 import { CheckboxField } from '@/components/shared/checkbox-field'
+import { buildOperationsViewModel } from '@/lib/operations'
 
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId
@@ -70,11 +73,11 @@ export type EnvironmentRenderProps = {
   cookiePreferences: CookiePreferences
   createOrderMutation: {
     isPending: boolean
-    mutate: (values: OrderFormValues) => void
+    mutate: (payload: { values: OrderFormValues }) => void
   }
   createEmployeeMutation: {
     isPending: boolean
-    mutate: (values: { employeeCode: string; displayName: string }) => void
+    mutate: (values: { employeeCode: string; displayName: string; temporaryPassword: string }) => void
   }
   createProductMutation: {
     isPending: boolean
@@ -86,6 +89,7 @@ export type EnvironmentRenderProps = {
     employeeCode: string
     displayName: string
     active: boolean
+    hasLogin: boolean
     createdAt: string
     updatedAt: string
   }>
@@ -110,6 +114,9 @@ export type EnvironmentRenderProps = {
     key: string
     acceptedAt: string
   }>
+  operations?: OperationsLiveResponse
+  operationsError: string | null
+  operationsQueryIsLoading: boolean
   orderMutationError?: ApiError
   orders: OrderRecord[]
   ordersError: string | null
@@ -148,7 +155,15 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
     case 'compliance':
       return <ComplianceEnvironment {...props} />
     case 'pdv':
-      return <PdvEnvironment products={props.products} />
+      return (
+        <PdvEnvironment
+          operations={props.operations}
+          operationsError={props.operationsError}
+          operationsQueryIsLoading={props.operationsQueryIsLoading}
+          products={props.products}
+          user={props.user}
+        />
+      )
     case 'calendario':
       return <CalendarioEnvironment />
     case 'map':
@@ -201,14 +216,28 @@ function CalendarioEnvironment() {
   )
 }
 
-function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProps['products'] }>) {
-  const boardProducts = products.map((p) => ({
+function PdvEnvironment({
+  operations,
+  operationsError,
+  operationsQueryIsLoading,
+  products,
+  user,
+}: Readonly<{
+  operations?: OperationsLiveResponse
+  operationsError: string | null
+  operationsQueryIsLoading: boolean
+  products: EnvironmentRenderProps['products']
+  user: AuthUser
+}>) {
+  const boardProducts = products.filter((product) => product.active).map((p) => ({
     id: p.id,
     name: p.name,
     category: p.category,
     unitPrice: p.unitPrice,
     currency: String(p.currency),
   }))
+  const operationsView = buildOperationsViewModel(operations)
+  const showExecutiveOperations = user.role === 'OWNER'
 
   return (
     <section className="space-y-6">
@@ -218,6 +247,28 @@ function PdvEnvironment({ products }: Readonly<{ products: EnvironmentRenderProp
         icon={Tags}
         title="PDV — Ponto de Venda"
       />
+      {showExecutiveOperations ? (
+        <div className="space-y-6">
+          {operationsError ? (
+            <div className="imperial-card px-5 py-4 text-sm text-[var(--text-soft)]">
+              Nao foi possivel carregar a operacao viva agora. {operationsError}
+            </div>
+          ) : null}
+          <OperationsExecutiveGrid
+            description={
+              operationsQueryIsLoading
+                ? 'Carregando a camada operacional para conectar funcionario, mesa e caixa em uma unica leitura.'
+                : 'Leitura consolidada do caixa e das mesas por funcionario, pronta para crescer com o realtime.'
+            }
+            rows={operationsView.rows}
+          />
+          <OperationsTimeline
+            description="Linha do tempo dos atendimentos por funcionario e mesa, desenhada para evoluir junto do FullCalendar Timeline."
+            items={operationsView.timelineItems}
+            resources={operationsView.resources}
+          />
+        </div>
+      ) : null}
       <PdvBoard products={boardProducts} />
     </section>
   )
@@ -336,6 +387,7 @@ function SalesEnvironment({
   ordersTotals,
   products,
   restoreEmployeeMutation,
+  user,
 }: Readonly<
   Pick<
     EnvironmentRenderProps,
@@ -354,6 +406,7 @@ function SalesEnvironment({
     | 'ordersTotals'
     | 'products'
     | 'restoreEmployeeMutation'
+    | 'user'
   >
 >) {
   return (
@@ -369,7 +422,12 @@ function SalesEnvironment({
         <MetricCard hint="Pedidos concluídos" icon={ShoppingCart} label="Concluídos" value={String(ordersTotals?.completedOrders ?? 0)} />
         <MetricCard hint="Pedidos cancelados" icon={LockKeyhole} label="Cancelados" value={String(ordersTotals?.cancelledOrders ?? 0)} />
         <MetricCard hint="Unidades vendidas" icon={Tags} label="Itens vendidos" value={String(ordersTotals?.soldUnits ?? 0)} />
-        <MetricCard hint="Funcionarios com vendas atribuidas" icon={UserRound} label="Equipe ativa" value={String(employeesTotals?.activeEmployees ?? 0)} />
+        <MetricCard
+          hint={user.role === 'OWNER' ? 'Funcionarios com vendas atribuidas' : 'Seu acesso operacional no workspace'}
+          icon={UserRound}
+          label={user.role === 'OWNER' ? 'Equipe ativa' : 'Perfil'}
+          value={user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : 'Staff'}
+        />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
@@ -379,22 +437,49 @@ function SalesEnvironment({
             loading={createOrderMutation.isPending}
             onSubmit={createOrderMutation.mutate}
             products={products.filter((product) => product.active)}
+            userRole={user.role}
           />
         </div>
 
-        <div className="space-y-4">
-          <EmployeeManagementCard
-            busy={createEmployeeMutation.isPending || archiveEmployeeMutation.isPending || restoreEmployeeMutation.isPending}
-            employees={employees}
-            error={employeeMutationError?.message ?? employeesError}
-            loading={createEmployeeMutation.isPending}
-            onArchive={archiveEmployeeMutation.mutate}
-            onCreate={createEmployeeMutation.mutate}
-            onRestore={restoreEmployeeMutation.mutate}
-            totals={employeesTotals}
-          />
-          <EmployeePayrollCard employees={employees} finance={finance} />
-        </div>
+        {user.role === 'OWNER' ? (
+          <div className="space-y-4">
+            <EmployeeManagementCard
+              busy={createEmployeeMutation.isPending || archiveEmployeeMutation.isPending || restoreEmployeeMutation.isPending}
+              employees={employees}
+              error={employeeMutationError?.message ?? employeesError}
+              loading={createEmployeeMutation.isPending}
+              onArchive={archiveEmployeeMutation.mutate}
+              onCreate={createEmployeeMutation.mutate}
+              onRestore={restoreEmployeeMutation.mutate}
+              totals={employeesTotals}
+            />
+            <EmployeePayrollCard employees={employees} finance={finance} />
+          </div>
+        ) : (
+          <div className="imperial-card p-7">
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(143,183,255,0.18)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">
+                <UserRound className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm text-[var(--text-soft)]">Acesso operacional</p>
+                <h2 className="text-xl font-semibold text-white">Conta compacta do funcionário</h2>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
+                Você opera vendas, PDV e calendário com trilha de auditoria vinculada ao seu acesso.
+              </div>
+              <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
+                Cadastros sensíveis, estrutura da equipe, edição e exclusão ficam restritos ao dono da empresa.
+              </div>
+              <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
+                Descontos com preço manual pedem validação do dono por PIN quando essa proteção estiver ativa.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <article className="imperial-card p-7">
@@ -416,6 +501,7 @@ function SalesEnvironment({
             orders.map((order) => (
               <OrderCard
                 busy={createOrderMutation.isPending || cancelOrderMutation.isPending}
+                canCancel={user.role === 'OWNER'}
                 key={order.id}
                 onCancel={cancelOrderMutation.mutate}
                 order={order}

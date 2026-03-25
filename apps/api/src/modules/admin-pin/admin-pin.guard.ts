@@ -9,39 +9,26 @@ export class AdminPinGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request & { auth?: AuthContext }>()
-    const userId = request.auth?.userId
+    const auth = request.auth
 
-    if (!userId) {
+    if (!auth?.userId) {
       throw new ForbiddenException('Sessão inválida.')
     }
 
-    const token = this.extractToken(request)
+    const workspaceOwnerUserId = auth.role === 'OWNER' ? auth.userId : auth.companyOwnerUserId ?? auth.userId
+    const hasPinConfigured = await this.adminPinService.hasPinConfigured(workspaceOwnerUserId)
 
-    // Se o usuário não tem PIN configurado, a ação não precisa de token
-    if (!token) {
-      const hasPinConfigured = await this.adminPinService.hasPinConfigured(userId)
-      if (!hasPinConfigured) return true
-      throw new ForbiddenException('Token de Admin PIN ausente.')
+    if (!hasPinConfigured) {
+      return true
     }
 
-    const tokenUserId = this.adminPinService.validateAdminPinToken(token)
+    const proof = this.adminPinService.extractVerificationProof(request)
+    const valid = await this.adminPinService.validateVerificationProof(auth, proof)
 
-    if (!tokenUserId) {
-      throw new ForbiddenException('Token de Admin PIN inválido ou expirado.')
-    }
-
-    // Garante que o token pertence ao usuário da sessão atual
-    if (userId !== tokenUserId) {
-      throw new ForbiddenException('Token de Admin PIN não pertence à sessão atual.')
+    if (!valid) {
+      throw new ForbiddenException('Validação administrativa ausente, inválida ou expirada.')
     }
 
     return true
-  }
-
-  private extractToken(request: Request): string | null {
-    const header = request.headers['x-admin-pin-token']
-    if (typeof header === 'string' && header.length > 0) return header
-    if (Array.isArray(header) && header.length > 0) return header[0]
-    return null
   }
 }

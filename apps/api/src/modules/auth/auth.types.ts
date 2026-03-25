@@ -3,9 +3,28 @@ import type { Request } from 'express'
 export type AuthContext = {
   userId: string
   sessionId: string
+  role: 'OWNER' | 'STAFF'
+  companyOwnerUserId: string | null
   email: string
   fullName: string
   companyName: string | null
+  companyLocation: {
+    streetLine1: string | null
+    streetNumber: string | null
+    addressComplement: string | null
+    district: string | null
+    city: string | null
+    state: string | null
+    postalCode: string | null
+    country: string | null
+    latitude: number | null
+    longitude: number | null
+    precision: 'city' | 'address'
+  }
+  workforce: {
+    hasEmployees: boolean
+    employeeCount: number
+  }
   emailVerified: boolean
   preferredCurrency: 'BRL' | 'USD' | 'EUR'
   status: string

@@ -1,14 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common'
+import { Body, Controller, Delete, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import type { Response } from 'express'
+import { assertOwnerRole } from '../../common/utils/workspace-access.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
@@ -25,24 +18,25 @@ export class AdminPinController {
   constructor(private readonly adminPinService: AdminPinService) {}
 
   /**
-   * Verifica o PIN e retorna um JWT de curta duração.
-   * Response 200: { valid: true, adminPinToken: string }
+   * Verifica o PIN e emite um challenge opaco.
+   * O challenge fica no Redis e a prova valida segue em cookie HttpOnly.
+   * Response 200: { valid: true, verifiedUntil: string }
    * Response 401: PIN inválido
    * Response 423: Muitas tentativas
    * Response 404: Nenhum PIN configurado
    */
   @Post('verify-pin')
   @HttpCode(HttpStatus.OK)
-  async verifyPin(@CurrentAuth() auth: AuthContext, @Body() body: VerifyPinDto) {
-    const valid = await this.adminPinService.verifyPin(auth.userId, body.pin)
+  async verifyPin(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: VerifyPinDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const challenge = await this.adminPinService.issueVerificationChallenge(auth, body.pin)
 
-    if (!valid) {
-      throw new UnauthorizedException('PIN inválido.')
-    }
+    this.adminPinService.setVerificationCookie(response, challenge.challengeId, challenge.expiresAt)
 
-    const adminPinToken = this.adminPinService.generateAdminPinToken(auth.userId)
-
-    return { valid: true, adminPinToken }
+    return { valid: true, verifiedUntil: challenge.expiresAt.toISOString() }
   }
 
   /**
@@ -52,8 +46,14 @@ export class AdminPinController {
    */
   @Post('pin')
   @HttpCode(HttpStatus.OK)
-  async setupPin(@CurrentAuth() auth: AuthContext, @Body() body: SetupPinDto) {
+  async setupPin(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: SetupPinDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    assertOwnerRole(auth, 'Apenas o dono pode configurar o PIN administrativo.')
     await this.adminPinService.setupPin(auth.userId, body.pin, body.currentPin)
+    this.adminPinService.clearVerificationCookie(response)
     return { message: 'PIN configurado com sucesso.' }
   }
 
@@ -62,8 +62,14 @@ export class AdminPinController {
    */
   @Delete('pin')
   @HttpCode(HttpStatus.OK)
-  async removePin(@CurrentAuth() auth: AuthContext, @Body() body: RemovePinDto) {
+  async removePin(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: RemovePinDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    assertOwnerRole(auth, 'Apenas o dono pode remover o PIN administrativo.')
     await this.adminPinService.removePin(auth.userId, body.pin)
+    this.adminPinService.clearVerificationCookie(response)
     return { message: 'PIN removido.' }
   }
 }

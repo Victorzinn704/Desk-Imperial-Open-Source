@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
+import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { ApiError, login } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 
@@ -19,11 +19,24 @@ export function LoginForm() {
   const {
     register: registerField,
     handleSubmit,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: {
+      loginMode: 'OWNER',
+      email: '',
+      companyEmail: '',
+      employeeCode: '',
+      password: '',
+    },
   })
+  const loginMode = useWatch({
+    control,
+    name: 'loginMode',
+  })
+  const isStaffMode = loginMode === 'STAFF'
 
   const loginMutation = useMutation({
     mutationFn: login,
@@ -33,15 +46,49 @@ export function LoginForm() {
       startTransition(() => { router.push('/dashboard') })
     },
     onError: (error, variables) => {
-      if (error instanceof ApiError && error.status === 403) {
+      if (
+        error instanceof ApiError &&
+        error.status === 403 &&
+        variables.loginMode === 'OWNER' &&
+        typeof variables.email === 'string'
+      ) {
+        const email = variables.email
         startTransition(() => {
-          router.push(`/verificar-email?email=${encodeURIComponent(variables.email)}`)
+          router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
         })
       }
     },
   })
 
-  const onSubmit = handleSubmit((values) => { loginMutation.mutate(values) })
+  const setLoginMode = (mode: 'OWNER' | 'STAFF') => {
+    setValue('loginMode', mode, { shouldDirty: true, shouldValidate: true })
+
+    if (mode === 'OWNER') {
+      setValue('companyEmail', '', { shouldDirty: false, shouldValidate: false })
+      setValue('employeeCode', '', { shouldDirty: false, shouldValidate: false })
+      return
+    }
+
+    setValue('email', '', { shouldDirty: false, shouldValidate: false })
+  }
+
+  const onSubmit = handleSubmit((values) => {
+    if (values.loginMode === 'STAFF') {
+      loginMutation.mutate({
+        loginMode: 'STAFF',
+        companyEmail: values.companyEmail,
+        employeeCode: values.employeeCode,
+        password: values.password,
+      })
+      return
+    }
+
+    loginMutation.mutate({
+      loginMode: 'OWNER',
+      email: values.email,
+      password: values.password,
+    })
+  })
   const isLoading = loginMutation.isPending || isRouting
 
   const errorMessage =
@@ -53,31 +100,91 @@ export function LoginForm() {
     <div className="w-full space-y-8">
       <div className="space-y-1.5">
         <h2 className="text-2xl font-semibold tracking-tight text-white">
-          Entre e comande seu comércio
+          {isStaffMode ? 'Entre na operação do dia' : 'Entre e comande seu comércio'}
         </h2>
         <p className="text-sm text-white/40">
-          Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.
+          {isStaffMode
+            ? 'Use o e-mail principal da empresa, seu ID interno e sua senha de acesso.'
+            : 'Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.'}
         </p>
       </div>
 
       <form className="space-y-5" onSubmit={onSubmit}>
-        {/* Email */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-white/50">Email Corporativo</label>
-          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-            <Mail className="size-4 shrink-0 text-white/30" />
-            <input
-              autoComplete="email"
-              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
-              placeholder="ceo@empresa.com"
-              type="email"
-              {...registerField('email')}
-            />
-          </div>
-          {errors.email?.message && <p className="text-xs text-red-400">{errors.email.message}</p>}
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+          <button
+            className={`flex items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors ${
+              !isStaffMode ? 'bg-white text-black' : 'text-white/55 hover:text-white'
+            }`}
+            type="button"
+            onClick={() => setLoginMode('OWNER')}
+          >
+            <Building2 className="size-4" />
+            Empresa
+          </button>
+          <button
+            className={`flex items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors ${
+              isStaffMode ? 'bg-white text-black' : 'text-white/55 hover:text-white'
+            }`}
+            type="button"
+            onClick={() => setLoginMode('STAFF')}
+          >
+            <UserRound className="size-4" />
+            Funcionário
+          </button>
         </div>
 
-        {/* Senha */}
+        <input type="hidden" {...registerField('loginMode')} />
+
+        {isStaffMode ? (
+          <>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-white/50">Email da Empresa</label>
+              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+                <Mail className="size-4 shrink-0 text-white/30" />
+                <input
+                  autoComplete="email"
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                  placeholder="ceo@empresa.com"
+                  type="email"
+                  {...registerField('companyEmail')}
+                />
+              </div>
+              {errors.companyEmail?.message ? <p className="text-xs text-red-400">{errors.companyEmail.message}</p> : null}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-white/50">ID do Funcionário</label>
+              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+                <UserRound className="size-4 shrink-0 text-white/30" />
+                <input
+                  autoCapitalize="characters"
+                  autoComplete="username"
+                  className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-white outline-none placeholder:text-white/20"
+                  placeholder="VD-001"
+                  type="text"
+                  {...registerField('employeeCode')}
+                />
+              </div>
+              {errors.employeeCode?.message ? <p className="text-xs text-red-400">{errors.employeeCode.message}</p> : null}
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-white/50">Email Corporativo</label>
+            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+              <Mail className="size-4 shrink-0 text-white/30" />
+              <input
+                autoComplete="email"
+                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                placeholder="ceo@empresa.com"
+                type="email"
+                {...registerField('email')}
+              />
+            </div>
+            {errors.email?.message ? <p className="text-xs text-red-400">{errors.email.message}</p> : null}
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-white/50">Senha de Acesso</label>
@@ -120,7 +227,13 @@ export function LoginForm() {
         <button
           className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20"
           type="button"
-          onClick={() => loginMutation.mutate({ email: 'demo@deskimperial.online', password: 'Demo@123' })}
+          onClick={() =>
+            loginMutation.mutate({
+              loginMode: 'OWNER',
+              email: 'demo@deskimperial.online',
+              password: 'Demo@123',
+            })
+          }
         >
           <div>
             <p className="text-sm font-semibold text-white">Acessar Sessão Demo</p>

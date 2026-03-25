@@ -11,6 +11,7 @@ import { InputField } from '@/components/shared/input-field'
 const emptyValues: EmployeeFormValues = {
   employeeCode: '',
   displayName: '',
+  temporaryPassword: '',
 }
 
 export function EmployeeManagementCard({
@@ -77,7 +78,7 @@ export function EmployeeManagementCard({
           reset(emptyValues)
         })}
       >
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-3">
           <InputField
             error={errors.employeeCode?.message}
             hint="Use um código curto, como VD-001."
@@ -91,7 +92,19 @@ export function EmployeeManagementCard({
             placeholder="Ana Martins"
             {...register('displayName')}
           />
+          <InputField
+            error={errors.temporaryPassword?.message}
+            hint="Essa será a senha inicial do funcionário."
+            label="Senha provisória"
+            placeholder="Senha@Inicial123"
+            type="password"
+            {...register('temporaryPassword')}
+          />
         </div>
+
+        <p className="text-xs leading-6 text-[var(--text-soft)]">
+          Login do funcionário: e-mail principal da empresa + ID do funcionário + senha provisória.
+        </p>
 
         <Button fullWidth loading={loading} type="submit">
           <UserPlus className="size-4" />
@@ -127,6 +140,9 @@ export function EmployeeManagementCard({
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-[var(--text-soft)]">ID {employee.employeeCode}</p>
+                    <p className="mt-1 text-xs text-[var(--text-soft)]">
+                      {employee.hasLogin ? 'Acesso individual ativo' : 'Sem acesso individual'}
+                    </p>
                   </div>
                 </div>
 

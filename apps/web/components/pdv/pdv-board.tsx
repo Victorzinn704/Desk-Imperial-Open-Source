@@ -127,6 +127,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
       setMesaPreSelected(null)
     }
     setShowNewModal(false)
+    return nova
   }
 
   function handleEditComanda(data: {
@@ -137,23 +138,35 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
     desconto: number
     acrescimo: number
   }) {
-    if (!editingComanda) return
+    if (!editingComanda) {
+      return {
+        id: nanoid(),
+        status: 'aberta' as ComandaStatus,
+        mesa: data.mesa || undefined,
+        clienteNome: data.clienteNome || undefined,
+        clienteDocumento: data.clienteDocumento || undefined,
+        itens: data.itens,
+        desconto: data.desconto,
+        acrescimo: data.acrescimo,
+        abertaEm: new Date(),
+      }
+    }
+
+    const updatedComanda: Comanda = {
+      ...editingComanda,
+      mesa: data.mesa || undefined,
+      clienteNome: data.clienteNome || undefined,
+      clienteDocumento: data.clienteDocumento || undefined,
+      itens: data.itens,
+      desconto: data.desconto,
+      acrescimo: data.acrescimo,
+    }
+
     setComandas((prev) =>
-      prev.map((c) =>
-        c.id === editingComanda.id
-          ? {
-              ...c,
-              mesa: data.mesa || undefined,
-              clienteNome: data.clienteNome || undefined,
-              clienteDocumento: data.clienteDocumento || undefined,
-              itens: data.itens,
-              desconto: data.desconto,
-              acrescimo: data.acrescimo,
-            }
-          : c,
-      ),
+      prev.map((c) => (c.id === editingComanda.id ? updatedComanda : c)),
     )
     setEditingComanda(null)
+    return updatedComanda
   }
 
   function handleStatusChange(comanda: Comanda, newStatus: ComandaStatus) {
@@ -193,9 +206,6 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
   // Stats
   const abertas = comandas.filter((c) => c.status !== 'fechada')
   const totalEmAberto = abertas.reduce((sum, c) => sum + calcTotal(c), 0)
-  const totalFechado = comandas
-    .filter((c) => c.status === 'fechada')
-    .reduce((sum, c) => sum + calcTotal(c), 0)
   const mesasLivres = mesas.filter((m) => m.status === 'livre').length
   const mesasOcupadas = mesas.filter((m) => m.status === 'ocupada').length
 
@@ -335,7 +345,7 @@ export function PdvBoard({ products }: Readonly<PdvBoardProps>) {
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.08)] py-20 text-center">
               <LayoutGrid className="size-10 text-[var(--text-muted)]" />
               <p className="mt-4 text-sm font-medium text-[var(--text-soft)]">Nenhuma mesa cadastrada</p>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">Clique em "Nova Mesa" para começar</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Clique em &quot;Nova Mesa&quot; para começar</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">

@@ -13,6 +13,7 @@ import type {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
+const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
 
 type JsonBody = Record<string, unknown>
 type ApiBody = JsonBody | FormData
@@ -240,6 +241,7 @@ export class ApiError extends Error {
 }
 
 export async function login(payload: LoginPayload) {
+  clearPersistedAdminPinHint()
   const normalizedPayload = normalizeLoginPayload(payload)
 
   try {
@@ -295,6 +297,7 @@ export async function logout() {
     method: 'POST',
   })
   clearPersistedCsrfToken()
+  clearPersistedAdminPinHint()
   return response
 }
 
@@ -496,17 +499,9 @@ export async function restoreEmployee(employeeId: string) {
 
 export async function createOrder(
   payload: OrderPayload,
-  options?: {
-    adminPinToken?: string
-  },
 ) {
   return apiFetch<{ order: OrderRecord }>('/orders', {
     method: 'POST',
-    headers: options?.adminPinToken
-      ? {
-          'X-Admin-Pin-Token': options.adminPinToken,
-        }
-      : undefined,
     body: payload,
   })
 }
@@ -650,6 +645,14 @@ function clearPersistedCsrfToken() {
   }
 
   window.sessionStorage.removeItem(CSRF_STORAGE_KEY)
+}
+
+function clearPersistedAdminPinHint() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
 }
 
 function hasCsrfToken(value: unknown): value is { csrfToken: string } {

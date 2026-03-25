@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { BuyerType, OrderStatus } from '@prisma/client'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
@@ -131,7 +132,9 @@ export class FinanceService {
   ) {}
 
   async getSummaryForUser(auth: AuthContext): Promise<FinanceSummaryResponse> {
-    const cacheKey = this.cache.financeKey(auth.userId)
+    assertOwnerRole(auth, 'Apenas o dono pode acessar o resumo financeiro executivo.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const cacheKey = this.cache.financeKey(workspaceUserId)
     const cached = await this.cache.get<FinanceSummaryResponse>(cacheKey)
     if (cached) return cached
     const snapshot = await this.currencyService.getSnapshot()
@@ -142,15 +145,15 @@ export class FinanceService {
 
     const [products, completedOrders, recentOrders] = await Promise.all([
       this.prisma.product.findMany({
-        where: { userId: auth.userId, active: true },
+        where: { userId: workspaceUserId, active: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.findMany({
-        where: { userId: auth.userId, status: OrderStatus.COMPLETED },
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.findMany({
-        where: { userId: auth.userId },
+        where: { userId: workspaceUserId },
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),

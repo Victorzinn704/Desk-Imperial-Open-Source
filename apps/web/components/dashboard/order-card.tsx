@@ -9,10 +9,12 @@ import { Button } from '@/components/shared/button'
 export function OrderCard({
   order,
   onCancel,
+  canCancel = true,
   busy,
 }: Readonly<{
   order: OrderRecord
   onCancel: (orderId: string) => void
+  canCancel?: boolean
   busy?: boolean
 }>) {
   const revenueValue = formatCurrencyComparison({
@@ -67,7 +69,7 @@ export function OrderCard({
           </div>
         </div>
 
-        {order.status === 'COMPLETED' ? (
+        {order.status === 'COMPLETED' && canCancel ? (
           <Button disabled={busy} onClick={() => onCancel(order.id)} size="sm" variant="ghost">
             <Ban className="size-4" />
             Cancelar

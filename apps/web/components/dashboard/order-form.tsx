@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, ShoppingBasket, Trash2 } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import type { EmployeeRecord } from '@/lib/api'
+import { AdminPinDialog } from '@/components/admin-pin/admin-pin-dialog'
+import { useAdminPin } from '@/components/admin-pin/use-admin-pin'
 import { currencyOptions, formatCurrency } from '@/lib/currency'
 import { formatStockBreakdown } from '@/lib/product-packaging'
 import { orderSchema, type OrderFormInputValues, type OrderFormValues } from '@/lib/validation'
@@ -39,15 +41,25 @@ export function OrderForm({
   products,
   onSubmit,
   loading,
+  userRole,
 }: Readonly<{
   employees: EmployeeRecord[]
   products: ProductRecord[]
-  onSubmit: (values: OrderFormValues) => void
+  onSubmit: (payload: { values: OrderFormValues }) => void
   loading?: boolean
+  userRole: 'OWNER' | 'STAFF'
 }>) {
   const [draftProductId, setDraftProductId] = useState(products[0]?.id ?? '')
   const [draftQuantity, setDraftQuantity] = useState('1')
   const [draftUnitPrice, setDraftUnitPrice] = useState('')
+  const {
+    pinDialogOpen,
+    pinDialogTitle,
+    pinDialogDescription,
+    requirePin,
+    handlePinCancel,
+    handlePinConfirm,
+  } = useAdminPin()
 
   const {
     register,
@@ -85,6 +97,7 @@ export function OrderForm({
     () => employees.filter((employee) => employee.active),
     [employees],
   )
+  const isStaffUser = userRole === 'STAFF'
   const employeeOptions = useMemo(
     () => [
       {
@@ -112,24 +125,29 @@ export function OrderForm({
     [products],
   )
 
-  const selectedDraftProduct = products.find((product) => product.id === draftProductId) ?? null
+  const resolvedDraftProductId =
+    products.length === 0
+      ? ''
+      : products.some((product) => product.id === draftProductId)
+        ? draftProductId
+        : (products[0]?.id ?? '')
+  const selectedDraftProduct = products.find((product) => product.id === resolvedDraftProductId) ?? null
   const itemsError = typeof errors.items?.message === 'string' ? errors.items.message : undefined
   const totalCartUnits = currentItems.reduce((total, item) => total + Number(item.quantity ?? 0), 0)
   const selectedStockLabel = selectedDraftProduct
     ? formatStockBreakdown(selectedDraftProduct.stock, selectedDraftProduct.unitsPerPackage)
     : 'Selecione um produto'
 
-  useEffect(() => {
-    if (!products.length) {
-      setDraftProductId('')
-      return
-    }
-
-    const draftStillExists = products.some((product) => product.id === draftProductId)
-    if (!draftProductId || !draftStillExists) {
-      setDraftProductId(products[0]?.id ?? '')
-    }
-  }, [draftProductId, products])
+  const submitOrder = (values: OrderFormValues) => {
+    onSubmit({ values })
+    reset({
+      ...emptyValues,
+      currency: products[0]?.currency ?? 'BRL',
+    })
+    setDraftProductId(products[0]?.id ?? '')
+    setDraftQuantity('1')
+    setDraftUnitPrice('')
+  }
 
   useEffect(() => {
     if (!selectedDraftProduct || currentItems.length > 0) {
@@ -143,7 +161,7 @@ export function OrderForm({
   }, [currentItems.length, selectedDraftProduct, setValue])
 
   const handleAddItem = () => {
-    const product = products.find((item) => item.id === draftProductId)
+    const product = products.find((item) => item.id === resolvedDraftProductId)
 
     if (!product) {
       setError('items', {
@@ -231,7 +249,7 @@ export function OrderForm({
       <form
         className="mt-6 space-y-6"
         onSubmit={handleSubmit((values) => {
-          if (activeEmployees.length > 0 && !values.sellerEmployeeId) {
+          if (!isStaffUser && activeEmployees.length > 0 && !values.sellerEmployeeId) {
             setError('sellerEmployeeId', {
               type: 'manual',
               message: 'Selecione o vendedor responsável por esta venda.',
@@ -240,14 +258,20 @@ export function OrderForm({
           }
 
           clearErrors('sellerEmployeeId')
-          onSubmit(values)
-          reset({
-            ...emptyValues,
-            currency: products[0]?.currency ?? 'BRL',
-          })
-          setDraftProductId(products[0]?.id ?? '')
-          setDraftQuantity('1')
-          setDraftUnitPrice('')
+
+          const hasManualPrice = values.items.some((item) => item.unitPrice != null)
+          if (hasManualPrice) {
+            requirePin(
+              () => submitOrder(values),
+              {
+                title: 'Validação de desconto',
+                description: 'Digite o PIN do dono para confirmar preco manual ou desconto nesta venda.',
+              },
+            )
+            return
+          }
+
+          submitOrder(values)
         })}
       >
         <section className="imperial-card-soft p-5">
@@ -265,7 +289,8 @@ export function OrderForm({
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
                   A quantidade sempre sai em unidade. O valor unitário é opcional e só serve quando
-                  você precisa vender um item com preço diferente do cadastro.
+                  você precisa vender um item com preço diferente do cadastro. Descontos pedem PIN
+                  do dono quando ele estiver configurado.
                 </p>
               </div>
             </div>
@@ -283,7 +308,7 @@ export function OrderForm({
               label="Produto"
               onChange={(event) => setDraftProductId(event.currentTarget.value)}
               options={productOptions}
-              value={draftProductId}
+              value={resolvedDraftProductId}
             />
             <InputField
               hint="Sempre em und."
@@ -398,17 +423,29 @@ export function OrderForm({
               options={currencyOptions}
               {...register('currency')}
             />
-            <SelectField
-              error={errors.sellerEmployeeId?.message}
-              hint={
-                activeEmployees.length > 0
-                  ? 'A venda alimenta ranking, ticket médio e desempenho individual.'
-                  : 'Cadastre pelo menos um funcionário ativo para atribuir vendas.'
-              }
-              label="Funcionário responsável"
-              options={employeeOptions}
-              {...register('sellerEmployeeId')}
-            />
+            {isStaffUser ? (
+              <div className="imperial-card-stat px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                  Responsável pela venda
+                </p>
+                <p className="mt-2 text-sm font-medium text-white">Seu acesso será vinculado automaticamente.</p>
+                <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
+                  O sistema grava sua autoria em tempo real para auditoria da empresa.
+                </p>
+              </div>
+            ) : (
+              <SelectField
+                error={errors.sellerEmployeeId?.message}
+                hint={
+                  activeEmployees.length > 0
+                    ? 'A venda alimenta ranking, ticket médio e desempenho individual.'
+                    : 'Cadastre pelo menos um funcionário ativo para atribuir vendas.'
+                }
+                label="Funcionário responsável"
+                options={employeeOptions}
+                {...register('sellerEmployeeId')}
+              />
+            )}
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -496,6 +533,15 @@ export function OrderForm({
           Registrar pedido
         </Button>
       </form>
+
+      {pinDialogOpen ? (
+        <AdminPinDialog
+          description={pinDialogDescription}
+          title={pinDialogTitle}
+          onCancel={handlePinCancel}
+          onConfirm={handlePinConfirm}
+        />
+      ) : null}
     </div>
   )
 }

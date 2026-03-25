@@ -4,9 +4,10 @@ import { RegisterForm } from '@/components/auth/register-form'
 export default function RegisterPage() {
   return (
     <AuthShell
-      description="Crie sua conta em 1 minuto. Seu comércio agradece."
-      eyebrow="Comece agora"
-      title="Prepare seu controle"
+      contentWidthClass="max-w-[900px]"
+      description="Cadastre a empresa com endereço validado, estrutura inicial da equipe e acesso seguro ao portal."
+      eyebrow="Seu acesso seguro"
+      title="Crie e ative seu acesso"
     >
       <RegisterForm />
     </AuthShell>

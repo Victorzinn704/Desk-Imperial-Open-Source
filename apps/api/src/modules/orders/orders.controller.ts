@@ -23,8 +23,12 @@ export class OrdersController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post()
-  createOrder(@CurrentAuth() auth: AuthContext, @Body() body: CreateOrderDto, @Req() request: Request) {
-    return this.ordersService.createForUser(auth, body, extractRequestContext(request))
+  createOrder(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: CreateOrderDto,
+    @Req() request: Request,
+  ) {
+    return this.ordersService.createForUser(auth, body, extractRequestContext(request), request)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

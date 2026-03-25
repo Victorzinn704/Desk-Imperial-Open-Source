@@ -50,7 +50,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Admin-Pin-Token'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
   })
   app.setGlobalPrefix('api')
   app.useGlobalFilters(new HttpExceptionFilter())
