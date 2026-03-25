@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -23,6 +23,7 @@ import {
   fetchCurrentUser,
   fetchEmployees,
   fetchFinanceSummary,
+  fetchOperationsLive,
   fetchOrders,
   fetchProducts,
   importProducts,
@@ -33,11 +34,12 @@ import {
   updateProduct,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
-import type { ProductFormValues } from '@/lib/validation'
+import type { OrderFormValues, ProductFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
+import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import {
   dashboardNavigationGroups,
@@ -46,6 +48,7 @@ import {
   type DashboardSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
+import { StaffMobileShell } from '@/components/staff-mobile'
 
 const sectionHeroCopy: Record<
   DashboardSectionId,
@@ -109,6 +112,14 @@ export function DashboardShell() {
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
   const consentQuery = useQuery({
@@ -130,14 +141,21 @@ export function DashboardShell() {
   const employeesQuery = useQuery({
     queryKey: ['employees'],
     queryFn: fetchEmployees,
-    enabled: Boolean(sessionQuery.data?.user.userId),
+    enabled: Boolean(sessionQuery.data?.user.userId) && sessionQuery.data?.user.role === 'OWNER',
   })
   const financeQuery = useQuery({
     queryKey: ['finance', 'summary'],
     queryFn: fetchFinanceSummary,
+    enabled: Boolean(sessionQuery.data?.user.userId) && sessionQuery.data?.user.role === 'OWNER',
+  })
+  const operationsQuery = useQuery({
+    queryKey: ['operations', 'live'],
+    queryFn: () => fetchOperationsLive(),
     enabled: Boolean(sessionQuery.data?.user.userId),
   })
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
+
+  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
 
   useEffect(() => {
     if (!evaluationAccess) {
@@ -209,7 +227,13 @@ export function DashboardShell() {
     },
   })
   const createOrderMutation = useMutation({
-    mutationFn: createOrder,
+    mutationFn: ({
+      values,
+      adminPinToken,
+    }: {
+      values: OrderFormValues
+      adminPinToken?: string
+    }) => createOrder(values, { adminPinToken }),
     onSuccess: () => invalidateOrders(queryClient),
   })
   const cancelOrderMutation = useMutation({
@@ -235,6 +259,22 @@ export function DashboardShell() {
     },
   })
 
+  const currentUser = sessionQuery.data?.user ?? null
+  const isStaffUser = currentUser?.role === 'STAFF'
+  const quickActions = isStaffUser ? [] : dashboardQuickActions
+  const navigationGroups = useMemo(
+    () =>
+      isStaffUser
+        ? dashboardNavigationGroups
+            .map((group) => ({
+              ...group,
+              items: group.items.filter((item) => ['sales', 'pdv', 'calendario'].includes(item.id)),
+            }))
+            .filter((group) => group.items.length > 0)
+        : dashboardNavigationGroups,
+    [isStaffUser],
+  )
+
   const isUnauthorized = sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401
   const sessionError =
     sessionQuery.error instanceof ApiError
@@ -250,6 +290,11 @@ export function DashboardShell() {
   }
 
   const user = sessionQuery.data.user
+  const allowedSections = new Set(navigationGroups.flatMap((group) => group.items.map((item) => item.id)))
+  const resolvedActiveSection = allowedSections.has(activeSection)
+    ? activeSection
+    : (isStaffUser ? 'sales' : 'overview')
+
   const cookiePreferences = consentQuery.data?.cookiePreferences ?? user.cookiePreferences
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
@@ -258,11 +303,13 @@ export function DashboardShell() {
   const orders = ordersQuery.data?.items ?? []
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
+  const operations = operationsQuery.data
 
   const productsError = productsQuery.error instanceof ApiError ? productsQuery.error.message : null
   const ordersError = ordersQuery.error instanceof ApiError ? ordersQuery.error.message : null
   const employeesError = employeesQuery.error instanceof ApiError ? employeesQuery.error.message : null
   const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
+  const operationsError = operationsQuery.error instanceof ApiError ? operationsQuery.error.message : null
   const orderMutationError = [createOrderMutation.error, cancelOrderMutation.error].find((error) => error instanceof ApiError)
   const employeeMutationError = [
     createEmployeeMutation.error,
@@ -321,28 +368,55 @@ export function DashboardShell() {
   }
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
 
-  const signals = [
-    {
-      label: 'Receita do mes',
-      value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
-      helper: 'resultado bruto do período',
-    },
-    {
-      label: 'Estoque baixo',
-      value: String(finance?.totals.lowStockItems ?? 0),
-      helper: 'itens para reposição rápida',
-    },
-    {
-      label: 'Documentos',
-      value: requiredDocumentCount ? `${legalAcceptances.length}/${requiredDocumentCount}` : '0/0',
-      helper: 'aceites exigidos no sistema',
-    },
-  ]
+  const signals = isStaffUser
+    ? [
+        {
+          label: 'Pedidos',
+          value: String(ordersQuery.data?.totals.completedOrders ?? 0),
+          helper: 'operações concluídas no workspace',
+        },
+        {
+          label: 'Portfólio',
+          value: String(productsQuery.data?.totals.activeProducts ?? 0),
+          helper: 'produtos ativos para venda',
+        },
+        {
+          label: 'Perfil',
+          value: 'Staff',
+          helper: 'acesso operacional com auditoria',
+        },
+      ]
+    : [
+        {
+          label: 'Receita do mes',
+          value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
+          helper: 'resultado bruto do período',
+        },
+        {
+          label: 'Estoque baixo',
+          value: String(finance?.totals.lowStockItems ?? 0),
+          helper: 'itens para reposição rápida',
+        },
+        {
+          label: 'Documentos',
+          value: requiredDocumentCount ? `${legalAcceptances.length}/${requiredDocumentCount}` : '0/0',
+          helper: 'aceites exigidos no sistema',
+        },
+      ]
 
   const activeNavigation =
-    dashboardNavigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
-    dashboardNavigationGroups[0]?.items[0]
-  const activeHero = sectionHeroCopy[activeSection]
+    navigationGroups.flatMap((group) => group.items).find((item) => item.id === resolvedActiveSection) ??
+    navigationGroups[0]?.items[0]
+  const activeHero = sectionHeroCopy[resolvedActiveSection]
+
+  if (isStaffUser && isMobile) {
+    return (
+      <StaffMobileShell
+        currentUser={currentUser}
+        produtos={productsQuery.data?.items ?? []}
+      />
+    )
+  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -351,11 +425,11 @@ export function DashboardShell() {
         style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
       >
         <DashboardSidebar
-          activeSection={activeSection}
+          activeSection={resolvedActiveSection}
           companyName={user.companyName}
           email={user.email}
-          groups={dashboardNavigationGroups}
-          quickActions={dashboardQuickActions}
+          groups={navigationGroups}
+          quickActions={quickActions}
           onNavigate={handleSectionNavigate}
           onQuickAction={handleQuickAction}
           onCollapseChange={setSidebarCollapsed}
@@ -396,7 +470,7 @@ export function DashboardShell() {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  {dashboardQuickActions.map((action) => {
+                  {quickActions.map((action) => {
                     const Icon = action.icon
                     return (
                       <button
@@ -454,7 +528,7 @@ export function DashboardShell() {
           ) : null}
 
           {renderActiveEnvironment({
-            activeSection,
+            activeSection: resolvedActiveSection,
             consentQueryIsLoading: consentQuery.isLoading,
             cookiePreferences,
             createOrderMutation,
@@ -475,6 +549,9 @@ export function DashboardShell() {
             importProductsMutation,
             lastImport,
             legalAcceptances,
+            operations,
+            operationsError,
+            operationsQueryIsLoading: operationsQuery.isLoading,
             orderMutationError,
             orders,
             ordersError,
