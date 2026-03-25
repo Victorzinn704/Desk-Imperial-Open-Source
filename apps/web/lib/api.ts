@@ -2,6 +2,7 @@ import type {
   CurrencyCode,
   FinanceSummaryResponse,
   MarketInsightResponse,
+  OperationsLiveResponse,
   OrderRecord,
   OrdersResponse,
   ProductImportResponse,
@@ -31,14 +32,45 @@ export type EvaluationAccess = {
 export type AuthUser = {
   userId: string
   sessionId: string
+  role: 'OWNER' | 'STAFF'
+  companyOwnerUserId: string | null
   fullName: string
   companyName: string | null
+  companyLocation: {
+    streetLine1: string | null
+    streetNumber: string | null
+    addressComplement: string | null
+    district: string | null
+    city: string | null
+    state: string | null
+    postalCode: string | null
+    country: string | null
+    latitude: number | null
+    longitude: number | null
+    precision: 'city' | 'address'
+  }
+  workforce: {
+    hasEmployees: boolean
+    employeeCount: number
+  }
   email: string
   emailVerified: boolean
   preferredCurrency: CurrencyCode
   status: string
   evaluationAccess: EvaluationAccess | null
   cookiePreferences: CookiePreferences
+}
+
+export type PostalCodeLookupResponse = {
+  postalCode: string
+  streetLine1: string | null
+  addressComplement: string | null
+  district: string | null
+  city: string | null
+  state: string | null
+  stateName: string | null
+  country: string
+  source: 'viacep'
 }
 
 export type AuthResponse = {
@@ -126,6 +158,9 @@ export type EmployeeRecord = {
   employeeCode: string
   displayName: string
   active: boolean
+  hasLogin: boolean
+  salarioBase?: number
+  percentualVendas?: number
   createdAt: string
   updatedAt: string
 }
@@ -141,6 +176,7 @@ export type EmployeesResponse = {
 export type EmployeePayload = {
   employeeCode: string
   displayName: string
+  temporaryPassword: string
 }
 
 export type ProfilePayload = {
@@ -150,7 +186,10 @@ export type ProfilePayload = {
 }
 
 export type LoginPayload = {
-  email: string
+  loginMode: 'OWNER' | 'STAFF'
+  email?: string
+  companyEmail?: string
+  employeeCode?: string
   password: string
 }
 
@@ -168,6 +207,16 @@ export type RegisterPayload = {
   fullName: string
   companyName?: string
   email: string
+  companyStreetLine1: string
+  companyStreetNumber: string
+  companyAddressComplement?: string
+  companyDistrict: string
+  companyCity: string
+  companyState: string
+  companyPostalCode: string
+  companyCountry: string
+  hasEmployees: boolean
+  employeeCount: number
   password: string
   acceptTerms: boolean
   acceptPrivacy: boolean
@@ -191,10 +240,30 @@ export class ApiError extends Error {
 }
 
 export async function login(payload: LoginPayload) {
-  return apiFetch<AuthResponse>('/auth/login', {
-    method: 'POST',
-    body: payload,
-  })
+  const normalizedPayload = normalizeLoginPayload(payload)
+
+  try {
+    return await apiFetch<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: normalizedPayload,
+    })
+  } catch (error) {
+    if (
+      payload.loginMode === 'OWNER' &&
+      error instanceof ApiError &&
+      isLegacyOwnerLoginContractError(error)
+    ) {
+      return apiFetch<AuthResponse>('/auth/login', {
+        method: 'POST',
+        body: {
+          email: normalizedPayload.email,
+          password: normalizedPayload.password,
+        },
+      })
+    }
+
+    throw error
+  }
 }
 
 export async function register(payload: RegisterPayload) {
@@ -202,6 +271,23 @@ export async function register(payload: RegisterPayload) {
     method: 'POST',
     body: payload,
   })
+}
+
+export async function lookupPostalCode(postalCode: string) {
+  const response = await fetch('/api/postal-code/lookup', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ postalCode }),
+  })
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  return (await response.json()) as PostalCodeLookupResponse
 }
 
 export async function logout() {
@@ -349,6 +435,18 @@ export async function fetchEmployees() {
   })
 }
 
+export async function fetchOperationsLive(businessDate?: string) {
+  const params = new URLSearchParams()
+  if (businessDate?.trim()) {
+    params.set('businessDate', businessDate.trim())
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<OperationsLiveResponse>(`/operations/live${suffix}`, {
+    method: 'GET',
+  })
+}
+
 export type LastLoginEntry = {
   id: string
   browser: string
@@ -361,9 +459,25 @@ export async function fetchLastLogins() {
   return apiFetch<LastLoginEntry[]>('/auth/activity', { method: 'GET' })
 }
 
+export type UpdateEmployeePayload = {
+  employeeCode?: string
+  displayName?: string
+  active?: boolean
+  temporaryPassword?: string
+  salarioBase?: number
+  percentualVendas?: number
+}
+
 export async function createEmployee(payload: EmployeePayload) {
   return apiFetch<{ employee: EmployeeRecord }>('/employees', {
     method: 'POST',
+    body: payload,
+  })
+}
+
+export async function updateEmployee(employeeId: string, payload: UpdateEmployeePayload) {
+  return apiFetch<{ employee: EmployeeRecord }>(`/employees/${employeeId}`, {
+    method: 'PATCH',
     body: payload,
   })
 }
@@ -380,9 +494,19 @@ export async function restoreEmployee(employeeId: string) {
   })
 }
 
-export async function createOrder(payload: OrderPayload) {
+export async function createOrder(
+  payload: OrderPayload,
+  options?: {
+    adminPinToken?: string
+  },
+) {
   return apiFetch<{ order: OrderRecord }>('/orders', {
     method: 'POST',
+    headers: options?.adminPinToken
+      ? {
+          'X-Admin-Pin-Token': options.adminPinToken,
+        }
+      : undefined,
     body: payload,
   })
 }
@@ -404,6 +528,7 @@ async function apiFetch<T>(
   path: string,
   options: Omit<RequestInit, 'body'> & {
     body?: ApiBody
+    skipCsrf?: boolean
   },
 ) {
   const headers = new Headers(options.headers)
@@ -415,7 +540,7 @@ async function apiFetch<T>(
 
   headers.set('Accept', 'application/json')
 
-  if (shouldAttachCsrfToken(options.method)) {
+  if (!options.skipCsrf && shouldAttachCsrfToken(options.method)) {
     // Try multiple CSRF token sources with priority:
     // 1. Persisted token from sessionStorage (most reliable)
     // 2. Token from cookie (httpOnly may block read)
@@ -429,12 +554,21 @@ async function apiFetch<T>(
     }
   }
 
-  const response = await fetch(buildApiUrl(path), {
-    ...options,
-    credentials: 'include',
-    headers,
-    body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
-  })
+  let response: Response
+
+  try {
+    response = await fetch(buildApiUrl(path), {
+      ...options,
+      credentials: 'include',
+      headers,
+      body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
+    })
+  } catch {
+    throw new ApiError(
+      `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
+      0,
+    )
+  }
 
   if (!response.ok) {
     throw await toApiError(response)
@@ -524,5 +658,37 @@ function hasCsrfToken(value: unknown): value is { csrfToken: string } {
     value !== null &&
     'csrfToken' in value &&
     typeof (value as { csrfToken?: unknown }).csrfToken === 'string'
+  )
+}
+
+function normalizeLoginPayload(payload: LoginPayload) {
+  const password = payload.password
+
+  if (payload.loginMode === 'STAFF') {
+    return {
+      loginMode: 'STAFF' as const,
+      companyEmail: payload.companyEmail?.trim(),
+      employeeCode: payload.employeeCode?.trim().toUpperCase(),
+      password,
+    }
+  }
+
+  return {
+    loginMode: 'OWNER' as const,
+    email: payload.email?.trim(),
+    password,
+  }
+}
+
+function isLegacyOwnerLoginContractError(error: ApiError) {
+  if (error.status !== 400) {
+    return false
+  }
+
+  const normalizedMessage = error.message.toLowerCase()
+  return (
+    normalizedMessage.includes('property loginmode should not exist') ||
+    normalizedMessage.includes('property companyemail should not exist') ||
+    normalizedMessage.includes('property employeecode should not exist')
   )
 }

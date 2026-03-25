@@ -1,31 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { BadgeCheck, ChevronDown, ChevronUp, DollarSign, Percent, TrendingUp, Users, Wallet } from 'lucide-react'
 import type { EmployeeRecord } from '@/lib/api'
+import { updateEmployee } from '@/lib/api'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
-
-type SalaryConfig = {
-  salarioBase: number
-  percentualVendas: number
-}
-
-type PayrollMap = Record<string, SalaryConfig>
-
-const STORAGE_KEY = 'desk_imperial_payroll'
-
-function loadPayroll(): PayrollMap {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
-  } catch {
-    return {}
-  }
-}
-
-function savePayroll(map: PayrollMap) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
-}
 
 export function EmployeePayrollCard({
   employees,
@@ -34,33 +14,69 @@ export function EmployeePayrollCard({
   employees: EmployeeRecord[]
   finance?: FinanceSummaryResponse
 }>) {
-  const [payroll, setPayroll] = useState<PayrollMap>({})
   const [expanded, setExpanded] = useState<string | null>(null)
+  // Local optimistic state: keyed by employeeId, stores partial overrides while saving
+  const [localOverrides, setLocalOverrides] = useState<
+    Record<string, { salarioBase?: number; percentualVendas?: number }>
+  >({})
 
-  useEffect(() => {
-    setPayroll(loadPayroll())
-  }, [])
+  function getConfig(emp: EmployeeRecord) {
+    const override = localOverrides[emp.id] ?? {}
+    return {
+      salarioBase: override.salarioBase ?? emp.salarioBase ?? 0,
+      percentualVendas: override.percentualVendas ?? emp.percentualVendas ?? 0,
+    }
+  }
 
-  function updateConfig(employeeId: string, field: keyof SalaryConfig, value: number) {
-    setPayroll((prev) => {
-      const next = {
-        ...prev,
-        [employeeId]: {
-          salarioBase: prev[employeeId]?.salarioBase ?? 0,
-          percentualVendas: prev[employeeId]?.percentualVendas ?? 0,
-          [field]: value,
-        },
-      }
-      savePayroll(next)
-      return next
-    })
+  async function handleFieldChange(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
+    // Optimistic update
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [employeeId]: {
+        ...prev[employeeId],
+        [field]: value,
+      },
+    }))
+
+    try {
+      await updateEmployee(employeeId, { [field]: value })
+      // On success, clear override so next render uses the fresh prop value
+      setLocalOverrides((prev) => {
+        const next = { ...prev }
+        if (next[employeeId]) {
+          const updated = { ...next[employeeId] }
+          delete updated[field]
+          if (Object.keys(updated).length === 0) {
+            delete next[employeeId]
+          } else {
+            next[employeeId] = updated
+          }
+        }
+        return next
+      })
+    } catch {
+      // On failure, revert optimistic override
+      setLocalOverrides((prev) => {
+        const next = { ...prev }
+        if (next[employeeId]) {
+          const updated = { ...next[employeeId] }
+          delete updated[field]
+          if (Object.keys(updated).length === 0) {
+            delete next[employeeId]
+          } else {
+            next[employeeId] = updated
+          }
+        }
+        return next
+      })
+    }
   }
 
   const currency = finance?.displayCurrency ?? 'BRL'
   const activeEmployees = employees.filter((e) => e.active)
 
   const rows = activeEmployees.map((emp) => {
-    const config = payroll[emp.id] ?? { salarioBase: 0, percentualVendas: 0 }
+    const config = getConfig(emp)
     const topEntry = finance?.topEmployees.find(
       (te) => te.employeeId === emp.id || te.employeeCode === emp.employeeCode,
     )
@@ -182,7 +198,9 @@ export function EmployeePayrollCard({
                         step="100"
                         type="number"
                         value={config.salarioBase / 100}
-                        onChange={(e) => updateConfig(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))}
+                        onChange={(e) =>
+                          handleFieldChange(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
+                        }
                       />
                       <p className="mt-1 text-[11px] text-[var(--text-soft)]">em centavos internamente</p>
                     </div>
@@ -200,7 +218,7 @@ export function EmployeePayrollCard({
                         step="0.5"
                         type="number"
                         value={config.percentualVendas}
-                        onChange={(e) => updateConfig(emp.id, 'percentualVendas', Number(e.target.value))}
+                        onChange={(e) => handleFieldChange(emp.id, 'percentualVendas', Number(e.target.value))}
                       />
                       <p className="mt-1 text-[11px] text-[var(--text-soft)]">máx 30%</p>
                     </div>
