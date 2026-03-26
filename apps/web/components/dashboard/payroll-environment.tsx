@@ -37,7 +37,9 @@ export function PayrollEnvironment({
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [expanded, setExpanded] = useState<string | null>(null)
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set())
-  const [localOverrides, setLocalOverrides] = useState<
+
+  // Saved overrides — only updated on blur (after user finishes typing)
+  const [savedOverrides, setSavedOverrides] = useState<
     Record<string, { salarioBase?: number; percentualVendas?: number }>
   >({})
 
@@ -45,38 +47,23 @@ export function PayrollEnvironment({
   const activeEmployees = employees.filter((e) => e.active)
 
   function getConfig(emp: EmployeeRecord) {
-    const override = localOverrides[emp.id] ?? {}
+    const override = savedOverrides[emp.id] ?? {}
     return {
       salarioBase: override.salarioBase ?? emp.salarioBase ?? 0,
       percentualVendas: override.percentualVendas ?? emp.percentualVendas ?? 0,
     }
   }
 
-  async function handleFieldChange(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
-    setLocalOverrides((prev) => ({ ...prev, [employeeId]: { ...prev[employeeId], [field]: value } }))
+  // Called on blur — persists to savedOverrides and fires API
+  async function commitField(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
+    // Store the previous value so we can revert on error
+    const prevOverrides = savedOverrides
+    setSavedOverrides((prev) => ({ ...prev, [employeeId]: { ...prev[employeeId], [field]: value } }))
     try {
       await updateEmployee(employeeId, { [field]: value })
-      setLocalOverrides((prev) => {
-        const next = { ...prev }
-        if (next[employeeId]) {
-          const updated = { ...next[employeeId] }
-          delete updated[field]
-          if (Object.keys(updated).length === 0) delete next[employeeId]
-          else next[employeeId] = updated
-        }
-        return next
-      })
     } catch {
-      setLocalOverrides((prev) => {
-        const next = { ...prev }
-        if (next[employeeId]) {
-          const updated = { ...next[employeeId] }
-          delete updated[field]
-          if (Object.keys(updated).length === 0) delete next[employeeId]
-          else next[employeeId] = updated
-        }
-        return next
-      })
+      // Revert on failure
+      setSavedOverrides(prevOverrides)
     }
   }
 
@@ -122,7 +109,7 @@ export function PayrollEnvironment({
   }
 
   function exportCsv() {
-    const header = 'Nome,Código,Salário Base,Vendas,Comissão,Total,Status'
+    const header = 'Nome,Código,Salário Base (R$),Vendas (R$),Comissão (R$),Total (R$),Status'
     const csvRows = rows.map((r) => [
       r.emp.displayName,
       r.emp.employeeCode,
@@ -234,7 +221,7 @@ export function PayrollEnvironment({
           <h3 className="text-base font-semibold text-white">Colaboradores — {MONTHS[selectedMonth]}</h3>
           {maiorComissionado && maiorComissionado.comissao > 0 && (
             <span className="rounded-full border border-[rgba(251,146,60,0.25)] bg-[rgba(251,146,60,0.08)] px-3 py-1 text-xs font-semibold text-[#fb923c]">
-              Top comissão: {maiorComissionado.emp.displayName.split(' ')[0]} · {formatCurrency(maiorComissionado.comissao, currency)}
+              Top: {maiorComissionado.emp.displayName.split(' ')[0]} · {formatCurrency(maiorComissionado.comissao, currency)}
             </span>
           )}
         </div>
@@ -254,9 +241,9 @@ export function PayrollEnvironment({
             return (
               <div key={emp.id} className="imperial-card-soft overflow-hidden">
                 {/* Row header */}
-                <div className="flex w-full items-center gap-4 px-4 py-4">
+                <div className="flex w-full items-center gap-3 px-4 py-4">
                   <button
-                    className="flex w-full items-center gap-4 text-left"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                     type="button"
                     onClick={() => setExpanded(isOpen ? null : emp.id)}
                   >
@@ -288,7 +275,7 @@ export function PayrollEnvironment({
                     )}
                   </button>
 
-                  {/* Status badge + toggle */}
+                  {/* Status toggle */}
                   <button
                     className={[
                       'shrink-0 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors',
@@ -303,7 +290,7 @@ export function PayrollEnvironment({
                   </button>
                 </div>
 
-                {/* Expanded config */}
+                {/* Expanded config — inputs are UNCONTROLLED (defaultValue + onBlur) */}
                 {isOpen && (
                   <div className="border-t border-[rgba(255,255,255,0.05)] px-4 pb-4 pt-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -313,16 +300,16 @@ export function PayrollEnvironment({
                           Salário base (R$)
                         </label>
                         <input
+                          key={`${emp.id}-salario-${config.salarioBase}`}
                           className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                          defaultValue={config.salarioBase / 100}
                           min="0"
-                          step="100"
+                          step="10"
                           type="number"
-                          value={config.salarioBase / 100}
-                          onChange={(e) =>
-                            handleFieldChange(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
+                          onBlur={(e) =>
+                            commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
                           }
                         />
-                        <p className="mt-1 text-[11px] text-[var(--text-soft)]">em centavos internamente</p>
                       </div>
 
                       <div className="min-w-0">
@@ -331,13 +318,14 @@ export function PayrollEnvironment({
                           % sobre vendas
                         </label>
                         <input
+                          key={`${emp.id}-pct-${config.percentualVendas}`}
                           className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                          defaultValue={config.percentualVendas}
                           max="30"
                           min="0"
                           step="0.5"
                           type="number"
-                          value={config.percentualVendas}
-                          onChange={(e) => handleFieldChange(emp.id, 'percentualVendas', Number(e.target.value))}
+                          onBlur={(e) => commitField(emp.id, 'percentualVendas', Number(e.target.value))}
                         />
                         <p className="mt-1 text-[11px] text-[var(--text-soft)]">máx 30%</p>
                       </div>
@@ -345,27 +333,27 @@ export function PayrollEnvironment({
 
                     {/* Calculation breakdown */}
                     <div className="mt-4 space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[var(--text-soft)]">Vendas atribuídas no mês</span>
-                        <span className="font-medium text-white">{formatCurrency(vendasDoMes, currency)}</span>
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-[var(--text-soft)]">Vendas no mês</span>
+                        <span className="shrink-0 font-medium text-white">{formatCurrency(vendasDoMes, currency)}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Comissão ({config.percentualVendas}%)</span>
-                        <span className="font-medium text-[#fb923c]">{formatCurrency(comissao, currency)}</span>
+                        <span className="shrink-0 font-medium text-[#fb923c]">{formatCurrency(comissao, currency)}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Salário base</span>
-                        <span className="font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
+                        <span className="shrink-0 font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
                       </div>
-                      <div className="flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
+                      <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                         <span className="text-white">Total a pagar</span>
-                        <span className="text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
+                        <span className="shrink-0 text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
                       </div>
                     </div>
 
                     {vendasDoMes === 0 && config.percentualVendas > 0 && (
                       <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-[rgba(251,146,60,0.2)] bg-[rgba(251,146,60,0.06)] px-3 py-2">
-                        <BadgeCheck className="size-3.5 text-[#fb923c]" />
+                        <BadgeCheck className="size-3.5 shrink-0 text-[#fb923c]" />
                         <p className="text-xs text-[#fb923c]">
                           Nenhuma venda atribuída a este funcionário ainda este mês.
                         </p>

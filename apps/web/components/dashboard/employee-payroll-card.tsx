@@ -15,60 +15,26 @@ export function EmployeePayrollCard({
   finance?: FinanceSummaryResponse
 }>) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  // Local optimistic state: keyed by employeeId, stores partial overrides while saving
-  const [localOverrides, setLocalOverrides] = useState<
+  // Saved overrides — only updated on blur, not on every keystroke
+  const [savedOverrides, setSavedOverrides] = useState<
     Record<string, { salarioBase?: number; percentualVendas?: number }>
   >({})
 
   function getConfig(emp: EmployeeRecord) {
-    const override = localOverrides[emp.id] ?? {}
+    const override = savedOverrides[emp.id] ?? {}
     return {
       salarioBase: override.salarioBase ?? emp.salarioBase ?? 0,
       percentualVendas: override.percentualVendas ?? emp.percentualVendas ?? 0,
     }
   }
 
-  async function handleFieldChange(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
-    // Optimistic update
-    setLocalOverrides((prev) => ({
-      ...prev,
-      [employeeId]: {
-        ...prev[employeeId],
-        [field]: value,
-      },
-    }))
-
+  async function commitField(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
+    const prevOverrides = savedOverrides
+    setSavedOverrides((prev) => ({ ...prev, [employeeId]: { ...prev[employeeId], [field]: value } }))
     try {
       await updateEmployee(employeeId, { [field]: value })
-      // On success, clear override so next render uses the fresh prop value
-      setLocalOverrides((prev) => {
-        const next = { ...prev }
-        if (next[employeeId]) {
-          const updated = { ...next[employeeId] }
-          delete updated[field]
-          if (Object.keys(updated).length === 0) {
-            delete next[employeeId]
-          } else {
-            next[employeeId] = updated
-          }
-        }
-        return next
-      })
     } catch {
-      // On failure, revert optimistic override
-      setLocalOverrides((prev) => {
-        const next = { ...prev }
-        if (next[employeeId]) {
-          const updated = { ...next[employeeId] }
-          delete updated[field]
-          if (Object.keys(updated).length === 0) {
-            delete next[employeeId]
-          } else {
-            next[employeeId] = updated
-          }
-        }
-        return next
-      })
+      setSavedOverrides(prevOverrides)
     }
   }
 
@@ -193,16 +159,16 @@ export function EmployeePayrollCard({
                         Salário base (R$)
                       </label>
                       <input
+                        key={`${emp.id}-salario-${config.salarioBase}`}
                         className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        defaultValue={config.salarioBase / 100}
                         min="0"
-                        step="100"
+                        step="10"
                         type="number"
-                        value={config.salarioBase / 100}
-                        onChange={(e) =>
-                          handleFieldChange(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
+                        onBlur={(e) =>
+                          commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
                         }
                       />
-                      <p className="mt-1 text-[11px] text-[var(--text-soft)]">em centavos internamente</p>
                     </div>
 
                     {/* Commission % */}
@@ -212,13 +178,14 @@ export function EmployeePayrollCard({
                         % sobre vendas
                       </label>
                       <input
+                        key={`${emp.id}-pct-${config.percentualVendas}`}
                         className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        defaultValue={config.percentualVendas}
                         max="30"
                         min="0"
                         step="0.5"
                         type="number"
-                        value={config.percentualVendas}
-                        onChange={(e) => handleFieldChange(emp.id, 'percentualVendas', Number(e.target.value))}
+                        onBlur={(e) => commitField(emp.id, 'percentualVendas', Number(e.target.value))}
                       />
                       <p className="mt-1 text-[11px] text-[var(--text-soft)]">máx 30%</p>
                     </div>
@@ -226,21 +193,21 @@ export function EmployeePayrollCard({
 
                   {/* Calculation breakdown */}
                   <div className="mt-4 rounded-[12px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[var(--text-soft)]">Vendas atribuídas no mês</span>
-                      <span className="font-medium text-white">{formatCurrency(vendasDoMes, currency)}</span>
+                    <div className="flex items-center justify-between gap-4 text-sm">
+                      <span className="text-[var(--text-soft)]">Vendas no mês</span>
+                      <span className="shrink-0 font-medium text-white">{formatCurrency(vendasDoMes, currency)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Comissão ({config.percentualVendas}%)</span>
-                      <span className="font-medium text-[#fb923c]">{formatCurrency(comissao, currency)}</span>
+                      <span className="shrink-0 font-medium text-[#fb923c]">{formatCurrency(comissao, currency)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Salário base</span>
-                      <span className="font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
+                      <span className="shrink-0 font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
                     </div>
-                    <div className="flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
+                    <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                       <span className="text-white">Total a pagar</span>
-                      <span className="text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
+                      <span className="shrink-0 text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
                     </div>
                   </div>
 
