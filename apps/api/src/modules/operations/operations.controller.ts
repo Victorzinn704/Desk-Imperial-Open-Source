@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { extractRequestContext } from '../../common/utils/request-context.util'
@@ -15,6 +15,7 @@ import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
 import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
+import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import { OperationsService } from './operations.service'
 
@@ -72,6 +73,17 @@ export class OperationsController {
     @Req() request: Request,
   ) {
     return this.operationsService.addComandaItem(auth, comandaId, body, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Patch('comandas/:comandaId')
+  replaceComanda(
+    @CurrentAuth() auth: AuthContext,
+    @Param('comandaId') comandaId: string,
+    @Body() body: ReplaceComandaDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.replaceComanda(auth, comandaId, body, extractRequestContext(request))
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

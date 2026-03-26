@@ -418,6 +418,7 @@ model Comanda {
   currentEmployee    Employee?     @relation("ComandaCurrentEmployee", fields: [currentEmployeeId], references: [id], onDelete: SetNull)
   items              ComandaItem[]
   assignments        ComandaAssignment[]
+  order              Order?
 
   @@index([companyOwnerId, status, openedAt])
   @@index([currentEmployeeId, status, openedAt])
@@ -465,6 +466,7 @@ model ComandaAssignment {
 model Order {
   id           String      @id @default(cuid())
   userId       String
+  comandaId    String?     @unique
   customerName String?
   buyerType    BuyerType?
   buyerDocument String?
@@ -489,6 +491,7 @@ model Order {
   updatedAt    DateTime    @updatedAt
   cancelledAt  DateTime?
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comanda      Comanda?    @relation(fields: [comandaId], references: [id], onDelete: SetNull)
   employee     Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   items        OrderItem[]
 
@@ -503,7 +506,7 @@ model Order {
 model OrderItem {
   id          String   @id @default(cuid())
   orderId     String
-  productId   String
+  productId   String?
   productName String
   category    String
   quantity    Int
@@ -515,9 +518,8 @@ model OrderItem {
   lineProfit  Decimal  @db.Decimal(10, 2)
   createdAt   DateTime @default(now())
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([productId, createdAt])
 }
-

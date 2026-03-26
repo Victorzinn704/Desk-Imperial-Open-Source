@@ -3,6 +3,7 @@ import type { CurrencyService, ExchangeRatesSnapshot } from '../currency/currenc
 
 export type OrderRecord = {
   id: string
+  comandaId: string | null
   customerName: string | null
   buyerType: BuyerType | null
   buyerDocument: string | null
@@ -32,7 +33,7 @@ export type OrderRecord = {
   cancelledAt: string | null
   items: Array<{
     id: string
-    productId: string
+    productId: string | null
     productName: string
     category: string
     quantity: number
@@ -68,6 +69,7 @@ export function toOrderRecord(
 
   return {
     id: order.id,
+    comandaId: order.comandaId,
     customerName: order.customerName,
     buyerType: order.buyerType,
     buyerDocument: order.buyerDocument,

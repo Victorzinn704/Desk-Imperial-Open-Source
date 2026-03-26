@@ -260,7 +260,7 @@ function PdvEnvironment({
         icon={Tags}
         title="PDV — Ponto de Venda"
       />
-      <PdvBoard products={boardProducts} />
+      <PdvBoard currentUser={user} operations={operations} products={boardProducts} />
       {showExecutiveOperations ? (
         <div className="space-y-6">
           {operationsError ? (

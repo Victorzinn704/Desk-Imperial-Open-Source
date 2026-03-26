@@ -8,7 +8,7 @@ import { ShoppingCart, Plus, Minus, Search } from 'lucide-react'
 interface MobileOrderBuilderProps {
   mesa: Mesa
   produtos: ProductRecord[]
-  onSubmit: (items: ComandaItem[]) => void
+  onSubmit: (items: ComandaItem[]) => Promise<void> | void
   onCancel: () => void
 }
 
@@ -68,10 +68,10 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
   const totalItems = cart.reduce((sum, c) => sum + c.quantidade, 0)
   const totalValue = cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0)
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (cart.length === 0) return
     const items: ComandaItem[] = cart.map(({ _key: _k, ...rest }) => rest)
-    onSubmit(items)
+    await onSubmit(items)
   }
 
   return (
@@ -180,7 +180,7 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
           </div>
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             disabled={cart.length === 0}
             className="rounded-xl bg-[var(--accent,#9b8460)] px-4 py-2.5 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80"
           >

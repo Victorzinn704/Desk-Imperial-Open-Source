@@ -1,25 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { Grid2x2, ShoppingCart, ClipboardList, LogOut, Cog } from 'lucide-react'
-import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ClipboardList, Cog, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
+import type { Mesa, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
-import { MobileTableGrid } from './mobile-table-grid'
-import { MobileOrderBuilder } from './mobile-order-builder'
 import { MobileComandaList } from './mobile-comanda-list'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { logout } from '@/lib/api'
+import { MobileOrderBuilder } from './mobile-order-builder'
+import { MobileTableGrid } from './mobile-table-grid'
+import { fetchOperationsLive, closeComanda, logout, openComanda, updateComandaStatus } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
+import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 
 type Tab = 'mesas' | 'pedido' | 'ativo'
-
-const DEFAULT_MESAS: Mesa[] = Array.from({ length: 6 }, (_, i) => ({
-  id: String(i + 1),
-  numero: String(i + 1),
-  capacidade: 4,
-  status: 'livre' as const,
-}))
 
 interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string } | null
@@ -29,11 +24,18 @@ interface StaffMobileShellProps {
 export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
-
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
   const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null)
-  const [mesas, setMesas] = useState<Mesa[]>(DEFAULT_MESAS)
-  const [comandas, setComandas] = useState<Comanda[]>([])
+  const [screenError, setScreenError] = useState<string | null>(null)
+
+  const operationsQuery = useQuery({
+    queryKey: ['operations', 'live'],
+    queryFn: () => fetchOperationsLive(),
+    enabled: Boolean(currentUser),
+    refetchInterval: 15_000,
+  })
+
+  useOperationsRealtime(Boolean(currentUser), queryClient)
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -43,62 +45,80 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       router.push('/login')
     },
   })
+  const openComandaMutation = useMutation({
+    mutationFn: openComanda,
+    onSuccess: () => invalidateMobileWorkspace(queryClient),
+  })
+  const updateComandaStatusMutation = useMutation({
+    mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
+      updateComandaStatus(comandaId, status),
+    onSuccess: () => invalidateMobileWorkspace(queryClient),
+  })
+  const closeComandaMutation = useMutation({
+    mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: { comandaId: string; discountAmount: number; serviceFeeAmount: number }) =>
+      closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
+    onSuccess: () => invalidateMobileWorkspace(queryClient),
+  })
+
+  const mesas = useMemo(() => buildPdvMesas(operationsQuery.data, ['1', '2', '3', '4', '5', '6']), [operationsQuery.data])
+  const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
+  const activeComandas = comandas.filter((comanda) => comanda.status !== 'fechada')
+  const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
 
   function handleSelectMesa(mesa: Mesa) {
     setSelectedMesa(mesa)
     setActiveTab('pedido')
   }
 
-  function handleSubmit(items: ComandaItem[]) {
+  async function handleSubmit(items: ComandaItem[]) {
     if (!selectedMesa) return
 
-    const newComanda: Comanda = {
-      id: `comanda-${Date.now()}`,
-      status: 'aberta',
-      mesa: selectedMesa.numero,
-      itens: items,
-      desconto: 0,
-      acrescimo: 0,
-      abertaEm: new Date(),
+    try {
+      setScreenError(null)
+      await openComandaMutation.mutateAsync({
+        tableLabel: selectedMesa.numero,
+        items: items.map((item) => ({
+          productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+          productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+          quantity: item.quantidade,
+          unitPrice: item.precoUnitario,
+          notes: item.observacao,
+        })),
+      })
+      setSelectedMesa(null)
+      setActiveTab('ativo')
+    } catch (error) {
+      setScreenError(error instanceof Error ? error.message : 'Nao foi possivel abrir a comanda.')
     }
-
-    setComandas((prev) => [...prev, newComanda])
-    setMesas((prev) =>
-      prev.map((m) =>
-        m.id === selectedMesa.id
-          ? { ...m, status: 'ocupada' as const, comandaId: newComanda.id }
-          : m,
-      ),
-    )
-    setSelectedMesa(null)
-    setActiveTab('ativo')
   }
 
-  function handleUpdateStatus(id: string, status: ComandaStatus) {
-    setComandas((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status } : c)),
-    )
+  async function handleUpdateStatus(id: string, status: ComandaStatus) {
+    const comanda = comandas.find((item) => item.id === id)
+    if (!comanda) return
 
-    if (status === 'fechada') {
-      const comanda = comandas.find((c) => c.id === id)
-      if (comanda?.mesa) {
-        setMesas((prev) =>
-          prev.map((m) =>
-            m.numero === comanda.mesa
-              ? { ...m, status: 'livre' as const, comandaId: undefined }
-              : m,
-          ),
-        )
+    try {
+      setScreenError(null)
+
+      if (status === 'fechada') {
+        const amounts = toOperationAmounts(comanda)
+        await closeComandaMutation.mutateAsync({
+          comandaId: id,
+          ...amounts,
+        })
+        return
       }
+
+      await updateComandaStatusMutation.mutateAsync({
+        comandaId: id,
+        status: toOperationsStatus(status),
+      })
+    } catch (error) {
+      setScreenError(error instanceof Error ? error.message : 'Nao foi possivel atualizar a comanda.')
     }
   }
-
-  const activeComandas = comandas.filter((c) => c.status !== 'fechada')
-  const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#000000] text-white">
-      {/* Fixed top bar */}
       <header className="flex shrink-0 items-center justify-between border-b border-[rgba(255,255,255,0.06)] bg-[#000000] px-4 py-3">
         <div className="flex items-center gap-3">
           <BrandMark />
@@ -130,13 +150,16 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         </div>
       </header>
 
-      {/* Scrollable main content */}
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === 'mesas' && (
-          <MobileTableGrid mesas={mesas} onSelectMesa={handleSelectMesa} />
-        )}
+      {screenError ? (
+        <div className="border-b border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
+          {screenError}
+        </div>
+      ) : null}
 
-        {activeTab === 'pedido' && (
+      <main className="flex-1 overflow-y-auto">
+        {activeTab === 'mesas' ? <MobileTableGrid mesas={mesas} onSelectMesa={handleSelectMesa} /> : null}
+
+        {activeTab === 'pedido' ? (
           selectedMesa ? (
             <MobileOrderBuilder
               mesa={selectedMesa}
@@ -145,7 +168,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
               onCancel={() => setActiveTab('mesas')}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
               <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
                 <ShoppingCart className="size-7 text-[#7a8896]" />
               </div>
@@ -162,17 +185,16 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
               </button>
             </div>
           )
-        )}
+        ) : null}
 
-        {activeTab === 'ativo' && (
+        {activeTab === 'ativo' ? (
           <MobileComandaList
             comandas={activeComandas}
             onUpdateStatus={handleUpdateStatus}
           />
-        )}
+        ) : null}
       </main>
 
-      {/* Fixed bottom navigation */}
       <nav className="shrink-0 border-t border-[rgba(255,255,255,0.06)] bg-[#000000]">
         <div className="grid grid-cols-3">
           {(
@@ -191,20 +213,19 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
                 className="relative flex flex-col items-center justify-center gap-1 py-3 transition-colors"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {/* Gold underline on active */}
-                {isActive && (
+                {isActive ? (
                   <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--accent,#9b8460)]" />
-                )}
+                ) : null}
                 <div className="relative">
                   <Icon
                     className="size-5"
                     style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
                   />
-                  {badge > 0 && (
+                  {badge > 0 ? (
                     <span className="absolute -right-2 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[9px] font-bold text-black">
                       {badge}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <span
                   className="text-[10px] font-medium"
@@ -219,4 +240,12 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       </nav>
     </div>
   )
+}
+
+async function invalidateMobileWorkspace(queryClient: ReturnType<typeof useQueryClient>) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['operations', 'live'] }),
+    queryClient.invalidateQueries({ queryKey: ['orders'] }),
+    queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] }),
+  ])
 }

@@ -6,11 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import {
+  BuyerType,
   AuditSeverity,
   CashClosureStatus,
   CashMovementType,
   CashSessionStatus,
   ComandaStatus,
+  CurrencyCode,
+  OrderStatus,
   Prisma,
   type CashClosure,
   type Employee,
@@ -18,6 +21,7 @@ import {
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
+import { CacheService } from '../../common/services/cache.service'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -28,10 +32,12 @@ import { AddComandaItemDto } from './dto/add-comanda-item.dto'
 import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import { CloseComandaDto } from './dto/close-comanda.dto'
+import { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
 import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
+import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import {
   buildEmployeeOperationsRecord,
@@ -54,6 +60,7 @@ type TransactionClient = Prisma.TransactionClient
 export class OperationsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
     private readonly auditLogService: AuditLogService,
     private readonly operationsRealtimeService: OperationsRealtimeService,
   ) {}
@@ -339,6 +346,9 @@ export class OperationsService {
       rejectFormula: false,
     })
     const participantCount = dto.participantCount ?? 1
+    const draftItems = await this.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
+    const discountAmount = roundCurrency(dto.discountAmount ?? 0)
+    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? 0)
 
     if (participantCount < 1) {
       throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
@@ -401,9 +411,10 @@ export class OperationsService {
       }
     }
 
+    await this.assertOpenTableAvailability(this.prisma, workspaceOwnerUserId, tableLabel)
     await this.assertBusinessDayOpen(workspaceOwnerUserId, businessDate)
 
-    const { comanda } = await this.prisma.$transaction(async (transaction) => {
+    const { comanda, closure } = await this.prisma.$transaction(async (transaction) => {
       const createdComanda = await transaction.comanda.create({
         data: {
           companyOwnerId: workspaceOwnerUserId,
@@ -425,6 +436,20 @@ export class OperationsService {
         },
       })
 
+      if (draftItems.length) {
+        await transaction.comandaItem.createMany({
+          data: draftItems.map((item) => ({
+            comandaId: createdComanda.id,
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            notes: item.notes,
+          })),
+        })
+      }
+
       if (currentEmployeeId) {
         await transaction.comandaAssignment.create({
           data: {
@@ -436,9 +461,22 @@ export class OperationsService {
         })
       }
 
-      await this.syncCashClosure(transaction, workspaceOwnerUserId, businessDate)
+      const recalculatedComanda =
+        draftItems.length || discountAmount > 0 || serviceFeeAmount > 0
+          ? await this.recalculateComanda(transaction, createdComanda.id, {
+              discountAmount,
+              serviceFeeAmount,
+            })
+          : createdComanda
+
+      if (recalculatedComanda.cashSessionId) {
+        await this.recalculateCashSession(transaction, recalculatedComanda.cashSessionId)
+      }
+
+      const closureSnapshot = await this.syncCashClosure(transaction, workspaceOwnerUserId, businessDate)
       return {
-        comanda: createdComanda,
+        comanda: recalculatedComanda,
+        closure: closureSnapshot,
       }
     })
 
@@ -464,6 +502,7 @@ export class OperationsService {
       subtotal: toNumber(comanda.subtotalAmount),
       totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
     })
+    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
 
     return {
       comanda: toComandaRecord(comanda),
@@ -574,23 +613,140 @@ export class OperationsService {
     }
   }
 
+  async replaceComanda(auth: AuthContext, comandaId: string, dto: ReplaceComandaDto, context: RequestContext) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const actorEmployee = await this.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
+    const comanda = await this.requireAuthorizedComanda(this.prisma, workspaceOwnerUserId, auth, comandaId, actorEmployee)
+
+    if (!isOpenComandaStatus(comanda.status)) {
+      throw new ConflictException('Nao e possivel editar uma comanda encerrada ou cancelada.')
+    }
+
+    const tableLabel = sanitizePlainText(dto.tableLabel, 'Mesa', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const customerName = sanitizePlainText(dto.customerName, 'Nome do cliente', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const customerDocument = sanitizePlainText(dto.customerDocument, 'Documento do cliente', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
+      allowEmpty: true,
+      rejectFormula: false,
+    })
+    const participantCount = dto.participantCount ?? comanda.participantCount
+    const draftItems = await this.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
+    const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
+    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+
+    if (participantCount < 1) {
+      throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
+    }
+
+    await this.assertOpenTableAvailability(this.prisma, workspaceOwnerUserId, tableLabel, comanda.id)
+
+    const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
+      async (transaction) => {
+        await transaction.comanda.update({
+          where: { id: comanda.id },
+          data: {
+            tableLabel,
+            customerName,
+            customerDocument,
+            participantCount,
+            notes,
+          },
+        })
+
+        await transaction.comandaItem.deleteMany({
+          where: { comandaId: comanda.id },
+        })
+
+        if (draftItems.length) {
+          await transaction.comandaItem.createMany({
+            data: draftItems.map((item) => ({
+              comandaId: comanda.id,
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalAmount: item.totalAmount,
+              notes: item.notes,
+            })),
+          })
+        }
+
+        const updatedComanda = await this.recalculateComanda(transaction, comanda.id, {
+          discountAmount,
+          serviceFeeAmount,
+        })
+        const resolvedBusinessDate = await this.resolveComandaBusinessDate(transaction, updatedComanda)
+        const updatedSession = updatedComanda.cashSessionId
+          ? await this.recalculateCashSession(transaction, updatedComanda.cashSessionId)
+          : null
+        const closureSnapshot = await this.syncCashClosure(transaction, workspaceOwnerUserId, resolvedBusinessDate)
+
+        return {
+          refreshedComanda: updatedComanda,
+          refreshedSession: updatedSession,
+          closure: closureSnapshot,
+          businessDate: resolvedBusinessDate,
+        }
+      },
+    )
+
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'operations.comanda.replaced',
+      resource: 'comanda',
+      resourceId: comanda.id,
+      metadata: {
+        tableLabel,
+        itemsCount: draftItems.length,
+        discountAmount,
+        serviceFeeAmount,
+      },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    this.operationsRealtimeService.publishComandaUpdated(auth, buildComandaUpdatedPayload(refreshedComanda))
+    if (refreshedSession) {
+      this.operationsRealtimeService.publishCashUpdated(auth, buildCashUpdatedPayload(refreshedSession))
+    }
+    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+
+    return {
+      comanda: toComandaRecord(refreshedComanda),
+      snapshot: await this.buildLiveSnapshot(workspaceOwnerUserId, businessDate),
+    }
+  }
+
   async assignComanda(auth: AuthContext, comandaId: string, dto: AssignComandaDto, context: RequestContext) {
     assertOwnerRole(auth, 'Somente o dono pode redistribuir mesas entre funcionarios.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const comanda = await this.requireOwnedComanda(this.prisma, workspaceOwnerUserId, comandaId)
-    const employee = await this.requireOwnedEmployee(this.prisma, workspaceOwnerUserId, dto.employeeId)
-    const employeeOpenSession = await this.prisma.cashSession.findFirst({
-      where: {
-        companyOwnerId: workspaceOwnerUserId,
-        employeeId: employee.id,
-        status: CashSessionStatus.OPEN,
-      },
-      orderBy: {
-        openedAt: 'desc',
-      },
-    })
+    const employee = dto.employeeId
+      ? await this.requireOwnedEmployee(this.prisma, workspaceOwnerUserId, dto.employeeId)
+      : null
+    const employeeOpenSession = employee
+      ? await this.prisma.cashSession.findFirst({
+          where: {
+            companyOwnerId: workspaceOwnerUserId,
+            employeeId: employee.id,
+            status: CashSessionStatus.OPEN,
+          },
+          orderBy: {
+            openedAt: 'desc',
+          },
+        })
+      : null
 
-    if (!employeeOpenSession) {
+    if (employee && !employeeOpenSession) {
       throw new ConflictException('O funcionario precisa abrir o proprio caixa antes de assumir uma mesa.')
     }
 
@@ -605,20 +761,22 @@ export class OperationsService {
         },
       })
 
-      await transaction.comandaAssignment.create({
-        data: {
-          companyOwnerId: workspaceOwnerUserId,
-          comandaId: comanda.id,
-          employeeId: employee.id,
-          assignedByUserId: auth.userId,
-        },
-      })
+      if (employee) {
+        await transaction.comandaAssignment.create({
+          data: {
+            companyOwnerId: workspaceOwnerUserId,
+            comandaId: comanda.id,
+            employeeId: employee.id,
+            assignedByUserId: auth.userId,
+          },
+        })
+      }
 
       const updatedComanda = await transaction.comanda.update({
         where: { id: comanda.id },
         data: {
-          currentEmployeeId: employee.id,
-          cashSessionId: employeeOpenSession.id,
+          currentEmployeeId: employee?.id ?? null,
+          cashSessionId: employeeOpenSession?.id ?? null,
         },
         include: {
           items: {
@@ -641,8 +799,8 @@ export class OperationsService {
       resource: 'comanda',
       resourceId: comanda.id,
       metadata: {
-        employeeId: employee.id,
-        cashSessionId: employeeOpenSession.id,
+        employeeId: employee?.id ?? null,
+        cashSessionId: employeeOpenSession?.id ?? null,
       },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -754,6 +912,8 @@ export class OperationsService {
           },
         })
 
+        await this.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
+
         const resolvedBusinessDate = await this.resolveComandaBusinessDate(transaction, closedComanda)
         const updatedSession = closedComanda.cashSessionId
           ? await this.recalculateCashSession(transaction, closedComanda.cashSessionId)
@@ -798,6 +958,8 @@ export class OperationsService {
     }
 
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+    void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
+    void this.cache.del(this.cache.financeKey(workspaceOwnerUserId))
 
     return {
       comanda: toComandaRecord(refreshedComanda),
@@ -995,6 +1157,13 @@ export class OperationsService {
           where: {
             status: ComandaStatus.CLOSED,
           },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
         },
       },
     })
@@ -1015,6 +1184,16 @@ export class OperationsService {
     const grossRevenueAmount = roundCurrency(
       session.comandas.reduce((sum, comanda) => sum + toNumber(comanda.totalAmount), 0),
     )
+    const realizedProfitAmount = roundCurrency(
+      session.comandas.reduce((sum, comanda) => {
+        const comandaCost = comanda.items.reduce((itemsTotal, item) => {
+          const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+          return itemsTotal + roundCurrency(unitCost * item.quantity)
+        }, 0)
+
+        return sum + roundCurrency(toNumber(comanda.totalAmount) - comandaCost)
+      }, 0),
+    )
     const expectedCashAmount = roundCurrency(
       toNumber(session.openingCashAmount) + supplyAmount + adjustmentAmount - withdrawalAmount + grossRevenueAmount,
     )
@@ -1024,7 +1203,7 @@ export class OperationsService {
       data: {
         expectedCashAmount,
         grossRevenueAmount,
-        realizedProfitAmount: 0,
+        realizedProfitAmount,
       },
       include: {
         movements: {
@@ -1331,6 +1510,209 @@ export class OperationsService {
     return new Date(comanda.openedAt.getFullYear(), comanda.openedAt.getMonth(), comanda.openedAt.getDate())
   }
 
+  private async resolveComandaDraftItems(
+    transaction: PrismaService | TransactionClient,
+    workspaceOwnerUserId: string,
+    items?: ComandaDraftItemDto[],
+  ): Promise<
+    Array<{
+      productId: string | null
+      productName: string
+      quantity: number
+      unitPrice: number
+      totalAmount: number
+      notes: string | null
+    }>
+  > {
+    if (!items?.length) {
+      return []
+    }
+
+    const normalizedItems: Array<{
+      productId: string | null
+      productName: string
+      quantity: number
+      unitPrice: number
+      totalAmount: number
+      notes: string | null
+    }> = []
+
+    for (const item of items) {
+      let productId: string | null = null
+      let productName: string
+      let unitPrice: number
+
+      if (item.productId) {
+        const product = await transaction.product.findFirst({
+          where: {
+            id: item.productId,
+            userId: workspaceOwnerUserId,
+            active: true,
+          },
+        })
+
+        if (!product) {
+          throw new NotFoundException('Produto nao encontrado para esta conta.')
+        }
+
+        productId = product.id
+        productName = product.name
+        unitPrice = roundCurrency(item.unitPrice ?? toNumber(product.unitPrice))
+      } else {
+        productName = sanitizePlainText(item.productName, 'Nome do item da comanda', {
+          allowEmpty: false,
+          rejectFormula: true,
+        })!
+
+        if (item.unitPrice === undefined) {
+          throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
+        }
+
+        unitPrice = roundCurrency(item.unitPrice)
+      }
+
+      const notes = sanitizePlainText(item.notes, 'Observacoes do item', {
+        allowEmpty: true,
+        rejectFormula: false,
+      })
+
+      normalizedItems.push({
+        productId,
+        productName,
+        quantity: item.quantity,
+        unitPrice,
+        totalAmount: roundCurrency(unitPrice * item.quantity),
+        notes,
+      })
+    }
+
+    return normalizedItems
+  }
+
+  private async assertOpenTableAvailability(
+    transaction: PrismaService | TransactionClient,
+    workspaceOwnerUserId: string,
+    tableLabel: string,
+    currentComandaId?: string,
+  ) {
+    const openComanda = await transaction.comanda.findFirst({
+      where: {
+        companyOwnerId: workspaceOwnerUserId,
+        tableLabel,
+        status: {
+          in: OPEN_COMANDA_STATUSES,
+        },
+        ...(currentComandaId
+          ? {
+              id: {
+                not: currentComandaId,
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (openComanda) {
+      throw new ConflictException('Ja existe uma comanda aberta para esta mesa.')
+    }
+  }
+
+  private async ensureOrderForClosedComanda(
+    transaction: TransactionClient,
+    workspaceOwnerUserId: string,
+    comandaId: string,
+  ) {
+    const existingOrder = await transaction.order.findFirst({
+      where: {
+        userId: workspaceOwnerUserId,
+        comandaId,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (existingOrder) {
+      return existingOrder
+    }
+
+    const comanda = await transaction.comanda.findFirst({
+      where: {
+        id: comandaId,
+        companyOwnerId: workspaceOwnerUserId,
+      },
+      include: {
+        currentEmployee: true,
+        items: {
+          include: {
+            product: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    })
+
+    if (!comanda) {
+      throw new NotFoundException('Comanda nao encontrada para gerar o pedido.')
+    }
+
+    const totalCost = roundCurrency(
+      comanda.items.reduce((sum, item) => {
+        const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+        return sum + roundCurrency(unitCost * item.quantity)
+      }, 0),
+    )
+    const totalRevenue = roundCurrency(toNumber(comanda.totalAmount))
+    const totalProfit = roundCurrency(totalRevenue - totalCost)
+    const totalItems = comanda.items.reduce((sum, item) => sum + item.quantity, 0)
+
+    return transaction.order.create({
+      data: {
+        userId: workspaceOwnerUserId,
+        comandaId: comanda.id,
+        customerName: comanda.customerName,
+        buyerType: resolveBuyerTypeFromDocument(comanda.customerDocument),
+        buyerDocument: comanda.customerDocument,
+        employeeId: comanda.currentEmployeeId,
+        sellerCode: comanda.currentEmployee?.employeeCode ?? null,
+        sellerName: comanda.currentEmployee?.displayName ?? null,
+        channel: 'COMANDA',
+        notes: comanda.notes,
+        currency: CurrencyCode.BRL,
+        status: OrderStatus.COMPLETED,
+        totalRevenue,
+        totalCost,
+        totalProfit,
+        totalItems,
+        items: {
+          create: comanda.items.map((item) => {
+            const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+            const lineRevenue = roundCurrency(toNumber(item.totalAmount))
+            const lineCost = roundCurrency(unitCost * item.quantity)
+
+            return {
+              productId: item.productId,
+              productName: item.productName,
+              category: item.product?.category ?? 'Comanda manual',
+              quantity: item.quantity,
+              currency: CurrencyCode.BRL,
+              unitCost,
+              unitPrice: roundCurrency(toNumber(item.unitPrice)),
+              lineRevenue,
+              lineCost,
+              lineProfit: roundCurrency(lineRevenue - lineCost),
+            }
+          }),
+        },
+      },
+    })
+  }
+
   private async assertBusinessDayOpen(workspaceOwnerUserId: string, businessDate: Date) {
     const closure = await this.prisma.cashClosure.findUnique({
       where: {
@@ -1382,6 +1764,20 @@ function toNumber(value: { toNumber(): number } | number | null | undefined) {
   }
 
   return typeof value === 'number' ? value : value.toNumber()
+}
+
+function resolveBuyerTypeFromDocument(document: string | null | undefined) {
+  const digits = (document ?? '').replace(/\D/g, '')
+
+  if (digits.length === 11) {
+    return BuyerType.PERSON
+  }
+
+  if (digits.length === 14) {
+    return BuyerType.COMPANY
+  }
+
+  return null
 }
 
 function isOpenComandaStatus(status: ComandaStatus) {

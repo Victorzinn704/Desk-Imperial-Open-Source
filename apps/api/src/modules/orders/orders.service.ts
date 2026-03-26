@@ -442,6 +442,10 @@ export class OrdersService {
 
     const cancelledOrder = await this.prisma.$transaction(async (transaction) => {
       for (const item of order.items) {
+        if (!item.productId || order.comandaId) {
+          continue
+        }
+
         await transaction.product.updateMany({
           where: {
             id: item.productId,

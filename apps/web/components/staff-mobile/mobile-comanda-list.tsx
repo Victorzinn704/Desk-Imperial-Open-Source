@@ -5,7 +5,7 @@ import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
-  onUpdateStatus: (id: string, status: ComandaStatus) => void
+  onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
 }
 
 type StatusConfig = {
@@ -137,7 +137,7 @@ export function MobileComandaList({ comandas, onUpdateStatus }: MobileComandaLis
               {config.nextStatus && (
                 <button
                   type="button"
-                  onClick={() => onUpdateStatus(comanda.id, config.nextStatus!)}
+                  onClick={() => void onUpdateStatus(comanda.id, config.nextStatus!)}
                   className="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity active:opacity-75"
                   style={{ backgroundColor: config.nextBg, border: `1px solid ${config.chipColor}22` }}
                 >

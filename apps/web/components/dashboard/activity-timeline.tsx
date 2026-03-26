@@ -1,8 +1,8 @@
 'use client'
 
-import { LogIn, Monitor, Smartphone, Activity, TrendingUp, Users, Package, AlertTriangle, X } from 'lucide-react'
+import { Activity, AlertTriangle, Ban, ClipboardList, LogIn, ReceiptText, Shield, TrendingUp, UserRound, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchLastLogins, type LastLoginEntry } from '@/lib/api'
+import { fetchActivityFeed, type ActivityFeedEntry } from '@/lib/api'
 
 const getRelativeTime = (date: Date) => {
   const now = new Date()
@@ -18,120 +18,27 @@ const getRelativeTime = (date: Date) => {
   return date.toLocaleDateString('pt-BR')
 }
 
-const MOBILE_OS = ['iPhone', 'iPad', 'Android']
-
-// Tipos de atividades do SaaS
-type ActivityType = 'login' | 'order_created' | 'product_updated' | 'finance_alert' | 'user_action'
-
-interface SaaSActivity {
+type ActivityViewModel = {
   id: string
-  type: ActivityType
   title: string
   description: string
+  icon: typeof Activity
+  color: string
   timestamp: Date
-  metadata?: Record<string, any>
-}
-
-const getActivityIcon = (type: ActivityType) => {
-  switch (type) {
-    case 'login':
-      return LogIn
-    case 'order_created':
-      return Package
-    case 'product_updated':
-      return TrendingUp
-    case 'finance_alert':
-      return AlertTriangle
-    case 'user_action':
-      return Users
-    default:
-      return Activity
-  }
-}
-
-const getActivityColor = (type: ActivityType) => {
-  switch (type) {
-    case 'login':
-      return '#36f57c'
-    case 'order_created':
-      return '#8fffb9'
-    case 'product_updated':
-      return '#d4b16a'
-    case 'finance_alert':
-      return '#ff6b6b'
-    case 'user_action':
-      return '#4ecdc4'
-    default:
-      return '#36f57c'
-  }
-}
-
-// Mock de atividades reais do SaaS (substituir por dados reais da API)
-const generateMockActivities = (): SaaSActivity[] => {
-  const now = new Date()
-  return [
-    {
-      id: '1',
-      type: 'login',
-      title: 'Novo acesso realizado',
-      description: 'Usuário fez login no sistema',
-      timestamp: new Date(now.getTime() - 5 * 60000), // 5 minutos atrás
-    },
-    {
-      id: '2',
-      type: 'order_created',
-      title: 'Pedido criado',
-      description: 'Novo pedido #1234 foi registrado',
-      timestamp: new Date(now.getTime() - 15 * 60000), // 15 minutos atrás
-    },
-    {
-      id: '3',
-      type: 'product_updated',
-      title: 'Produto atualizado',
-      description: 'Estoque do produto "Hambúrguer Premium" foi ajustado',
-      timestamp: new Date(now.getTime() - 30 * 60000), // 30 minutos atrás
-    },
-    {
-      id: '4',
-      type: 'finance_alert',
-      title: 'Alerta financeiro',
-      description: 'Receita do dia superou meta em 15%',
-      timestamp: new Date(now.getTime() - 45 * 60000), // 45 minutos atrás
-    },
-    {
-      id: '5',
-      type: 'user_action',
-      title: 'Ação do usuário',
-      description: 'Perfil do funcionário João Silva foi atualizado',
-      timestamp: new Date(now.getTime() - 60 * 60000), // 1 hora atrás
-    },
-  ]
+  ipAddress: string | null
 }
 
 export function ActivityTimeline({ onClose }: { onClose: () => void }) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['auth', 'activity'],
-    queryFn: fetchLastLogins,
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['auth', 'activity-feed'],
+    queryFn: fetchActivityFeed,
+    staleTime: 30_000,
   })
 
-  // Combinar logins com atividades do SaaS
-  const mockActivities = generateMockActivities()
-  const combinedActivities = [
-    ...(data?.map((login: LastLoginEntry) => ({
-      id: `login-${login.id}`,
-      type: 'login' as ActivityType,
-      title: 'Acesso realizado',
-      description: `Login via ${login.browser} no ${login.os}`,
-      timestamp: new Date(login.createdAt),
-      metadata: { ipAddress: login.ipAddress },
-    })) || []),
-    ...mockActivities,
-  ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  const activities = (data ?? []).map(toActivityViewModel)
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -143,8 +50,8 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
             <Activity className="size-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white">Atividades do SaaS</h2>
-            <p className="text-xs text-[var(--text-soft)]">Histórico real de ações e eventos</p>
+            <h2 className="text-xl font-semibold text-white">Atividades do workspace</h2>
+            <p className="text-xs text-[var(--text-soft)]">Eventos reais de operação, autenticação e gestão</p>
           </div>
           <button
             className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
@@ -155,76 +62,160 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-      {isLoading && (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="size-8 animate-pulse rounded-full bg-[rgba(255,255,255,0.06)]" />
-              <div className="flex-1 space-y-2 pt-1">
-                <div className="h-3 w-2/3 animate-pulse rounded bg-[rgba(255,255,255,0.06)]" />
-                <div className="h-2.5 w-1/2 animate-pulse rounded bg-[rgba(255,255,255,0.04)]" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <p className="text-sm text-[var(--danger)]">Não foi possível carregar o histórico.</p>
-      )}
-
-      {combinedActivities.length === 0 && (
-        <p className="text-sm text-[var(--text-soft)]">Nenhuma atividade registrada ainda.</p>
-      )}
-
-      {combinedActivities.length > 0 && (
-        <div className="space-y-4">
-          {combinedActivities.map((activity, index) => {
-            const isMobile = activity.type === 'login' && activity.metadata?.ipAddress
-            const isLast = index === combinedActivities.length - 1
-            const IconComponent = getActivityIcon(activity.type)
-            const iconColor = getActivityColor(activity.type)
-
-            return (
-              <div key={activity.id} className="relative">
-                {!isLast && (
-                  <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" />
-                )}
-                <div className="flex gap-4">
-                  <div
-                    className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-[rgba(255,255,255,0.1)]"
-                    style={{ backgroundColor: `${iconColor}20`, borderColor: `${iconColor}40` }}
-                  >
-                    <IconComponent className="size-4" style={{ color: iconColor }} />
-                  </div>
-                  <div className="flex-1 pb-4">
-                    <p className="text-sm font-semibold text-white">{activity.title}</p>
-                    <p className="text-xs text-[var(--text-soft)]">
-                      {activity.description}
-                    </p>
-                    {activity.metadata?.ipAddress && (
-                      <p className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">
-                        {activity.metadata.ipAddress}
-                      </p>
-                    )}
-                    <time className="mt-1 block text-xs text-[var(--text-muted)]">
-                      {getRelativeTime(activity.timestamp)}
-                    </time>
-                  </div>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="flex gap-4">
+                <div className="size-8 animate-pulse rounded-full bg-[rgba(255,255,255,0.06)]" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="h-3 w-2/3 animate-pulse rounded bg-[rgba(255,255,255,0.06)]" />
+                  <div className="h-2.5 w-1/2 animate-pulse rounded bg-[rgba(255,255,255,0.04)]" />
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : null}
 
-      <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
-        <div className="flex items-center justify-center gap-2">
-          <TrendingUp className="size-3" />
-          <span>Monitoramento em tempo real</span>
+        {error ? (
+          <p className="text-sm text-[var(--danger)]">Não foi possível carregar o histórico operacional.</p>
+        ) : null}
+
+        {!isLoading && !error && activities.length === 0 ? (
+          <p className="text-sm text-[var(--text-soft)]">Nenhuma atividade registrada ainda.</p>
+        ) : null}
+
+        {!isLoading && !error && activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((activity, index) => {
+              const isLast = index === activities.length - 1
+              const IconComponent = activity.icon
+
+              return (
+                <div key={activity.id} className="relative">
+                  {!isLast ? (
+                    <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" />
+                  ) : null}
+
+                  <div className="flex gap-4">
+                    <div
+                      className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-[rgba(255,255,255,0.1)]"
+                      style={{ backgroundColor: `${activity.color}20`, borderColor: `${activity.color}40` }}
+                    >
+                      <IconComponent className="size-4" style={{ color: activity.color }} />
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <p className="text-sm font-semibold text-white">{activity.title}</p>
+                      <p className="text-xs text-[var(--text-soft)]">{activity.description}</p>
+                      {activity.ipAddress ? (
+                        <p className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">{activity.ipAddress}</p>
+                      ) : null}
+                      <time className="mt-1 block text-xs text-[var(--text-muted)]">
+                        {getRelativeTime(activity.timestamp)}
+                      </time>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+
+        <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
+          <div className="flex items-center justify-center gap-2">
+            <TrendingUp className="size-3" />
+            <span>Painel ligado à trilha real de auditoria</span>
+          </div>
         </div>
-      </div>
       </aside>
     </>
   )
+}
+
+function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
+  const actorName = entry.actorName ?? 'Sistema'
+  const fallback = {
+    title: 'Atividade registrada',
+    description: `${actorName} executou ${entry.event}.`,
+    icon: Activity,
+    color: '#4ecdc4',
+  }
+
+  const mapping = resolveActivityPresentation(entry, actorName)
+
+  return {
+    id: entry.id,
+    title: mapping.title,
+    description: mapping.description,
+    icon: mapping.icon,
+    color: mapping.color,
+    timestamp: new Date(entry.createdAt),
+    ipAddress: entry.ipAddress,
+  }
+
+  function resolveActivityPresentation(activity: ActivityFeedEntry, actor: string) {
+    if (activity.event === 'auth.login.succeeded') {
+      return {
+        title: 'Acesso autenticado',
+        description: `${actor} iniciou uma nova sessão no sistema.`,
+        icon: LogIn,
+        color: '#36f57c',
+      }
+    }
+
+    if (activity.event.startsWith('operations.cash_')) {
+      return {
+        title: 'Movimento de caixa',
+        description: `${actor} atualizou o ciclo operacional do caixa.`,
+        icon: Shield,
+        color: '#d4b16a',
+      }
+    }
+
+    if (activity.event.startsWith('operations.comanda')) {
+      return {
+        title: 'Comanda movimentada',
+        description: `${actor} alterou uma comanda do salão.`,
+        icon: ClipboardList,
+        color: '#60a5fa',
+      }
+    }
+
+    if (activity.event.startsWith('employee.')) {
+      return {
+        title: 'Equipe atualizada',
+        description: `${actor} alterou um vínculo de funcionário.`,
+        icon: UserRound,
+        color: '#8fffb9',
+      }
+    }
+
+    if (activity.event === 'order.cancelled') {
+      return {
+        title: 'Pedido cancelado',
+        description: `${actor} cancelou um pedido já registrado.`,
+        icon: Ban,
+        color: '#ff8c69',
+      }
+    }
+
+    if (activity.event.startsWith('order.')) {
+      return {
+        title: 'Pedido registrado',
+        description: `${actor} gerou ou atualizou um pedido comercial.`,
+        icon: ReceiptText,
+        color: '#8b5cf6',
+      }
+    }
+
+    if (activity.severity === 'WARN' || activity.severity === 'ERROR') {
+      return {
+        title: 'Alerta operacional',
+        description: `${actor} gerou um evento que merece revisão.`,
+        icon: AlertTriangle,
+        color: '#f59e0b',
+      }
+    }
+
+    return fallback
+  }
 }

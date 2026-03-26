@@ -3,7 +3,7 @@ import { Type, Transform } from 'class-transformer'
 import { IsArray, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator'
 import { ComandaDraftItemDto } from './comanda-draft-item.dto'
 
-export class OpenComandaDto {
+export class ReplaceComandaDto {
   @ApiProperty({ example: 'X' })
   @IsString()
   @MaxLength(40)
@@ -34,12 +34,11 @@ export class OpenComandaDto {
   @MaxLength(240)
   notes?: string
 
-  @ApiPropertyOptional({ type: [ComandaDraftItemDto] })
-  @IsOptional()
+  @ApiProperty({ type: [ComandaDraftItemDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ComandaDraftItemDto)
-  items?: ComandaDraftItemDto[]
+  items!: ComandaDraftItemDto[]
 
   @ApiPropertyOptional({ example: 10 })
   @Transform(({ value }) => (value === undefined || value === null || value === '' ? undefined : Number(value)))
@@ -54,14 +53,4 @@ export class OpenComandaDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   serviceFeeAmount?: number
-
-  @ApiPropertyOptional({ example: 'cmabc123session' })
-  @IsOptional()
-  @IsString()
-  cashSessionId?: string
-
-  @ApiPropertyOptional({ example: 'cmabc123employee' })
-  @IsOptional()
-  @IsString()
-  employeeId?: string
 }

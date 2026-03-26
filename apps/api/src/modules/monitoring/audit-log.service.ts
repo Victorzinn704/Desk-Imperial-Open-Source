@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { AuditSeverity, Prisma } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import type { AuthContext } from '../auth/auth.types'
+import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 
 export type AuditLogInput = {
   actorUserId?: string | null
@@ -19,6 +21,20 @@ export type LastLoginEntry = {
   os: string
   ipAddress: string | null
   createdAt: string
+}
+
+export type ActivityFeedEntry = {
+  id: string
+  event: string
+  resource: string
+  resourceId: string | null
+  severity: AuditSeverity
+  actorUserId: string | null
+  actorName: string | null
+  actorRole: 'OWNER' | 'STAFF' | null
+  ipAddress: string | null
+  createdAt: string
+  metadata: Prisma.JsonValue | null
 }
 
 function parseUserAgent(ua: string | null): { browser: string; os: string } {
@@ -68,6 +84,52 @@ export class AuditLogService {
         createdAt: log.createdAt.toISOString(),
       }
     })
+  }
+
+  async getActivityFeedForAuth(auth: AuthContext, limit = 40): Promise<ActivityFeedEntry[]> {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const logs = await this.prisma.auditLog.findMany({
+      where:
+        auth.role === 'OWNER'
+          ? {
+              OR: [
+                { actorUserId: workspaceOwnerUserId },
+                {
+                  actor: {
+                    companyOwnerId: workspaceOwnerUserId,
+                  },
+                },
+              ],
+            }
+          : {
+              actorUserId: auth.userId,
+            },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        actor: {
+          select: {
+            id: true,
+            fullName: true,
+            role: true,
+          },
+        },
+      },
+    })
+
+    return logs.map((log) => ({
+      id: log.id,
+      event: log.event,
+      resource: log.resource,
+      resourceId: log.resourceId,
+      severity: log.severity,
+      actorUserId: log.actorUserId,
+      actorName: log.actor?.fullName ?? null,
+      actorRole: log.actor?.role ?? null,
+      ipAddress: log.ipAddress,
+      createdAt: log.createdAt.toISOString(),
+      metadata: log.metadata ?? null,
+    }))
   }
 
   async record(input: AuditLogInput) {

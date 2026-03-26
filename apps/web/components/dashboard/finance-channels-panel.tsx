@@ -5,7 +5,7 @@ import { ShoppingCart } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { cn } from '@/lib/utils'
 import { TableSkeleton } from '@/components/shared/skeleton'
-import { FinanceOrdersTableAg } from './finance-orders-table-ag'
+import { FinanceOrdersTable } from './finance-orders-table'
 
 type Props = {
   finance: FinanceSummaryResponse
@@ -66,7 +66,7 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
         </div>
       </div>
 
-      <FinanceOrdersTableAg orders={filteredOrders} displayCurrency={displayCurrency} />
+      <FinanceOrdersTable orders={filteredOrders} displayCurrency={displayCurrency} />
     </div>
   )
 }

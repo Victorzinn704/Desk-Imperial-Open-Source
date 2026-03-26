@@ -26,6 +26,9 @@ type Props = {
   onAddMesa: () => void
   onClickLivre: (mesa: Mesa) => void
   onClickOcupada: (comanda: Comanda) => void
+  allowMesaCatalogEditing?: boolean
+  allowRosterEditing?: boolean
+  allowStatusDragging?: boolean
 }
 
 // ─── Cores de status ───────────────────────────────────────────────────────────
@@ -149,7 +152,7 @@ function ItemsTooltip({ comanda }: { comanda: Comanda }) {
 
 function MesaCard({
   mesa, garcons, comanda, index, view, now, assigningGarcomId,
-  onAssign, onClickLivre, onClickOcupada,
+  onAssign, onClickLivre, onClickOcupada, dragDisabled = false,
 }: {
   mesa: Mesa
   garcons: Garcom[]
@@ -161,6 +164,7 @@ function MesaCard({
   onAssign: (mesaId: string, garcomId: string | undefined) => void
   onClickLivre: (m: Mesa) => void
   onClickOcupada: (c: Comanda) => void
+  dragDisabled?: boolean
 }) {
   const [showGarcomSel, setShowGarcomSel] = useState(false)
   const [showConfirm, setShowConfirm]     = useState(false)
@@ -338,7 +342,7 @@ function MesaCard({
 
   if (view === 'equipe') return card
   return (
-    <Draggable draggableId={mesa.id} index={index}>
+    <Draggable draggableId={mesa.id} index={index} isDragDisabled={dragDisabled}>
       {(provided, snapshot) => (
         <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
           style={{ ...provided.draggableProps.style, opacity: snapshot.isDragging ? 0.85 : 1 }}>
@@ -352,17 +356,18 @@ function MesaCard({
 // ─── MesaCompact (modo compacto para pool livre) ───────────────────────────────
 
 function MesaCompact({
-  mesa, garcons, index, onAssign, onClickLivre,
+  mesa, garcons, index, onAssign, onClickLivre, dragDisabled = false,
 }: {
   mesa: Mesa; garcons: Garcom[]; index: number
   onAssign: (mesaId: string, garcomId: string | undefined) => void
   onClickLivre: (m: Mesa) => void
+  dragDisabled?: boolean
 }) {
   const [showGarcomSel, setShowGarcomSel] = useState(false)
   const garcom = garcons.find(g => g.id === mesa.garcomId)
 
   return (
-    <Draggable draggableId={mesa.id} index={index}>
+    <Draggable draggableId={mesa.id} index={index} isDragDisabled={dragDisabled}>
       {(provided, snapshot) => (
         <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
           style={{ ...provided.draggableProps.style, opacity: snapshot.isDragging ? 0.8 : 1 }}>
@@ -441,6 +446,7 @@ function GarcomStrip({
 function SalaoView({
   mesas, garcons, comandas, filter, now, assigningGarcomId,
   onStatusChange, onAssign, onClickLivre, onClickOcupada, onAddMesa, onSelectGarcom,
+  allowMesaCatalogEditing, allowStatusDragging,
 }: {
   mesas: Mesa[]; garcons: Garcom[]; comandas: Comanda[]
   filter: FilterStatus; now: number; assigningGarcomId: string | null
@@ -448,10 +454,13 @@ function SalaoView({
   onAssign: (mesaId: string, garcomId: string | undefined) => void
   onClickLivre: (m: Mesa) => void; onClickOcupada: (c: Comanda) => void
   onAddMesa: () => void; onSelectGarcom: (id: string | null) => void
+  allowMesaCatalogEditing: boolean
+  allowStatusDragging: boolean
 }) {
   const [compactLivres, setCompactLivres] = useState(false)
 
   function handleDragEnd(result: DropResult) {
+    if (!allowStatusDragging) return
     const { draggableId, destination } = result
     if (!destination) return
     const newStatus = destination.droppableId as MesaStatus
@@ -496,10 +505,12 @@ function SalaoView({
                 {compactLivres ? <Maximize2 className="size-3" /> : <Minimize2 className="size-3" />}
                 {compactLivres ? 'Expandir' : 'Compactar'}
               </button>
-              <button type="button" onClick={onAddMesa}
-                className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.13)]">
-                <Plus className="size-3" /> Nova Mesa
-              </button>
+              {allowMesaCatalogEditing ? (
+                <button type="button" onClick={onAddMesa}
+                  className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.13)]">
+                  <Plus className="size-3" /> Nova Mesa
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -517,11 +528,13 @@ function SalaoView({
                 {livreMesas.map((mesa, i) =>
                   compactLivres ? (
                     <MesaCompact key={mesa.id} mesa={mesa} garcons={garcons} index={i}
+                      dragDisabled={!allowStatusDragging}
                       onAssign={onAssign} onClickLivre={onClickLivre} />
                   ) : (
                     <div key={mesa.id} style={{ width: 160 }}>
                       <MesaCard mesa={mesa} garcons={garcons} comanda={undefined}
                         index={i} view="salao" now={now} assigningGarcomId={assigningGarcomId}
+                        dragDisabled={!allowStatusDragging}
                         onAssign={onAssign} onClickLivre={onClickLivre} onClickOcupada={onClickOcupada} />
                     </div>
                   )
@@ -560,6 +573,7 @@ function SalaoView({
                       <MesaCard key={mesa.id} mesa={mesa} garcons={garcons}
                         comanda={mesa.comandaId ? comandas.find(c => c.id === mesa.comandaId) : undefined}
                         index={i} view="salao" now={now} assigningGarcomId={assigningGarcomId}
+                        dragDisabled={!allowStatusDragging}
                         onAssign={onAssign} onClickLivre={onClickLivre} onClickOcupada={onClickOcupada} />
                     ))}
                     {provided.placeholder}
@@ -578,13 +592,14 @@ function SalaoView({
 
 function EquipeView({
   mesas, garcons, comandas, now, assigningGarcomId,
-  onAssign, onAddGarcom, onRemoveGarcom, onClickLivre, onClickOcupada,
+  onAssign, onAddGarcom, onRemoveGarcom, onClickLivre, onClickOcupada, allowRosterEditing,
 }: {
   mesas: Mesa[]; garcons: Garcom[]; comandas: Comanda[]
   now: number; assigningGarcomId: string | null
   onAssign: (mesaId: string, garcomId: string | undefined) => void
   onAddGarcom: (nome: string) => void; onRemoveGarcom: (id: string) => void
   onClickLivre: (m: Mesa) => void; onClickOcupada: (c: Comanda) => void
+  allowRosterEditing: boolean
 }) {
   const [showAdd, setShowAdd] = useState(false)
   const [newNome, setNewNome] = useState('')
@@ -601,10 +616,12 @@ function EquipeView({
             </span>
           )}
         </p>
-        <button type="button" onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(155,132,96,0.16)]">
-          <Plus className="size-3.5" /> Garçom
-        </button>
+        {allowRosterEditing ? (
+          <button type="button" onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(155,132,96,0.16)]">
+            <Plus className="size-3.5" /> Garçom
+          </button>
+        ) : null}
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -642,10 +659,12 @@ function EquipeView({
               style={{ width: 210, borderColor: `${cor}25`, background: `${cor}04` }}>
               <div className="relative flex flex-col items-center gap-1 border-b px-3 pb-3 pt-5"
                 style={{ borderColor: `${cor}18` }}>
-                <button type="button" title="Remover garçom" onClick={() => onRemoveGarcom(garcom.id)}
-                  className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-white hover:opacity-100">
-                  <X className="size-3" />
-                </button>
+                {allowRosterEditing ? (
+                  <button type="button" title="Remover garçom" onClick={() => onRemoveGarcom(garcom.id)}
+                    className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-white hover:opacity-100">
+                    <X className="size-3" />
+                  </button>
+                ) : null}
                 <div className="flex items-center justify-center rounded-full font-bold text-black"
                   style={{ width: 48, height: 48, background: cor, fontSize: 18 }}>
                   {initials(garcom.nome)}
@@ -677,14 +696,16 @@ function EquipeView({
           )
         })}
 
-        <button type="button" onClick={() => setShowAdd(true)}
-          className="flex w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.1)] text-[var(--text-muted)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-soft)]"
-          title="Adicionar garçom">
-          <Plus className="size-5" />
-        </button>
+        {allowRosterEditing ? (
+          <button type="button" onClick={() => setShowAdd(true)}
+            className="flex w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.1)] text-[var(--text-muted)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-soft)]"
+            title="Adicionar garçom">
+            <Plus className="size-5" />
+          </button>
+        ) : null}
       </div>
 
-      {garcons.length === 0 && semGarcom.length === 0 && (
+      {garcons.length === 0 && semGarcom.length === 0 && allowRosterEditing && (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[rgba(255,255,255,0.08)] py-20">
           <Users2 className="size-10 opacity-40 text-[var(--text-muted)]" />
           <div className="text-center">
@@ -698,7 +719,7 @@ function EquipeView({
         </div>
       )}
 
-      {showAdd && (
+      {showAdd && allowRosterEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-xs rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[#0e1018] p-6 shadow-2xl">
             <h3 className="mb-4 text-base font-bold text-white">Novo Garçom</h3>
@@ -735,6 +756,9 @@ export function SalaoUnificado({
   mesas, garcons, comandas,
   onStatusChange, onAssignGarcom, onAddGarcom, onRemoveGarcom,
   onAddMesa, onClickLivre, onClickOcupada,
+  allowMesaCatalogEditing = true,
+  allowRosterEditing = true,
+  allowStatusDragging = true,
 }: Readonly<Props>) {
   const [view, setView]                       = useState<SalaoView>('salao')
   const [filter, setFilter]                   = useState<FilterStatus>('todos')
@@ -809,7 +833,9 @@ export function SalaoUnificado({
 
       {view === 'salao' && (
         <p className="text-xs text-[var(--text-soft)]">
-          Arraste mesas entre zonas · selecione um garçom para atribuir (persiste até ESC) · hover na comanda para ver os itens
+          {allowStatusDragging
+            ? 'Arraste mesas entre zonas · selecione um garçom para atribuir (persiste até ESC) · hover na comanda para ver os itens'
+            : 'O estado das mesas acompanha a comanda real · selecione um garçom para redistribuir o atendimento · hover na comanda para ver os itens'}
         </p>
       )}
 
@@ -820,6 +846,8 @@ export function SalaoUnificado({
           onStatusChange={onStatusChange} onAssign={handleAssign}
           onClickLivre={onClickLivre} onClickOcupada={onClickOcupada}
           onAddMesa={onAddMesa} onSelectGarcom={setAssigning}
+          allowMesaCatalogEditing={allowMesaCatalogEditing}
+          allowStatusDragging={allowStatusDragging}
         />
       ) : (
         <EquipeView
@@ -828,6 +856,7 @@ export function SalaoUnificado({
           onAssign={handleAssign} onAddGarcom={onAddGarcom}
           onRemoveGarcom={onRemoveGarcom} onClickLivre={onClickLivre}
           onClickOcupada={onClickOcupada}
+          allowRosterEditing={allowRosterEditing}
         />
       )}
     </div>

@@ -204,6 +204,7 @@ export type MarketInsightResponse = {
 
 export type OrderRecord = {
   id: string
+  comandaId: string | null
   customerName: string | null
   buyerType: 'PERSON' | 'COMPANY' | null
   buyerDocument: string | null
@@ -233,7 +234,7 @@ export type OrderRecord = {
   cancelledAt: string | null
   items: Array<{
     id: string
-    productId: string
+    productId: string | null
     productName: string
     category: string
     quantity: number

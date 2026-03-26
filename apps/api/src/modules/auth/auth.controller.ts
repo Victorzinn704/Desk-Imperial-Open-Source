@@ -88,4 +88,10 @@ export class AuthController {
   getActivity(@CurrentAuth() auth: AuthContext) {
     return this.auditLogService.getLastLoginsForUser(auth.userId)
   }
+
+  @UseGuards(SessionGuard)
+  @Get('activity-feed')
+  getActivityFeed(@CurrentAuth() auth: AuthContext) {
+    return this.auditLogService.getActivityFeedForAuth(auth)
+  }
 }

@@ -1,4 +1,6 @@
 import type {
+  ComandaRecord,
+  ComandaStatus,
   CurrencyCode,
   FinanceSummaryResponse,
   MarketInsightResponse,
@@ -460,6 +462,97 @@ export type LastLoginEntry = {
 
 export async function fetchLastLogins() {
   return apiFetch<LastLoginEntry[]>('/auth/activity', { method: 'GET' })
+}
+
+export type ActivityFeedEntry = {
+  id: string
+  event: string
+  resource: string
+  resourceId: string | null
+  severity: 'INFO' | 'WARN' | 'ERROR'
+  actorUserId: string | null
+  actorName: string | null
+  actorRole: 'OWNER' | 'STAFF' | null
+  ipAddress: string | null
+  createdAt: string
+  metadata: Record<string, unknown> | null
+}
+
+export async function fetchActivityFeed() {
+  return apiFetch<ActivityFeedEntry[]>('/auth/activity-feed', { method: 'GET' })
+}
+
+export type ComandaDraftItemPayload = {
+  productId?: string
+  productName?: string
+  quantity: number
+  unitPrice?: number
+  notes?: string
+}
+
+export type OpenComandaPayload = {
+  tableLabel: string
+  customerName?: string
+  customerDocument?: string
+  participantCount?: number
+  notes?: string
+  cashSessionId?: string
+  employeeId?: string
+  items?: ComandaDraftItemPayload[]
+  discountAmount?: number
+  serviceFeeAmount?: number
+}
+
+export type ReplaceComandaPayload = {
+  tableLabel: string
+  customerName?: string
+  customerDocument?: string
+  participantCount?: number
+  notes?: string
+  items: ComandaDraftItemPayload[]
+  discountAmount?: number
+  serviceFeeAmount?: number
+}
+
+export type CloseComandaPayload = {
+  notes?: string
+  discountAmount?: number
+  serviceFeeAmount?: number
+}
+
+export async function openComanda(payload: OpenComandaPayload) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>('/operations/comandas', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+export async function replaceComanda(comandaId: string, payload: ReplaceComandaPayload) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+}
+
+export async function assignComanda(comandaId: string, employeeId?: string) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/assign`, {
+    method: 'POST',
+    body: employeeId ? { employeeId } : {},
+  })
+}
+
+export async function updateComandaStatus(comandaId: string, status: Extract<ComandaStatus, 'OPEN' | 'IN_PREPARATION' | 'READY'>) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/status`, {
+    method: 'POST',
+    body: { status },
+  })
+}
+
+export async function closeComanda(comandaId: string, payload: CloseComandaPayload) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/close`, {
+    method: 'POST',
+    body: payload,
+  })
 }
 
 export type UpdateEmployeePayload = {

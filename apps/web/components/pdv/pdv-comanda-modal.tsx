@@ -27,15 +27,17 @@ type SaveComandaPayload = {
 }
 
 type PdvComandaModalProps = {
+  busy?: boolean
   comanda?: Comanda | null
   products: SimpleProduct[]
   initialMesa?: string
-  onSave: (data: SaveComandaPayload) => Comanda
+  onSave: (data: SaveComandaPayload) => Promise<Comanda>
   onClose: () => void
-  onStatusChange?: (comanda: Comanda, status: Comanda['status']) => void
+  onStatusChange?: (comanda: Comanda, status: Comanda['status']) => Promise<void>
 }
 
 export function PdvComandaModal({
+  busy = false,
   comanda,
   products,
   initialMesa,
@@ -44,6 +46,7 @@ export function PdvComandaModal({
   onStatusChange,
 }: Readonly<PdvComandaModalProps>) {
   const isEditing = Boolean(comanda)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [mesa, setMesa] = useState(comanda?.mesa ?? initialMesa ?? '')
   const [clienteNome, setClienteNome] = useState(comanda?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(comanda?.clienteDocumento ?? '')
@@ -119,33 +122,37 @@ export function PdvComandaModal({
     abertaEm: comanda?.abertaEm ?? new Date(),
   }
   const total = calcTotal(draftComanda)
+  const isBusy = busy || isSubmitting
 
   async function handleSave(options?: { printAfterSave?: boolean }) {
-    if (itens.length === 0) {
+    if (itens.length === 0 || isBusy) {
       return
     }
 
     setSaveError(null)
-
-    const savedComanda = onSave({
-      mesa,
-      clienteNome,
-      clienteDocumento,
-      itens,
-      desconto,
-      acrescimo,
-    })
-
-    if (!options?.printAfterSave) {
-      onClose()
-      return
-    }
+    setIsSubmitting(true)
 
     try {
+      const savedComanda = await onSave({
+        mesa,
+        clienteNome,
+        clienteDocumento,
+        itens,
+        desconto,
+        acrescimo,
+      })
+
+      if (!options?.printAfterSave) {
+        onClose()
+        return
+      }
+
       await printComanda(buildPrintableComanda(savedComanda))
       onClose()
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Nao foi possivel imprimir a comanda.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -369,8 +376,9 @@ export function PdvComandaModal({
                       color: option.color,
                     }}
                     type="button"
-                    onClick={() => {
-                      onStatusChange(comanda, option.value)
+                    disabled={isBusy}
+                    onClick={async () => {
+                      await onStatusChange(comanda, option.value)
                       onClose()
                     }}
                   >
@@ -394,10 +402,11 @@ export function PdvComandaModal({
                   </div>
 
                   <button
-                    className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
-                    type="button"
-                    onClick={() => void refreshPrinters()}
-                  >
+                  className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void refreshPrinters()}
+                >
                     <RefreshCw className={`size-3.5 ${connectionState === 'discovering' ? 'animate-spin' : ''}`} />
                     Atualizar
                   </button>
@@ -436,7 +445,7 @@ export function PdvComandaModal({
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button
                   className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-white transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={itens.length === 0 || connectionState === 'printing'}
+                  disabled={itens.length === 0 || connectionState === 'printing' || isBusy}
                   type="button"
                   onClick={() => void handleSave()}
                 >
@@ -445,11 +454,11 @@ export function PdvComandaModal({
 
                 <button
                   className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing'}
+                  disabled={itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing' || isBusy}
                   type="button"
                   onClick={() => void handleSave({ printAfterSave: true })}
                 >
-                  {connectionState === 'printing' ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
+                  {connectionState === 'printing' || isBusy ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
                   {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
                 </button>
               </div>

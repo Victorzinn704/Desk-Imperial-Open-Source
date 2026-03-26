@@ -184,6 +184,7 @@ export function DashboardShell({
     queryKey: ['operations', 'live'],
     queryFn: () => fetchOperationsLive(),
     enabled: Boolean(sessionQuery.data?.user.userId),
+    refetchInterval: 15_000,
   })
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
 

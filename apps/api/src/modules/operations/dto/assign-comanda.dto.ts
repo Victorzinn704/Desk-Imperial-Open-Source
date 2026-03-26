@@ -1,8 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger'
-import { IsString } from 'class-validator'
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsOptional, IsString } from 'class-validator'
 
 export class AssignComandaDto {
-  @ApiProperty({ example: 'cmabc123employee' })
+  @ApiPropertyOptional({ example: 'cmabc123employee' })
+  @IsOptional()
   @IsString()
-  employeeId!: string
+  employeeId?: string
 }

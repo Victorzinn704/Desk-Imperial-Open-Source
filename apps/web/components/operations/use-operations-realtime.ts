@@ -27,10 +27,16 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
       queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
     }
 
+    const invalidateCommercial = () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
+    }
+
     for (const eventName of OPERATIONS_EVENTS) {
       socket.on(eventName, invalidate)
     }
 
+    socket.on('comanda.closed', invalidateCommercial)
     socket.on('connect_error', invalidate)
 
     return () => {
@@ -38,6 +44,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
         socket.off(eventName, invalidate)
       }
 
+      socket.off('comanda.closed', invalidateCommercial)
       socket.off('connect_error', invalidate)
       socket.disconnect()
     }

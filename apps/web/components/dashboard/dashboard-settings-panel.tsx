@@ -18,11 +18,11 @@ import {
 import type { ProfileFormValues } from '@/lib/validation'
 import {
   ApiError,
-  fetchLastLogins,
+  fetchActivityFeed,
+  type ActivityFeedEntry,
   type AuthUser,
   type CookiePreferencePayload,
   type CookiePreferences,
-  type LastLoginEntry,
 } from '@/lib/api'
 import { removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
 import { formatAccountStatus } from '@/lib/dashboard-format'
@@ -106,9 +106,9 @@ export function DashboardSettingsPanel({
   user,
 }: Readonly<DashboardSettingsPanelProps>) {
   const activityQuery = useQuery({
-    queryKey: ['auth', 'activity'],
-    queryFn: fetchLastLogins,
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['auth', 'activity-feed'],
+    queryFn: fetchActivityFeed,
+    staleTime: 30_000,
   })
 
   const [workspacePreferences, setWorkspacePreferences] = useState<WorkspacePreferences>(() => {
@@ -288,7 +288,7 @@ function SecurityTab({
   activityError,
   activityLoading,
 }: Readonly<{
-  activity: LastLoginEntry[]
+  activity: ActivityFeedEntry[]
   activityError: string | null
   activityLoading: boolean
 }>) {
@@ -803,7 +803,7 @@ function SessionTab({
   onLogout,
   user,
 }: Readonly<{
-  activity: LastLoginEntry[]
+  activity: ActivityFeedEntry[]
   activityError: string | null
   activityLoading: boolean
   logoutBusy: boolean
@@ -869,7 +869,7 @@ function RecentAccessSummary({
   activityError,
   activityLoading,
 }: Readonly<{
-  activity: LastLoginEntry[]
+  activity: ActivityFeedEntry[]
   activityError: string | null
   activityLoading: boolean
 }>) {
@@ -888,9 +888,7 @@ function RecentAccessSummary({
 
   return (
     <div className="mt-3 rounded-[14px] border border-white/8 bg-white/[0.02] px-4 py-4">
-      <p className="text-sm font-semibold text-white">
-        {latest.browser} em {latest.os}
-      </p>
+      <p className="text-sm font-semibold text-white">{formatActivityTitle(latest)}</p>
       <p className="mt-1 text-xs text-[var(--text-soft)]">
         {new Intl.DateTimeFormat('pt-BR', {
           day: '2-digit',
@@ -898,6 +896,8 @@ function RecentAccessSummary({
           hour: '2-digit',
           minute: '2-digit',
         }).format(new Date(latest.createdAt))}
+        {' · '}
+        {formatActivityDescription(latest)}
       </p>
     </div>
   )
@@ -908,7 +908,7 @@ function RecentAccessList({
   activityError,
   activityLoading,
 }: Readonly<{
-  activity: LastLoginEntry[]
+  activity: ActivityFeedEntry[]
   activityError: string | null
   activityLoading: boolean
 }>) {
@@ -933,22 +933,20 @@ function RecentAccessList({
   return (
     <div className="space-y-3">
       {activity.map((entry) => {
-        const isMobileDevice = ['iPhone', 'iPad', 'Android'].includes(entry.os)
         return (
           <div
             className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[0.02] px-4 py-3"
             key={entry.id}
           >
             <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-soft)]">
-              {isMobileDevice ? <Smartphone className="size-4" /> : <Monitor className="size-4" />}
+              {entry.event === 'auth.login.succeeded' ? <Monitor className="size-4" /> : <Smartphone className="size-4" />}
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">
-                {entry.browser} em {entry.os}
-              </p>
+              <p className="truncate text-sm font-semibold text-white">{formatActivityTitle(entry)}</p>
               <p className="mt-1 truncate text-xs text-[var(--text-soft)]">
-                {entry.ipAddress || 'IP protegido pelo ambiente'}
+                {formatActivityDescription(entry)}
+                {entry.ipAddress ? ` · ${entry.ipAddress}` : ''}
               </p>
             </div>
 
@@ -965,6 +963,60 @@ function RecentAccessList({
       })}
     </div>
   )
+}
+
+function formatActivityTitle(entry: ActivityFeedEntry) {
+  const actorName = entry.actorName ?? 'Sistema'
+
+  if (entry.event === 'auth.login.succeeded') {
+    return `${actorName} iniciou uma sessão`
+  }
+
+  if (entry.event.startsWith('operations.cash_')) {
+    return `${actorName} movimentou o caixa`
+  }
+
+  if (entry.event.startsWith('operations.comanda')) {
+    return `${actorName} atualizou uma comanda`
+  }
+
+  if (entry.event.startsWith('employee.')) {
+    return `${actorName} alterou a equipe`
+  }
+
+  if (entry.event === 'order.cancelled') {
+    return `${actorName} cancelou um pedido`
+  }
+
+  if (entry.event.startsWith('order.')) {
+    return `${actorName} registrou um pedido`
+  }
+
+  return `${actorName} gerou atividade`
+}
+
+function formatActivityDescription(entry: ActivityFeedEntry) {
+  if (entry.event === 'auth.login.succeeded') {
+    return 'Acesso autenticado no portal'
+  }
+
+  if (entry.event.startsWith('operations.cash_')) {
+    return 'Fluxo operacional de caixa'
+  }
+
+  if (entry.event.startsWith('operations.comanda')) {
+    return 'Movimento operacional do salão'
+  }
+
+  if (entry.event.startsWith('employee.')) {
+    return 'Gestão de vínculo e acesso'
+  }
+
+  if (entry.event.startsWith('order.')) {
+    return 'Registro comercial auditado'
+  }
+
+  return entry.resource ? `${entry.resource} · ${entry.event}` : entry.event
 }
 
 function SettingsMetric({
