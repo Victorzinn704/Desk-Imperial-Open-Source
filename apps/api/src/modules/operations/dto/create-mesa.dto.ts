@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator'
+import { IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 
 export class CreateMesaDto {
   @ApiProperty({ example: 'Mesa 5' })

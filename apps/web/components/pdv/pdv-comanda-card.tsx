@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Clock, Package, Percent, User } from 'lucide-react'
 import type { Comanda, KanbanColumn } from './pdv-types'
@@ -16,7 +17,8 @@ type PdvComandaCardProps = {
 export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<PdvComandaCardProps>) {
   const total = calcTotal(comanda)
   const elapsed = formatElapsed(comanda.abertaEm)
-  const isOld = Date.now() - comanda.abertaEm.getTime() > 30 * 60 * 1000
+  // eslint-disable-next-line react-hooks/purity
+  const isOld = useMemo(() => Date.now() - comanda.abertaEm.getTime() > 30 * 60 * 1000, [comanda.abertaEm])
   const itemCount = comanda.itens.reduce((sum, i) => sum + i.quantidade, 0)
 
   return (

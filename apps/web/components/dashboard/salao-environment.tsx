@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Armchair, Grid3X3, List, Pencil, Plus, Power, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
@@ -74,7 +74,10 @@ export function SalaoEnvironment() {
   const [editForm, setEditForm] = useState<EditForm>({ label: '', capacity: '4', section: '' })
   const [formError, setFormError] = useState<string | null>(null)
   const [dragging, setDragging] = useState<DragState | null>(null)
-  const [localPositions, setLocalPositions] = useState<Record<string, { x: number; y: number }>>({})
+  // Armazena APENAS overrides de drag do usuário; posições do servidor vêm direto do MesaRecord
+  const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({})
+  const dragOverridesRef = useRef(dragOverrides)
+  useLayoutEffect(() => { dragOverridesRef.current = dragOverrides })
   const canvasRef = useRef<HTMLDivElement>(null)
 
   // ── data ──────────────────────────────────────────────────────────────────────
@@ -110,24 +113,11 @@ export function SalaoEnvironment() {
     onError: (err) => setFormError(err instanceof Error ? err.message : 'Erro ao atualizar mesa'),
   })
 
-  // Sync saved positions from server on load
-  useEffect(() => {
-    if (!mesas.length) return
-    setLocalPositions((prev) => {
-      const next = { ...prev }
-      for (const m of mesas) {
-        if (!(m.id in next) && m.positionX !== null && m.positionY !== null) {
-          next[m.id] = { x: m.positionX, y: m.positionY }
-        }
-      }
-      return next
-    })
-  }, [mesas])
-
   // ── drag ──────────────────────────────────────────────────────────────────────
 
   function getMesaPosition(mesa: MesaRecord, autoIndex: number): { x: number; y: number } {
-    if (localPositions[mesa.id]) return localPositions[mesa.id]
+    // dragOverrides tem prioridade (drag em andamento), depois posição salva no servidor, depois grade automática
+    if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
     if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
     return getAutoPosition(autoIndex)
   }
@@ -145,14 +135,14 @@ export function SalaoEnvironment() {
       const canvasW = canvasEl ? canvasEl.offsetWidth : 800
       const newX = clamp(dragging.origX + (e.clientX - dragging.startMouseX), 0, canvasW - CARD_W)
       const newY = clamp(dragging.origY + (e.clientY - dragging.startMouseY), 0, CANVAS_H - CARD_H)
-      setLocalPositions((prev) => ({ ...prev, [dragging.mesaId]: { x: newX, y: newY } }))
+      setDragOverrides((prev) => ({ ...prev, [dragging.mesaId]: { x: newX, y: newY } }))
     },
     [dragging],
   )
 
   const handleMouseUp = useCallback(() => {
     if (!dragging) return
-    const pos = localPositions[dragging.mesaId]
+    const pos = dragOverridesRef.current[dragging.mesaId]
     if (pos) {
       updateMutation.mutate({
         id: dragging.mesaId,
@@ -160,7 +150,7 @@ export function SalaoEnvironment() {
       })
     }
     setDragging(null)
-  }, [dragging, localPositions, updateMutation])
+  }, [dragging, updateMutation])
 
   useEffect(() => {
     if (!dragging) return

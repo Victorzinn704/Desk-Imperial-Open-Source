@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEnum, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
+import { IsEnum, IsString, MinLength, ValidateIf } from 'class-validator'
 
 export enum LoginModeDto {
   OWNER = 'OWNER',

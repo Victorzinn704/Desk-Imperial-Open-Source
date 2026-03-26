@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
-import type { AuthUser, OpenComandaPayload, ReplaceComandaPayload } from '@/lib/api'
-import { assignComanda, closeComanda, openComanda, replaceComanda, updateComandaStatus } from '@/lib/api'
+import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload } from '@/lib/api'
+import { assignComanda, closeComanda, createMesa, openComanda, replaceComanda, updateComandaStatus } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { PdvColumn } from './pdv-column'
@@ -71,6 +71,10 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
   const closeComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: { discountAmount: number; serviceFeeAmount: number } }) =>
       closeComanda(comandaId, payload),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+  })
+  const createMesaMutation = useMutation({
+    mutationFn: (body: CreateMesaInput) => createMesa(body),
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
 
@@ -201,7 +205,8 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     replaceComandaMutation.isPending ||
     assignComandaMutation.isPending ||
     updateComandaStatusMutation.isPending ||
-    closeComandaMutation.isPending
+    closeComandaMutation.isPending ||
+    createMesaMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -319,7 +324,17 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
             }
             setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
           }}
-          onAddMesa={() => setActionError('A lista persistente de mesas ainda depende da camada de banco em andamento.')}
+          onAddMesa={() => {
+            const label = window.prompt('Nome da nova mesa (ex: Mesa 1, Varanda 3, VIP):')
+            if (!label?.trim()) return
+            const capacityInput = window.prompt('Capacidade de lugares:', '4')
+            const capacity = capacityInput ? parseInt(capacityInput, 10) : 4
+            setActionError(null)
+            createMesaMutation.mutate(
+              { label: label.trim(), capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 4 },
+              { onError: (err) => setActionError(err instanceof Error ? err.message : 'Nao foi possivel criar a mesa.') },
+            )
+          }}
           onClickLivre={handleClickMesaLivre}
           onClickOcupada={handleClickMesaOcupada}
         />

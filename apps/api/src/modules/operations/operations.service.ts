@@ -419,7 +419,7 @@ export class OperationsService {
     await this.assertBusinessDayOpen(workspaceOwnerUserId, businessDate)
 
     // Resolve mesaId — if provided, validate ownership and availability
-    let resolvedMesaId: string | null = dto.mesaId ?? null
+    const resolvedMesaId: string | null = dto.mesaId ?? null
     if (resolvedMesaId) {
       const mesa = await this.prisma.mesa.findUnique({ where: { id: resolvedMesaId } })
       if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId || !mesa.active) {
