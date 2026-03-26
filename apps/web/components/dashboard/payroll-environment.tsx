@@ -37,8 +37,6 @@ export function PayrollEnvironment({
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [expanded, setExpanded] = useState<string | null>(null)
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set())
-
-  // Saved overrides — only updated on blur (after user finishes typing)
   const [savedOverrides, setSavedOverrides] = useState<
     Record<string, { salarioBase?: number; percentualVendas?: number }>
   >({})
@@ -49,33 +47,34 @@ export function PayrollEnvironment({
   function getConfig(emp: EmployeeRecord) {
     const override = savedOverrides[emp.id] ?? {}
     return {
+      // salarioBase is stored in centavos (e.g. 200000 = R$ 2.000,00)
       salarioBase: override.salarioBase ?? emp.salarioBase ?? 0,
       percentualVendas: override.percentualVendas ?? emp.percentualVendas ?? 0,
     }
   }
 
-  // Called on blur — persists to savedOverrides and fires API
   async function commitField(employeeId: string, field: 'salarioBase' | 'percentualVendas', value: number) {
-    // Store the previous value so we can revert on error
     const prevOverrides = savedOverrides
     setSavedOverrides((prev) => ({ ...prev, [employeeId]: { ...prev[employeeId], [field]: value } }))
     try {
       await updateEmployee(employeeId, { [field]: value })
     } catch {
-      // Revert on failure
       setSavedOverrides(prevOverrides)
     }
   }
 
   const rows = activeEmployees.map((emp) => {
     const config = getConfig(emp)
+    // Convert centavos → reais for all display and calculation
+    const salarioBaseReais = config.salarioBase / 100
     const topEntry = finance?.topEmployees.find(
       (te) => te.employeeId === emp.id || te.employeeCode === emp.employeeCode,
     )
+    // finance.topEmployees.revenue is already in reais
     const vendasDoMes = topEntry?.revenue ?? 0
     const comissao = (vendasDoMes * config.percentualVendas) / 100
-    const totalAPagar = config.salarioBase + comissao
-    return { emp, config, vendasDoMes, comissao, totalAPagar }
+    const totalAPagar = salarioBaseReais + comissao
+    return { emp, config, salarioBaseReais, vendasDoMes, comissao, totalAPagar }
   })
 
   const folhaTotal = rows.reduce((sum, r) => sum + r.totalAPagar, 0)
@@ -113,10 +112,10 @@ export function PayrollEnvironment({
     const csvRows = rows.map((r) => [
       r.emp.displayName,
       r.emp.employeeCode,
-      (r.config.salarioBase / 100).toFixed(2),
-      (r.vendasDoMes / 100).toFixed(2),
-      (r.comissao / 100).toFixed(2),
-      (r.totalAPagar / 100).toFixed(2),
+      r.salarioBaseReais.toFixed(2),
+      r.vendasDoMes.toFixed(2),
+      r.comissao.toFixed(2),
+      r.totalAPagar.toFixed(2),
       paidIds.has(r.emp.id) ? 'Pago' : 'Pendente',
     ].join(','))
     const blob = new Blob([[header, ...csvRows].join('\n')], { type: 'text/csv' })
@@ -235,7 +234,7 @@ export function PayrollEnvironment({
             </div>
           )}
 
-          {rows.map(({ emp, config, vendasDoMes, comissao, totalAPagar }) => {
+          {rows.map(({ emp, config, salarioBaseReais, vendasDoMes, comissao, totalAPagar }) => {
             const isOpen = expanded === emp.id
             const isPaid = paidIds.has(emp.id)
             return (
@@ -259,7 +258,7 @@ export function PayrollEnvironment({
                         </span>
                       </div>
                       <p className="mt-0.5 text-sm text-[var(--text-soft)]">
-                        Base {formatCurrency(config.salarioBase, currency)} · {config.percentualVendas}% comissão
+                        Base {formatCurrency(salarioBaseReais, currency)} · {config.percentualVendas}% comissão
                       </p>
                     </div>
 
@@ -299,10 +298,11 @@ export function PayrollEnvironment({
                           <DollarSign className="size-3" />
                           Salário base (R$)
                         </label>
+                        {/* defaultValue in reais; onBlur converts back to centavos for storage */}
                         <input
                           key={`${emp.id}-salario-${config.salarioBase}`}
                           className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
-                          defaultValue={config.salarioBase / 100}
+                          defaultValue={salarioBaseReais}
                           min="0"
                           step="10"
                           type="number"
@@ -331,7 +331,7 @@ export function PayrollEnvironment({
                       </div>
                     </div>
 
-                    {/* Calculation breakdown */}
+                    {/* Calculation breakdown — all values in reais */}
                     <div className="mt-4 space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Vendas no mês</span>
@@ -343,7 +343,7 @@ export function PayrollEnvironment({
                       </div>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Salário base</span>
-                        <span className="shrink-0 font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
+                        <span className="shrink-0 font-medium text-white">{formatCurrency(salarioBaseReais, currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                         <span className="text-white">Total a pagar</span>

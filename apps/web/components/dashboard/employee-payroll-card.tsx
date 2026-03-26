@@ -43,13 +43,16 @@ export function EmployeePayrollCard({
 
   const rows = activeEmployees.map((emp) => {
     const config = getConfig(emp)
+    // salarioBase is stored in centavos — convert to reais for display/calculation
+    const salarioBaseReais = config.salarioBase / 100
     const topEntry = finance?.topEmployees.find(
       (te) => te.employeeId === emp.id || te.employeeCode === emp.employeeCode,
     )
+    // finance.topEmployees.revenue is in reais
     const vendasDoMes = topEntry?.revenue ?? 0
     const comissao = (vendasDoMes * config.percentualVendas) / 100
-    const totalAPagar = config.salarioBase + comissao
-    return { emp, config, vendasDoMes, comissao, totalAPagar }
+    const totalAPagar = salarioBaseReais + comissao
+    return { emp, config, salarioBaseReais, vendasDoMes, comissao, totalAPagar }
   })
 
   const folhaTotal = rows.reduce((sum, r) => sum + r.totalAPagar, 0)
@@ -110,7 +113,7 @@ export function EmployeePayrollCard({
           </div>
         )}
 
-        {rows.map(({ emp, config, vendasDoMes, comissao, totalAPagar }) => {
+        {rows.map(({ emp, config, salarioBaseReais, vendasDoMes, comissao, totalAPagar }) => {
           const isOpen = expanded === emp.id
           return (
             <div key={emp.id} className="imperial-card-soft overflow-hidden">
@@ -132,7 +135,7 @@ export function EmployeePayrollCard({
                     </span>
                   </div>
                   <p className="mt-0.5 text-sm text-[var(--text-soft)]">
-                    Base {formatCurrency(config.salarioBase, currency)} · {config.percentualVendas}% comissão
+                    Base {formatCurrency(salarioBaseReais, currency)} · {config.percentualVendas}% comissão
                   </p>
                 </div>
 
@@ -203,7 +206,7 @@ export function EmployeePayrollCard({
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Salário base</span>
-                      <span className="shrink-0 font-medium text-white">{formatCurrency(config.salarioBase, currency)}</span>
+                      <span className="shrink-0 font-medium text-white">{formatCurrency(salarioBaseReais, currency)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                       <span className="text-white">Total a pagar</span>
