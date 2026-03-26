@@ -51,18 +51,15 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
             count={recentOrders.length}
             onClick={() => setActiveChannel(ALL_TAB)}
           />
-          {channels.map((channel) => {
-            const entry = salesByChannel.find((c) => c.channel === channel)
-            return (
-              <Tab
-                key={channel}
-                label={channel}
-                active={activeChannel === channel}
-                count={entry?.orders ?? 0}
-                onClick={() => setActiveChannel(channel)}
-              />
-            )
-          })}
+          {channels.map((channel) => (
+            <Tab
+              key={channel}
+              label={channel}
+              active={activeChannel === channel}
+              count={recentOrders.filter((o) => o.channel === channel).length}
+              onClick={() => setActiveChannel(channel)}
+            />
+          ))}
         </div>
       </div>
 
