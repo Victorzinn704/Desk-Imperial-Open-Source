@@ -95,11 +95,17 @@ export class OperationsService {
   async listMesas(auth: AuthContext): Promise<MesaRecord[]> {
     assertOwnerRole(auth, 'Somente o dono pode gerenciar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-    const mesas = await this.prisma.mesa.findMany({
-      where: { companyOwnerId: workspaceOwnerUserId },
-      orderBy: [{ active: 'desc' }, { section: 'asc' }, { label: 'asc' }],
-    })
-    return mesas.map((m) => toMesaRecord(m, []))
+    const [mesas, openComandas] = await Promise.all([
+      this.prisma.mesa.findMany({
+        where: { companyOwnerId: workspaceOwnerUserId },
+        orderBy: [{ active: 'desc' }, { section: 'asc' }, { label: 'asc' }],
+      }),
+      this.prisma.comanda.findMany({
+        where: { companyOwnerId: workspaceOwnerUserId, status: { in: ['OPEN', 'IN_PREPARATION', 'READY'] } },
+        select: { id: true, mesaId: true, currentEmployeeId: true, status: true },
+      }),
+    ])
+    return mesas.map((m) => toMesaRecord(m, openComandas.filter((c) => c.mesaId === m.id)))
   }
 
   async createMesa(auth: AuthContext, dto: CreateMesaDto): Promise<MesaRecord> {
@@ -146,6 +152,9 @@ export class OperationsService {
         ...(dto.positionX !== undefined && { positionX: dto.positionX }),
         ...(dto.positionY !== undefined && { positionY: dto.positionY }),
         ...(dto.active !== undefined && { active: dto.active }),
+        ...(dto.reservedUntil !== undefined && {
+          reservedUntil: dto.reservedUntil ? new Date(dto.reservedUntil) : null,
+        }),
       },
     })
     return toMesaRecord(updated, [])

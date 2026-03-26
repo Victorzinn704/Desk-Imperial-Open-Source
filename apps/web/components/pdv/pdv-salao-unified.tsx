@@ -508,7 +508,7 @@ function SalaoView({
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-[#36f57c] shadow-[0_0_6px_#36f57c]" />
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#36f57c]">Livre</span>
-              <span className="text-xs text-[var(--text-muted)]">— arraste para ocupar</span>
+              <span className="text-xs text-[var(--text-muted)]">— clique para comanda · arraste para reservar</span>
             </div>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => setCompactLivres(v => !v)}
@@ -578,7 +578,9 @@ function SalaoView({
                       outline: snapshot.isDraggingOver ? `1.5px dashed ${zone.color}50` : '1.5px dashed transparent',
                     }}>
                     {zone.list.length === 0 && !snapshot.isDraggingOver && (
-                      <p className="pt-8 text-center text-xs text-[var(--text-muted)]">Arraste uma mesa aqui</p>
+                      <p className="pt-8 text-center text-xs text-[var(--text-muted)]">
+                        {zone.id === 'ocupada' ? 'Arraste para abrir comanda' : 'Arraste para reservar por 2h'}
+                      </p>
                     )}
                     {zone.list.map((mesa, i) => (
                       <MesaCard key={mesa.id} mesa={mesa} garcons={garcons}
@@ -845,7 +847,7 @@ export function SalaoUnificado({
       {view === 'salao' && (
         <p className="text-xs text-[var(--text-soft)]">
           {allowStatusDragging
-            ? 'Arraste mesas entre zonas · selecione um garçom para atribuir (persiste até ESC) · hover na comanda para ver os itens'
+            ? 'Livre→Ocupada: abre comanda · Livre→Reservada: reserva por 2h · Reservada→Livre: cancela reserva · selecione garçom para atribuir (ESC cancela) · hover para ver itens'
             : 'O estado das mesas acompanha a comanda real · selecione um garçom para redistribuir o atendimento · hover na comanda para ver os itens'}
         </p>
       )}

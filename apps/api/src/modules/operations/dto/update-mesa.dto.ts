@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator'
+import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateIf } from 'class-validator'
 
 export class UpdateMesaDto {
   @ApiPropertyOptional({ example: 'Mesa 5' })
@@ -36,4 +36,14 @@ export class UpdateMesaDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean
+
+  @ApiPropertyOptional({
+    description: 'Reservar a mesa até esta data/hora (ISO 8601). Envie null para liberar a reserva.',
+    example: '2026-03-26T22:00:00.000Z',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.reservedUntil !== null)
+  @IsDateString()
+  reservedUntil?: string | null
 }

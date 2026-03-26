@@ -31,6 +31,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Desktop: trava scroll no documento — só o conteúdo interno rola */
+@media (min-width: 1280px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
 body {
   position: relative;
   isolation: isolate;
@@ -583,7 +592,7 @@ select {
 
 @layer components {
   .workspace-shell {
-    min-height: 100vh;
+    min-height: 100vh; /* mobile: altura mínima natural */
     background:
       radial-gradient(circle at top left, rgba(18, 24, 31, 0.42), transparent 26%),
       linear-gradient(180deg, rgba(4, 5, 8, 1) 0%, rgba(2, 3, 5, 1) 100%);

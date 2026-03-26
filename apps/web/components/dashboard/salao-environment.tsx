@@ -89,6 +89,7 @@ export function SalaoEnvironment() {
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+    void queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
   }
 
   const createMutation = useMutation({
@@ -628,6 +629,23 @@ function MesaListCard({
         <span>👤 {mesa.capacity}</span>
         {mesa.section && <span className="truncate">· {mesa.section}</span>}
       </div>
+      {mesa.active && (
+        <span
+          className="w-fit rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+          style={{
+            background:
+              mesa.status === 'ocupada' ? 'rgba(248,113,113,0.12)' :
+              mesa.status === 'reservada' ? 'rgba(96,165,250,0.12)' :
+              'rgba(52,242,127,0.08)',
+            color:
+              mesa.status === 'ocupada' ? '#f87171' :
+              mesa.status === 'reservada' ? '#60a5fa' :
+              '#36f57c',
+          }}
+        >
+          {mesa.status === 'ocupada' ? 'Ocupada' : mesa.status === 'reservada' ? 'Reservada' : 'Livre'}
+        </span>
+      )}
     </div>
   )
 }

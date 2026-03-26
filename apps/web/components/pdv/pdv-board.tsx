@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
-import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload } from '@/lib/api'
-import { assignComanda, closeComanda, createMesa, openComanda, replaceComanda, updateComandaStatus } from '@/lib/api'
+import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
+import { assignComanda, closeComanda, createMesa, openComanda, replaceComanda, updateComandaStatus, updateMesa } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { PdvColumn } from './pdv-column'
@@ -37,6 +37,8 @@ type PdvBoardProps = {
 
 type ActiveTab = 'comandas' | 'salao'
 
+type AddMesaForm = { label: string; capacity: string }
+
 export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ActiveTab>('comandas')
@@ -44,6 +46,7 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
   const [editingComandaId, setEditingComandaId] = useState<string | null>(null)
   const [mesaPreSelected, setMesaPreSelected] = useState<Mesa | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [addMesaForm, setAddMesaForm] = useState<AddMesaForm | null>(null)
 
   const comandas = useMemo(() => buildPdvComandas(operations), [operations])
   const mesas = useMemo(() => buildPdvMesas(operations), [operations])
@@ -75,6 +78,14 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
   })
   const createMesaMutation = useMutation({
     mutationFn: (body: CreateMesaInput) => createMesa(body),
+    onSuccess: () => {
+      invalidateOperationsWorkspace(queryClient)
+      setAddMesaForm(null)
+    },
+  })
+
+  const updateMesaMutation = useMutation({
+    mutationFn: ({ mesaId, body }: { mesaId: string; body: UpdateMesaInput }) => updateMesa(mesaId, body),
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
 
@@ -161,7 +172,8 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
 
   async function handleAssignGarcom(mesaId: string, garcomId: string | undefined) {
     const mesa = mesas.find((item) => item.id === mesaId)
-    if (!mesa?.comandaId || currentUser.role !== 'OWNER') {
+    if (!mesa?.comandaId) {
+      setActionError('Abra uma comanda nessa mesa antes de atribuir um garçom.')
       return
     }
 
@@ -206,7 +218,8 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     assignComandaMutation.isPending ||
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending ||
-    createMesaMutation.isPending
+    createMesaMutation.isPending ||
+    updateMesaMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -307,15 +320,43 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
           </DragDropContext>
         </>
       ) : (
+        <>
         <SalaoUnificado
           mesas={mesas}
           garcons={garcons}
           comandas={comandas}
-          onStatusChange={() => undefined}
+          onStatusChange={(mesaId, newStatus) => {
+            const mesa = mesas.find((item) => item.id === mesaId)
+            if (!mesa) return
+            // Arrastar para ocupada = abrir comanda (status é derivado da comanda)
+            if (newStatus === 'ocupada' && mesa.status === 'livre') {
+              handleClickMesaLivre(mesa)
+              return
+            }
+            // Arrastar para reservada = marcar reserva por 2h
+            if (newStatus === 'reservada' && mesa.status === 'livre') {
+              const reservedUntil = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+              void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil } }).catch((err) => {
+                setActionError(err instanceof Error ? err.message : 'Nao foi possivel reservar a mesa.')
+              })
+              return
+            }
+            // Arrastar reservada de volta para livre = cancelar reserva
+            if (newStatus === 'livre' && mesa.status === 'reservada') {
+              void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil: null } }).catch((err) => {
+                setActionError(err instanceof Error ? err.message : 'Nao foi possivel liberar a mesa.')
+              })
+              return
+            }
+            // Mesas ocupadas não podem ser movidas manualmente (dependem do fechamento da comanda)
+            if (mesa.status === 'ocupada') {
+              setActionError('Feche a comanda para liberar esta mesa.')
+            }
+          }}
           onAssignGarcom={(mesaId, garcomId) => {
             void handleAssignGarcom(mesaId, garcomId)
           }}
-          onAddGarcom={() => setActionError('Cadastre ou edite funcionários pela área administrativa da empresa.')}
+          onAddGarcom={() => setActionError('Cadastre funcionários pela área de Vendas para adicioná-los ao turno.')}
           onRemoveGarcom={(employeeId) => {
             const mesa = mesas.find((item) => item.garcomId === employeeId && item.comandaId)
             if (mesa?.comandaId) {
@@ -324,20 +365,31 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
             }
             setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
           }}
-          onAddMesa={() => {
-            const label = window.prompt('Nome da nova mesa (ex: Mesa 1, Varanda 3, VIP):')
-            if (!label?.trim()) return
-            const capacityInput = window.prompt('Capacidade de lugares:', '4')
-            const capacity = capacityInput ? parseInt(capacityInput, 10) : 4
-            setActionError(null)
-            createMesaMutation.mutate(
-              { label: label.trim(), capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 4 },
-              { onError: (err) => setActionError(err instanceof Error ? err.message : 'Nao foi possivel criar a mesa.') },
-            )
-          }}
+          onAddMesa={() => setAddMesaForm({ label: '', capacity: '4' })}
           onClickLivre={handleClickMesaLivre}
           onClickOcupada={handleClickMesaOcupada}
         />
+        {addMesaForm !== null ? (
+          <AddMesaModal
+            form={addMesaForm}
+            busy={createMesaMutation.isPending}
+            error={createMesaMutation.error instanceof Error ? createMesaMutation.error.message : null}
+            onChange={setAddMesaForm}
+            onConfirm={() => {
+              const label = addMesaForm.label.trim()
+              const capacity = parseInt(addMesaForm.capacity, 10)
+              if (!label) { setActionError('Informe o nome da mesa.'); setAddMesaForm(null); return }
+              createMesaMutation.mutate({
+                label,
+                capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 4,
+              }, {
+                onError: (err) => setActionError(err instanceof Error ? err.message : 'Nao foi possivel criar a mesa.'),
+              })
+            }}
+            onClose={() => setAddMesaForm(null)}
+          />
+        ) : null}
+        </>
       )}
 
       {showNewModal ? (
@@ -363,6 +415,80 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
           onStatusChange={transitionComanda}
         />
       ) : null}
+    </div>
+  )
+}
+
+function AddMesaModal({
+  form,
+  busy,
+  error,
+  onChange,
+  onConfirm,
+  onClose,
+}: Readonly<{
+  form: AddMesaForm
+  busy: boolean
+  error: string | null
+  onChange: (form: AddMesaForm) => void
+  onConfirm: () => void
+  onClose: () => void
+}>) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="imperial-card w-full max-w-sm p-6">
+        <h2 className="text-lg font-semibold text-white">Nova mesa</h2>
+        <p className="mt-1 text-sm text-[var(--text-soft)]">Informe o nome e a capacidade da mesa.</p>
+
+        <div className="mt-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-[var(--text-soft)]">
+              Nome / identificador
+            </label>
+            <input
+              autoFocus
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white placeholder-[var(--text-muted)] outline-none focus:border-[rgba(52,242,127,0.5)]"
+              placeholder="Ex: Mesa 1, Varanda 3, VIP"
+              value={form.label}
+              onChange={(e) => onChange({ ...form, label: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') onConfirm() }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-[var(--text-soft)]">
+              Capacidade (lugares)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.5)]"
+              value={form.capacity}
+              onChange={(e) => onChange({ ...form, capacity: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {error ? <p className="mt-3 text-sm text-[var(--danger)]">{error}</p> : null}
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-[10px] border border-[rgba(255,255,255,0.1)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={busy || !form.label.trim()}
+            onClick={onConfirm}
+            className="rounded-[10px] bg-[rgba(52,242,127,0.12)] px-4 py-2 text-sm font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(52,242,127,0.22)] disabled:opacity-40"
+          >
+            {busy ? 'Criando...' : 'Criar mesa'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

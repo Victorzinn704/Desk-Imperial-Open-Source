@@ -3,22 +3,17 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   Clock,
   LogOut,
   TimerReset,
 } from 'lucide-react'
-import type { ProductImportResponse, ProductRecord } from '@contracts/contracts'
-import {
-  ApiError,
-  fetchOperationsLive,
-} from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { formatCurrency } from '@/lib/currency'
-import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 import { SpotlightButton } from '@/components/shared/spotlight-button'
@@ -115,11 +110,9 @@ export function DashboardShell({
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isRouting, startTransition] = useTransition()
-  const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
   const [activeSection, setActiveSection] = useState<DashboardSectionId>(initialSection)
   const [activeSettingsSection, setActiveSettingsSection] = useState<DashboardSettingsSectionId>(initialSettingsSection)
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
-  const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -142,12 +135,6 @@ export function DashboardShell({
   }, [initialSettingsSection])
 
   const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
-  const operationsQuery = useQuery({
-    queryKey: ['operations', 'live'],
-    queryFn: () => fetchOperationsLive(),
-    enabled: Boolean(sessionQuery.data?.user.userId),
-    refetchInterval: 15_000,
-  })
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
 
   useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
@@ -174,46 +161,15 @@ export function DashboardShell({
     }
   }, [evaluationAccess, queryClient, router, startTransition])
 
-  const {
-    logoutMutation: _logoutMutation,
-    preferenceMutation,
-    updateProfileMutation: profileMutation,
-    createProductMutation,
-    updateProductMutation: _updateProductMutation,
-    archiveProductMutation: _archiveProductMutation,
-    restoreProductMutation,
-    importProductsMutation: _importProductsMutation,
-    createOrderMutation,
-    cancelOrderMutation,
-    createEmployeeMutation,
-    archiveEmployeeMutation,
-    restoreEmployeeMutation,
-  } = useDashboardMutations()
+  const { logoutMutation: _logoutMutation } = useDashboardMutations()
 
-  // Wrappers com side-effects específicos do shell
+  // Wrapper com side-effect de navegação após logout
   const logoutMutation = {
     isPending: _logoutMutation.isPending,
-    mutate: () => _logoutMutation.mutate(undefined, {
-      onSuccess: () => startTransition(() => router.push('/login')),
-    }),
-  }
-  const updateProductMutation = {
-    isPending: _updateProductMutation.isPending,
-    error: _updateProductMutation.error,
-    mutate: (payload: Parameters<typeof _updateProductMutation.mutate>[0]) =>
-      _updateProductMutation.mutate(payload, { onSuccess: () => setEditingProduct(null) }),
-  }
-  const archiveProductMutation = {
-    isPending: _archiveProductMutation.isPending,
-    error: _archiveProductMutation.error,
-    mutate: (id: string) =>
-      _archiveProductMutation.mutate(id, { onSuccess: () => setEditingProduct(null) }),
-  }
-  const importProductsMutation = {
-    isPending: _importProductsMutation.isPending,
-    error: _importProductsMutation.error,
-    mutate: (file: File) =>
-      _importProductsMutation.mutate(file, { onSuccess: (payload) => setLastImport(payload) }),
+    mutate: () =>
+      _logoutMutation.mutate(undefined, {
+        onSuccess: () => startTransition(() => router.push('/login')),
+      }),
   }
 
   const currentUser = sessionQuery.data?.user ?? null
@@ -297,62 +253,11 @@ export function DashboardShell({
 
   const user = sessionQuery.data.user
 
-  const cookiePreferences = consentQuery.data?.cookiePreferences ?? user.cookiePreferences
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
-  const documentTitles = new Map(consentQuery.data?.documents.map((document) => [document.key, document.title]) ?? [])
   const products = productsQuery.data?.items ?? []
-  const orders = ordersQuery.data?.items ?? []
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
-  const operations = operationsQuery.data
-
-  const productsError = productsQuery.error instanceof ApiError ? productsQuery.error.message : null
-  const ordersError = ordersQuery.error instanceof ApiError ? ordersQuery.error.message : null
-  const employeesError = employeesQuery.error instanceof ApiError ? employeesQuery.error.message : null
-  const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
-  const operationsError = operationsQuery.error instanceof ApiError ? operationsQuery.error.message : null
-  const orderMutationError = [createOrderMutation.error, cancelOrderMutation.error].find((error) => error instanceof ApiError)
-  const employeeMutationError = [
-    createEmployeeMutation.error,
-    archiveEmployeeMutation.error,
-    restoreEmployeeMutation.error,
-  ].find((error) => error instanceof ApiError)
-  const productMutationError = [
-    createProductMutation.error,
-    updateProductMutation.error,
-    archiveProductMutation.error,
-    restoreProductMutation.error,
-  ].find((error) => error instanceof ApiError)
-  const importMutationError = importProductsMutation.error instanceof ApiError ? importProductsMutation.error.message : null
-
-  const handleProductSubmit = (values: ProductFormValues) => {
-    const payload = {
-      name: values.name,
-      brand: values.brand,
-      category: values.category,
-      packagingClass: values.packagingClass,
-      measurementUnit: values.measurementUnit,
-      measurementValue: values.measurementValue,
-      unitsPerPackage: values.unitsPerPackage,
-      description: values.description,
-      unitCost: values.unitCost,
-      unitPrice: values.unitPrice,
-      currency: values.currency,
-      stock: values.stock,
-    }
-
-    if (editingProduct) {
-      updateProductMutation.mutate({ productId: editingProduct.id, values: payload })
-      return
-    }
-
-    createProductMutation.mutate(payload)
-  }
-
-  const handleProfileSubmit = (values: ProfileFormValues) => {
-    profileMutation.mutate(values)
-  }
 
   const scrollWorkspaceTargetIntoView = (targetElement: HTMLElement) => {
     if (isMobile || !workspaceScrollRef.current) {
@@ -377,10 +282,6 @@ export function DashboardShell({
     setActiveSection(sectionId)
     if (sectionId === 'settings') {
       setActiveSettingsSection(settingsSectionId)
-    }
-
-    if (sectionId !== 'portfolio') {
-      setEditingProduct(null)
     }
 
     if (typeof window !== 'undefined') {
@@ -472,7 +373,7 @@ export function DashboardShell({
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background text-foreground xl:h-screen xl:overflow-hidden">
+    <main className="bg-background text-foreground xl:h-screen xl:overflow-hidden">
       <div
         className="workspace-shell xl:grid xl:h-full"
         style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
@@ -597,53 +498,10 @@ export function DashboardShell({
             {renderActiveEnvironment({
               activeSection: resolvedActiveSection,
               activeSettingsSection,
-              archiveEmployeeMutation,
-              archiveProductMutation,
-              cancelOrderMutation,
-              consentQueryIsLoading: consentQuery.isLoading,
-              cookiePreferences,
-              createOrderMutation,
-              createProductMutation,
-              createEmployeeMutation,
-              documentTitles,
-              editingProduct,
-              employeeMutationError,
               employees,
-              employeesError,
-              employeesTotals: employeesQuery.data?.totals,
-              employeesQueryIsLoading: employeesQuery.isLoading,
               finance,
-              financeError,
-              financeQueryIsLoading: financeQuery.isLoading,
-              handleProductSubmit,
-              importMutationError,
-              importProductsMutation,
-              lastImport,
-              legalAcceptances,
-              logoutMutationIsPending: logoutMutation.isPending || isRouting,
-              onLogout: () => logoutMutation.mutate(),
               onNavigateSection: handleSectionNavigate,
-              onProfileSubmit: handleProfileSubmit,
               onSettingsSectionChange: handleSettingsSectionChange,
-              operations,
-              operationsError,
-              operationsQueryIsLoading: operationsQuery.isLoading,
-              orderMutationError,
-              orders,
-              ordersError,
-              ordersQueryIsLoading: ordersQuery.isLoading,
-              ordersTotals: ordersQuery.data?.totals,
-              preferenceMutation,
-              productMutationError,
-              products,
-              productsError,
-              productsTotals: productsQuery.data?.totals,
-              profileMutationError: profileMutation.error instanceof ApiError ? profileMutation.error : undefined,
-              profileMutationIsPending: profileMutation.isPending,
-              restoreProductMutation,
-              restoreEmployeeMutation,
-              updateProductMutation,
-              setEditingProduct,
               user,
             })}
           </div>

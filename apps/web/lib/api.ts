@@ -468,6 +468,7 @@ export type UpdateMesaInput = {
   positionX?: number
   positionY?: number
   active?: boolean
+  reservedUntil?: string | null
 }
 
 export async function fetchMesas() {
