@@ -1,14 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
   Building2,
   ChevronLeft,
   ChevronRight,
   CircleDot,
-  Cog,
-  Plus,
+  LogOut,
+  Settings,
   UserRound,
 } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
@@ -18,6 +17,7 @@ import type {
   DashboardNavigationGroup,
   DashboardQuickAction,
   DashboardSectionId,
+  DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 
 const COLLAPSE_KEY = 'desk_imperial_sidebar_collapsed'
@@ -27,9 +27,12 @@ export function DashboardSidebar({
   companyName,
   email,
   groups,
+  role,
   quickActions,
   onNavigate,
+  onOpenSettings,
   onQuickAction,
+  onSignOut,
   onCollapseChange,
   status,
   userName,
@@ -38,9 +41,12 @@ export function DashboardSidebar({
   companyName: string | null
   email: string
   groups: DashboardNavigationGroup[]
+  role: 'OWNER' | 'STAFF'
   quickActions: DashboardQuickAction[]
   onNavigate: (section: DashboardSectionId) => void
+  onOpenSettings: (section: DashboardSettingsSectionId) => void
   onQuickAction: (action: DashboardQuickAction) => void
+  onSignOut: () => void
   onCollapseChange?: (collapsed: boolean) => void
   status: string
   userName: string
@@ -60,24 +66,14 @@ export function DashboardSidebar({
       {/* ═══════════════════════════════════════════
           NAV MOBILE — visível abaixo de xl
           ═══════════════════════════════════════════ */}
-      <section className="imperial-card p-5 xl:hidden">
-        {/* Topo: brand + configurações */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <BrandMark />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {companyName || 'Painel corporativo'}
-              <span className="mx-1.5 text-white/20">·</span>
-              {formatAccountStatus(status)}
-            </p>
-          </div>
-          <Link
-            className="flex size-10 shrink-0 items-center justify-center rounded-[14px] border border-white/8 bg-white/[0.03] text-muted-foreground transition hover:border-white/14 hover:text-white"
-            href="/dashboard/configuracoes"
-            title="Configurações"
-          >
-            <Cog className="size-4" />
-          </Link>
+      <section className="imperial-card sticky top-0 z-40 p-4 xl:hidden" style={{ backdropFilter: 'blur(16px)' }}>
+        <div className="min-w-0">
+          <BrandMark />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {companyName || 'Painel corporativo'}
+            <span className="mx-1.5 text-white/20">·</span>
+            {formatAccountStatus(status)}
+          </p>
         </div>
 
         {/* Ações rápidas */}
@@ -141,9 +137,7 @@ export function DashboardSidebar({
                       >
                         <Icon className="size-3.5" />
                       </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-xs font-semibold">{item.label}</span>
-                      </span>
+                      <span className="truncate text-xs font-semibold">{item.label}</span>
                     </button>
                   )
                 })}
@@ -151,6 +145,17 @@ export function DashboardSidebar({
             </div>
           ))}
         </nav>
+
+        <div className="mt-5 border-t border-white/[0.06] pt-5">
+          <MobileAccountDock
+            email={email}
+            role={role}
+            status={status}
+            userName={userName || companyName || 'Conta'}
+            onOpenSettings={onOpenSettings}
+            onSignOut={onSignOut}
+          />
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════
@@ -173,6 +178,7 @@ export function DashboardSidebar({
             )}
             <button
               className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.07] hover:text-white"
+              aria-expanded={!collapsed}
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
               onClick={() => setCollapsed((v) => !v)}
@@ -192,7 +198,7 @@ export function DashboardSidebar({
                   <p className="truncate text-sm font-semibold text-white">
                     {companyName || 'Painel corporativo'}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">Workspace principal da operação</p>
+                  <p className="truncate text-xs text-muted-foreground">Centro principal da operação</p>
                 </div>
               </div>
 
@@ -213,7 +219,7 @@ export function DashboardSidebar({
                         <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
                         <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
                       </span>
-                      <Plus className="size-4 text-muted-foreground" />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </button>
                   )
                 })}
@@ -247,6 +253,7 @@ export function DashboardSidebar({
                           onClick={() => onNavigate(item.id)}
                           title={item.label}
                           type="button"
+                          aria-current={isActive ? 'page' : undefined}
                         >
                           <Icon className="size-5" />
                         </button>
@@ -262,14 +269,12 @@ export function DashboardSidebar({
                         key={item.id}
                         onClick={() => onNavigate(item.id)}
                         type="button"
+                        aria-current={isActive ? 'page' : undefined}
                       >
                         <span className="workspace-nav-item__icon">
                           <Icon className="size-4" />
                         </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold">{item.label}</span>
-                          <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
-                        </span>
+                        <span className="block truncate text-sm font-semibold">{item.label}</span>
                       </button>
                     )
                   })}
@@ -284,54 +289,164 @@ export function DashboardSidebar({
               <>
                 <button
                   className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
-                  title={userName}
-                  type="button"
-                >
-                  <UserRound className="size-5" />
-                </button>
-                <Link
-                  className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
-                  href="/dashboard/configuracoes"
                   title="Configurações"
+                  type="button"
+                  onClick={() => onOpenSettings('account')}
                 >
-                  <Cog className="size-5" />
-                </Link>
+                  <Settings className="size-5" />
+                </button>
+                <button
+                  className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
+                  title="Encerrar sessão"
+                  type="button"
+                  onClick={onSignOut}
+                >
+                  <LogOut className="size-5" />
+                </button>
               </>
             ) : (
-              <>
-                <div className="workspace-sidebar__surface">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
-                      <UserRound className="size-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">{userName || companyName || 'Conta'}</p>
-                      <p className="truncate text-xs text-muted-foreground">{email}</p>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8fffb9]">
-                    <CircleDot className="size-3" />
-                    {formatAccountStatus(status)}
-                  </div>
-                </div>
-
-                <Link
-                  className="workspace-nav-item group"
-                  href="/dashboard/configuracoes"
-                >
-                  <span className="workspace-nav-item__icon">
-                    <Cog className="size-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-semibold">Configurações</span>
-                    <span className="block text-xs text-muted-foreground">Ajustes da conta e preferências</span>
-                  </span>
-                </Link>
-              </>
+              <DesktopAccountDock
+                companyName={companyName}
+                email={email}
+                role={role}
+                status={status}
+                userName={userName}
+                onOpenSettings={onOpenSettings}
+                onSignOut={onSignOut}
+              />
             )}
           </div>
         </div>
       </aside>
     </>
+  )
+}
+
+function DesktopAccountDock({
+  companyName,
+  email,
+  role,
+  status,
+  userName,
+  onOpenSettings,
+  onSignOut,
+}: Readonly<{
+  companyName: string | null
+  email: string
+  role: 'OWNER' | 'STAFF'
+  status: string
+  userName: string
+  onOpenSettings: (section: DashboardSettingsSectionId) => void
+  onSignOut: () => void
+}>) {
+  return (
+    <>
+      {/* Bloco de perfil unificado */}
+      <div className="workspace-sidebar__surface">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+            <UserRound className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-white">{userName || companyName || 'Conta'}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8fffb9]">
+              <CircleDot className="size-2.5" />
+              {formatAccountStatus(status)}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+              {role === 'OWNER' ? 'Admin' : 'Staff'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Ações da conta */}
+      <div className="grid gap-1">
+        <button
+          className="workspace-nav-item group"
+          type="button"
+          onClick={() => onOpenSettings('account')}
+        >
+          <span className="workspace-nav-item__icon">
+            <Settings className="size-4" />
+          </span>
+          <span className="text-sm font-semibold">Configurações</span>
+        </button>
+
+        <button
+          className="workspace-nav-item group text-[var(--text-soft)] hover:text-white"
+          type="button"
+          onClick={onSignOut}
+        >
+          <span className="workspace-nav-item__icon">
+            <LogOut className="size-4" />
+          </span>
+          <span className="text-sm font-semibold">Encerrar sessão</span>
+        </button>
+      </div>
+    </>
+  )
+}
+
+function MobileAccountDock({
+  email,
+  role,
+  status,
+  userName,
+  onOpenSettings,
+  onSignOut,
+}: Readonly<{
+  email: string
+  role: 'OWNER' | 'STAFF'
+  status: string
+  userName: string
+  onOpenSettings: (section: DashboardSettingsSectionId) => void
+  onSignOut: () => void
+}>) {
+  return (
+    <div className="space-y-3">
+      <div className="workspace-sidebar__surface">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+            <UserRound className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">{userName}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8fffb9]">
+            <CircleDot className="size-3" />
+            {formatAccountStatus(status)}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+            {role === 'OWNER' ? 'Admin' : 'Operação'}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-1 sm:grid-cols-2">
+        <button
+          className="workspace-nav-item group"
+          type="button"
+          onClick={() => onOpenSettings('account')}
+        >
+          <span className="workspace-nav-item__icon">
+            <Settings className="size-4" />
+          </span>
+          <span className="text-sm font-semibold">Configurações</span>
+        </button>
+        <button className="workspace-nav-item group" type="button" onClick={onSignOut}>
+          <span className="workspace-nav-item__icon">
+            <LogOut className="size-4" />
+          </span>
+          <span className="text-sm font-semibold">Encerrar sessão</span>
+        </button>
+      </div>
+    </div>
   )
 }

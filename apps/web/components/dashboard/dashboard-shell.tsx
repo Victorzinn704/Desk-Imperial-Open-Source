@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -30,12 +30,13 @@ import {
   logout,
   restoreEmployee,
   restoreProduct,
+  updateProfile,
   updateCookiePreferences,
   updateProduct,
 } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { clearAdminPinVerification } from '@/lib/admin-pin'
-import type { OrderFormValues, ProductFormValues } from '@/lib/validation'
+import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
 import { SpotlightButton } from '@/components/shared/spotlight-button'
@@ -43,10 +44,15 @@ import { renderActiveEnvironment } from '@/components/dashboard/dashboard-enviro
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import {
+  dashboardDefaultSection,
+  dashboardDefaultSettingsSection,
   dashboardNavigationGroups,
   dashboardQuickActions,
+  parseDashboardSectionParam,
+  parseDashboardSettingsSectionParam,
   type DashboardQuickAction,
   type DashboardSectionId,
+  type DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 import { StaffMobileShell } from '@/components/staff-mobile'
@@ -77,12 +83,6 @@ const sectionHeroCopy: Record<
     description:
       'Aqui o foco sai da visão geral e entra no cadastro, na rentabilidade e na estrutura que sustenta o caixa.',
   },
-  compliance: {
-    badge: 'Ambiente de conformidade',
-    title: 'Consentimento, cookies e governança em um espaço dedicado.',
-    description:
-      'Esse módulo deixa a camada de LGPD e segurança visível sem misturar com os blocos operacionais do dia a dia.',
-  },
   pdv: {
     badge: 'Ponto de venda',
     title: 'Comandas e atendimento em tempo real.',
@@ -101,19 +101,36 @@ const sectionHeroCopy: Record<
     description:
       'Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido.',
   },
+  settings: {
+    badge: 'Conta e governança',
+    title: 'Configurações, segurança e conformidade em uma única central.',
+    description:
+      'A camada administrativa agora reúne conta, preferências, sessão e consentimento sem quebrar a navegação operacional.',
+  },
 }
 
-export function DashboardShell() {
+type DashboardShellProps = {
+  initialSection?: DashboardSectionId
+  initialSettingsSection?: DashboardSettingsSectionId
+}
+
+export function DashboardShell({
+  initialSection = dashboardDefaultSection,
+  initialSettingsSection = dashboardDefaultSettingsSection,
+}: Readonly<DashboardShellProps>) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isRouting, startTransition] = useTransition()
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
-  const [activeSection, setActiveSection] = useState<DashboardSectionId>('overview')
+  const [activeSection, setActiveSection] = useState<DashboardSectionId>(initialSection)
+  const [activeSettingsSection, setActiveSettingsSection] = useState<DashboardSettingsSectionId>(initialSettingsSection)
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const workspaceScrollRef = useRef<HTMLDivElement | null>(null)
+  const sectionScrollMemory = useRef<Partial<Record<DashboardSectionId, number>>>({})
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -121,6 +138,14 @@ export function DashboardShell() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    setActiveSection(initialSection)
+  }, [initialSection])
+
+  useEffect(() => {
+    setActiveSettingsSection(initialSettingsSection)
+  }, [initialSettingsSection])
 
   const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
   const consentQuery = useQuery({
@@ -195,6 +220,13 @@ export function DashboardShell() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
+  })
+
+  const profileMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (payload) => {
+      queryClient.setQueryData(['auth', 'me'], payload)
     },
   })
 
@@ -277,6 +309,55 @@ export function DashboardShell() {
       ? sessionQuery.error.message
       : 'Conecte a API e autentique a sessão para ver o painel.'
 
+  const allowedSections = useMemo(
+    () =>
+      new Set<DashboardSectionId>([
+        ...navigationGroups.flatMap((group) => group.items.map((item) => item.id)),
+        'settings',
+      ]),
+    [navigationGroups],
+  )
+  const resolvedActiveSection = allowedSections.has(activeSection)
+    ? activeSection
+    : (isStaffUser ? 'sales' : dashboardDefaultSection)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const syncFromLocation = () => {
+      const params = new URLSearchParams(window.location.search)
+      const sectionFromUrl = parseDashboardSectionParam(params.get('view'))
+      const settingsSectionFromUrl = parseDashboardSettingsSectionParam(params.get('panel'))
+
+      if (sectionFromUrl && allowedSections.has(sectionFromUrl)) {
+        setActiveSection(sectionFromUrl)
+      }
+
+      if (settingsSectionFromUrl) {
+        setActiveSettingsSection(settingsSectionFromUrl)
+      }
+    }
+
+    syncFromLocation()
+    window.addEventListener('popstate', syncFromLocation)
+    return () => window.removeEventListener('popstate', syncFromLocation)
+  }, [allowedSections])
+
+  useEffect(() => {
+    if (isMobile) {
+      return
+    }
+
+    const container = workspaceScrollRef.current
+    if (!container) {
+      return
+    }
+
+    container.scrollTop = sectionScrollMemory.current[resolvedActiveSection] ?? 0
+  }, [isMobile, resolvedActiveSection])
+
   if (sessionQuery.isLoading) {
     return <LoadingState />
   }
@@ -286,10 +367,6 @@ export function DashboardShell() {
   }
 
   const user = sessionQuery.data.user
-  const allowedSections = new Set(navigationGroups.flatMap((group) => group.items.map((item) => item.id)))
-  const resolvedActiveSection = allowedSections.has(activeSection)
-    ? activeSection
-    : (isStaffUser ? 'sales' : 'overview')
 
   const cookiePreferences = consentQuery.data?.cookiePreferences ?? user.cookiePreferences
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
@@ -319,6 +396,7 @@ export function DashboardShell() {
     restoreProductMutation.error,
   ].find((error) => error instanceof ApiError)
   const importMutationError = importProductsMutation.error instanceof ApiError ? importProductsMutation.error.message : null
+
   const handleProductSubmit = (values: ProductFormValues) => {
     const payload: Parameters<typeof createProduct>[0] = {
       name: values.name,
@@ -343,23 +421,66 @@ export function DashboardShell() {
     createProductMutation.mutate(payload)
   }
 
-  const handleSectionNavigate = (sectionId: DashboardSectionId) => {
+  const handleProfileSubmit = (values: ProfileFormValues) => {
+    profileMutation.mutate(values)
+  }
+
+  const scrollWorkspaceTargetIntoView = (targetElement: HTMLElement) => {
+    if (isMobile || !workspaceScrollRef.current) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    const container = workspaceScrollRef.current
+    const top =
+      targetElement.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop -
+      24
+
+    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  }
+
+  const navigateWithinWorkspace = (
+    sectionId: DashboardSectionId,
+    settingsSectionId: DashboardSettingsSectionId = activeSettingsSection,
+  ) => {
     setActiveSection(sectionId)
+    if (sectionId === 'settings') {
+      setActiveSettingsSection(settingsSectionId)
+    }
+
     if (sectionId !== 'portfolio') {
       setEditingProduct(null)
     }
+
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', buildDashboardUrl(sectionId, settingsSectionId))
+    }
+  }
+
+  const handleSectionNavigate = (sectionId: DashboardSectionId) => {
+    navigateWithinWorkspace(sectionId)
+  }
+
+  const handleSettingsSectionChange = (sectionId: DashboardSettingsSectionId) => {
+    navigateWithinWorkspace('settings', sectionId)
   }
 
   const handleQuickAction = (action: DashboardQuickAction) => {
-    handleSectionNavigate(action.target)
+    navigateWithinWorkspace(action.target)
 
     if (typeof document === 'undefined') {
       return
     }
 
     window.setTimeout(() => {
-      const targetElement = action.anchorId ? document.getElementById(action.anchorId) : document.getElementById('workspace-header')
-      targetElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const targetElement = action.anchorId
+        ? document.getElementById(action.anchorId)
+        : document.getElementById('workspace-header')
+      if (targetElement instanceof HTMLElement) {
+        scrollWorkspaceTargetIntoView(targetElement)
+      }
     }, 80)
   }
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
@@ -402,10 +523,17 @@ export function DashboardShell() {
 
   const activeNavigation =
     navigationGroups.flatMap((group) => group.items).find((item) => item.id === resolvedActiveSection) ??
-    navigationGroups[0]?.items[0]
+    (resolvedActiveSection === 'settings'
+      ? {
+          id: 'settings',
+          label: 'Conta e preferências',
+          description: 'Conta, segurança e conformidade',
+          icon: Clock,
+        }
+      : navigationGroups[0]?.items[0])
   const activeHero = sectionHeroCopy[resolvedActiveSection]
 
-  if (isStaffUser && isMobile) {
+  if (isStaffUser && isMobile && resolvedActiveSection !== 'settings') {
     return (
       <StaffMobileShell
         currentUser={currentUser}
@@ -415,9 +543,9 @@ export function DashboardShell() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
+    <main className="min-h-screen overflow-x-hidden bg-background text-foreground xl:h-screen xl:overflow-hidden">
       <div
-        className="mx-auto xl:grid"
+        className="mx-auto xl:grid xl:h-full"
         style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
       >
         <DashboardSidebar
@@ -425,15 +553,28 @@ export function DashboardShell() {
           companyName={user.companyName}
           email={user.email}
           groups={navigationGroups}
+          onCollapseChange={setSidebarCollapsed}
           quickActions={quickActions}
           onNavigate={handleSectionNavigate}
+          onOpenSettings={handleSettingsSectionChange}
           onQuickAction={handleQuickAction}
-          onCollapseChange={setSidebarCollapsed}
+          onSignOut={() => logoutMutation.mutate()}
+          role={user.role}
           status={user.status}
           userName={user.fullName}
         />
 
-        <div className="space-y-6 px-4 py-6 sm:px-6">
+        <div
+          ref={workspaceScrollRef}
+          className="space-y-6 px-4 py-6 sm:px-6 xl:h-screen xl:overflow-y-auto"
+          onScroll={(event) => {
+            if (isMobile) {
+              return
+            }
+
+            sectionScrollMemory.current[resolvedActiveSection] = event.currentTarget.scrollTop
+          }}
+        >
           <header className="imperial-card p-6 md:p-8" id="workspace-header">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div>
@@ -525,6 +666,10 @@ export function DashboardShell() {
 
           {renderActiveEnvironment({
             activeSection: resolvedActiveSection,
+            activeSettingsSection,
+            archiveEmployeeMutation,
+            archiveProductMutation,
+            cancelOrderMutation,
             consentQueryIsLoading: consentQuery.isLoading,
             cookiePreferences,
             createOrderMutation,
@@ -545,6 +690,11 @@ export function DashboardShell() {
             importProductsMutation,
             lastImport,
             legalAcceptances,
+            logoutMutationIsPending: logoutMutation.isPending || isRouting,
+            onLogout: () => logoutMutation.mutate(),
+            onNavigateSection: handleSectionNavigate,
+            onProfileSubmit: handleProfileSubmit,
+            onSettingsSectionChange: handleSettingsSectionChange,
             operations,
             operationsError,
             operationsQueryIsLoading: operationsQuery.isLoading,
@@ -558,13 +708,12 @@ export function DashboardShell() {
             products,
             productsError,
             productsTotals: productsQuery.data?.totals,
+            profileMutationError: profileMutation.error instanceof ApiError ? profileMutation.error : undefined,
+            profileMutationIsPending: profileMutation.isPending,
             restoreProductMutation,
             restoreEmployeeMutation,
-            archiveProductMutation,
-            archiveEmployeeMutation,
             updateProductMutation,
             setEditingProduct,
-            cancelOrderMutation,
             user,
           })}
         </div>
@@ -710,6 +859,24 @@ function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
 function invalidateEmployees(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['employees'] })
   queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
+}
+
+function buildDashboardUrl(
+  sectionId: DashboardSectionId,
+  settingsSectionId: DashboardSettingsSectionId,
+) {
+  const params = new URLSearchParams()
+
+  if (sectionId !== dashboardDefaultSection) {
+    params.set('view', sectionId)
+  }
+
+  if (sectionId === 'settings') {
+    params.set('panel', settingsSectionId)
+  }
+
+  const queryString = params.toString()
+  return queryString ? `/dashboard?${queryString}` : '/dashboard'
 }
 
 function formatDuration(totalSeconds: number) {
