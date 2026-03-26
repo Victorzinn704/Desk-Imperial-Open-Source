@@ -644,7 +644,7 @@ function MesaListCard({
 
 function MesaFloorCard({ mesa, isDragging }: { mesa: MesaRecord; isDragging: boolean }) {
   const statusColor =
-    mesa.status === 'ocupada' ? '#f97316' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
+    mesa.status === 'ocupada' ? '#ef4444' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
 
   return (
     <div
