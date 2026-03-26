@@ -38,6 +38,7 @@ import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-setting
 import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
 import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { PayrollEnvironment } from '@/components/dashboard/payroll-environment'
+import { SalaoEnvironment } from '@/components/dashboard/salao-environment'
 import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-card'
 import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
 import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
@@ -179,6 +180,8 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <MapEnvironment {...props} />
     case 'payroll':
       return <PayrollEnvironment employees={props.employees} finance={props.finance} />
+    case 'salao':
+      return <SalaoEnvironment />
     case 'settings':
       return <SettingsEnvironment {...props} />
     case 'overview':

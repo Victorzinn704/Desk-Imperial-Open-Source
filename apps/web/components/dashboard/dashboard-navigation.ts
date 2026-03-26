@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Armchair,
   Boxes,
   CalendarRange,
   Cog,
@@ -22,6 +23,7 @@ export type DashboardSectionId =
   | 'calendario'
   | 'map'
   | 'payroll'
+  | 'salao'
   | 'settings'
 
 export type DashboardSettingsSectionId =
@@ -64,6 +66,7 @@ const DASHBOARD_SECTIONS: DashboardSectionId[] = [
   'calendario',
   'map',
   'payroll',
+  'salao',
   'settings',
 ]
 
@@ -139,8 +142,14 @@ export const dashboardNavigationGroups: DashboardNavigationGroup[] = [
       {
         id: 'pdv',
         label: 'PDV / Comandas',
-        description: 'Salão, mesas e preparo',
+        description: 'Kanban de comandas e preparo',
         icon: Tags,
+      },
+      {
+        id: 'salao',
+        label: 'Salão',
+        description: 'Mesas, capacidade e planta baixa',
+        icon: Armchair,
       },
       {
         id: 'calendario',

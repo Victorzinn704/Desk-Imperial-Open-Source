@@ -101,6 +101,12 @@ const sectionHeroCopy: Record<
     description:
       'Acompanhe base salarial, comissão variável e leitura consolidada da folha com o mesmo padrão da operação comercial.',
   },
+  salao: {
+    badge: 'Gestão do salão',
+    title: 'Mesas, capacidade e planta baixa.',
+    description:
+      'Cadastre e organize as mesas do salão, defina capacidade e seção, e posicione cada uma na planta baixa com drag-and-drop.',
+  },
   map: {
     badge: 'Inteligência territorial',
     title: 'Mapa de vendas — território de guerra.',
