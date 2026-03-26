@@ -89,21 +89,16 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending
 
-  async function handleSelectMesa(mesa: Mesa) {
+  function handleSelectMesa(mesa: Mesa) {
     if (mesa.status === 'ocupada' && mesa.comandaId) {
-      // occupied → jump straight to that comanda
+      // occupied → jump straight to that comanda in ativo tab
       setFocusedComandaId(mesa.comandaId)
       setActiveTab('ativo')
     } else {
-      // libre → open comanda immediately (no item builder needed)
-      setScreenError(null)
-      try {
-        const result = await openComandaMutation.mutateAsync({ tableLabel: mesa.numero })
-        setFocusedComandaId(result.comanda.id)
-        setActiveTab('ativo')
-      } catch (err) {
-        setScreenError(err instanceof Error ? err.message : 'Não foi possível abrir a comanda.')
-      }
+      // libre → open PDV first so the staff can add items before creating the comanda
+      setPendingAction({ type: 'new', mesa })
+      setFocusedComandaId(null)
+      setActiveTab('pedido')
     }
   }
 

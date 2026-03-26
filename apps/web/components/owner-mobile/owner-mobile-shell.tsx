@@ -13,7 +13,7 @@ import {
   fetchOrders,
   closeComanda,
   logout,
-  openComanda,
+
   updateComandaStatus,
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -77,11 +77,6 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: {
       comandaId: string; discountAmount: number; serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
-    onSuccess: () => invalidateOwnerWorkspace(queryClient),
-  })
-
-  const openComandaMutation = useMutation({
-    mutationFn: openComanda,
     onSuccess: () => invalidateOwnerWorkspace(queryClient),
   })
 
@@ -174,20 +169,15 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         {activeTab === 'mesas' ? (
           <MobileTableGrid
             mesas={mesas}
-            onSelectMesa={async (mesa: Mesa) => {
+            onSelectMesa={(mesa: Mesa) => {
               if (mesa.status === 'ocupada' && mesa.comandaId) {
+                // occupied → go to that comanda directly
                 setFocusedComandaId(mesa.comandaId)
-                setActiveTab('comandas')
               } else {
-                setScreenError(null)
-                try {
-                  const result = await openComandaMutation.mutateAsync({ tableLabel: mesa.numero })
-                  setFocusedComandaId(result.comanda.id)
-                  setActiveTab('comandas')
-                } catch (err) {
-                  setScreenError(err instanceof Error ? err.message : 'Não foi possível abrir a comanda.')
-                }
+                // libre → just show all comandas, no empty comanda created
+                setFocusedComandaId(null)
               }
+              setActiveTab('comandas')
             }}
           />
         ) : null}
