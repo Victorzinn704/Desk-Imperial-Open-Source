@@ -37,6 +37,7 @@ import { DashboardSectionHeading } from '@/components/dashboard/dashboard-sectio
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
 import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
+import { PayrollEnvironment } from '@/components/dashboard/payroll-environment'
 import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-card'
 import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categories-sidebar'
 import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
@@ -176,6 +177,8 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <CalendarioEnvironment />
     case 'map':
       return <MapEnvironment {...props} />
+    case 'payroll':
+      return <PayrollEnvironment employees={props.employees} finance={props.finance} />
     case 'settings':
       return <SettingsEnvironment {...props} />
     case 'overview':
@@ -257,6 +260,7 @@ function PdvEnvironment({
         icon={Tags}
         title="PDV — Ponto de Venda"
       />
+      <PdvBoard products={boardProducts} />
       {showExecutiveOperations ? (
         <div className="space-y-6">
           {operationsError ? (
@@ -279,7 +283,6 @@ function PdvEnvironment({
           />
         </div>
       ) : null}
-      <PdvBoard products={boardProducts} />
     </section>
   )
 }

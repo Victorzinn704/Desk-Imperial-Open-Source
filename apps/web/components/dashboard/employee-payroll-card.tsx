@@ -187,13 +187,13 @@ export function EmployeePayrollCard({
                 <div className="border-t border-[rgba(255,255,255,0.05)] px-4 pb-4 pt-4">
                   <div className="grid grid-cols-2 gap-3">
                     {/* Salary base */}
-                    <div>
+                    <div className="min-w-0">
                       <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
                         <DollarSign className="size-3" />
                         Salário base (R$)
                       </label>
                       <input
-                        className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
                         min="0"
                         step="100"
                         type="number"
@@ -206,13 +206,13 @@ export function EmployeePayrollCard({
                     </div>
 
                     {/* Commission % */}
-                    <div>
+                    <div className="min-w-0">
                       <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
                         <Percent className="size-3" />
                         % sobre vendas
                       </label>
                       <input
-                        className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
                         max="30"
                         min="0"
                         step="0.5"

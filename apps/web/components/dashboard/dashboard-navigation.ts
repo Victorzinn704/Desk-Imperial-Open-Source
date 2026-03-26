@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Tags,
   UserRound,
+  Wallet,
 } from 'lucide-react'
 
 export type DashboardSectionId =
@@ -20,6 +21,7 @@ export type DashboardSectionId =
   | 'pdv'
   | 'calendario'
   | 'map'
+  | 'payroll'
   | 'settings'
 
 export type DashboardSettingsSectionId =
@@ -61,6 +63,7 @@ const DASHBOARD_SECTIONS: DashboardSectionId[] = [
   'pdv',
   'calendario',
   'map',
+  'payroll',
   'settings',
 ]
 
@@ -144,6 +147,12 @@ export const dashboardNavigationGroups: DashboardNavigationGroup[] = [
         label: 'Calendário',
         description: 'Agenda comercial',
         icon: CalendarRange,
+      },
+      {
+        id: 'payroll',
+        label: 'Folha de Pagamento',
+        description: 'Salários e comissões',
+        icon: Wallet,
       },
     ],
   },
