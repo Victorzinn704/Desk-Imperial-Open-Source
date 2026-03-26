@@ -161,11 +161,11 @@ export function DashboardSidebar({
       {/* ═══════════════════════════════════════════
           SIDEBAR DESKTOP — visível em xl+
           ═══════════════════════════════════════════ */}
-      <aside className="hidden xl:sticky xl:top-0 xl:block xl:h-screen xl:max-h-screen">
+      <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
         <div
           className={cn(
-            'workspace-sidebar imperial-card flex h-full flex-col transition-all duration-300',
-            collapsed ? 'w-[72px] p-3' : 'w-full p-5',
+            'workspace-sidebar h-full transition-[padding] duration-300',
+            collapsed ? 'px-3 py-4' : 'px-4 py-5',
           )}
         >
           {/* Cabeçalho */}

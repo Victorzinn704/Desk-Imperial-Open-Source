@@ -582,10 +582,44 @@ select {
 /* ─── Workspace sidebar & navigation ───────────────────────────────────────── */
 
 @layer components {
+  .workspace-shell {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(18, 24, 31, 0.42), transparent 26%),
+      linear-gradient(180deg, rgba(4, 5, 8, 1) 0%, rgba(2, 3, 5, 1) 100%);
+  }
+
+  .workspace-shell__main {
+    min-width: 0;
+    background:
+      radial-gradient(circle at top left, rgba(20, 25, 31, 0.22), transparent 24%),
+      linear-gradient(180deg, rgba(5, 6, 9, 0.98) 0%, rgba(2, 3, 5, 1) 100%);
+  }
+
   .workspace-sidebar {
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top left, rgba(255, 255, 255, 0.035), transparent 24%),
+      linear-gradient(180deg, rgba(13, 16, 21, 0.985) 0%, rgba(7, 9, 13, 0.995) 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      inset -1px 0 0 rgba(255, 255, 255, 0.03),
+      24px 0 60px rgba(0, 0, 0, 0.26);
+  }
+
+  .workspace-sidebar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    opacity: 0.45;
+    pointer-events: none;
   }
 
   .workspace-sidebar__surface {

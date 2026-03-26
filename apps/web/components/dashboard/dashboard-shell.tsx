@@ -95,6 +95,12 @@ const sectionHeroCopy: Record<
     description:
       'Arraste atividades para mudar datas, redimensione para ajustar duração e acompanhe o impacto esperado em vendas de cada evento.',
   },
+  payroll: {
+    badge: 'Folha operacional',
+    title: 'Salários, comissões e fechamento da equipe em um único fluxo.',
+    description:
+      'Acompanhe base salarial, comissão variável e leitura consolidada da folha com o mesmo padrão da operação comercial.',
+  },
   map: {
     badge: 'Inteligência territorial',
     title: 'Mapa de vendas — território de guerra.',
@@ -545,8 +551,8 @@ export function DashboardShell({
   return (
     <main className="min-h-screen overflow-x-hidden bg-background text-foreground xl:h-screen xl:overflow-hidden">
       <div
-        className="mx-auto xl:grid xl:h-full"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '72px minmax(0,1fr)' : '260px minmax(0,1fr)' }}
+        className="workspace-shell xl:grid xl:h-full"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={resolvedActiveSection}
@@ -566,7 +572,7 @@ export function DashboardShell({
 
         <div
           ref={workspaceScrollRef}
-          className="space-y-6 px-4 py-6 sm:px-6 xl:h-screen xl:overflow-y-auto"
+          className="workspace-shell__main xl:h-screen xl:overflow-y-auto"
           onScroll={(event) => {
             if (isMobile) {
               return
@@ -575,147 +581,149 @@ export function DashboardShell({
             sectionScrollMemory.current[resolvedActiveSection] = event.currentTarget.scrollTop
           }}
         >
-          <header className="imperial-card p-6 md:p-8" id="workspace-header">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                  <span className="size-2 rounded-full bg-[var(--accent)]" />
-                  {activeHero.badge}
+          <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+            <header className="imperial-card p-6 md:p-8" id="workspace-header">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                    <span className="size-2 rounded-full bg-[var(--accent)]" />
+                    {activeHero.badge}
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Início / Painel operacional / {activeNavigation.label}
+                  </p>
+                  <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
+                    {activeHero.title}
+                  </h1>
+                  <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
+                    {activeHero.description}
+                  </p>
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Início / Painel operacional / {activeNavigation.label}
-                </p>
-                <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
-                  {activeHero.title}
-                </h1>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
-                  {activeHero.description}
-                </p>
+
+                <div className="flex flex-col gap-4 xl:max-w-[520px]">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {signals.map((signal) => (
+                      <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          {signal.label}
+                        </p>
+                        <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
+                        <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    {quickActions.map((action) => {
+                      const Icon = action.icon
+                      return (
+                        <button
+                          className="workspace-quick-action flex-1 sm:min-w-[150px]"
+                          key={action.id}
+                          onClick={() => handleQuickAction(action)}
+                          type="button"
+                        >
+                          <span className="workspace-quick-action__icon">
+                            <Icon className="size-4" />
+                          </span>
+                          <span className="min-w-0 flex-1 text-left">
+                            <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Link href="/">
+                      <Button size="lg" variant="ghost">
+                        Ver site
+                        <ArrowUpRight className="size-4" />
+                      </Button>
+                    </Link>
+                    <Button
+                      size="lg"
+                      variant={isTimelineOpen ? 'primary' : 'ghost'}
+                      onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                    >
+                      <Clock className="size-4" />
+                      Atividades
+                    </Button>
+                    <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
+                      <LogOut className="size-4" />
+                      Encerrar sessão
+                    </SpotlightButton>
+                  </div>
+                </div>
               </div>
+            </header>
 
-              <div className="flex flex-col gap-4 xl:max-w-[520px]">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {signals.map((signal) => (
-                    <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {signal.label}
-                      </p>
-                      <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
-                      <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
-                    </div>
-                  ))}
-                </div>
+            {user.evaluationAccess ? (
+              <EvaluationModeBanner
+                dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
+                remainingSeconds={Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000,
+                  ),
+                )}
+              />
+            ) : null}
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  {quickActions.map((action) => {
-                    const Icon = action.icon
-                    return (
-                      <button
-                        className="workspace-quick-action flex-1 sm:min-w-[150px]"
-                        key={action.id}
-                        onClick={() => handleQuickAction(action)}
-                        type="button"
-                      >
-                        <span className="workspace-quick-action__icon">
-                          <Icon className="size-4" />
-                        </span>
-                        <span className="min-w-0 flex-1 text-left">
-                          <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
-                          <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/">
-                  <Button size="lg" variant="ghost">
-                    Ver site
-                    <ArrowUpRight className="size-4" />
-                  </Button>
-                </Link>
-                <Button
-                  size="lg"
-                  variant={isTimelineOpen ? 'primary' : 'ghost'}
-                  onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-                >
-                  <Clock className="size-4" />
-                  Atividades
-                </Button>
-                <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
-                  <LogOut className="size-4" />
-                  Encerrar sessão
-                </SpotlightButton>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {user.evaluationAccess ? (
-            <EvaluationModeBanner
-              dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
-              remainingSeconds={Math.max(
-                0,
-                Math.ceil(
-                  (new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000,
-                ),
-              )}
-            />
-          ) : null}
-
-          {renderActiveEnvironment({
-            activeSection: resolvedActiveSection,
-            activeSettingsSection,
-            archiveEmployeeMutation,
-            archiveProductMutation,
-            cancelOrderMutation,
-            consentQueryIsLoading: consentQuery.isLoading,
-            cookiePreferences,
-            createOrderMutation,
-            createProductMutation,
-            createEmployeeMutation,
-            documentTitles,
-            editingProduct,
-            employeeMutationError,
-            employees,
-            employeesError,
-            employeesTotals: employeesQuery.data?.totals,
-            employeesQueryIsLoading: employeesQuery.isLoading,
-            finance,
-            financeError,
-            financeQueryIsLoading: financeQuery.isLoading,
-            handleProductSubmit,
-            importMutationError,
-            importProductsMutation,
-            lastImport,
-            legalAcceptances,
-            logoutMutationIsPending: logoutMutation.isPending || isRouting,
-            onLogout: () => logoutMutation.mutate(),
-            onNavigateSection: handleSectionNavigate,
-            onProfileSubmit: handleProfileSubmit,
-            onSettingsSectionChange: handleSettingsSectionChange,
-            operations,
-            operationsError,
-            operationsQueryIsLoading: operationsQuery.isLoading,
-            orderMutationError,
-            orders,
-            ordersError,
-            ordersQueryIsLoading: ordersQuery.isLoading,
-            ordersTotals: ordersQuery.data?.totals,
-            preferenceMutation,
-            productMutationError,
-            products,
-            productsError,
-            productsTotals: productsQuery.data?.totals,
-            profileMutationError: profileMutation.error instanceof ApiError ? profileMutation.error : undefined,
-            profileMutationIsPending: profileMutation.isPending,
-            restoreProductMutation,
-            restoreEmployeeMutation,
-            updateProductMutation,
-            setEditingProduct,
-            user,
-          })}
+            {renderActiveEnvironment({
+              activeSection: resolvedActiveSection,
+              activeSettingsSection,
+              archiveEmployeeMutation,
+              archiveProductMutation,
+              cancelOrderMutation,
+              consentQueryIsLoading: consentQuery.isLoading,
+              cookiePreferences,
+              createOrderMutation,
+              createProductMutation,
+              createEmployeeMutation,
+              documentTitles,
+              editingProduct,
+              employeeMutationError,
+              employees,
+              employeesError,
+              employeesTotals: employeesQuery.data?.totals,
+              employeesQueryIsLoading: employeesQuery.isLoading,
+              finance,
+              financeError,
+              financeQueryIsLoading: financeQuery.isLoading,
+              handleProductSubmit,
+              importMutationError,
+              importProductsMutation,
+              lastImport,
+              legalAcceptances,
+              logoutMutationIsPending: logoutMutation.isPending || isRouting,
+              onLogout: () => logoutMutation.mutate(),
+              onNavigateSection: handleSectionNavigate,
+              onProfileSubmit: handleProfileSubmit,
+              onSettingsSectionChange: handleSettingsSectionChange,
+              operations,
+              operationsError,
+              operationsQueryIsLoading: operationsQuery.isLoading,
+              orderMutationError,
+              orders,
+              ordersError,
+              ordersQueryIsLoading: ordersQuery.isLoading,
+              ordersTotals: ordersQuery.data?.totals,
+              preferenceMutation,
+              productMutationError,
+              products,
+              productsError,
+              productsTotals: productsQuery.data?.totals,
+              profileMutationError: profileMutation.error instanceof ApiError ? profileMutation.error : undefined,
+              profileMutationIsPending: profileMutation.isPending,
+              restoreProductMutation,
+              restoreEmployeeMutation,
+              updateProductMutation,
+              setEditingProduct,
+              user,
+            })}
+          </div>
         </div>
       </div>
 
@@ -726,11 +734,11 @@ export function DashboardShell({
 
 function LoadingState() {
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
-      <div className="mx-auto max-w-[1600px] xl:grid xl:gap-6" style={{ gridTemplateColumns: '260px minmax(0,1fr)' }}>
+    <main className="min-h-screen bg-background text-foreground xl:h-screen xl:overflow-hidden">
+      <div className="workspace-shell xl:grid xl:h-full" style={{ gridTemplateColumns: '288px minmax(0,1fr)' }}>
         {/* Sidebar skeleton */}
-        <aside className="hidden xl:block">
-          <div className="imperial-card flex h-[calc(100vh-3rem)] flex-col gap-4 p-5">
+        <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
+          <div className="workspace-sidebar flex h-full flex-col gap-4 px-4 py-5">
             <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
             <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
             <div className="mt-2 flex-1 space-y-2">
@@ -743,39 +751,41 @@ function LoadingState() {
         </aside>
 
         {/* Main content skeleton */}
-        <div className="mt-6 space-y-6 xl:mt-0">
-          {/* Header skeleton */}
-          <div className="imperial-card p-6 md:p-8">
-            <div className="skeleton-shimmer h-6 w-32 rounded-full" />
-            <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
-            <div className="skeleton-shimmer mt-4 h-12 w-3/4 rounded-2xl" />
-            <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
-          </div>
-
-          {/* Metric cards skeleton */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div className="imperial-card-stat p-5" key={i}>
-                <div className="skeleton-shimmer size-11 rounded-2xl" />
-                <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
-                <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
-                <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
-              </div>
-            ))}
-          </div>
-
-          {/* Chart area skeleton */}
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="imperial-card p-6">
-              <div className="skeleton-shimmer h-4 w-32 rounded-full" />
-              <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+        <div className="workspace-shell__main xl:h-screen xl:overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+            {/* Header skeleton */}
+            <div className="imperial-card p-6 md:p-8">
+              <div className="skeleton-shimmer h-6 w-32 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-12 w-3/4 rounded-2xl" />
+              <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
             </div>
-            <div className="imperial-card p-6">
-              <div className="skeleton-shimmer h-4 w-28 rounded-full" />
-              <div className="mt-4 space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
-                ))}
+
+            {/* Metric cards skeleton */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div className="imperial-card-stat p-5" key={i}>
+                  <div className="skeleton-shimmer size-11 rounded-2xl" />
+                  <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
+                  <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
+                  <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
+                </div>
+              ))}
+            </div>
+
+            {/* Chart area skeleton */}
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="imperial-card p-6">
+                <div className="skeleton-shimmer h-4 w-32 rounded-full" />
+                <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+              </div>
+              <div className="imperial-card p-6">
+                <div className="skeleton-shimmer h-4 w-28 rounded-full" />
+                <div className="mt-4 space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
