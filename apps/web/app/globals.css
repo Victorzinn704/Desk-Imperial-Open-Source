@@ -220,10 +220,10 @@ select {
     radial-gradient(at 0% 64%, rgba(18, 24, 32, 0.60) 0px, transparent 85%),
     radial-gradient(at 41% 94%, rgba(16, 22, 30, 0.45) 0px, transparent 85%),
     radial-gradient(at 100% 99%, rgba(8, 12, 18, 0.90) 0px, transparent 85%);
-  border: 1px solid rgba(180, 190, 200, 0.07);
+  border: 1px solid rgba(180, 190, 200, 0.06);
   box-shadow:
-    0 -16px 24px 0 rgba(200, 210, 220, 0.03) inset,
-    0 24px 80px rgba(0, 0, 0, 0.40);
+    0 -8px 16px 0 rgba(200, 210, 220, 0.02) inset,
+    0 4px 24px rgba(0, 0, 0, 0.28);
   contain: layout paint style;
 }
 
@@ -242,8 +242,8 @@ select {
   inset: -1px;
   z-index: 0;
   border-radius: inherit;
-  background-image: linear-gradient(0deg, rgba(180, 190, 200, 0.06) -50%, rgba(255, 255, 255, 0.01) 100%);
-  opacity: 0.55;
+  background-image: linear-gradient(0deg, rgba(180, 190, 200, 0.04) -50%, rgba(255, 255, 255, 0.01) 100%);
+  opacity: 0.40;
 }
 
 .imperial-card::after,
@@ -271,8 +271,8 @@ select {
 }
 
 .imperial-card {
-  --beam-opacity: 0.10;
-  --beam-duration: 12s;
+  --beam-opacity: 0.05;
+  --beam-duration: 22s;
 }
 
 .imperial-card-soft {

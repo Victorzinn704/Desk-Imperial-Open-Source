@@ -33,16 +33,16 @@ export function MetricCard({
   const sparkData = trend?.map((v, i) => ({ i, v }))
 
   const [r, g, b] = hexToRgb(trendColor.startsWith('#') ? trendColor : '#d4b16a')
-  const iconGlow = `0 0 18px rgba(${r},${g},${b},0.28)`
+  const iconGlow = `0 0 10px rgba(${r},${g},${b},0.14)`
   const iconBorderColor = `rgba(${r},${g},${b},0.32)`
   const iconBg = `rgba(${r},${g},${b},0.1)`
 
   return (
-    <article className="imperial-card-stat p-5 contain-layout">
-      <div className="flex items-start justify-between gap-2">
+    <article className="imperial-card-stat p-4 contain-layout">
+      <div className="flex items-center justify-between gap-2">
         <Tooltip content={hint} side="top">
           <span
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl border transition-colors duration-200"
             style={{
               background: iconBg,
               borderColor: iconBorderColor,
@@ -50,14 +50,14 @@ export function MetricCard({
               color: trendColor,
             }}
           >
-            <Icon className="size-5" />
+            <Icon className="size-4" />
           </span>
         </Tooltip>
 
         {sparkData && sparkData.length > 1 && (
-          <div className="h-12 w-24 shrink-0">
+          <div className="h-9 w-20 shrink-0 opacity-70">
             <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={sparkData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+              <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                 <Line
                   dataKey="v"
                   dot={false}
@@ -65,7 +65,7 @@ export function MetricCard({
                   stroke={trendColor}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   type="natural"
                 />
               </LineChart>
@@ -74,9 +74,8 @@ export function MetricCard({
         )}
       </div>
 
-      <p className="mt-5 text-sm font-medium text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-[var(--text-soft)]">{hint}</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-1.5 text-xl font-semibold text-white">{value}</p>
     </article>
   )
 }
