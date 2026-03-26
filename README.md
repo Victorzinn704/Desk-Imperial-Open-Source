@@ -1,6 +1,6 @@
 # DESK IMPERIAL
 
-Portal empresarial full-stack de nível profissional, construído em monorepo com Next.js 15, NestJS, PostgreSQL e infraestrutura em nuvem com Cloudflare CDN, Redis e Neon serverless. Foco em segurança real, UX premium e arquitetura escalável.
+Portal empresarial full-stack de nível profissional, construído em monorepo com Next.js 16, NestJS, PostgreSQL e infraestrutura em nuvem com Cloudflare CDN, Redis e Neon serverless. Foco em segurança real, UX premium e arquitetura escalável.
 
 **Acesso público:** [app.deskimperial.online](https://app.deskimperial.online)
 
@@ -12,7 +12,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Cadastro com confirmação obrigatória de email via OTP de 8 dígitos
 - Login com sessão segura por cookie `HttpOnly` + `SameSite`
 - Proteção CSRF com duplo token (cookie + header)
-- Rate limiting de tentativas persistido em PostgreSQL — imune a multi-instância
+- Rate limiting de tentativas persistido em Redis com TTL — consistente entre instâncias
 - Admin PIN server-side com hash `argon2id`, token JWT de 10 minutos (HMAC-SHA256)
 - Audit log de todos os eventos sensíveis do sistema
 - Recuperação de senha por código temporário enviado por email
@@ -23,7 +23,6 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Gráfico de receita histórica com seleção de período
 - Breakdown por categoria com navegação em abas — produtos, valores, venda em potencial e unidades
 - Top produtos por categoria (top-5 real via DB)
-- Canais de venda e distribuição de receita
 - Tabela de pedidos recentes com status
 - Mapa de vendas geográfico com Leaflet + CARTO tiles — renderização por bairro, cidade e região
 - Ranking de funcionários por performance vinculada a pedidos reais
@@ -50,7 +49,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ### Frontend
 | Tecnologia | Uso |
 |---|---|
-| `Next.js 15` | Framework principal com App Router |
+| `Next.js 16` | Framework principal com App Router |
 | `React 19` | UI com Server e Client Components |
 | `TanStack Query` | Cache e sincronização de estado servidor |
 | `React Hook Form` + `Zod` | Formulários com validação tipada |
@@ -97,7 +96,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
             .online               .online               .online
                │                     │                     │
     ┌──────────▼──────────┐ ┌────────▼────────┐  ┌────────▼──────┐
-    │   Next.js 15        │ │   NestJS API    │  │  Landing Page │
+    │   Next.js 16        │ │   NestJS API    │  │  Landing Page │
     │   Railway           │ │   Railway       │  │               │
     └─────────────────────┘ └────────┬────────┘  └───────────────┘
                                      │
@@ -124,7 +123,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - CSRF: token duplo (cookie `csrf-token` + header `X-CSRF-Token`)
 - Cookies: `HttpOnly`, `SameSite=Lax`, `Secure` em produção
 - Helmet com headers de segurança completos
-- Rate limiting via tabela `AuthRateLimit` no PostgreSQL — compartilhado entre instâncias
+- Rate limiting via Redis com TTL por domínio (`auth`, `admin-pin`, `admin-pin-proof`) — compartilhado entre instâncias
 - Global HTTP Exception Filter — erros 5xx logados com stack trace, 4xx silenciosos
 
 ### Admin PIN
@@ -327,6 +326,21 @@ npm --workspace @partner/web run dev
 | `npm run db:up` | Sobe PostgreSQL local via Docker |
 | `npm run db:down` | Para e remove o container |
 | `npm run db:studio` | Abre Prisma Studio |
+
+---
+
+## Estado Atual de Testes (API)
+
+Execução validada em `26/03/2026`:
+
+- **Test Suites:** 13 passed, 13 total
+- **Tests:** 337 passed, 337 total
+
+Comando de validação:
+
+```bash
+npm --workspace @partner/api test
+```
 
 ---
 

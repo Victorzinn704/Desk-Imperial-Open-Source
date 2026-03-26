@@ -4,22 +4,22 @@
 
 ---
 
-## Visão Geral
+## Visão Geral (Consolidado)
 
 | Métrica | Valor |
 |---|---|
 | Suítes de teste | 13 |
-| Testes totais | 338 |
-| Passando | 285 (84%) |
-| Falhando | 53 (16%) |
-| Suítes com falha | 5 |
+| Testes totais | 337 |
+| Passando | 337 (100%) |
+| Falhando | 0 (0%) |
+| Suítes com falha | 0 |
 | Tempo de execução | ~1.4s |
 
 ---
 
 ## Suítes de Teste
 
-### Passando (8 suítes)
+### Passando (13 suítes)
 
 | Arquivo | Testes | O que cobre |
 |---|---|---|
@@ -31,16 +31,21 @@
 | `utils.spec.ts` | - | Utilitários gerais (document validation, input hardening, number rounding) |
 | `app.service.spec.ts` | - | Health check de DB e Redis |
 | `mailer-templates.spec.ts` | - | Renderização de templates de email |
+| `products.service.spec.ts` | - | Portfólio, importação CSV, cache e conflitos Prisma |
+| `orders.service.spec.ts` | - | Pedidos, cancelamento, estoque, resumo e cache |
+| `employees.service.spec.ts` | - | Funcionários, criação/update, vínculo de login e cache |
+| `admin-pin.service.spec.ts` | - | Challenge/proof, rate limit e validação segura |
+| `cache.service.spec.ts` | - | Operações de cache e key builders |
 
-### Com Falha (5 suítes)
+### Consolidação das suítes anteriormente falhando
 
-| Arquivo | Falhas | Causa raiz |
+| Arquivo | Situação final | Evidência |
 |---|---|---|
-| `admin-pin.service.spec.ts` | ~15 | `extractVerificationProof` retorna `null` em vez do objeto esperado; `clearVerificationChallenge` não existe como método público |
-| `products.service.spec.ts` | ~12 | Chaves de cache divergentes entre mock e implementação real; CSV parsing com colunas em PT |
-| `orders.service.spec.ts` | ~10 | Expectativas de chaves de cache e mensagens de erro desalinhadas |
-| `employees.service.spec.ts` | ~8 | Formato de email gerado e chaves de cache |
-| `cache.service.spec.ts` | ~8 | Métodos estáticos vs instância |
+| `admin-pin.service.spec.ts` | ✅ Corrigido | `extractVerificationProof` alinhado ao cookie `partner_admin_pin`; remoção de teste de método inexistente |
+| `products.service.spec.ts` | ✅ Corrigido | Chaves `products:list:*` e conflito `P2002` via `PrismaClientKnownRequestError` |
+| `orders.service.spec.ts` | ✅ Corrigido | Factories ajustadas (`updatedAt`, `cancelledAt`) e cache `orders:summary:*` |
+| `employees.service.spec.ts` | ✅ Corrigido | Email de login alinhado para `staff.<owner>.<code>@login.deskimperial.internal` e cache `employees:list:*` |
+| `cache.service.spec.ts` | ✅ Corrigido | Mocks e chamadas alinhadas ao contrato atual do serviço |
 
 ---
 
@@ -157,32 +162,12 @@ Esse refactor foi o que permitiu escrever `operations-domain.utils.spec.ts` com 
 
 ---
 
-## Falhas a Corrigir
+## Correções Aplicadas (Resumo)
 
-As 53 falhas são todas em suítes criadas nesta sessão e são correções simples de alinhamento — não indicam bugs na aplicação.
-
-### admin-pin.service.spec.ts
-
-**Problema 1:** `extractVerificationProof` — o teste espera um objeto `{ challengeId, signature, expiresAt }` mas o método retorna `null` para o mock de request.
-**Fix:** Ajustar o mock do request para incluir os headers corretos que o método lê.
-
-**Problema 2:** `clearVerificationChallenge` não é método público.
-**Fix:** Remover o teste ou expor o método (sem necessidade de expor — remover).
-
-### products / orders / employees / cache
-
-**Problema:** Chaves de cache no mock diferem do formato real.
-**Fix:** Alinhar com as constantes reais:
-```typescript
-// Errado nos testes
-'products:user-1'
-'finance:user-1'
-
-// Correto (conforme CacheService)
-'products:list:user-1'
-'finance:summary:user-1'
-'employees:list:user-1'
-```
+- Alinhamento de contratos de teste com implementação real de cache e validação.
+- Ajuste de factories e dados de entrada para refletir regras de domínio (CPF válido, shape de order/item).
+- Correções de assinaturas em `admin-pin` para fluxo real de challenge/proof.
+- Revisão de isolamento entre testes (`jest.resetAllMocks` em cenários críticos).
 
 ---
 
@@ -204,7 +189,7 @@ test:
 
 Os testes rodam em paralelo com o job de lint/typecheck. O build só inicia se **ambos** passarem (`needs: [quality, test]`).
 
-**Status atual no CI:** os 53 testes falhando fariam o pipeline bloquear o merge. Precisam ser corrigidos antes do próximo PR.
+**Status atual no CI:** suíte de API verde (13/13) e pronta para merge/deploy.
 
 ---
 
@@ -212,7 +197,7 @@ Os testes rodam em paralelo com o job de lint/typecheck. O build só inicia se *
 
 | Prioridade | Tarefa | Esforço |
 |---|---|---|
-| Alta | Corrigir 53 falhas (alinhamento de mocks) | 2-3h |
+| Alta | Manter suíte de API estável com revisão em PR (sem regressões) | Contínuo |
 | Alta | Testes para `finance.service.ts` | 1 dia |
 | Média | Testes para `consent.service.ts` | 4h |
 | Média | Testes para `currency.service.ts` | 4h |

@@ -1,12 +1,12 @@
-# Pendências de Testes — Diagnóstico Completo
+# Pendências de Testes — Encerradas
 **Data:** 26 de março de 2026
-**Status:** Correções aplicadas e validadas ✅
+**Status:** Correções aplicadas, validadas e suíte consolidada ✅
 
 ---
 
 ## Panorama
 
-| Suíte | Testes falhando | Status |
+| Suíte | Falhas iniciais (histórico) | Status |
 |---|---|---|
 | `admin-pin.service.spec.ts` | ~8 | Corrigido e validado ✅ |
 | `products.service.spec.ts` | ~10 | Corrigido e validado ✅ |
@@ -14,7 +14,7 @@
 | `employees.service.spec.ts` | ~20 | Corrigido e validado ✅ |
 | `cache.service.spec.ts` | 0 | Passou — sem pendência |
 
-Todos os 4 arquivos de teste foram atualizados e executados com sucesso.
+Todos os arquivos críticos foram atualizados e executados com sucesso.
 
 ---
 
@@ -217,7 +217,9 @@ O service usa `ratelimitKey('admin-pin-proof', ...)` internamente. O teste esper
 
 ---
 
-## Próximo passo recomendado
+## Consolidação final
 
-1. Commitar os 4 arquivos de teste + este documento.
-2. Rodar a suíte completa de API (`npm test`) para confirmar ausência de regressões fora do escopo.
+Suíte completa da API validada após as correções:
+
+- **Test Suites:** 13 passed, 13 total
+- **Tests:** 337 passed, 337 total

@@ -72,10 +72,10 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 - 211 testes
 - 10.6% de cobertura
 
-**Depois da implementação:**
+**Depois da implementação (consolidado):**
 - 13 arquivos de teste
-- 338 testes (+127 novos)
-- 18.07% de cobertura (+7.47%)
+- 337 testes
+- 13 suítes passando (100%)
 
 ### 1.4 Módulos com Cobertura Aprimorada
 
@@ -264,28 +264,45 @@ function makeEntity(overrides = {}) {
 
 ---
 
-## 4. Próximos Passos Recomendados
+## 4. Status de Consolidação
 
-### 4.1 Ajustes Necessários nos Testes
+### 4.1 Ajustes nos testes críticos (concluídos)
 
-Os testes criados precisam de ajustes para alinhar completamente com a implementação real:
+Os ajustes críticos foram aplicados e validados na suíte completa da API:
 
 1. **Products Service**
-   - Ajustar CSV parsing para usar colunas em português
-   - Corrigir expectativa de erro Prisma P2002
-   - Ajustar chaves de cache para `products:list:user-1`
+  - ✅ Expectativas de cache alinhadas para `products:list:*`
+  - ✅ Cenários de conflito Prisma `P2002` corrigidos
+  - ✅ Fluxo de importação CSV ajustado aos headers reais
 
 2. **Admin Pin Service**
-   - Atualizar formato do proof (string vs object)
-   - Corrigir expectativa de mensagem de erro
-   - Ajustar chave de cache para `admin-pin-challenge:*`
+  - ✅ Formato de proof ajustado (`string | null` via cookie)
+  - ✅ Teste de método inexistente removido
+  - ✅ Chaves de challenge/rate limit alinhadas
 
 3. **Employees Service**
-   - Ajustar chaves de cache para `employees:list:user-1`
-   - Corrigir expectativa de mensagem de erro
-   - Ajustar email gerado para `staff.owner-1.002@login.deskimperial.internal`
+  - ✅ Chaves de cache alinhadas para `employees:list:*`
+  - ✅ Mensagens de erro atualizadas para contrato real
+  - ✅ Email de login ajustado para `staff.<owner>.<code>@login.deskimperial.internal`
 
-### 4.2 Testes Pendentes
+4. **Orders e Cache Service**
+  - ✅ Factories e chaves de cache corrigidas
+  - ✅ Comportamentos de cancelamento/sumário alinhados
+
+### 4.2 Evidência de execução
+
+Comando executado:
+
+```bash
+npm --workspace @partner/api test
+```
+
+Resultado:
+
+- **Test Suites:** 13 passed, 13 total
+- **Tests:** 337 passed, 337 total
+
+### 4.3 Próximos incrementos (não bloqueantes)
 
 | Módulo | Prioridade | Testes Estimados |
 |--------|------------|------------------|
@@ -296,14 +313,14 @@ Os testes criados precisam de ajustes para alinhar completamente com a implement
 | mailer.service.ts | 🟡 Baixa | 15 testes |
 | operations-realtime.gateway.ts | 🟡 Baixa | 10 testes |
 
-### 4.3 Testes E2E Pendentes
+### 4.4 Testes E2E (backlog)
 
 - [ ] Setup de TestContainers com PostgreSQL
 - [ ] Testes de fluxo completo de autenticação
 - [ ] Testes de fluxo completo de pedidos
 - [ ] Testes de integração com WebSocket
 
-### 4.4 Testes de Frontend Pendentes
+### 4.5 Testes de Frontend (backlog)
 
 - [ ] Setup de React Testing Library
 - [ ] Testes de componentes críticos
@@ -333,12 +350,12 @@ Os testes criados precisam de ajustes para alinhar completamente com a implement
 
 Os testes criados demonstram **padrões de qualidade enterprise** e estabelecem uma **base sólida** para expansão da cobertura. 
 
-Os ajustes necessários são **pontuais** e relacionados a detalhes de implementação específicos, não à estrutura ou qualidade dos testes.
+Os ajustes críticos já foram concluídos, e a base atual permite evoluir cobertura com foco em módulos ainda sem suíte dedicada.
 
 **Prioridade imediata:**
-1. Ajustar testes falhantes (2-3 horas)
-2. Implementar testes do finance.service.ts (1-2 dias)
-3. Implementar testes E2E (3-5 dias)
+1. Expandir cobertura de `finance.service.ts` (1-2 dias)
+2. Iniciar trilha E2E com fluxos críticos de autenticação/pedido (3-5 dias)
+3. Adicionar validação de regressão de frontend em componentes do dashboard
 
 ---
 

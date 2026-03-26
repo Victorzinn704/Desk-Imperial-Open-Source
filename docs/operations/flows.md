@@ -57,7 +57,8 @@ Employee
                ▼
 ┌─────────────────────────────────────────┐
 │  1. Valida role = OWNER                 │
-│  2. Gera email: func002@empresa.com     │
+│  2. Gera email técnico de login         │
+│     staff.<owner>.<code>@login...       │
 │  3. Hash da senha temporária (argon2id) │
 │  4. Cria User (role=STAFF)              │
 │  5. Cria Employee com vínculo           │
@@ -74,7 +75,7 @@ Employee
 │      employeeCode: "002",               │
 │      displayName: "Maria Silva",        │
 │      hasLogin: true,                    │
-│      email: "func002@empresa.com"       │
+│      email: "staff.owner-id.002@login.deskimperial.internal" │
 │    }                                    │
 │  }                                      │
 └─────────────────────────────────────────┘
@@ -85,7 +86,7 @@ Employee
 | Regra | Descrição |
 |-------|-----------|
 | **Apenas OWNER cadastra** | STAFF não pode cadastrar funcionários |
-| **Email único** | `func{employeeCode}@empresa.com` |
+| **Email único** | `staff.<owner>.<employeeCode>@login.deskimperial.internal` |
 | **Senha temporária** | Exige troca no primeiro login (futuro) |
 | **Vínculo opcional** | Funcionário pode não ter login (ex: temporário) |
 | **Código único** | `employeeCode` único por empresa |
