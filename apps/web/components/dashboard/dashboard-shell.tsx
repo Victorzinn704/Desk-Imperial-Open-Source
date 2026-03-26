@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   Clock,
+  LogOut,
   TimerReset,
 } from 'lucide-react'
 import type { ProductImportResponse, ProductRecord } from '@contracts/contracts'
@@ -38,7 +39,7 @@ import { clearAdminPinVerification } from '@/lib/admin-pin'
 import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
-
+import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
@@ -574,58 +575,78 @@ export function DashboardShell({
             sectionScrollMemory.current[resolvedActiveSection] = event.currentTarget.scrollTop
           }}
         >
-          <header className="imperial-card px-6 py-5 md:px-8 md:py-6" id="workspace-header">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-soft)]">
+          <header className="imperial-card p-6 md:p-8" id="workspace-header">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                  <span className="size-2 rounded-full bg-[var(--accent)]" />
                   {activeHero.badge}
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Início / Painel operacional / {activeNavigation.label}
                 </p>
-                <h1 className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-white xl:text-3xl">
+                <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
                   {activeHero.title}
                 </h1>
+                <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
+                  {activeHero.description}
+                </p>
               </div>
 
-              <div className="flex flex-col gap-4 xl:shrink-0 xl:items-end">
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col gap-4 xl:max-w-[520px]">
+                <div className="grid gap-3 sm:grid-cols-3">
                   {signals.map((signal) => (
-                    <div key={signal.label}>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {signal.label}
                       </p>
-                      <p className="mt-1 text-base font-semibold text-white">{signal.value}</p>
+                      <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
+                      <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   {quickActions.map((action) => {
                     const Icon = action.icon
                     return (
                       <button
-                        className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-150 hover:border-white/[0.12] hover:text-white"
+                        className="workspace-quick-action flex-1 sm:min-w-[150px]"
                         key={action.id}
                         onClick={() => handleQuickAction(action)}
                         type="button"
                       >
-                        <Icon className="size-3.5" />
-                        {action.label}
+                        <span className="workspace-quick-action__icon">
+                          <Icon className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1 text-left">
+                          <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+                        </span>
                       </button>
                     )
                   })}
-                  <Button
-                    size="sm"
-                    variant={isTimelineOpen ? 'primary' : 'ghost'}
-                    onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-                  >
-                    <Clock className="size-3.5" />
-                    Atividades
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/">
+                  <Button size="lg" variant="ghost">
+                    Ver site
+                    <ArrowUpRight className="size-4" />
                   </Button>
-                  <Link href="/">
-                    <Button size="sm" variant="ghost">
-                      Ver site
-                      <ArrowUpRight className="size-3.5" />
-                    </Button>
-                  </Link>
+                </Link>
+                <Button
+                  size="lg"
+                  variant={isTimelineOpen ? 'primary' : 'ghost'}
+                  onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                >
+                  <Clock className="size-4" />
+                  Atividades
+                </Button>
+                <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
+                  <LogOut className="size-4" />
+                  Encerrar sessão
+                </SpotlightButton>
                 </div>
               </div>
             </div>
