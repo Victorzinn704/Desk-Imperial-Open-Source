@@ -1,5 +1,6 @@
-import { Body, Controller, NotFoundException, Post } from '@nestjs/common'
+import { Body, Controller, NotFoundException, Post, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { SessionGuard } from '../auth/guards/session.guard'
 import { LookupPostalCodeDto } from './dto/lookup-postal-code.dto'
 import { GeocodingService } from './geocoding.service'
 
@@ -8,6 +9,7 @@ import { GeocodingService } from './geocoding.service'
 export class GeocodingController {
   constructor(private readonly geocodingService: GeocodingService) {}
 
+  @UseGuards(SessionGuard)
   @Post('postal-code/lookup')
   async lookupPostalCode(@Body() body: LookupPostalCodeDto) {
     const result = await this.geocodingService.lookupPostalCode(body.postalCode)

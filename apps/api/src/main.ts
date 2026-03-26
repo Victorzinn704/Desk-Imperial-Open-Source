@@ -73,6 +73,12 @@ async function bootstrap() {
     )
   }
 
+  if (!isProduction && portfolioFallback === 'true') {
+    logger.warn(
+      'PORTFOLIO_EMAIL_FALLBACK=true esta ativo apenas para requisicoes locais em localhost/127.0.0.1. Origens publicas nao recebem preview de codigo.',
+    )
+  }
+
   if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
     throw new Error(
       'ENABLE_SWAGGER=true em producao exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',

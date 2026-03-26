@@ -34,7 +34,7 @@ const mockArgon2Verify = jest.fn(async () => false)
 
 jest.mock('argon2', () => ({
   hash: jest.fn(async () => '$argon2id$v=19$m=65536,t=3,p=4$mocked'),
-  verify: (...args: unknown[]) => mockArgon2Verify(...args),
+  verify: mockArgon2Verify,
   argon2id: 2,
 }))
 

@@ -485,6 +485,40 @@ export class AuthService {
         userAgent: context.userAgent,
       })
     } catch (error) {
+      if (isServiceUnavailable(error) && this.shouldUsePortfolioEmailFallback(context)) {
+        await this.auditLogService.record({
+          actorUserId: user.id,
+          event: 'auth.password-reset.preview_enabled',
+          resource: 'password_reset',
+          resourceId: resetCode.recordId,
+          severity: AuditSeverity.WARN,
+          metadata: {
+            email: user.email,
+            reason: error instanceof Error ? error.message : 'unknown',
+            attempts: rateLimitState.count,
+            lockedUntil: rateLimitState.lockedUntil
+              ? new Date(rateLimitState.lockedUntil).toISOString()
+              : null,
+          },
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        })
+
+        this.logger.warn(
+          `Entrega de redefinicao indisponivel para ${user.email}. Codigo de apoio liberado no modo local.`,
+        )
+
+        return {
+          success: true,
+          email: user.email,
+          deliveryMode: 'preview',
+          previewCode: resetCode.code,
+          previewExpiresAt: resetCode.expiresAt.toISOString(),
+          message:
+            'O email de redefinicao esta indisponivel neste ambiente. Liberamos um codigo de apoio para concluir a troca de senha neste navegador.',
+        }
+      }
+
       await this.prisma.oneTimeCode.deleteMany({
         where: {
           id: resetCode.recordId,
@@ -1054,8 +1088,12 @@ export class AuthService {
     return Math.max(ttlMinutes, 5)
   }
 
-  private shouldUsePortfolioEmailFallback() {
-    return !this.isProduction() && parseBoolean(this.configService.get<string>('PORTFOLIO_EMAIL_FALLBACK'))
+  private shouldUsePortfolioEmailFallback(context: RequestContext) {
+    return (
+      !this.isProduction() &&
+      parseBoolean(this.configService.get<string>('PORTFOLIO_EMAIL_FALLBACK') ?? 'true') &&
+      isStrictlyLocalRequestContext(context)
+    )
   }
 
   private shouldUseSecureCookies() {
@@ -1218,7 +1256,7 @@ export class AuthService {
         expiresInMinutes: this.getEmailVerificationTtlMinutes(),
       })
 
-      if (delivery.mode === 'log' && this.shouldUsePortfolioEmailFallback()) {
+      if (delivery.mode === 'log' && this.shouldUsePortfolioEmailFallback(params.context)) {
         await this.auditLogService.record({
           actorUserId: params.userId,
           event: 'auth.email-verification.preview_enabled',
@@ -1268,7 +1306,7 @@ export class AuthService {
         deliveryMode: 'email',
       }
     } catch (error) {
-      if (isServiceUnavailable(error) && this.shouldUsePortfolioEmailFallback()) {
+      if (isServiceUnavailable(error) && this.shouldUsePortfolioEmailFallback(params.context)) {
         await this.auditLogService.record({
           actorUserId: params.userId,
           event: 'auth.email-verification.preview_enabled',
@@ -1696,6 +1734,45 @@ function sanitizePostalCode(value: string) {
 
 function normalizeComparableValue(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? ''
+}
+
+function isStrictlyLocalRequestContext(context: RequestContext) {
+  const ipAddress = normalizeComparableValue(context.ipAddress)
+  const host = extractHostCandidate(context.host)
+  const originHost = extractHostFromUrlCandidate(context.origin)
+  const refererHost = extractHostFromUrlCandidate(context.referer)
+
+  const hostCandidates = [host, originHost, refererHost].filter((value): value is string => Boolean(value))
+
+  return isLoopbackIp(ipAddress) && hostCandidates.every(isLocalHost)
+}
+
+function extractHostCandidate(value: string | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  return value.trim().split(':')[0]?.toLowerCase() ?? null
+}
+
+function extractHostFromUrlCandidate(value: string | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  try {
+    return new URL(value).hostname.toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+function isLoopbackIp(value: string) {
+  return value === '127.0.0.1' || value === '::1' || value === 'localhost'
+}
+
+function isLocalHost(value: string) {
+  return value === 'localhost' || value === '127.0.0.1'
 }
 
 function isServiceUnavailable(error: unknown) {

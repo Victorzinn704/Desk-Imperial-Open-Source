@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from 'nestjs-pino'
+import { resolve } from 'node:path'
 import { PrismaModule } from './database/prisma.module'
 import { CacheModule } from './cache/cache.module'
 import { AppController } from './app.controller'
@@ -24,7 +25,13 @@ import { ProductsModule } from './modules/products/products.module'
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile: process.env.NODE_ENV === 'production',
-      envFilePath: ['../../.env'],
+      envFilePath: Array.from(
+        new Set([
+          resolve(process.cwd(), 'apps/api/.env'),
+          resolve(process.cwd(), '.env'),
+          resolve(process.cwd(), '../../.env'),
+        ]),
+      ),
     }),
     LoggerModule.forRoot({
       pinoHttp: {

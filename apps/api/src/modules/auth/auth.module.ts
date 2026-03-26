@@ -11,7 +11,7 @@ import { CsrfGuard } from './guards/csrf.guard'
 import { SessionGuard } from './guards/session.guard'
 
 @Module({
-  imports: [forwardRef(() => ConsentModule), GeocodingModule, MonitoringModule, MailerModule],
+  imports: [forwardRef(() => ConsentModule), forwardRef(() => GeocodingModule), MonitoringModule, MailerModule],
   controllers: [AuthController],
   providers: [AuthService, AuthRateLimitService, DemoAccessService, SessionGuard, CsrfGuard],
   exports: [AuthService, SessionGuard, CsrfGuard],
