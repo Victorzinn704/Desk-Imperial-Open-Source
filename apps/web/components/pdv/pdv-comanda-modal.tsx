@@ -224,9 +224,11 @@ export function PdvComandaModal({
                   return (
                     <button
                       key={product.id}
-                      className="flex w-full items-center justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)]"
+                      draggable
+                      className="flex w-full items-center justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)] cursor-grab active:cursor-grabbing"
                       type="button"
                       onClick={() => addItem(product)}
+                      onDragStart={(e) => e.dataTransfer.setData('productId', product.id)}
                     >
                       <div>
                         <p className="text-sm font-medium text-white">{product.name}</p>
@@ -499,12 +501,21 @@ export function PdvComandaModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div
+              className="flex-1 overflow-y-auto px-4 py-4"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault()
+                const id = e.dataTransfer.getData('productId')
+                const product = products.find((p) => p.id === id)
+                if (product) addItem(product)
+              }}
+            >
               {itens.length === 0 ? (
                 <div className="flex h-full min-h-52 flex-col items-center justify-center rounded-[18px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
                   <p className="text-sm font-semibold text-white">Nenhum item ainda</p>
                   <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
-                    Toque em um produto na coluna da esquerda para montar a comanda e acompanhar tudo por aqui.
+                    Arraste produtos da esquerda ou toque para adicionar.
                   </p>
                 </div>
               ) : (
@@ -538,9 +549,18 @@ export function PdvComandaModal({
                             >
                               <Minus className="size-3.5" />
                             </button>
-                            <span className="min-w-8 text-center text-sm font-semibold text-white">
-                              {item.quantidade}
-                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              className="w-10 bg-transparent text-center text-sm font-semibold text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              value={item.quantidade}
+                              onChange={(e) => {
+                                const v = Math.max(1, Math.floor(Number(e.target.value) || 1))
+                                setItens((prev) =>
+                                  prev.map((i) => i.produtoId === item.produtoId ? { ...i, quantidade: v } : i),
+                                )
+                              }}
+                            />
                             <button
                               className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
                               type="button"

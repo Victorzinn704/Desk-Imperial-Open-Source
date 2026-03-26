@@ -27,9 +27,11 @@ export function useThermalPrinting() {
     setIsHydrated(true)
   }, [])
 
-  const refreshPrinters = useCallback(async () => {
-    setConnectionState('discovering')
-    setStatusMessage('Buscando impressoras termicas conectadas ao QZ Tray...')
+  const refreshPrinters = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setConnectionState('discovering')
+      setStatusMessage('Buscando impressoras termicas conectadas ao QZ Tray...')
+    }
 
     try {
       const discoveredPrinters = await listThermalPrinters(provider)
@@ -54,8 +56,14 @@ export function useThermalPrinting() {
       }
     } catch (error) {
       setPrinters([])
-      setConnectionState('error')
-      setStatusMessage(normalizeThermalError(error))
+      if (options?.silent) {
+        // Auto-detect silencioso: QZ Tray nao instalado, nao mostrar erro
+        setConnectionState('idle')
+        setStatusMessage('QZ Tray nao detectado. Clique em "Atualizar" para tentar conectar.')
+      } else {
+        setConnectionState('error')
+        setStatusMessage(normalizeThermalError(error))
+      }
       return {
         printers: [] as ThermalPrinter[],
         selectedPrinterName: '',
@@ -68,7 +76,7 @@ export function useThermalPrinting() {
       return
     }
 
-    void refreshPrinters()
+    void refreshPrinters({ silent: true })
   }, [isHydrated, provider, refreshPrinters])
 
   function choosePrinter(printerName: string) {

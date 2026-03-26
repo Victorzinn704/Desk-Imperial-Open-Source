@@ -288,7 +288,18 @@ function MesaCard({
       {/* Garçom row */}
       <div className="relative px-3 py-2">
         <button type="button"
-          onClick={e => { e.stopPropagation(); if (!isAssignTarget) setShowGarcomSel(v => !v) }}
+          onClick={e => {
+            e.stopPropagation()
+            if (isAssignTarget) {
+              if (mesa.garcomId && mesa.garcomId !== assigningGarcomId) {
+                setShowConfirm(true)
+              } else {
+                onAssign(mesa.id, assigningGarcomId!)
+              }
+              return
+            }
+            setShowGarcomSel(v => !v)
+          }}
           className="flex w-full items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-left transition-colors hover:bg-[rgba(255,255,255,0.05)]">
           {garcom ? (
             <>

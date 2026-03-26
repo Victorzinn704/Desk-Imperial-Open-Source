@@ -22,6 +22,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { UserRole, UserStatus, CurrencyCode } from '@prisma/client'
 import { AuthService } from '../src/modules/auth/auth.service'
+import * as argon2 from 'argon2'
 
 // ── argon2 mock (ESM-safe) ────────────────────────────────────────────────────
 //
@@ -30,13 +31,22 @@ import { AuthService } from '../src/modules/auth/auth.service'
 // A solução é mockar o módulo inteiro via jest.mock() antes do import,
 // expondo uma função controlável (mockArgon2Verify) para cada teste definir seu retorno.
 
-const mockArgon2Verify = jest.fn(async () => false)
+jest.mock('argon2', () => {
+  const mockArgon2Verify = jest.fn(async () => false)
+  return {
+    __esModule: true,
+    default: {
+      hash: jest.fn(async () => '$argon2id$v=19$m=65536,t=3,p=4$mocked'),
+      verify: mockArgon2Verify,
+      argon2id: 2,
+    },
+    hash: jest.fn(async () => '$argon2id$v=19$m=65536,t=3,p=4$mocked'),
+    verify: mockArgon2Verify,
+    argon2id: 2,
+  }
+})
 
-jest.mock('argon2', () => ({
-  hash: jest.fn(async () => '$argon2id$v=19$m=65536,t=3,p=4$mocked'),
-  verify: mockArgon2Verify,
-  argon2id: 2,
-}))
+const mockArgon2Verify = argon2.verify as jest.Mock
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 //

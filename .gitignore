@@ -88,3 +88,4 @@ Desktop.ini
 *.zip
 .vercel
 .netlify
+.aider*

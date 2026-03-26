@@ -36,7 +36,6 @@ import type {
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
-import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { PayrollEnvironment } from '@/components/dashboard/payroll-environment'
 import { SalaoEnvironment } from '@/components/dashboard/salao-environment'
 import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-card'
@@ -469,7 +468,6 @@ function SalesEnvironment({
               onRestore={restoreEmployeeMutation.mutate}
               totals={employeesTotals}
             />
-            <EmployeePayrollCard employees={employees} finance={finance} />
           </div>
         ) : (
           <div className="imperial-card p-7">
