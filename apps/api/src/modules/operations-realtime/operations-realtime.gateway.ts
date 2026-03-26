@@ -24,10 +24,15 @@ import type { OperationsRealtimeConnectionContext, OperationsRealtimeSocketLike 
  * are available, a thin Nest gateway can delegate to this bridge without
  * changing the auth or room logic below.
  */
+const ALLOWED_ORIGINS = [
+  'https://app.deskimperial.online',
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : []),
+]
+
 @WebSocketGateway({
   namespace: OPERATIONS_REALTIME_NAMESPACE,
   cors: {
-    origin: true,
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   },
 })

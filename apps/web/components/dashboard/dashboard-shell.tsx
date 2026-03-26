@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   Clock,
@@ -13,29 +13,11 @@ import {
 import type { ProductImportResponse, ProductRecord } from '@contracts/contracts'
 import {
   ApiError,
-  archiveEmployee,
-  archiveProduct,
-  cancelOrder,
-  createEmployee,
-  createOrder,
-  createProduct,
-  fetchConsentOverview,
-  fetchCurrentUser,
-  fetchEmployees,
-  fetchFinanceSummary,
   fetchOperationsLive,
-  fetchOrders,
-  fetchProducts,
-  importProducts,
-  logout,
-  restoreEmployee,
-  restoreProduct,
-  updateProfile,
-  updateCookiePreferences,
-  updateProduct,
 } from '@/lib/api'
+import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
+import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { formatCurrency } from '@/lib/currency'
-import { clearAdminPinVerification } from '@/lib/admin-pin'
 import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { Button } from '@/components/shared/button'
@@ -159,33 +141,7 @@ export function DashboardShell({
     setActiveSettingsSection(initialSettingsSection)
   }, [initialSettingsSection])
 
-  const sessionQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser, retry: false })
-  const consentQuery = useQuery({
-    queryKey: ['consent', 'me'],
-    queryFn: fetchConsentOverview,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-    retry: false,
-  })
-  const productsQuery = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
-  const ordersQuery = useQuery({
-    queryKey: ['orders'],
-    queryFn: fetchOrders,
-    enabled: Boolean(sessionQuery.data?.user.userId),
-  })
-  const employeesQuery = useQuery({
-    queryKey: ['employees'],
-    queryFn: fetchEmployees,
-    enabled: Boolean(sessionQuery.data?.user.userId) && sessionQuery.data?.user.role === 'OWNER',
-  })
-  const financeQuery = useQuery({
-    queryKey: ['finance', 'summary'],
-    queryFn: fetchFinanceSummary,
-    enabled: Boolean(sessionQuery.data?.user.userId) && sessionQuery.data?.user.role === 'OWNER',
-  })
+  const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
     queryFn: () => fetchOperationsLive(),
@@ -218,87 +174,47 @@ export function DashboardShell({
     }
   }, [evaluationAccess, queryClient, router, startTransition])
 
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-    onSuccess: async () => {
-      await queryClient.cancelQueries()
-      queryClient.clear()
-      clearAdminPinVerification()
-      startTransition(() => router.push('/login'))
-    },
-  })
+  const {
+    logoutMutation: _logoutMutation,
+    preferenceMutation,
+    updateProfileMutation: profileMutation,
+    createProductMutation,
+    updateProductMutation: _updateProductMutation,
+    archiveProductMutation: _archiveProductMutation,
+    restoreProductMutation,
+    importProductsMutation: _importProductsMutation,
+    createOrderMutation,
+    cancelOrderMutation,
+    createEmployeeMutation,
+    archiveEmployeeMutation,
+    restoreEmployeeMutation,
+  } = useDashboardMutations()
 
-  const preferenceMutation = useMutation({
-    mutationFn: updateCookiePreferences,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-    },
-  })
-
-  const profileMutation = useMutation({
-    mutationFn: updateProfile,
-    onSuccess: (payload) => {
-      queryClient.setQueryData(['auth', 'me'], payload)
-    },
-  })
-
-  const createProductMutation = useMutation({
-    mutationFn: createProduct,
-    onSuccess: () => invalidateCatalog(queryClient),
-  })
-  const updateProductMutation = useMutation({
-    mutationFn: ({ productId, values }: { productId: string; values: Parameters<typeof updateProduct>[1] }) =>
-      updateProduct(productId, values),
-    onSuccess: () => {
-      setEditingProduct(null)
-      invalidateCatalog(queryClient)
-    },
-  })
-  const archiveProductMutation = useMutation({
-    mutationFn: archiveProduct,
-    onSuccess: () => {
-      setEditingProduct(null)
-      invalidateCatalog(queryClient)
-    },
-  })
-  const restoreProductMutation = useMutation({
-    mutationFn: restoreProduct,
-    onSuccess: () => invalidateCatalog(queryClient),
-  })
-  const importProductsMutation = useMutation({
-    mutationFn: importProducts,
-    onSuccess: (payload) => {
-      setLastImport(payload)
-      invalidateCatalog(queryClient)
-    },
-  })
-  const createOrderMutation = useMutation({
-    mutationFn: ({ values }: { values: OrderFormValues }) => createOrder(values),
-    onSuccess: () => invalidateOrders(queryClient),
-  })
-  const cancelOrderMutation = useMutation({
-    mutationFn: cancelOrder,
-    onSuccess: () => invalidateOrders(queryClient),
-  })
-  const createEmployeeMutation = useMutation({
-    mutationFn: createEmployee,
-    onSuccess: () => {
-      invalidateEmployees(queryClient)
-    },
-  })
-  const archiveEmployeeMutation = useMutation({
-    mutationFn: archiveEmployee,
-    onSuccess: () => {
-      invalidateEmployees(queryClient)
-    },
-  })
-  const restoreEmployeeMutation = useMutation({
-    mutationFn: restoreEmployee,
-    onSuccess: () => {
-      invalidateEmployees(queryClient)
-    },
-  })
+  // Wrappers com side-effects específicos do shell
+  const logoutMutation = {
+    isPending: _logoutMutation.isPending,
+    mutate: () => _logoutMutation.mutate(undefined, {
+      onSuccess: () => startTransition(() => router.push('/login')),
+    }),
+  }
+  const updateProductMutation = {
+    isPending: _updateProductMutation.isPending,
+    error: _updateProductMutation.error,
+    mutate: (payload: Parameters<typeof _updateProductMutation.mutate>[0]) =>
+      _updateProductMutation.mutate(payload, { onSuccess: () => setEditingProduct(null) }),
+  }
+  const archiveProductMutation = {
+    isPending: _archiveProductMutation.isPending,
+    error: _archiveProductMutation.error,
+    mutate: (id: string) =>
+      _archiveProductMutation.mutate(id, { onSuccess: () => setEditingProduct(null) }),
+  }
+  const importProductsMutation = {
+    isPending: _importProductsMutation.isPending,
+    error: _importProductsMutation.error,
+    mutate: (file: File) =>
+      _importProductsMutation.mutate(file, { onSuccess: (payload) => setLastImport(payload) }),
+  }
 
   const currentUser = sessionQuery.data?.user ?? null
   const isStaffUser = currentUser?.role === 'STAFF'
@@ -411,7 +327,7 @@ export function DashboardShell({
   const importMutationError = importProductsMutation.error instanceof ApiError ? importProductsMutation.error.message : null
 
   const handleProductSubmit = (values: ProductFormValues) => {
-    const payload: Parameters<typeof createProduct>[0] = {
+    const payload = {
       name: values.name,
       brand: values.brand,
       category: values.category,
@@ -860,22 +776,6 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
       </div>
     </main>
   )
-}
-
-function invalidateCatalog(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: ['products'] })
-  queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
-}
-
-function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: ['orders'] })
-  queryClient.invalidateQueries({ queryKey: ['products'] })
-  queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
-}
-
-function invalidateEmployees(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: ['employees'] })
-  queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
 }
 
 function buildDashboardUrl(

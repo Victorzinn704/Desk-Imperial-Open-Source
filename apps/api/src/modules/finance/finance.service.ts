@@ -143,19 +143,90 @@ export class FinanceService {
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const previousMonthEnd = currentMonthStart
 
-    const [products, completedOrders, recentOrders] = await Promise.all([
+    // Só os últimos 6 meses são necessários para timeline e breakdowns
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
+    const [
+      products,
+      recentOrders,
+      // groupBy por moeda — retorna O(3 moedas) em vez de O(todos os pedidos)
+      allTimeAggregates,
+      currentMonthAggregates,
+      previousMonthAggregates,
+      // Queries scopadas com cap de segurança
+      timelineOrders,
+      channelOrders,
+      customerOrders,
+      employeeOrders,
+      geographyOrders,
+    ] = await Promise.all([
       this.prisma.product.findMany({
         where: { userId: workspaceUserId, active: true },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.order.findMany({
-        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.findMany({
         where: { userId: workspaceUserId },
         orderBy: { createdAt: 'desc' },
         take: 5,
+      }),
+      // Totais históricos: agrega no banco, não em memória
+      this.prisma.order.groupBy({
+        by: ['currency'],
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
+        _count: { _all: true },
+        _sum: { totalRevenue: true, totalCost: true, totalProfit: true },
+      }),
+      // Mês atual por moeda
+      this.prisma.order.groupBy({
+        by: ['currency'],
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, createdAt: { gte: currentMonthStart } },
+        _sum: { totalRevenue: true, totalProfit: true },
+      }),
+      // Mês anterior por moeda
+      this.prisma.order.groupBy({
+        by: ['currency'],
+        where: {
+          userId: workspaceUserId,
+          status: OrderStatus.COMPLETED,
+          createdAt: { gte: previousMonthStart, lt: previousMonthEnd },
+        },
+        _sum: { totalRevenue: true, totalProfit: true },
+      }),
+      // Timeline: apenas últimos 6 meses (não histórico completo)
+      this.prisma.order.findMany({
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, createdAt: { gte: sixMonthsAgo } },
+        select: { createdAt: true, currency: true, totalRevenue: true, totalProfit: true },
+      }),
+      // Canal: cap de 5000 pedidos mais recentes
+      this.prisma.order.findMany({
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
+        select: { channel: true, currency: true, totalRevenue: true, totalProfit: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5_000,
+      }),
+      // Clientes: cap de 5000
+      this.prisma.order.findMany({
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
+        select: { customerName: true, buyerType: true, buyerDocument: true, currency: true, totalRevenue: true, totalProfit: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5_000,
+      }),
+      // Funcionários: cap de 2000
+      this.prisma.order.findMany({
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
+        select: { employeeId: true, sellerCode: true, sellerName: true, currency: true, totalRevenue: true, totalProfit: true },
+        orderBy: { createdAt: 'desc' },
+        take: 2_000,
+      }),
+      // Geografia: apenas pedidos geolocalizados, cap de 2000
+      this.prisma.order.findMany({
+        where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, buyerLatitude: { not: null } },
+        select: {
+          buyerDistrict: true, buyerCity: true, buyerState: true, buyerCountry: true,
+          buyerLatitude: true, buyerLongitude: true, currency: true, totalRevenue: true, totalProfit: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 2_000,
       }),
     ])
 
@@ -168,81 +239,33 @@ export class FinanceService {
       }),
     )
 
-    const currentMonthOrders = completedOrders.filter((order) => order.createdAt >= currentMonthStart)
-    const previousMonthOrders = completedOrders.filter(
-      (order) => order.createdAt >= previousMonthStart && order.createdAt < previousMonthEnd,
-    )
-    const realizedRevenue = roundCurrency(
-      completedOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(
-            Number(order.totalRevenue),
-            order.currency,
-            displayCurrency,
-            snapshot,
-          ),
-        0,
-      ),
-    )
-    const realizedCost = roundCurrency(
-      completedOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(Number(order.totalCost), order.currency, displayCurrency, snapshot),
-        0,
-      ),
-    )
-    const realizedProfit = roundCurrency(
-      completedOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(Number(order.totalProfit), order.currency, displayCurrency, snapshot),
-        0,
-      ),
-    )
-    const currentMonthRevenue = roundCurrency(
-      currentMonthOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(
-            Number(order.totalRevenue),
-            order.currency,
-            displayCurrency,
-            snapshot,
-          ),
-        0,
-      ),
-    )
-    const currentMonthProfit = roundCurrency(
-      currentMonthOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(Number(order.totalProfit), order.currency, displayCurrency, snapshot),
-        0,
-      ),
-    )
-    const previousMonthRevenue = roundCurrency(
-      previousMonthOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(
-            Number(order.totalRevenue),
-            order.currency,
-            displayCurrency,
-            snapshot,
-          ),
-        0,
-      ),
-    )
-    const previousMonthProfit = roundCurrency(
-      previousMonthOrders.reduce(
-        (total, order) =>
-          total +
-          this.currencyService.convert(Number(order.totalProfit), order.currency, displayCurrency, snapshot),
-        0,
-      ),
-    )
+    // Totais computados a partir dos agregados por moeda (O(3) em vez de O(N pedidos))
+    let realizedRevenue = 0, realizedCost = 0, realizedProfit = 0, completedOrdersCount = 0
+    for (const agg of allTimeAggregates) {
+      realizedRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      realizedCost += this.currencyService.convert(agg._sum.totalCost?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      realizedProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      completedOrdersCount += agg._count._all
+    }
+    realizedRevenue = roundCurrency(realizedRevenue)
+    realizedCost = roundCurrency(realizedCost)
+    realizedProfit = roundCurrency(realizedProfit)
+
+    let currentMonthRevenue = 0, currentMonthProfit = 0
+    for (const agg of currentMonthAggregates) {
+      currentMonthRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      currentMonthProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+    }
+    currentMonthRevenue = roundCurrency(currentMonthRevenue)
+    currentMonthProfit = roundCurrency(currentMonthProfit)
+
+    let previousMonthRevenue = 0, previousMonthProfit = 0
+    for (const agg of previousMonthAggregates) {
+      previousMonthRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      previousMonthProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+    }
+    previousMonthRevenue = roundCurrency(previousMonthRevenue)
+    previousMonthProfit = roundCurrency(previousMonthProfit)
 
     const totals = {
       activeProducts: records.length,
@@ -253,7 +276,7 @@ export class FinanceService {
       realizedRevenue,
       realizedCost,
       realizedProfit,
-      completedOrders: completedOrders.length,
+      completedOrders: completedOrdersCount,
       currentMonthRevenue,
       currentMonthProfit,
       previousMonthRevenue,
@@ -368,32 +391,32 @@ export class FinanceService {
         totalItems: order.totalItems,
         createdAt: order.createdAt.toISOString(),
       })),
-      revenueTimeline: buildRevenueTimeline(completedOrders, now, {
+      revenueTimeline: buildRevenueTimeline(timelineOrders, now, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,
       }),
-      salesByChannel: buildSalesByChannel(completedOrders, {
+      salesByChannel: buildSalesByChannel(channelOrders, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,
       }),
-      topCustomers: buildTopCustomers(completedOrders, {
+      topCustomers: buildTopCustomers(customerOrders, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,
       }),
-      topEmployees: buildTopEmployees(completedOrders, {
+      topEmployees: buildTopEmployees(employeeOrders, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,
       }),
-      salesMap: buildSalesMap(completedOrders, {
+      salesMap: buildSalesMap(geographyOrders, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,
       }),
-      topRegions: buildTopRegions(completedOrders, {
+      topRegions: buildTopRegions(geographyOrders, {
         currencyService: this.currencyService,
         displayCurrency,
         snapshot,

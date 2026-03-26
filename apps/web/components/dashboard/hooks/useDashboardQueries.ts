@@ -40,16 +40,18 @@ export function useDashboardQueries() {
     enabled: Boolean(userId),
   })
 
+  const isOwner = sessionQuery.data?.user.role === 'OWNER'
+
   const employeesQuery = useQuery({
     queryKey: ['employees'],
     queryFn: fetchEmployees,
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && isOwner,
   })
 
   const financeQuery = useQuery({
     queryKey: ['finance', 'summary'],
     queryFn: fetchFinanceSummary,
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && isOwner,
   })
 
   return {

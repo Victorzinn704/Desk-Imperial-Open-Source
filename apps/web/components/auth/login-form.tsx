@@ -10,6 +10,10 @@ import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-rea
 import { ApiError, login } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 
+// Conta de avaliação pública — credenciais visíveis por design
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? 'demo@deskimperial.online'
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? 'Demo@123'
+
 export function LoginForm() {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -230,8 +234,8 @@ export function LoginForm() {
           onClick={() =>
             loginMutation.mutate({
               loginMode: 'OWNER',
-              email: 'demo@deskimperial.online',
-              password: 'Demo@123',
+              email: DEMO_EMAIL,
+              password: DEMO_PASSWORD,
             })
           }
         >
