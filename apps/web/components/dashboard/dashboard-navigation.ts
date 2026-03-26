@@ -2,22 +2,32 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
   CalendarRange,
-  CirclePlus,
+  Cog,
+  History,
   LayoutDashboard,
+  Lock,
   Map,
-  ShieldCheck,
+  SlidersHorizontal,
   ShoppingCart,
   Tags,
+  UserRound,
 } from 'lucide-react'
 
 export type DashboardSectionId =
   | 'overview'
   | 'sales'
   | 'portfolio'
-  | 'compliance'
   | 'pdv'
   | 'calendario'
   | 'map'
+  | 'settings'
+
+export type DashboardSettingsSectionId =
+  | 'account'
+  | 'security'
+  | 'preferences'
+  | 'compliance'
+  | 'session'
 
 export type DashboardNavigationItem = {
   id: DashboardSectionId
@@ -41,6 +51,65 @@ export type DashboardQuickAction = {
   anchorId?: string
 }
 
+export const dashboardDefaultSection: DashboardSectionId = 'overview'
+export const dashboardDefaultSettingsSection: DashboardSettingsSectionId = 'account'
+
+const DASHBOARD_SECTIONS: DashboardSectionId[] = [
+  'overview',
+  'sales',
+  'portfolio',
+  'pdv',
+  'calendario',
+  'map',
+  'settings',
+]
+
+const DASHBOARD_SETTINGS_SECTIONS: DashboardSettingsSectionId[] = [
+  'account',
+  'security',
+  'preferences',
+  'compliance',
+  'session',
+]
+
+export const dashboardSettingsNav = [
+  {
+    id: 'account',
+    label: 'Conta',
+    description: 'Identidade da conta e dados principais',
+    icon: UserRound,
+  },
+  {
+    id: 'security',
+    label: 'Segurança',
+    description: 'PIN administrativo e proteção de acesso',
+    icon: Lock,
+  },
+  {
+    id: 'preferences',
+    label: 'Preferências',
+    description: 'Leituras do workspace e rotina da operação',
+    icon: SlidersHorizontal,
+  },
+  {
+    id: 'compliance',
+    label: 'Conformidade',
+    description: 'Consentimento, cookies e governança',
+    icon: Cog,
+  },
+  {
+    id: 'session',
+    label: 'Sessão',
+    description: 'Acessos recentes e controle da sessão ativa',
+    icon: History,
+  },
+] as const satisfies ReadonlyArray<{
+  id: DashboardSettingsSectionId
+  label: string
+  description: string
+  icon: LucideIcon
+}>
+
 export const dashboardNavigationGroups: DashboardNavigationGroup[] = [
   {
     id: 'workspace',
@@ -49,65 +118,75 @@ export const dashboardNavigationGroups: DashboardNavigationGroup[] = [
       {
         id: 'overview',
         label: 'Dashboard',
-        description: 'Visão executiva consolidada',
+        description: 'Leitura executiva',
         icon: LayoutDashboard,
       },
     ],
   },
   {
     id: 'commercial',
-    label: 'Operação comercial',
+    label: 'Operação',
     items: [
       {
         id: 'sales',
         label: 'Operação',
-        description: 'Pedidos, vendas e equipe',
+        description: 'Pedidos, caixa e equipe',
         icon: ShoppingCart,
       },
       {
         id: 'pdv',
         label: 'PDV / Comandas',
-        description: 'Atendimento e preparo',
+        description: 'Salão, mesas e preparo',
         icon: Tags,
       },
       {
         id: 'calendario',
         label: 'Calendário',
-        description: 'Agenda comercial e eventos',
+        description: 'Agenda comercial',
         icon: CalendarRange,
       },
     ],
   },
   {
     id: 'portfolio',
-    label: 'Portfólio e inteligência',
+    label: 'Portfólio',
     items: [
       {
         id: 'portfolio',
         label: 'Portfólio',
-        description: 'Produtos, margem e estoque',
+        description: 'Produtos, estoque e margem',
         icon: Boxes,
       },
       {
         id: 'map',
         label: 'Mapa',
-        description: 'Território e concentração de vendas',
+        description: 'Território e demanda',
         icon: Map,
-      },
-    ],
-  },
-  {
-    id: 'governance',
-    label: 'Governança',
-    items: [
-      {
-        id: 'compliance',
-        label: 'Conformidade',
-        description: 'LGPD, consentimento e segurança',
-        icon: ShieldCheck,
       },
     ],
   },
 ]
 
 export const dashboardQuickActions: DashboardQuickAction[] = []
+
+export function parseDashboardSectionParam(value: string | string[] | null | undefined) {
+  const normalized = Array.isArray(value) ? value[0] : value
+  if (!normalized) {
+    return null
+  }
+
+  return DASHBOARD_SECTIONS.includes(normalized as DashboardSectionId)
+    ? (normalized as DashboardSectionId)
+    : null
+}
+
+export function parseDashboardSettingsSectionParam(value: string | string[] | null | undefined) {
+  const normalized = Array.isArray(value) ? value[0] : value
+  if (!normalized) {
+    return null
+  }
+
+  return DASHBOARD_SETTINGS_SECTIONS.includes(normalized as DashboardSettingsSectionId)
+    ? (normalized as DashboardSettingsSectionId)
+    : null
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Grid2x2, ShoppingCart, ClipboardList, LogOut } from 'lucide-react'
+import { Grid2x2, ShoppingCart, ClipboardList, LogOut, Cog } from 'lucide-react'
 import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -109,15 +109,25 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             <p className="text-xs text-[#7a8896]">Olá, {displayName.split(' ')[0]}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-          className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#7a8896] transition-colors active:bg-[rgba(255,255,255,0.1)]"
-          aria-label="Encerrar sessão"
-        >
-          <LogOut className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard?view=settings&panel=account')}
+            className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#7a8896] transition-colors active:bg-[rgba(255,255,255,0.1)]"
+            aria-label="Abrir configurações"
+          >
+            <Cog className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#7a8896] transition-colors active:bg-[rgba(255,255,255,0.1)]"
+            aria-label="Encerrar sessão"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </header>
 
       {/* Scrollable main content */}

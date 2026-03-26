@@ -4,8 +4,7 @@ import { useState } from 'react'
 import {
   Box,
   Boxes,
-  ChartColumnIncreasing,
-  FileCheck2,
+  Cog,
   LayoutDashboard,
   LockKeyhole,
   MapPin,
@@ -28,10 +27,14 @@ import { type ApiError, type AuthUser, type CookiePreferencePayload, type Cookie
 import { formatCurrency } from '@/lib/currency'
 import { formatAccountStatus } from '@/lib/dashboard-format'
 import { downloadPortfolioCsv, downloadProductTemplateCsv } from '@/lib/portfolio-csv'
-import type { OrderFormValues, ProductFormValues } from '@/lib/validation'
+import type { OrderFormValues, ProductFormValues, ProfileFormValues } from '@/lib/validation'
 import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
-import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
+import type {
+  DashboardSectionId,
+  DashboardSettingsSectionId,
+} from '@/components/dashboard/dashboard-navigation'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
 import { EmployeePayrollCard } from '@/components/dashboard/employee-payroll-card'
 import { EmployeeRankingCard } from '@/components/dashboard/employee-ranking-card'
@@ -52,11 +55,11 @@ import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 import { OperationsExecutiveGrid, OperationsTimeline } from '@/components/operations'
 import { PdvBoard } from '@/components/pdv/pdv-board'
-import { CheckboxField } from '@/components/shared/checkbox-field'
 import { buildOperationsViewModel } from '@/lib/operations'
 
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId
+  activeSettingsSection: DashboardSettingsSectionId
   archiveEmployeeMutation: {
     isPending: boolean
     mutate: (employeeId: string) => void
@@ -122,6 +125,10 @@ export type EnvironmentRenderProps = {
   ordersError: string | null
   ordersQueryIsLoading: boolean
   ordersTotals?: OrdersResponse['totals']
+  onLogout: () => void
+  onNavigateSection: (sectionId: DashboardSectionId) => void
+  onProfileSubmit: (values: ProfileFormValues) => void
+  onSettingsSectionChange: (sectionId: DashboardSettingsSectionId) => void
   preferenceMutation: {
     error: unknown
     isPending: boolean
@@ -131,6 +138,8 @@ export type EnvironmentRenderProps = {
   products: ProductRecord[]
   productsError: string | null
   productsTotals?: ProductsResponse['totals']
+  profileMutationError?: ApiError
+  profileMutationIsPending: boolean
   restoreProductMutation: {
     isPending: boolean
     mutate: (productId: string) => void
@@ -144,6 +153,7 @@ export type EnvironmentRenderProps = {
     isPending: boolean
   }
   user: AuthUser
+  logoutMutationIsPending: boolean
 }
 
 export function renderActiveEnvironment(props: EnvironmentRenderProps) {
@@ -152,8 +162,6 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <SalesEnvironment {...props} />
     case 'portfolio':
       return <PortfolioEnvironment {...props} />
-    case 'compliance':
-      return <ComplianceEnvironment {...props} />
     case 'pdv':
       return (
         <PdvEnvironment
@@ -168,6 +176,8 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <CalendarioEnvironment />
     case 'map':
       return <MapEnvironment {...props} />
+    case 'settings':
+      return <SettingsEnvironment {...props} />
     case 'overview':
     default:
       return <OverviewEnvironment {...props} />
@@ -716,116 +726,66 @@ function PortfolioEnvironment({
   )
 }
 
-function ComplianceEnvironment({
+function SettingsEnvironment({
+  activeSettingsSection,
   consentQueryIsLoading,
   cookiePreferences,
   documentTitles,
   legalAcceptances,
+  logoutMutationIsPending,
+  onLogout,
+  onNavigateSection,
+  onProfileSubmit,
+  onSettingsSectionChange,
   preferenceMutation,
+  profileMutationError,
+  profileMutationIsPending,
+  user,
 }: Readonly<
   Pick<
     EnvironmentRenderProps,
+    | 'activeSettingsSection'
     | 'consentQueryIsLoading'
     | 'cookiePreferences'
     | 'documentTitles'
     | 'legalAcceptances'
+    | 'logoutMutationIsPending'
+    | 'onLogout'
+    | 'onNavigateSection'
+    | 'onProfileSubmit'
+    | 'onSettingsSectionChange'
     | 'preferenceMutation'
+    | 'profileMutationError'
+    | 'profileMutationIsPending'
+    | 'user'
   >
 >) {
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="A camada de conformidade continua presente e visível, com consentimento e preferências do usuário."
-        eyebrow="Segurança e LGPD"
-        icon={ShieldCheck}
-        title="Módulo de conformidade e consentimento"
+        description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
+        eyebrow="Conta e governança"
+        icon={Cog}
+        title="Configurações do workspace"
       />
 
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <FileCheck2 className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Consentimento</p>
-              <h2 className="text-xl font-semibold text-white">Documentos aceitos</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {legalAcceptances.length ? (
-              legalAcceptances.map((acceptance) => (
-                <MiniInfoCard
-                  hint={`Aceito em ${new Date(acceptance.acceptedAt).toLocaleString('pt-BR')}`}
-                  key={acceptance.key}
-                  label={documentTitles.get(acceptance.key) ?? acceptance.key}
-                  value="Aceito"
-                />
-              ))
-            ) : (
-              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-                Os documentos legais aparecerao aqui assim que houver consentimento registrado.
-              </p>
-            )}
-          </div>
-        </article>
-
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <ChartColumnIncreasing className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-[var(--text-soft)]">Preferências</p>
-              <h2 className="text-xl font-semibold text-white">Gestão de cookies opcionais</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            <CheckboxField
-              checked={cookiePreferences.analytics}
-              description="Permite medir uso e desempenho da plataforma."
-              disabled={preferenceMutation.isPending || consentQueryIsLoading}
-              label="Cookies analíticos"
-              onChange={(event) =>
-                preferenceMutation.mutate({
-                  analytics: event.currentTarget.checked,
-                  marketing: cookiePreferences.marketing,
-                })
-              }
-            />
-
-            <CheckboxField
-              checked={cookiePreferences.marketing}
-              description="Mantem a base pronta para comunicação promocional controlada."
-              disabled={preferenceMutation.isPending || consentQueryIsLoading}
-              label="Cookies de marketing"
-              onChange={(event) =>
-                preferenceMutation.mutate({
-                  analytics: cookiePreferences.analytics,
-                  marketing: event.currentTarget.checked,
-                })
-              }
-            />
-          </div>
-
-          {preferenceMutation.error instanceof Error ? (
-            <p className="mt-4 text-sm text-[var(--danger)]">{preferenceMutation.error.message}</p>
-          ) : null}
-        </article>
-      </div>
+      <DashboardSettingsPanel
+        activeTab={activeSettingsSection}
+        consentQueryIsLoading={consentQueryIsLoading}
+        cookiePreferences={cookiePreferences}
+        documentTitles={documentTitles}
+        legalAcceptances={legalAcceptances}
+        logoutBusy={logoutMutationIsPending}
+        onLogout={onLogout}
+        onNavigateSection={onNavigateSection}
+        onProfileSubmit={onProfileSubmit}
+        onTabChange={onSettingsSectionChange}
+        preferenceMutation={preferenceMutation}
+        profileError={profileMutationError?.message}
+        profileLoading={profileMutationIsPending}
+        user={user}
+      />
     </section>
-  )
-}
-
-function MiniInfoCard({ hint, label, value }: Readonly<{ hint: string; label: string; value: string }>) {
-  return (
-    <div className="imperial-card-soft p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-3 text-xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{hint}</p>
-    </div>
   )
 }
 
