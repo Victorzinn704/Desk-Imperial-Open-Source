@@ -1,35 +1,67 @@
 name: CI
 
+# Dispara em push para main e em qualquer Pull Request.
+# Em PRs, o check bloqueia o merge se falhar (configure branch protection rules).
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
+    branches: [main]
+
+# Cancela runs em progresso quando um novo commit chega para o mesmo branch/PR.
+# Economiza minutos de Actions e evita feedback de código desatualizado.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permissão mínima por princípio de menor privilégio (OWASP).
+# Jobs individuais declaram permissões adicionais somente quando necessário.
+permissions:
+  contents: read
+
+# Variáveis de ambiente compartilhadas entre todos os jobs.
+# Secrets de CI usam valores longos para atender políticas de comprimento mínimo dos serviços.
+# NUNCA usar esses valores fora do ambiente de CI.
+env:
+  NODE_ENV: test
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_API_URL: http://localhost:4000
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partner_portal_test
+  COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
+  CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
+  ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
+  SESSION_TTL_HOURS: "24"
+  PASSWORD_RESET_TTL_MINUTES: "30"
+  CONSENT_VERSION: "2026.03"
+  ENABLE_SWAGGER: "false"
 
 jobs:
-  validate:
+  # ── quality ────────────────────────────────────────────────────────────────
+  # Lint e typecheck são rápidos (~30s) e dão feedback imediato.
+  # Rodam em paralelo com os testes para reduzir o tempo total do pipeline.
+  quality:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    env:
-      NODE_ENV: test
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partner_portal
-      COOKIE_SECRET: ci-cookie-secret
-      CSRF_SECRET: ci-csrf-secret
-      ENCRYPTION_KEY: ci-encryption-key
-      SESSION_TTL_HOURS: 24
-      PASSWORD_RESET_TTL_MINUTES: 30
-      CONSENT_VERSION: 2026.03
-      ENABLE_SWAGGER: false
+    timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-quality-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-quality-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
+            turbo-quality-${{ runner.os }}-
 
       - name: Install dependencies
         run: npm ci
@@ -43,8 +75,90 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm run test
+  # ── test ───────────────────────────────────────────────────────────────────
+  # Suite de testes unitários com relatório de cobertura.
+  # Roda em paralelo com quality — sem dependência entre os dois.
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-      - name: Build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Run tests with coverage
+        run: |
+          npm --workspace @partner/api run test -- \
+            --coverage \
+            --ci \
+            --forceExit \
+            --coverageReporters=text-summary \
+            --coverageReporters=lcov
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: apps/api/coverage/lcov.info
+          retention-days: 14
+
+  # ── build ──────────────────────────────────────────────────────────────────
+  # Build final só roda após quality + test passarem.
+  # Garante que nada quebrado chega à branch main.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, test]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-build-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-build-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
+            turbo-build-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Build all workspaces
         run: npm run build
+
+      - name: Upload build artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-${{ github.sha }}
+          path: |
+            apps/api/dist/
+            apps/web/.next/server/
+          retention-days: 3
