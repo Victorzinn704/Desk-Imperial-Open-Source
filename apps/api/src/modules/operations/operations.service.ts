@@ -45,8 +45,12 @@ import {
   toCashSessionRecord,
   toClosureRecord,
   toComandaRecord,
+  toMesaRecord,
+  type MesaRecord,
   type OperationsLiveResponse,
 } from './operations.types'
+import type { CreateMesaDto } from './dto/create-mesa.dto'
+import type { UpdateMesaDto } from './dto/update-mesa.dto'
 
 const OPEN_COMANDA_STATUSES: ComandaStatus[] = [
   ComandaStatus.OPEN,
@@ -414,11 +418,25 @@ export class OperationsService {
     await this.assertOpenTableAvailability(this.prisma, workspaceOwnerUserId, tableLabel)
     await this.assertBusinessDayOpen(workspaceOwnerUserId, businessDate)
 
+    // Resolve mesaId — if provided, validate ownership and availability
+    let resolvedMesaId: string | null = dto.mesaId ?? null
+    if (resolvedMesaId) {
+      const mesa = await this.prisma.mesa.findUnique({ where: { id: resolvedMesaId } })
+      if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId || !mesa.active) {
+        throw new NotFoundException('Mesa não encontrada ou inativa.')
+      }
+      const ocupada = await this.prisma.comanda.findFirst({
+        where: { mesaId: resolvedMesaId, status: { in: ['OPEN', 'IN_PREPARATION', 'READY'] } },
+      })
+      if (ocupada) throw new ConflictException('Essa mesa já possui uma comanda aberta.')
+    }
+
     const { comanda, closure } = await this.prisma.$transaction(async (transaction) => {
       const createdComanda = await transaction.comanda.create({
         data: {
           companyOwnerId: workspaceOwnerUserId,
           cashSessionId,
+          mesaId: resolvedMesaId,
           openedByUserId: auth.userId,
           currentEmployeeId,
           tableLabel,
@@ -1050,7 +1068,7 @@ export class OperationsService {
     scopedEmployeeId?: string | null,
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
-    const [employees, sessions, comandas, closure] = await Promise.all([
+    const [employees, sessions, comandas, closure, mesas] = await Promise.all([
       this.prisma.employee.findMany({
         where: {
           userId: workspaceOwnerUserId,
@@ -1107,6 +1125,10 @@ export class OperationsService {
           },
         },
       }),
+      this.prisma.mesa.findMany({
+        where: { companyOwnerId: workspaceOwnerUserId, active: true },
+        orderBy: [{ section: 'asc' }, { label: 'asc' }],
+      }),
     ])
 
     const sessionsByEmployee = new Map<string | null, (typeof sessions)[number]>()
@@ -1125,6 +1147,15 @@ export class OperationsService {
       comandasByEmployee.set(key, bucket)
     }
 
+    // Build a map of mesaId → open comanda for status derivation
+    const openComandas = comandas.filter(
+      (c) => c.status === 'OPEN' || c.status === 'IN_PREPARATION' || c.status === 'READY',
+    )
+    const openComandaByMesa = new Map<string, (typeof openComandas)[number]>()
+    for (const comanda of openComandas) {
+      if (comanda.mesaId) openComandaByMesa.set(comanda.mesaId, comanda)
+    }
+
     return {
       businessDate: formatBusinessDateKey(businessDate),
       companyOwnerId: workspaceOwnerUserId,
@@ -1141,7 +1172,72 @@ export class OperationsService {
         cashSession: sessionsByEmployee.get(null) ?? null,
         comandas: comandasByEmployee.get(null) ?? [],
       }),
+      mesas: mesas.map((mesa) => {
+        const comanda = openComandaByMesa.get(mesa.id)
+        return toMesaRecord(mesa, comanda ? [comanda] : [])
+      }),
     }
+  }
+
+  // ── Mesa CRUD ────────────────────────────────────────────────────────────
+
+  async listMesas(auth: AuthContext): Promise<MesaRecord[]> {
+    assertOwnerRole(auth, 'Somente o dono pode gerenciar mesas.')
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const mesas = await this.prisma.mesa.findMany({
+      where: { companyOwnerId: workspaceOwnerUserId },
+      orderBy: [{ active: 'desc' }, { section: 'asc' }, { label: 'asc' }],
+    })
+    return mesas.map((m) => toMesaRecord(m, []))
+  }
+
+  async createMesa(auth: AuthContext, dto: CreateMesaDto): Promise<MesaRecord> {
+    assertOwnerRole(auth, 'Somente o dono pode criar mesas.')
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const label = sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })!
+    const section = dto.section
+      ? sanitizePlainText(dto.section, 'Secao da mesa', { allowEmpty: true, rejectFormula: true })
+      : null
+    const existing = await this.prisma.mesa.findUnique({
+      where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label } },
+    })
+    if (existing) throw new ConflictException(`Já existe uma mesa com o label "${label}".`)
+    const mesa = await this.prisma.mesa.create({
+      data: {
+        companyOwnerId: workspaceOwnerUserId,
+        label,
+        capacity: dto.capacity ?? 4,
+        section,
+        positionX: dto.positionX ?? null,
+        positionY: dto.positionY ?? null,
+      },
+    })
+    return toMesaRecord(mesa, [])
+  }
+
+  async updateMesa(auth: AuthContext, mesaId: string, dto: UpdateMesaDto): Promise<MesaRecord> {
+    assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
+    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) throw new NotFoundException('Mesa não encontrada.')
+    if (dto.label && dto.label !== mesa.label) {
+      const conflict = await this.prisma.mesa.findUnique({
+        where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: dto.label } },
+      })
+      if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${dto.label}".`)
+    }
+    const updated = await this.prisma.mesa.update({
+      where: { id: mesaId },
+      data: {
+        ...(dto.label !== undefined && { label: sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })! }),
+        ...(dto.capacity !== undefined && { capacity: dto.capacity }),
+        ...(dto.section !== undefined && { section: dto.section }),
+        ...(dto.positionX !== undefined && { positionX: dto.positionX }),
+        ...(dto.positionY !== undefined && { positionY: dto.positionY }),
+        ...(dto.active !== undefined && { active: dto.active }),
+      },
+    })
+    return toMesaRecord(updated, [])
   }
 
   private async recalculateCashSession(transaction: TransactionClient, cashSessionId: string) {

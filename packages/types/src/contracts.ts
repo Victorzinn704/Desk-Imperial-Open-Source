@@ -318,10 +318,25 @@ export type ComandaItemRecord = {
   notes: string | null
 }
 
+export type MesaRecord = {
+  id: string
+  label: string
+  capacity: number
+  section: string | null
+  positionX: number | null
+  positionY: number | null
+  active: boolean
+  reservedUntil: string | null
+  status: 'livre' | 'ocupada' | 'reservada'
+  comandaId: string | null
+  currentEmployeeId: string | null
+}
+
 export type ComandaRecord = {
   id: string
   companyOwnerId: string
   cashSessionId: string | null
+  mesaId: string | null
   currentEmployeeId: string | null
   tableLabel: string
   customerName: string | null
@@ -369,4 +384,5 @@ export type OperationsLiveResponse = {
   } | null
   employees: EmployeeOperationsRecord[]
   unassigned: EmployeeOperationsRecord
+  mesas: MesaRecord[]
 }

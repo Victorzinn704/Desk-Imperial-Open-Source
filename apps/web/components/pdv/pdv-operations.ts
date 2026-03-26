@@ -52,23 +52,34 @@ export function buildPdvGarcons(snapshot: OperationsLiveResponse | undefined): G
     }))
 }
 
-export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined, defaultLabels = DEFAULT_TABLE_LABELS): Mesa[] {
-  const activeRecords = collectComandas(snapshot).filter((comanda) => isOpenOperationsStatus(comanda.status))
-  const labels = [...new Set([...defaultLabels, ...activeRecords.map((comanda) => comanda.tableLabel)])]
-  const responsibleByComanda = new Map(activeRecords.map((comanda) => [comanda.id, comanda.currentEmployeeId ?? undefined]))
+export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mesa[] {
+  if (!snapshot?.mesas?.length) {
+    // fallback: derive from active comandas if mesas not yet seeded in DB
+    const activeRecords = collectComandas(snapshot).filter((comanda) => isOpenOperationsStatus(comanda.status))
+    const labels = [...new Set([...DEFAULT_TABLE_LABELS, ...activeRecords.map((comanda) => comanda.tableLabel)])]
+    return labels.map((label) => {
+      const currentComanda = activeRecords.find((comanda) => comanda.tableLabel === label)
+      return {
+        id: label,
+        numero: label,
+        capacidade: label === 'VIP' ? 10 : 4,
+        status: currentComanda ? 'ocupada' : 'livre',
+        comandaId: currentComanda?.id,
+        garcomId: currentComanda?.currentEmployeeId ?? undefined,
+      }
+    })
+  }
 
-  return labels.map((label) => {
-    const currentComanda = activeRecords.find((comanda) => comanda.tableLabel === label)
-
-    return {
-      id: label,
-      numero: label,
-      capacidade: label === 'VIP' ? 10 : 4,
-      status: currentComanda ? 'ocupada' : 'livre',
-      comandaId: currentComanda?.id,
-      garcomId: currentComanda ? responsibleByComanda.get(currentComanda.id) : undefined,
-    }
-  })
+  return snapshot.mesas
+    .filter((mesa) => mesa.active)
+    .map((mesa) => ({
+      id: mesa.id,
+      numero: mesa.label,
+      capacidade: mesa.capacity,
+      status: mesa.status,
+      comandaId: mesa.comandaId ?? undefined,
+      garcomId: mesa.currentEmployeeId ?? undefined,
+    }))
 }
 
 export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada'>) {

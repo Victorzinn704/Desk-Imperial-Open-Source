@@ -126,6 +126,7 @@ model User {
   companyCashClosures CashClosure[]        @relation("CompanyCashClosures")
   cashClosuresClosed  CashClosure[]        @relation("CashClosureClosedBy")
   companyComandas     Comanda[]            @relation("CompanyComandas")
+  companyMesas        Mesa[]               @relation("CompanyMesas")
   comandasOpened      Comanda[]            @relation("ComandaOpenedBy")
   comandasClosed      Comanda[]            @relation("ComandaClosedBy")
   companyComandaAssignments ComandaAssignment[] @relation("CompanyComandaAssignments")
@@ -390,10 +391,30 @@ model CashClosure {
   @@index([companyOwnerId, status, businessDate])
 }
 
+model Mesa {
+  id             String    @id @default(cuid())
+  companyOwnerId String
+  label          String
+  capacity       Int       @default(4)
+  section        String?
+  positionX      Float?
+  positionY      Float?
+  active         Boolean   @default(true)
+  reservedUntil  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  companyOwner   User      @relation("CompanyMesas", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  comandas       Comanda[]
+
+  @@unique([companyOwnerId, label])
+  @@index([companyOwnerId, active])
+}
+
 model Comanda {
   id                 String        @id @default(cuid())
   companyOwnerId     String
   cashSessionId      String?
+  mesaId             String?
   openedByUserId     String
   closedByUserId     String?
   currentEmployeeId  String?
@@ -413,6 +434,7 @@ model Comanda {
   updatedAt          DateTime      @updatedAt
   companyOwner       User          @relation("CompanyComandas", fields: [companyOwnerId], references: [id], onDelete: Cascade)
   cashSession        CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  mesa               Mesa?         @relation(fields: [mesaId], references: [id], onDelete: SetNull)
   openedByUser       User          @relation("ComandaOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
   closedByUser       User?         @relation("ComandaClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
   currentEmployee    Employee?     @relation("ComandaCurrentEmployee", fields: [currentEmployeeId], references: [id], onDelete: SetNull)

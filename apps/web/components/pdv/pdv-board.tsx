@@ -11,7 +11,6 @@ import { formatCurrency } from '@/lib/currency'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
 import {
-  DEFAULT_TABLE_LABELS,
   buildPdvComandas,
   buildPdvGarcons,
   buildPdvMesas,
@@ -47,7 +46,7 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
   const [actionError, setActionError] = useState<string | null>(null)
 
   const comandas = useMemo(() => buildPdvComandas(operations), [operations])
-  const mesas = useMemo(() => buildPdvMesas(operations, DEFAULT_TABLE_LABELS), [operations])
+  const mesas = useMemo(() => buildPdvMesas(operations), [operations])
   const garcons = useMemo(() => buildPdvGarcons(operations), [operations])
   const editingComanda = comandas.find((item) => item.id === editingComandaId) ?? null
 

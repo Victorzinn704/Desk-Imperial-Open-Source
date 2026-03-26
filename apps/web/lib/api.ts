@@ -4,6 +4,7 @@ import type {
   CurrencyCode,
   FinanceSummaryResponse,
   MarketInsightResponse,
+  MesaRecord,
   OperationsLiveResponse,
   OrderRecord,
   OrdersResponse,
@@ -450,6 +451,35 @@ export async function fetchOperationsLive(businessDate?: string) {
   return apiFetch<OperationsLiveResponse>(`/operations/live${suffix}`, {
     method: 'GET',
   })
+}
+
+export type CreateMesaInput = {
+  label: string
+  capacity?: number
+  section?: string
+  positionX?: number
+  positionY?: number
+}
+
+export type UpdateMesaInput = {
+  label?: string
+  capacity?: number
+  section?: string
+  positionX?: number
+  positionY?: number
+  active?: boolean
+}
+
+export async function fetchMesas() {
+  return apiFetch<MesaRecord[]>('/operations/mesas', { method: 'GET' })
+}
+
+export async function createMesa(body: CreateMesaInput) {
+  return apiFetch<MesaRecord>('/operations/mesas', { method: 'POST', body })
+}
+
+export async function updateMesa(mesaId: string, body: UpdateMesaInput) {
+  return apiFetch<MesaRecord>(`/operations/mesas/${mesaId}`, { method: 'PATCH', body })
 }
 
 export type LastLoginEntry = {

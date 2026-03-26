@@ -60,7 +60,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     onSuccess: () => invalidateMobileWorkspace(queryClient),
   })
 
-  const mesas = useMemo(() => buildPdvMesas(operationsQuery.data, ['1', '2', '3', '4', '5', '6']), [operationsQuery.data])
+  const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const activeComandas = comandas.filter((comanda) => comanda.status !== 'fechada')
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'

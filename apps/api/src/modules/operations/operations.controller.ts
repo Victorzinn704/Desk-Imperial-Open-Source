@@ -12,11 +12,13 @@ import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import { CloseComandaDto } from './dto/close-comanda.dto'
 import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
+import { CreateMesaDto } from './dto/create-mesa.dto'
 import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
 import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
 import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import { UpdateMesaDto } from './dto/update-mesa.dto'
 import { OperationsService } from './operations.service'
 
 @ApiTags('operations')
@@ -123,5 +125,25 @@ export class OperationsController {
   @Post('closures/close')
   closeCashClosure(@CurrentAuth() auth: AuthContext, @Body() body: CloseCashClosureDto, @Req() request: Request) {
     return this.operationsService.closeCashClosure(auth, body, extractRequestContext(request))
+  }
+
+  // ── Mesas ──────────────────────────────────────────────────────────────────
+
+  @UseGuards(SessionGuard)
+  @Get('mesas')
+  listMesas(@CurrentAuth() auth: AuthContext) {
+    return this.operationsService.listMesas(auth)
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Post('mesas')
+  createMesa(@CurrentAuth() auth: AuthContext, @Body() body: CreateMesaDto) {
+    return this.operationsService.createMesa(auth, body)
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Patch('mesas/:mesaId')
+  updateMesa(@CurrentAuth() auth: AuthContext, @Param('mesaId') mesaId: string, @Body() body: UpdateMesaDto) {
+    return this.operationsService.updateMesa(auth, mesaId, body)
   }
 }

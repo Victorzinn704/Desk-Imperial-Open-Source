@@ -5,6 +5,7 @@ import type {
   Comanda,
   ComandaItem,
   Employee,
+  Mesa,
 } from '@prisma/client'
 
 function toNumber(value: { toNumber(): number } | number | null | undefined) {
@@ -45,11 +46,17 @@ type ComandaItemLike = Pick<
   'id' | 'productId' | 'productName' | 'quantity' | 'unitPrice' | 'totalAmount' | 'notes'
 >
 
+type MesaLike = Pick<
+  Mesa,
+  'id' | 'label' | 'capacity' | 'section' | 'positionX' | 'positionY' | 'active' | 'reservedUntil'
+>
+
 type ComandaLike = Pick<
   Comanda,
   | 'id'
   | 'companyOwnerId'
   | 'cashSessionId'
+  | 'mesaId'
   | 'currentEmployeeId'
   | 'tableLabel'
   | 'customerName'
@@ -119,10 +126,26 @@ export type ComandaItemRecord = {
   notes: string | null
 }
 
+export type MesaRecord = {
+  id: string
+  label: string
+  capacity: number
+  section: string | null
+  positionX: number | null
+  positionY: number | null
+  active: boolean
+  reservedUntil: string | null
+  // derived status — computed from open comandas
+  status: 'livre' | 'ocupada' | 'reservada'
+  comandaId: string | null
+  currentEmployeeId: string | null
+}
+
 export type ComandaRecord = {
   id: string
   companyOwnerId: string
   cashSessionId: string | null
+  mesaId: string | null
   currentEmployeeId: string | null
   tableLabel: string
   customerName: string | null
@@ -170,6 +193,7 @@ export type OperationsLiveResponse = {
   } | null
   employees: EmployeeOperationsRecord[]
   unassigned: EmployeeOperationsRecord
+  mesas: MesaRecord[]
 }
 
 export function toCashMovementRecord(movement: CashMovementLike): CashMovementRecord {
@@ -216,11 +240,32 @@ export function toComandaItemRecord(item: ComandaItemLike): ComandaItemRecord {
   }
 }
 
+export function toMesaRecord(
+  mesa: MesaLike,
+  openComandas: Pick<Comanda, 'id' | 'currentEmployeeId'>[],
+): MesaRecord {
+  const comanda = openComandas.find((c) => c.id) // will be matched by mesaId in service
+  return {
+    id: mesa.id,
+    label: mesa.label,
+    capacity: mesa.capacity,
+    section: mesa.section,
+    positionX: mesa.positionX,
+    positionY: mesa.positionY,
+    active: mesa.active,
+    reservedUntil: mesa.reservedUntil?.toISOString() ?? null,
+    status: mesa.reservedUntil && mesa.reservedUntil > new Date() ? 'reservada' : comanda ? 'ocupada' : 'livre',
+    comandaId: comanda?.id ?? null,
+    currentEmployeeId: comanda?.currentEmployeeId ?? null,
+  }
+}
+
 export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
   return {
     id: comanda.id,
     companyOwnerId: comanda.companyOwnerId,
     cashSessionId: comanda.cashSessionId,
+    mesaId: comanda.mesaId,
     currentEmployeeId: comanda.currentEmployeeId,
     tableLabel: comanda.tableLabel,
     customerName: comanda.customerName,

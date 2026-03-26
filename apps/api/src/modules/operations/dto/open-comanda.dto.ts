@@ -64,4 +64,9 @@ export class OpenComandaDto {
   @IsOptional()
   @IsString()
   employeeId?: string
+
+  @ApiPropertyOptional({ example: 'cmabc123mesa' })
+  @IsOptional()
+  @IsString()
+  mesaId?: string
 }
