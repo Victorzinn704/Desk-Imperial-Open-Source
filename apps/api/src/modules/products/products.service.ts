@@ -31,9 +31,10 @@ export class ProductsService {
   async listForUser(auth: AuthContext, query: ListProductsQueryDto) {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const includeInactive = auth.role === 'OWNER' && query.includeInactive
-    const hasFilters = !!(query.category || query.search || includeInactive)
+    const hasFilters = !!(query.category || query.search || includeInactive || query.cursor)
+    const limit = Math.min(query.limit ?? 200, 2000)
 
-    if (!hasFilters) {
+    if (!hasFilters && !query.limit) {
       const cached = await this.cache.get<ReturnType<typeof buildProductsResponse>>(
         CacheService.productsKey(workspaceUserId),
       )
@@ -42,6 +43,8 @@ export class ProductsService {
 
     const snapshot = await this.currencyService.getSnapshot()
     const items = await this.prisma.product.findMany({
+      take: limit,
+      ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
       where: {
         userId: workspaceUserId,
         ...(includeInactive ? {} : { active: true }),
