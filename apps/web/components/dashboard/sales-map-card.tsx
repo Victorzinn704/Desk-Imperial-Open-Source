@@ -32,7 +32,7 @@ export function SalesMapCard({
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
+    <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr] xl:items-start">
       <article className="imperial-card p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>

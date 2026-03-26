@@ -357,7 +357,7 @@ function OverviewEnvironment({
         <>
           <FinanceOverviewTotal finance={finance} isLoading={financeQueryIsLoading} />
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <FinanceChannelsPanel finance={finance} isLoading={financeQueryIsLoading} />
             <FinanceCategoriesSidebar finance={finance} isLoading={financeQueryIsLoading} />
           </div>
@@ -440,7 +440,7 @@ function SalesEnvironment({
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px] xl:items-start">
         <div>
           <OrderForm
             employees={employees}
@@ -626,7 +626,7 @@ function PortfolioEnvironment({
         </p>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
         <div className="space-y-4">
           <ProductForm
             loading={createProductMutation.isPending || updateProductMutation.isPending}

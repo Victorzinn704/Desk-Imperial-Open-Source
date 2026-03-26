@@ -236,7 +236,7 @@ export function FinanceChart({
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr] xl:items-start">
         <div className="imperial-card-soft p-4">
           <div className="h-[380px]">
             {renderChart({

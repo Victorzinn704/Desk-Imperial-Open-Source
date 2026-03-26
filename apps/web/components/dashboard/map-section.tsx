@@ -55,7 +55,7 @@ export function MapSection({
       </div>
 
       {/* Main grid */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 xl:grid-cols-[1fr_320px] xl:items-start">
         {/* Map canvas */}
         <article className="imperial-card overflow-hidden p-0">
           <div className="h-[520px]">

@@ -417,7 +417,7 @@ function SecurityTab({
         </div>
       </article>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="imperial-card p-7">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
@@ -618,7 +618,7 @@ function PreferencesTab({
         </div>
       </article>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Painéis com prioridade
@@ -730,7 +730,7 @@ function ComplianceTab({
         </div>
       </article>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Documentos aceitos
@@ -829,7 +829,7 @@ function SessionTab({
         </div>
       </article>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Últimos acessos
