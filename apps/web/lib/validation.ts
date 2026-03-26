@@ -11,7 +11,7 @@ export const loginSchema = z
     email: z.string().trim().optional().or(z.literal('')),
     companyEmail: z.string().trim().optional().or(z.literal('')),
     employeeCode: z.string().trim().optional().or(z.literal('')),
-    password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
+    password: z.string().min(6, 'A senha ou PIN precisa ter pelo menos 6 caracteres.'),
   })
   .superRefine((values, context) => {
     if (values.loginMode === 'OWNER') {
@@ -241,9 +241,7 @@ export const employeeSchema = z.object({
     .max(120, 'O nome do funcionário ficou longo demais.'),
   temporaryPassword: z
     .string()
-    .min(12, 'A senha provisória precisa ter pelo menos 12 caracteres.')
-    .max(128, 'A senha provisória está longa demais.')
-    .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
+    .regex(/^\d{6}$/, 'O PIN precisa ter exatamente 6 dígitos numéricos.'),
 })
 
 export const orderItemSchema = z.object({

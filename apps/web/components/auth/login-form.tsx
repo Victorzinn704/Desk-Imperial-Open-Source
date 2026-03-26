@@ -108,7 +108,7 @@ export function LoginForm() {
         </h2>
         <p className="text-sm text-white/40">
           {isStaffMode
-            ? 'Use o e-mail principal da empresa, seu ID interno e sua senha de acesso.'
+            ? 'Use o e-mail da empresa, seu ID e o PIN de 6 dígitos configurado pelo dono.'
             : 'Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.'}
         </p>
       </div>
@@ -191,20 +191,36 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50">Senha de Acesso</label>
-            <Link className="text-xs text-white/40 hover:text-white/70 transition-colors" href="/recuperar-senha">
-              Esqueci a senha
-            </Link>
+            <label className="text-xs font-medium text-white/50">
+              {isStaffMode ? 'PIN de acesso' : 'Senha de Acesso'}
+            </label>
+            {!isStaffMode && (
+              <Link className="text-xs text-white/40 hover:text-white/70 transition-colors" href="/recuperar-senha">
+                Esqueci a senha
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
             <LockKeyhole className="size-4 shrink-0 text-white/30" />
-            <input
-              autoComplete="current-password"
-              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
-              placeholder="••••••••"
-              type={showPassword ? 'text' : 'password'}
-              {...registerField('password')}
-            />
+            {isStaffMode ? (
+              <input
+                autoComplete="current-password"
+                className="w-full bg-transparent text-sm tracking-[0.3em] text-white outline-none placeholder:text-white/20"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="••••••"
+                type={showPassword ? 'text' : 'password'}
+                {...registerField('password')}
+              />
+            ) : (
+              <input
+                autoComplete="current-password"
+                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                placeholder="••••••••"
+                type={showPassword ? 'text' : 'password'}
+                {...registerField('password')}
+              />
+            )}
             <button
               className="shrink-0 text-white/30 hover:text-white/60 transition-colors"
               type="button"

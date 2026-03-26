@@ -27,6 +27,8 @@ type PendingAction =
   | { type: 'new'; mesa: Mesa }
   | { type: 'add'; comandaId: string; mesaLabel: string }
 
+// null = no focus; string = scroll-to & highlight that comanda
+
 interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string } | null
   produtos: ProductRecord[]
@@ -38,6 +40,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
+  const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
@@ -86,18 +89,34 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending
 
-  function handleSelectMesa(mesa: Mesa) {
+  async function handleSelectMesa(mesa: Mesa) {
     if (mesa.status === 'ocupada' && mesa.comandaId) {
-      setPendingAction({ type: 'add', comandaId: mesa.comandaId, mesaLabel: mesa.numero })
+      // occupied → jump straight to that comanda
+      setFocusedComandaId(mesa.comandaId)
+      setActiveTab('ativo')
     } else {
-      setPendingAction({ type: 'new', mesa })
+      // libre → open comanda immediately (no item builder needed)
+      setScreenError(null)
+      try {
+        const result = await openComandaMutation.mutateAsync({ tableLabel: mesa.numero })
+        setFocusedComandaId(result.comanda.id)
+        setActiveTab('ativo')
+      } catch (err) {
+        setScreenError(err instanceof Error ? err.message : 'Não foi possível abrir a comanda.')
+      }
     }
-    setActiveTab('pedido')
   }
 
   function handleAddItemsToComanda(comanda: Comanda) {
     setPendingAction({ type: 'add', comandaId: comanda.id, mesaLabel: comanda.mesa ?? '?' })
     setActiveTab('pedido')
+  }
+
+  function handleNewComanda() {
+    // clear pending and go to mesas to pick a free table
+    setPendingAction(null)
+    setFocusedComandaId(null)
+    setActiveTab('mesas')
   }
 
   async function handleSubmit(items: ComandaItem[]) {
@@ -258,6 +277,8 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             comandas={activeComandas}
             onUpdateStatus={handleUpdateStatus}
             onAddItems={handleAddItemsToComanda}
+            onNewComanda={handleNewComanda}
+            focusedComandaId={focusedComandaId}
           />
         ) : null}
       </main>
@@ -279,7 +300,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  setActiveTab(id)
+                  if (id !== 'ativo') setFocusedComandaId(null)
+                }}
                 className="relative flex flex-col items-center justify-center gap-1 py-3 transition-colors"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >

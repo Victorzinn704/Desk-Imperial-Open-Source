@@ -1,11 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsBoolean, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator'
-import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  STRONG_PASSWORD_MESSAGE,
-  STRONG_PASSWORD_REGEX,
-} from '../../../common/constants/password'
+
+const EMPLOYEE_PIN_REGEX = /^\d{6}$/
+const EMPLOYEE_PIN_MESSAGE = 'O PIN precisa ter exatamente 6 dígitos numéricos.'
 
 export class UpdateEmployeeDto {
   @ApiPropertyOptional({ example: 'VEN-001' })
@@ -27,14 +24,12 @@ export class UpdateEmployeeDto {
   @IsBoolean()
   active?: boolean
 
-  @ApiPropertyOptional({ example: 'Funcionario@123' })
+  @ApiPropertyOptional({ example: '123456' })
   @IsOptional()
   @IsString()
-  @MinLength(PASSWORD_MIN_LENGTH)
-  @MaxLength(PASSWORD_MAX_LENGTH)
-  @Matches(STRONG_PASSWORD_REGEX, {
-    message: STRONG_PASSWORD_MESSAGE,
-  })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(EMPLOYEE_PIN_REGEX, { message: EMPLOYEE_PIN_MESSAGE })
   temporaryPassword?: string
 
   @ApiPropertyOptional({ example: 250000 })

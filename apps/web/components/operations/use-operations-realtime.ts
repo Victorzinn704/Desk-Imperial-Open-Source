@@ -25,6 +25,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
 
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+      queryClient.invalidateQueries({ queryKey: ['mesas'] })
     }
 
     const invalidateCommercial = () => {

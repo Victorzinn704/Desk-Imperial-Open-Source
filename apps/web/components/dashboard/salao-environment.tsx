@@ -1,11 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Armchair, Grid3X3, List, Pencil, Plus, Power, X } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Armchair, Clock, Grid3X3, List, Pencil, Plus, Power, Zap, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
-import { createMesa, fetchMesas, updateMesa } from '@/lib/api'
+import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
+import { calcTotal, formatElapsed, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
+
+function fmtBRL(value: number) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 // ── constants ──────────────────────────────────────────────────────────────────
 
@@ -20,7 +26,7 @@ const CANVAS_PADDING = 24
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
-type View = 'lista' | 'planta'
+type View = 'operacional' | 'configuracao' | 'planta'
 
 type CreateForm = {
   mode: 'single' | 'bulk'
@@ -62,35 +68,70 @@ function clamp(value: number, min: number, maxValue: number) {
   return Math.max(min, Math.min(maxValue, value))
 }
 
+const URGENCY_BORDER: Record<0 | 1 | 2 | 3, string> = {
+  0: 'rgba(248,113,113,0.25)',
+  1: 'rgba(251,191,36,0.28)',
+  2: 'rgba(251,191,36,0.55)',
+  3: 'rgba(248,113,113,0.65)',
+}
+
+const URGENCY_SHADOW: Record<0 | 1 | 2 | 3, string | undefined> = {
+  0: undefined,
+  1: undefined,
+  2: '0 0 10px rgba(251,191,36,0.12)',
+  3: '0 0 18px rgba(248,113,113,0.2)',
+}
+
 // ── main component ─────────────────────────────────────────────────────────────
 
 export function SalaoEnvironment() {
   const queryClient = useQueryClient()
 
-  const [view, setView] = useState<View>('lista')
+  const [view, setView] = useState<View>('operacional')
   const [showCreate, setShowCreate] = useState(false)
   const [editingMesa, setEditingMesa] = useState<MesaRecord | null>(null)
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm)
   const [editForm, setEditForm] = useState<EditForm>({ label: '', capacity: '4', section: '' })
   const [formError, setFormError] = useState<string | null>(null)
   const [dragging, setDragging] = useState<DragState | null>(null)
-  // Armazena APENAS overrides de drag do usuário; posições do servidor vêm direto do MesaRecord
   const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({})
   const dragOverridesRef = useRef(dragOverrides)
   useLayoutEffect(() => { dragOverridesRef.current = dragOverrides })
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  // ── data ──────────────────────────────────────────────────────────────────────
+  // ── queries ──────────────────────────────────────────────────────────────────
 
-  const { data: mesas = [], isLoading } = useQuery({
+  const { data: mesas = [], isLoading: mesasLoading } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchMesas,
   })
+
+  const { data: liveData, isLoading: liveLoading } = useQuery({
+    queryKey: ['operations', 'live'],
+    queryFn: () => fetchOperationsLive(),
+    refetchInterval: 15_000,
+    enabled: view === 'operacional',
+  })
+
+  const liveMesas = useMemo(() => buildPdvMesas(liveData), [liveData])
+  const liveComandas = useMemo(() => buildPdvComandas(liveData), [liveData])
+
+  // garçom display name by employeeId
+  const garcomNames = useMemo(() => {
+    if (!liveData) return {} as Record<string, string>
+    return Object.fromEntries(
+      liveData.employees
+        .filter((e) => e.employeeId)
+        .map((e) => [e.employeeId!, e.displayName])
+    )
+  }, [liveData])
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
     void queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
   }
+
+  // ── mutations ─────────────────────────────────────────────────────────────────
 
   const createMutation = useMutation({
     mutationFn: createMesa,
@@ -117,7 +158,6 @@ export function SalaoEnvironment() {
   // ── drag ──────────────────────────────────────────────────────────────────────
 
   function getMesaPosition(mesa: MesaRecord, autoIndex: number): { x: number; y: number } {
-    // dragOverrides tem prioridade (drag em andamento), depois posição salva no servidor, depois grade automática
     if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
     if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
     return getAutoPosition(autoIndex)
@@ -163,7 +203,7 @@ export function SalaoEnvironment() {
     }
   }, [dragging, handleMouseMove, handleMouseUp])
 
-  // ── create ────────────────────────────────────────────────────────────────────
+  // ── create / edit ─────────────────────────────────────────────────────────────
 
   async function handleCreateSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -223,60 +263,75 @@ export function SalaoEnvironment() {
 
   // ── render ────────────────────────────────────────────────────────────────────
 
+  const TABS: { id: View; label: string }[] = [
+    { id: 'operacional', label: 'Operacional' },
+    { id: 'configuracao', label: 'Configuração' },
+    { id: 'planta', label: 'Planta Baixa' },
+  ]
+
   return (
     <div className="space-y-6">
       <DashboardSectionHeading
         eyebrow="Gestão do salão"
         icon={Armchair}
         title="Salão"
-        description="Cadastre e organize as mesas, defina capacidade e seção, e posicione cada uma na planta baixa com drag-and-drop."
+        description="Acompanhe o status das mesas em tempo real, gerencie o cadastro e posicione na planta baixa."
       />
 
-      {/* header */}
+      {/* tab bar */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
-          {(['lista', 'planta'] as const).map((v) => (
+          {TABS.map(({ id, label }) => (
             <button
-              key={v}
-              onClick={() => setView(v)}
+              key={id}
+              onClick={() => setView(id)}
               className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                view === v
+                view === id
                   ? 'bg-[var(--accent)] text-black'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
               }`}
             >
-              {v === 'lista' ? <List className="size-4" /> : <Grid3X3 className="size-4" />}
-              {v === 'lista' ? 'Lista' : 'Planta Baixa'}
+              {id === 'operacional' ? <Zap className="size-4" /> : id === 'configuracao' ? <List className="size-4" /> : <Grid3X3 className="size-4" />}
+              {label}
             </button>
           ))}
         </div>
 
-        <button
-          onClick={() => {
-            setCreateForm(defaultCreateForm())
-            setFormError(null)
-            setShowCreate(true)
-          }}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
-        >
-          <Plus className="size-4" /> Nova Mesa
-        </button>
+        {view === 'configuracao' && (
+          <button
+            onClick={() => {
+              setCreateForm(defaultCreateForm())
+              setFormError(null)
+              setShowCreate(true)
+            }}
+            className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
+          >
+            <Plus className="size-4" /> Nova Mesa
+          </button>
+        )}
       </div>
 
-      {/* ── LISTA ── */}
-      {view === 'lista' && (
-        <div className="space-y-6">
-          {isLoading && <p className="text-sm text-[var(--text-soft)]">Carregando mesas…</p>}
+      {/* ── OPERACIONAL ── */}
+      {view === 'operacional' && (
+        <OperacionalView
+          liveMesas={liveMesas}
+          liveComandas={liveComandas}
+          garcomNames={garcomNames}
+          isLoading={liveLoading}
+        />
+      )}
 
-          {!isLoading && mesas.length === 0 && (
+      {/* ── CONFIGURAÇÃO ── */}
+      {view === 'configuracao' && (
+        <div className="space-y-6">
+          {mesasLoading && <p className="text-sm text-[var(--text-soft)]">Carregando mesas…</p>}
+
+          {!mesasLoading && mesas.length === 0 && (
             <div className="imperial-card-soft flex flex-col items-center gap-3 rounded-2xl py-16 text-center">
               <span className="text-5xl">🪑</span>
               <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa cadastrada ainda.</p>
               <button
-                onClick={() => {
-                  setCreateForm(defaultCreateForm())
-                  setShowCreate(true)
-                }}
+                onClick={() => { setCreateForm(defaultCreateForm()); setShowCreate(true) }}
                 className="mt-1 text-sm font-medium text-[var(--accent)] hover:underline"
               >
                 Criar primeira mesa
@@ -339,15 +394,15 @@ export function SalaoEnvironment() {
               userSelect: 'none',
             }}
           >
-            {isLoading && (
+            {mesasLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="text-sm text-[var(--text-soft)]">Carregando…</p>
               </div>
             )}
 
-            {!isLoading && activeMesas.length === 0 && (
+            {!mesasLoading && activeMesas.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa ativa. Crie mesas na aba Lista.</p>
+                <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa ativa. Crie mesas na aba Configuração.</p>
               </div>
             )}
 
@@ -385,13 +440,9 @@ export function SalaoEnvironment() {
       {showCreate && (
         <Modal
           title="Nova Mesa"
-          onClose={() => {
-            setShowCreate(false)
-            setFormError(null)
-          }}
+          onClose={() => { setShowCreate(false); setFormError(null) }}
         >
           <form onSubmit={(e) => void handleCreateSubmit(e)} className="space-y-4">
-            {/* mode toggle */}
             <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
               {(['single', 'bulk'] as const).map((mode) => (
                 <button
@@ -472,8 +523,10 @@ export function SalaoEnvironment() {
                   </Field>
                 </div>
                 <p className="rounded-lg bg-[rgba(195,164,111,0.08)] px-3 py-2 text-xs text-[var(--text-soft)]">
-                  Criará: <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkFrom}</strong>{' '}
-                  até <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkTo}</strong>
+                  Criará:{' '}
+                  <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkFrom}</strong>
+                  {' '}até{' '}
+                  <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkTo}</strong>
                   {' '}— {Math.max(0, parseInt(createForm.bulkTo, 10) - parseInt(createForm.bulkFrom, 10) + 1) || 0} mesas
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -503,10 +556,7 @@ export function SalaoEnvironment() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  setShowCreate(false)
-                  setFormError(null)
-                }}
+                onClick={() => { setShowCreate(false); setFormError(null) }}
                 className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
               >
                 Cancelar
@@ -527,10 +577,7 @@ export function SalaoEnvironment() {
       {editingMesa && (
         <Modal
           title={`Editar — ${editingMesa.label}`}
-          onClose={() => {
-            setEditingMesa(null)
-            setFormError(null)
-          }}
+          onClose={() => { setEditingMesa(null); setFormError(null) }}
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <Field label="Nome da mesa *">
@@ -567,10 +614,7 @@ export function SalaoEnvironment() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  setEditingMesa(null)
-                  setFormError(null)
-                }}
+                onClick={() => { setEditingMesa(null); setFormError(null) }}
                 className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
               >
                 Cancelar
@@ -585,6 +629,180 @@ export function SalaoEnvironment() {
             </div>
           </form>
         </Modal>
+      )}
+    </div>
+  )
+}
+
+// ── OperacionalView ─────────────────────────────────────────────────────────────
+
+function OperacionalView({
+  liveMesas,
+  liveComandas,
+  garcomNames,
+  isLoading,
+}: {
+  liveMesas: Mesa[]
+  liveComandas: Comanda[]
+  garcomNames: Record<string, string>
+  isLoading: boolean
+}) {
+  const now = Date.now()
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-xl bg-[rgba(255,255,255,0.04)]" />
+        ))}
+      </div>
+    )
+  }
+
+  if (liveMesas.length === 0) {
+    return (
+      <div className="imperial-card-soft flex flex-col items-center gap-3 rounded-2xl py-16 text-center">
+        <span className="text-5xl">🪑</span>
+        <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa ativa.</p>
+        <p className="text-xs text-[var(--text-soft)] opacity-60">Crie mesas na aba Configuração.</p>
+      </div>
+    )
+  }
+
+  const livres = liveMesas.filter((m) => m.status === 'livre')
+  const ocupadas = liveMesas.filter((m) => m.status === 'ocupada')
+  const reservadas = liveMesas.filter((m) => m.status === 'reservada')
+
+  return (
+    <div className="space-y-6">
+      {/* Summary strip */}
+      <div className="flex items-center gap-6 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-5 py-3">
+        <Kpi label="Ocupadas" value={ocupadas.length} color="#f87171" />
+        <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
+        <Kpi label="Livres" value={livres.length} color="#36f57c" />
+        <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
+        <Kpi label="Reservadas" value={reservadas.length} color="#60a5fa" />
+        {ocupadas.length > 0 && (
+          <>
+            <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
+            <Kpi
+              label="Receita aberta"
+              value={fmtBRL(
+                ocupadas.reduce((sum, m) => {
+                  const comanda = liveComandas.find((c) => c.id === m.comandaId)
+                  return sum + (comanda ? calcTotal(comanda) : 0)
+                }, 0)
+              )}
+              color="var(--accent)"
+            />
+          </>
+        )}
+      </div>
+
+      {/* Mesa grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {liveMesas.map((mesa) => {
+          const comanda = mesa.comandaId ? liveComandas.find((c) => c.id === mesa.comandaId) : undefined
+          const garcomId = mesa.garcomId
+          const garcomName = garcomId ? garcomNames[garcomId] : undefined
+
+          let urgency: 0 | 1 | 2 | 3 = 0
+          if (comanda && mesa.status === 'ocupada') {
+            const min = Math.floor((now - comanda.abertaEm.getTime()) / 60000)
+            urgency = min >= 90 ? 3 : min >= 60 ? 2 : min >= 30 ? 1 : 0
+          }
+
+          return (
+            <OperacionalCard
+              key={mesa.id}
+              mesa={mesa}
+              comanda={comanda}
+              garcomName={garcomName}
+              urgency={urgency}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Kpi({ label, value, color }: { label: string; value: number | string; color: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-soft)' }}>{label}</p>
+      <p className="text-lg font-bold" style={{ color }}>{value}</p>
+    </div>
+  )
+}
+
+function OperacionalCard({
+  mesa,
+  comanda,
+  garcomName,
+  urgency,
+}: {
+  mesa: Mesa
+  comanda: Comanda | undefined
+  garcomName: string | undefined
+  urgency: 0 | 1 | 2 | 3
+}) {
+  const STATUS_CFG = {
+    livre:     { label: 'Livre',     color: '#36f57c', bg: 'rgba(54,245,124,0.06)'  },
+    ocupada:   { label: 'Ocupada',   color: '#f87171', bg: 'rgba(248,113,113,0.06)' },
+    reservada: { label: 'Reservada', color: '#60a5fa', bg: 'rgba(96,165,250,0.06)'  },
+  }
+
+  const cfg = STATUS_CFG[mesa.status]
+  const borderColor = mesa.status === 'ocupada' ? URGENCY_BORDER[urgency] : `${cfg.color}28`
+
+  const total = comanda ? calcTotal(comanda) : 0
+  const itemCount = comanda ? comanda.itens.reduce((s, i) => s + i.quantidade, 0) : 0
+  const elapsed = comanda ? formatElapsed(comanda.abertaEm) : null
+
+  return (
+    <div
+      className="imperial-card-soft flex flex-col gap-2 rounded-xl p-3 transition-all duration-300"
+      style={{
+        backgroundColor: cfg.bg,
+        borderColor,
+        boxShadow: URGENCY_SHADOW[urgency],
+      }}
+    >
+      {/* Header: label + status badge */}
+      <div className="flex items-start justify-between gap-1">
+        <span className="truncate text-sm font-bold text-[var(--text-primary)]">{mesa.numero}</span>
+        <span
+          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
+          style={{ color: cfg.color, backgroundColor: `${cfg.color}18` }}
+        >
+          {cfg.label}
+        </span>
+      </div>
+
+      {comanda ? (
+        <>
+          {/* Itens + garçom */}
+          <p className="text-[11px] text-[var(--text-soft)]">
+            {itemCount} {itemCount === 1 ? 'item' : 'itens'}
+            {garcomName ? <span className="opacity-70"> · {garcomName.split(' ')[0]}</span> : null}
+          </p>
+          {/* Tempo + total */}
+          <div className="flex items-center justify-between gap-1">
+            <span
+              className="flex items-center gap-0.5 text-[11px]"
+              style={{ color: urgency >= 2 ? '#fbbf24' : urgency === 1 ? '#fb923c' : 'var(--text-soft)' }}
+            >
+              <Clock className="size-3 shrink-0" />
+              {elapsed}
+            </span>
+            <span className="text-xs font-semibold text-white">{fmtBRL(total)}</span>
+          </div>
+        </>
+      ) : (
+        <p className="text-[11px] text-[var(--text-soft)]">
+          👤 {mesa.capacidade}
+        </p>
       )}
     </div>
   )

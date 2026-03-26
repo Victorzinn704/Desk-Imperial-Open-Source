@@ -94,16 +94,18 @@ export function EmployeeManagementCard({
           />
           <InputField
             error={errors.temporaryPassword?.message}
-            hint="Essa será a senha inicial do funcionário."
-            label="Senha provisória"
-            placeholder="Senha@Inicial123"
-            type="password"
+            hint="6 dígitos numéricos. Ex: 123456"
+            label="PIN de acesso"
+            placeholder="123456"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
             {...register('temporaryPassword')}
           />
         </div>
 
         <p className="text-xs leading-6 text-[var(--text-soft)]">
-          Login do funcionário: e-mail principal da empresa + ID do funcionário + senha provisória.
+          Login do funcionário: e-mail principal da empresa + ID do funcionário + PIN de 6 dígitos.
         </p>
 
         <Button fullWidth loading={loading} type="submit">

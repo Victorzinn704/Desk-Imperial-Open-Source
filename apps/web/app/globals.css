@@ -894,6 +894,35 @@ select {
   .stackcard:hover ~ .stackcard { left: 0; transform: none; }
 }
 
+@media (max-width: 639px) {
+  .stackrow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 8px 4px 16px;
+    overflow: hidden;
+  }
+  .stackcard {
+    width: 100%;
+    height: 148px;
+    margin-left: 0 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    left: 0 !important;
+    transform: none !important;
+  }
+  .stackcard:not(:first-child) {
+    margin-left: 0;
+  }
+  .stackcard:hover ~ .stackcard {
+    left: 0;
+    transform: none;
+  }
+  .stackcard__content {
+    font-size: 0.62rem;
+    top: 52px;
+  }
+}
+
 /* ─── UI Reference cards (8 módulos) ────────────────────────────────────────── */
 
 .uicard {

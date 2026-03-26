@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import type { Mesa } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BarChart3, Building2, ClipboardList, Cog, LogOut, TrendingUp } from 'lucide-react'
 import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
@@ -12,6 +13,7 @@ import {
   fetchOrders,
   closeComanda,
   logout,
+  openComanda,
   updateComandaStatus,
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -38,6 +40,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
   const [screenError, setScreenError] = useState<string | null>(null)
+  const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
@@ -74,6 +77,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: {
       comandaId: string; discountAmount: number; serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
+    onSuccess: () => invalidateOwnerWorkspace(queryClient),
+  })
+
+  const openComandaMutation = useMutation({
+    mutationFn: openComanda,
     onSuccess: () => invalidateOwnerWorkspace(queryClient),
   })
 
@@ -166,7 +174,21 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         {activeTab === 'mesas' ? (
           <MobileTableGrid
             mesas={mesas}
-            onSelectMesa={() => setActiveTab('comandas')}
+            onSelectMesa={async (mesa: Mesa) => {
+              if (mesa.status === 'ocupada' && mesa.comandaId) {
+                setFocusedComandaId(mesa.comandaId)
+                setActiveTab('comandas')
+              } else {
+                setScreenError(null)
+                try {
+                  const result = await openComandaMutation.mutateAsync({ tableLabel: mesa.numero })
+                  setFocusedComandaId(result.comanda.id)
+                  setActiveTab('comandas')
+                } catch (err) {
+                  setScreenError(err instanceof Error ? err.message : 'Não foi possível abrir a comanda.')
+                }
+              }
+            }}
           />
         ) : null}
 
@@ -174,6 +196,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <MobileComandaList
             comandas={activeComandas}
             onUpdateStatus={handleUpdateStatus}
+            focusedComandaId={focusedComandaId}
           />
         ) : null}
 
@@ -207,7 +230,10 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  setActiveTab(id)
+                  if (id !== 'comandas') setFocusedComandaId(null)
+                }}
                 className="relative flex flex-col items-center justify-center gap-1 py-3 transition-colors"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
