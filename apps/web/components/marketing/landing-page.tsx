@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, type MouseEvent as ReactMouseEvent } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import {
+  Menu,
+  X,
   BadgeDollarSign,
   CalendarDays,
   ChartColumn,
@@ -172,6 +174,7 @@ async function fireConfetti(x: number, y: number) {
 }
 
 export function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pointerX = useMotionValue(0)
   const pointerY = useMotionValue(0)
 
@@ -237,40 +240,98 @@ export function LandingPage() {
       <SpaceBackground />
 
       {/* ── Topbar fixa full-width ────────────────────────────────────────────── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.85)] px-6 py-4 backdrop-blur-xl lg:px-12">
-        <div className="flex items-center gap-6">
-          <BrandMark />
-          <nav className="hidden items-center gap-1 md:flex">
-            {[
-              { label: 'Fundação', href: '#fundacao' },
-              { label: 'Entregas', href: '#entregas' },
-              { label: 'Estrutura', href: '#rodape' },
-            ].map(({ label, href }) => (
-              <Link
-                key={label}
-                className="rounded-lg px-3 py-1.5 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
-                href={href}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.90)] backdrop-blur-xl">
+        <div className="flex items-center justify-between px-6 py-4 lg:px-12">
+          <div className="flex items-center gap-6">
+            <BrandMark />
+            <nav className="hidden items-center gap-1 md:flex">
+              {[
+                { label: 'Fundação', href: '#fundacao' },
+                { label: 'Entregas', href: '#entregas' },
+                { label: 'Estrutura', href: '#rodape' },
+              ].map(({ label, href }) => (
+                <Link
+                  key={label}
+                  className="rounded-lg px-3 py-1.5 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
+                  href={href}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              className="hidden rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:shadow-[0_0_14px_rgba(155,132,96,0.18)] sm:block"
+              href="/login"
+            >
+              Entrar
+            </Link>
+            <Link
+              className="hidden rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.05)] sm:block"
+              href="/dashboard"
+            >
+              Abrir painel
+            </Link>
+            {/* Hamburger — mobile only */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="flex size-10 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors active:bg-[rgba(255,255,255,0.1)] sm:hidden"
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:shadow-[0_0_14px_rgba(155,132,96,0.18)]"
-            href="/login"
-          >
-            Entrar
-          </Link>
-          <Link
-            className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.05)]"
-            href="/dashboard"
-          >
-            Abrir painel
-          </Link>
-        </div>
+        {/* Mobile dropdown menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              key="mobile-menu"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="border-t border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.95)] px-6 pb-6 pt-4 sm:hidden"
+            >
+              <nav className="mb-5 flex flex-col gap-1">
+                {[
+                  { label: 'Fundação', href: '#fundacao' },
+                  { label: 'Entregas', href: '#entregas' },
+                  { label: 'Estrutura', href: '#rodape' },
+                ].map(({ label, href }) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-xl px-4 py-3 text-sm font-medium text-[var(--text-soft)] transition-colors active:bg-[rgba(255,255,255,0.06)] active:text-[var(--text-primary)]"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+              <div className="flex flex-col gap-3">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full rounded-xl border border-[var(--border-strong)] py-3 text-center text-sm font-semibold text-[var(--text-primary)] transition-all active:border-[var(--accent)]"
+                >
+                  Entrar
+                </Link>
+                <Link
+                  href="/cadastro"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rainbow-hover hero-entry-button w-full justify-center"
+                >
+                  <span className="sp">Cadastrar-se</span>
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 pt-24 lg:px-12">
@@ -358,7 +419,7 @@ export function LandingPage() {
 
           <motion.div
             animate={{ opacity: 1, x: 0 }}
-            className="relative space-y-4 pt-[15rem] sm:space-y-5 sm:pt-[16rem] lg:space-y-6 lg:pt-[18rem]"
+            className="relative space-y-4 pt-8 sm:space-y-5 sm:pt-12 lg:space-y-6 lg:pt-[18rem]"
             initial={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >

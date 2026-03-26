@@ -2,10 +2,12 @@
 
 import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
 import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
+import { Plus } from 'lucide-react'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
   onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
+  onAddItems?: (comanda: Comanda) => void
 }
 
 type StatusConfig = {
@@ -48,7 +50,7 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export function MobileComandaList({ comandas, onUpdateStatus }: MobileComandaListProps) {
+export function MobileComandaList({ comandas, onUpdateStatus, onAddItems }: MobileComandaListProps) {
   const active = comandas.filter((c) => c.status !== 'fechada')
 
   if (active.length === 0) {
@@ -77,6 +79,7 @@ export function MobileComandaList({ comandas, onUpdateStatus }: MobileComandaLis
           const total = calcTotal(comanda)
           const elapsed = formatElapsed(comanda.abertaEm)
           const itemCount = comanda.itens.reduce((sum, i) => sum + i.quantidade, 0)
+          const canAddItems = comanda.status === 'aberta' || comanda.status === 'em_preparo'
 
           return (
             <li
@@ -104,8 +107,21 @@ export function MobileComandaList({ comandas, onUpdateStatus }: MobileComandaLis
                     {itemCount} {itemCount === 1 ? 'item' : 'itens'} · aberta há {elapsed}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{formatCurrency(total)}</p>
+                <div className="flex items-center gap-2">
+                  {onAddItems && canAddItems ? (
+                    <button
+                      type="button"
+                      onClick={() => onAddItems(comanda)}
+                      className="flex size-8 items-center justify-center rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.2)]"
+                      aria-label="Adicionar itens à comanda"
+                      title="Adicionar itens"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  ) : null}
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-white">{formatCurrency(total)}</p>
+                  </div>
                 </div>
               </div>
 

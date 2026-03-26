@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
 import { QueryProvider } from '@/providers/query-provider'
 import './globals.css'
@@ -6,6 +6,12 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'DESK IMPERIAL',
   description: 'Plataforma empresarial moderna com UX/UI premium, seguranca e observabilidade.',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({

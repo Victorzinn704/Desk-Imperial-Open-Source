@@ -558,6 +558,21 @@ export async function openComanda(payload: OpenComandaPayload) {
   })
 }
 
+export type AddComandaItemPayload = {
+  productId?: string
+  productName?: string
+  quantity: number
+  unitPrice?: number
+  notes?: string
+}
+
+export async function addComandaItem(comandaId: string, payload: AddComandaItemPayload) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/items`, {
+    method: 'POST',
+    body: payload as JsonBody,
+  })
+}
+
 export async function replaceComanda(comandaId: string, payload: ReplaceComandaPayload) {
   return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}`, {
     method: 'PATCH',

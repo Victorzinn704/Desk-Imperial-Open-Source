@@ -33,6 +33,7 @@ import {
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 import { StaffMobileShell } from '@/components/staff-mobile'
+import { OwnerMobileShell } from '@/components/owner-mobile/owner-mobile-shell'
 
 const sectionHeroCopy: Record<
   DashboardSectionId,
@@ -370,6 +371,10 @@ export function DashboardShell({
         produtos={productsQuery.data?.items ?? []}
       />
     )
+  }
+
+  if (!isStaffUser && isMobile) {
+    return <OwnerMobileShell currentUser={currentUser} />
   }
 
   return (

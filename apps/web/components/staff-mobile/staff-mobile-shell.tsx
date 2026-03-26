@@ -3,18 +3,29 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ClipboardList, Cog, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
-import type { Mesa, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
+import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { MobileComandaList } from './mobile-comanda-list'
 import { MobileOrderBuilder } from './mobile-order-builder'
 import { MobileTableGrid } from './mobile-table-grid'
-import { fetchOperationsLive, closeComanda, logout, openComanda, updateComandaStatus } from '@/lib/api'
+import {
+  fetchOperationsLive,
+  closeComanda,
+  logout,
+  openComanda,
+  updateComandaStatus,
+  addComandaItem,
+} from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 
 type Tab = 'mesas' | 'pedido' | 'ativo'
+
+type PendingAction =
+  | { type: 'new'; mesa: Mesa }
+  | { type: 'add'; comandaId: string; mesaLabel: string }
 
 interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string } | null
@@ -25,14 +36,14 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const router = useRouter()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
-  const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null)
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
 
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
     queryFn: () => fetchOperationsLive(),
     enabled: Boolean(currentUser),
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
   })
 
   useOperationsRealtime(Boolean(currentUser), queryClient)
@@ -48,6 +59,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const openComandaMutation = useMutation({
     mutationFn: openComanda,
     onSuccess: () => invalidateMobileWorkspace(queryClient),
+  })
+  const addComandaItemMutation = useMutation({
+    mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
+      addComandaItem(comandaId, payload),
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
@@ -65,18 +80,53 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const activeComandas = comandas.filter((comanda) => comanda.status !== 'fechada')
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
 
+  const isBusy =
+    openComandaMutation.isPending ||
+    addComandaItemMutation.isPending ||
+    updateComandaStatusMutation.isPending ||
+    closeComandaMutation.isPending
+
   function handleSelectMesa(mesa: Mesa) {
-    setSelectedMesa(mesa)
+    if (mesa.status === 'ocupada' && mesa.comandaId) {
+      setPendingAction({ type: 'add', comandaId: mesa.comandaId, mesaLabel: mesa.numero })
+    } else {
+      setPendingAction({ type: 'new', mesa })
+    }
+    setActiveTab('pedido')
+  }
+
+  function handleAddItemsToComanda(comanda: Comanda) {
+    setPendingAction({ type: 'add', comandaId: comanda.id, mesaLabel: comanda.mesa ?? '?' })
     setActiveTab('pedido')
   }
 
   async function handleSubmit(items: ComandaItem[]) {
-    if (!selectedMesa) return
+    if (!pendingAction) return
+    setScreenError(null)
 
     try {
-      setScreenError(null)
+      if (pendingAction.type === 'add') {
+        for (const item of items) {
+          await addComandaItemMutation.mutateAsync({
+            comandaId: pendingAction.comandaId,
+            payload: {
+              productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+              productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+              quantity: item.quantidade,
+              unitPrice: item.precoUnitario,
+              notes: item.observacao,
+            },
+          })
+        }
+        await invalidateMobileWorkspace(queryClient)
+        setPendingAction(null)
+        setActiveTab('ativo')
+        return
+      }
+
+      // type === 'new'
       await openComandaMutation.mutateAsync({
-        tableLabel: selectedMesa.numero,
+        tableLabel: pendingAction.mesa.numero,
         items: items.map((item) => ({
           productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
           productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
@@ -85,10 +135,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
           notes: item.observacao,
         })),
       })
-      setSelectedMesa(null)
+      setPendingAction(null)
       setActiveTab('ativo')
     } catch (error) {
-      setScreenError(error instanceof Error ? error.message : 'Nao foi possivel abrir a comanda.')
+      setScreenError(error instanceof Error ? error.message : 'Não foi possível processar o pedido.')
     }
   }
 
@@ -113,13 +163,20 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         status: toOperationsStatus(status),
       })
     } catch (error) {
-      setScreenError(error instanceof Error ? error.message : 'Nao foi possivel atualizar a comanda.')
+      setScreenError(error instanceof Error ? error.message : 'Não foi possível atualizar a comanda.')
     }
   }
 
+  const mesaLabel = pendingAction
+    ? pendingAction.type === 'new'
+      ? pendingAction.mesa.numero
+      : pendingAction.mesaLabel
+    : '?'
+  const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
+
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#000000] text-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[rgba(255,255,255,0.06)] bg-[#000000] px-4 py-3">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
+      <header className="flex shrink-0 items-center justify-between border-b border-[rgba(255,255,255,0.06)] bg-[#000000] px-4 py-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <BrandMark />
           <div>
@@ -153,6 +210,13 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       {screenError ? (
         <div className="border-b border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
           {screenError}
+          <button
+            type="button"
+            className="ml-3 text-xs font-semibold underline opacity-70"
+            onClick={() => setScreenError(null)}
+          >
+            OK
+          </button>
         </div>
       ) : null}
 
@@ -160,12 +224,14 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         {activeTab === 'mesas' ? <MobileTableGrid mesas={mesas} onSelectMesa={handleSelectMesa} /> : null}
 
         {activeTab === 'pedido' ? (
-          selectedMesa ? (
+          pendingAction ? (
             <MobileOrderBuilder
-              mesa={selectedMesa}
+              mesaLabel={mesaLabel}
+              mode={orderMode}
+              busy={isBusy}
               produtos={produtos}
               onSubmit={handleSubmit}
-              onCancel={() => setActiveTab('mesas')}
+              onCancel={() => { setPendingAction(null); setActiveTab('mesas') }}
             />
           ) : (
             <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -191,11 +257,15 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
           <MobileComandaList
             comandas={activeComandas}
             onUpdateStatus={handleUpdateStatus}
+            onAddItems={handleAddItemsToComanda}
           />
         ) : null}
       </main>
 
-      <nav className="shrink-0 border-t border-[rgba(255,255,255,0.06)] bg-[#000000]">
+      <nav
+        className="shrink-0 border-t border-[rgba(255,255,255,0.06)] bg-[#000000]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom,0px)' }}
+      >
         <div className="grid grid-cols-3">
           {(
             [

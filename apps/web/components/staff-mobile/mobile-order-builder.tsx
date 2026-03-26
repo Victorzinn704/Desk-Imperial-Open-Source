@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import type { Mesa, ComandaItem } from '@/components/pdv/pdv-types'
+import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
-import { ShoppingCart, Plus, Minus, Search } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Search, PlusCircle } from 'lucide-react'
 
 interface MobileOrderBuilderProps {
-  mesa: Mesa
+  mesaLabel: string
+  mode: 'new' | 'add'
+  busy?: boolean
   produtos: ProductRecord[]
   onSubmit: (items: ComandaItem[]) => Promise<void> | void
   onCancel: () => void
@@ -18,7 +20,7 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
+export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState<CartEntry[]>([])
 
@@ -69,10 +71,15 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
   const totalValue = cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0)
 
   async function handleSubmit() {
-    if (cart.length === 0) return
+    if (cart.length === 0 || busy) return
     const items: ComandaItem[] = cart.map(({ _key: _k, ...rest }) => rest)
     await onSubmit(items)
   }
+
+  const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
+  const subtitle = mode === 'add'
+    ? 'Adicionar itens à comanda'
+    : 'Adicionar produtos ao pedido'
 
   return (
     <div className="flex h-full flex-col">
@@ -80,10 +87,15 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
       <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
-              Mesa {mesa.numero}
-            </p>
-            <p className="text-sm text-[var(--text-soft,#7a8896)]">Adicionar produtos ao pedido</p>
+            <div className="flex items-center gap-2">
+              {mode === 'add' ? (
+                <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" />
+              ) : null}
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+                Mesa {mesaLabel}
+              </p>
+            </div>
+            <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
           </div>
           <button
             type="button"
@@ -108,7 +120,7 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
       </div>
 
       {/* Product list — scrollable */}
-      <div className="flex-1 overflow-y-auto pb-36">
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom,0px))' }}>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
@@ -159,8 +171,11 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
         )}
       </div>
 
-      {/* Sticky bottom cart bar */}
-      <div className="fixed bottom-16 left-0 right-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3 shadow-lg">
+      {/* Sticky bottom cart bar — safe-area aware */}
+      <div
+        className="fixed left-0 right-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3 shadow-lg"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom,0px))' }}
+      >
         <div className="flex items-center gap-3">
           <div className="relative">
             <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
@@ -181,10 +196,10 @@ export function MobileOrderBuilder({ mesa, produtos, onSubmit, onCancel }: Mobil
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || busy}
             className="rounded-xl bg-[var(--accent,#9b8460)] px-4 py-2.5 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80"
           >
-            Enviar pedido
+            {busy ? 'Enviando...' : submitLabel}
           </button>
         </div>
       </div>
