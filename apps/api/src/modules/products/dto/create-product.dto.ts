@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { CurrencyCode } from '@prisma/client'
 import { Transform } from 'class-transformer'
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Produto Alpha' })
@@ -73,4 +73,10 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   stock!: number
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  requiresKitchen?: boolean
 }

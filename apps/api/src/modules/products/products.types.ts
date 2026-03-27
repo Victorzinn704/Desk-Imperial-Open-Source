@@ -17,6 +17,7 @@ type ProductLike = Pick<
   | 'unitPrice'
   | 'currency'
   | 'stock'
+  | 'requiresKitchen'
   | 'active'
   | 'createdAt'
   | 'updatedAt'
@@ -41,6 +42,7 @@ export type ProductRecord = {
   originalUnitCost: number
   originalUnitPrice: number
   stock: number
+  requiresKitchen: boolean
   active: boolean
   createdAt: string
   updatedAt: string
@@ -140,6 +142,7 @@ export function toProductRecord(
     originalUnitCost,
     originalUnitPrice,
     stock: product.stock,
+    requiresKitchen: product.requiresKitchen,
     active: product.active,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),

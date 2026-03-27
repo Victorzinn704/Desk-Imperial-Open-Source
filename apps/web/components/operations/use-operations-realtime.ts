@@ -11,6 +11,8 @@ const OPERATIONS_EVENTS = [
   'comanda.updated',
   'comanda.closed',
   'cash.closure.updated',
+  'kitchen.item.queued',
+  'kitchen.item.updated',
 ] as const
 
 export type RealtimeStatus = 'connecting' | 'connected' | 'disconnected'

@@ -3,9 +3,10 @@
 import { useMemo, useState } from 'react'
 import type { Mesa } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BarChart3, Building2, ClipboardList, Cog, LogOut, TrendingUp } from 'lucide-react'
-import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
+import { BarChart3, Building2, ChefHat, ClipboardList, Cog, LogOut, TrendingUp } from 'lucide-react'
+import type { ComandaStatus } from '@/components/pdv/pdv-types'
 import { BrandMark } from '@/components/shared/brand-mark'
+import { KitchenOrdersView } from '../staff-mobile/kitchen-orders-view'
 import { MobileComandaList } from '../staff-mobile/mobile-comanda-list'
 import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
 import {
@@ -25,7 +26,7 @@ import {
 } from '@/components/pdv/pdv-operations'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 
-type Tab = 'mesas' | 'comandas' | 'resumo'
+type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo'
 
 interface OwnerMobileShellProps {
   currentUser: { name?: string; fullName?: string; companyName?: string | null } | null
@@ -84,6 +85,22 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const activeComandas = comandas.filter((c) => c.status !== 'fechada')
+
+  const kitchenBadge = useMemo(() => {
+    const snapshot = operationsQuery.data
+    if (!snapshot) return 0
+    const groups = [...snapshot.employees, snapshot.unassigned]
+    let count = 0
+    for (const group of groups) {
+      for (const comanda of group.comandas) {
+        if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
+        for (const item of comanda.items) {
+          if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') count++
+        }
+      }
+    }
+    return count
+  }, [operationsQuery.data])
 
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Proprietário'
   const companyName = currentUser?.companyName ?? 'Desk Imperial'
@@ -192,6 +209,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           />
         ) : null}
 
+        {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
+
         {activeTab === 'comandas' ? (
           <MobileComandaList
             comandas={activeComandas}
@@ -217,10 +236,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         className="shrink-0 bg-[#000000] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-3 gap-1 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-1 relative">
+        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Building2, badge: 0 },
+              { id: 'cozinha', label: 'Cozinha', Icon: ChefHat, badge: kitchenBadge },
               { id: 'comandas', label: 'Comandas', Icon: ClipboardList, badge: activeComandas.length },
               { id: 'resumo', label: 'Resumo', Icon: BarChart3, badge: 0 },
             ] as const

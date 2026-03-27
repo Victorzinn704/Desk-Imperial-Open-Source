@@ -5,6 +5,7 @@ import type {
   Comanda,
   ComandaItem,
   Employee,
+  KitchenItemStatus,
   Mesa,
 } from '@prisma/client'
 
@@ -43,7 +44,7 @@ type CashSessionLike = Pick<
 
 type ComandaItemLike = Pick<
   ComandaItem,
-  'id' | 'productId' | 'productName' | 'quantity' | 'unitPrice' | 'totalAmount' | 'notes'
+  'id' | 'productId' | 'productName' | 'quantity' | 'unitPrice' | 'totalAmount' | 'notes' | 'kitchenStatus' | 'kitchenQueuedAt' | 'kitchenReadyAt'
 >
 
 type MesaLike = Pick<
@@ -124,6 +125,9 @@ export type ComandaItemRecord = {
   unitPrice: number
   totalAmount: number
   notes: string | null
+  kitchenStatus: KitchenItemStatus | null
+  kitchenQueuedAt: string | null
+  kitchenReadyAt: string | null
 }
 
 export type MesaRecord = {
@@ -237,6 +241,9 @@ export function toComandaItemRecord(item: ComandaItemLike): ComandaItemRecord {
     unitPrice: toNumber(item.unitPrice) ?? 0,
     totalAmount: toNumber(item.totalAmount) ?? 0,
     notes: item.notes,
+    kitchenStatus: item.kitchenStatus,
+    kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
+    kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
   }
 }
 

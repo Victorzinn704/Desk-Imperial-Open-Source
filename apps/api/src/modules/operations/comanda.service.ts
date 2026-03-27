@@ -8,6 +8,7 @@ import {
 import {
   CashSessionStatus,
   ComandaStatus,
+  KitchenItemStatus,
 } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
@@ -24,6 +25,7 @@ import { CloseComandaDto } from './dto/close-comanda.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
 import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import {
@@ -256,6 +258,7 @@ export class ComandaService {
     let productId: string | null = null
     let productName: string
     let unitPrice: number
+    let requiresKitchen = false
 
     if (dto.productId) {
       const product = await this.prisma.product.findFirst({
@@ -273,6 +276,7 @@ export class ComandaService {
       productId = product.id
       productName = product.name
       unitPrice = roundCurrency(dto.unitPrice ?? toNumber(product.unitPrice))
+      requiresKitchen = product.requiresKitchen
     } else {
       productName = sanitizePlainText(dto.productName, 'Nome do item da comanda', {
         allowEmpty: false,
@@ -291,6 +295,7 @@ export class ComandaService {
       rejectFormula: false,
     })
     const totalAmount = roundCurrency(unitPrice * dto.quantity)
+    const kitchenQueuedAt = requiresKitchen ? new Date() : null
 
     const helpers = this.helpers
     const { item, refreshedComanda, businessDate, closure } = await this.prisma.$transaction(async (transaction) => {
@@ -303,6 +308,8 @@ export class ComandaService {
           unitPrice,
           totalAmount,
           notes: note,
+          kitchenStatus: requiresKitchen ? KitchenItemStatus.QUEUED : null,
+          kitchenQueuedAt,
         },
       })
 
@@ -341,6 +348,19 @@ export class ComandaService {
 
     this.operationsRealtimeService.publishComandaUpdated(auth, buildComandaUpdatedPayload(refreshedComanda))
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+
+    if (requiresKitchen && kitchenQueuedAt) {
+      this.operationsRealtimeService.publishKitchenItemQueued(auth, {
+        itemId: item.id,
+        comandaId: comanda.id,
+        mesaLabel: comanda.tableLabel,
+        productName,
+        quantity: dto.quantity,
+        notes: note ?? null,
+        kitchenStatus: 'QUEUED',
+        kitchenQueuedAt: kitchenQueuedAt.toISOString(),
+      })
+    }
 
     return {
       comanda: toComandaRecord(refreshedComanda),
@@ -600,6 +620,62 @@ export class ComandaService {
         await this.helpers.resolveComandaBusinessDate(this.prisma, refreshedComanda),
       ),
     }
+  }
+
+  async updateKitchenItemStatus(
+    auth: AuthContext,
+    itemId: string,
+    dto: UpdateKitchenItemStatusDto,
+    context: RequestContext,
+  ) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+
+    const item = await this.prisma.comandaItem.findUnique({
+      where: { id: itemId },
+      include: { comanda: { select: { id: true, companyOwnerId: true, tableLabel: true } } },
+    })
+
+    if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
+      throw new NotFoundException('Item de comanda nao encontrado.')
+    }
+
+    if (!item.kitchenStatus) {
+      throw new BadRequestException('Este item nao esta na fila da cozinha.')
+    }
+
+    const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
+
+    const updatedItem = await this.prisma.comandaItem.update({
+      where: { id: itemId },
+      data: {
+        kitchenStatus: dto.status as KitchenItemStatus,
+        kitchenReadyAt: kitchenReadyAt ?? null,
+      },
+    })
+
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'operations.kitchen_item.status_updated',
+      resource: 'comanda_item',
+      resourceId: itemId,
+      metadata: { status: dto.status, comandaId: item.comanda.id },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    this.operationsRealtimeService.publishKitchenItemUpdated(auth, {
+      itemId: updatedItem.id,
+      comandaId: item.comanda.id,
+      mesaLabel: item.comanda.tableLabel,
+      productName: updatedItem.productName,
+      quantity: updatedItem.quantity,
+      notes: updatedItem.notes ?? null,
+      kitchenStatus: dto.status,
+      kitchenQueuedAt: updatedItem.kitchenQueuedAt?.toISOString() ?? null,
+      kitchenReadyAt: updatedItem.kitchenReadyAt?.toISOString() ?? null,
+    })
+
+    return { itemId, status: dto.status }
   }
 
   async closeComanda(auth: AuthContext, comandaId: string, dto: CloseComandaDto, context: RequestContext) {

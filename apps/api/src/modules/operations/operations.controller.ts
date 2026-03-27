@@ -18,6 +18,7 @@ import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
 import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { UpdateMesaDto } from './dto/update-mesa.dto'
 import { OperationsService } from './operations.service'
 
@@ -125,6 +126,17 @@ export class OperationsController {
   @Post('closures/close')
   closeCashClosure(@CurrentAuth() auth: AuthContext, @Body() body: CloseCashClosureDto, @Req() request: Request) {
     return this.operationsService.closeCashClosure(auth, body, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Patch('kitchen-items/:itemId/status')
+  updateKitchenItemStatus(
+    @CurrentAuth() auth: AuthContext,
+    @Param('itemId') itemId: string,
+    @Body() body: UpdateKitchenItemStatusDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.updateKitchenItemStatus(auth, itemId, body, extractRequestContext(request))
   }
 
   // ── Mesas ──────────────────────────────────────────────────────────────────

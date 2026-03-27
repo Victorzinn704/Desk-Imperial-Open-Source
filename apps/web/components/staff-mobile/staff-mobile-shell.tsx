@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ClipboardList, Cog, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
+import { ChefHat, ClipboardList, Cog, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
 import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
+import { KitchenOrdersView } from './kitchen-orders-view'
 import { MobileComandaList } from './mobile-comanda-list'
 import { MobileOrderBuilder } from './mobile-order-builder'
 import { MobileTableGrid } from './mobile-table-grid'
@@ -21,7 +22,7 @@ import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 
-type Tab = 'mesas' | 'pedido' | 'ativo'
+type Tab = 'mesas' | 'cozinha' | 'pedido' | 'ativo'
 
 type PendingAction =
   | { type: 'new'; mesa: Mesa }
@@ -83,6 +84,22 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const activeComandas = comandas.filter((comanda) => comanda.status !== 'fechada')
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
+
+  const kitchenBadge = useMemo(() => {
+    const snapshot = operationsQuery.data
+    if (!snapshot) return 0
+    const groups = [...snapshot.employees, snapshot.unassigned]
+    let count = 0
+    for (const group of groups) {
+      for (const comanda of group.comandas) {
+        if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
+        for (const item of comanda.items) {
+          if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') count++
+        }
+      }
+    }
+    return count
+  }, [operationsQuery.data])
 
   const isBusy =
     openComandaMutation.isPending ||
@@ -249,6 +266,8 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'mesas' ? <MobileTableGrid mesas={mesas} onSelectMesa={handleSelectMesa} /> : null}
 
+        {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
+
         {activeTab === 'pedido' ? (
           pendingAction ? (
             <MobileOrderBuilder
@@ -294,10 +313,11 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         className="shrink-0 bg-[#000000] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-3 gap-1 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-1 relative">
+        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
+              { id: 'cozinha', label: 'Cozinha', Icon: ChefHat, badge: kitchenBadge },
               { id: 'pedido', label: 'Pedido', Icon: ShoppingCart, badge: 0 },
               { id: 'ativo', label: 'Ativo', Icon: ClipboardList, badge: activeComandas.length },
             ] as const

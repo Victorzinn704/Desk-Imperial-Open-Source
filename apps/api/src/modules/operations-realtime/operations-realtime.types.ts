@@ -11,6 +11,8 @@ export type OperationsRealtimeEventName =
   | 'comanda.updated'
   | 'comanda.closed'
   | 'cash.closure.updated'
+  | 'kitchen.item.queued'
+  | 'kitchen.item.updated'
 
 export type OperationsRealtimeActorRole = 'OWNER' | 'STAFF'
 
@@ -70,6 +72,27 @@ export interface OperationsRealtimeEventPayloadMap {
     differenceAmount: number | null
     pendingCashSessions: number
     closedCashSessions: number
+  }
+  'kitchen.item.queued': {
+    itemId: string
+    comandaId: string
+    mesaLabel: string
+    productName: string
+    quantity: number
+    notes: string | null
+    kitchenStatus: 'QUEUED'
+    kitchenQueuedAt: string
+  }
+  'kitchen.item.updated': {
+    itemId: string
+    comandaId: string
+    mesaLabel: string
+    productName: string
+    quantity: number
+    notes: string | null
+    kitchenStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+    kitchenQueuedAt: string | null
+    kitchenReadyAt: string | null
   }
 }
 

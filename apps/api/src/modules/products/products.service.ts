@@ -126,6 +126,7 @@ export class ProductsService {
           unitPrice: dto.unitPrice,
           currency: dto.currency,
           stock: dto.stock,
+          requiresKitchen: dto.requiresKitchen ?? false,
           active: true,
         },
       })
@@ -230,6 +231,7 @@ export class ProductsService {
           ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
           ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
           ...(dto.active !== undefined ? { active: dto.active } : {}),
+          ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
         },
       })
       const snapshot = await this.currencyService.getSnapshot()

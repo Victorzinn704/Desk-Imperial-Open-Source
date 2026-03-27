@@ -101,4 +101,18 @@ export class OperationsRealtimeService {
   ) {
     return this.publishWorkspaceEvent(auth, 'cash.closure.updated', payload)
   }
+
+  publishKitchenItemQueued(
+    auth: Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role'>,
+    payload: OperationsRealtimeEventPayload<'kitchen.item.queued'>,
+  ) {
+    return this.publishWorkspaceEvent(auth, 'kitchen.item.queued', payload)
+  }
+
+  publishKitchenItemUpdated(
+    auth: Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role'>,
+    payload: OperationsRealtimeEventPayload<'kitchen.item.updated'>,
+  ) {
+    return this.publishWorkspaceEvent(auth, 'kitchen.item.updated', payload)
+  }
 }

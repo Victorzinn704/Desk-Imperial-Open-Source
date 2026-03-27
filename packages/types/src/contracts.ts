@@ -42,6 +42,7 @@ export type ProductRecord = {
   originalUnitCost: number
   originalUnitPrice: number
   stock: number
+  requiresKitchen: boolean
   active: boolean
   createdAt: string
   updatedAt: string
@@ -279,6 +280,7 @@ export type CashSessionStatus = 'OPEN' | 'CLOSED' | 'FORCE_CLOSED'
 export type CashMovementType = 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | 'ADJUSTMENT'
 export type CashClosureStatus = 'OPEN' | 'PENDING_EMPLOYEE_CLOSE' | 'CLOSED' | 'FORCE_CLOSED'
 export type ComandaStatus = 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' | 'CANCELLED'
+export type KitchenItemStatus = 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
 
 export type CashMovementRecord = {
   id: string
@@ -316,6 +318,9 @@ export type ComandaItemRecord = {
   unitPrice: number
   totalAmount: number
   notes: string | null
+  kitchenStatus: KitchenItemStatus | null
+  kitchenQueuedAt: string | null
+  kitchenReadyAt: string | null
 }
 
 export type MesaRecord = {

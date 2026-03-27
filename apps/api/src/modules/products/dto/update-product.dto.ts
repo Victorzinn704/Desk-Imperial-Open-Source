@@ -89,4 +89,10 @@ export class UpdateProductDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   active?: boolean
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  requiresKitchen?: boolean
 }

@@ -73,6 +73,13 @@ enum CurrencyCode {
   EUR
 }
 
+enum KitchenItemStatus {
+  QUEUED
+  IN_PREPARATION
+  READY
+  DELIVERED
+}
+
 enum OneTimeCodePurpose {
   EMAIL_VERIFICATION
   PASSWORD_RESET
@@ -280,6 +287,7 @@ model Product {
   unitPrice   Decimal  @db.Decimal(10, 2)
   currency    CurrencyCode @default(BRL)
   stock       Int
+  requiresKitchen Boolean @default(false)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -456,9 +464,12 @@ model ComandaItem {
   quantity    Int
   unitPrice   Decimal  @db.Decimal(12, 2)
   totalAmount Decimal  @db.Decimal(12, 2)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  notes            String?
+  kitchenStatus    KitchenItemStatus?
+  kitchenQueuedAt  DateTime?
+  kitchenReadyAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   comanda     Comanda  @relation(fields: [comandaId], references: [id], onDelete: Cascade)
   product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 

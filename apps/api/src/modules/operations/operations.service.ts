@@ -18,6 +18,7 @@ import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OpenComandaDto } from './dto/open-comanda.dto'
 import { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { toMesaRecord, type MesaRecord } from './operations.types'
 import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
@@ -88,6 +89,10 @@ export class OperationsService {
 
   closeComanda(auth: AuthContext, comandaId: string, dto: CloseComandaDto, context: RequestContext) {
     return this.comanda.closeComanda(auth, comandaId, dto, context)
+  }
+
+  updateKitchenItemStatus(auth: AuthContext, itemId: string, dto: UpdateKitchenItemStatusDto, context: RequestContext) {
+    return this.comanda.updateKitchenItemStatus(auth, itemId, dto, context)
   }
 
   // ── Mesa CRUD ─────────────────────────────────────────────────────────────

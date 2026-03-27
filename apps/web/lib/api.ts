@@ -627,6 +627,13 @@ export async function closeCashClosure(payload: CloseCashClosurePayload) {
   })
 }
 
+export async function updateKitchenItemStatus(itemId: string, status: 'IN_PREPARATION' | 'READY' | 'DELIVERED') {
+  return apiFetch<{ itemId: string; status: string }>(`/operations/kitchen-items/${itemId}/status`, {
+    method: 'PATCH',
+    body: { status },
+  })
+}
+
 export type UpdateEmployeePayload = {
   employeeCode?: string
   displayName?: string
@@ -702,9 +709,9 @@ async function apiFetch<T>(
 
   if (!options.skipCsrf && shouldAttachCsrfToken(options.method)) {
     // Try multiple CSRF token sources with priority:
-    // 1. Persisted token from sessionStorage (most reliable)
-    // 2. Token from cookie (httpOnly may block read)
-    const csrfToken = readPersistedCsrfToken() ?? readCsrfToken()
+    // 1. Token from cookie (always fresh across multiple tabs)
+    // 2. Persisted token from sessionStorage (fallback)
+    const csrfToken = readCsrfToken() ?? readPersistedCsrfToken()
     
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken)
