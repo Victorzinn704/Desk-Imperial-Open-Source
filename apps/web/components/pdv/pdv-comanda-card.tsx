@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Clock, Package, Percent, User } from 'lucide-react'
 import type { Comanda, KanbanColumn } from './pdv-types'
@@ -14,7 +14,12 @@ type PdvComandaCardProps = {
   onClick: (comanda: Comanda) => void
 }
 
-export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<PdvComandaCardProps>) {
+export const PdvComandaCard = memo(function PdvComandaCard({
+  comanda,
+  index,
+  column,
+  onClick,
+}: Readonly<PdvComandaCardProps>) {
   const total = calcTotal(comanda)
   const elapsed = formatElapsed(comanda.abertaEm)
   // eslint-disable-next-line react-hooks/purity
@@ -101,4 +106,4 @@ export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<Pdv
       )}
     </Draggable>
   )
-}
+})

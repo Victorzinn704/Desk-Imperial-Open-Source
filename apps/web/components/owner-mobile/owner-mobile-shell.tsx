@@ -25,7 +25,9 @@ import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
-import { fetchOperationsLive, fetchOrders, closeComanda, logout, updateComandaStatus } from '@/lib/api'
+import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
+import { MobileOrderBuilder } from '../staff-mobile/mobile-order-builder'
+import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { useRouter } from 'next/navigation'
 import {
   buildPdvComandas,
@@ -33,9 +35,22 @@ import {
   toOperationAmounts,
   toOperationsStatus,
 } from '@/components/pdv/pdv-operations'
-import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
+import {
+  fetchOperationsLive,
+  fetchOrders,
+  fetchProducts,
+  closeComanda,
+  logout,
+  openComanda,
+  openCashSession,
+  updateComandaStatus,
+  addComandaItem,
+  ApiError,
+} from '@/lib/api'
 
-type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo'
+type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
+
+type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
 
 interface OwnerMobileShellProps {
   currentUser: { name?: string; fullName?: string; companyName?: string | null } | null
@@ -49,6 +64,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
   const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
@@ -74,6 +90,12 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
   })
 
+  const productsQuery = useQuery({
+    queryKey: ['products'],
+    queryFn: () => fetchProducts(),
+    enabled: Boolean(currentUser),
+  })
+
   const ordersQuery = useQuery({
     queryKey: ['orders'],
     queryFn: () => fetchOrders(),
@@ -87,6 +109,35 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       await queryClient.cancelQueries()
       queryClient.clear()
       router.push('/login')
+    },
+    onError: () => {
+      toast.error('Erro ao sair. Verifique sua conexão.')
+    },
+  })
+
+  const openComandaMutation = useMutation({
+    mutationFn: openComanda,
+    onSuccess: () => {
+      invalidateOwnerWorkspace(queryClient)
+      toast.success('Comanda aberta com sucesso')
+      haptic.success()
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Erro ao abrir comanda')
+      haptic.error()
+    },
+  })
+
+  const addComandaItemMutation = useMutation({
+    mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
+      addComandaItem(comandaId, payload),
+    onSuccess: () => {
+      toast.success('Item adicionado')
+      haptic.light()
+    },
+    onError: () => {
+      toast.error('Erro ao adicionar item')
+      haptic.error()
     },
   })
 
@@ -127,7 +178,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
-  const activeComandas = comandas.filter((c) => c.status !== 'fechada')
+  const activeComandas = useMemo(() => comandas.filter((c: any) => c.status !== 'fechada'), [comandas])
 
   const kitchenBadge = useMemo(() => {
     const snapshot = operationsQuery.data
@@ -166,11 +217,14 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const today = new Date().toISOString().slice(0, 10)
   const orders = ordersQuery.data?.items ?? []
-  const todayOrders = orders.filter((o) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0)
+  const todayOrders = orders.filter((o: any) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
+  const todayRevenue = todayOrders.reduce((sum: number, o: any) => sum + o.totalRevenue, 0)
   const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
 
-  const totalItems = activeComandas.reduce((sum, c) => sum + c.itens.reduce((s, i) => s + i.quantidade, 0), 0)
+  const totalItems = activeComandas.reduce(
+    (sum: number, c: any) => sum + c.itens.reduce((s: number, i: any) => s + i.quantidade, 0),
+    0,
+  )
 
   // Ranking garçons — a partir do snapshot
   const garconRanking = useMemo(() => {
@@ -212,6 +266,77 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     return [...map.values()].sort((a, b) => b.valor - a.valor).slice(0, 5)
   }, [operationsQuery.data])
 
+  const isBusy =
+    openComandaMutation.isPending ||
+    addComandaItemMutation.isPending ||
+    updateComandaStatusMutation.isPending ||
+    closeComandaMutation.isPending
+
+  async function handleSubmit(items: import('@/components/pdv/pdv-types').ComandaItem[]) {
+    if (!pendingAction) return
+    setScreenError(null)
+
+    try {
+      if (pendingAction.type === 'add') {
+        for (const item of items) {
+          await addComandaItemMutation.mutateAsync({
+            comandaId: pendingAction.comandaId,
+            payload: {
+              productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+              productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+              quantity: item.quantidade,
+              unitPrice: item.precoUnitario,
+              notes: item.observacao,
+            },
+          })
+        }
+        await invalidateOwnerWorkspace(queryClient)
+        setPendingAction(null)
+        setActiveTab('comandas')
+        return
+      }
+
+      const comParams = {
+        tableLabel: normalizeTableLabel(pendingAction.mesa.numero),
+        items: items.map((item) => ({
+          productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+          productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+          quantity: item.quantidade,
+          unitPrice: item.precoUnitario,
+          notes: item.observacao,
+        })),
+      }
+
+      try {
+        await openComandaMutation.mutateAsync(comParams)
+      } catch (err: unknown) {
+        const isCaixaError =
+          (err instanceof ApiError && err.status === 409) ||
+          (err instanceof Error && err.message.toLowerCase().includes('caixa'))
+        if (isCaixaError) {
+          toast.dismiss()
+          toast.info('Abrindo caixa automaticamente...')
+          await openCashSession({ openingCashAmount: 0 })
+          await invalidateOwnerWorkspace(queryClient)
+          await openComandaMutation.mutateAsync(comParams)
+        } else {
+          throw err
+        }
+      }
+      setPendingAction(null)
+      setActiveTab('comandas')
+    } catch (error) {
+      setScreenError(error instanceof Error ? error.message : 'Não foi possível processar o pedido.')
+    }
+  }
+
+  const mesaLabel = pendingAction
+    ? pendingAction.type === 'new'
+      ? normalizeTableLabel(pendingAction.mesa.numero)
+      : pendingAction.mesaLabel
+    : '?'
+  const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
+
   // Mesas ao vivo
   const mesasLivres = mesas.filter((m) => m.status === 'livre').length
   const mesasOcupadas = mesas.filter((m) => m.status === 'ocupada').length
@@ -221,7 +346,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       {/* Header */}
       {/* Header Minimalista */}
       <header
-        className="flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
+        className="relative z-50 flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
@@ -298,16 +423,33 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             mesas={mesas}
             onSelectMesa={(mesa: Mesa) => {
               if (mesa.status === 'ocupada' && mesa.comandaId) {
-                // occupied → go to that comanda directly
                 setFocusedComandaId(mesa.comandaId)
+                setActiveTab('comandas')
               } else {
-                // libre → just show all comandas, no empty comanda created
+                setPendingAction({ type: 'new', mesa })
                 setFocusedComandaId(null)
+                setActiveTab('pedido')
               }
-              setActiveTab('comandas')
             }}
           />
         ) : null}
+
+        <div style={{ display: activeTab === 'pedido' ? undefined : 'none' }}>
+          {pendingAction ? (
+            <MobileOrderBuilder
+              mesaLabel={mesaLabel}
+              mode={orderMode}
+              produtos={productsQuery.data?.items ?? []}
+              busy={isBusy}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onSubmit={handleSubmit as any}
+              onCancel={() => {
+                setPendingAction(null)
+                setActiveTab('mesas')
+              }}
+            />
+          ) : null}
+        </div>
 
         {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
 

@@ -1,0 +1,59 @@
+(node:7996) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL test/admin-pin.service.spec.ts
+  ÔùÅ AdminPinService ÔÇ║ issueVerificationChallenge ÔÇ║ deve registrar falha de tentativa e aplicar rate limiting
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "admin-pin:user-1:session-1:user-1", ObjectContaining {"count": 3}, Any<Number>
+    Received: "ratelimit:admin-pin:user-1:session-1:user-1", {"count": 3, "firstAttemptAt": 1774639857942, "lockedUntil": 1774640157942}, 300
+
+    Number of calls: 1
+
+      313 |       )
+      314 |
+    > 315 |       expect(mockCache.set).toHaveBeenCalledWith(
+          |                             ^
+      316 |         'admin-pin:user-1:session-1:user-1',
+      317 |         expect.objectContaining({
+      318 |           count: 3,
+
+      at Object.<anonymous> (test/admin-pin.service.spec.ts:315:29)
+
+[32m[Nest] 7996  - [39m27/03/2026, 16:30:57 [32m    LOG[39m [38;5;3m[AdminPinService] [39m[32mAdmin PIN configurado para userId=user-1[39m
+[32m[Nest] 7996  - [39m27/03/2026, 16:30:57 [32m    LOG[39m [38;5;3m[AdminPinService] [39m[32mAdmin PIN configurado para userId=user-1[39m
+[32m[Nest] 7996  - [39m27/03/2026, 16:30:57 [32m    LOG[39m [38;5;3m[AdminPinService] [39m[32mAdmin PIN removido para userId=user-1[39m
+FAIL test/cache.service.spec.ts
+  ÔùÅ CacheService ÔÇ║ chaves espec├¡ficas ÔÇ║ deve gerar chave de finance correta
+
+    TypeError: service.financeKey is not a function
+
+      223 |     it('deve gerar chave de finance correta', () => {
+      224 |       const service = new CacheService()
+    > 225 |       const key = service.financeKey('user-123')
+          |                           ^
+      226 |
+      227 |       expect(key).toBe('finance:summary:user-123')
+      228 |     })
+
+      at Object.<anonymous> (test/cache.service.spec.ts:225:27)
+
+  ÔùÅ CacheService ÔÇ║ chaves espec├¡ficas ÔÇ║ deve gerar chave de ratelimit correta
+
+    TypeError: service.ratelimitKey is not a function
+
+      230 |     it('deve gerar chave de ratelimit correta', () => {
+      231 |       const service = new CacheService()
+    > 232 |       const key = service.ratelimitKey('auth', 'login:user-123')
+          |                           ^
+      233 |
+      234 |       expect(key).toBe('ratelimit:auth:login:user-123')
+      235 |     })
+
+      at Object.<anonymous> (test/cache.service.spec.ts:232:27)
+
+Test Suites: 2 failed, 2 total
+Tests:       3 failed, 47 passed, 50 total
+Snapshots:   0 total
+Time:        0.538 s, estimated 1 s
+Ran all test suites matching test/cache.service.spec.ts|test/admin-pin.service.spec.ts.

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,13 +11,10 @@ import {
   Post,
   Query,
   Req,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
-import { FileInterceptor } from '@nestjs/platform-express'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
@@ -28,11 +24,6 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { ListProductsQueryDto } from './dto/list-products.query'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductsService } from './products.service'
-
-type UploadedCsvFile = {
-  buffer: Buffer
-  originalname: string
-}
 
 @ApiTags('products')
 @Controller('products')

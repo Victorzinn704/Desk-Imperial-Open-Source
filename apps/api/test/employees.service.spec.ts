@@ -15,9 +15,9 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Prisma, UserRole, UserStatus } from '@prisma/client'
 import { EmployeesService } from '../src/modules/employees/employees.service'
-import { PrismaService } from '../src/database/prisma.service'
-import { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import { CacheService } from '../src/common/services/cache.service'
+import type { PrismaService } from '../src/database/prisma.service'
+import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
+import type { CacheService } from '../src/common/services/cache.service'
 import * as argon2 from 'argon2'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────

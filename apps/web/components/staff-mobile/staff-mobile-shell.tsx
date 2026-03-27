@@ -138,7 +138,6 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       ])
       // Insert optimistic comanda into snapshot.unassigned.comandas
       if (snapshot) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const optimistic = {
           id: `optimistic-${Date.now()}`,
           companyOwnerId: '',

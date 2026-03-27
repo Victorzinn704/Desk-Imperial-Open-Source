@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Users, ShoppingBag, Clock } from 'lucide-react'
 import type { Mesa, Comanda } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
@@ -37,7 +38,13 @@ type PdvMesaCardProps = {
   onDelete: (mesaId: string) => void
 }
 
-export function PdvMesaCard({ mesa, comanda, onClickLivre, onClickOcupada, onDelete }: Readonly<PdvMesaCardProps>) {
+export const PdvMesaCard = memo(function PdvMesaCard({
+  mesa,
+  comanda,
+  onClickLivre,
+  onClickOcupada,
+  onDelete,
+}: Readonly<PdvMesaCardProps>) {
   const cfg = STATUS_CONFIG[mesa.status]
 
   function handleClick() {
@@ -116,4 +123,4 @@ export function PdvMesaCard({ mesa, comanda, onClickLivre, onClickOcupada, onDel
       )}
     </div>
   )
-}
+})

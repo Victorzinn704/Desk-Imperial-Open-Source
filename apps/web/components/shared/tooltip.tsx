@@ -18,7 +18,6 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
   const [mounted, setMounted] = useState(false)
   const ref = useRef<HTMLSpanElement | null>(null)
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setMounted(true)
   }, [])

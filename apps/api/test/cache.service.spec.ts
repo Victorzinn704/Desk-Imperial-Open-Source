@@ -25,46 +25,42 @@ jest.mock('ioredis', () => {
     del: jest.fn(),
     disconnect: jest.fn(),
     on: jest.fn(),
+    connect: jest.fn().mockResolvedValue(undefined),
+    ping: jest.fn().mockResolvedValue('PONG'),
   }))
 })
 
-// ── Setup ─────────────────────────────────────────────────────────────────────
-
-let cacheService: CacheService
-
-beforeEach(() => {
-  jest.clearAllMocks()
-  process.env.REDIS_URL = 'redis://localhost:6379'
-
-  cacheService = new CacheService()
-})
-
-afterEach(() => {
-  delete process.env.REDIS_URL
-})
+const mockConfigService = {
+  get: jest.fn().mockReturnValue('redis://localhost:6379'),
+}
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('CacheService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockConfigService.get.mockReturnValue('redis://localhost:6379')
+  })
+
   describe('inicialização', () => {
     it('deve inicializar com Redis quando REDIS_URL está definida', () => {
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       // A inicialização ocorre no onModuleInit em produção
       // Aqui testamos que o serviço pode ser instanciado
       expect(service).toBeDefined()
     })
 
     it('deve retornar false em isReady quando Redis não está disponível', () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
       expect(service.isReady()).toBe(false)
     })
   })
 
   describe('get', () => {
     it('deve retornar null quando cache está desabilitado', async () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
 
       const result = await service.get('test-key')
 
@@ -75,7 +71,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.get as jest.Mock).mockResolvedValue(null)
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       // Forçar Redis mockado
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
@@ -90,7 +86,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.get as jest.Mock).mockResolvedValue(JSON.stringify(cachedData))
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -104,7 +100,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.get as jest.Mock).mockResolvedValue('invalid-json')
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -117,7 +113,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.get as jest.Mock).mockRejectedValue(new Error('Redis error'))
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -132,7 +128,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.set as jest.Mock).mockResolvedValue('OK')
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -142,8 +138,8 @@ describe('CacheService', () => {
     })
 
     it('deve retornar void silenciosamente quando cache está desabilitado', async () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
 
       await expect(service.set('test-key', { foo: 'bar' }, 300)).resolves.toBeUndefined()
     })
@@ -152,7 +148,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.set as jest.Mock).mockRejectedValue(new Error('Redis error'))
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -166,7 +162,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.del as jest.Mock).mockResolvedValue(1)
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -176,8 +172,8 @@ describe('CacheService', () => {
     })
 
     it('deve retornar void silenciosamente quando cache está desabilitado', async () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
 
       await expect(service.del('test-key')).resolves.toBeUndefined()
     })
@@ -186,7 +182,7 @@ describe('CacheService', () => {
       const mockRedis = new Redis()
       ;(mockRedis.del as jest.Mock).mockRejectedValue(new Error('Redis error'))
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 
@@ -196,7 +192,7 @@ describe('CacheService', () => {
 
   describe('isReady', () => {
     it('deve retornar true quando Redis está conectado', () => {
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = { status: 'ready' }
       ;(service as any).enabled = true
 
@@ -204,7 +200,7 @@ describe('CacheService', () => {
     })
 
     it('deve retornar false quando cliente não existe', () => {
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = null
       ;(service as any).enabled = true
 
@@ -212,8 +208,8 @@ describe('CacheService', () => {
     })
 
     it('deve retornar false quando cache está desabilitado', () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
 
       expect(service.isReady()).toBe(false)
     })
@@ -221,15 +217,13 @@ describe('CacheService', () => {
 
   describe('chaves específicas', () => {
     it('deve gerar chave de finance correta', () => {
-      const service = new CacheService()
-      const key = service.financeKey('user-123')
+      const key = CacheService.financeKey('user-123')
 
       expect(key).toBe('finance:summary:user-123')
     })
 
     it('deve gerar chave de ratelimit correta', () => {
-      const service = new CacheService()
-      const key = service.ratelimitKey('auth', 'login:user-123')
+      const key = CacheService.ratelimitKey('auth', 'login:user-123')
 
       expect(key).toBe('ratelimit:auth:login:user-123')
     })
@@ -255,8 +249,8 @@ describe('CacheService', () => {
 
   describe('graceful degradation', () => {
     it('deve operar sem Redis quando variável não está definida', async () => {
-      delete process.env.REDIS_URL
-      const service = new CacheService()
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
 
       expect(service.isReady()).toBe(false)
       await expect(service.get('key')).resolves.toBeNull()
@@ -270,7 +264,7 @@ describe('CacheService', () => {
       ;(mockRedis.set as jest.Mock).mockRejectedValue(new Error('Connection lost'))
       ;(mockRedis.del as jest.Mock).mockRejectedValue(new Error('Connection lost'))
 
-      const service = new CacheService()
+      const service = new CacheService(mockConfigService as any)
       ;(service as any).client = mockRedis
       ;(service as any).enabled = true
 

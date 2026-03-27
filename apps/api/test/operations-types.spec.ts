@@ -94,7 +94,6 @@ describe('toComandaRecord', () => {
       ],
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = toComandaRecord(comanda as any)
     expect(record.id).toBe('com-1')
     expect(record.subtotalAmount).toBe(50)
@@ -127,7 +126,6 @@ describe('toComandaRecord', () => {
       items: [],
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = toComandaRecord(comanda as any)
     expect(record.subtotalAmount).toBe(0)
     expect(record.customerName).toBeNull()
@@ -147,7 +145,6 @@ describe('toCashMovementRecord', () => {
       createdAt: new Date('2026-03-26T00:00:00Z'),
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = toCashMovementRecord(movement as any)
     expect(record.id).toBe('mov-1')
     expect(record.amount).toBe(100)
@@ -183,7 +180,6 @@ describe('buildEmployeeOperationsRecord', () => {
       }),
     )
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = buildEmployeeOperationsRecord({ employee, cashSession: null, comandas: comandas as any })
     expect(record.metrics.openTables).toBe(3)
     expect(record.metrics.closedTables).toBe(1)
@@ -213,7 +209,6 @@ describe('toClosureRecord', () => {
       openComandasCount: 0,
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = toClosureRecord(closure as any)
     expect(record).not.toBeNull()
     expect(record!.expectedCashAmount).toBe(500)

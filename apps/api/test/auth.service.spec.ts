@@ -19,7 +19,7 @@
  */
 
 import { BadRequestException, ConflictException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { UserRole, UserStatus, CurrencyCode } from '@prisma/client'
 import { AuthService } from '../src/modules/auth/auth.service'
 import * as argon2 from 'argon2'

@@ -26,9 +26,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { AdminPinService } from '../src/modules/admin-pin/admin-pin.service'
-import { PrismaService } from '../src/database/prisma.service'
-import { ConfigService } from '@nestjs/config'
-import { CacheService } from '../src/common/services/cache.service'
+import type { PrismaService } from '../src/database/prisma.service'
+import type { ConfigService } from '@nestjs/config'
+import type { CacheService } from '../src/common/services/cache.service'
 import * as argon2 from 'argon2'
 import { createHash } from 'node:crypto'
 
@@ -62,11 +62,18 @@ jest.mock('argon2', () => ({
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 
-function makeAuthContext(overrides: Partial<Record<string, unknown>> = {}) {
+function makeAuthContext(
+  overrides: Partial<{
+    userId: string
+    sessionId: string
+    role: 'OWNER' | 'STAFF'
+    companyOwnerUserId: string | null
+  }> = {},
+) {
   return {
     userId: 'user-1',
     sessionId: 'session-1',
-    role: 'OWNER',
+    role: 'OWNER' as const,
     companyOwnerUserId: null,
     ...overrides,
   }
@@ -99,7 +106,7 @@ beforeEach(() => {
 
   // Defaults
   mockCache.isReady.mockReturnValue(true)
-  mockCache.ratelimitKey.mockImplementation((prefix: string, key: string) => `${prefix}:${key}`)
+  mockCache.ratelimitKey.mockImplementation((prefix: string, key: string) => `ratelimit:${prefix}:${key}`)
   mockPrisma.user.findUnique.mockResolvedValue(makeUser())
 })
 
@@ -255,7 +262,7 @@ describe('AdminPinService', () => {
     })
 
     it('deve rejeitar quando sessão é inválida', async () => {
-      const invalidAuth = makeAuthContext({ sessionId: null })
+      const invalidAuth = makeAuthContext({ sessionId: undefined as any })
 
       await expect(adminPinService.issueVerificationChallenge(invalidAuth, '1234')).rejects.toThrow(ForbiddenException)
       await expect(adminPinService.issueVerificationChallenge(invalidAuth, '1234')).rejects.toThrow('Sessão inválida')
@@ -313,7 +320,7 @@ describe('AdminPinService', () => {
       )
 
       expect(mockCache.set).toHaveBeenCalledWith(
-        'admin-pin:user-1:session-1:user-1',
+        'ratelimit:admin-pin:user-1:session-1:user-1',
         expect.objectContaining({
           count: 3,
         }),

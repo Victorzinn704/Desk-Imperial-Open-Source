@@ -21,13 +21,13 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { BuyerType, CurrencyCode, OrderStatus } from '@prisma/client'
 import { OrdersService } from '../src/modules/orders/orders.service'
-import { PrismaService } from '../src/database/prisma.service'
-import { CurrencyService } from '../src/modules/currency/currency.service'
-import { GeocodingService } from '../src/modules/geocoding/geocoding.service'
-import { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import { AdminPinService } from '../src/modules/admin-pin/admin-pin.service'
-import { CacheService } from '../src/common/services/cache.service'
-import { CreateOrderDto } from '../src/modules/orders/dto/create-order.dto'
+import type { PrismaService } from '../src/database/prisma.service'
+import type { CurrencyService } from '../src/modules/currency/currency.service'
+import type { GeocodingService } from '../src/modules/geocoding/geocoding.service'
+import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
+import type { AdminPinService } from '../src/modules/admin-pin/admin-pin.service'
+import type { CacheService } from '../src/common/services/cache.service'
+import type { CreateOrderDto } from '../src/modules/orders/dto/create-order.dto'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 

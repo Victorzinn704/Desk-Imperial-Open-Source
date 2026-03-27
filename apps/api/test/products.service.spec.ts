@@ -20,13 +20,13 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { CurrencyCode, Prisma } from '@prisma/client'
 import { ProductsService } from '../src/modules/products/products.service'
-import { PrismaService } from '../src/database/prisma.service'
-import { CurrencyService } from '../src/modules/currency/currency.service'
-import { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import { CacheService } from '../src/common/services/cache.service'
-import { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
-import { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
-import { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
+import type { PrismaService } from '../src/database/prisma.service'
+import type { CurrencyService } from '../src/modules/currency/currency.service'
+import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
+import type { CacheService } from '../src/common/services/cache.service'
+import type { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
+import type { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
+import type { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
