@@ -1,4 +1,5 @@
 import type {
+  CashSessionRecord,
   ComandaRecord,
   ComandaStatus,
   CurrencyCode,
@@ -598,6 +599,31 @@ export async function closeComanda(comandaId: string, payload: CloseComandaPaylo
   return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/close`, {
     method: 'POST',
     body: payload,
+  })
+}
+
+export type OpenCashSessionPayload = {
+  openingCashAmount: number
+  notes?: string
+}
+
+export type CloseCashClosurePayload = {
+  countedCashAmount: number
+  forceClose?: boolean
+  notes?: string
+}
+
+export async function openCashSession(payload: OpenCashSessionPayload) {
+  return apiFetch<{ cashSession: CashSessionRecord; snapshot: OperationsLiveResponse }>('/operations/cash-sessions', {
+    method: 'POST',
+    body: payload as JsonBody,
+  })
+}
+
+export async function closeCashClosure(payload: CloseCashClosurePayload) {
+  return apiFetch<{ snapshot: OperationsLiveResponse }>('/operations/closures/close', {
+    method: 'POST',
+    body: payload as JsonBody,
   })
 }
 

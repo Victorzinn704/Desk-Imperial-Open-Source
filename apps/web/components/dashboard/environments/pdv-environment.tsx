@@ -6,6 +6,7 @@ import { ApiError, fetchOperationsLive } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { buildOperationsViewModel } from '@/lib/operations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { CaixaPanel } from '@/components/dashboard/caixa-panel'
 import { OperationsExecutiveGrid, OperationsTimeline } from '@/components/operations'
 import { PdvBoard } from '@/components/pdv/pdv-board'
 
@@ -49,6 +50,7 @@ export function PdvEnvironment() {
       <PdvBoard currentUser={user} operations={operations} products={boardProducts} />
       {showExecutiveOperations ? (
         <div className="space-y-6">
+          <CaixaPanel operations={operations} />
           {operationsError ? (
             <div className="imperial-card px-5 py-4 text-sm text-[var(--text-soft)]">
               Nao foi possivel carregar a operacao viva agora. {operationsError}
