@@ -23,7 +23,6 @@ export function ProtectedOperationGuard({ onConfirm, onError }: Readonly<Protect
     setSecondsLeft,
     setIsBlocked,
     handleCancel,
-    handleConfirm: executeOperation,
   } = useProtectedOperation()
 
   // Countdown timer for rate limiting
@@ -42,16 +41,13 @@ export function ProtectedOperationGuard({ onConfirm, onError }: Readonly<Protect
     return () => clearInterval(id)
   }, [isBlocked, secondsLeft, setSecondsLeft, setIsBlocked])
 
-  const handlePinConfirm = async (pin: string) => {
-    try {
-      await executeOperation(pin)
-      if (onConfirm) {
-        await onConfirm(pin)
-      }
-    } catch (error) {
-      if (onError && error instanceof Error) {
-        onError(error)
-      }
+  const handlePinConfirm = () => {
+    if (onConfirm) {
+      onConfirm('').catch((error: unknown) => {
+        if (onError && error instanceof Error) {
+          onError(error)
+        }
+      })
     }
   }
 
