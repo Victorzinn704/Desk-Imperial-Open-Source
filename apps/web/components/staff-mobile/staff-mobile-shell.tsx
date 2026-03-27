@@ -42,14 +42,15 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const [screenError, setScreenError] = useState<string | null>(null)
   const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
+  const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
+
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
     queryFn: () => fetchOperationsLive(),
     enabled: Boolean(currentUser),
-    refetchInterval: 5_000,
+    // socket ativo = sem polling; socket offline = fallback a cada 20s
+    refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
   })
-
-  useOperationsRealtime(Boolean(currentUser), queryClient)
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -190,21 +191,32 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[rgba(255,255,255,0.06)] bg-[#000000] px-4 py-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+      <header
+        className="flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
+        style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+      >
         <div className="flex items-center gap-3">
           <BrandMark />
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
-              Operacional
-            </p>
-            <p className="text-xs text-[#7a8896]">Olá, {displayName.split(' ')[0]}</p>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#9b8460)]">
+                Operacional
+              </span>
+              <span
+                className="size-1.5 rounded-full"
+                style={{
+                  background: realtimeStatus === 'connected' ? '#34f27f' : realtimeStatus === 'connecting' ? '#fbbf24' : '#f87171',
+                }}
+              />
+            </div>
+            <span className="text-sm font-medium text-white">{displayName.split(' ')[0]}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => router.push('/dashboard?view=settings&panel=account')}
-            className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#7a8896] transition-colors active:bg-[rgba(255,255,255,0.1)]"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-white transition-transform active:scale-95"
             aria-label="Abrir configurações"
           >
             <Cog className="size-4" />
@@ -213,7 +225,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             type="button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#7a8896] transition-colors active:bg-[rgba(255,255,255,0.1)]"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-white transition-transform active:scale-95"
             aria-label="Encerrar sessão"
           >
             <LogOut className="size-4" />
@@ -279,10 +291,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       </main>
 
       <nav
-        className="shrink-0 border-t border-[rgba(255,255,255,0.06)] bg-[#000000]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom,0px)' }}
+        className="shrink-0 bg-[#000000] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
+        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid grid-cols-3">
+        <div className="grid h-16 grid-cols-3 gap-1 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-1 relative">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
@@ -299,26 +311,27 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
                   setActiveTab(id)
                   if (id !== 'ativo') setFocusedComandaId(null)
                 }}
-                className="relative flex flex-col items-center justify-center gap-1 py-3 transition-colors"
+                className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {isActive ? (
-                  <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--accent,#9b8460)]" />
-                ) : null}
-                <div className="relative">
+                {isActive && (
+                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(155,132,96,0.15)] pointer-events-none" />
+                )}
+                <div className="relative z-10">
                   <Icon
-                    className="size-5"
+                    className="size-[22px]"
                     style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
+                    strokeWidth={isActive ? 2.5 : 2}
                   />
-                  {badge > 0 ? (
-                    <span className="absolute -right-2 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[9px] font-bold text-black">
+                  {badge > 0 && (
+                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[10px] font-bold text-[#000000] ring-2 ring-black">
                       {badge}
                     </span>
-                  ) : null}
+                  )}
                 </div>
                 <span
-                  className="text-[10px] font-medium"
-                  style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
+                  className="relative z-10 text-[10px] font-semibold tracking-wide"
+                  style={{ color: isActive ? 'white' : '#7a8896' }}
                 >
                   {label}
                 </span>
