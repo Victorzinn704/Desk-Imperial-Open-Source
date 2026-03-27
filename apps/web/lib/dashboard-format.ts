@@ -31,13 +31,15 @@ export function maskBuyerDocument(document: string | null | undefined) {
 
   const digits = document.replace(/\D/g, '')
 
+  // CPF: mostra apenas 3 primeiros e 2 últimos dígitos — padrão LGPD
   if (digits.length === 11) {
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
   }
 
+  // CNPJ: mostra apenas 2 primeiros e 2 últimos dígitos — padrão LGPD
   if (digits.length === 14) {
-    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+    return `${digits.slice(0, 2)}.***.***/****-${digits.slice(12)}`
   }
 
-  return digits
+  return '***'
 }
