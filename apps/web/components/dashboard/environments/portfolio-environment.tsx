@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Boxes, Tags } from 'lucide-react'
-import type { ProductImportResponse, ProductRecord } from '@contracts/contracts'
+import { Boxes, Package, Search, Tags, TrendingUp } from 'lucide-react'
+import type { FinanceSummaryResponse, ProductImportResponse, ProductRecord } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { downloadPortfolioCsv, downloadProductTemplateCsv } from '@/lib/portfolio-csv'
@@ -15,26 +15,85 @@ import { ProductForm } from '@/components/dashboard/product-form'
 import { ProductImportCard } from '@/components/dashboard/product-import-card'
 import { ProductSearchField } from '@/components/dashboard/product-search-field'
 
-function MiniCategoryCard({
+// ── category card ─────────────────────────────────────────────────────────────
+
+function CategoryCard({
   category,
-  profit,
-  subtitle,
-}: Readonly<{ category: string; profit: string; subtitle: string }>) {
+  products,
+  units,
+  potentialProfit,
+  inventorySalesValue,
+  displayCurrency,
+  maxProfit,
+}: {
+  category: string
+  products: number
+  units: number
+  potentialProfit: number
+  inventorySalesValue: number
+  displayCurrency: string
+  maxProfit: number
+}) {
+  const barPct = maxProfit > 0 ? Math.max(4, (potentialProfit / maxProfit) * 100) : 4
+
   return (
-    <div className="imperial-card-soft p-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4 hover:border-white/10 transition-colors">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-medium text-[var(--text-primary)]">{category}</p>
-          <p className="mt-1 text-sm text-[var(--text-soft)]">{subtitle}</p>
+          <p className="text-sm font-semibold text-white leading-snug">{category}</p>
+          <p className="mt-1 text-[11px] text-[var(--text-soft)]">
+            {products} produto{products !== 1 ? 's' : ''} · {units} unidade{units !== 1 ? 's' : ''}
+          </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-[var(--text-primary)]">{profit}</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">lucro potencial</p>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-semibold text-[#c9a96e]">
+            {formatCurrency(potentialProfit, displayCurrency as never)}
+          </p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-soft)]">lucro pot.</p>
         </div>
+      </div>
+
+      {/* progress bar */}
+      <div className="mt-3.5 h-1 rounded-full bg-white/6 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+          style={{ width: `${barPct}%` }}
+        />
+      </div>
+
+      <p className="mt-2 text-[10px] text-[var(--text-soft)]">
+        {formatCurrency(inventorySalesValue, displayCurrency as never)} em valor de venda potencial
+      </p>
+    </div>
+  )
+}
+
+// ── summary pill ──────────────────────────────────────────────────────────────
+
+function SummaryPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3.5 flex items-center gap-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
+        <Icon className="size-3.5 text-[var(--accent)]" />
+      </span>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+        <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
       </div>
     </div>
   )
 }
+
+// ── avg margin calc ───────────────────────────────────────────────────────────
+
+function calcAvgMargin(products: ProductRecord[]): string {
+  const active = products.filter((p) => p.active && p.unitPrice > 0)
+  if (!active.length) return '—'
+  const avg = active.reduce((sum, p) => sum + ((p.unitPrice - p.unitCost) / p.unitPrice) * 100, 0) / active.length
+  return `${avg.toFixed(0)}%`
+}
+
+// ── main ──────────────────────────────────────────────────────────────────────
 
 export function PortfolioEnvironment() {
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
@@ -121,48 +180,43 @@ export function PortfolioEnvironment() {
       )
     : products
 
+  const avgMargin = calcAvgMargin(products)
+  const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((c) => c.potentialProfit) ?? [0]), 0)
+
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
         description="O portfólio alimenta estoque, potencial de lucro e o comportamento financeiro do painel."
         eyebrow="Estoque e margem"
         icon={Boxes}
-        title="Módulo de portfólio e produtos"
+        title="Portfólio de produtos"
       />
 
-      <section className="imperial-card p-6">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Localize um produto</p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">
-              Busque por nome, inicial, marca ou classe de cadastro
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              A barra abaixo filtra o portfólio em tempo real para voce achar qualquer item sem descer a tela inteira.
-            </p>
-            <div className="mt-5">
-              <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
-            </div>
-          </div>
+      {/* summary strip */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <SummaryPill
+          icon={Package}
+          label="Produtos ativos"
+          value={productsTotals ? String(productsTotals.activeProducts) : '—'}
+        />
+        <SummaryPill
+          icon={Boxes}
+          label="Total em estoque"
+          value={productsTotals ? `${productsTotals.stockUnits} und` : '—'}
+        />
+        <SummaryPill
+          icon={TrendingUp}
+          label="Margem média"
+          value={avgMargin}
+        />
+        <SummaryPill
+          icon={Tags}
+          label="SKUs cadastrados"
+          value={productsTotals ? String(productsTotals.totalProducts) : '—'}
+        />
+      </div>
 
-          <div className="imperial-card-soft px-5 py-4 text-sm text-[var(--text-soft)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">Portfólio filtrado</p>
-            <p className="mt-3 text-3xl font-semibold text-white">{filteredProducts.length}</p>
-            <p className="mt-2 leading-7">
-              {productsTotals
-                ? `${productsTotals.totalProducts} produto(s) no total e ${productsTotals.stockUnits} und disponiveis.`
-                : 'Carregando produtos cadastrados...'}
-            </p>
-          </div>
-        </div>
-
-        <p className="mt-4 text-sm text-[var(--text-soft)]">
-          {filteredProducts.length === products.length
-            ? 'Digite apenas o nome, a inicial, a marca ou o tipo da embalagem para localizar um item mais rápido.'
-            : `${filteredProducts.length} item(ns) encontrado(s) para "${searchQuery}".`}
-        </p>
-      </section>
-
+      {/* form + import + category */}
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
         <div className="space-y-4">
           <ProductForm
@@ -183,59 +237,76 @@ export function PortfolioEnvironment() {
           />
         </div>
 
-        <article className="imperial-card p-7">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-              <Tags className="size-5" />
+        {/* categories */}
+        <div className="imperial-card p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
+              <Tags className="size-4 text-[var(--accent)]" />
             </span>
             <div>
-              <p className="text-sm text-[var(--text-soft)]">Categorias</p>
-              <h2 className="text-xl font-semibold text-white">Registro de fluxo por categoria</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Categorias</p>
+              <h2 className="text-base font-semibold text-white leading-snug">Fluxo por categoria</h2>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
+          <div className="space-y-2.5">
             {finance?.categoryBreakdown.length ? (
               finance.categoryBreakdown.map((item) => (
-                <MiniCategoryCard
-                  category={item.category}
+                <CategoryCard
                   key={item.category}
-                  profit={formatCurrency(item.potentialProfit, finance.displayCurrency)}
-                  subtitle={`${item.products} produto(s), ${item.units} unidade(s) e ${formatCurrency(item.inventorySalesValue, finance.displayCurrency)} em venda potencial`}
+                  category={item.category}
+                  products={item.products}
+                  units={item.units}
+                  potentialProfit={item.potentialProfit}
+                  inventorySalesValue={item.inventorySalesValue}
+                  displayCurrency={String(finance.displayCurrency)}
+                  maxProfit={maxCategoryProfit}
                 />
               ))
             ) : (
-              <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-                Cadastre produtos para destravar a leitura por categoria.
-              </p>
+              <div className="rounded-[16px] border border-dashed border-white/8 px-5 py-8 text-center">
+                <Tags className="mx-auto size-7 text-[var(--text-soft)]/50 mb-3" />
+                <p className="text-sm text-[var(--text-soft)]">
+                  Cadastre produtos para destravar a leitura por categoria.
+                </p>
+              </div>
             )}
           </div>
-        </article>
+        </div>
       </div>
 
-      <section className="imperial-card p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      {/* product list */}
+      <section className="imperial-card p-6 md:p-8">
+        {/* list header */}
+        <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Portfólio</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Produtos cadastrados na operação</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
-              Aqui ficam os itens que alimentam o financeiro potencial e as vendas futuras.
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Produtos cadastrados</h2>
+            <p className="mt-1.5 text-sm text-[var(--text-soft)]">
+              {filteredProducts.length === products.length
+                ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
+                : `${filteredProducts.length} de ${products.length} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`}
             </p>
           </div>
-
-          <div className="imperial-card-stat px-4 py-3 text-sm text-[var(--text-soft)]">
-            {productsTotals
-              ? `${productsTotals.totalProducts} produto(s), ${productsTotals.activeProducts} ativo(s) e ${productsTotals.stockUnits} und disponiveis`
-              : 'Carregando portfólio...'}
+          <div className="sm:w-72">
+            <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
           </div>
         </div>
 
-        {productsError ? <p className="mt-5 text-sm text-[var(--danger)]">{productsError}</p> : null}
+        {/* errors */}
+        {productsError ? (
+          <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
+            {productsError}
+          </p>
+        ) : null}
         {productMutationError ? (
-          <p className="mt-5 text-sm text-[var(--danger)]">{productMutationError.message}</p>
+          <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
+            {productMutationError.message}
+          </p>
         ) : null}
 
-        <div className="mt-8 space-y-4">
+        {/* grid */}
+        <div className="mt-6 grid gap-3 xl:grid-cols-2">
           {filteredProducts.length ? (
             filteredProducts.map((product) => (
               <ProductCard
@@ -248,14 +319,15 @@ export function PortfolioEnvironment() {
               />
             ))
           ) : (
-            <div className="imperial-card-soft border-dashed px-5 py-12 text-center">
-              <p className="text-lg font-semibold text-white">
+            <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
+              <Search className="mx-auto size-9 text-[var(--text-soft)]/50 mb-3" />
+              <p className="text-base font-semibold text-white">
                 {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
               </p>
-              <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+              <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
                 {products.length
                   ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
-                  : 'Use o formulario acima para criar os primeiros itens do portfólio.'}
+                  : 'Use o formulário ao lado para criar os primeiros itens do portfólio.'}
               </p>
             </div>
           )}
