@@ -33,6 +33,7 @@ const emptyValues: ProductFormInputValues = {
   currency: 'BRL',
   stockPackages: 0,
   stockLooseUnits: 0,
+  requiresKitchen: false,
 }
 
 export function ProductForm({
@@ -66,6 +67,7 @@ export function ProductForm({
   const unitsPerPackage = Number(watch('unitsPerPackage') ?? 1)
   const stockPackages = Number(watch('stockPackages') ?? 0)
   const stockLooseUnits = Number(watch('stockLooseUnits') ?? 0)
+  const requiresKitchenValue = watch('requiresKitchen')
   const selectedPresetIsManual = selectedPreset === manualPackagingOption
   const manualMeasurementMode = measurementMode === customMeasurementOption
   const calculatedStockTotal = buildStockTotalUnits(stockPackages, stockLooseUnits, unitsPerPackage)
@@ -95,6 +97,7 @@ export function ProductForm({
       currency: product.currency,
       stockPackages: product.stockPackages,
       stockLooseUnits: product.stockLooseUnits,
+      requiresKitchen: product.requiresKitchen ?? false,
     })
     setSelectedPreset(matchedPreset?.key ?? manualPackagingOption)
     setMeasurementMode(nextMeasurementMode)
@@ -305,6 +308,28 @@ export function ProductForm({
             type="number"
             {...register('stockLooseUnits')}
           />
+        </div>
+
+        <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
+          <div>
+            <p className="text-sm font-medium text-white">Envia para a cozinha</p>
+            <p className="mt-0.5 text-xs text-[var(--text-soft)]">
+              Ative para que os pedidos desse item entrem automaticamente na fila da cozinha (KDS).
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={requiresKitchenValue}
+            onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
+            className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
+            style={{ background: requiresKitchenValue ? 'var(--accent, #9b8460)' : 'rgba(255,255,255,0.12)' }}
+          >
+            <span
+              className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
+              style={{ transform: requiresKitchenValue ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
         </div>
 
         <Button fullWidth loading={loading} size="lg" type="submit">

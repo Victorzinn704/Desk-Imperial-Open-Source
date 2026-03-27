@@ -20,7 +20,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://*.basemaps.cartocdn.com",
-      `connect-src 'self' ${localApiOrigin} https://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com`,
+      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

@@ -142,6 +142,7 @@ export function PortfolioEnvironment() {
       unitPrice: values.unitPrice,
       currency: values.currency,
       stock: values.stock,
+      requiresKitchen: values.requiresKitchen ?? false,
     }
 
     if (editingProduct) {

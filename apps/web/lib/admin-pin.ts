@@ -29,16 +29,18 @@ function buildUrl(path: string) {
 function getCsrfToken(): string | null {
   if (typeof window === 'undefined') return null
 
-  // 1. Persisted token from sessionStorage (same strategy as api.ts)
-  const persisted = window.sessionStorage.getItem(CSRF_STORAGE_KEY)
-  if (persisted) return persisted
-
-  // 2. Fallback: cookie
   const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
   const cookie = document.cookie
     .split('; ')
     .find((entry) => CSRF_COOKIE_NAMES.some((name) => entry.startsWith(`${name}=`)))
-  return cookie ? (cookie.split('=')[1] ?? null) : null
+  
+  const cookieToken = cookie ? (cookie.split('=')[1] ?? null) : null
+  if (cookieToken) return cookieToken
+
+  const persisted = window.sessionStorage.getItem(CSRF_STORAGE_KEY)
+  if (persisted) return persisted
+
+  return null
 }
 
 async function adminApiFetch<T>(

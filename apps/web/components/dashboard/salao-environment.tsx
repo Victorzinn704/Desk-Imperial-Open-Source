@@ -651,9 +651,9 @@ function OperacionalView({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-xl bg-[rgba(255,255,255,0.04)]" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="h-32 animate-pulse rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]" />
         ))}
       </div>
     )
@@ -661,10 +661,17 @@ function OperacionalView({
 
   if (liveMesas.length === 0) {
     return (
-      <div className="imperial-card-soft flex flex-col items-center gap-3 rounded-2xl py-16 text-center">
-        <span className="text-5xl">🪑</span>
-        <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa ativa.</p>
-        <p className="text-xs text-[var(--text-soft)] opacity-60">Crie mesas na aba Configuração.</p>
+      <div className="flex flex-col items-center gap-4 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] py-20 text-center shadow-xl backdrop-blur-xl">
+        <div className="flex size-20 items-center justify-center rounded-full border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] shadow-inner">
+          <Armchair className="size-8 text-[var(--text-soft)]" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-white tracking-tight">Salão vazio</h3>
+          <p className="mt-2 text-sm text-[var(--text-soft)]">Seu salão ainda não possui mesas ativas.</p>
+        </div>
+        <p className="rounded-full bg-[rgba(255,255,255,0.05)] px-4 py-1.5 text-xs font-medium text-[var(--text-muted)]">
+          Crie mesas na aba Configuração
+        </p>
       </div>
     )
   }
@@ -672,39 +679,28 @@ function OperacionalView({
   const livres = liveMesas.filter((m) => m.status === 'livre')
   const ocupadas = liveMesas.filter((m) => m.status === 'ocupada')
   const reservadas = liveMesas.filter((m) => m.status === 'reservada')
+  
+  const receitaAberta = ocupadas.reduce((sum, m) => {
+    const comanda = liveComandas.find((c) => c.id === m.comandaId)
+    return sum + (comanda ? calcTotal(comanda) : 0)
+  }, 0)
 
   return (
-    <div className="space-y-6">
-      {/* Summary strip */}
-      <div className="flex items-center gap-6 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-5 py-3">
-        <Kpi label="Ocupadas" value={ocupadas.length} color="#f87171" />
-        <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
-        <Kpi label="Livres" value={livres.length} color="#36f57c" />
-        <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
-        <Kpi label="Reservadas" value={reservadas.length} color="#60a5fa" />
-        {ocupadas.length > 0 && (
-          <>
-            <div className="h-8 w-px bg-[rgba(255,255,255,0.06)]" />
-            <Kpi
-              label="Receita aberta"
-              value={fmtBRL(
-                ocupadas.reduce((sum, m) => {
-                  const comanda = liveComandas.find((c) => c.id === m.comandaId)
-                  return sum + (comanda ? calcTotal(comanda) : 0)
-                }, 0)
-              )}
-              color="var(--accent)"
-            />
-          </>
-        )}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Premium Summary Strip */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:flex items-center rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl">
+        <KpiCard label="Receita Circulante" value={fmtBRL(receitaAberta)} color="var(--accent)" isHighlight />
+        <div className="hidden h-12 w-px bg-gradient-to-b from-transparent via-[rgba(255,255,255,0.1)] to-transparent md:block" />
+        <KpiCard label="Ocupadas" value={ocupadas.length} color="#f87171" total={liveMesas.length} />
+        <KpiCard label="Livres" value={livres.length} color="#36f57c" total={liveMesas.length} />
+        <KpiCard label="Reservas" value={reservadas.length} color="#60a5fa" total={liveMesas.length} />
       </div>
 
-      {/* Mesa grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      {/* Mesas Grid */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {liveMesas.map((mesa) => {
           const comanda = mesa.comandaId ? liveComandas.find((c) => c.id === mesa.comandaId) : undefined
-          const garcomId = mesa.garcomId
-          const garcomName = garcomId ? garcomNames[garcomId] : undefined
+          const garcomName = mesa.garcomId ? garcomNames[mesa.garcomId] : undefined
 
           let urgency: 0 | 1 | 2 | 3 = 0
           if (comanda && mesa.status === 'ocupada') {
@@ -713,7 +709,7 @@ function OperacionalView({
           }
 
           return (
-            <OperacionalCard
+            <ModernOperacionalCard
               key={mesa.id}
               mesa={mesa}
               comanda={comanda}
@@ -727,16 +723,24 @@ function OperacionalView({
   )
 }
 
-function Kpi({ label, value, color }: { label: string; value: number | string; color: string }) {
+function KpiCard({ label, value, color, isHighlight, total }: { label: string; value: string | number; color: string; isHighlight?: boolean, total?: number }) {
+  const percentage = total && typeof value === 'number' ? Math.round((value / total) * 100) : null
+  
   return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-soft)' }}>{label}</p>
-      <p className="text-lg font-bold" style={{ color }}>{value}</p>
+    <div className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}>
+      <div className="flex items-center gap-2">
+        <span className="size-2 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: color, color: color }} />
+        <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)]">{label}</p>
+      </div>
+      <div className="mt-2 flex items-baseline gap-2">
+        <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+        {percentage !== null && <p className="text-xs font-medium" style={{ color: `${color}99` }}>{percentage}%</p>}
+      </div>
     </div>
   )
 }
 
-function OperacionalCard({
+function ModernOperacionalCard({
   mesa,
   comanda,
   garcomName,
@@ -748,62 +752,140 @@ function OperacionalCard({
   urgency: 0 | 1 | 2 | 3
 }) {
   const STATUS_CFG = {
-    livre:     { label: 'Livre',     color: '#36f57c', bg: 'rgba(54,245,124,0.06)'  },
-    ocupada:   { label: 'Ocupada',   color: '#f87171', bg: 'rgba(248,113,113,0.06)' },
-    reservada: { label: 'Reservada', color: '#60a5fa', bg: 'rgba(96,165,250,0.06)'  },
+    livre: { label: 'Livre', color: '#36f57c', bgFrom: 'rgba(54,245,124,0.03)', bgTo: 'rgba(54,245,124,0.01)', border: 'rgba(54,245,124,0.15)' },
+    ocupada: { label: 'Ocupada', color: '#f87171', bgFrom: 'rgba(248,113,113,0.04)', bgTo: 'rgba(248,113,113,0.01)', border: 'rgba(248,113,113,0.2)' },
+    reservada: { label: 'Reservada', color: '#60a5fa', bgFrom: 'rgba(96,165,250,0.04)', bgTo: 'rgba(96,165,250,0.01)', border: 'rgba(96,165,250,0.2)' },
   }
 
   const cfg = STATUS_CFG[mesa.status]
-  const borderColor = mesa.status === 'ocupada' ? URGENCY_BORDER[urgency] : `${cfg.color}28`
+  
+  // High urgency effects
+  const isCritical = urgency >= 3
+  const isWarning = urgency === 2
+  
+  let dynamicBorder = cfg.border
+  let dynamicShadow = '0 4px 20px rgba(0,0,0,0.2)'
+  let pulseClass = ''
+  
+  if (mesa.status === 'ocupada') {
+    if (isCritical) {
+      dynamicBorder = 'rgba(248,113,113,0.6)'
+      dynamicShadow = '0 0 30px rgba(248,113,113,0.15)'
+      pulseClass = 'animate-pulse'
+    } else if (isWarning) {
+      dynamicBorder = 'rgba(251,191,36,0.4)'
+      dynamicShadow = '0 0 20px rgba(251,191,36,0.1)'
+    }
+  }
 
   const total = comanda ? calcTotal(comanda) : 0
   const itemCount = comanda ? comanda.itens.reduce((s, i) => s + i.quantidade, 0) : 0
   const elapsed = comanda ? formatElapsed(comanda.abertaEm) : null
 
+  const shortGarcom = garcomName ? garcomName.split(' ')[0] : 'S/ Garçom'
+  const garcomInitials = garcomName ? garcomName.substring(0, 2).toUpperCase() : '?'
+
+  const GARCOM_COLORS = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
+  const colorIndex = garcomName ? garcomName.charCodeAt(0) % GARCOM_COLORS.length : 0
+  const garcomColor = garcomName ? GARCOM_COLORS[colorIndex] : '#7a8896'
+
   return (
-    <div
-      className="imperial-card-soft flex flex-col gap-2 rounded-xl p-3 transition-all duration-300"
+    <div 
+      className="group relative flex h-full min-h-[140px] flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] transition-all duration-500 hover:-translate-y-1 hover:border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.04)]"
       style={{
-        backgroundColor: cfg.bg,
-        borderColor,
-        boxShadow: URGENCY_SHADOW[urgency],
+        boxShadow: dynamicShadow,
+        borderColor: dynamicBorder
       }}
     >
-      {/* Header: label + status badge */}
-      <div className="flex items-start justify-between gap-1">
-        <span className="truncate text-sm font-bold text-[var(--text-primary)]">{mesa.numero}</span>
-        <span
-          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
-          style={{ color: cfg.color, backgroundColor: `${cfg.color}18` }}
-        >
-          {cfg.label}
-        </span>
-      </div>
-
-      {comanda ? (
-        <>
-          {/* Itens + garçom */}
-          <p className="text-[11px] text-[var(--text-soft)]">
-            {itemCount} {itemCount === 1 ? 'item' : 'itens'}
-            {garcomName ? <span className="opacity-70"> · {garcomName.split(' ')[0]}</span> : null}
-          </p>
-          {/* Tempo + total */}
-          <div className="flex items-center justify-between gap-1">
-            <span
-              className="flex items-center gap-0.5 text-[11px]"
-              style={{ color: urgency >= 2 ? '#fbbf24' : urgency === 1 ? '#fb923c' : 'var(--text-soft)' }}
-            >
-              <Clock className="size-3 shrink-0" />
-              {elapsed}
-            </span>
-            <span className="text-xs font-semibold text-white">{fmtBRL(total)}</span>
-          </div>
-        </>
-      ) : (
-        <p className="text-[11px] text-[var(--text-soft)]">
-          👤 {mesa.capacidade}
-        </p>
+      {/* Background Status Glow */}
+      <div 
+        className="absolute inset-0 opacity-40 mix-blend-screen transition-opacity duration-1000 group-hover:opacity-60"
+        style={{
+          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.bgFrom} 0%, ${cfg.bgTo} 50%, transparent 100%)`
+        }}
+      />
+      
+      {/* Critical Glow Effect */}
+      {isCritical && (
+        <div className="absolute inset-x-0 top-0 h-1 bg-red-400 bg-opacity-80 drop-shadow-[0_0_8px_rgba(248,113,113,1)]" />
       )}
+
+      {/* Inner Content */}
+      <div className="relative flex flex-1 flex-col p-4">
+        {/* Header Row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span 
+              className={`flex h-6 items-center rounded-full px-2.5 text-[9px] font-bold uppercase tracking-widest ${pulseClass}`}
+              style={{ color: cfg.color, backgroundColor: `${cfg.color}15`, border: `1px solid ${cfg.color}30` }}
+            >
+              {cfg.label}
+            </span>
+          </div>
+          {/* Waiter Avatar ("Monitoring TV") */}
+          {mesa.status === 'ocupada' && garcomName && (
+            <div className="flex shrink-0 flex-col items-center justify-center animate-in zoom-in-50 duration-500">
+               <div 
+                 className="flex size-11 items-center justify-center rounded-full text-[15px] font-black shadow-lg border-[2px]"
+                 style={{ 
+                   backgroundColor: garcomColor, 
+                   color: '#111', 
+                   borderColor: 'rgba(255,255,255,0.2)',
+                   textShadow: '0 1px 1px rgba(255,255,255,0.5)', 
+                   boxShadow: `0 0 20px ${garcomColor}66` 
+                 }}
+               >
+                 {garcomInitials}
+               </div>
+               <span className="mt-1.5 text-[10px] font-bold text-white tracking-wide drop-shadow-md">
+                 {shortGarcom}
+               </span>
+            </div>
+          )}
+        </div>
+
+        {/* Mesa Label - Big & Bold */}
+        <div className="mt-3 flex-1">
+          <h4 className="text-xl font-black tracking-tight text-white drop-shadow-sm">{mesa.numero}</h4>
+          {comanda?.clienteNome && (
+            <p className="mt-1 truncate text-xs font-medium text-[var(--text-soft)]" title={comanda.clienteNome}>
+              {comanda.clienteNome}
+            </p>
+          )}
+        </div>
+
+        {/* Footer Data */}
+        {comanda ? (
+          <div className="mt-4 flex items-end justify-between border-t border-[rgba(255,255,255,0.05)] pt-3">
+            <div className="flex flex-col gap-1.5">
+              <div 
+                className="flex items-center gap-1.5 text-[11px] font-semibold"
+                style={{ color: isCritical ? '#f87171' : isWarning ? '#fbbf24' : '#fb923c' }}
+              >
+                <Clock className="size-3.5" />
+                <span>{elapsed}</span>
+              </div>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                {itemCount} {itemCount === 1 ? 'item' : 'itens'}
+              </span>
+            </div>
+            
+            <div className="text-right">
+              <span className="flex items-baseline justify-end text-lg font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]">
+                {fmtBRL(total)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.05)] pt-3 opacity-60">
+            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+              <Armchair className="size-3.5" />
+              <span>{mesa.capacidade} lugares</span>
+            </div>
+            {mesa.status === 'reservada' && <span className="text-[10px] font-medium uppercase tracking-widest text-[#60a5fa]">Reservado</span>}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

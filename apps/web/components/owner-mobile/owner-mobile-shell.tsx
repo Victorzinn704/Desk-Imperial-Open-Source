@@ -1,14 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { Mesa } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BarChart3, Building2, ChefHat, ClipboardList, Cog, LogOut, TrendingUp } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ComandaStatus } from '@/components/pdv/pdv-types'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { KitchenOrdersView } from '../staff-mobile/kitchen-orders-view'
 import { MobileComandaList } from '../staff-mobile/mobile-comanda-list'
 import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
+import { ConnectionBanner } from '@/components/shared/connection-banner'
+import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
+import { PullIndicator } from '@/components/shared/pull-indicator'
+import { haptic } from '@/components/shared/haptic'
 import {
   fetchOperationsLive,
   fetchOrders,
@@ -45,6 +50,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
 
+  const handlePullRefresh = useCallback(async () => {
+    haptic.light()
+    await queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+  }, [queryClient])
+
+  const {
+    containerRef: pullRef,
+    indicatorStyle: pullIndicatorStyle,
+    isRefreshing,
+    progress: pullProgress,
+  } = usePullToRefresh({ onRefresh: handlePullRefresh })
+
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
     queryFn: () => fetchOperationsLive(),
@@ -72,14 +89,24 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status),
-    onSuccess: () => invalidateOwnerWorkspace(queryClient),
+    onSuccess: () => {
+      invalidateOwnerWorkspace(queryClient)
+      toast.success('Status atualizado')
+      haptic.medium()
+    },
+    onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status'); haptic.error() },
   })
 
   const closeComandaMutation = useMutation({
     mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: {
       comandaId: string; discountAmount: number; serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
-    onSuccess: () => invalidateOwnerWorkspace(queryClient),
+    onSuccess: () => {
+      invalidateOwnerWorkspace(queryClient)
+      toast.success('Comanda fechada')
+      haptic.heavy()
+    },
+    onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao fechar comanda'); haptic.error() },
   })
 
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
@@ -160,6 +187,14 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => router.push('/dashboard?view=settings&panel=account')}
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-transform active:scale-95"
+            aria-label="Configurações"
+          >
+            <Cog className="size-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => router.push('/dashboard')}
             className="flex size-10 items-center justify-center rounded-full bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-transform active:scale-95"
             aria-label="Abrir painel completo"
@@ -178,6 +213,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         </div>
       </header>
 
+      <ConnectionBanner status={realtimeStatus} />
+
       {screenError ? (
         <div className="border-b border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
           {screenError}
@@ -192,7 +229,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       ) : null}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      <main ref={pullRef} className="flex-1 overflow-y-auto relative">
+        <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
         {activeTab === 'mesas' ? (
           <MobileTableGrid
             mesas={mesas}
@@ -215,7 +253,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <MobileComandaList
             comandas={activeComandas}
             onUpdateStatus={handleUpdateStatus}
-            focusedComandaId={focusedComandaId}
+            focusedId={focusedComandaId}
           />
         ) : null}
 

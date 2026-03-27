@@ -55,9 +55,9 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
             ))}
           </Pie>
           <Tooltip
-            formatter={(value) => [
+            formatter={(value, name) => [
               formatCompactCurrency(Number(value), displayCurrency),
-              'Valor em estoque',
+              name,
             ]}
             contentStyle={{
               background: 'rgba(18,24,20,0.97)',

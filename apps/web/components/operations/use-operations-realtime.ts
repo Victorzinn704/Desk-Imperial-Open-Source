@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import type { QueryClient } from '@tanstack/react-query'
+import type { OperationsLiveResponse } from '@contracts/contracts'
 
 const OPERATIONS_EVENTS = [
   'cash.opened',
@@ -13,6 +14,7 @@ const OPERATIONS_EVENTS = [
   'cash.closure.updated',
   'kitchen.item.queued',
   'kitchen.item.updated',
+  'mesa.upserted',
 ] as const
 
 export type RealtimeStatus = 'connecting' | 'connected' | 'disconnected'
@@ -22,6 +24,7 @@ export function useOperationsRealtime(
   queryClient: QueryClient,
 ): { status: RealtimeStatus } {
   const [status, setStatus] = useState<RealtimeStatus>('connecting')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!enabled) {
@@ -37,9 +40,18 @@ export function useOperationsRealtime(
       reconnectionDelayMax: 10_000,
     })
 
-    const invalidate = () => {
-      queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
-      queryClient.invalidateQueries({ queryKey: ['mesas'] })
+    // Write-through: se o evento vier com snapshot, aplica direto no cache.
+    // Caso contrário, invalida com debounce de 200ms para evitar cascata de re-renders.
+    const handleEvent = (payload?: { snapshot?: OperationsLiveResponse }) => {
+      if (payload?.snapshot) {
+        queryClient.setQueryData(['operations', 'live'], payload.snapshot)
+        return
+      }
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+        queryClient.invalidateQueries({ queryKey: ['mesas'] })
+      }, 200)
     }
 
     const invalidateCommercial = () => {
@@ -52,18 +64,19 @@ export function useOperationsRealtime(
     socket.on('connect_error', () => {
       setStatus('disconnected')
       // fallback: força atualização mesmo sem socket
-      invalidate()
+      handleEvent()
     })
 
     for (const eventName of OPERATIONS_EVENTS) {
-      socket.on(eventName, invalidate)
+      socket.on(eventName, handleEvent)
     }
 
     socket.on('comanda.closed', invalidateCommercial)
 
     return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
       for (const eventName of OPERATIONS_EVENTS) {
-        socket.off(eventName, invalidate)
+        socket.off(eventName, handleEvent)
       }
 
       socket.off('comanda.closed', invalidateCommercial)

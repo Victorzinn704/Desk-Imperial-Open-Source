@@ -247,16 +247,25 @@ export function LoginForm() {
         <button
           className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20"
           type="button"
-          onClick={() =>
-            loginMutation.mutate({
-              loginMode: 'OWNER',
-              email: DEMO_EMAIL,
-              password: DEMO_PASSWORD,
-            })
-          }
+          onClick={() => {
+            if (isStaffMode) {
+              loginMutation.mutate({
+                loginMode: 'STAFF',
+                companyEmail: DEMO_EMAIL,
+                employeeCode: 'VD-001',
+                password: '123456',
+              })
+            } else {
+              loginMutation.mutate({
+                loginMode: 'OWNER',
+                email: DEMO_EMAIL,
+                password: DEMO_PASSWORD,
+              })
+            }
+          }}
         >
           <div>
-            <p className="text-sm font-semibold text-white">Acessar Sessão Demo</p>
+            <p className="text-sm font-semibold text-white">Acessar Sessão Demo {isStaffMode ? 'Funcionário' : 'Empresa'}</p>
             <p className="text-xs text-white/40">Experimente sem compromisso</p>
           </div>
           <svg className="size-4 text-white/30" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

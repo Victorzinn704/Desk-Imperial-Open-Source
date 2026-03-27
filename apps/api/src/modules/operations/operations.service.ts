@@ -7,6 +7,7 @@ import type { RequestContext } from '../../common/utils/request-context.util'
 import { CashSessionService } from './cash-session.service'
 import { ComandaService } from './comanda.service'
 import { OperationsHelpersService } from './operations-helpers.service'
+import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import { AssignComandaDto } from './dto/assign-comanda.dto'
 import { AddComandaItemDto } from './dto/add-comanda-item.dto'
 import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
@@ -32,6 +33,7 @@ export class OperationsService {
     private readonly cashSession: CashSessionService,
     private readonly comanda: ComandaService,
     private readonly helpers: OperationsHelpersService,
+    private readonly realtime: OperationsRealtimeService,
   ) {}
 
   // ── Live snapshot ─────────────────────────────────────────────────────────
@@ -134,6 +136,7 @@ export class OperationsService {
         positionY: dto.positionY ?? null,
       },
     })
+    this.realtime.publishMesaUpserted(auth, { mesaId: mesa.id, label: mesa.label, status: 'livre' })
     return toMesaRecord(mesa, [])
   }
 
@@ -162,6 +165,7 @@ export class OperationsService {
         }),
       },
     })
+    this.realtime.publishMesaUpserted(auth, { mesaId: updated.id, label: updated.label, status: 'livre' })
     return toMesaRecord(updated, [])
   }
 }

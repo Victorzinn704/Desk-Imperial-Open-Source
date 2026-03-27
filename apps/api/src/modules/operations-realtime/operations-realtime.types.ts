@@ -13,6 +13,7 @@ export type OperationsRealtimeEventName =
   | 'cash.closure.updated'
   | 'kitchen.item.queued'
   | 'kitchen.item.updated'
+  | 'mesa.upserted'
 
 export type OperationsRealtimeActorRole = 'OWNER' | 'STAFF'
 
@@ -93,6 +94,11 @@ export interface OperationsRealtimeEventPayloadMap {
     kitchenStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
     kitchenQueuedAt: string | null
     kitchenReadyAt: string | null
+  }
+  'mesa.upserted': {
+    mesaId: string
+    label: string
+    status: 'livre' | 'ocupada' | 'reservada'
   }
 }
 

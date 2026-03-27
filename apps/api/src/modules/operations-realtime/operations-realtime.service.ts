@@ -115,4 +115,11 @@ export class OperationsRealtimeService {
   ) {
     return this.publishWorkspaceEvent(auth, 'kitchen.item.updated', payload)
   }
+
+  publishMesaUpserted(
+    auth: Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role'>,
+    payload: OperationsRealtimeEventPayload<'mesa.upserted'>,
+  ) {
+    return this.publishWorkspaceEvent(auth, 'mesa.upserted', payload)
+  }
 }

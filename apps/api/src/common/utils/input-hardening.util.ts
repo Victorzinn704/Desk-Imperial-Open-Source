@@ -1,8 +1,11 @@
 import { BadRequestException } from '@nestjs/common'
 
-const htmlLikePattern = /[<>]/
+// Covers ASCII <>, fullwidth ＜＞ (U+FF1C, U+FF1E), and HTML angle-bracket lookalikes
+const htmlLikePattern = /[<>\uFF1C\uFF1E]/
 const spreadsheetFormulaPattern = /^[=+@-]/
 const whitespacePattern = /\s+/g
+// Bidi override / isolate chars that could spoof displayed text direction
+const bidiOverridePattern = /[\u200F\u200E\u202A-\u202E\u2066-\u2069]/g
 
 export function sanitizePlainText(
   value: string | null | undefined,
@@ -12,7 +15,7 @@ export function sanitizePlainText(
     rejectFormula?: boolean
   },
 ) {
-  const normalized = normalizePlainText(value ?? '')
+  const normalized = normalizePlainText((value ?? '').replace(bidiOverridePattern, ''))
 
   if (!normalized) {
     if (options?.allowEmpty ?? true) {

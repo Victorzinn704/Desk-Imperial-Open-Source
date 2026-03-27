@@ -233,7 +233,7 @@ export function LandingPage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]"
+      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]"
       onClick={handlePageClick}
     >
       <CustomCursor />

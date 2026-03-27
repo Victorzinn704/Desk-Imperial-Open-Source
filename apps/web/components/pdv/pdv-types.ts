@@ -9,6 +9,7 @@ export type Mesa = {
   status: MesaStatus
   comandaId?: string  // comanda vinculada (quando ocupada)
   garcomId?: string   // garçom responsável
+  garcomNome?: string  // nome do garçom para exibição
 }
 
 export type Garcom = {

@@ -31,14 +31,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Desktop: trava scroll no documento — só o conteúdo interno rola */
-@media (min-width: 1280px) {
-  html,
-  body {
-    height: 100%;
-    overflow: hidden;
-  }
-}
 
 body {
   position: relative;

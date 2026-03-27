@@ -1,9 +1,9 @@
 [CmdletBinding(PositionalBinding = $false)]
 Param(
-  [ValidateSet('fast', 'daily', 'critical', 'custom')]
+  [ValidateSet('fast', 'daily', 'critical', 'smart', 'custom')]
   [string]$Mode = 'daily',
 
-  [ValidateSet('openrouter', 'groq', 'github')]
+  [ValidateSet('openrouter', 'groq', 'github', 'minimax')]
   [string]$Provider = '',
 
   [string]$Model = '',
@@ -16,7 +16,51 @@ Param(
 $repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
 Set-Location $repoRoot
 
-$validModes = @('fast', 'daily', 'critical', 'custom')
+$envFiles = @(
+  "$repoRoot\.env.local",
+  "$repoRoot\.env"
+)
+
+function Get-EnvFileValue {
+  Param(
+    [Parameter(Mandatory = $true)]
+    [string]$Key
+  )
+
+  $pattern = '^{0}\s*=\s*(.*)$' -f [regex]::Escape($Key)
+
+  foreach ($envFile in $envFiles) {
+    if (-not (Test-Path $envFile)) { continue }
+
+    foreach ($rawLine in Get-Content -Path $envFile) {
+      $line = $rawLine.Trim()
+      if (-not $line -or $line.StartsWith('#')) { continue }
+
+      if ($line.StartsWith('export ')) {
+        $line = $line.Substring(7).Trim()
+      }
+
+      if ($line -match $pattern) {
+        $value = $Matches[1].Trim()
+
+        if (
+          (($value.StartsWith('"')) -and ($value.EndsWith('"'))) -or
+          (($value.StartsWith("'")) -and ($value.EndsWith("'")))
+        ) {
+          $value = $value.Substring(1, $value.Length - 2)
+        }
+
+        if ($value) {
+          return $value
+        }
+      }
+    }
+  }
+
+  return $null
+}
+
+$validModes = @('fast', 'daily', 'critical', 'smart', 'custom')
 if ($AiderArgs -and $AiderArgs.Count -gt 0) {
   $firstArg = $AiderArgs[0]
   if ($firstArg -and (-not $firstArg.StartsWith('-')) -and ($validModes -contains $firstArg.ToLowerInvariant())) {
@@ -51,6 +95,13 @@ $modeDefaults = @{
     historyTokens = '4500'
     refresh = 'files'
   }
+  smart = @{
+    provider = 'minimax'
+    model = 'minimax-text-01'
+    mapTokens = '896'
+    historyTokens = '2000'
+    refresh = 'files'
+  }
 }
 
 if ($Mode -ne 'custom') {
@@ -74,6 +125,7 @@ if (-not $TokenFile) {
     'openrouter' { $TokenFile = "$repoRoot\.openrouter.token" }
     'groq' { $TokenFile = "$repoRoot\.groq.token" }
     'github' { $TokenFile = "$repoRoot\.github-models.token" }
+    'minimax' { $TokenFile = "$repoRoot\.minimax.token" }
   }
 }
 
@@ -81,6 +133,14 @@ switch ($Provider) {
   'openrouter' {
     if ($env:OPENROUTER_API_KEY) {
       $env:OPENAI_API_KEY = $env:OPENROUTER_API_KEY
+    }
+
+    if (-not $env:OPENAI_API_KEY) {
+      $token = Get-EnvFileValue -Key 'OPENROUTER_API_KEY'
+      if (-not $token) {
+        $token = Get-EnvFileValue -Key 'OPENAI_API_KEY'
+      }
+      if ($token) { $env:OPENAI_API_KEY = $token }
     }
 
     if (-not $env:OPENAI_API_KEY -and (Test-Path $TokenFile)) {
@@ -102,6 +162,14 @@ switch ($Provider) {
       $env:OPENAI_API_KEY = $env:GROQ_API_KEY
     }
 
+    if (-not $env:OPENAI_API_KEY) {
+      $token = Get-EnvFileValue -Key 'GROQ_API_KEY'
+      if (-not $token) {
+        $token = Get-EnvFileValue -Key 'OPENAI_API_KEY'
+      }
+      if ($token) { $env:OPENAI_API_KEY = $token }
+    }
+
     if (-not $env:OPENAI_API_KEY -and (Test-Path $TokenFile)) {
       $token = (Get-Content -Path $TokenFile -Raw).Trim()
       if ($token) { $env:OPENAI_API_KEY = $token }
@@ -117,6 +185,11 @@ switch ($Provider) {
   }
 
   'github' {
+    if (-not $env:OPENAI_API_KEY) {
+      $token = Get-EnvFileValue -Key 'OPENAI_API_KEY'
+      if ($token) { $env:OPENAI_API_KEY = $token }
+    }
+
     if (-not $env:OPENAI_API_KEY -and (Test-Path $TokenFile)) {
       $token = (Get-Content -Path $TokenFile -Raw).Trim()
       if ($token) { $env:OPENAI_API_KEY = $token }
@@ -129,6 +202,33 @@ switch ($Provider) {
 
     if (-not $Model) { $Model = 'gpt-4o' }
     $env:OPENAI_API_BASE = 'https://models.inference.ai.azure.com'
+  }
+
+  'minimax' {
+    if ($env:MINIMAX_API_KEY) {
+      $env:OPENAI_API_KEY = $env:MINIMAX_API_KEY
+    }
+
+    if (-not $env:OPENAI_API_KEY) {
+      $token = Get-EnvFileValue -Key 'MINIMAX_API_KEY'
+      if (-not $token) {
+        $token = Get-EnvFileValue -Key 'OPENAI_API_KEY'
+      }
+      if ($token) { $env:OPENAI_API_KEY = $token }
+    }
+
+    if (-not $env:OPENAI_API_KEY -and (Test-Path $TokenFile)) {
+      $token = (Get-Content -Path $TokenFile -Raw).Trim()
+      if ($token) { $env:OPENAI_API_KEY = $token }
+    }
+
+    if (-not $env:OPENAI_API_KEY) {
+      Write-Error 'Defina MINIMAX_API_KEY (ou OPENAI_API_KEY) ou crie .minimax.token.'
+      exit 1
+    }
+
+    if (-not $Model) { $Model = 'minimax-text-01' }
+    $env:OPENAI_API_BASE = 'https://api.minimaxi.com/v1'
   }
 }
 

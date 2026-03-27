@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { LoaderCircle, Minus, Plus, Printer, RefreshCw, Search, X } from 'lucide-react'
+import { useMemo, useState, useRef } from 'react'
+import { LoaderCircle, Minus, Plus, Printer, RefreshCw, Search, X, Coffee, Pizza, Beer, Package, UtensilsCrossed, Wine } from 'lucide-react'
 import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
 import { maskDocument, validateDocument } from '@/lib/document-validation'
+import { AdminPinDialog } from '@/components/admin-pin/admin-pin-dialog'
 import type { Comanda, ComandaItem } from './pdv-types'
 import { calcTotal } from './pdv-types'
 import { useThermalPrinting } from './use-thermal-printing'
@@ -54,7 +55,15 @@ export function PdvComandaModal({
   const [desconto, setDesconto] = useState(comanda?.desconto ?? 0)
   const [acrescimo, setAcrescimo] = useState(comanda?.acrescimo ?? 0)
   const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  
+  // PIN protection states
+  const [isPinDialogOpen, setIsPinDialogOpen] = useState(false)
+  const [pinDialogTitle, setPinDialogTitle] = useState('Ação protegida')
+  const [pinDialogDescription, setPinDialogDescription] = useState('Digite o PIN para confirmar')
+  const pinActionRef = useRef<(() => void) | null>(null)
+  
   const {
     printers,
     selectedPrinterName,
@@ -68,12 +77,46 @@ export function PdvComandaModal({
   const docValidation = validateDocument(clienteDocumento)
   const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase()),
-  )
+  const categories = Array.from(new Set(products.map(p => p.category))).filter(Boolean).sort()
 
-  function addItem(product: SimpleProduct) {
+  const filteredProducts = products.filter((p) => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
+    const matchCat = selectedCategory ? p.category === selectedCategory : true
+    return matchSearch && matchCat
+  })
+
+  // Helper to require PIN before executing an action
+  function requirePin(action: () => void, title: string, description: string) {
+    setPinDialogTitle(title)
+    setPinDialogDescription(description)
+    pinActionRef.current = action
+    setIsPinDialogOpen(true)
+  }
+
+  function handlePinConfirm() {
+    if (pinActionRef.current) {
+      pinActionRef.current()
+    }
+    setIsPinDialogOpen(false)
+    pinActionRef.current = null
+  }
+
+  function handlePinCancel() {
+    setIsPinDialogOpen(false)
+    pinActionRef.current = null
+  }
+
+  // Heuristic icon mapper
+  function getCategoryIcon(cat: string) {
+    const low = cat.toLowerCase()
+    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('vinho')) return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('combo') || low.includes('kit')) return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+
     setItens((prev) => {
       const existing = prev.find((item) => item.produtoId === product.id)
       if (existing) {
@@ -215,6 +258,43 @@ export function PdvComandaModal({
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
+
+              {/* Categories Kanban Squares */}
+              {categories.length > 0 && (
+                <div className="mt-4 flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className={`group flex shrink-0 flex-col items-center justify-center rounded-[14px] border px-3 py-3 min-w-[70px] transition-all hover:-translate-y-0.5 ${
+                      selectedCategory === null 
+                        ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]' 
+                        : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
+                    }`}
+                  >
+                    <Search className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`} />
+                    <span className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}>Todos</span>
+                  </button>
+
+                  {categories.map((cat) => {
+                    const isActive = selectedCategory === cat
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`group flex shrink-0 flex-col items-center justify-center rounded-[14px] border px-3 py-3 min-w-[70px] transition-all hover:-translate-y-0.5 ${
+                          isActive
+                            ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
+                            : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
+                        }`}
+                      >
+                        {getCategoryIcon(cat)}
+                        <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
+                          {cat.length > 10 ? cat.substring(0,10) + '...' : cat}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">
@@ -334,7 +414,14 @@ export function PdvComandaModal({
                   min="0"
                   type="number"
                   value={desconto}
-                  onChange={(event) => setDesconto(Math.min(100, Math.max(0, Number(event.target.value))))}
+                  onChange={(event) => {
+                    const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
+                    if (newValue > 0 && newValue !== desconto) {
+                      requirePin(() => setDesconto(newValue), 'Aplicar Desconto', `Confirme o desconto de ${newValue}% com seu PIN.`)
+                    } else {
+                      setDesconto(newValue)
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -347,7 +434,14 @@ export function PdvComandaModal({
                   min="0"
                   type="number"
                   value={acrescimo}
-                  onChange={(event) => setAcrescimo(Math.min(100, Math.max(0, Number(event.target.value))))}
+                  onChange={(event) => {
+                    const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
+                    if (newValue > 0 && newValue !== acrescimo) {
+                      requirePin(() => setAcrescimo(newValue), 'Aplicar Acréscimo', `Confirme o acréscimo de ${newValue}% com seu PIN.`)
+                    } else {
+                      setAcrescimo(newValue)
+                    }
+                  }}
                 />
               </div>
             </div>

@@ -198,6 +198,7 @@ export const productSchema = z.object({
     .number()
     .int('Use um número inteiro para unidades avulsas.')
     .min(0, 'A quantidade de unidades avulsas não pode ser negativa.'),
+  requiresKitchen: z.boolean().optional().default(false),
 })
   .superRefine((values, context) => {
     if (values.unitsPerPackage > 1 && values.stockLooseUnits >= values.unitsPerPackage) {

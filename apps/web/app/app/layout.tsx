@@ -1,31 +1,44 @@
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'sonner'
-import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
 import { QueryProvider } from '@/providers/query-provider'
-import './globals.css'
+import { ServiceWorkerRegistrar } from '@/components/shared/sw-registrar'
+import '../globals.css'
 
 export const metadata: Metadata = {
-  title: 'DESK IMPERIAL',
-  description: 'Plataforma empresarial moderna com UX/UI premium, seguranca e observabilidade.',
+  title: 'Desk Imperial — Operacional',
+  description: 'Sistema operacional móvel para garçons e proprietários.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Desk Imperial',
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
+  themeColor: '#0a0a0a',
 }
 
-export default function RootLayout({
+export default function AppMobileLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <html lang="pt-BR">
-      <body>
+      <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+      </head>
+      <body style={{ background: '#0a0a0a', overscrollBehavior: 'none' }}>
         <QueryProvider>
-          <div id="app-shell">{children}</div>
+          {children}
         </QueryProvider>
+        <ServiceWorkerRegistrar />
         <Toaster
           theme="dark"
           position="top-center"
@@ -38,9 +51,6 @@ export default function RootLayout({
             },
           }}
         />
-        <div id="cookie-consent-root">
-          <CookieConsentBanner />
-        </div>
       </body>
     </html>
   )

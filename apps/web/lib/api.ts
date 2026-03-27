@@ -595,6 +595,13 @@ export async function updateComandaStatus(comandaId: string, status: Extract<Com
   })
 }
 
+export async function cancelComanda(comandaId: string) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/status`, {
+    method: 'POST',
+    body: { status: 'CANCELLED' },
+  })
+}
+
 export async function closeComanda(comandaId: string, payload: CloseComandaPayload) {
   return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/close`, {
     method: 'POST',

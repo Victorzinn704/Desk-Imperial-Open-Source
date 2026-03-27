@@ -160,7 +160,7 @@ export class DemoAccessService {
   }
 
   private getDailyLimitMinutes() {
-    const configuredLimit = Number(this.configService.get<string>('DEMO_DAILY_LIMIT_MINUTES') ?? 20)
+    const configuredLimit = Number(this.configService.get<string>('DEMO_DAILY_LIMIT_MINUTES') ?? 999999)
     return Math.max(configuredLimit, 1)
   }
 

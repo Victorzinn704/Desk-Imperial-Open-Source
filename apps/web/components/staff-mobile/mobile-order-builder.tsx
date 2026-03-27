@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
-import { ShoppingCart, Plus, Minus, Search, PlusCircle } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Search, PlusCircle, Coffee, Pizza, Beer, Package, UtensilsCrossed, Wine } from 'lucide-react'
 
 interface MobileOrderBuilderProps {
   mesaLabel: string
@@ -22,14 +22,28 @@ function formatCurrency(value: number): string {
 
 export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartEntry[]>([])
 
   const activeProdutos = produtos.filter((p) => p.active)
+  const categories = Array.from(new Set(activeProdutos.map(p => p.category))).filter(Boolean).sort()
 
-  const filtered = activeProdutos.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase()),
-  )
+  const filtered = activeProdutos.filter((p) => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
+    const matchCat = selectedCategory ? p.category === selectedCategory : true
+    return matchSearch && matchCat
+  })
+
+  // Heuristic icon mapper
+  function getCategoryIcon(cat: string) {
+    const low = cat.toLowerCase()
+    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('vinho')) return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('combo') || low.includes('kit')) return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
 
   function getQty(produtoId: string): number {
     return cart.find((c) => c.produtoId === produtoId)?.quantidade ?? 0
@@ -117,6 +131,43 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-2.5 pl-9 pr-4 text-sm text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
           />
         </div>
+
+        {/* Categories Kanban Squares */}
+        {categories.length > 0 && (
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] transition-all hover:-translate-y-0.5 ${
+                selectedCategory === null 
+                  ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]' 
+                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] hover:border-[rgba(255,255,255,0.2)]'
+              }`}
+            >
+              <Search className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-black' : ''}`} />
+              <span className={`text-[10px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-black' : ''}`}>Todos</span>
+            </button>
+
+            {categories.map((cat) => {
+              const isActive = selectedCategory === cat
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] transition-all hover:-translate-y-0.5 ${
+                    isActive
+                      ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
+                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] hover:border-[rgba(255,255,255,0.2)]'
+                  }`}
+                >
+                  {getCategoryIcon(cat)}
+                  <span className={`text-[10px] uppercase font-bold tracking-wider ${isActive ? 'text-black' : ''}`}>
+                    {cat.length > 10 ? cat.substring(0,10) + '...' : cat}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Product list — scrollable */}

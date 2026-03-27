@@ -19,6 +19,7 @@ import {
   toPdvComanda,
 } from './pdv-operations'
 import { type Comanda, type ComandaItem, type ComandaStatus, type Mesa, KANBAN_COLUMNS, calcTotal } from './pdv-types'
+import { normalizeTableLabel } from './normalize-table-label'
 import { SalaoUnificado } from './pdv-salao-unified'
 
 type SimpleProduct = {
@@ -102,7 +103,7 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     const draft: Comanda = {
       id: editingComanda?.id ?? '',
       status: editingComanda?.status ?? 'aberta',
-      mesa: data.mesa,
+      mesa: normalizeTableLabel(data.mesa),
       clienteNome: data.clienteNome || undefined,
       clienteDocumento: data.clienteDocumento || undefined,
       itens: data.itens,
@@ -112,7 +113,7 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     }
     const amounts = toOperationAmounts(draft)
     const payload = {
-      tableLabel: data.mesa.trim(),
+      tableLabel: normalizeTableLabel(data.mesa),
       customerName: data.clienteNome.trim() || undefined,
       customerDocument: data.clienteDocumento.trim() || undefined,
       items: data.itens.map((item) => ({
