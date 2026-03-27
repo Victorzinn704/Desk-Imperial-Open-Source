@@ -74,10 +74,7 @@ export class PeriodClassifierService {
    * @param settings Configurações do estabelecimento (usa default se não fornecido)
    * @returns Resultado da classificação
    */
-  classify(
-    timestamp: Date | string | number,
-    settings?: EstablishmentSettings,
-  ): PeriodClassificationResult {
+  classify(timestamp: Date | string | number, settings?: EstablishmentSettings): PeriodClassificationResult {
     const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
 
@@ -152,10 +149,7 @@ export class PeriodClassifierService {
   /**
    * Retorna contexto completo da venda
    */
-  getContext(
-    timestamp: Date | string | number,
-    settings?: EstablishmentSettings,
-  ): PeriodClassificationResult {
+  getContext(timestamp: Date | string | number, settings?: EstablishmentSettings): PeriodClassificationResult {
     return this.classify(timestamp, settings)
   }
 

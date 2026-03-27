@@ -23,9 +23,13 @@ export function FounderPortraitCard() {
               <span className="flex size-16 lg:size-20 items-center justify-center rounded-[24px] lg:rounded-[30px] border border-[var(--border-strong)] bg-[rgba(155,132,96,0.1)] text-[var(--accent)] shadow-[0_16px_32px_rgba(0,0,0,0.2)] lg:shadow-[0_24px_56px_rgba(0,0,0,0.28)]">
                 <UserRound className="size-8 lg:size-9" />
               </span>
-              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Espaço do fundador</p>
+              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+                Espaço do fundador
+              </p>
               <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--text-soft)]">
-                Salve sua imagem em <span className="font-semibold text-[var(--text-primary)]">apps/web/public/founder-portrait.png</span> para ativar este destaque.
+                Salve sua imagem em{' '}
+                <span className="font-semibold text-[var(--text-primary)]">apps/web/public/founder-portrait.png</span>{' '}
+                para ativar este destaque.
               </p>
             </div>
           )}

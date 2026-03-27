@@ -16,10 +16,10 @@ function formatDateTime(date: Date): string {
 type Filtro = 'tudo' | 'abertas' | 'fechadas'
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  aberta:     { label: 'Aberta',     color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta:     { label: 'Pronta',     color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada:    { label: 'Paga',       color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
+  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
 interface Props {
@@ -44,11 +44,13 @@ export function OwnerComandasView({ comandas }: Props) {
     <div className="p-4">
       {/* Filtros */}
       <div className="mb-4 flex gap-2">
-        {([
-          { id: 'tudo', label: `Tudo (${comandas.length})` },
-          { id: 'abertas', label: `Abertas (${countAbertas})` },
-          { id: 'fechadas', label: `Fechadas (${countFechadas})` },
-        ] as const).map(({ id, label }) => (
+        {(
+          [
+            { id: 'tudo', label: `Tudo (${comandas.length})` },
+            { id: 'abertas', label: `Abertas (${countAbertas})` },
+            { id: 'fechadas', label: `Fechadas (${countFechadas})` },
+          ] as const
+        ).map(({ id, label }) => (
           <button
             key={id}
             type="button"
@@ -68,7 +70,9 @@ export function OwnerComandasView({ comandas }: Props) {
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="text-3xl mb-3">📋</span>
-          <p className="text-sm text-white font-medium">Nenhuma comanda {filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : ''}</p>
+          <p className="text-sm text-white font-medium">
+            Nenhuma comanda {filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : ''}
+          </p>
           <p className="text-xs text-[#7a8896] mt-1">Nenhum registro encontrado para este filtro</p>
         </div>
       ) : (
@@ -112,24 +116,23 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
           {/* Linha 2: Garçom + Data/hora */}
           <div className="flex items-center gap-2 flex-wrap">
             {comanda.garcomNome && (
-              <span className="text-[11px] text-[#a78bfa] font-medium">
-                👤 {comanda.garcomNome}
-              </span>
+              <span className="text-[11px] text-[#a78bfa] font-medium">👤 {comanda.garcomNome}</span>
             )}
-            <span className="text-[11px] text-[#7a8896]">
-              🕐 {formatDateTime(comanda.abertaEm)}
-            </span>
+            <span className="text-[11px] text-[#7a8896]">🕐 {formatDateTime(comanda.abertaEm)}</span>
             <span className="text-[11px] text-[#7a8896]">
               {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2 pt-1">
-          <span className="text-sm font-bold" style={{ color: badge.color }}>{formatCurrency(total)}</span>
-          {open
-            ? <ChevronDown className="size-4 text-[#7a8896]" />
-            : <ChevronRight className="size-4 text-[#7a8896]" />
-          }
+          <span className="text-sm font-bold" style={{ color: badge.color }}>
+            {formatCurrency(total)}
+          </span>
+          {open ? (
+            <ChevronDown className="size-4 text-[#7a8896]" />
+          ) : (
+            <ChevronRight className="size-4 text-[#7a8896]" />
+          )}
         </div>
       </button>
 
@@ -145,9 +148,7 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                     <p className="text-xs font-medium text-white truncate">
                       {item.quantidade}× {item.nome}
                     </p>
-                    {item.observacao && (
-                      <p className="text-[10px] italic text-[#7a8896]">"{item.observacao}"</p>
-                    )}
+                    {item.observacao && <p className="text-[10px] italic text-[#7a8896]">"{item.observacao}"</p>}
                   </div>
                   <span className="text-xs font-semibold text-white shrink-0">
                     {formatCurrency(item.quantidade * item.precoUnitario)}

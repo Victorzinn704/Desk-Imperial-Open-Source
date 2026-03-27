@@ -29,9 +29,7 @@ export function readCookieConsentChoice() {
     }
   }
 
-  const cookieValue = document.cookie
-    .split('; ')
-    .find((item) => item.startsWith(`${CONSENT_COOKIE_NAME}=`))
+  const cookieValue = document.cookie.split('; ').find((item) => item.startsWith(`${CONSENT_COOKIE_NAME}=`))
 
   if (!cookieValue) {
     return null

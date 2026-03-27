@@ -397,8 +397,7 @@ export type OperationsLiveResponse = {
  * Padrões de validação compartilhados entre API e Web
  */
 export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/
-export const STRONG_PASSWORD_MESSAGE =
-  'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
+export const STRONG_PASSWORD_MESSAGE = 'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
 export const EMAIL_CODE_REGEX = /^\d{6}$/
 export const EMAIL_CODE_MESSAGE = 'Digite o código de 6 dígitos enviado por e-mail.'
 export const PASSWORD_MIN_LENGTH = 8

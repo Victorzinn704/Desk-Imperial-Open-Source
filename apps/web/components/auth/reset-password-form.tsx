@@ -6,11 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, resetPassword } from '@/lib/api'
-import {
-  getPasswordStrength,
-  type ResetPasswordFormValues,
-  resetPasswordSchema,
-} from '@/lib/validation'
+import { getPasswordStrength, type ResetPasswordFormValues, resetPasswordSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 
@@ -40,10 +36,11 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
     },
   })
 
-  const password = useWatch({
-    control,
-    name: 'password',
-  }) ?? ''
+  const password =
+    useWatch({
+      control,
+      name: 'password',
+    }) ?? ''
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
 
   const onSubmit = handleSubmit((values) => {
@@ -63,9 +60,7 @@ export function ResetPasswordForm({ email }: Readonly<{ email?: string }>) {
   return (
     <div>
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Redefinir senha
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Redefinir senha</p>
         <h2 className="text-3xl font-semibold text-white">Escolha uma nova senha para sua conta.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
           O codigo enviado por email expira rapido e invalida as sessoes anteriores depois da troca.

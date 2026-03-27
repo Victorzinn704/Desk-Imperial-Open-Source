@@ -35,9 +35,7 @@ export default function AppMobileLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
       </head>
       <body style={{ background: '#0a0a0a', overscrollBehavior: 'none' }}>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <QueryProvider>{children}</QueryProvider>
         <ServiceWorkerRegistrar />
         <Toaster
           theme="dark"

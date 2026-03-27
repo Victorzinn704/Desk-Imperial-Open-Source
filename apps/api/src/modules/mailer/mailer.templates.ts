@@ -134,8 +134,7 @@ export function buildLoginAlertEmailContent(params: LoginAlertTemplateParams) {
     previewText: 'Detectamos uma nova entrada na sua conta.',
     eyebrow: 'Alerta de acesso',
     title: 'Nova entrada detectada.',
-    intro:
-      'Este aviso ajuda a monitorar acessos à conta. Caso tenha sido você, nenhuma ação adicional é necessária.',
+    intro: 'Este aviso ajuda a monitorar acessos à conta. Caso tenha sido você, nenhuma ação adicional é necessária.',
     body: `
       <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
         <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(occurredAt)}</p>
@@ -309,10 +308,7 @@ function buildCodeEmail(params: {
         : `${params.appName} | Código de segurança`,
     text,
     html,
-    tags:
-      params.eyebrow === 'Confirmação de email'
-        ? ['auth', 'email-verification']
-        : ['auth', 'password-reset'],
+    tags: params.eyebrow === 'Confirmação de email' ? ['auth', 'email-verification'] : ['auth', 'password-reset'],
   }
 }
 

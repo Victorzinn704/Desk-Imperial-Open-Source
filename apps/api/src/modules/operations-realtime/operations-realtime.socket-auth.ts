@@ -84,7 +84,10 @@ export async function authenticateOperationsRealtimeSocket(
   const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
   const workspaceChannel = buildWorkspaceChannel(workspaceOwnerUserId)
 
-  assertOperationsRealtimeWorkspaceAccess(auth as Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role' | 'status'>, workspaceOwnerUserId)
+  assertOperationsRealtimeWorkspaceAccess(
+    auth as Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role' | 'status'>,
+    workspaceOwnerUserId,
+  )
 
   socket.data.auth = auth
   socket.data.workspaceOwnerUserId = workspaceOwnerUserId

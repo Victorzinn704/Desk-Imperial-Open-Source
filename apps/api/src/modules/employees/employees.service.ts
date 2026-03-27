@@ -24,7 +24,10 @@ export class EmployeesService {
     assertOwnerRole(auth, 'Apenas o dono pode listar e gerenciar funcionarios.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
 
-    type ListResult = { items: ReturnType<typeof toEmployeeRecord>[]; totals: { totalEmployees: number; activeEmployees: number } }
+    type ListResult = {
+      items: ReturnType<typeof toEmployeeRecord>[]
+      totals: { totalEmployees: number; activeEmployees: number }
+    }
     const cached = await this.cache.get<ListResult>(CacheService.employeesKey(workspaceUserId))
     if (cached) return cached
 
@@ -138,8 +141,7 @@ export class EmployeesService {
     assertOwnerRole(auth, 'Apenas o dono pode editar funcionarios.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingEmployee = await this.requireOwnedEmployee(workspaceUserId, employeeId)
-    const sanitizedEmployeeCode =
-      dto.employeeCode !== undefined ? sanitizeEmployeeCode(dto.employeeCode) : undefined
+    const sanitizedEmployeeCode = dto.employeeCode !== undefined ? sanitizeEmployeeCode(dto.employeeCode) : undefined
     const sanitizedDisplayName =
       dto.displayName !== undefined
         ? sanitizePlainText(dto.displayName, 'Nome do funcionario', {
@@ -165,9 +167,7 @@ export class EmployeesService {
             where: { id: existingEmployee.loginUserId },
             data: {
               ...(sanitizedDisplayName !== undefined ? { fullName: sanitizedDisplayName } : {}),
-              ...(dto.active !== undefined
-                ? { status: dto.active ? UserStatus.ACTIVE : UserStatus.DISABLED }
-                : {}),
+              ...(dto.active !== undefined ? { status: dto.active ? UserStatus.ACTIVE : UserStatus.DISABLED } : {}),
             },
           })
         }
@@ -217,12 +217,7 @@ export class EmployeesService {
     return this.toggleActiveState(auth, employeeId, true, context)
   }
 
-  private async toggleActiveState(
-    auth: AuthContext,
-    employeeId: string,
-    active: boolean,
-    context: RequestContext,
-  ) {
+  private async toggleActiveState(auth: AuthContext, employeeId: string, active: boolean, context: RequestContext) {
     assertOwnerRole(auth, 'Apenas o dono pode alterar o status de funcionarios.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingEmployee = await this.requireOwnedEmployee(workspaceUserId, employeeId)

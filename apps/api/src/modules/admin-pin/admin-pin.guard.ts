@@ -15,7 +15,7 @@ export class AdminPinGuard implements CanActivate {
       throw new ForbiddenException('Sessão inválida.')
     }
 
-    const workspaceOwnerUserId = auth.role === 'OWNER' ? auth.userId : auth.companyOwnerUserId ?? auth.userId
+    const workspaceOwnerUserId = auth.role === 'OWNER' ? auth.userId : (auth.companyOwnerUserId ?? auth.userId)
     const hasPinConfigured = await this.adminPinService.hasPinConfigured(workspaceOwnerUserId)
 
     if (!hasPinConfigured) {

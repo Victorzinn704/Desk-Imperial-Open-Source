@@ -44,8 +44,11 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       }).addTo(map)
 
       L.control.zoom({ position: 'topright' }).addTo(map)
-      L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>')
+      L.control
+        .attribution({ position: 'bottomright', prefix: false })
+        .addAttribution(
+          '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        )
         .addTo(map)
 
       // Heat scale legend
@@ -71,8 +74,12 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       const layerGroup = L.layerGroup().addTo(map)
       layerGroupRef.current = layerGroup
       mapRef.current = map
-      setTimeout(() => { map.invalidateSize() }, 100)
-      setTimeout(() => { map.invalidateSize() }, 300)
+      setTimeout(() => {
+        map.invalidateSize()
+      }, 100)
+      setTimeout(() => {
+        map.invalidateSize()
+      }, 300)
       if (active) setMapReady(true)
     }
 
@@ -169,7 +176,9 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
     }
 
     updateMarkers()
-    return () => { active = false }
+    return () => {
+      active = false
+    }
   }, [displayCurrency, points, tab, mapReady])
 
   return <div className="h-full w-full min-h-[520px]" ref={containerRef} />

@@ -7,10 +7,7 @@ import { ApiError } from '@/lib/api'
 import type { ProfileFormValues } from '@/lib/validation'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
-import type {
-  DashboardSectionId,
-  DashboardSettingsSectionId,
-} from '@/components/dashboard/dashboard-navigation'
+import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 
@@ -36,11 +33,8 @@ export function SettingsEnvironment({
 
   const cookiePreferences = consentQuery.data?.cookiePreferences ?? user.cookiePreferences
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
-  const documentTitles = new Map(
-    consentQuery.data?.documents.map((doc) => [doc.key, doc.title]) ?? [],
-  )
-  const profileMutationError =
-    updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error : undefined
+  const documentTitles = new Map(consentQuery.data?.documents.map((doc) => [doc.key, doc.title]) ?? [])
+  const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error : undefined
 
   const handleLogout = () => {
     _logoutMutation.mutate(undefined, {

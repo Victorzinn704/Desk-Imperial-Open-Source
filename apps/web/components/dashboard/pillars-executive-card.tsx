@@ -45,7 +45,8 @@ export function PillarsExecutiveCard() {
                     <TrendingDown className="size-4 text-red-500" />
                   )}
                   <span className={pillar.changePercent > 0 ? 'text-green-500' : 'text-red-500'}>
-                    {pillar.changePercent > 0 ? '+' : ''}{pillar.changePercent}%
+                    {pillar.changePercent > 0 ? '+' : ''}
+                    {pillar.changePercent}%
                   </span>
                 </div>
               )}

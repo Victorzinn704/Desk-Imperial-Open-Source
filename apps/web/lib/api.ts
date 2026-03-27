@@ -254,11 +254,7 @@ export async function login(payload: LoginPayload) {
       body: normalizedPayload,
     })
   } catch (error) {
-    if (
-      payload.loginMode === 'OWNER' &&
-      error instanceof ApiError &&
-      isLegacyOwnerLoginContractError(error)
-    ) {
+    if (payload.loginMode === 'OWNER' && error instanceof ApiError && isLegacyOwnerLoginContractError(error)) {
       return apiFetch<AuthResponse>('/auth/login', {
         method: 'POST',
         body: {
@@ -408,11 +404,46 @@ export async function fetchFinanceSummary() {
 
 export async function fetchPillars() {
   return apiFetch<{
-    weeklyRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
-    monthlyRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
-    profit: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
-    eventRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
-    normalRevenue: { label: string; value: number; currency: string; previousValue: number; changePercent: number; trend: number[] }
+    weeklyRevenue: {
+      label: string
+      value: number
+      currency: string
+      previousValue: number
+      changePercent: number
+      trend: number[]
+    }
+    monthlyRevenue: {
+      label: string
+      value: number
+      currency: string
+      previousValue: number
+      changePercent: number
+      trend: number[]
+    }
+    profit: {
+      label: string
+      value: number
+      currency: string
+      previousValue: number
+      changePercent: number
+      trend: number[]
+    }
+    eventRevenue: {
+      label: string
+      value: number
+      currency: string
+      previousValue: number
+      changePercent: number
+      trend: number[]
+    }
+    normalRevenue: {
+      label: string
+      value: number
+      currency: string
+      previousValue: number
+      changePercent: number
+      trend: number[]
+    }
   }>('/finance/pillars', {
     method: 'GET',
   })
@@ -568,10 +599,13 @@ export type AddComandaItemPayload = {
 }
 
 export async function addComandaItem(comandaId: string, payload: AddComandaItemPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/items`, {
-    method: 'POST',
-    body: payload as JsonBody,
-  })
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
+    `/operations/comandas/${comandaId}/items`,
+    {
+      method: 'POST',
+      body: payload as JsonBody,
+    },
+  )
 }
 
 export async function replaceComanda(comandaId: string, payload: ReplaceComandaPayload) {
@@ -582,31 +616,46 @@ export async function replaceComanda(comandaId: string, payload: ReplaceComandaP
 }
 
 export async function assignComanda(comandaId: string, employeeId?: string) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/assign`, {
-    method: 'POST',
-    body: employeeId ? { employeeId } : {},
-  })
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
+    `/operations/comandas/${comandaId}/assign`,
+    {
+      method: 'POST',
+      body: employeeId ? { employeeId } : {},
+    },
+  )
 }
 
-export async function updateComandaStatus(comandaId: string, status: Extract<ComandaStatus, 'OPEN' | 'IN_PREPARATION' | 'READY'>) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/status`, {
-    method: 'POST',
-    body: { status },
-  })
+export async function updateComandaStatus(
+  comandaId: string,
+  status: Extract<ComandaStatus, 'OPEN' | 'IN_PREPARATION' | 'READY'>,
+) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
+    `/operations/comandas/${comandaId}/status`,
+    {
+      method: 'POST',
+      body: { status },
+    },
+  )
 }
 
 export async function cancelComanda(comandaId: string) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/status`, {
-    method: 'POST',
-    body: { status: 'CANCELLED' },
-  })
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
+    `/operations/comandas/${comandaId}/status`,
+    {
+      method: 'POST',
+      body: { status: 'CANCELLED' },
+    },
+  )
 }
 
 export async function closeComanda(comandaId: string, payload: CloseComandaPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}/close`, {
-    method: 'POST',
-    body: payload,
-  })
+  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
+    `/operations/comandas/${comandaId}/close`,
+    {
+      method: 'POST',
+      body: payload,
+    },
+  )
 }
 
 export type OpenCashSessionPayload = {
@@ -676,9 +725,7 @@ export async function restoreEmployee(employeeId: string) {
   })
 }
 
-export async function createOrder(
-  payload: OrderPayload,
-) {
+export async function createOrder(payload: OrderPayload) {
   return apiFetch<{ order: OrderRecord }>('/orders', {
     method: 'POST',
     body: payload,
@@ -719,7 +766,7 @@ async function apiFetch<T>(
     // 1. Token from cookie (always fresh across multiple tabs)
     // 2. Persisted token from sessionStorage (fallback)
     const csrfToken = readCsrfToken() ?? readPersistedCsrfToken()
-    
+
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken)
     } else {
@@ -798,7 +845,7 @@ function readCsrfToken() {
     .split('; ')
     .find((entry) => CSRF_COOKIE_NAMES.some((cookieName) => entry.startsWith(`${cookieName}=`)))
 
-  return cookie ? cookie.split('=')[1] ?? null : null
+  return cookie ? (cookie.split('=')[1] ?? null) : null
 }
 
 function persistCsrfToken(value: string) {

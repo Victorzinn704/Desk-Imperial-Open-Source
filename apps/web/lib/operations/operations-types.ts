@@ -73,4 +73,3 @@ export type OperationGridRow = {
   tables: OperationTableRecord[]
   movements: OperationCashMovement[]
 }
-

@@ -219,25 +219,27 @@ function makeMockDemoAccess() {
 }
 
 /** Constrói uma instância real do AuthService com todos os colaboradores mockados. */
-function buildService(overrides: {
-  prisma?: any
-  config?: any
-  geocoding?: any
-  mailer?: any
-  audit?: any
-  consent?: any
-  rateLimit?: any
-  demo?: any
-} = {}) {
+function buildService(
+  overrides: {
+    prisma?: any
+    config?: any
+    geocoding?: any
+    mailer?: any
+    audit?: any
+    consent?: any
+    rateLimit?: any
+    demo?: any
+  } = {},
+) {
   return new AuthService(
-    overrides.prisma    ?? makeMockPrisma(),
-    overrides.config    ?? (makeMockConfig() as unknown as ConfigService),
-    overrides.consent   ?? makeMockConsent(),
+    overrides.prisma ?? makeMockPrisma(),
+    overrides.config ?? (makeMockConfig() as unknown as ConfigService),
+    overrides.consent ?? makeMockConsent(),
     overrides.geocoding ?? makeMockGeocoding(),
-    overrides.mailer    ?? makeMockMailer(),
-    overrides.audit     ?? makeMockAuditLog(),
+    overrides.mailer ?? makeMockMailer(),
+    overrides.audit ?? makeMockAuditLog(),
     overrides.rateLimit ?? makeMockRateLimit(),
-    overrides.demo      ?? makeMockDemoAccess(),
+    overrides.demo ?? makeMockDemoAccess(),
   )
 }
 
@@ -318,10 +320,7 @@ describe('AuthService.register()', () => {
     it('lança BadRequestException quando hasEmployees=true mas employeeCount=0', async () => {
       const service = buildService()
       await expect(
-        service.register(
-          { ...VALID_REGISTER_DTO, hasEmployees: true, employeeCount: 0 },
-          makeRequestContext() as any,
-        ),
+        service.register({ ...VALID_REGISTER_DTO, hasEmployees: true, employeeCount: 0 }, makeRequestContext() as any),
       ).rejects.toBeInstanceOf(BadRequestException)
     })
 
@@ -356,9 +355,9 @@ describe('AuthService.register()', () => {
       const service = buildService({
         prisma: makeMockPrisma(makeUser()),
       })
-      await expect(
-        service.register(VALID_REGISTER_DTO, makeRequestContext() as any),
-      ).rejects.toBeInstanceOf(ConflictException)
+      await expect(service.register(VALID_REGISTER_DTO, makeRequestContext() as any)).rejects.toBeInstanceOf(
+        ConflictException,
+      )
     })
 
     it('lança ConflictException mesmo com e-mail em case diferente (normalização)', async () => {
@@ -368,10 +367,7 @@ describe('AuthService.register()', () => {
         prisma: makeMockPrisma(makeUser({ email: 'joao@empresa.com' })),
       })
       await expect(
-        service.register(
-          { ...VALID_REGISTER_DTO, email: 'JOAO@EMPRESA.COM' },
-          makeRequestContext() as any,
-        ),
+        service.register({ ...VALID_REGISTER_DTO, email: 'JOAO@EMPRESA.COM' }, makeRequestContext() as any),
       ).rejects.toBeInstanceOf(ConflictException)
     })
   })
@@ -388,9 +384,7 @@ describe('AuthService.register()', () => {
         prisma: makeMockPrisma(null),
         geocoding: makeMockGeocoding(null), // simula Nominatim retornando vazio
       })
-      await expect(
-        service.register(VALID_REGISTER_DTO, makeRequestContext() as any),
-      ).rejects.toBeDefined()
+      await expect(service.register(VALID_REGISTER_DTO, makeRequestContext() as any)).rejects.toBeDefined()
     })
   })
 
@@ -420,9 +414,7 @@ describe('AuthService.register()', () => {
       if (result) {
         expect(result.requiresEmailVerification).toBe(true)
         // O audit log deve ter sido chamado para rastreabilidade
-        expect(audit.record).toHaveBeenCalledWith(
-          expect.objectContaining({ event: 'auth.registered' }),
-        )
+        expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.registered' }))
       } else {
         // Erro de infra (mailer, oneTimeCode) é aceitável aqui — o importante é
         // que as validações de negócio passaram (sem BadRequest ou Conflict)
@@ -472,9 +464,7 @@ describe('AuthService.login()', () => {
      */
     it('lança erro 429-like quando o rate limit está ativo para o IP/e-mail', async () => {
       const service = buildService({ rateLimit: makeMockRateLimit(true) })
-      await expect(
-        service.login(loginDto, {} as any, makeRequestContext() as any),
-      ).rejects.toThrow(/tentativas|login/i)
+      await expect(service.login(loginDto, {} as any, makeRequestContext() as any)).rejects.toThrow(/tentativas|login/i)
     })
 
     it('registra o evento de bloqueio no audit log', async () => {
@@ -490,9 +480,7 @@ describe('AuthService.login()', () => {
         // esperado
       }
 
-      expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ event: 'auth.login.blocked' }),
-      )
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.login.blocked' }))
     })
   })
 
@@ -504,18 +492,14 @@ describe('AuthService.login()', () => {
      */
     it('rejeita quando o usuário não existe no banco', async () => {
       const service = buildService({ prisma: makeMockPrisma(null) })
-      await expect(
-        service.login(loginDto, {} as any, makeRequestContext() as any),
-      ).rejects.toBeDefined()
+      await expect(service.login(loginDto, {} as any, makeRequestContext() as any)).rejects.toBeDefined()
     })
 
     it('rejeita quando o usuário existe mas está inativo (DISABLED)', async () => {
       const service = buildService({
         prisma: makeMockPrisma(makeUser({ status: UserStatus.DISABLED })),
       })
-      await expect(
-        service.login(loginDto, {} as any, makeRequestContext() as any),
-      ).rejects.toBeDefined()
+      await expect(service.login(loginDto, {} as any, makeRequestContext() as any)).rejects.toBeDefined()
     })
   })
 
@@ -531,9 +515,7 @@ describe('AuthService.login()', () => {
     it('rejeita quando a senha é inválida (argon2.verify retorna false)', async () => {
       mockArgon2Verify.mockResolvedValue(false) // senha não confere
       const service = buildService({ prisma: makeMockPrisma(makeUser()) })
-      await expect(
-        service.login(loginDto, {} as any, makeRequestContext() as any),
-      ).rejects.toBeDefined()
+      await expect(service.login(loginDto, {} as any, makeRequestContext() as any)).rejects.toBeDefined()
     })
   })
 
@@ -550,9 +532,7 @@ describe('AuthService.login()', () => {
       const service = buildService({
         prisma: makeMockPrisma(makeUser({ emailVerifiedAt: null })),
       })
-      await expect(
-        service.login(loginDto, {} as any, makeRequestContext() as any),
-      ).rejects.toBeDefined()
+      await expect(service.login(loginDto, {} as any, makeRequestContext() as any)).rejects.toBeDefined()
     })
   })
 })
@@ -597,8 +577,7 @@ describe('AuthService.buildCsrfToken()', () => {
     const serviceA = buildService({ config: makeMockConfig('test') as unknown as ConfigService })
     const serviceB = buildService({
       config: {
-        get: (key: string) =>
-          key === 'CSRF_SECRET' ? 'outro-csrf-secret-completamente-diferente!' : 'test',
+        get: (key: string) => (key === 'CSRF_SECRET' ? 'outro-csrf-secret-completamente-diferente!' : 'test'),
       } as unknown as ConfigService,
     })
 

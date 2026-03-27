@@ -75,11 +75,11 @@ const barProducts = [
   // Cervejas Litrão
   { name: 'Brahma Litrão', category: 'Cervejas', brand: 'Brahma', cost: 10.0, price: 12.0, type: 'Litrão' },
   { name: 'Antarctica Litrão', category: 'Cervejas', brand: 'Antarctica', cost: 9.2, price: 11.0, type: 'Litrão' },
-  
+
   // Cervejas Latão
   { name: 'Brahma Latão', category: 'Cervejas', brand: 'Brahma', cost: 5.0, price: 6.0, type: 'Latão' },
   { name: 'Antarctica Latão', category: 'Cervejas', brand: 'Antarctica', cost: 4.6, price: 5.5, type: 'Latão' },
-  
+
   // Cervejas Cracudinha (350ml)
   { name: 'Brahma 350ml', category: 'Cervejas', brand: 'Brahma', cost: 2.8, price: 4.0, type: 'Cracudinha' },
   { name: 'Antarctica 350ml', category: 'Cervejas', brand: 'Antarctica', cost: 2.5, price: 3.5, type: 'Cracudinha' },
@@ -88,14 +88,14 @@ const barProducts = [
   { name: 'Spaten 350ml', category: 'Cervejas', brand: 'Spaten', cost: 4.5, price: 7.0, type: 'Premium' },
   { name: 'Stella Artois 350ml', category: 'Cervejas', brand: 'Stella Artois', cost: 4.9, price: 7.5, type: 'Premium' },
   { name: 'Budweiser 350ml', category: 'Cervejas', brand: 'Budweiser', cost: 4.2, price: 6.5, type: 'Premium' },
-  
+
   // Destilados
   { name: 'Whisky Dose', category: 'Destilados', brand: 'Variados', cost: 8.5, price: 15.0, type: 'Dose' },
   { name: 'Vodka Dose', category: 'Destilados', brand: 'Variados', cost: 6.8, price: 12.0, type: 'Dose' },
   { name: 'Gin Dose', category: 'Destilados', brand: 'Variados', cost: 8.0, price: 14.0, type: 'Dose' },
   { name: '51 Dose', category: 'Destilados', brand: '51', cost: 2.8, price: 5.0, type: 'Dose' },
   { name: 'Deher Garrafa', category: 'Destilados', brand: 'Deher', cost: 14.0, price: 25.0, type: 'Garrafa' },
-  
+
   // Outros
   { name: 'Água Mineral', category: 'Outros', brand: 'Variadas', cost: 1.5, price: 3.0, type: 'Bebida' },
   { name: 'Guaraná Lata', category: 'Outros', brand: 'Variadas', cost: 2.8, price: 5.0, type: 'Bebida' },
@@ -104,12 +104,7 @@ const barProducts = [
 ]
 
 // Vendedores
-const vendedores = [
-  'Ana Maria',
-  'Pedro',
-  'Lohana',
-  'João Victor',
-]
+const vendedores = ['Ana Maria', 'Pedro', 'Lohana', 'João Victor']
 
 type SeedProduct = (typeof barProducts)[number]
 type SeedEmployee = {
@@ -143,16 +138,16 @@ async function generateRandomOrders(
   const orders: GeneratedOrder[] = []
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  
+
   for (let i = 0; i < days; i++) {
     const currentDate = new Date(now)
     currentDate.setDate(currentDate.getDate() - i)
     const dayOfWeek = currentDate.getDay()
-    
+
     // Determinar quantidade de vendas por dia
     let ordersPerDay = 0
     let isEventHour = false
-    
+
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       // Fim de semana
       if (Math.random() > 0.5) {
@@ -175,14 +170,14 @@ async function generateRandomOrders(
       // Segunda a quinta
       ordersPerDay = Math.floor(Math.random() * 2) + 1 // 1-2 vendas
     }
-    
+
     for (let j = 0; j < ordersPerDay; j++) {
       const employee = employees[Math.floor(Math.random() * employees.length)]
       const numProducts = Math.floor(Math.random() * 3) + 1 // 1-3 produtos por pedido
       const selectedProducts = []
       let totalRevenue = 0
       let totalCost = 0
-      
+
       for (let k = 0; k < numProducts; k++) {
         const product = products[Math.floor(Math.random() * products.length)]
         const quantity = Math.floor(Math.random() * 5) + 1 // 1-5 unidades
@@ -195,14 +190,14 @@ async function generateRandomOrders(
         totalRevenue += product.price * quantity
         totalCost += product.cost * quantity
       }
-      
+
       const orderDate = new Date(currentDate)
       if (isEventHour) {
         orderDate.setHours(16 + Math.floor(Math.random() * 8))
       } else {
         orderDate.setHours(Math.floor(Math.random() * 15) + 9) // 9h-23h
       }
-      
+
       orders.push({
         userId,
         employee,
@@ -215,7 +210,7 @@ async function generateRandomOrders(
       })
     }
   }
-  
+
   return orders
 }
 
@@ -334,12 +329,12 @@ async function main() {
 
   // Gerar pedidos aleatórios realistas
   const generatedOrders = await generateRandomOrders(user.id, employees, barProducts, 180)
-  
+
   // Criar pedidos no banco
   let ordersCreated = 0
   for (let i = 0; i < Math.min(generatedOrders.length, 80); i++) {
     const orderData = generatedOrders[i]
-    
+
     const orderItems = orderData.products.map((item) => {
       const product = createdProducts.find((candidate) => candidate.name === item.product.name)
       return {
@@ -354,7 +349,7 @@ async function main() {
         lineProfit: item.revenue - item.cost,
       }
     })
-    
+
     try {
       await prisma.order.create({
         data: {

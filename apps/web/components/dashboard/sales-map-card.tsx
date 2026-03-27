@@ -7,17 +7,14 @@ import { ChartSkeleton } from '@/components/shared/skeleton'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
-const SalesMapCanvas = dynamic(
-  () => import('./sales-map-canvas').then((module) => module.SalesMapCanvas),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="imperial-card-soft flex h-full items-center justify-center border-dashed px-6 text-center">
-        <p className="text-sm text-[var(--text-soft)]">Carregando mapa de vendas...</p>
-      </div>
-    ),
-  },
-)
+const SalesMapCanvas = dynamic(() => import('./sales-map-canvas').then((module) => module.SalesMapCanvas), {
+  ssr: false,
+  loading: () => (
+    <div className="imperial-card-soft flex h-full items-center justify-center border-dashed px-6 text-center">
+      <p className="text-sm text-[var(--text-soft)]">Carregando mapa de vendas...</p>
+    </div>
+  ),
+})
 
 export function SalesMapCard({
   finance,
@@ -37,14 +34,12 @@ export function SalesMapCard({
       <article className="imperial-card p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Inteligência Operacional
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">
-              Mapa de Vendas — Monitoramento Geográfico
-            </h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Inteligência Operacional</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">Mapa de Vendas — Monitoramento Geográfico</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Monitore a operação em tempo real através da geolocalização automática de cada venda. Cada ponto representa um pedido geocodificado por estado e cidade, permitindo análise de mercado, identificação de territórios de concentração e validação de padrões de cobertura.
+              Monitore a operação em tempo real através da geolocalização automática de cada venda. Cada ponto
+              representa um pedido geocodificado por estado e cidade, permitindo análise de mercado, identificação de
+              territórios de concentração e validação de padrões de cobertura.
             </p>
           </div>
 
@@ -71,7 +66,8 @@ export function SalesMapCard({
                   Dados não disponíveis
                 </p>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Complete os dados de localização (bairro, cidade, estado e país) nos pedidos para gerar a análise geográfica.
+                  Complete os dados de localização (bairro, cidade, estado e país) nos pedidos para gerar a análise
+                  geográfica.
                 </p>
               </div>
             </div>
@@ -111,10 +107,7 @@ export function SalesMapCard({
         <div className="mt-6 space-y-3">
           {topRegions.length ? (
             topRegions.map((region) => (
-              <div
-                className="imperial-card-soft p-4"
-                key={region.label}
-              >
+              <div className="imperial-card-soft p-4" key={region.label}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-medium text-white">{region.label}</p>
@@ -126,9 +119,7 @@ export function SalesMapCard({
                     <p className="text-sm font-semibold text-white">
                       {formatCurrency(region.revenue, displayCurrency)}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                      receita
-                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">receita</p>
                   </div>
                 </div>
               </div>

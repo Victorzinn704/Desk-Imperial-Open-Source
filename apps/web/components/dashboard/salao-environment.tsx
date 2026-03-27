@@ -96,7 +96,9 @@ export function SalaoEnvironment() {
   const [dragging, setDragging] = useState<DragState | null>(null)
   const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({})
   const dragOverridesRef = useRef(dragOverrides)
-  useLayoutEffect(() => { dragOverridesRef.current = dragOverrides })
+  useLayoutEffect(() => {
+    dragOverridesRef.current = dragOverrides
+  })
   const canvasRef = useRef<HTMLDivElement>(null)
 
   // ── queries ──────────────────────────────────────────────────────────────────
@@ -119,11 +121,7 @@ export function SalaoEnvironment() {
   // garçom display name by employeeId
   const garcomNames = useMemo(() => {
     if (!liveData) return {} as Record<string, string>
-    return Object.fromEntries(
-      liveData.employees
-        .filter((e) => e.employeeId)
-        .map((e) => [e.employeeId!, e.displayName])
-    )
+    return Object.fromEntries(liveData.employees.filter((e) => e.employeeId).map((e) => [e.employeeId!, e.displayName]))
   }, [liveData])
 
   function invalidate() {
@@ -145,8 +143,7 @@ export function SalaoEnvironment() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateMesa>[1] }) =>
-      updateMesa(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateMesa>[1] }) => updateMesa(id, body),
     onSuccess: () => {
       invalidate()
       setEditingMesa(null)
@@ -226,7 +223,9 @@ export function SalaoEnvironment() {
       const prefix = createForm.bulkPrefix.trim() || 'Mesa'
       const section = createForm.section.trim() || undefined
       for (let n = from; n <= to; n++) {
-        await createMutation.mutateAsync({ label: `${prefix} ${n}`, capacity: cap > 0 ? cap : 4, section }).catch(() => {})
+        await createMutation
+          .mutateAsync({ label: `${prefix} ${n}`, capacity: cap > 0 ? cap : 4, section })
+          .catch(() => {})
       }
       invalidate()
       setShowCreate(false)
@@ -242,7 +241,11 @@ export function SalaoEnvironment() {
     const cap = parseInt(editForm.capacity, 10)
     updateMutation.mutate({
       id: editingMesa.id,
-      body: { label: editForm.label.trim(), capacity: cap > 0 ? cap : 4, section: editForm.section.trim() || undefined },
+      body: {
+        label: editForm.label.trim(),
+        capacity: cap > 0 ? cap : 4,
+        section: editForm.section.trim() || undefined,
+      },
     })
   }
 
@@ -323,12 +326,7 @@ export function SalaoEnvironment() {
       )}
 
       {/* ── COMANDAS ── */}
-      {view === 'comandas' && (
-        <ComandasTableView
-          comandas={liveComandas}
-          isLoading={liveLoading}
-        />
-      )}
+      {view === 'comandas' && <ComandasTableView comandas={liveComandas} isLoading={liveLoading} />}
 
       {/* ── CONFIGURAÇÃO ── */}
       {view === 'configuracao' && (
@@ -340,7 +338,10 @@ export function SalaoEnvironment() {
               <span className="text-5xl">🪑</span>
               <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa cadastrada ainda.</p>
               <button
-                onClick={() => { setCreateForm(defaultCreateForm()); setShowCreate(true) }}
+                onClick={() => {
+                  setCreateForm(defaultCreateForm())
+                  setShowCreate(true)
+                }}
                 className="mt-1 text-sm font-medium text-[var(--accent)] hover:underline"
               >
                 Criar primeira mesa
@@ -449,7 +450,10 @@ export function SalaoEnvironment() {
       {showCreate && (
         <Modal
           title="Nova Mesa"
-          onClose={() => { setShowCreate(false); setFormError(null) }}
+          onClose={() => {
+            setShowCreate(false)
+            setFormError(null)
+          }}
         >
           <form onSubmit={(e) => void handleCreateSubmit(e)} className="space-y-4">
             <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
@@ -533,10 +537,14 @@ export function SalaoEnvironment() {
                 </div>
                 <p className="rounded-lg bg-[rgba(195,164,111,0.08)] px-3 py-2 text-xs text-[var(--text-soft)]">
                   Criará:{' '}
-                  <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkFrom}</strong>
-                  {' '}até{' '}
-                  <strong className="text-[var(--accent)]">{createForm.bulkPrefix || 'Mesa'} {createForm.bulkTo}</strong>
-                  {' '}— {Math.max(0, parseInt(createForm.bulkTo, 10) - parseInt(createForm.bulkFrom, 10) + 1) || 0} mesas
+                  <strong className="text-[var(--accent)]">
+                    {createForm.bulkPrefix || 'Mesa'} {createForm.bulkFrom}
+                  </strong>{' '}
+                  até{' '}
+                  <strong className="text-[var(--accent)]">
+                    {createForm.bulkPrefix || 'Mesa'} {createForm.bulkTo}
+                  </strong>{' '}
+                  — {Math.max(0, parseInt(createForm.bulkTo, 10) - parseInt(createForm.bulkFrom, 10) + 1) || 0} mesas
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Capacidade padrão">
@@ -565,7 +573,10 @@ export function SalaoEnvironment() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => { setShowCreate(false); setFormError(null) }}
+                onClick={() => {
+                  setShowCreate(false)
+                  setFormError(null)
+                }}
                 className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
               >
                 Cancelar
@@ -586,7 +597,10 @@ export function SalaoEnvironment() {
       {editingMesa && (
         <Modal
           title={`Editar — ${editingMesa.label}`}
-          onClose={() => { setEditingMesa(null); setFormError(null) }}
+          onClose={() => {
+            setEditingMesa(null)
+            setFormError(null)
+          }}
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <Field label="Nome da mesa *">
@@ -623,7 +637,10 @@ export function SalaoEnvironment() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => { setEditingMesa(null); setFormError(null) }}
+                onClick={() => {
+                  setEditingMesa(null)
+                  setFormError(null)
+                }}
                 className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
               >
                 Cancelar
@@ -662,7 +679,10 @@ function OperacionalView({
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="h-32 animate-pulse rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]" />
+          <div
+            key={i}
+            className="h-32 animate-pulse rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
+          />
         ))}
       </div>
     )
@@ -688,7 +708,7 @@ function OperacionalView({
   const livres = liveMesas.filter((m) => m.status === 'livre')
   const ocupadas = liveMesas.filter((m) => m.status === 'ocupada')
   const reservadas = liveMesas.filter((m) => m.status === 'reservada')
-  
+
   const receitaAberta = ocupadas.reduce((sum, m) => {
     const comanda = liveComandas.find((c) => c.id === m.comandaId)
     return sum + (comanda ? calcTotal(comanda) : 0)
@@ -732,18 +752,39 @@ function OperacionalView({
   )
 }
 
-function KpiCard({ label, value, color, isHighlight, total }: { label: string; value: string | number; color: string; isHighlight?: boolean, total?: number }) {
+function KpiCard({
+  label,
+  value,
+  color,
+  isHighlight,
+  total,
+}: {
+  label: string
+  value: string | number
+  color: string
+  isHighlight?: boolean
+  total?: number
+}) {
   const percentage = total && typeof value === 'number' ? Math.round((value / total) * 100) : null
-  
+
   return (
-    <div className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}>
+    <div
+      className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
+    >
       <div className="flex items-center gap-2">
-        <span className="size-2 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: color, color: color }} />
+        <span
+          className="size-2 rounded-full shadow-[0_0_10px_currentColor]"
+          style={{ backgroundColor: color, color: color }}
+        />
         <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)]">{label}</p>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
         <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
-        {percentage !== null && <p className="text-xs font-medium" style={{ color: `${color}99` }}>{percentage}%</p>}
+        {percentage !== null && (
+          <p className="text-xs font-medium" style={{ color: `${color}99` }}>
+            {percentage}%
+          </p>
+        )}
       </div>
     </div>
   )
@@ -761,21 +802,39 @@ function ModernOperacionalCard({
   urgency: 0 | 1 | 2 | 3
 }) {
   const STATUS_CFG = {
-    livre: { label: 'Livre', color: '#36f57c', bgFrom: 'rgba(54,245,124,0.03)', bgTo: 'rgba(54,245,124,0.01)', border: 'rgba(54,245,124,0.15)' },
-    ocupada: { label: 'Ocupada', color: '#f87171', bgFrom: 'rgba(248,113,113,0.04)', bgTo: 'rgba(248,113,113,0.01)', border: 'rgba(248,113,113,0.2)' },
-    reservada: { label: 'Reservada', color: '#60a5fa', bgFrom: 'rgba(96,165,250,0.04)', bgTo: 'rgba(96,165,250,0.01)', border: 'rgba(96,165,250,0.2)' },
+    livre: {
+      label: 'Livre',
+      color: '#36f57c',
+      bgFrom: 'rgba(54,245,124,0.03)',
+      bgTo: 'rgba(54,245,124,0.01)',
+      border: 'rgba(54,245,124,0.15)',
+    },
+    ocupada: {
+      label: 'Ocupada',
+      color: '#f87171',
+      bgFrom: 'rgba(248,113,113,0.04)',
+      bgTo: 'rgba(248,113,113,0.01)',
+      border: 'rgba(248,113,113,0.2)',
+    },
+    reservada: {
+      label: 'Reservada',
+      color: '#60a5fa',
+      bgFrom: 'rgba(96,165,250,0.04)',
+      bgTo: 'rgba(96,165,250,0.01)',
+      border: 'rgba(96,165,250,0.2)',
+    },
   }
 
   const cfg = STATUS_CFG[mesa.status]
-  
+
   // High urgency effects
   const isCritical = urgency >= 3
   const isWarning = urgency === 2
-  
+
   let dynamicBorder = cfg.border
   let dynamicShadow = '0 4px 20px rgba(0,0,0,0.2)'
   let pulseClass = ''
-  
+
   if (mesa.status === 'ocupada') {
     if (isCritical) {
       dynamicBorder = 'rgba(248,113,113,0.6)'
@@ -799,21 +858,21 @@ function ModernOperacionalCard({
   const garcomColor = garcomName ? GARCOM_COLORS[colorIndex] : '#7a8896'
 
   return (
-    <div 
+    <div
       className="group relative flex h-full min-h-[140px] flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] transition-all duration-500 hover:-translate-y-1 hover:border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.04)]"
       style={{
         boxShadow: dynamicShadow,
-        borderColor: dynamicBorder
+        borderColor: dynamicBorder,
       }}
     >
       {/* Background Status Glow */}
-      <div 
+      <div
         className="absolute inset-0 opacity-40 mix-blend-screen transition-opacity duration-1000 group-hover:opacity-60"
         style={{
-          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.bgFrom} 0%, ${cfg.bgTo} 50%, transparent 100%)`
+          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.bgFrom} 0%, ${cfg.bgTo} 50%, transparent 100%)`,
         }}
       />
-      
+
       {/* Critical Glow Effect */}
       {isCritical && (
         <div className="absolute inset-x-0 top-0 h-1 bg-red-400 bg-opacity-80 drop-shadow-[0_0_8px_rgba(248,113,113,1)]" />
@@ -824,7 +883,7 @@ function ModernOperacionalCard({
         {/* Header Row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span 
+            <span
               className={`flex h-6 items-center rounded-full px-2.5 text-[9px] font-bold uppercase tracking-widest ${pulseClass}`}
               style={{ color: cfg.color, backgroundColor: `${cfg.color}15`, border: `1px solid ${cfg.color}30` }}
             >
@@ -834,21 +893,21 @@ function ModernOperacionalCard({
           {/* Waiter Avatar ("Monitoring TV") */}
           {mesa.status === 'ocupada' && garcomName && (
             <div className="flex shrink-0 flex-col items-center justify-center animate-in zoom-in-50 duration-500">
-               <div 
-                 className="flex size-11 items-center justify-center rounded-full text-[15px] font-black shadow-lg border-[2px]"
-                 style={{ 
-                   backgroundColor: garcomColor, 
-                   color: '#111', 
-                   borderColor: 'rgba(255,255,255,0.2)',
-                   textShadow: '0 1px 1px rgba(255,255,255,0.5)', 
-                   boxShadow: `0 0 20px ${garcomColor}66` 
-                 }}
-               >
-                 {garcomInitials}
-               </div>
-               <span className="mt-1.5 text-[10px] font-bold text-white tracking-wide drop-shadow-md">
-                 {shortGarcom}
-               </span>
+              <div
+                className="flex size-11 items-center justify-center rounded-full text-[15px] font-black shadow-lg border-[2px]"
+                style={{
+                  backgroundColor: garcomColor,
+                  color: '#111',
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  textShadow: '0 1px 1px rgba(255,255,255,0.5)',
+                  boxShadow: `0 0 20px ${garcomColor}66`,
+                }}
+              >
+                {garcomInitials}
+              </div>
+              <span className="mt-1.5 text-[10px] font-bold text-white tracking-wide drop-shadow-md">
+                {shortGarcom}
+              </span>
             </div>
           )}
         </div>
@@ -867,7 +926,7 @@ function ModernOperacionalCard({
         {comanda ? (
           <div className="mt-4 flex items-end justify-between border-t border-[rgba(255,255,255,0.05)] pt-3">
             <div className="flex flex-col gap-1.5">
-              <div 
+              <div
                 className="flex items-center gap-1.5 text-[11px] font-semibold"
                 style={{ color: isCritical ? '#f87171' : isWarning ? '#fbbf24' : '#fb923c' }}
               >
@@ -878,7 +937,7 @@ function ModernOperacionalCard({
                 {itemCount} {itemCount === 1 ? 'item' : 'itens'}
               </span>
             </div>
-            
+
             <div className="text-right">
               <span className="flex items-baseline justify-end text-lg font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]">
                 {fmtBRL(total)}
@@ -891,7 +950,9 @@ function ModernOperacionalCard({
               <Armchair className="size-3.5" />
               <span>{mesa.capacidade} lugares</span>
             </div>
-            {mesa.status === 'reservada' && <span className="text-[10px] font-medium uppercase tracking-widest text-[#60a5fa]">Reservado</span>}
+            {mesa.status === 'reservada' && (
+              <span className="text-[10px] font-medium uppercase tracking-widest text-[#60a5fa]">Reservado</span>
+            )}
           </div>
         )}
       </div>
@@ -943,13 +1004,12 @@ function MesaListCard({
           className="w-fit rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
           style={{
             background:
-              mesa.status === 'ocupada' ? 'rgba(248,113,113,0.12)' :
-              mesa.status === 'reservada' ? 'rgba(96,165,250,0.12)' :
-              'rgba(52,242,127,0.08)',
-            color:
-              mesa.status === 'ocupada' ? '#f87171' :
-              mesa.status === 'reservada' ? '#60a5fa' :
-              '#36f57c',
+              mesa.status === 'ocupada'
+                ? 'rgba(248,113,113,0.12)'
+                : mesa.status === 'reservada'
+                  ? 'rgba(96,165,250,0.12)'
+                  : 'rgba(52,242,127,0.08)',
+            color: mesa.status === 'ocupada' ? '#f87171' : mesa.status === 'reservada' ? '#60a5fa' : '#36f57c',
           }}
         >
           {mesa.status === 'ocupada' ? 'Ocupada' : mesa.status === 'reservada' ? 'Reservada' : 'Livre'}
@@ -960,8 +1020,7 @@ function MesaListCard({
 }
 
 function MesaFloorCard({ mesa, isDragging }: { mesa: MesaRecord; isDragging: boolean }) {
-  const statusColor =
-    mesa.status === 'ocupada' ? '#ef4444' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
+  const statusColor = mesa.status === 'ocupada' ? '#ef4444' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
 
   return (
     <div
@@ -974,11 +1033,7 @@ function MesaFloorCard({ mesa, isDragging }: { mesa: MesaRecord; isDragging: boo
     >
       <div className="flex items-center justify-between gap-1">
         <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{mesa.label}</span>
-        <span
-          className="size-2 shrink-0 rounded-full"
-          style={{ backgroundColor: statusColor }}
-          title={mesa.status}
-        />
+        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} title={mesa.status} />
       </div>
       <div className="text-[10px] leading-tight text-[var(--text-soft)]">
         <span>👤 {mesa.capacity}</span>
@@ -988,15 +1043,7 @@ function MesaFloorCard({ mesa, isDragging }: { mesa: MesaRecord; isDragging: boo
   )
 }
 
-function Modal({
-  title,
-  children,
-  onClose,
-}: {
-  title: string
-  children: React.ReactNode
-  onClose: () => void
-}) {
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="imperial-card w-full max-w-md rounded-2xl p-6 shadow-2xl">
@@ -1029,10 +1076,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 type ComandasFiltro = 'tudo' | 'abertas' | 'fechadas'
 
 const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> = {
-  aberta:     { text: 'Aberta',     color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  aberta: { text: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   em_preparo: { text: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta:     { text: 'Pronta',     color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada:    { text: 'Paga',       color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
+  pronta: { text: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { text: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
 function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoading: boolean }) {
@@ -1053,7 +1100,10 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
     return (
       <div className="space-y-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]" />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
+          />
         ))}
       </div>
     )
@@ -1063,11 +1113,11 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Filtros */}
       <div className="flex items-center gap-2">
-        {([
+        {[
           { id: 'tudo' as const, label: `Tudo (${comandas.length})` },
           { id: 'abertas' as const, label: `Abertas (${countAbertas})` },
           { id: 'fechadas' as const, label: `Fechadas (${countFechadas})` },
-        ]).map(({ id, label }) => (
+        ].map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setFiltro(id)}
@@ -1085,7 +1135,9 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] py-16 text-center">
           <span className="text-4xl">📋</span>
-          <p className="text-sm text-[var(--text-soft)]">Nenhuma comanda {filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : ''} encontrada</p>
+          <p className="text-sm text-[var(--text-soft)]">
+            Nenhuma comanda {filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : ''} encontrada
+          </p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
@@ -1122,10 +1174,17 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                   </span>
                   <span className="text-xs text-[var(--text-soft)] truncate">{comanda.garcomNome ?? '—'}</span>
                   <span className="text-xs text-[var(--text-soft)]">
-                    {comanda.abertaEm.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {comanda.abertaEm.toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                   <span className="text-xs text-center text-[var(--text-soft)]">{itemCount}</span>
-                  <span className="text-sm font-bold text-right" style={{ color: badge.color }}>{fmtBRL(total)}</span>
+                  <span className="text-sm font-bold text-right" style={{ color: badge.color }}>
+                    {fmtBRL(total)}
+                  </span>
                 </button>
 
                 {isExpanded && (
@@ -1134,14 +1193,22 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                       <p className="text-xs text-[var(--text-soft)] text-center py-2">Sem itens</p>
                     ) : (
                       <div className="grid grid-cols-[1fr_80px_100px] gap-1 text-xs">
-                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest pb-1">Item</span>
-                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest text-center pb-1">Qtd</span>
-                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest text-right pb-1">Valor</span>
+                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest pb-1">
+                          Item
+                        </span>
+                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest text-center pb-1">
+                          Qtd
+                        </span>
+                        <span className="text-[var(--text-soft)] font-semibold uppercase text-[10px] tracking-widest text-right pb-1">
+                          Valor
+                        </span>
                         {comanda.itens.map((item, idx) => (
                           <div key={idx} className="contents">
                             <span className="text-white truncate py-0.5">{item.nome}</span>
                             <span className="text-[var(--text-soft)] text-center py-0.5">{item.quantidade}</span>
-                            <span className="text-white text-right py-0.5">{fmtBRL(item.quantidade * item.precoUnitario)}</span>
+                            <span className="text-white text-right py-0.5">
+                              {fmtBRL(item.quantidade * item.precoUnitario)}
+                            </span>
                           </div>
                         ))}
                       </div>

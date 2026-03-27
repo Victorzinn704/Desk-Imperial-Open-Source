@@ -64,11 +64,7 @@ export function resolveBuyerTypeFromDocument(document: string | null | undefined
 }
 
 export function isOpenComandaStatus(status: ComandaStatus) {
-  return (
-    status === ComandaStatus.OPEN ||
-    status === ComandaStatus.IN_PREPARATION ||
-    status === ComandaStatus.READY
-  )
+  return status === ComandaStatus.OPEN || status === ComandaStatus.IN_PREPARATION || status === ComandaStatus.READY
 }
 
 export function buildCashUpdatedPayload(session: {

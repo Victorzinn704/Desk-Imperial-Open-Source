@@ -10,10 +10,10 @@ function formatCurrency(value: number): string {
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  aberta:     { label: 'Em aberto',  color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)'   },
-  pronta:     { label: 'Pronta',     color: '#60a5fa', bg: 'rgba(96,165,250,0.12)'  },
-  fechada:    { label: 'Paga',       color: '#36f57c', bg: 'rgba(54,245,124,0.12)'  },
+  aberta: { label: 'Em aberto', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
+  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
 interface Props {
@@ -31,9 +31,7 @@ export function MobileHistoricoView({ comandas }: Props) {
           <span className="text-3xl">📋</span>
         </div>
         <p className="text-sm font-medium text-white">Nenhum atendimento hoje</p>
-        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">
-          Os atendimentos do dia aparecerão aqui
-        </p>
+        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">Os atendimentos do dia aparecerão aqui</p>
       </div>
     )
   }
@@ -83,11 +81,14 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold" style={{ color: badge.color }}>{formatCurrency(total)}</span>
-          {open
-            ? <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
-            : <ChevronRight className="size-4 text-[var(--text-soft,#7a8896)]" />
-          }
+          <span className="text-sm font-bold" style={{ color: badge.color }}>
+            {formatCurrency(total)}
+          </span>
+          {open ? (
+            <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
+          ) : (
+            <ChevronRight className="size-4 text-[var(--text-soft,#7a8896)]" />
+          )}
         </div>
       </button>
 

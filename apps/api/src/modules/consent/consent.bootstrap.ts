@@ -10,8 +10,6 @@ export class ConsentBootstrap implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.consentService.ensureDefaultDocuments(
-      this.configService.get<string>('CONSENT_VERSION') ?? '2026.03',
-    )
+    await this.consentService.ensureDefaultDocuments(this.configService.get<string>('CONSENT_VERSION') ?? '2026.03')
   }
 }

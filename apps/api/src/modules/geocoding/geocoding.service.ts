@@ -248,17 +248,11 @@ export class GeocodingService {
   }
 
   private getBaseUrl() {
-    return (
-      this.configService.get<string>('GEOCODING_URL')?.trim() ||
-      'https://nominatim.openstreetmap.org/search'
-    )
+    return this.configService.get<string>('GEOCODING_URL')?.trim() || 'https://nominatim.openstreetmap.org/search'
   }
 
   private getPostalLookupBaseUrl() {
-    return (
-      this.configService.get<string>('POSTAL_CODE_LOOKUP_URL')?.trim() ||
-      'https://viacep.com.br/ws/'
-    )
+    return this.configService.get<string>('POSTAL_CODE_LOOKUP_URL')?.trim() || 'https://viacep.com.br/ws/'
   }
 
   private getCacheTtlSeconds() {

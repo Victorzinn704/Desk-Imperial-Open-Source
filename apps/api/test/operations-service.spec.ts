@@ -58,9 +58,7 @@ function createMockPrisma() {
         if (where?.companyOwnerId_label) {
           const { companyOwnerId, label } = where.companyOwnerId_label
           return (
-            Array.from(mesaStore.values()).find(
-              (m) => m.companyOwnerId === companyOwnerId && m.label === label,
-            ) ?? null
+            Array.from(mesaStore.values()).find((m) => m.companyOwnerId === companyOwnerId && m.label === label) ?? null
           )
         }
         return null
@@ -304,14 +302,14 @@ describe('Mesa CRUD', () => {
 describe('Cálculo de lucro por item', () => {
   function calcProfit(items: Array<{ unitPrice: number; unitCost: number; quantity: number }>) {
     const revenue = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
-    const cost    = items.reduce((sum, i) => sum + i.unitCost  * i.quantity, 0)
+    const cost = items.reduce((sum, i) => sum + i.unitCost * i.quantity, 0)
     return Math.round((revenue - cost) * 100) / 100
   }
 
   it('calcula lucro corretamente para múltiplos produtos', () => {
     const items = [
       { unitPrice: 10, unitCost: 3.5, quantity: 2 }, // lucro: (10-3.5)×2 = 13
-      { unitPrice: 15, unitCost: 5,   quantity: 1 }, // lucro: (15-5)×1   = 10
+      { unitPrice: 15, unitCost: 5, quantity: 1 }, // lucro: (15-5)×1   = 10
     ]
     expect(calcProfit(items)).toBe(23)
   })
@@ -420,13 +418,15 @@ describe('Saldo esperado do caixa', () => {
   it('saldo completo com todos os tipos de movimento', () => {
     // Cenário realista: caixa com R$200, recebeu R$500 de supply, pagou R$100 de withdrawal,
     // e teve R$1500 de vendas em dinheiro
-    expect(calcExpected({
-      opening: 200,
-      supply: 500,
-      adjustment: 20,
-      withdrawal: 100,
-      grossRevenue: 1500,
-    })).toBe(2120)
+    expect(
+      calcExpected({
+        opening: 200,
+        supply: 500,
+        adjustment: 20,
+        withdrawal: 100,
+        grossRevenue: 1500,
+      }),
+    ).toBe(2120)
   })
 
   it('diferença positiva → sobra de caixa', () => {
@@ -458,16 +458,9 @@ describe('Saldo esperado do caixa', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('isOpenComandaStatus() — predicado de comanda ativa', () => {
-  const statusesAtivos: ComandaStatus[] = [
-    ComandaStatus.OPEN,
-    ComandaStatus.IN_PREPARATION,
-    ComandaStatus.READY,
-  ]
+  const statusesAtivos: ComandaStatus[] = [ComandaStatus.OPEN, ComandaStatus.IN_PREPARATION, ComandaStatus.READY]
 
-  const statusesInativos: ComandaStatus[] = [
-    ComandaStatus.CLOSED,
-    ComandaStatus.CANCELLED,
-  ]
+  const statusesInativos: ComandaStatus[] = [ComandaStatus.CLOSED, ComandaStatus.CANCELLED]
 
   it.each(statusesAtivos)('retorna true para %s (comanda em atendimento)', (status) => {
     expect(isOpenComandaStatus(status)).toBe(true)
@@ -496,10 +489,7 @@ describe('isOpenComandaStatus() — predicado de comanda ativa', () => {
   })
 
   it('permite fechamento quando todas as comandas estão encerradas', () => {
-    const comandas = [
-      { status: ComandaStatus.CLOSED },
-      { status: ComandaStatus.CANCELLED },
-    ]
+    const comandas = [{ status: ComandaStatus.CLOSED }, { status: ComandaStatus.CANCELLED }]
 
     const hasOpenComandas = comandas.some((c) => isOpenComandaStatus(c.status))
     expect(hasOpenComandas).toBe(false) // pode fechar o caixa

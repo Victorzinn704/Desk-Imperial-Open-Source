@@ -28,7 +28,12 @@ import {
   ApiError,
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
-import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
+import {
+  buildPdvComandas,
+  buildPdvMesas,
+  toOperationAmounts,
+  toOperationsStatus,
+} from '@/components/pdv/pdv-operations'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { MobileHistoricoView } from '@/components/staff-mobile/mobile-historico-view'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
@@ -36,9 +41,7 @@ import { useOfflineQueue } from '@/components/shared/use-offline-queue'
 
 type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
-type PendingAction =
-  | { type: 'new'; mesa: Mesa }
-  | { type: 'add'; comandaId: string; mesaLabel: string }
+type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
 
 // null = no focus; string = scroll-to & highlight that comanda
 
@@ -62,13 +65,16 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   const runDrain = useCallback(() => {
     return drainQueue(async (action) => {
       if (action.type === 'add-item') {
-        const { comandaId, payload } = action.payload as { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }
+        const { comandaId, payload } = action.payload as {
+          comandaId: string
+          payload: Parameters<typeof addComandaItem>[1]
+        }
         await addComandaItemMutation.mutateAsync({ comandaId, payload })
       } else if (action.type === 'open-comanda') {
         await openComandaMutation.mutateAsync(action.payload as Parameters<typeof openComanda>[0])
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drainQueue])
 
   // Canal 1 — Background Sync: SW acorda a aba mesmo quando está em background
@@ -85,7 +91,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   useEffect(() => {
     if (realtimeStatus !== 'connected') return
     void runDrain()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [realtimeStatus])
 
   const handlePullRefresh = useCallback(async () => {
@@ -126,7 +132,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     mutationFn: openComanda,
     onMutate: async (vars) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>(['operations', 'live'])
+      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
+        'operations',
+        'live',
+      ])
       // Insert optimistic comanda into snapshot.unassigned.comandas
       if (snapshot) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,7 +195,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       addComandaItem(comandaId, payload),
     onMutate: async ({ comandaId, payload }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>(['operations', 'live'])
+      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
+        'operations',
+        'live',
+      ])
       if (snapshot) {
         const newItem: import('@contracts/contracts').ComandaItemRecord = {
           id: `opt-item-${Date.now()}`,
@@ -204,11 +216,17 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         for (const group of groups) {
           const comandaIdx = group.comandas.findIndex((c) => c.id === comandaId)
           if (comandaIdx !== -1) {
-            const updatedComanda = { ...group.comandas[comandaIdx], items: [...group.comandas[comandaIdx].items, newItem] }
+            const updatedComanda = {
+              ...group.comandas[comandaIdx],
+              items: [...group.comandas[comandaIdx].items, newItem],
+            }
             const updatedComandas = [...group.comandas]
             updatedComandas[comandaIdx] = updatedComanda
             if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, unassigned: { ...snapshot.unassigned, comandas: updatedComandas } })
+              queryClient.setQueryData(['operations', 'live'], {
+                ...snapshot,
+                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+              })
             } else {
               const empIdx = snapshot.employees.findIndex((e) => e === group)
               const updatedEmployees = [...snapshot.employees]
@@ -226,14 +244,20 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       toast.error('Erro ao adicionar item')
       haptic.error()
     },
-    onSuccess: () => { toast.success('Item adicionado'); haptic.light() },
+    onSuccess: () => {
+      toast.success('Item adicionado')
+      haptic.light()
+    },
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status),
     onMutate: async ({ comandaId, status }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>(['operations', 'live'])
+      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
+        'operations',
+        'live',
+      ])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
@@ -242,7 +266,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             const updatedComandas = [...group.comandas]
             updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status }
             if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, unassigned: { ...snapshot.unassigned, comandas: updatedComandas } })
+              queryClient.setQueryData(['operations', 'live'], {
+                ...snapshot,
+                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+              })
             } else {
               const empIdx = snapshot.employees.findIndex((e) => e === group)
               const updatedEmployees = [...snapshot.employees]
@@ -267,11 +294,21 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     },
   })
   const closeComandaMutation = useMutation({
-    mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: { comandaId: string; discountAmount: number; serviceFeeAmount: number }) =>
-      closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
+    mutationFn: ({
+      comandaId,
+      discountAmount,
+      serviceFeeAmount,
+    }: {
+      comandaId: string
+      discountAmount: number
+      serviceFeeAmount: number
+    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
     onMutate: async ({ comandaId }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>(['operations', 'live'])
+      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
+        'operations',
+        'live',
+      ])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
@@ -280,7 +317,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             const updatedComandas = [...group.comandas]
             updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status: 'CLOSED' }
             if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, unassigned: { ...snapshot.unassigned, comandas: updatedComandas } })
+              queryClient.setQueryData(['operations', 'live'], {
+                ...snapshot,
+                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+              })
             } else {
               const empIdx = snapshot.employees.findIndex((e) => e === group)
               const updatedEmployees = [...snapshot.employees]
@@ -308,7 +348,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     mutationFn: cancelComanda,
     onMutate: async (comandaId) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>(['operations', 'live'])
+      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
+        'operations',
+        'live',
+      ])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
@@ -317,7 +360,10 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             const updatedComandas = [...group.comandas]
             updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status: 'CANCELLED' }
             if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, unassigned: { ...snapshot.unassigned, comandas: updatedComandas } })
+              queryClient.setQueryData(['operations', 'live'], {
+                ...snapshot,
+                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+              })
             } else {
               const empIdx = snapshot.employees.findIndex((e) => e === group)
               const updatedEmployees = [...snapshot.employees]
@@ -434,7 +480,8 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         await openComandaMutation.mutateAsync(comParams)
       } catch (err: unknown) {
         // Se o erro for 409 (caixa fechado), abre o caixa automaticamente e retenta
-        const isCaixaError = (err instanceof ApiError && err.status === 409) ||
+        const isCaixaError =
+          (err instanceof ApiError && err.status === 409) ||
           (err instanceof Error && err.message.toLowerCase().includes('caixa'))
         if (isCaixaError) {
           toast.dismiss() // Limpa o toast de erro do mutation
@@ -569,7 +616,12 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
               <span
                 className="size-1.5 rounded-full"
                 style={{
-                  background: realtimeStatus === 'connected' ? '#34f27f' : realtimeStatus === 'connecting' ? '#fbbf24' : '#f87171',
+                  background:
+                    realtimeStatus === 'connected'
+                      ? '#34f27f'
+                      : realtimeStatus === 'connecting'
+                        ? '#fbbf24'
+                        : '#f87171',
                 }}
               />
             </div>
@@ -676,9 +728,9 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
           {(
             [
-              { id: 'mesas',    label: 'Mesas',    Icon: Grid2x2,      badge: 0 },
-              { id: 'cozinha',  label: 'Cozinha',  Icon: ChefHat,      badge: kitchenBadge },
-              { id: 'pedidos',  label: 'Pedidos',  Icon: ClipboardList, badge: activeComandas.length },
+              { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
+              { id: 'cozinha', label: 'Cozinha', Icon: ChefHat, badge: kitchenBadge },
+              { id: 'pedidos', label: 'Pedidos', Icon: ClipboardList, badge: activeComandas.length },
               { id: 'historico', label: 'Histórico', Icon: ShoppingCart, badge: 0 },
             ] as const
           ).map(({ id, label, Icon, badge }) => {

@@ -39,7 +39,7 @@ export function OperationsExecutiveGrid({
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(rows[0]?.employee.employeeId ?? null)
   const resolvedSelectedEmployeeId = rows.some((row) => row.employee.employeeId === selectedEmployeeId)
     ? selectedEmployeeId
-    : rows[0]?.employee.employeeId ?? null
+    : (rows[0]?.employee.employeeId ?? null)
 
   const totals = rows.reduce(
     (accumulator, row) => {
@@ -86,10 +86,30 @@ export function OperationsExecutiveGrid({
     { field: 'cashStatus', headerName: 'Caixa', minWidth: 140 },
     { field: 'activeTables', headerName: 'Mesas abertas', minWidth: 130 },
     { field: 'closedTables', headerName: 'Mesas fechadas', minWidth: 140 },
-    { field: 'revenue', headerName: 'Receita', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'profit', headerName: 'Lucro', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'currentCash', headerName: 'Caixa atual', minWidth: 140, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'expectedCash', headerName: 'Caixa esperado', minWidth: 150, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
+    {
+      field: 'revenue',
+      headerName: 'Receita',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'profit',
+      headerName: 'Lucro',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'currentCash',
+      headerName: 'Caixa atual',
+      minWidth: 140,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'expectedCash',
+      headerName: 'Caixa esperado',
+      minWidth: 150,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
   ]
 
   const tableColumns: ColDef<(typeof selectedRow.tables)[number]>[] = [
@@ -101,17 +121,47 @@ export function OperationsExecutiveGrid({
       valueFormatter: ({ value }) => getComandaTone(value).label,
     },
     { field: 'itemsCount', headerName: 'Itens', minWidth: 100 },
-    { field: 'subtotal', headerName: 'Subtotal', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'discountAmount', headerName: 'Desconto', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'totalAmount', headerName: 'Total', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'openedAt', headerName: 'Abertura', minWidth: 120, valueFormatter: ({ value }) => formatShortTime(String(value ?? '')) },
+    {
+      field: 'subtotal',
+      headerName: 'Subtotal',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'discountAmount',
+      headerName: 'Desconto',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'totalAmount',
+      headerName: 'Total',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'openedAt',
+      headerName: 'Abertura',
+      minWidth: 120,
+      valueFormatter: ({ value }) => formatShortTime(String(value ?? '')),
+    },
   ]
 
   const movementColumns: ColDef<(typeof selectedRow.movements)[number]>[] = [
     { field: 'type', headerName: 'Tipo', minWidth: 140 },
     { field: 'reason', headerName: 'Motivo', flex: 1, minWidth: 180 },
-    { field: 'amount', headerName: 'Valor', minWidth: 130, valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)) },
-    { field: 'createdAt', headerName: 'Hora', minWidth: 120, valueFormatter: ({ value }) => formatShortTime(String(value ?? '')) },
+    {
+      field: 'amount',
+      headerName: 'Valor',
+      minWidth: 130,
+      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Hora',
+      minWidth: 120,
+      valueFormatter: ({ value }) => formatShortTime(String(value ?? '')),
+    },
   ]
 
   const cashDelta = totals.cashCurrent - totals.cashExpected
@@ -120,7 +170,9 @@ export function OperationsExecutiveGrid({
     <section className="imperial-card p-6 md:p-7">
       <header className="flex flex-col gap-4 border-b border-white/6 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Sprint operacional</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Sprint operacional
+          </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{description}</p>
         </div>
@@ -134,9 +186,17 @@ export function OperationsExecutiveGrid({
       </header>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-4">
-        <SummaryCard label="Receita" value={formatMoney(totals.salesRevenue)} hint="Faturamento operacional consolidado." />
+        <SummaryCard
+          label="Receita"
+          value={formatMoney(totals.salesRevenue)}
+          hint="Faturamento operacional consolidado."
+        />
         <SummaryCard label="Lucro" value={formatMoney(totals.salesProfit)} hint="Resultado bruto estimado do salão." />
-        <SummaryCard label="Caixa esperado" value={formatMoney(totals.cashExpected)} hint="Baseado em abertura e movimentos." />
+        <SummaryCard
+          label="Caixa esperado"
+          value={formatMoney(totals.cashExpected)}
+          hint="Baseado em abertura e movimentos."
+        />
         <SummaryCard
           highlight={cashDelta >= 0 ? 'positive' : 'negative'}
           label="Caixa atual"
@@ -153,10 +213,15 @@ export function OperationsExecutiveGrid({
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">AG Grid</p>
                 <h3 className="mt-1 text-lg font-semibold text-white">Visão executiva por colaborador</h3>
               </div>
-              <p className="text-xs text-[var(--text-soft)]">Clique em um funcionário para abrir mesas e movimentos da sessão.</p>
+              <p className="text-xs text-[var(--text-soft)]">
+                Clique em um funcionário para abrir mesas e movimentos da sessão.
+              </p>
             </div>
 
-            <div className="ag-theme-quartz rounded-[22px] border border-white/6" style={{ ...gridThemeStyle, height: 360 }}>
+            <div
+              className="ag-theme-quartz rounded-[22px] border border-white/6"
+              style={{ ...gridThemeStyle, height: 360 }}
+            >
               <AgGridReact
                 columnDefs={summaryColumns}
                 domLayout="normal"
@@ -178,15 +243,22 @@ export function OperationsExecutiveGrid({
               <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mesas do atendimento</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                      Mesas do atendimento
+                    </p>
                     <h3 className="mt-1 text-lg font-semibold text-white">{selectedRow.employee.employeeName}</h3>
                   </div>
-                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getCashSessionTone(selectedRow.employee.cashSessionStatus).className}`}>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getCashSessionTone(selectedRow.employee.cashSessionStatus).className}`}
+                  >
                     {getCashSessionTone(selectedRow.employee.cashSessionStatus).label}
                   </span>
                 </div>
 
-                <div className="ag-theme-quartz rounded-[22px] border border-white/6" style={{ ...gridThemeStyle, height: 320 }}>
+                <div
+                  className="ag-theme-quartz rounded-[22px] border border-white/6"
+                  style={{ ...gridThemeStyle, height: 320 }}
+                >
                   <AgGridReact
                     columnDefs={tableColumns}
                     domLayout="normal"
@@ -199,24 +271,34 @@ export function OperationsExecutiveGrid({
 
               <div className="space-y-4">
                 <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Resumo da sessão</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    Resumo da sessão
+                  </p>
                   <div className="mt-4 grid gap-3">
                     <SummaryBadge label="Abertura" value={formatMoney(selectedRow.employee.cashOpeningAmount)} />
                     <SummaryBadge label="Caixa atual" value={formatMoney(selectedRow.employee.cashCurrentAmount)} />
                     <SummaryBadge label="Caixa esperado" value={formatMoney(selectedRow.employee.cashExpectedAmount)} />
-                    <SummaryBadge label="Diferença" value={formatMoney(selectedRow.employee.cashDifferenceAmount ?? 0)} />
+                    <SummaryBadge
+                      label="Diferença"
+                      value={formatMoney(selectedRow.employee.cashDifferenceAmount ?? 0)}
+                    />
                   </div>
                 </div>
 
                 <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Movimentos</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                        Movimentos
+                      </p>
                       <h3 className="mt-1 text-lg font-semibold text-white">Últimos registros</h3>
                     </div>
                   </div>
 
-                  <div className="ag-theme-quartz rounded-[22px] border border-white/6" style={{ ...gridThemeStyle, height: 260 }}>
+                  <div
+                    className="ag-theme-quartz rounded-[22px] border border-white/6"
+                    style={{ ...gridThemeStyle, height: 260 }}
+                  >
                     <AgGridReact
                       columnDefs={movementColumns}
                       domLayout="normal"
@@ -235,7 +317,8 @@ export function OperationsExecutiveGrid({
           <Layers3 className="mx-auto size-10 text-[var(--text-soft)]/70" />
           <p className="mt-4 text-sm font-medium text-white">Nenhum funcionário conectado ainda.</p>
           <p className="mt-2 text-sm text-[var(--text-soft)]">
-            O grid executivo já está importado com AG Grid e entra em cena assim que o banco começar a publicar caixas e comandas.
+            O grid executivo já está importado com AG Grid e entra em cena assim que o banco começar a publicar caixas e
+            comandas.
           </p>
         </div>
       )}

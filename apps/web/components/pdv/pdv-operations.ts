@@ -110,7 +110,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
 
   // Build active comandas map by normalized tableLabel for cross-reference
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
-  const comandaByTable = new Map<string, typeof activeComandas[0]>()
+  const comandaByTable = new Map<string, (typeof activeComandas)[0]>()
   for (const c of activeComandas) {
     if (c.tableLabel) comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
   }

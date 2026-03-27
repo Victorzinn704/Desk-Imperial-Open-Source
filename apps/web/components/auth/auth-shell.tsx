@@ -52,17 +52,11 @@ export function AuthShell({
           </div>
 
           <div className="relative max-w-sm space-y-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/32">
-              {eyebrow}
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/32">{eyebrow}</p>
 
             <div className="space-y-3">
-              <h1 className="text-[2.65rem] font-semibold leading-tight tracking-tight text-white">
-                {title}
-              </h1>
-              <p className="max-w-md text-[13px] leading-6 text-white/44">
-                {description}
-              </p>
+              <h1 className="text-[2.65rem] font-semibold leading-tight tracking-tight text-white">{title}</h1>
+              <p className="max-w-md text-[13px] leading-6 text-white/44">{description}</p>
             </div>
 
             <div
@@ -72,8 +66,8 @@ export function AuthShell({
 
             <blockquote className="space-y-2">
               <p className="text-[13px] leading-6 text-white/38 italic">
-                &ldquo;A excelência operacional não é um diferencial competitivo,
-                é a fundação para escalar modelos de negócio complexos.&rdquo;
+                &ldquo;A excelência operacional não é um diferencial competitivo, é a fundação para escalar modelos de
+                negócio complexos.&rdquo;
               </p>
               <footer className="text-xs text-white/24">
                 Desk Imperial <span className="mx-1.5 opacity-50">·</span> Enterprise Suite
@@ -99,9 +93,7 @@ export function AuthShell({
         </aside>
 
         <section className="flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.02)_0%,transparent_38%),#020304] px-6 py-8 sm:px-10 lg:px-12 xl:px-14">
-          <div className={`w-full ${contentWidthClass}`}>
-            {children}
-          </div>
+          <div className={`w-full ${contentWidthClass}`}>{children}</div>
         </section>
       </div>
     </main>

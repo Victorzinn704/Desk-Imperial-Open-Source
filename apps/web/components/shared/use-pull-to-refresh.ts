@@ -19,38 +19,40 @@ interface UsePullToRefreshOptions {
  *     ...children
  *   </div>
  */
-export function usePullToRefresh({
-  onRefresh,
-  threshold = 80,
-  maxPull = 120,
-}: UsePullToRefreshOptions) {
+export function usePullToRefresh({ onRefresh, threshold = 80, maxPull = 120 }: UsePullToRefreshOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const startY = useRef(0)
   const [pullDistance, setPullDistance] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isPulling, setIsPulling] = useState(false)
 
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    const el = containerRef.current
-    if (!el || el.scrollTop > 0 || isRefreshing) return
-    startY.current = e.touches[0].clientY
-    setIsPulling(true)
-  }, [isRefreshing])
+  const handleTouchStart = useCallback(
+    (e: TouchEvent) => {
+      const el = containerRef.current
+      if (!el || el.scrollTop > 0 || isRefreshing) return
+      startY.current = e.touches[0].clientY
+      setIsPulling(true)
+    },
+    [isRefreshing],
+  )
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isPulling || isRefreshing) return
-    const delta = e.touches[0].clientY - startY.current
-    if (delta < 0) {
-      setPullDistance(0)
-      return
-    }
-    // Resistência logarítmica para sensação natural
-    const dampened = Math.min(delta * 0.5, maxPull)
-    setPullDistance(dampened)
-    if (dampened > 10) {
-      e.preventDefault()
-    }
-  }, [isPulling, isRefreshing, maxPull])
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isPulling || isRefreshing) return
+      const delta = e.touches[0].clientY - startY.current
+      if (delta < 0) {
+        setPullDistance(0)
+        return
+      }
+      // Resistência logarítmica para sensação natural
+      const dampened = Math.min(delta * 0.5, maxPull)
+      setPullDistance(dampened)
+      if (dampened > 10) {
+        e.preventDefault()
+      }
+    },
+    [isPulling, isRefreshing, maxPull],
+  )
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPulling) return

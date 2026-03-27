@@ -22,25 +22,19 @@ export function useAdminPin() {
    * Open the PIN dialog, or skip it entirely if we recently verified the PIN.
    * The callback does not receive a bearer token anymore.
    */
-  const requirePin = useCallback(
-    (
-      onConfirm: () => void,
-      options?: { title?: string; description?: string },
-    ) => {
-      if (hasRecentAdminPinVerification()) {
-        onConfirm()
-        return
-      }
+  const requirePin = useCallback((onConfirm: () => void, options?: { title?: string; description?: string }) => {
+    if (hasRecentAdminPinVerification()) {
+      onConfirm()
+      return
+    }
 
-      setState({
-        isOpen: true,
-        title: options?.title ?? 'Ação protegida',
-        description: options?.description ?? 'Digite o PIN de administrador para continuar.',
-        onConfirmCallback: onConfirm,
-      })
-    },
-    [],
-  )
+    setState({
+      isOpen: true,
+      title: options?.title ?? 'Ação protegida',
+      description: options?.description ?? 'Digite o PIN de administrador para continuar.',
+      onConfirmCallback: onConfirm,
+    })
+  }, [])
 
   function handleConfirm() {
     state.onConfirmCallback?.()

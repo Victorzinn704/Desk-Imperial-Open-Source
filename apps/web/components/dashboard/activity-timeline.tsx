@@ -1,6 +1,17 @@
 'use client'
 
-import { Activity, AlertTriangle, Ban, ClipboardList, LogIn, ReceiptText, Shield, TrendingUp, UserRound, X } from 'lucide-react'
+import {
+  Activity,
+  AlertTriangle,
+  Ban,
+  ClipboardList,
+  LogIn,
+  ReceiptText,
+  Shield,
+  TrendingUp,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { fetchActivityFeed, type ActivityFeedEntry } from '@/lib/api'
@@ -40,10 +51,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
         <div className="mb-6 flex items-center gap-3">
@@ -85,9 +93,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
               return (
                 <div key={activity.id} className="relative">
-                  {!isLast ? (
-                    <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" />
-                  ) : null}
+                  {!isLast ? <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" /> : null}
 
                   <div className="flex gap-4">
                     <div

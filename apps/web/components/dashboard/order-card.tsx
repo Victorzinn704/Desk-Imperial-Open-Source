@@ -41,11 +41,13 @@ export const OrderCard = memo(function OrderCard({
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-lg font-semibold text-white">{order.customerName || 'Cliente não informado'}</h3>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                order.status === 'COMPLETED'
-                  ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
-                  : 'border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.1)] text-[var(--danger)]'
-              }`}>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                  order.status === 'COMPLETED'
+                    ? 'border border-[rgba(123,214,138,0.28)] bg-[rgba(123,214,138,0.12)] text-[var(--success)]'
+                    : 'border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.1)] text-[var(--danger)]'
+                }`}
+              >
                 {order.status === 'COMPLETED' ? 'concluido' : 'cancelado'}
               </span>
             </div>
@@ -56,8 +58,9 @@ export const OrderCard = memo(function OrderCard({
               {formatBuyerType(order.buyerType)} • {maskBuyerDocument(order.buyerDocument)}
             </p>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
-              {[order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry].filter(Boolean).join(', ') ||
-                'Local da venda não informado'}
+              {[order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry]
+                .filter(Boolean)
+                .join(', ') || 'Local da venda não informado'}
             </p>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
               {order.sellerName
@@ -82,12 +85,16 @@ export const OrderCard = memo(function OrderCard({
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Receita</p>
           <p className="mt-2 text-lg font-semibold text-white">{revenueValue.primary}</p>
-          {revenueValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{revenueValue.secondary}</p> : null}
+          {revenueValue.secondary ? (
+            <p className="mt-1 text-xs text-[var(--text-soft)]">{revenueValue.secondary}</p>
+          ) : null}
         </div>
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro</p>
           <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
-          {profitValue.secondary ? <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p> : null}
+          {profitValue.secondary ? (
+            <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p>
+          ) : null}
         </div>
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Unidades</p>

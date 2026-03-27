@@ -28,10 +28,7 @@ export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnP
         style={{ background: column.bgColor, borderColor: column.borderColor }}
       >
         <div className="flex items-center gap-2">
-          <span
-            className="inline-block size-2.5 rounded-full"
-            style={{ background: column.dotColor }}
-          />
+          <span className="inline-block size-2.5 rounded-full" style={{ background: column.dotColor }} />
           <span className={`text-sm font-semibold ${column.color}`}>{column.label}</span>
           <span
             className="ml-1 inline-flex size-5 items-center justify-center rounded-full text-[11px] font-bold"
@@ -56,12 +53,8 @@ export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnP
             className="flex flex-1 flex-col gap-2 rounded-[20px] border p-2 transition-all duration-200"
             style={{
               minHeight: 200,
-              background: snapshot.isDraggingOver
-                ? column.bgColor
-                : 'rgba(255,255,255,0.02)',
-              borderColor: snapshot.isDraggingOver
-                ? column.borderColor
-                : 'rgba(255,255,255,0.05)',
+              background: snapshot.isDraggingOver ? column.bgColor : 'rgba(255,255,255,0.02)',
+              borderColor: snapshot.isDraggingOver ? column.borderColor : 'rgba(255,255,255,0.05)',
             }}
           >
             {comandas.length === 0 && !snapshot.isDraggingOver && (
@@ -71,13 +64,7 @@ export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnP
             )}
 
             {comandas.map((comanda, idx) => (
-              <PdvComandaCard
-                key={comanda.id}
-                column={column}
-                comanda={comanda}
-                index={idx}
-                onClick={onCardClick}
-              />
+              <PdvComandaCard key={comanda.id} column={column} comanda={comanda} index={idx} onClick={onCardClick} />
             ))}
 
             {provided.placeholder}

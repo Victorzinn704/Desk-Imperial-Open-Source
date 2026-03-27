@@ -47,9 +47,7 @@ export function ForgotPasswordForm() {
   return (
     <div>
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Recuperacao de acesso
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Recuperacao de acesso</p>
         <h2 className="text-3xl font-semibold text-white">Receba um codigo seguro para redefinir a senha.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
           O portal envia um codigo temporario para o email cadastrado e aplica limite contra abuso de requisicoes.

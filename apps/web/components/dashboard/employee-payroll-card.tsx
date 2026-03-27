@@ -168,17 +168,14 @@ export function EmployeePayrollCard({
                         min="0"
                         step="10"
                         type="number"
-                        onBlur={(e) =>
-                          commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
-                        }
+                        onBlur={(e) => commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))}
                       />
                     </div>
 
                     {/* Commission % */}
                     <div className="min-w-0">
                       <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-                        <Percent className="size-3" />
-                        % sobre vendas
+                        <Percent className="size-3" />% sobre vendas
                       </label>
                       <input
                         key={`${emp.id}-pct-${config.percentualVendas}`}
@@ -206,7 +203,9 @@ export function EmployeePayrollCard({
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Salário base</span>
-                      <span className="shrink-0 font-medium text-white">{formatCurrency(salarioBaseReais, currency)}</span>
+                      <span className="shrink-0 font-medium text-white">
+                        {formatCurrency(salarioBaseReais, currency)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                       <span className="text-white">Total a pagar</span>

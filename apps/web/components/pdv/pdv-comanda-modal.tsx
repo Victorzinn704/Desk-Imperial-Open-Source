@@ -1,7 +1,21 @@
 'use client'
 
 import { useMemo, useState, useRef } from 'react'
-import { LoaderCircle, Minus, Plus, Printer, RefreshCw, Search, X, Coffee, Pizza, Beer, Package, UtensilsCrossed, Wine } from 'lucide-react'
+import {
+  LoaderCircle,
+  Minus,
+  Plus,
+  Printer,
+  RefreshCw,
+  Search,
+  X,
+  Coffee,
+  Pizza,
+  Beer,
+  Package,
+  UtensilsCrossed,
+  Wine,
+} from 'lucide-react'
 import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
 import { maskDocument, validateDocument } from '@/lib/document-validation'
@@ -58,13 +72,13 @@ export function PdvComandaModal({
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  
+
   // PIN protection states
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false)
   const [pinDialogTitle, setPinDialogTitle] = useState('Ação protegida')
   const [pinDialogDescription, setPinDialogDescription] = useState('Digite o PIN para confirmar')
   const pinActionRef = useRef<(() => void) | null>(null)
-  
+
   const {
     printers,
     selectedPrinterName,
@@ -78,10 +92,13 @@ export function PdvComandaModal({
   const docValidation = validateDocument(clienteDocumento)
   const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
 
-  const categories = Array.from(new Set(products.map(p => p.category))).filter(Boolean).sort()
+  const categories = Array.from(new Set(products.map((p) => p.category)))
+    .filter(Boolean)
+    .sort()
 
   const filteredProducts = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
+    const matchSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
     const matchCat = selectedCategory ? p.category === selectedCategory : true
     return matchSearch && matchCat
   })
@@ -110,11 +127,16 @@ export function PdvComandaModal({
   // Heuristic icon mapper
   function getCategoryIcon(cat: string) {
     const low = cat.toLowerCase()
-    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('vinho')) return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('combo') || low.includes('kit')) return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
+      return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('vinho'))
+      return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
+      return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('combo') || low.includes('kit'))
+      return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
+      return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
     return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
   }
 
@@ -122,9 +144,7 @@ export function PdvComandaModal({
     setItens((prev) => {
       const existing = prev.find((item) => item.produtoId === product.id)
       if (existing) {
-        return prev.map((item) =>
-          item.produtoId === product.id ? { ...item, quantidade: item.quantidade + 1 } : item,
-        )
+        return prev.map((item) => (item.produtoId === product.id ? { ...item, quantidade: item.quantidade + 1 } : item))
       }
 
       return [
@@ -147,14 +167,8 @@ export function PdvComandaModal({
     )
   }
 
-  const bruto = useMemo(
-    () => itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0),
-    [itens],
-  )
-  const itemCount = useMemo(
-    () => itens.reduce((sum, item) => sum + item.quantidade, 0),
-    [itens],
-  )
+  const bruto = useMemo(() => itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0), [itens])
+  const itemCount = useMemo(() => itens.reduce((sum, item) => sum + item.quantidade, 0), [itens])
   const draftComanda: Comanda = {
     id: comanda?.id ?? '',
     status: comanda?.status ?? 'aberta',
@@ -267,13 +281,19 @@ export function PdvComandaModal({
                   <button
                     onClick={() => setSelectedCategory(null)}
                     className={`group flex shrink-0 flex-col items-center justify-center rounded-[14px] border px-3 py-3 min-w-[70px] transition-all hover:-translate-y-0.5 ${
-                      selectedCategory === null 
-                        ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]' 
+                      selectedCategory === null
+                        ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
                         : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
                     }`}
                   >
-                    <Search className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`} />
-                    <span className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}>Todos</span>
+                    <Search
+                      className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+                    />
+                    <span
+                      className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+                    >
+                      Todos
+                    </span>
                   </button>
 
                   {categories.map((cat) => {
@@ -289,8 +309,10 @@ export function PdvComandaModal({
                         }`}
                       >
                         {getCategoryIcon(cat)}
-                        <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
-                          {cat.length > 10 ? cat.substring(0,10) + '...' : cat}
+                        <span
+                          className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}
+                        >
+                          {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
                         </span>
                       </button>
                     )
@@ -374,7 +396,7 @@ export function PdvComandaModal({
                       color: docValidation.valid ? '#36f57c' : '#fca5a5',
                     }}
                   >
-                    {docValidation.valid ? `${docLabel} valido` : docValidation.message ?? `${docLabel} invalido`}
+                    {docValidation.valid ? `${docLabel} valido` : (docValidation.message ?? `${docLabel} invalido`)}
                   </span>
                 ) : null}
               </label>
@@ -419,7 +441,11 @@ export function PdvComandaModal({
                   onChange={(event) => {
                     const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
                     if (newValue > 0 && newValue !== desconto) {
-                      requirePin(() => setDesconto(newValue), 'Aplicar Desconto', `Confirme o desconto de ${newValue}% com seu PIN.`)
+                      requirePin(
+                        () => setDesconto(newValue),
+                        'Aplicar Desconto',
+                        `Confirme o desconto de ${newValue}% com seu PIN.`,
+                      )
                     } else {
                       setDesconto(newValue)
                     }
@@ -439,7 +465,11 @@ export function PdvComandaModal({
                   onChange={(event) => {
                     const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
                     if (newValue > 0 && newValue !== acrescimo) {
-                      requirePin(() => setAcrescimo(newValue), 'Aplicar Acréscimo', `Confirme o acréscimo de ${newValue}% com seu PIN.`)
+                      requirePin(
+                        () => setAcrescimo(newValue),
+                        'Aplicar Acréscimo',
+                        `Confirme o acréscimo de ${newValue}% com seu PIN.`,
+                      )
                     } else {
                       setAcrescimo(newValue)
                     }
@@ -451,54 +481,52 @@ export function PdvComandaModal({
             <div className="m-4 flex items-center justify-between rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
               <div>
                 {bruto !== total ? (
-                  <p className="text-xs text-[var(--text-soft)] line-through">
-                    {formatCurrency(bruto, 'BRL')}
-                  </p>
+                  <p className="text-xs text-[var(--text-soft)] line-through">{formatCurrency(bruto, 'BRL')}</p>
                 ) : null}
                 <p className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</p>
               </div>
-              <p className="text-xs text-[var(--text-soft)]">
-                {itemCount} itens
-              </p>
+              <p className="text-xs text-[var(--text-soft)]">{itemCount} itens</p>
             </div>
 
             {isEditing && onStatusChange && comanda ? (
               <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-                {statusOptions.filter((option) => option.value !== comanda.status).map((option) => (
-                  <button
-                    key={option.value}
-                    className="rounded-[12px] border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
-                    style={{
-                      borderColor: `${option.color}44`,
-                      background: `${option.color}11`,
-                      color: option.color,
-                    }}
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() => {
-                      // Protect status changes, especially "Fechar Comanda"
-                      const requiresPin = option.value === 'fechada'
-                      if (requiresPin) {
-                        requirePin(
-                          async () => {
+                {statusOptions
+                  .filter((option) => option.value !== comanda.status)
+                  .map((option) => (
+                    <button
+                      key={option.value}
+                      className="rounded-[12px] border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
+                      style={{
+                        borderColor: `${option.color}44`,
+                        background: `${option.color}11`,
+                        color: option.color,
+                      }}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        // Protect status changes, especially "Fechar Comanda"
+                        const requiresPin = option.value === 'fechada'
+                        if (requiresPin) {
+                          requirePin(
+                            async () => {
+                              await onStatusChange(comanda, option.value)
+                              onClose()
+                            },
+                            'Fechar Comanda',
+                            'Confirme com seu PIN para fechar completamente esta comanda.',
+                          )
+                        } else {
+                          // No PIN required for intermediate statuses
+                          void (async () => {
                             await onStatusChange(comanda, option.value)
                             onClose()
-                          },
-                          'Fechar Comanda',
-                          'Confirme com seu PIN para fechar completamente esta comanda.',
-                        )
-                      } else {
-                        // No PIN required for intermediate statuses
-                        void (async () => {
-                          await onStatusChange(comanda, option.value)
-                          onClose()
-                        })()
-                      }
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                          })()
+                        }
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
               </div>
             ) : null}
 
@@ -510,17 +538,19 @@ export function PdvComandaModal({
                       <Printer className="size-4" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Comanda termica</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                        Comanda termica
+                      </p>
                       <p className="mt-1 text-sm text-white">QZ Tray agora. PrintNode fica como segunda via.</p>
                     </div>
                   </div>
 
                   <button
-                  className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => void refreshPrinters()}
-                >
+                    className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => void refreshPrinters()}
+                  >
                     <RefreshCw className={`size-3.5 ${connectionState === 'discovering' ? 'animate-spin' : ''}`} />
                     Atualizar
                   </button>
@@ -535,7 +565,8 @@ export function PdvComandaModal({
                     <option value="">Selecione uma impressora termica</option>
                     {printers.map((printer) => (
                       <option key={printer.id} value={printer.name}>
-                        {printer.name}{printer.isDefault ? ' (padrao)' : ''}
+                        {printer.name}
+                        {printer.isDefault ? ' (padrao)' : ''}
                       </option>
                     ))}
                   </select>
@@ -568,11 +599,17 @@ export function PdvComandaModal({
 
                 <button
                   className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing' || isBusy}
+                  disabled={
+                    itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing' || isBusy
+                  }
                   type="button"
                   onClick={() => void handleSave({ printAfterSave: true })}
                 >
-                  {connectionState === 'printing' || isBusy ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
+                  {connectionState === 'printing' || isBusy ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <Printer className="size-4" />
+                  )}
                   {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
                 </button>
               </div>
@@ -581,12 +618,8 @@ export function PdvComandaModal({
 
           <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
             <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-                Tela da comanda
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-white">
-                Itens ao vivo da mesa {mesa || 'sem numero'}
-              </h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tela da comanda</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">Itens ao vivo da mesa {mesa || 'sem numero'}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
                 Sempre que abrir ou editar uma comanda, esta coluna mostra os itens que vao sair para o atendimento.
               </p>
@@ -595,9 +628,7 @@ export function PdvComandaModal({
             <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
               <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
-                <p className="mt-2 truncate text-sm font-medium text-white">
-                  {clienteNome || 'Nao identificado'}
-                </p>
+                <p className="mt-2 truncate text-sm font-medium text-white">{clienteNome || 'Nao identificado'}</p>
               </div>
               <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Status</p>
@@ -669,7 +700,7 @@ export function PdvComandaModal({
                               onChange={(e) => {
                                 const v = Math.max(1, Math.floor(Number(e.target.value) || 1))
                                 setItens((prev) =>
-                                  prev.map((i) => i.produtoId === item.produtoId ? { ...i, quantidade: v } : i),
+                                  prev.map((i) => (i.produtoId === item.produtoId ? { ...i, quantidade: v } : i)),
                                 )
                               }}
                             />
@@ -708,7 +739,9 @@ export function PdvComandaModal({
                   <span>{acrescimo}%</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.08)] pt-4">
-                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Total final</span>
+                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    Total final
+                  </span>
                   <span className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</span>
                 </div>
               </div>

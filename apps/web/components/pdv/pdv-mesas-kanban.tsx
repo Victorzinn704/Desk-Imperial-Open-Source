@@ -77,9 +77,7 @@ function MesaSquare({
               boxShadow: snapshot.isDragging ? '0 0 20px rgba(54,245,124,0.25)' : undefined,
             }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(54,245,124,0.6)]">
-              Mesa
-            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(54,245,124,0.6)]">Mesa</p>
             <p className="text-2xl font-bold text-white leading-none mt-0.5">{mesa.numero}</p>
             <div className="mt-1 flex items-center gap-0.5 text-[rgba(54,245,124,0.55)]">
               <Users className="size-2.5" />
@@ -126,9 +124,7 @@ function MesaRectCard({
           <div
             className="rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5"
             style={{
-              background: snapshot.isDragging
-                ? `${colColor}18`
-                : `${colColor}0a`,
+              background: snapshot.isDragging ? `${colColor}18` : `${colColor}0a`,
               borderColor: snapshot.isDragging ? colColor : `${colColor}44`,
               boxShadow: snapshot.isDragging ? `0 8px 24px ${colColor}22` : undefined,
             }}
@@ -156,7 +152,8 @@ function MesaRectCard({
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--text-soft)]">
-                    {comanda.itens.length} {comanda.itens.length === 1 ? 'item' : 'itens'} · {formatElapsed(comanda.abertaEm)}
+                    {comanda.itens.length} {comanda.itens.length === 1 ? 'item' : 'itens'} ·{' '}
+                    {formatElapsed(comanda.abertaEm)}
                   </span>
                   <span className="text-[11px] font-bold" style={{ color: colColor }}>
                     {formatCurrency(calcTotal(comanda), 'BRL')}
@@ -199,7 +196,6 @@ export function PdvMesasKanban({
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="space-y-5">
-
         {/* ── Pool: Mesas Livres ── */}
         <div
           className="rounded-2xl border p-4"
@@ -214,9 +210,7 @@ export function PdvMesasKanban({
                 className="inline-block size-2 rounded-full"
                 style={{ background: '#36f57c', boxShadow: '0 0 6px #36f57c' }}
               />
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#36f57c]">
-                Livre
-              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#36f57c]">Livre</span>
               <span className="text-xs text-[var(--text-muted)]">— arraste para ocupar ou reservar</span>
             </div>
             <button
@@ -265,24 +259,14 @@ export function PdvMesasKanban({
           {COLUMNS.map((col) => {
             const colMesas = mesas.filter((m) => m.status === col.id)
             return (
-              <div
-                key={col.id}
-                className="rounded-2xl border"
-                style={{ borderColor: col.border, background: col.bg }}
-              >
+              <div key={col.id} className="rounded-2xl border" style={{ borderColor: col.border, background: col.bg }}>
                 {/* Column header */}
-                <div
-                  className="flex items-center gap-2 px-4 py-3 border-b"
-                  style={{ borderColor: col.border }}
-                >
+                <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: col.border }}>
                   <span
                     className="inline-block size-2 rounded-full"
                     style={{ background: col.color, boxShadow: `0 0 6px ${col.color}` }}
                   />
-                  <span
-                    className="text-xs font-bold uppercase tracking-[0.2em]"
-                    style={{ color: col.color }}
-                  >
+                  <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: col.color }}>
                     {col.label}
                   </span>
                   <span
@@ -305,9 +289,7 @@ export function PdvMesasKanban({
                       }}
                     >
                       {colMesas.length === 0 && !snapshot.isDraggingOver && (
-                        <p className="text-center text-xs text-[var(--text-muted)] pt-8">
-                          Arraste uma mesa aqui
-                        </p>
+                        <p className="text-center text-xs text-[var(--text-muted)] pt-8">Arraste uma mesa aqui</p>
                       )}
                       {colMesas.map((mesa, i) => (
                         <MesaRectCard

@@ -2,13 +2,7 @@
 
 import { useState } from 'react'
 import type { CurrencyCode, FinanceSummaryResponse, OrdersResponse } from '@contracts/contracts'
-import {
-  BarChart3,
-  Boxes,
-  Building2,
-  TrendingUp,
-  UsersRound,
-} from 'lucide-react'
+import { BarChart3, Boxes, Building2, TrendingUp, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Area,
@@ -75,12 +69,7 @@ const chartViews: ChartViewOption[] = [
   },
 ]
 
-export function FinanceChart({
-  finance,
-  ordersTotals,
-  isLoading = false,
-  error = null,
-}: FinanceChartProps) {
+export function FinanceChart({ finance, ordersTotals, isLoading = false, error = null }: FinanceChartProps) {
   const [activeView, setActiveView] = useState<ChartView>('timeline')
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
 
@@ -152,14 +141,14 @@ export function FinanceChart({
                   ? `${highlightedCustomer.buyerTypeLabel} • ${highlightedCustomer.documentLabel}`
                   : 'registre compradores para abrir esta visao',
               },
-            {
-              label: 'Maior receita',
-              value: highlightedCustomer
-                ? formatCurrency(highlightedCustomer.revenue, displayCurrency)
-                : formatCurrency(0, displayCurrency),
-              helper: highlightedCustomer
-                ? `${highlightedCustomer.orders} pedido(s) registrados`
-                : 'sem compradores suficientes ainda',
+              {
+                label: 'Maior receita',
+                value: highlightedCustomer
+                  ? formatCurrency(highlightedCustomer.revenue, displayCurrency)
+                  : formatCurrency(0, displayCurrency),
+                helper: highlightedCustomer
+                  ? `${highlightedCustomer.orders} pedido(s) registrados`
+                  : 'sem compradores suficientes ainda',
               },
               {
                 label: 'Margem media',
@@ -169,9 +158,9 @@ export function FinanceChart({
             ]
           : [
               {
-              label: 'Categoria lider',
-              value: highlightedCategory?.category ?? 'Sem dados',
-              helper: highlightedCategory
+                label: 'Categoria lider',
+                value: highlightedCategory?.category ?? 'Sem dados',
+                helper: highlightedCategory
                   ? `${formatCurrency(highlightedCategory.potentialProfit, displayCurrency)} de lucro potencial`
                   : 'cadastre produtos para destravar a leitura',
               },
@@ -197,14 +186,10 @@ export function FinanceChart({
           <h2 className="mt-3 text-3xl font-semibold text-white">
             Leitura executiva do desempenho comercial e financeiro.
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-            {activeViewOption.description}
-          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{activeViewOption.description}</p>
           <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-soft)]">
             exibindo valores em {displayCurrency}
-            {finance?.ratesUpdatedAt
-              ? ` • cotacao de ${new Date(finance.ratesUpdatedAt).toLocaleString('pt-BR')}`
-              : ''}
+            {finance?.ratesUpdatedAt ? ` • cotacao de ${new Date(finance.ratesUpdatedAt).toLocaleString('pt-BR')}` : ''}
             {finance?.ratesSource === 'stale-cache' ? ' • cache de contingencia' : ''}
             {finance?.ratesSource === 'fallback' ? ' • estimativa temporaria' : ''}
           </p>
@@ -285,10 +270,7 @@ export function FinanceChart({
                 </div>
               ))
             : insightCards.map((insight) => (
-                <div
-                  className="imperial-card-stat p-5"
-                  key={insight.label}
-                >
+                <div className="imperial-card-stat p-5" key={insight.label}>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
                     {insight.label}
                   </p>
@@ -363,9 +345,7 @@ function renderChart({
     return (
       <div className="flex h-full items-center justify-center rounded-[24px] border border-dashed border-[rgba(245,132,132,0.3)] bg-[rgba(245,132,132,0.06)] px-6 text-center">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">
-            Falha na leitura
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">Falha na leitura</p>
           <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{error}</p>
         </div>
       </div>
@@ -412,15 +392,25 @@ function renderChart({
             width={80}
           />
           <Tooltip
-            content={
-              <DashboardChartTooltip
-                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
-              />
-            }
+            content={<DashboardChartTooltip valueFormatter={(value) => formatCurrency(value, displayCurrency)} />}
           />
           <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
-          <Area dataKey="revenue" fill="url(#timelineRevenue)" name="Receita" stroke="#36f57c" strokeWidth={3} type="monotone" />
-          <Area dataKey="profit" fill="url(#timelineProfit)" name="Lucro" stroke="#38bdf8" strokeWidth={3} type="monotone" />
+          <Area
+            dataKey="revenue"
+            fill="url(#timelineRevenue)"
+            name="Receita"
+            stroke="#36f57c"
+            strokeWidth={3}
+            type="monotone"
+          />
+          <Area
+            dataKey="profit"
+            fill="url(#timelineProfit)"
+            name="Lucro"
+            stroke="#38bdf8"
+            strokeWidth={3}
+            type="monotone"
+          />
         </AreaChart>
       </ResponsiveContainer>
     )
@@ -438,13 +428,16 @@ function renderChart({
             tickLine={false}
             type="number"
           />
-          <YAxis axisLine={false} dataKey="channel" tick={{ fill: '#99a3b1', fontSize: 12 }} tickLine={false} type="category" width={110} />
+          <YAxis
+            axisLine={false}
+            dataKey="channel"
+            tick={{ fill: '#99a3b1', fontSize: 12 }}
+            tickLine={false}
+            type="category"
+            width={110}
+          />
           <Tooltip
-            content={
-              <DashboardChartTooltip
-                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
-              />
-            }
+            content={<DashboardChartTooltip valueFormatter={(value) => formatCurrency(value, displayCurrency)} />}
           />
           <Legend wrapperStyle={{ color: '#f3f4f6', paddingTop: '12px' }} />
           <Bar dataKey="revenue" fill="#36f57c" name="Receita" radius={[0, 14, 14, 0]} />
@@ -468,11 +461,7 @@ function renderChart({
             width={80}
           />
           <Tooltip
-            content={
-              <DashboardChartTooltip
-                valueFormatter={(value) => formatCurrency(value, displayCurrency)}
-              />
-            }
+            content={<DashboardChartTooltip valueFormatter={(value) => formatCurrency(value, displayCurrency)} />}
           />
           <Bar dataKey="revenue" fill="#7df9d8" name="Receita" radius={[14, 14, 0, 0]}>
             {customerData.map((entry, index) => (
@@ -488,11 +477,7 @@ function renderChart({
     <ResponsiveContainer height="100%" width="100%">
       <PieChart>
         <Tooltip
-          content={
-            <DashboardChartTooltip
-              valueFormatter={(value) => formatCurrency(value, displayCurrency)}
-            />
-          }
+          content={<DashboardChartTooltip valueFormatter={(value) => formatCurrency(value, displayCurrency)} />}
         />
         <Legend wrapperStyle={{ color: '#f3f4f6' }} />
         <Pie
@@ -518,9 +503,7 @@ function EmptyChartState({ message }: { message: string }) {
   return (
     <div className="imperial-card-soft flex h-full items-center justify-center border-dashed px-6 text-center">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-          Dados insuficientes
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Dados insuficientes</p>
         <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{message}</p>
       </div>
     </div>
@@ -540,12 +523,7 @@ type DashboardChartTooltipProps = {
   valueFormatter: (value: number) => string
 }
 
-function DashboardChartTooltip({
-  active,
-  label,
-  payload,
-  valueFormatter,
-}: DashboardChartTooltipProps) {
+function DashboardChartTooltip({ active, label, payload, valueFormatter }: DashboardChartTooltipProps) {
   if (!active || !payload?.length) {
     return null
   }

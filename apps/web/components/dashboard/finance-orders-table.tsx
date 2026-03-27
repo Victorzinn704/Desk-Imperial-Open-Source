@@ -132,11 +132,14 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                   )}
                 >
                   <td className="max-w-[180px] px-4 py-3">
-                    <p className="truncate font-semibold text-white">
-                      {order.customerName || 'Cliente não informado'}
-                    </p>
+                    <p className="truncate font-semibold text-white">{order.customerName || 'Cliente não informado'}</p>
                   </td>
-                  <td className={cn('px-4 py-3 text-right font-semibold', isCompleted ? 'text-[#36f57c]' : 'text-red-400')}>
+                  <td
+                    className={cn(
+                      'px-4 py-3 text-right font-semibold',
+                      isCompleted ? 'text-[#36f57c]' : 'text-red-400',
+                    )}
+                  >
                     {isCompleted ? '' : '−'}
                     {formatCurrency(order.totalRevenue, displayCurrency)}
                   </td>
@@ -146,15 +149,9 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                   <td className="px-4 py-3 text-center">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3 text-[var(--text-soft)] max-md:hidden">
-                    {formatDate(order.createdAt)}
-                  </td>
-                  <td className="px-4 py-3 capitalize text-[var(--text-soft)] max-md:hidden">
-                    {order.channel || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right text-[var(--text-soft)] max-md:hidden">
-                    {order.totalItems}
-                  </td>
+                  <td className="px-4 py-3 text-[var(--text-soft)] max-md:hidden">{formatDate(order.createdAt)}</td>
+                  <td className="px-4 py-3 capitalize text-[var(--text-soft)] max-md:hidden">{order.channel || '—'}</td>
+                  <td className="px-4 py-3 text-right text-[var(--text-soft)] max-md:hidden">{order.totalItems}</td>
                 </tr>
               )
             })}

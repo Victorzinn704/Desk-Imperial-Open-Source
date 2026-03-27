@@ -19,7 +19,9 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
   const ref = useRef<HTMLSpanElement | null>(null)
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   function handleShow() {
     if (ref.current) {
@@ -27,7 +29,7 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
       const GAP = 12
       let top = 0
       let left = 0
-      
+
       if (side === 'top') {
         top = r.top + window.scrollY - GAP
         left = r.left + r.width / 2
@@ -55,9 +57,11 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
 
   const arrowClasses: Record<string, string> = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-[rgba(30,38,48,0.96)] border-t-4 border-x-4 border-x-transparent border-b-0',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-[rgba(30,38,48,0.96)] border-b-4 border-x-4 border-x-transparent border-t-0',
+    bottom:
+      'bottom-full left-1/2 -translate-x-1/2 border-b-[rgba(30,38,48,0.96)] border-b-4 border-x-4 border-x-transparent border-t-0',
     left: 'left-full top-1/2 -translate-y-1/2 border-l-[rgba(30,38,48,0.96)] border-l-4 border-y-4 border-y-transparent border-r-0',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-[rgba(30,38,48,0.96)] border-r-4 border-y-4 border-y-transparent border-l-0',
+    right:
+      'right-full top-1/2 -translate-y-1/2 border-r-[rgba(30,38,48,0.96)] border-r-4 border-y-4 border-y-transparent border-l-0',
   }
 
   return (
@@ -71,29 +75,28 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
     >
       {children}
 
-      {mounted && createPortal(
-        <span
-          aria-hidden={!visible}
-          role="tooltip"
-          className={cn(
-            'pointer-events-none fixed z-[9999] whitespace-nowrap rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(23,28,34,0.98)] px-3.5 py-2 text-xs font-medium text-[rgba(255,255,255,0.95)] shadow-[0_12px_48px_rgba(0,0,0,0.48)] backdrop-blur-sm',
-            'transition-[opacity,transform] duration-200 ease-out',
-            visible 
-              ? 'opacity-100 scale-100 pointer-events-auto' 
-              : 'opacity-0 scale-90 pointer-events-none',
-            className,
-          )}
-          style={{
-            top: `${coords.top}px`,
-            left: `${coords.left}px`,
-            transform: transformMap[side],
-          }}
-        >
-          {content}
-          <span className={cn('absolute h-0 w-0', arrowClasses[side])} />
-        </span>,
-        document.body,
-      )}
+      {mounted &&
+        createPortal(
+          <span
+            aria-hidden={!visible}
+            role="tooltip"
+            className={cn(
+              'pointer-events-none fixed z-[9999] whitespace-nowrap rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(23,28,34,0.98)] px-3.5 py-2 text-xs font-medium text-[rgba(255,255,255,0.95)] shadow-[0_12px_48px_rgba(0,0,0,0.48)] backdrop-blur-sm',
+              'transition-[opacity,transform] duration-200 ease-out',
+              visible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none',
+              className,
+            )}
+            style={{
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
+              transform: transformMap[side],
+            }}
+          >
+            {content}
+            <span className={cn('absolute h-0 w-0', arrowClasses[side])} />
+          </span>,
+          document.body,
+        )}
     </span>
   )
 }

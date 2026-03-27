@@ -193,7 +193,7 @@ let mockRequest: ReturnType<typeof makeRequestContext>
 
 beforeEach(() => {
   jest.clearAllMocks()
-  
+
   ordersService = new OrdersService(
     mockPrisma as unknown as PrismaService,
     mockCurrencyService as unknown as CurrencyService,
@@ -202,10 +202,10 @@ beforeEach(() => {
     mockAdminPinService as unknown as AdminPinService,
     mockCache as unknown as CacheService,
   )
-  
+
   mockContext = makeAuthContext()
   mockRequest = makeRequestContext()
-  
+
   // Defaults
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
   mockCurrencyService.convert.mockImplementation((value) => value)
@@ -248,7 +248,7 @@ describe('OrdersService', () => {
 
     it('deve buscar pedidos do banco quando cache não disponível', async () => {
       mockCache.get.mockResolvedValue(null)
-      
+
       const orders = [makeOrder(), makeOrder({ id: 'order-2' })]
       mockPrisma.order.findMany.mockResolvedValue(orders)
       mockPrisma.order.aggregate.mockResolvedValue({
@@ -294,21 +294,14 @@ describe('OrdersService', () => {
 
       await ordersService.listForUser(mockContext, { limit: 10 })
 
-      expect(mockCache.set).toHaveBeenCalledWith(
-        'orders:summary:user-1',
-        expect.any(Object),
-        90,
-      )
+      expect(mockCache.set).toHaveBeenCalledWith('orders:summary:user-1', expect.any(Object), 90)
     })
   })
 
   describe('createForUser', () => {
     it('deve criar pedido com dados válidos', async () => {
       const dto = makeCreateOrderDto()
-      const products = [
-        makeProduct({ id: 'product-1', stock: 100 }),
-        makeProduct({ id: 'product-2', stock: 50 }),
-      ]
+      const products = [makeProduct({ id: 'product-1', stock: 100 }), makeProduct({ id: 'product-2', stock: 50 })]
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.order.create.mockResolvedValue(makeOrder())
       mockGeocodingService.geocodeCityLocation.mockResolvedValue({
@@ -330,21 +323,21 @@ describe('OrdersService', () => {
     it('deve rejeitar pedido sem itens', async () => {
       const dto = makeCreateOrderDto({ items: [] })
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(BadRequestException)
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow('Adicione pelo menos um produto ao pedido.')
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        'Adicione pelo menos um produto ao pedido.',
+      )
     })
 
     it('deve validar existência dos produtos', async () => {
       const dto = makeCreateOrderDto()
       mockPrisma.product.findMany.mockResolvedValue([])
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(NotFoundException)
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        NotFoundException,
+      )
     })
 
     it('deve validar disponibilidade de estoque', async () => {
@@ -356,9 +349,9 @@ describe('OrdersService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(BadRequestException)
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('deve validar CPF para pessoa física', async () => {
@@ -370,12 +363,12 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(BadRequestException)
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow('CPF valido')
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        'CPF valido',
+      )
     })
 
     it('deve validar CNPJ para pessoa jurídica', async () => {
@@ -387,12 +380,12 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(BadRequestException)
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow('CNPJ valido')
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        'CNPJ valido',
+      )
     })
 
     it('deve aceitar CPF válido', async () => {
@@ -410,9 +403,7 @@ describe('OrdersService', () => {
         label: 'São Paulo, Brasil',
       })
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).resolves.toBeDefined()
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).resolves.toBeDefined()
     })
 
     it('deve exigir Admin PIN para desconto > 15% com STAFF', async () => {
@@ -421,16 +412,16 @@ describe('OrdersService', () => {
         items: [{ productId: 'product-1', quantity: 1, unitPrice: 10.0 }],
       })
       const products = [makeProduct({ unitPrice: 20.0 })]
-      
+
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.employee.findFirst.mockResolvedValue({ id: 'emp-1', employeeCode: '001' })
       mockAdminPinService.hasPinConfigured.mockResolvedValue(true)
       mockAdminPinService.extractVerificationProof.mockReturnValue('invalid-proof')
       mockAdminPinService.validateVerificationProof.mockResolvedValue(false)
 
-      await expect(
-        ordersService.createForUser(staffContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(ForbiddenException)
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        ForbiddenException,
+      )
     })
 
     it('deve permitir desconto até 15% para STAFF sem PIN', async () => {
@@ -439,7 +430,7 @@ describe('OrdersService', () => {
         items: [{ productId: 'product-1', quantity: 1, unitPrice: 17.0 }], // 15% desconto
       })
       const products = [makeProduct({ unitPrice: 20.0 })]
-      
+
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.employee.findFirst.mockResolvedValue({ id: 'emp-1', employeeCode: '001' })
       mockPrisma.order.create.mockResolvedValue(makeOrder())
@@ -450,9 +441,7 @@ describe('OrdersService', () => {
       })
       mockAdminPinService.hasPinConfigured.mockResolvedValue(false)
 
-      await expect(
-        ordersService.createForUser(staffContext, dto, mockRequest, mockRequest),
-      ).resolves.toBeDefined()
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).resolves.toBeDefined()
     })
 
     it('deve exigir funcionário ativo para STAFF', async () => {
@@ -461,21 +450,18 @@ describe('OrdersService', () => {
         items: [{ productId: 'product-1', quantity: 1 }],
       })
       const products = [makeProduct()]
-      
+
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.employee.findFirst.mockResolvedValue(null)
 
-      await expect(
-        ordersService.createForUser(staffContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(ForbiddenException)
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        ForbiddenException,
+      )
     })
 
     it('deve decrementar estoque em transação', async () => {
       const dto = makeCreateOrderDto()
-      const products = [
-        makeProduct({ id: 'product-1', stock: 100 }),
-        makeProduct({ id: 'product-2', stock: 50 }),
-      ]
+      const products = [makeProduct({ id: 'product-1', stock: 100 }), makeProduct({ id: 'product-2', stock: 50 })]
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.product.updateMany.mockResolvedValue({ count: 1 })
       mockPrisma.order.create.mockResolvedValue(makeOrder())
@@ -541,9 +527,9 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(
-        ordersService.createForUser(mockContext, dto, mockRequest, mockRequest),
-      ).rejects.toThrow(BadRequestException)
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
     })
   })
 
@@ -575,27 +561,32 @@ describe('OrdersService', () => {
       const order = makeOrder({ status: OrderStatus.CANCELLED })
       mockPrisma.order.findFirst.mockResolvedValue(order)
 
-      await expect(
-        ordersService.cancelForUser(mockContext, 'order-1', mockRequest),
-      ).rejects.toThrow(BadRequestException)
-      await expect(
-        ordersService.cancelForUser(mockContext, 'order-1', mockRequest),
-      ).rejects.toThrow('ja foi cancelado')
+      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow('ja foi cancelado')
     })
 
     it('deve rejeitar cancelamento de pedido inexistente', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null)
 
-      await expect(
-        ordersService.cancelForUser(mockContext, 'order-inexistente', mockRequest),
-      ).rejects.toThrow(NotFoundException)
+      await expect(ordersService.cancelForUser(mockContext, 'order-inexistente', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      )
     })
 
     it('deve pular produtos sem productId ou com comandaId', async () => {
       const order = makeOrder({
         status: OrderStatus.COMPLETED,
         items: [
-          makeOrderItem({ productId: null, quantity: 2, lineRevenue: 40, lineCost: 20, lineProfit: 20, comandaId: 'comanda-1' }),
+          makeOrderItem({
+            productId: null,
+            quantity: 2,
+            lineRevenue: 40,
+            lineCost: 20,
+            lineProfit: 20,
+            comandaId: 'comanda-1',
+          }),
           makeOrderItem({ id: 'order-item-2', productId: 'product-1', quantity: 1 }),
         ],
       })
@@ -636,9 +627,9 @@ describe('OrdersService', () => {
     it('deve rejeitar cancelamento para role STAFF', async () => {
       const staffContext = makeAuthContext({ role: 'STAFF' })
 
-      await expect(
-        ordersService.cancelForUser(staffContext, 'order-1', mockRequest),
-      ).rejects.toThrow('Apenas o dono pode cancelar vendas')
+      await expect(ordersService.cancelForUser(staffContext, 'order-1', mockRequest)).rejects.toThrow(
+        'Apenas o dono pode cancelar vendas',
+      )
     })
   })
 

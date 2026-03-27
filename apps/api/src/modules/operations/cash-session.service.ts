@@ -1,14 +1,5 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common'
-import {
-  AuditSeverity,
-  CashClosureStatus,
-  CashMovementType,
-  CashSessionStatus,
-} from '@prisma/client'
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
+import { AuditSeverity, CashClosureStatus, CashMovementType, CashSessionStatus } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -24,11 +15,7 @@ import { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
-import {
-  toCashMovementRecord,
-  toCashSessionRecord,
-  toClosureRecord,
-} from './operations.types'
+import { toCashMovementRecord, toCashSessionRecord, toClosureRecord } from './operations.types'
 import {
   OPEN_COMANDA_STATUSES,
   buildCashClosurePayload,
@@ -60,7 +47,7 @@ export class CashSessionService {
     await this.helpers.assertBusinessDayOpen(workspaceOwnerUserId, businessDate)
 
     const employee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const employeeId = auth.role === 'STAFF' ? employee?.id ?? null : null
+    const employeeId = auth.role === 'STAFF' ? (employee?.id ?? null) : null
 
     if (auth.role === 'STAFF' && !employeeId) {
       throw new BadRequestException('Seu acesso precisa estar vinculado a um funcionario ativo para abrir caixa.')
@@ -157,7 +144,12 @@ export class CashSessionService {
 
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const session = await this.helpers.requireAuthorizedCashSession(this.prisma, workspaceOwnerUserId, auth, cashSessionId)
+    const session = await this.helpers.requireAuthorizedCashSession(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      cashSessionId,
+    )
 
     if (session.status !== CashSessionStatus.OPEN) {
       throw new ConflictException('Somente caixas abertos aceitam movimentacoes.')
@@ -216,14 +208,14 @@ export class CashSessionService {
     }
   }
 
-  async closeCashSession(
-    auth: AuthContext,
-    cashSessionId: string,
-    dto: CloseCashSessionDto,
-    context: RequestContext,
-  ) {
+  async closeCashSession(auth: AuthContext, cashSessionId: string, dto: CloseCashSessionDto, context: RequestContext) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-    const session = await this.helpers.requireAuthorizedCashSession(this.prisma, workspaceOwnerUserId, auth, cashSessionId)
+    const session = await this.helpers.requireAuthorizedCashSession(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      cashSessionId,
+    )
 
     if (session.status !== CashSessionStatus.OPEN) {
       throw new ConflictException('Este caixa ja foi encerrado.')

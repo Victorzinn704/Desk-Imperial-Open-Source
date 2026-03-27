@@ -22,13 +22,8 @@ export function MetricCard({
 }>) {
   if (loading) return <MetricCardSkeleton />
 
-  const trendColor = color ?? (
-    !trend || trend.length < 2
-      ? '#7a8896'
-      : trend[trend.length - 1] >= trend[0]
-        ? '#36f57c'
-        : '#ef4444'
-  )
+  const trendColor =
+    color ?? (!trend || trend.length < 2 ? '#7a8896' : trend[trend.length - 1] >= trend[0] ? '#36f57c' : '#ef4444')
 
   const sparkData = trend?.map((v, i) => ({ i, v }))
 
@@ -83,7 +78,13 @@ export function MetricCard({
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '')
-  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean
   const n = parseInt(full, 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }

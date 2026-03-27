@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  Box,
-  LayoutDashboard,
-  ShieldCheck,
-  ShoppingCart,
-  UserRound,
-} from 'lucide-react'
+import { Box, LayoutDashboard, ShieldCheck, ShoppingCart, UserRound } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import { formatAccountStatus } from '@/lib/dashboard-format'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
@@ -47,8 +41,20 @@ export function OverviewEnvironment() {
       />
 
       <div className="grid gap-4 xl:grid-cols-5">
-        <MetricCard color="#60a5fa" hint={user.fullName} icon={UserRound} label="Conta" value={user.companyName || 'Conta Demo'} />
-        <MetricCard color="#36f57c" hint="Status da identidade no portal" icon={ShieldCheck} label="Status" value={formatAccountStatus(user.status)} />
+        <MetricCard
+          color="#60a5fa"
+          hint={user.fullName}
+          icon={UserRound}
+          label="Conta"
+          value={user.companyName || 'Conta Demo'}
+        />
+        <MetricCard
+          color="#36f57c"
+          hint="Status da identidade no portal"
+          icon={ShieldCheck}
+          label="Status"
+          value={formatAccountStatus(user.status)}
+        />
         <MetricCard
           color="#a78bfa"
           hint="Produtos ativos com sessão autenticada"
@@ -99,7 +105,12 @@ export function OverviewEnvironment() {
 
       <SalesPerformanceCard finance={finance} isLoading={financeQuery.isLoading} />
       <MarketIntelligenceCard />
-      <FinanceChart error={financeError} finance={finance} isLoading={financeQuery.isLoading} ordersTotals={ordersTotals} />
+      <FinanceChart
+        error={financeError}
+        finance={finance}
+        isLoading={financeQuery.isLoading}
+        ordersTotals={ordersTotals}
+      />
       <EmployeeRankingCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
       <SalesMapCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
     </section>

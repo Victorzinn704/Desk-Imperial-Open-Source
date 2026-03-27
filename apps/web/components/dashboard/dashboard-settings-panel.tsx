@@ -173,9 +173,7 @@ export function DashboardSettingsPanel({
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
                   'relative shrink-0 px-5 py-3.5 text-sm font-semibold transition-colors duration-150',
-                  isActive
-                    ? 'text-white'
-                    : 'text-[var(--text-soft)] hover:text-white',
+                  isActive ? 'text-white' : 'text-[var(--text-soft)] hover:text-white',
                 )}
               >
                 {tab.label}
@@ -190,52 +188,52 @@ export function DashboardSettingsPanel({
 
       {/* Conteúdo em largura total */}
       <div className="space-y-6">
-          {activeTab === 'account' ? (
-            <AccountTab
-              profileError={profileError}
-              profileLoading={profileLoading}
-              user={user}
-              onProfileSubmit={onProfileSubmit}
-            />
-          ) : null}
+        {activeTab === 'account' ? (
+          <AccountTab
+            profileError={profileError}
+            profileLoading={profileLoading}
+            user={user}
+            onProfileSubmit={onProfileSubmit}
+          />
+        ) : null}
 
-          {activeTab === 'security' ? (
-            <SecurityTab
-              activity={activityQuery.data ?? []}
-              activityError={activityQuery.error instanceof Error ? activityQuery.error.message : null}
-              activityLoading={activityQuery.isLoading}
-            />
-          ) : null}
+        {activeTab === 'security' ? (
+          <SecurityTab
+            activity={activityQuery.data ?? []}
+            activityError={activityQuery.error instanceof Error ? activityQuery.error.message : null}
+            activityLoading={activityQuery.isLoading}
+          />
+        ) : null}
 
-          {activeTab === 'preferences' ? (
-            <PreferencesTab
-              preferences={workspacePreferences}
-              onNavigateSection={onNavigateSection}
-              onPreferencesChange={setWorkspacePreferences}
-            />
-          ) : null}
+        {activeTab === 'preferences' ? (
+          <PreferencesTab
+            preferences={workspacePreferences}
+            onNavigateSection={onNavigateSection}
+            onPreferencesChange={setWorkspacePreferences}
+          />
+        ) : null}
 
-          {activeTab === 'compliance' ? (
-            <ComplianceTab
-              consentQueryIsLoading={consentQueryIsLoading}
-              cookiePreferences={cookiePreferences}
-              documentTitles={documentTitles}
-              legalAcceptances={legalAcceptances}
-              preferenceMutation={preferenceMutation}
-            />
-          ) : null}
+        {activeTab === 'compliance' ? (
+          <ComplianceTab
+            consentQueryIsLoading={consentQueryIsLoading}
+            cookiePreferences={cookiePreferences}
+            documentTitles={documentTitles}
+            legalAcceptances={legalAcceptances}
+            preferenceMutation={preferenceMutation}
+          />
+        ) : null}
 
-          {activeTab === 'session' ? (
-            <SessionTab
-              activity={activityQuery.data ?? []}
-              activityError={activityQuery.error instanceof Error ? activityQuery.error.message : null}
-              activityLoading={activityQuery.isLoading}
-              logoutBusy={logoutBusy}
-              user={user}
-              onLogout={onLogout}
-            />
-          ) : null}
-        </div>
+        {activeTab === 'session' ? (
+          <SessionTab
+            activity={activityQuery.data ?? []}
+            activityError={activityQuery.error instanceof Error ? activityQuery.error.message : null}
+            activityLoading={activityQuery.isLoading}
+            logoutBusy={logoutBusy}
+            user={user}
+            onLogout={onLogout}
+          />
+        ) : null}
+      </div>
     </section>
   )
 }
@@ -261,9 +259,7 @@ function AccountTab({
             <UserRound className="size-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Conta e identidade
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Conta e identidade</p>
             <h2 className="mt-3 text-3xl font-semibold text-white">Dados principais da operação</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Nome da empresa, responsável e moeda principal passam a ser geridos dentro do mesmo ambiente do dashboard.
@@ -406,12 +402,11 @@ function SecurityTab({
             <Lock className="size-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Segurança operacional
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Segurança operacional</p>
             <h2 className="mt-3 text-3xl font-semibold text-white">Proteção das ações críticas</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              O PIN administrativo segue como confirmação curta para desconto elevado, exclusão e ajustes sensíveis do workspace.
+              O PIN administrativo segue como confirmação curta para desconto elevado, exclusão e ajustes sensíveis do
+              workspace.
             </p>
           </div>
         </div>
@@ -496,7 +491,9 @@ function SecurityTab({
               <div className="mt-5 space-y-3">
                 {!showConfirmRemove ? (
                   <div className="flex flex-wrap items-center gap-3">
-                    <p className="text-sm text-[var(--text-soft)]">O PIN está valendo para o fluxo sensível do workspace.</p>
+                    <p className="text-sm text-[var(--text-soft)]">
+                      O PIN está valendo para o fluxo sensível do workspace.
+                    </p>
                     <button
                       className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-2 text-xs font-semibold text-[#fca5a5] transition hover:bg-[rgba(239,68,68,0.14)]"
                       type="button"
@@ -541,7 +538,9 @@ function SecurityTab({
                             ))}
                           </div>
                         </fieldset>
-                        {confirmRemoveError ? <p className="mt-3 text-xs text-[#fca5a5]">{confirmRemoveError}</p> : null}
+                        {confirmRemoveError ? (
+                          <p className="mt-3 text-xs text-[#fca5a5]">{confirmRemoveError}</p>
+                        ) : null}
                       </>
                     )}
 
@@ -569,7 +568,8 @@ function SecurityTab({
           </p>
           <h3 className="mt-3 text-2xl font-semibold text-white">Fluxo seguro da conta principal</h3>
           <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-            A troca definitiva de senha continua via validação segura por email enquanto o painel administrativo interno é endurecido.
+            A troca definitiva de senha continua via validação segura por email enquanto o painel administrativo interno
+            é endurecido.
           </p>
 
           <div className="mt-6">
@@ -626,12 +626,14 @@ function PreferencesTab({
           <h3 className="mt-3 text-2xl font-semibold text-white">O que fica mais visível na leitura executiva</h3>
 
           <div className="mt-6 grid gap-3">
-            {([
-              { key: 'revenue', label: 'Receita e financeiro' },
-              { key: 'operations', label: 'Operação comercial' },
-              { key: 'map', label: 'Mapa e território' },
-              { key: 'team', label: 'Equipe e produtividade' },
-            ] as const).map(({ key, label }) => (
+            {(
+              [
+                { key: 'revenue', label: 'Receita e financeiro' },
+                { key: 'operations', label: 'Operação comercial' },
+                { key: 'map', label: 'Mapa e território' },
+                { key: 'team', label: 'Equipe e produtividade' },
+              ] as const
+            ).map(({ key, label }) => (
               <CheckboxField
                 checked={preferences.executiveModules[key]}
                 description="Ajuste local salvo neste dispositivo para destacar o que mais importa na leitura do dashboard."
@@ -666,9 +668,7 @@ function PreferencesTab({
         </article>
 
         <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Agenda operacional
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Agenda operacional</p>
           <h3 className="mt-3 text-2xl font-semibold text-white">Atalhos da rotina comercial</h3>
           <div className="mt-6 space-y-4">
             <SettingsInfoCard
@@ -724,7 +724,8 @@ function ComplianceTab({
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-white">Conformidade integrada à central da conta</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              O bloco de conformidade deixa a navegação principal mais limpa e passa a viver onde a governança realmente faz sentido.
+              O bloco de conformidade deixa a navegação principal mais limpa e passa a viver onde a governança realmente
+              faz sentido.
             </p>
           </div>
         </div>
@@ -732,9 +733,7 @@ function ComplianceTab({
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
         <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Documentos aceitos
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Documentos aceitos</p>
           <h3 className="mt-3 text-2xl font-semibold text-white">Histórico de consentimento</h3>
 
           <div className="mt-6 space-y-3">
@@ -823,7 +822,8 @@ function SessionTab({
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-white">Acessos recentes e controle da sessão ativa</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Toda leitura relevante da conta passa por aqui: dispositivo, histórico recente e encerramento manual da sessão.
+              Toda leitura relevante da conta passa por aqui: dispositivo, histórico recente e encerramento manual da
+              sessão.
             </p>
           </div>
         </div>
@@ -831,9 +831,7 @@ function SessionTab({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Últimos acessos
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Últimos acessos</p>
           <h3 className="mt-3 text-2xl font-semibold text-white">Leitura recente da conta</h3>
           <div className="mt-6">
             <RecentAccessList activity={activity} activityError={activityError} activityLoading={activityLoading} />
@@ -841,15 +839,21 @@ function SessionTab({
         </article>
 
         <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Sessão atual
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Sessão atual</p>
           <h3 className="mt-3 text-2xl font-semibold text-white">Encerramento seguro</h3>
 
           <div className="mt-6 space-y-4">
             <SettingsInfoCard hint="Conta autenticada neste dispositivo" label="Usuário" value={user.fullName} />
-            <SettingsInfoCard hint="Escopo atual de acesso" label="Perfil" value={user.role === 'OWNER' ? 'Administrador' : 'Operacional'} />
-            <SettingsInfoCard hint="Estado da identidade no portal" label="Status" value={formatAccountStatus(user.status)} />
+            <SettingsInfoCard
+              hint="Escopo atual de acesso"
+              label="Perfil"
+              value={user.role === 'OWNER' ? 'Administrador' : 'Operacional'}
+            />
+            <SettingsInfoCard
+              hint="Estado da identidade no portal"
+              label="Status"
+              value={formatAccountStatus(user.status)}
+            />
           </div>
 
           <div className="mt-8">
@@ -939,7 +943,11 @@ function RecentAccessList({
             key={entry.id}
           >
             <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-soft)]">
-              {entry.event === 'auth.login.succeeded' ? <Monitor className="size-4" /> : <Smartphone className="size-4" />}
+              {entry.event === 'auth.login.succeeded' ? (
+                <Monitor className="size-4" />
+              ) : (
+                <Smartphone className="size-4" />
+              )}
             </span>
 
             <div className="min-w-0 flex-1">
@@ -1082,7 +1090,5 @@ function formatCompanyLocation(user: AuthUser) {
 function formatCountdown(seconds: number) {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
-  return minutes > 0
-    ? `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
-    : `${remainingSeconds}s`
+  return minutes > 0 ? `${minutes}:${String(remainingSeconds).padStart(2, '0')}` : `${remainingSeconds}s`
 }

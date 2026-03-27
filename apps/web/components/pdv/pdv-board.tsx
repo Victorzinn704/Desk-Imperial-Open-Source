@@ -5,7 +5,15 @@ import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
 import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
-import { assignComanda, closeComanda, createMesa, openComanda, replaceComanda, updateComandaStatus, updateMesa } from '@/lib/api'
+import {
+  assignComanda,
+  closeComanda,
+  createMesa,
+  openComanda,
+  replaceComanda,
+  updateComandaStatus,
+  updateMesa,
+} from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { PdvColumn } from './pdv-column'
@@ -64,7 +72,8 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
   const assignComandaMutation = useMutation({
-    mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) => assignComanda(comandaId, employeeId),
+    mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) =>
+      assignComanda(comandaId, employeeId),
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
   const updateComandaStatusMutation = useMutation({
@@ -73,8 +82,13 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
   const closeComandaMutation = useMutation({
-    mutationFn: ({ comandaId, payload }: { comandaId: string; payload: { discountAmount: number; serviceFeeAmount: number } }) =>
-      closeComanda(comandaId, payload),
+    mutationFn: ({
+      comandaId,
+      payload,
+    }: {
+      comandaId: string
+      payload: { discountAmount: number; serviceFeeAmount: number }
+    }) => closeComanda(comandaId, payload),
     onSuccess: () => invalidateOperationsWorkspace(queryClient),
   })
   const createMesaMutation = useMutation({
@@ -268,10 +282,12 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
       ) : null}
 
       <div className="flex items-center gap-1 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1 w-fit">
-        {([
-          { id: 'comandas' as ActiveTab, label: 'Comandas', icon: ShoppingBag },
-          { id: 'salao' as ActiveTab, label: 'Salão', icon: LayoutGrid },
-        ] as const).map(({ id, label, icon: Icon }) => (
+        {(
+          [
+            { id: 'comandas' as ActiveTab, label: 'Comandas', icon: ShoppingBag },
+            { id: 'salao' as ActiveTab, label: 'Salão', icon: LayoutGrid },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
@@ -322,74 +338,82 @@ export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoar
         </>
       ) : (
         <>
-        <SalaoUnificado
-          mesas={mesas}
-          garcons={garcons}
-          comandas={comandas}
-          onStatusChange={(mesaId, newStatus) => {
-            const mesa = mesas.find((item) => item.id === mesaId)
-            if (!mesa) return
-            // Arrastar para ocupada = abrir comanda (status é derivado da comanda)
-            if (newStatus === 'ocupada' && mesa.status === 'livre') {
-              handleClickMesaLivre(mesa)
-              return
-            }
-            // Arrastar para reservada = marcar reserva por 2h
-            if (newStatus === 'reservada' && mesa.status === 'livre') {
-              const reservedUntil = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-              void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil } }).catch((err) => {
-                setActionError(err instanceof Error ? err.message : 'Nao foi possivel reservar a mesa.')
-              })
-              return
-            }
-            // Arrastar reservada de volta para livre = cancelar reserva
-            if (newStatus === 'livre' && mesa.status === 'reservada') {
-              void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil: null } }).catch((err) => {
-                setActionError(err instanceof Error ? err.message : 'Nao foi possivel liberar a mesa.')
-              })
-              return
-            }
-            // Mesas ocupadas não podem ser movidas manualmente (dependem do fechamento da comanda)
-            if (mesa.status === 'ocupada') {
-              setActionError('Feche a comanda para liberar esta mesa.')
-            }
-          }}
-          onAssignGarcom={(mesaId, garcomId) => {
-            void handleAssignGarcom(mesaId, garcomId)
-          }}
-          onAddGarcom={() => setActionError('Cadastre funcionários pela área de Vendas para adicioná-los ao turno.')}
-          onRemoveGarcom={(employeeId) => {
-            const mesa = mesas.find((item) => item.garcomId === employeeId && item.comandaId)
-            if (mesa?.comandaId) {
-              void handleAssignGarcom(mesa.id, undefined)
-              return
-            }
-            setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
-          }}
-          onAddMesa={() => setAddMesaForm({ label: '', capacity: '4' })}
-          onClickLivre={handleClickMesaLivre}
-          onClickOcupada={handleClickMesaOcupada}
-        />
-        {addMesaForm !== null ? (
-          <AddMesaModal
-            form={addMesaForm}
-            busy={createMesaMutation.isPending}
-            error={createMesaMutation.error instanceof Error ? createMesaMutation.error.message : null}
-            onChange={setAddMesaForm}
-            onConfirm={() => {
-              const label = addMesaForm.label.trim()
-              const capacity = parseInt(addMesaForm.capacity, 10)
-              if (!label) { setActionError('Informe o nome da mesa.'); setAddMesaForm(null); return }
-              createMesaMutation.mutate({
-                label,
-                capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 4,
-              }, {
-                onError: (err) => setActionError(err instanceof Error ? err.message : 'Nao foi possivel criar a mesa.'),
-              })
+          <SalaoUnificado
+            mesas={mesas}
+            garcons={garcons}
+            comandas={comandas}
+            onStatusChange={(mesaId, newStatus) => {
+              const mesa = mesas.find((item) => item.id === mesaId)
+              if (!mesa) return
+              // Arrastar para ocupada = abrir comanda (status é derivado da comanda)
+              if (newStatus === 'ocupada' && mesa.status === 'livre') {
+                handleClickMesaLivre(mesa)
+                return
+              }
+              // Arrastar para reservada = marcar reserva por 2h
+              if (newStatus === 'reservada' && mesa.status === 'livre') {
+                const reservedUntil = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+                void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil } }).catch((err) => {
+                  setActionError(err instanceof Error ? err.message : 'Nao foi possivel reservar a mesa.')
+                })
+                return
+              }
+              // Arrastar reservada de volta para livre = cancelar reserva
+              if (newStatus === 'livre' && mesa.status === 'reservada') {
+                void updateMesaMutation.mutateAsync({ mesaId, body: { reservedUntil: null } }).catch((err) => {
+                  setActionError(err instanceof Error ? err.message : 'Nao foi possivel liberar a mesa.')
+                })
+                return
+              }
+              // Mesas ocupadas não podem ser movidas manualmente (dependem do fechamento da comanda)
+              if (mesa.status === 'ocupada') {
+                setActionError('Feche a comanda para liberar esta mesa.')
+              }
             }}
-            onClose={() => setAddMesaForm(null)}
+            onAssignGarcom={(mesaId, garcomId) => {
+              void handleAssignGarcom(mesaId, garcomId)
+            }}
+            onAddGarcom={() => setActionError('Cadastre funcionários pela área de Vendas para adicioná-los ao turno.')}
+            onRemoveGarcom={(employeeId) => {
+              const mesa = mesas.find((item) => item.garcomId === employeeId && item.comandaId)
+              if (mesa?.comandaId) {
+                void handleAssignGarcom(mesa.id, undefined)
+                return
+              }
+              setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
+            }}
+            onAddMesa={() => setAddMesaForm({ label: '', capacity: '4' })}
+            onClickLivre={handleClickMesaLivre}
+            onClickOcupada={handleClickMesaOcupada}
           />
-        ) : null}
+          {addMesaForm !== null ? (
+            <AddMesaModal
+              form={addMesaForm}
+              busy={createMesaMutation.isPending}
+              error={createMesaMutation.error instanceof Error ? createMesaMutation.error.message : null}
+              onChange={setAddMesaForm}
+              onConfirm={() => {
+                const label = addMesaForm.label.trim()
+                const capacity = parseInt(addMesaForm.capacity, 10)
+                if (!label) {
+                  setActionError('Informe o nome da mesa.')
+                  setAddMesaForm(null)
+                  return
+                }
+                createMesaMutation.mutate(
+                  {
+                    label,
+                    capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 4,
+                  },
+                  {
+                    onError: (err) =>
+                      setActionError(err instanceof Error ? err.message : 'Nao foi possivel criar a mesa.'),
+                  },
+                )
+              }}
+              onClose={() => setAddMesaForm(null)}
+            />
+          ) : null}
         </>
       )}
 
@@ -452,7 +476,9 @@ function AddMesaModal({
               placeholder="Ex: Mesa 1, Varanda 3, VIP"
               value={form.label}
               onChange={(e) => onChange({ ...form, label: e.target.value })}
-              onKeyDown={(e) => { if (e.key === 'Enter') onConfirm() }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onConfirm()
+              }}
             />
           </div>
           <div>

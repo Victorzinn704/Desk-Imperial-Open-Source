@@ -41,15 +41,13 @@ export function MarketIntelligenceCard() {
     <section className="imperial-card p-8">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Consultor com IA
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Consultor com IA</p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
             Gemini Flash como copiloto de previsão e gestão comercial.
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-            O motor consulta o panorama financeiro atual, cruza canais, clientes, equipe e regiões,
-            e devolve uma leitura executiva com previsão de curto prazo e próximos passos.
+            O motor consulta o panorama financeiro atual, cruza canais, clientes, equipe e regiões, e devolve uma
+            leitura executiva com previsão de curto prazo e próximos passos.
           </p>
         </div>
 
@@ -98,8 +96,7 @@ export function MarketIntelligenceCard() {
             Gerar consultoria
           </Button>
           <p className="max-w-xs text-xs leading-6 text-[var(--text-soft)]">
-            O backend usa cache e rate limit para evitar excesso de chamadas e proteger a chave da
-            IA.
+            O backend usa cache e rate limit para evitar excesso de chamadas e proteger a chave da IA.
           </p>
         </div>
       </div>
@@ -135,9 +132,7 @@ export function MarketIntelligenceCard() {
           </div>
         ) : insightQuery.error ? (
           <div className="mt-6 rounded-[24px] border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.06)] px-5 py-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">
-              IA indisponivel
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">IA indisponivel</p>
             <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{errorMessage}</p>
           </div>
         ) : insightQuery.data ? (
@@ -153,42 +148,26 @@ export function MarketIntelligenceCard() {
                 </div>
               </div>
 
-              <p className="mt-4 text-sm leading-8 text-[var(--text-soft)]">
-                {insightQuery.data.summary}
-              </p>
+              <p className="mt-4 text-sm leading-8 text-[var(--text-soft)]">{insightQuery.data.summary}</p>
 
               <div className="mt-6 rounded-[22px] border border-[rgba(143,183,255,0.2)] bg-[rgba(143,183,255,0.08)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--info)]">
                   Previsão de curto prazo
                 </p>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  {insightQuery.data.forecast}
-                </p>
+                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{insightQuery.data.forecast}</p>
               </div>
             </article>
 
             <div className="grid gap-4">
-              <InsightListCard
-                icon={TrendingUp}
-                items={insightQuery.data.opportunities}
-                title="Oportunidades"
-              />
-              <InsightListCard
-                icon={Sparkles}
-                items={insightQuery.data.nextActions}
-                title="Próximos passos"
-              />
+              <InsightListCard icon={TrendingUp} items={insightQuery.data.opportunities} title="Oportunidades" />
+              <InsightListCard icon={Sparkles} items={insightQuery.data.nextActions} title="Próximos passos" />
             </div>
           </div>
         ) : null}
 
         {insightQuery.data ? (
           <div className="mt-4">
-            <InsightListCard
-              icon={RefreshCcw}
-              items={insightQuery.data.risks}
-              title="Riscos a monitorar"
-            />
+            <InsightListCard icon={RefreshCcw} items={insightQuery.data.risks} title="Riscos a monitorar" />
           </div>
         ) : null}
       </div>

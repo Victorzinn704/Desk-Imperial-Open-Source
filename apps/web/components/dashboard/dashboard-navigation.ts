@@ -26,12 +26,7 @@ export type DashboardSectionId =
   | 'salao'
   | 'settings'
 
-export type DashboardSettingsSectionId =
-  | 'account'
-  | 'security'
-  | 'preferences'
-  | 'compliance'
-  | 'session'
+export type DashboardSettingsSectionId = 'account' | 'security' | 'preferences' | 'compliance' | 'session'
 
 export type DashboardNavigationItem = {
   id: DashboardSectionId
@@ -193,9 +188,7 @@ export function parseDashboardSectionParam(value: string | string[] | null | und
     return null
   }
 
-  return DASHBOARD_SECTIONS.includes(normalized as DashboardSectionId)
-    ? (normalized as DashboardSectionId)
-    : null
+  return DASHBOARD_SECTIONS.includes(normalized as DashboardSectionId) ? (normalized as DashboardSectionId) : null
 }
 
 export function parseDashboardSettingsSectionParam(value: string | string[] | null | undefined) {

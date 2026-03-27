@@ -4,16 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCompactCurrency } from '@/lib/currency'
 
-const COLORS = [
-  '#36f57c',
-  '#2265d8',
-  '#C9A84C',
-  '#f04438',
-  '#a78bfa',
-  '#38bdf8',
-  '#fb923c',
-  '#e879f9',
-]
+const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
 
 type Props = {
   categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
@@ -55,10 +46,7 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
             ))}
           </Pie>
           <Tooltip
-            formatter={(value, name) => [
-              formatCompactCurrency(Number(value), displayCurrency),
-              name,
-            ]}
+            formatter={(value, name) => [formatCompactCurrency(Number(value), displayCurrency), name]}
             contentStyle={{
               background: 'rgba(18,24,20,0.97)',
               border: '1px solid rgba(52,242,127,0.18)',

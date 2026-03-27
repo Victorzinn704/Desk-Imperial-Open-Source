@@ -10,9 +10,7 @@ export type RequestContext = {
 
 export function extractRequestContext(request: Request): RequestContext {
   const forwardedFor = request.headers['x-forwarded-for']
-  const firstForwardedIp = Array.isArray(forwardedFor)
-    ? forwardedFor[0]
-    : forwardedFor?.split(',')[0]?.trim()
+  const firstForwardedIp = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]?.trim()
   const rawIp = request.ip ?? firstForwardedIp ?? null
 
   return {

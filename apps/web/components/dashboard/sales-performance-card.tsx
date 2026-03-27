@@ -4,16 +4,7 @@ import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { Skeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export function SalesPerformanceCard({
   finance,
@@ -93,27 +84,15 @@ export function SalesPerformanceCard({
             <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
-              <ComposedChart
-                data={timeline}
-                margin={{ top: 4, right: 4, left: -14, bottom: 0 }}
-              >
+              <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
                 <defs>
                   <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
                     <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid
-                  stroke="rgba(255,255,255,0.05)"
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
-                <XAxis
-                  axisLine={false}
-                  dataKey="label"
-                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
-                  tickLine={false}
-                />
+                <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
+                <XAxis axisLine={false} dataKey="label" tick={{ fill: '#6b7a8d', fontSize: 11 }} tickLine={false} />
                 <YAxis
                   axisLine={false}
                   tick={{ fill: '#6b7a8d', fontSize: 11 }}
@@ -121,18 +100,8 @@ export function SalesPerformanceCard({
                   tickLine={false}
                   width={68}
                 />
-                <Tooltip
-                  content={
-                    <PerformanceTooltip displayCurrency={displayCurrency} />
-                  }
-                />
-                <Bar
-                  dataKey="revenue"
-                  fill="url(#perfRevenue)"
-                  maxBarSize={32}
-                  name="Receita"
-                  radius={[6, 6, 2, 2]}
-                />
+                <Tooltip content={<PerformanceTooltip displayCurrency={displayCurrency} />} />
+                <Bar dataKey="revenue" fill="url(#perfRevenue)" maxBarSize={32} name="Receita" radius={[6, 6, 2, 2]} />
                 <Line
                   dataKey="profit"
                   dot={{ fill: '#38bdf8', r: 3, strokeWidth: 0 }}
@@ -188,10 +157,7 @@ function MetricTile({
   const Icon = isPositive ? TrendingUp : TrendingDown
 
   return (
-    <div
-      className="rounded-[16px] border bg-[var(--surface-soft)] p-3"
-      style={{ borderColor: `${color}22` }}
-    >
+    <div className="rounded-[16px] border bg-[var(--surface-soft)] p-3" style={{ borderColor: `${color}22` }}>
       <p className="text-[11px] font-medium text-[var(--text-soft)]">{label}</p>
       {isLoading ? (
         <Skeleton className="mt-1.5 h-6 w-24 rounded-md" />

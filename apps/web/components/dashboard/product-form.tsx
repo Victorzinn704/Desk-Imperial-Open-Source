@@ -79,7 +79,7 @@ export function ProductForm({
     if (shouldBeKitchen && !requiresKitchenValue) {
       setValue('requiresKitchen', true, { shouldDirty: true })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryValue])
 
   const selectedPresetIsManual = selectedPreset === manualPackagingOption
@@ -195,11 +195,21 @@ export function ProductForm({
       >
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
-          <InputField error={errors.brand?.message} label="Marca" placeholder="Coca-Cola, Brahma, Guarana..." {...register('brand')} />
+          <InputField
+            error={errors.brand?.message}
+            label="Marca"
+            placeholder="Coca-Cola, Brahma, Guarana..."
+            {...register('brand')}
+          />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <InputField error={errors.category?.message} label="Categoria" placeholder="Bebidas" {...register('category')} />
+          <InputField
+            error={errors.category?.message}
+            label="Categoria"
+            placeholder="Bebidas"
+            {...register('category')}
+          />
           <SelectField
             error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
             hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
@@ -222,7 +232,9 @@ export function ProductForm({
           <>
             <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
               <p className="font-medium text-white">Classe ativa</p>
-              <p className="mt-2">{packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}</p>
+              <p className="mt-2">
+                {packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}
+              </p>
             </div>
             <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
           </>
@@ -296,9 +308,26 @@ export function ProductForm({
         />
 
         <div className="grid gap-5 sm:grid-cols-3">
-          <InputField error={errors.unitCost?.message} label="Custo unitário" step="0.01" type="number" {...register('unitCost')} />
-          <InputField error={errors.unitPrice?.message} label="Preço unitário" step="0.01" type="number" {...register('unitPrice')} />
-          <SelectField error={errors.currency?.message} label="Moeda" options={currencyOptions} {...register('currency')} />
+          <InputField
+            error={errors.unitCost?.message}
+            label="Custo unitário"
+            step="0.01"
+            type="number"
+            {...register('unitCost')}
+          />
+          <InputField
+            error={errors.unitPrice?.message}
+            label="Preço unitário"
+            step="0.01"
+            type="number"
+            {...register('unitPrice')}
+          />
+          <SelectField
+            error={errors.currency?.message}
+            label="Moeda"
+            options={currencyOptions}
+            {...register('currency')}
+          />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">

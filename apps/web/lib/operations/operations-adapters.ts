@@ -91,17 +91,20 @@ export function buildOperationsViewModel(snapshot: OperationsLiveResponse | null
   }))
 
   const timelineItems = rows.flatMap((row) =>
-    row.tables.map((table) => ({
-      id: table.comandaId,
-      resourceId: row.employee.employeeId,
-      title: `Mesa ${table.tableLabel}`,
-      start: table.openedAt,
-      end: table.status === 'closed' ? table.updatedAt : new Date().toISOString(),
-      status: table.status,
-      tableLabel: table.tableLabel,
-      employeeName: row.employee.employeeName,
-      amount: table.totalAmount,
-    }) satisfies OperationTimelineItem),
+    row.tables.map(
+      (table) =>
+        ({
+          id: table.comandaId,
+          resourceId: row.employee.employeeId,
+          title: `Mesa ${table.tableLabel}`,
+          start: table.openedAt,
+          end: table.status === 'closed' ? table.updatedAt : new Date().toISOString(),
+          status: table.status,
+          tableLabel: table.tableLabel,
+          employeeName: row.employee.employeeName,
+          amount: table.totalAmount,
+        }) satisfies OperationTimelineItem,
+    ),
   )
 
   return {
@@ -121,7 +124,9 @@ function mapCashSessionStatus(
   return status === 'OPEN' ? 'open' : 'closing'
 }
 
-function mapCashMovementType(type: 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | 'ADJUSTMENT'): OperationCashMovementType {
+function mapCashMovementType(
+  type: 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | 'ADJUSTMENT',
+): OperationCashMovementType {
   switch (type) {
     case 'OPENING_FLOAT':
       return 'opening'
@@ -135,7 +140,9 @@ function mapCashMovementType(type: 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | '
   }
 }
 
-function mapComandaStatus(status: 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' | 'CANCELLED'): OperationComandaStatus {
+function mapComandaStatus(
+  status: 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' | 'CANCELLED',
+): OperationComandaStatus {
   switch (status) {
     case 'IN_PREPARATION':
       return 'in_preparation'

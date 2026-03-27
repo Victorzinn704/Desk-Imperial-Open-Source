@@ -4,12 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowUpRight,
-  Clock,
-  LogOut,
-  TimerReset,
-} from 'lucide-react'
+import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
@@ -150,12 +145,15 @@ export function DashboardShell({
     const intervalId = window.setInterval(() => {
       setCountdownNow(Date.now())
     }, 1000)
-    const timeoutId = window.setTimeout(() => {
-      queryClient.clear()
-      startTransition(() => {
-        router.replace('/login')
-      })
-    }, Math.max(0, expirationTime - Date.now()) + 150)
+    const timeoutId = window.setTimeout(
+      () => {
+        queryClient.clear()
+        startTransition(() => {
+          router.replace('/login')
+        })
+      },
+      Math.max(0, expirationTime - Date.now()) + 150,
+    )
 
     return () => {
       window.clearInterval(intervalId)
@@ -206,7 +204,9 @@ export function DashboardShell({
   )
   const resolvedActiveSection = allowedSections.has(activeSection)
     ? activeSection
-    : (isStaffUser ? 'sales' : dashboardDefaultSection)
+    : isStaffUser
+      ? 'sales'
+      : dashboardDefaultSection
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -274,10 +274,7 @@ export function DashboardShell({
 
     const container = workspaceScrollRef.current
     const top =
-      targetElement.getBoundingClientRect().top -
-      container.getBoundingClientRect().top +
-      container.scrollTop -
-      24
+      targetElement.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 24
 
     container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
   }
@@ -371,12 +368,7 @@ export function DashboardShell({
   const activeHero = sectionHeroCopy[resolvedActiveSection]
 
   if (isStaffUser && isMobile && resolvedActiveSection !== 'settings') {
-    return (
-      <StaffMobileShell
-        currentUser={currentUser}
-        produtos={productsQuery.data?.items ?? []}
-      />
-    )
+    return <StaffMobileShell currentUser={currentUser} produtos={productsQuery.data?.items ?? []} />
   }
 
   if (!isStaffUser && isMobile) {
@@ -427,12 +419,8 @@ export function DashboardShell({
                   <p className="mt-4 text-sm text-muted-foreground">
                     Início / Painel operacional / {activeNavigation.label}
                   </p>
-                  <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">
-                    {activeHero.title}
-                  </h1>
-                  <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
-                    {activeHero.description}
-                  </p>
+                  <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">{activeHero.title}</h1>
+                  <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
                 </div>
 
                 <div className="flex flex-col gap-4 xl:max-w-[520px]">
@@ -485,7 +473,10 @@ export function DashboardShell({
                       <Clock className="size-4" />
                       Atividades
                     </Button>
-                    <SpotlightButton loading={logoutMutation.isPending || isRouting} onClick={() => logoutMutation.mutate()}>
+                    <SpotlightButton
+                      loading={logoutMutation.isPending || isRouting}
+                      onClick={() => logoutMutation.mutate()}
+                    >
                       <LogOut className="size-4" />
                       Encerrar sessão
                     </SpotlightButton>
@@ -499,9 +490,7 @@ export function DashboardShell({
                 dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
                 remainingSeconds={Math.max(
                   0,
-                  Math.ceil(
-                    (new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000,
-                  ),
+                  Math.ceil((new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000),
                 )}
               />
             ) : null}
@@ -602,9 +591,7 @@ function EvaluationModeBanner({
             <TimerReset className="size-5" />
           </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Sessão temporária
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sessão temporária</p>
             <h2 className="mt-2 text-lg font-semibold text-white">
               Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
             </h2>
@@ -615,9 +602,7 @@ function EvaluationModeBanner({
         </div>
 
         <div className="imperial-card-stat px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Tempo restante
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tempo restante</p>
           <p className="mt-2 text-2xl font-semibold text-white">{formatDuration(remainingSeconds)}</p>
         </div>
       </div>
@@ -639,7 +624,9 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
             <Button size="lg">Entrar</Button>
           </Link>
           <Link href="/cadastro">
-            <Button size="lg" variant="secondary">Criar conta</Button>
+            <Button size="lg" variant="secondary">
+              Criar conta
+            </Button>
           </Link>
         </div>
       </div>
@@ -672,10 +659,7 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
   )
 }
 
-function buildDashboardUrl(
-  sectionId: DashboardSectionId,
-  settingsSectionId: DashboardSettingsSectionId,
-) {
+function buildDashboardUrl(sectionId: DashboardSectionId, settingsSectionId: DashboardSettingsSectionId) {
   const params = new URLSearchParams()
 
   if (sectionId !== dashboardDefaultSection) {

@@ -20,7 +20,10 @@ export function ProductSearchField({
         </div>
 
         <div className="min-w-0 flex-1">
-          <label className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[var(--accent)]" htmlFor="portfolio-search">
+          <label
+            className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[var(--accent)]"
+            htmlFor="portfolio-search"
+          >
             Buscar produto
           </label>
           <input

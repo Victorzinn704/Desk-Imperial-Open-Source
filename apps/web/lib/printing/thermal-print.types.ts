@@ -1,11 +1,6 @@
 export type ThermalPrintProvider = 'QZ_TRAY' | 'PRINTNODE'
 
-export type ThermalPrinterConnectionState =
-  | 'idle'
-  | 'discovering'
-  | 'connected'
-  | 'printing'
-  | 'error'
+export type ThermalPrinterConnectionState = 'idle' | 'discovering' | 'connected' | 'printing' | 'error'
 
 export type ThermalPrinter = {
   id: string

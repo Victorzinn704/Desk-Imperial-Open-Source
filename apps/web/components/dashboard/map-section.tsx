@@ -8,17 +8,14 @@ import { MapRankingPanel } from '@/components/dashboard/map-ranking-panel'
 
 type MapTab = 'revenue' | 'orders' | 'profit'
 
-const MapCanvas = dynamic(
-  () => import('./map-canvas').then((m) => m.MapCanvas),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-[var(--text-soft)]">Carregando monitoramento geográfico...</p>
-      </div>
-    ),
-  },
-)
+const MapCanvas = dynamic(() => import('./map-canvas').then((m) => m.MapCanvas), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center">
+      <p className="text-sm text-[var(--text-soft)]">Carregando monitoramento geográfico...</p>
+    </div>
+  ),
+})
 
 export function MapSection({
   displayCurrency,
@@ -49,9 +46,7 @@ export function MapSection({
       <div className="flex flex-wrap gap-3">
         <StatusPill value={`${regionCount} ${regionCount === 1 ? 'região' : 'regiões'}`} />
         <StatusPill value={`${formatCurrency(mappedRevenue, displayCurrency)} mapeado`} />
-        {coveragePct !== null && (
-          <StatusPill value={`${coveragePct}% cobertura geocodificada`} />
-        )}
+        {coveragePct !== null && <StatusPill value={`${coveragePct}% cobertura geocodificada`} />}
       </div>
 
       {/* Main grid */}
@@ -74,7 +69,8 @@ export function MapSection({
                 </p>
                 <p className="max-w-sm text-sm leading-7 text-[var(--text-soft)]">
                   Registre pedidos com <strong className="text-white">estado</strong> e{' '}
-                  <strong className="text-white">cidade</strong> informados para ativar o monitoramento geográfico e análise da cobertura de mercado.
+                  <strong className="text-white">cidade</strong> informados para ativar o monitoramento geográfico e
+                  análise da cobertura de mercado.
                 </p>
               </div>
             ) : (
@@ -85,12 +81,7 @@ export function MapSection({
 
         {/* Ranking panel */}
         {finance ? (
-          <MapRankingPanel
-            displayCurrency={displayCurrency}
-            finance={finance}
-            tab={tab}
-            onTabChange={setTab}
-          />
+          <MapRankingPanel displayCurrency={displayCurrency} finance={finance} tab={tab} onTabChange={setTab} />
         ) : (
           <article className="imperial-card p-6">
             <div className="h-full animate-pulse rounded-2xl bg-[rgba(255,255,255,0.04)]" />

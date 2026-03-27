@@ -43,9 +43,7 @@ describe('PeriodClassifierService', () => {
 
     it('classifies special events correctly', () => {
       const settings = PeriodClassifierService.createEstablishmentSettings({
-        specialEvents: [
-          { date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 },
-        ],
+        specialEvents: [{ date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 }],
       })
 
       // UTC hour 23 → local hour 20 in UTC-3 (Brasil)
@@ -59,9 +57,7 @@ describe('PeriodClassifierService', () => {
 
     it('does not match special event outside time range', () => {
       const settings = PeriodClassifierService.createEstablishmentSettings({
-        specialEvents: [
-          { date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 },
-        ],
+        specialEvents: [{ date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 }],
       })
 
       // UTC hour 22 → local hour 19 in UTC-3 (before 20h start)
@@ -72,9 +68,7 @@ describe('PeriodClassifierService', () => {
 
     it('does not match special event on different day', () => {
       const settings = PeriodClassifierService.createEstablishmentSettings({
-        specialEvents: [
-          { date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 },
-        ],
+        specialEvents: [{ date: '2026-03-28', name: 'Forró do Pedrão', type: 'forro', startHour: 20, endHour: 23 }],
       })
 
       // UTC hour 3 on March 27 → local 00:00 on March 27 (wrong day)

@@ -3,7 +3,19 @@
 import { useState } from 'react'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
-import { ShoppingCart, Plus, Minus, Search, PlusCircle, Coffee, Pizza, Beer, Package, UtensilsCrossed, Wine } from 'lucide-react'
+import {
+  ShoppingCart,
+  Plus,
+  Minus,
+  Search,
+  PlusCircle,
+  Coffee,
+  Pizza,
+  Beer,
+  Package,
+  UtensilsCrossed,
+  Wine,
+} from 'lucide-react'
 
 interface MobileOrderBuilderProps {
   mesaLabel: string
@@ -26,10 +38,13 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
   const [cart, setCart] = useState<CartEntry[]>([])
 
   const activeProdutos = produtos.filter((p) => p.active)
-  const categories = Array.from(new Set(activeProdutos.map(p => p.category))).filter(Boolean).sort()
+  const categories = Array.from(new Set(activeProdutos.map((p) => p.category)))
+    .filter(Boolean)
+    .sort()
 
   const filtered = activeProdutos.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
+    const matchSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
     const matchCat = selectedCategory ? p.category === selectedCategory : true
     return matchSearch && matchCat
   })
@@ -37,11 +52,16 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
   // Heuristic icon mapper
   function getCategoryIcon(cat: string) {
     const low = cat.toLowerCase()
-    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('vinho')) return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('combo') || low.includes('kit')) return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
+      return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('vinho'))
+      return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
+      return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('combo') || low.includes('kit'))
+      return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
+      return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
     return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
   }
 
@@ -53,9 +73,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
     setCart((prev) => {
       const existing = prev.find((c) => c.produtoId === produto.id)
       if (existing) {
-        return prev.map((c) =>
-          c.produtoId === produto.id ? { ...c, quantidade: c.quantidade + 1 } : c,
-        )
+        return prev.map((c) => (c.produtoId === produto.id ? { ...c, quantidade: c.quantidade + 1 } : c))
       }
       return [
         ...prev,
@@ -75,9 +93,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
       const existing = prev.find((c) => c.produtoId === produtoId)
       if (!existing) return prev
       if (existing.quantidade === 1) return prev.filter((c) => c.produtoId !== produtoId)
-      return prev.map((c) =>
-        c.produtoId === produtoId ? { ...c, quantidade: c.quantidade - 1 } : c,
-      )
+      return prev.map((c) => (c.produtoId === produtoId ? { ...c, quantidade: c.quantidade - 1 } : c))
     })
   }
 
@@ -91,9 +107,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
   }
 
   const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
-  const subtitle = mode === 'add'
-    ? 'Adicionar itens à comanda'
-    : 'Adicionar produtos ao pedido'
+  const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
 
   return (
     <div className="flex h-full flex-col">
@@ -102,9 +116,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              {mode === 'add' ? (
-                <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" />
-              ) : null}
+              {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" /> : null}
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
                 Mesa {mesaLabel}
               </p>
@@ -138,13 +150,19 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             <button
               onClick={() => setSelectedCategory(null)}
               className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] transition-all hover:-translate-y-0.5 ${
-                selectedCategory === null 
-                  ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]' 
+                selectedCategory === null
+                  ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
                   : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] hover:border-[rgba(255,255,255,0.2)]'
               }`}
             >
-              <Search className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-black' : ''}`} />
-              <span className={`text-[10px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-black' : ''}`}>Todos</span>
+              <Search
+                className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-black' : ''}`}
+              />
+              <span
+                className={`text-[10px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-black' : ''}`}
+              >
+                Todos
+              </span>
             </button>
 
             {categories.map((cat) => {
@@ -161,7 +179,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
                 >
                   {getCategoryIcon(cat)}
                   <span className={`text-[10px] uppercase font-bold tracking-wider ${isActive ? 'text-black' : ''}`}>
-                    {cat.length > 10 ? cat.substring(0,10) + '...' : cat}
+                    {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
                   </span>
                 </button>
               )
@@ -181,10 +199,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             {filtered.map((produto) => {
               const qty = getQty(produto.id)
               return (
-                <li
-                  key={produto.id}
-                  className="flex items-center gap-3 px-4 py-3"
-                >
+                <li key={produto.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-white">{produto.name}</p>
                     <p className="mt-0.5 text-xs text-[var(--text-soft,#7a8896)]">
@@ -202,9 +217,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
                         >
                           <Minus className="size-4" />
                         </button>
-                        <span className="min-w-[20px] text-center text-sm font-semibold text-white">
-                          {qty}
-                        </span>
+                        <span className="min-w-[20px] text-center text-sm font-semibold text-white">{qty}</span>
                       </>
                     )}
                     <button
@@ -240,9 +253,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             <p className="text-xs text-[var(--text-soft,#7a8896)]">
               {totalItems === 0 ? 'Carrinho vazio' : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
             </p>
-            {totalValue > 0 && (
-              <p className="text-sm font-semibold text-white">{formatCurrency(totalValue)}</p>
-            )}
+            {totalValue > 0 && <p className="text-sm font-semibold text-white">{formatCurrency(totalValue)}</p>}
           </div>
           <button
             type="button"

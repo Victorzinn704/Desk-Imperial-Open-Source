@@ -63,8 +63,7 @@ export function ProductImportCard({
       </div>
 
       <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">
-        Começamos pela importação de produtos para destravar a operação real sem cadastro manual
-        item por item.
+        Começamos pela importação de produtos para destravar a operação real sem cadastro manual item por item.
       </p>
 
       <div className="imperial-card-soft mt-5">
@@ -73,9 +72,7 @@ export function ProductImportCard({
           type="button"
           onClick={() => setShowColumns((v) => !v)}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-            Colunas esperadas
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Colunas esperadas</p>
           <ChevronDown
             className={`size-4 text-[var(--text-soft)] transition-transform duration-200 ${showColumns ? 'rotate-180' : ''}`}
           />
@@ -122,9 +119,11 @@ export function ProductImportCard({
             </div>
 
             <p className="text-xs leading-6 text-[var(--text-soft)]">
-              Prefira <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockPackages</code> +{' '}
-              <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockLooseUnits</code> para controle por embalagem.{' '}
-              <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stock</code> aceita o total em unidades para compatibilidade.
+              Prefira <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockPackages</code>{' '}
+              + <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stockLooseUnits</code> para
+              controle por embalagem.{' '}
+              <code className="rounded bg-[rgba(143,183,255,0.1)] px-1 text-[var(--info)]">stock</code> aceita o total
+              em unidades para compatibilidade.
             </p>
           </div>
         )}
@@ -135,13 +134,7 @@ export function ProductImportCard({
           <Download className="size-4" />
           Baixar modelo CSV
         </Button>
-        <Button
-          disabled={!hasProducts}
-          fullWidth
-          onClick={onDownloadPortfolio}
-          type="button"
-          variant="ghost"
-        >
+        <Button disabled={!hasProducts} fullWidth onClick={onDownloadPortfolio} type="button" variant="ghost">
           <Download className="size-4" />
           Exportar portfólio atual
         </Button>
@@ -187,9 +180,7 @@ export function ProductImportCard({
 
       {lastImport ? (
         <div className="imperial-card-soft mt-5 p-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Última importação
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Última importação</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <ImportMetric label="Linhas lidas" value={String(lastImport.summary.totalRows)} />
             <ImportMetric label="Criados" value={String(lastImport.summary.createdCount)} />

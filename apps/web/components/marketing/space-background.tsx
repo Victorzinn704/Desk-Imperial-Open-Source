@@ -54,19 +54,25 @@ export function SpaceBackground() {
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
-    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight }
+    const onResize = () => {
+      w = canvas.width = window.innerWidth
+      h = canvas.height = window.innerHeight
+    }
     window.addEventListener('resize', onResize)
 
     const stars: Star[] = Array.from({ length: 320 }, () => {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
-        x, y, ox: x, oy: y,
+        x,
+        y,
+        ox: x,
+        oy: y,
         r: Math.random() * 1.2 + 0.1,
         alpha: Math.random() * 0.55 + 0.12,
-        speed: Math.random() * 0.035 + 0.006,   // very slow drift up
+        speed: Math.random() * 0.035 + 0.006, // very slow drift up
         t: Math.random() * Math.PI * 2,
-        ts: Math.random() * 0.008 + 0.002,       // slow twinkle
+        ts: Math.random() * 0.008 + 0.002, // slow twinkle
       }
     })
 
@@ -74,7 +80,10 @@ export function SpaceBackground() {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
-        x, y, ox: x, oy: y,
+        x,
+        y,
+        ox: x,
+        oy: y,
         r: Math.random() * 1.6 + 0.6,
         alpha: Math.random() * 0.4 + 0.18,
         speed: Math.random() * 0.022 + 0.004,
@@ -94,7 +103,10 @@ export function SpaceBackground() {
       for (const s of stars) {
         s.t += s.ts
         s.oy -= s.speed
-        if (s.oy < -2) { s.oy = h + 2; s.ox = Math.random() * w }
+        if (s.oy < -2) {
+          s.oy = h + 2
+          s.ox = Math.random() * w
+        }
         s.y = s.oy + my * 0.15
         s.x = s.ox + mx * 0.15
 
@@ -108,7 +120,10 @@ export function SpaceBackground() {
       for (const s of goldStars) {
         s.t += s.ts
         s.oy -= s.speed
-        if (s.oy < -2) { s.oy = h + 2; s.ox = Math.random() * w }
+        if (s.oy < -2) {
+          s.oy = h + 2
+          s.ox = Math.random() * w
+        }
         s.y = s.oy + my * 0.12
         s.x = s.ox + mx * 0.12
 
@@ -123,7 +138,10 @@ export function SpaceBackground() {
     }
     tick()
 
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', onResize)
+    }
   }, [])
 
   // ── Foreground layer — close glowing particles with heavy parallax ──
@@ -135,17 +153,23 @@ export function SpaceBackground() {
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
-    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight }
+    const onResize = () => {
+      w = canvas.width = window.innerWidth
+      h = canvas.height = window.innerHeight
+    }
     window.addEventListener('resize', onResize)
 
     const particles: FgParticle[] = Array.from({ length: 28 }, () => {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
-        x: ox, y: oy, ox, oy,
+        x: ox,
+        y: oy,
+        ox,
+        oy,
         r: Math.random() * 2.8 + 1.0,
         alpha: Math.random() * 0.22 + 0.06,
-        speedY: -(Math.random() * 0.18 + 0.05),  // much slower
+        speedY: -(Math.random() * 0.18 + 0.05), // much slower
         speedX: (Math.random() - 0.5) * 0.12,
         glow: Math.random() * 10 + 6,
         t: Math.random() * Math.PI * 2,
@@ -157,10 +181,13 @@ export function SpaceBackground() {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
-        x: ox, y: oy, ox, oy,
+        x: ox,
+        y: oy,
+        ox,
+        oy,
         r: Math.random() * 4 + 2.5,
-        alpha: Math.random() * 0.10 + 0.03,
-        speedY: -(Math.random() * 0.10 + 0.025),
+        alpha: Math.random() * 0.1 + 0.03,
+        speedY: -(Math.random() * 0.1 + 0.025),
         speedX: (Math.random() - 0.5) * 0.06,
         glow: Math.random() * 22 + 14,
         t: Math.random() * Math.PI * 2,
@@ -180,7 +207,10 @@ export function SpaceBackground() {
         p.t += p.ts
         p.oy += p.speedY
         p.ox += p.speedX
-        if (p.oy < -p.r * 3) { p.oy = h + p.r; p.ox = Math.random() * w }
+        if (p.oy < -p.r * 3) {
+          p.oy = h + p.r
+          p.ox = Math.random() * w
+        }
         if (p.ox < -p.r * 3) p.ox = w + p.r
         if (p.ox > w + p.r * 3) p.ox = -p.r
 
@@ -210,13 +240,20 @@ export function SpaceBackground() {
     }
     tick()
 
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', onResize)
+    }
   }, [])
 
   return (
     <>
       <canvas ref={bgRef} className="pointer-events-none fixed inset-0 z-0" style={{ opacity: 0.92 }} />
-      <canvas ref={fgRef} className="pointer-events-none fixed inset-0 z-[60]" style={{ opacity: 1, mixBlendMode: 'screen' }} />
+      <canvas
+        ref={fgRef}
+        className="pointer-events-none fixed inset-0 z-[60]"
+        style={{ opacity: 1, mixBlendMode: 'screen' }}
+      />
     </>
   )
 }

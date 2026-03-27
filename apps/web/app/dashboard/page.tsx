@@ -16,13 +16,7 @@ type DashboardPageProps = {
 export default async function DashboardPage({ searchParams }: Readonly<DashboardPageProps>) {
   const params = (await searchParams) ?? {}
   const initialSection = parseDashboardSectionParam(params.view) ?? dashboardDefaultSection
-  const initialSettingsSection =
-    parseDashboardSettingsSectionParam(params.panel) ?? dashboardDefaultSettingsSection
+  const initialSettingsSection = parseDashboardSettingsSectionParam(params.panel) ?? dashboardDefaultSettingsSection
 
-  return (
-    <DashboardShell
-      initialSection={initialSection}
-      initialSettingsSection={initialSettingsSection}
-    />
-  )
+  return <DashboardShell initialSection={initialSection} initialSettingsSection={initialSettingsSection} />
 }

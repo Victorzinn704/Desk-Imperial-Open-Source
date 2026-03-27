@@ -1,15 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import {
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  CircleDot,
-  LogOut,
-  Settings,
-  UserRound,
-} from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight, CircleDot, LogOut, Settings, UserRound } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
 import { cn } from '@/lib/utils'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -93,9 +85,7 @@ export function DashboardSidebar({
                   </span>
                   <span className="text-sm font-semibold text-white">{action.label}</span>
                 </div>
-                <p className="mt-1.5 text-[11px] leading-[1.5] text-muted-foreground">
-                  {action.description}
-                </p>
+                <p className="mt-1.5 text-[11px] leading-[1.5] text-muted-foreground">{action.description}</p>
               </button>
             )
           })}
@@ -195,9 +185,7 @@ export function DashboardSidebar({
                   <Building2 className="size-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">
-                    {companyName || 'Painel corporativo'}
-                  </p>
+                  <p className="truncate text-sm font-semibold text-white">{companyName || 'Painel corporativo'}</p>
                   <p className="truncate text-xs text-muted-foreground">Centro principal da operação</p>
                 </div>
               </div>
@@ -237,9 +225,7 @@ export function DashboardSidebar({
           >
             {groups.map((group) => (
               <section className="workspace-nav-group" key={group.id}>
-                {!collapsed ? (
-                  <p className="workspace-nav-group__label">{group.label}</p>
-                ) : null}
+                {!collapsed ? <p className="workspace-nav-group__label">{group.label}</p> : null}
 
                 <div className={cn('space-y-1', collapsed ? 'space-y-2' : '')}>
                   {group.items.map((item) => {
@@ -268,10 +254,7 @@ export function DashboardSidebar({
 
                     return (
                       <button
-                        className={cn(
-                          'workspace-nav-item group',
-                          isActive && 'workspace-nav-item--active',
-                        )}
+                        className={cn('workspace-nav-item group', isActive && 'workspace-nav-item--active')}
                         key={item.id}
                         onClick={() => onNavigate(item.id)}
                         type="button"

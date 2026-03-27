@@ -6,7 +6,7 @@
 /**
  * Regex para validação de senha forte
  * Requer: letra maiúscula, letra minúscula, número e caractere especial
- * 
+ *
  * Exemplos válidos:
  * - Strong@Pass123
  * - MyP@ssw0rd
@@ -17,8 +17,7 @@ export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za
 /**
  * Mensagem padrão para validação de senha
  */
-export const STRONG_PASSWORD_MESSAGE =
-  'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
+export const STRONG_PASSWORD_MESSAGE = 'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
 
 /**
  * Regex para validação de código de email (6 dígitos)

@@ -9,11 +9,9 @@ import { useEffect } from 'react'
 export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/app/' })
-        .catch((err) => {
-          console.warn('[SW] Falha ao registrar service worker:', err)
-        })
+      navigator.serviceWorker.register('/sw.js', { scope: '/app/' }).catch((err) => {
+        console.warn('[SW] Falha ao registrar service worker:', err)
+      })
     }
   }, [])
 

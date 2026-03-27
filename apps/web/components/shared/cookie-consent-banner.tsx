@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Cookie, ShieldCheck } from 'lucide-react'
 import { fetchCurrentUser, updateCookiePreferences } from '@/lib/api'
-import {
-  persistCookieConsent,
-  readCookieConsentChoice,
-  type CookieConsentChoice,
-} from '@/lib/cookie-consent'
+import { persistCookieConsent, readCookieConsentChoice, type CookieConsentChoice } from '@/lib/cookie-consent'
 import { Button } from '@/components/shared/button'
 
 export function CookieConsentBanner() {
@@ -116,9 +112,7 @@ export function CookieConsentBanner() {
               <h2 className="mt-3 text-xl font-semibold text-white" id="cookie-consent-title">
                 {content.title}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
-                {content.description}
-              </p>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">{content.description}</p>
               <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 O site só libera a navegação depois da sua escolha.
               </p>
@@ -134,11 +128,7 @@ export function CookieConsentBanner() {
             >
               Usar apenas essenciais
             </Button>
-            <Button
-              loading={isSubmitting}
-              onClick={() => void handleDecision('accepted')}
-              size="md"
-            >
+            <Button loading={isSubmitting} onClick={() => void handleDecision('accepted')} size="md">
               Aceitar e continuar
             </Button>
           </div>

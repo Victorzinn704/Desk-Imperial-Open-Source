@@ -15,15 +15,7 @@ export class MarketIntelligenceController {
 
   @UseGuards(SessionGuard)
   @Get('insights')
-  getInsights(
-    @CurrentAuth() auth: AuthContext,
-    @Query() query: GetMarketInsightQueryDto,
-    @Req() request: Request,
-  ) {
-    return this.marketIntelligenceService.getInsightForUser(
-      auth,
-      query.focus,
-      extractRequestContext(request),
-    )
+  getInsights(@CurrentAuth() auth: AuthContext, @Query() query: GetMarketInsightQueryDto, @Req() request: Request) {
+    return this.marketIntelligenceService.getInsightForUser(auth, query.focus, extractRequestContext(request))
   }
 }

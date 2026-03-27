@@ -244,9 +244,9 @@ export class ProductsService {
         event: 'product.updated',
         resource: 'product',
         resourceId: product.id,
-          metadata: {
-            updatedFields: Object.keys(dto),
-          },
+        metadata: {
+          updatedFields: Object.keys(dto),
+        },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       })
@@ -274,11 +274,7 @@ export class ProductsService {
     return this.toggleActiveState(auth, productId, true, context)
   }
 
-  async importForUser(
-    auth: AuthContext,
-    file: UploadedCsvFile | undefined,
-    context: RequestContext,
-  ) {
+  async importForUser(auth: AuthContext, file: UploadedCsvFile | undefined, context: RequestContext) {
     assertOwnerRole(auth, 'Apenas o dono pode importar produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     if (!file) {
@@ -526,4 +522,3 @@ function handleProductConflict(error: unknown): never {
 
   throw error
 }
-

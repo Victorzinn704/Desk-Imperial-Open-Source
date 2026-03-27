@@ -106,7 +106,9 @@ function MesaChip({
       )}
 
       {!comanda && (
-        <p className="mt-1 text-[10px]" style={{ color: `${garcomCor}60` }}>sem comanda</p>
+        <p className="mt-1 text-[10px]" style={{ color: `${garcomCor}60` }}>
+          sem comanda
+        </p>
       )}
     </div>
   )
@@ -219,17 +221,28 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
           className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && nome.trim()) { onSave(nome.trim()); onClose() } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && nome.trim()) {
+              onSave(nome.trim())
+              onClose()
+            }
+          }}
         />
         <div className="flex gap-3 mt-4">
-          <button type="button" onClick={onClose}
-            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]"
+          >
             Cancelar
           </button>
           <button
             type="button"
             disabled={!nome.trim()}
-            onClick={() => { onSave(nome.trim()); onClose() }}
+            onClick={() => {
+              onSave(nome.trim())
+              onClose()
+            }}
             className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black transition-all disabled:opacity-40"
             style={{ background: 'var(--accent)' }}
           >
@@ -241,14 +254,7 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
   )
 }
 
-export function PdvGarcomBoard({
-  garcons,
-  mesas,
-  comandas,
-  onAssign,
-  onAddGarcom,
-  onRemoveGarcom,
-}: Readonly<Props>) {
+export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom, onRemoveGarcom }: Readonly<Props>) {
   const [showAddGarcom, setShowAddGarcom] = useState(false)
   const [showAssign, setShowAssign] = useState(false)
 
@@ -280,12 +286,7 @@ export function PdvGarcomBoard({
           Adicionar Garçom
         </button>
 
-        {showAddGarcom && (
-          <AddGarcomModal
-            onSave={onAddGarcom}
-            onClose={() => setShowAddGarcom(false)}
-          />
-        )}
+        {showAddGarcom && <AddGarcomModal onSave={onAddGarcom} onClose={() => setShowAddGarcom(false)} />}
       </div>
     )
   }
@@ -353,10 +354,7 @@ export function PdvGarcomBoard({
                 </button>
 
                 {/* Bonequinho */}
-                <div
-                  className="rounded-full p-2"
-                  style={{ background: `${cor}15`, border: `1.5px solid ${cor}30` }}
-                >
+                <div className="rounded-full p-2" style={{ background: `${cor}15`, border: `1.5px solid ${cor}30` }}>
                   <StickFigure color={cor} />
                 </div>
 
@@ -377,9 +375,7 @@ export function PdvGarcomBoard({
               {/* Mesas atribuídas */}
               <div className="flex flex-col gap-2.5 p-3 flex-1 min-h-[160px]">
                 {garcomMesas.length === 0 && (
-                  <p className="text-center text-xs text-[var(--text-muted)] pt-6">
-                    Nenhuma mesa atribuída
-                  </p>
+                  <p className="text-center text-xs text-[var(--text-muted)] pt-6">Nenhuma mesa atribuída</p>
                 )}
                 {garcomMesas.map((mesa) => (
                   <MesaChip
@@ -407,12 +403,7 @@ export function PdvGarcomBoard({
       </div>
 
       {/* Modais */}
-      {showAddGarcom && (
-        <AddGarcomModal
-          onSave={onAddGarcom}
-          onClose={() => setShowAddGarcom(false)}
-        />
-      )}
+      {showAddGarcom && <AddGarcomModal onSave={onAddGarcom} onClose={() => setShowAddGarcom(false)} />}
 
       {showAssign && (
         <AssignModal

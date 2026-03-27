@@ -399,11 +399,10 @@ export function LandingPage() {
 
             <div className="mt-12 grid gap-4 sm:grid-cols-3">
               {metrics.map((metric) => (
-                <div
-                  className="glass-card p-5"
-                  key={metric.label}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{metric.label}</p>
+                <div className="glass-card p-5" key={metric.label}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">
+                    {metric.label}
+                  </p>
                   <p className="mt-3 text-base leading-7 text-[var(--text-primary)]">{metric.value}</p>
                 </div>
               ))}
@@ -530,21 +529,21 @@ export function LandingPage() {
             style={{ transformOrigin: side === 'left' ? 'left center' : 'right center' }}
             transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.2 }}
           >
-              <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
-                <div className="s-feature-card__text">
-                  <span className="s-feature-card__tag">
-                    <Icon className="size-3.5" />
-                    {tag}
-                  </span>
-                  <h3 className="s-feature-card__title">{title}</h3>
-                  <p className="s-feature-card__body">{body}</p>
-                </div>
-                <div className="s-feature-card__stat">
-                  <span className="s-feature-card__stat-value">{stat.value}</span>
-                  <span className="s-feature-card__stat-label">{stat.label}</span>
-                </div>
+            <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
+              <div className="s-feature-card__text">
+                <span className="s-feature-card__tag">
+                  <Icon className="size-3.5" />
+                  {tag}
+                </span>
+                <h3 className="s-feature-card__title">{title}</h3>
+                <p className="s-feature-card__body">{body}</p>
               </div>
-              <div className="s-feature-card__bar" />
+              <div className="s-feature-card__stat">
+                <span className="s-feature-card__stat-value">{stat.value}</span>
+                <span className="s-feature-card__stat-label">{stat.label}</span>
+              </div>
+            </div>
+            <div className="s-feature-card__bar" />
           </motion.div>
         ))}
       </section>
@@ -557,56 +556,58 @@ export function LandingPage() {
             viewport={{ once: false, amount: 0.12 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-          <div className="glass-card p-8 lg:p-10">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
-                <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                  Entrada rápida para começar a operar sem fricção.
-                </h2>
-                <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
-                  Cadastro, login e painel ficam acessíveis logo de cara para você entrar e já acompanhar comandas,
-                  vendas e indicadores do dia.
-                </p>
+            <div className="glass-card p-8 lg:p-10">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+                    Acesso principal
+                  </p>
+                  <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+                    Entrada rápida para começar a operar sem fricção.
+                  </h2>
+                  <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
+                    Cadastro, login e painel ficam acessíveis logo de cara para você entrar e já acompanhar comandas,
+                    vendas e indicadores do dia.
+                  </p>
+                </div>
+
+                <div className="glass-card px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
+                  Menos clique para entrar, mais tempo para operar: do acesso ao monitoramento em poucos segundos.
+                </div>
               </div>
 
-              <div className="glass-card px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
-                Menos clique para entrar, mais tempo para operar: do acesso ao monitoramento em poucos segundos.
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                <div className="glass-card p-5">
+                  <div className="flex items-center gap-3">
+                    <Waypoints className="size-5 text-[var(--info)]" />
+                    <p className="text-sm font-semibold text-white">Comandas ao vivo</p>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                    Abra, mova e feche comandas no fluxo real do atendimento com drag and drop.
+                  </p>
+                </div>
+
+                <div className="glass-card p-5">
+                  <div className="flex items-center gap-3">
+                    <Crown className="size-5 text-[var(--accent)]" />
+                    <p className="text-sm font-semibold text-white">Mapa de vendas</p>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                    Monitore concentração de pedidos por região e direcione melhor ações comerciais.
+                  </p>
+                </div>
+
+                <div className="glass-card p-5">
+                  <div className="flex items-center gap-3">
+                    <Globe2 className="size-5 text-[var(--info)]" />
+                    <p className="text-sm font-semibold text-white">Fechamento com dados</p>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
+                    Exporte CSV, acompanhe ranking e feche o dia com leitura financeira consolidada.
+                  </p>
+                </div>
               </div>
             </div>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3">
-                  <Waypoints className="size-5 text-[var(--info)]" />
-                  <p className="text-sm font-semibold text-white">Comandas ao vivo</p>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Abra, mova e feche comandas no fluxo real do atendimento com drag and drop.
-                </p>
-              </div>
-
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3">
-                  <Crown className="size-5 text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-white">Mapa de vendas</p>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Monitore concentração de pedidos por região e direcione melhor ações comerciais.
-                </p>
-              </div>
-
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3">
-                  <Globe2 className="size-5 text-[var(--info)]" />
-                  <p className="text-sm font-semibold text-white">Fechamento com dados</p>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Exporte CSV, acompanhe ranking e feche o dia com leitura financeira consolidada.
-                </p>
-              </div>
-            </div>
-          </div>
           </motion.div>
 
           <motion.div
@@ -655,7 +656,10 @@ export function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-            <p>DESK IMPERIAL © 2026. Comandas ao vivo, monitoramento de vendas no mapa e operação comercial em tempo real.</p>
+            <p>
+              DESK IMPERIAL © 2026. Comandas ao vivo, monitoramento de vendas no mapa e operação comercial em tempo
+              real.
+            </p>
             <div className="flex flex-wrap gap-4">
               <Link className="transition hover:text-white" href="https://app.deskimperial.online">
                 app.deskimperial.online

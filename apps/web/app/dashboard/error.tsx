@@ -3,13 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 
-export default function DashboardError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string }
-  reset: () => void
-}) {
+export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('[DashboardError]', error)
   }, [error])
@@ -22,11 +16,10 @@ export default function DashboardError({
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold text-white">Erro no painel</h1>
         <p className="max-w-sm text-sm leading-6 text-[var(--text-soft)]">
-          O painel encontrou um problema. Clique em &ldquo;Tentar novamente&rdquo; para recarregar o estado, ou volte para o login.
+          O painel encontrou um problema. Clique em &ldquo;Tentar novamente&rdquo; para recarregar o estado, ou volte
+          para o login.
         </p>
-        {error.digest && (
-          <p className="text-xs text-[var(--text-soft)] opacity-50">Código: {error.digest}</p>
-        )}
+        {error.digest && <p className="text-xs text-[var(--text-soft)] opacity-50">Código: {error.digest}</p>}
       </div>
       <div className="flex gap-3">
         <button

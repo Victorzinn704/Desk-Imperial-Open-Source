@@ -162,16 +162,12 @@ export class CurrencyService {
   }
 
   private getStaleCacheTtlSeconds() {
-    const configuredTtl = Number(
-      this.configService.get<string>('EXCHANGE_RATES_STALE_CACHE_SECONDS') ?? 21600,
-    )
+    const configuredTtl = Number(this.configService.get<string>('EXCHANGE_RATES_STALE_CACHE_SECONDS') ?? 21600)
     return Math.max(configuredTtl, this.getCacheTtlSeconds())
   }
 
   private getRateLimitBackoffSeconds() {
-    const configuredBackoff = Number(
-      this.configService.get<string>('EXCHANGE_RATES_RATE_LIMIT_BACKOFF_SECONDS') ?? 600,
-    )
+    const configuredBackoff = Number(this.configService.get<string>('EXCHANGE_RATES_RATE_LIMIT_BACKOFF_SECONDS') ?? 600)
     return Math.max(configuredBackoff, 60)
   }
 
@@ -258,7 +254,6 @@ function normalizeCurrencyCode(value: string): CurrencyCode | null {
 function buildPairKey(from: CurrencyCode, to: CurrencyCode) {
   return `${from}_${to}`
 }
-
 
 function extractErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Erro desconhecido ao consultar cotacoes.'

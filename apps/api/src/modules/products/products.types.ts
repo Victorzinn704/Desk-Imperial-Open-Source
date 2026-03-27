@@ -195,7 +195,6 @@ export function buildProductsResponse(
   }
 }
 
-
 function toNumber(value: { toNumber(): number } | number) {
   return typeof value === 'number' ? value : value.toNumber()
 }

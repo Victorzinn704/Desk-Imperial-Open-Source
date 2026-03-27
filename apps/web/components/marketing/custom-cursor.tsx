@@ -20,7 +20,10 @@ export function CustomCursor() {
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
-    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight }
+    const onResize = () => {
+      w = canvas.width = window.innerWidth
+      h = canvas.height = window.innerHeight
+    }
     window.addEventListener('resize', onResize)
 
     const cursor = { x: -200, y: -200 }
@@ -108,10 +111,5 @@ export function CustomCursor() {
     }
   }, [])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-[999]"
-    />
-  )
+  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-[999]" />
 }

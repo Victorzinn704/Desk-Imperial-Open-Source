@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import {
   CashClosureStatus,
   CashMovementType,
@@ -257,9 +253,7 @@ export class OperationsHelpersService {
       throw new NotFoundException('Comanda nao encontrada.')
     }
 
-    const subtotalAmount = roundCurrency(
-      comanda.items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0),
-    )
+    const subtotalAmount = roundCurrency(comanda.items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
     const discountAmount = roundCurrency(overrides?.discountAmount ?? toNumber(comanda.discountAmount))
     const serviceFeeAmount = roundCurrency(overrides?.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
     const totalAmount = roundCurrency(Math.max(0, subtotalAmount - discountAmount + serviceFeeAmount))
@@ -282,11 +276,7 @@ export class OperationsHelpersService {
     })
   }
 
-  async syncCashClosure(
-    transaction: TransactionClient,
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-  ) {
+  async syncCashClosure(transaction: TransactionClient, workspaceOwnerUserId: string, businessDate: Date) {
     const window = buildBusinessDateWindow(businessDate)
     const [sessions, openComandasCount, existingClosure] = await Promise.all([
       transaction.cashSession.findMany({
@@ -329,8 +319,7 @@ export class OperationsHelpersService {
     )
 
     const status =
-      existingClosure?.status === CashClosureStatus.CLOSED ||
-      existingClosure?.status === CashClosureStatus.FORCE_CLOSED
+      existingClosure?.status === CashClosureStatus.CLOSED || existingClosure?.status === CashClosureStatus.FORCE_CLOSED
         ? existingClosure.status
         : openSessionsCount > 0 || openComandasCount > 0
           ? CashClosureStatus.PENDING_EMPLOYEE_CLOSE
@@ -639,11 +628,7 @@ export class OperationsHelpersService {
     }
   }
 
-  async ensureOrderForClosedComanda(
-    transaction: TransactionClient,
-    workspaceOwnerUserId: string,
-    comandaId: string,
-  ) {
+  async ensureOrderForClosedComanda(transaction: TransactionClient, workspaceOwnerUserId: string, comandaId: string) {
     const existingOrder = await transaction.order.findFirst({
       where: {
         userId: workspaceOwnerUserId,
@@ -742,10 +727,7 @@ export class OperationsHelpersService {
       },
     })
 
-    if (
-      closure?.status === CashClosureStatus.CLOSED ||
-      closure?.status === CashClosureStatus.FORCE_CLOSED
-    ) {
+    if (closure?.status === CashClosureStatus.CLOSED || closure?.status === CashClosureStatus.FORCE_CLOSED) {
       throw new NotFoundException('A operacao deste dia ja foi consolidada e nao aceita novas aberturas.')
     }
   }

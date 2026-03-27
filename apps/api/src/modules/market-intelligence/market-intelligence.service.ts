@@ -140,7 +140,10 @@ export class MarketIntelligenceService {
     }
 
     const payload = (await response.json()) as GeminiGenerateContentResponse
-    const rawText = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('')?.trim()
+    const rawText = payload.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? '')
+      .join('')
+      ?.trim()
     if (!rawText) {
       throw new BadGatewayException('A IA nao retornou uma leitura valida para esta consulta.')
     }
@@ -238,8 +241,7 @@ export class MarketIntelligenceService {
 
   private buildModelUrl(model: string, apiKey: string) {
     const baseUrl =
-      this.configService.get<string>('GEMINI_API_URL') ??
-      'https://generativelanguage.googleapis.com/v1beta/models'
+      this.configService.get<string>('GEMINI_API_URL') ?? 'https://generativelanguage.googleapis.com/v1beta/models'
     return `${baseUrl}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
   }
 
@@ -349,4 +351,3 @@ function normalizeStringArray(value: unknown, maxItems: number) {
     .filter(Boolean)
     .slice(0, maxItems)
 }
-

@@ -55,11 +55,7 @@ export class ConsentService {
     })
   }
 
-  async recordLegalAcceptances(params: {
-    userId: string
-    version: string
-    context: RequestContext
-  }) {
+  async recordLegalAcceptances(params: { userId: string; version: string; context: RequestContext }) {
     const documents = await this.ensureDefaultDocuments(params.version)
     const legalDocuments = documents.filter((document) => document.required)
 

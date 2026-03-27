@@ -102,10 +102,7 @@ export function buildTimelineWindow(items: OperationTimelineItem[]) {
   }
 }
 
-export function getTimelinePlacement(
-  window: { start: Date; durationMinutes: number },
-  item: OperationTimelineItem,
-) {
+export function getTimelinePlacement(window: { start: Date; durationMinutes: number }, item: OperationTimelineItem) {
   const itemStart = new Date(item.start).getTime()
   const itemEnd = new Date(item.end).getTime()
   const windowStart = window.start.getTime()
@@ -135,10 +132,7 @@ export function buildTimelineTicks(window: { start: Date; durationMinutes: numbe
   return ticks
 }
 
-export function groupItemsByResource(
-  resources: OperationTimelineResource[],
-  items: OperationTimelineItem[],
-) {
+export function groupItemsByResource(resources: OperationTimelineResource[], items: OperationTimelineItem[]) {
   return resources.map((resource) => ({
     resource,
     items: items.filter((item) => item.resourceId === resource.id),
@@ -148,4 +142,3 @@ export function groupItemsByResource(
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
-

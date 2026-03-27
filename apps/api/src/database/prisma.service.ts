@@ -18,8 +18,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
-    const maskUrl = (url: string) =>
-      url.replace(/:\/\/([^:]+):([^@]+)@/, '://$1:***@')
+    const maskUrl = (url: string) => url.replace(/:\/\/([^:]+):([^@]+)@/, '://$1:***@')
 
     const databaseUrl = process.env.DATABASE_URL ?? 'undefined'
     const directUrl = process.env.DIRECT_URL ?? 'undefined'
@@ -37,34 +36,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         break
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error)
-        this.logger.error(
-          `Prisma connection attempt ${attempt}/${maxRetries} failed: ${msg}`,
-          'PrismaService',
-        )
+        this.logger.error(`Prisma connection attempt ${attempt}/${maxRetries} failed: ${msg}`, 'PrismaService')
 
         if (attempt === maxRetries) {
-          this.logger.warn(
-            'Could not connect at startup — Prisma will connect lazily on first query.',
-            'PrismaService',
-          )
+          this.logger.warn('Could not connect at startup — Prisma will connect lazily on first query.', 'PrismaService')
           break
         }
 
         const delay = baseDelayMs * Math.pow(2, attempt - 1)
-        this.logger.warn(
-          `Retrying Prisma connection in ${delay}ms...`,
-          'PrismaService',
-        )
+        this.logger.warn(`Retrying Prisma connection in ${delay}ms...`, 'PrismaService')
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
 
     this.$on('query' as never, (e: Prisma.QueryEvent) => {
       if (e.duration > SLOW_QUERY_THRESHOLD_MS) {
-        this.logger.warn(
-          `Slow query (${e.duration}ms): ${e.query}`,
-          'SlowQuery',
-        )
+        this.logger.warn(`Slow query (${e.duration}ms): ${e.query}`, 'SlowQuery')
       }
     })
 

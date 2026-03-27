@@ -40,21 +40,13 @@ export class EmployeesController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Delete(':employeeId')
-  archiveEmployee(
-    @CurrentAuth() auth: AuthContext,
-    @Param('employeeId') employeeId: string,
-    @Req() request: Request,
-  ) {
+  archiveEmployee(@CurrentAuth() auth: AuthContext, @Param('employeeId') employeeId: string, @Req() request: Request) {
     return this.employeesService.archiveForUser(auth, employeeId, extractRequestContext(request))
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post(':employeeId/restore')
-  restoreEmployee(
-    @CurrentAuth() auth: AuthContext,
-    @Param('employeeId') employeeId: string,
-    @Req() request: Request,
-  ) {
+  restoreEmployee(@CurrentAuth() auth: AuthContext, @Param('employeeId') employeeId: string, @Req() request: Request) {
     return this.employeesService.restoreForUser(auth, employeeId, extractRequestContext(request))
   }
 }

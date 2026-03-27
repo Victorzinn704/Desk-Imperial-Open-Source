@@ -26,9 +26,7 @@ function CardContent() {
     <>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-            Leitura ao vivo
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Leitura ao vivo</p>
           <p className="mt-2 text-lg font-semibold text-white">Pulso executivo</p>
         </div>
         <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(123,214,138,0.08)] text-[var(--success)]">
@@ -38,10 +36,7 @@ function CardContent() {
 
       <div className="mt-5 space-y-3">
         {signals.map((signal) => (
-          <div
-            className="imperial-card-stat px-4 py-3"
-            key={signal.label}
-          >
+          <div className="imperial-card-stat px-4 py-3" key={signal.label}>
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs font-medium text-[var(--text-soft)]">{signal.label}</span>
               <span className={`text-sm font-semibold ${signal.tone}`}>{signal.value}</span>

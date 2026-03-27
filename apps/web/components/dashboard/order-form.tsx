@@ -52,14 +52,8 @@ export function OrderForm({
   const [draftProductId, setDraftProductId] = useState(products[0]?.id ?? '')
   const [draftQuantity, setDraftQuantity] = useState('1')
   const [draftUnitPrice, setDraftUnitPrice] = useState('')
-  const {
-    pinDialogOpen,
-    pinDialogTitle,
-    pinDialogDescription,
-    requirePin,
-    handlePinCancel,
-    handlePinConfirm,
-  } = useAdminPin()
+  const { pinDialogOpen, pinDialogTitle, pinDialogDescription, requirePin, handlePinCancel, handlePinConfirm } =
+    useAdminPin()
 
   const {
     register,
@@ -83,20 +77,17 @@ export function OrderForm({
     name: 'items',
   })
 
-  const currentItems = (useWatch({
-    control,
-    name: 'items',
-  }) as CartItemValue[] | undefined) ?? []
+  const currentItems =
+    (useWatch({
+      control,
+      name: 'items',
+    }) as CartItemValue[] | undefined) ?? []
   const buyerType = useWatch({ control, name: 'buyerType' })
   const orderCurrency = useWatch({ control, name: 'currency' })
   const documentLabel = buyerType === 'COMPANY' ? 'CNPJ do comprador' : 'CPF do comprador'
-  const documentPlaceholder =
-    buyerType === 'COMPANY' ? '12.345.678/0001-90' : '123.456.789-09'
+  const documentPlaceholder = buyerType === 'COMPANY' ? '12.345.678/0001-90' : '123.456.789-09'
 
-  const activeEmployees = useMemo(
-    () => employees.filter((employee) => employee.active),
-    [employees],
-  )
+  const activeEmployees = useMemo(() => employees.filter((employee) => employee.active), [employees])
   const isStaffUser = userRole === 'STAFF'
   const employeeOptions = useMemo(
     () => [
@@ -180,13 +171,9 @@ export function OrderForm({
       return
     }
 
-    const normalizedUnitPrice =
-      draftUnitPrice.trim() === '' ? undefined : Number(draftUnitPrice.replace(',', '.'))
+    const normalizedUnitPrice = draftUnitPrice.trim() === '' ? undefined : Number(draftUnitPrice.replace(',', '.'))
 
-    if (
-      normalizedUnitPrice !== undefined &&
-      (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice < 0)
-    ) {
+    if (normalizedUnitPrice !== undefined && (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice < 0)) {
       setError('items', {
         type: 'manual',
         message: 'O valor unitário precisa ser zero ou positivo.',
@@ -234,15 +221,11 @@ export function OrderForm({
   return (
     <div className="imperial-card p-7">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Pedido multi-item
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold text-white">
-          Monte a venda como um carrinho de mercado.
-        </h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Pedido multi-item</p>
+        <h2 className="mt-3 text-2xl font-semibold text-white">Monte a venda como um carrinho de mercado.</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-          Organizei a operação em etapas para deixar o preenchimento mais claro: primeiro o carrinho,
-          depois a configuração da venda e por fim os dados do comprador.
+          Organizei a operação em etapas para deixar o preenchimento mais claro: primeiro o carrinho, depois a
+          configuração da venda e por fim os dados do comprador.
         </p>
       </div>
 
@@ -261,13 +244,10 @@ export function OrderForm({
 
           const hasManualPrice = values.items.some((item) => item.unitPrice != null)
           if (hasManualPrice) {
-            requirePin(
-              () => submitOrder(values),
-              {
-                title: 'Validação de desconto',
-                description: 'Digite o PIN do dono para confirmar preco manual ou desconto nesta venda.',
-              },
-            )
+            requirePin(() => submitOrder(values), {
+              title: 'Validação de desconto',
+              description: 'Digite o PIN do dono para confirmar preco manual ou desconto nesta venda.',
+            })
             return
           }
 
@@ -281,16 +261,13 @@ export function OrderForm({
                 <ShoppingBasket className="size-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">
-                  1. Monte o carrinho
-                </p>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">1. Monte o carrinho</p>
                 <h3 className="mt-2 text-xl font-semibold text-white">
                   Escolha os produtos e adicione cada linha ao pedido
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
-                  A quantidade sempre sai em unidade. O valor unitário é opcional e só serve quando
-                  você precisa vender um item com preço diferente do cadastro. Descontos pedem PIN
-                  do dono quando ele estiver configurado.
+                  A quantidade sempre sai em unidade. O valor unitário é opcional e só serve quando você precisa vender
+                  um item com preço diferente do cadastro. Descontos pedem PIN do dono quando ele estiver configurado.
                 </p>
               </div>
             </div>
@@ -328,12 +305,7 @@ export function OrderForm({
               type="number"
               value={draftUnitPrice}
             />
-            <Button
-              className="2xl:mb-[2px]"
-              disabled={!products.length}
-              onClick={handleAddItem}
-              type="button"
-            >
+            <Button className="2xl:mb-[2px]" disabled={!products.length} onClick={handleAddItem} type="button">
               <Plus className="size-4" />
               Adicionar ao pedido
             </Button>
@@ -355,15 +327,10 @@ export function OrderForm({
                 const product = products.find((item) => item.id === field.productId)
 
                 return (
-                  <div
-                    className="imperial-card-soft px-4 py-4"
-                    key={field.id}
-                  >
+                  <div className="imperial-card-soft px-4 py-4" key={field.id}>
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                       <div>
-                        <p className="font-medium text-white">
-                          {product?.name ?? 'Produto removido do portfólio'}
-                        </p>
+                        <p className="font-medium text-white">{product?.name ?? 'Produto removido do portfólio'}</p>
                         <p className="mt-1 text-sm text-[var(--text-soft)]">
                           {product
                             ? `${product.category} • ${formatStockBreakdown(product.stock, product.unitsPerPackage)}`
@@ -406,13 +373,10 @@ export function OrderForm({
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 2. Configure a operação
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-white">
-                Defina moeda, vendedor e contexto da venda
-              </h3>
+              <h3 className="mt-2 text-xl font-semibold text-white">Defina moeda, vendedor e contexto da venda</h3>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
-              Essa etapa alimenta o ranking da equipe, a análise por canal e o comportamento do pedido
-              dentro do painel.
+              Essa etapa alimenta o ranking da equipe, a análise por canal e o comportamento do pedido dentro do painel.
             </p>
           </div>
 
@@ -471,9 +435,7 @@ export function OrderForm({
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 3. Identifique o comprador
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-white">
-                Registre quem comprou e de onde saiu a venda
-              </h3>
+              <h3 className="mt-2 text-xl font-semibold text-white">Registre quem comprou e de onde saiu a venda</h3>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
               Esses dados sustentam mapa de vendas, compliance e leitura do cliente no financeiro.

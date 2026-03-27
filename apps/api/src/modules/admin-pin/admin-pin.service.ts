@@ -115,7 +115,10 @@ export class AdminPinService {
     return !!user?.adminPinHash
   }
 
-  async issueVerificationChallenge(auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId'>, pin: string) {
+  async issueVerificationChallenge(
+    auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId'>,
+    pin: string,
+  ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
 
     if (!auth.sessionId) {
@@ -158,7 +161,11 @@ export class AdminPinService {
       expiresAt: expiresAt.toISOString(),
     }
 
-    await this.cache.set(this.buildChallengeKey(workspaceOwnerUserId, auth.sessionId, auth.userId), record, Math.ceil(ADMIN_PIN_VERIFICATION_TTL_MS / 1000))
+    await this.cache.set(
+      this.buildChallengeKey(workspaceOwnerUserId, auth.sessionId, auth.userId),
+      record,
+      Math.ceil(ADMIN_PIN_VERIFICATION_TTL_MS / 1000),
+    )
     await this.cache.del(CacheService.ratelimitKey('admin-pin', rateLimitKey))
 
     return {
@@ -281,10 +288,7 @@ export class AdminPinService {
 
     if (entry.lockedUntil && entry.lockedUntil > now) {
       const retryAfterMinutes = Math.ceil((entry.lockedUntil - now) / 60000)
-      throw new HttpException(
-        `Muitas tentativas. Tente em ${retryAfterMinutes} minuto(s).`,
-        HttpStatus.LOCKED,
-      )
+      throw new HttpException(`Muitas tentativas. Tente em ${retryAfterMinutes} minuto(s).`, HttpStatus.LOCKED)
     }
 
     if (entry.firstAttemptAt + PIN_WINDOW_MS <= now) {
@@ -348,4 +352,3 @@ export class AdminPinService {
 function fingerprintPinHash(adminPinHash: string) {
   return createHash('sha256').update(adminPinHash).digest('base64url')
 }
-

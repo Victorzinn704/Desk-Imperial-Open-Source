@@ -98,45 +98,156 @@ export function OperationsTimeline({
         {resources.length ? (
           <div className="operations-rbc overflow-hidden rounded-[24px] border border-white/6">
             <style jsx global>{`
-              .operations-rbc .rbc-calendar { background: transparent !important; color: #e2ddd6; font-family: inherit; }
-              .operations-rbc .rbc-toolbar { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); background: transparent !important; }
-              .operations-rbc .rbc-toolbar button { color: #7a8896; background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-              .operations-rbc .rbc-toolbar button:hover { color: #fff; border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); }
-              .operations-rbc .rbc-toolbar button.rbc-active { color: #36f57c; border-color: rgba(52,242,127,0.4); background: rgba(52,242,127,0.1); }
-              .operations-rbc .rbc-toolbar-label { font-size: 15px; font-weight: 600; color: #fff; }
+              .operations-rbc .rbc-calendar {
+                background: transparent !important;
+                color: #e2ddd6;
+                font-family: inherit;
+              }
+              .operations-rbc .rbc-toolbar {
+                padding: 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-toolbar button {
+                color: #7a8896;
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 6px 14px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.15s;
+              }
+              .operations-rbc .rbc-toolbar button:hover {
+                color: #fff;
+                border-color: rgba(255, 255, 255, 0.18);
+                background: rgba(255, 255, 255, 0.04);
+              }
+              .operations-rbc .rbc-toolbar button.rbc-active {
+                color: #36f57c;
+                border-color: rgba(52, 242, 127, 0.4);
+                background: rgba(52, 242, 127, 0.1);
+              }
+              .operations-rbc .rbc-toolbar-label {
+                font-size: 15px;
+                font-weight: 600;
+                color: #fff;
+              }
 
-              .operations-rbc .rbc-time-view { border: none !important; background: transparent !important; }
-              .operations-rbc .rbc-time-view .rbc-row { background: transparent !important; }
-              .operations-rbc .rbc-time-header { border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: transparent !important; }
-              .operations-rbc .rbc-time-header-content { border-left: 1px solid rgba(255,255,255,0.05) !important; background: transparent !important; }
-              .operations-rbc .rbc-time-header-gutter { background: transparent !important; border-color: rgba(255,255,255,0.06) !important; }
-              .operations-rbc .rbc-allday-cell { background: transparent !important; }
-              .operations-rbc .rbc-time-content { background: transparent !important; border-top: 1px solid rgba(255,255,255,0.06) !important; }
-              .operations-rbc .rbc-time-content > * + * > * { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-              .operations-rbc .rbc-time-gutter { background: transparent !important; }
-              .operations-rbc .rbc-time-column { background: transparent !important; }
-              .operations-rbc .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.04) !important; background: transparent !important; }
-              .operations-rbc .rbc-day-slot { background: transparent !important; }
-              .operations-rbc .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.025) !important; background: transparent !important; }
-              .operations-rbc .rbc-today { background: rgba(52,242,127,0.03) !important; }
+              .operations-rbc .rbc-time-view {
+                border: none !important;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-view .rbc-row {
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-header {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-header-content {
+                border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-header-gutter {
+                background: transparent !important;
+                border-color: rgba(255, 255, 255, 0.06) !important;
+              }
+              .operations-rbc .rbc-allday-cell {
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-content {
+                background: transparent !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+              }
+              .operations-rbc .rbc-time-content > * + * > * {
+                border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
+              }
+              .operations-rbc .rbc-time-gutter {
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-time-column {
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-timeslot-group {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-day-slot {
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-day-slot .rbc-time-slot {
+                border-top: 1px solid rgba(255, 255, 255, 0.025) !important;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-today {
+                background: rgba(52, 242, 127, 0.03) !important;
+              }
 
-              .operations-rbc .rbc-header { padding: 10px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #7a8896; background: rgba(255,255,255,0.02) !important; border-color: rgba(255,255,255,0.06) !important; }
-              .operations-rbc .rbc-header + .rbc-header { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-              .operations-rbc .rbc-time-slot, .operations-rbc .rbc-label { color: #4a5568; font-size: 11px; background: transparent !important; }
-              .operations-rbc .rbc-current-time-indicator { background: #36f57c !important; height: 2px; box-shadow: 0 0 6px rgba(52,242,127,0.5); }
+              .operations-rbc .rbc-header {
+                padding: 10px 0;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                color: #7a8896;
+                background: rgba(255, 255, 255, 0.02) !important;
+                border-color: rgba(255, 255, 255, 0.06) !important;
+              }
+              .operations-rbc .rbc-header + .rbc-header {
+                border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
+              }
+              .operations-rbc .rbc-time-slot,
+              .operations-rbc .rbc-label {
+                color: #4a5568;
+                font-size: 11px;
+                background: transparent !important;
+              }
+              .operations-rbc .rbc-current-time-indicator {
+                background: #36f57c !important;
+                height: 2px;
+                box-shadow: 0 0 6px rgba(52, 242, 127, 0.5);
+              }
 
-              .operations-rbc .rbc-events-container { margin-right: 0; }
-              .operations-rbc .rbc-day-slot .rbc-event { border: none; background: transparent; }
-              .operations-rbc .rbc-event { outline: none !important; }
+              .operations-rbc .rbc-events-container {
+                margin-right: 0;
+              }
+              .operations-rbc .rbc-day-slot .rbc-event {
+                border: none;
+                background: transparent;
+              }
+              .operations-rbc .rbc-event {
+                outline: none !important;
+              }
 
-              .operations-rbc .rbc-addons-dnd-resizable { cursor: grab; }
-              .operations-rbc .rbc-addons-dnd-resize-ns-anchor { height: 6px; background: rgba(52,242,127,0.4); cursor: ns-resize; border-radius: 0 0 6px 6px; }
-              .operations-rbc .rbc-addons-dnd-resize-ew-anchor { width: 6px; background: rgba(52,242,127,0.4); cursor: ew-resize; }
+              .operations-rbc .rbc-addons-dnd-resizable {
+                cursor: grab;
+              }
+              .operations-rbc .rbc-addons-dnd-resize-ns-anchor {
+                height: 6px;
+                background: rgba(52, 242, 127, 0.4);
+                cursor: ns-resize;
+                border-radius: 0 0 6px 6px;
+              }
+              .operations-rbc .rbc-addons-dnd-resize-ew-anchor {
+                width: 6px;
+                background: rgba(52, 242, 127, 0.4);
+                cursor: ew-resize;
+              }
 
-              .operations-rbc .rbc-agenda-view { background: transparent; }
-              .operations-rbc .rbc-agenda-view table { color: #e2ddd6; border-color: rgba(255,255,255,0.06) !important; }
+              .operations-rbc .rbc-agenda-view {
+                background: transparent;
+              }
+              .operations-rbc .rbc-agenda-view table {
+                color: #e2ddd6;
+                border-color: rgba(255, 255, 255, 0.06) !important;
+              }
               .operations-rbc .rbc-agenda-view .rbc-agenda-date-cell,
-              .operations-rbc .rbc-agenda-view .rbc-agenda-time-cell { color: #7a8896; font-size: 12px; }
+              .operations-rbc .rbc-agenda-view .rbc-agenda-time-cell {
+                color: #7a8896;
+                font-size: 12px;
+              }
             `}</style>
 
             <DnDCalendar
@@ -212,7 +323,8 @@ export function OperationsTimeline({
               <Layers3 className="mx-auto size-10 text-[var(--text-soft)]/70" />
               <p className="mt-4 text-sm font-medium text-white">Nenhum recurso carregado ainda.</p>
               <p className="mt-2 text-sm text-[var(--text-soft)]">
-                Assim que os dados vierem do banco, esta agenda operacional passa a refletir a equipe e as mesas com drag-and-drop.
+                Assim que os dados vierem do banco, esta agenda operacional passa a refletir a equipe e as mesas com
+                drag-and-drop.
               </p>
             </div>
           </div>
@@ -228,7 +340,9 @@ function OperationEventCard({ event }: Readonly<EventProps<TimelineCalendarEvent
   return (
     <div className="h-full rounded-[16px] border border-white/8 bg-[rgba(255,255,255,0.04)] px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
       <div className="flex items-center justify-between gap-3">
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${tone.className}`}>
+        <span
+          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${tone.className}`}
+        >
           {tone.label}
         </span>
         <span className="text-[11px] text-[var(--text-soft)]">{formatMoney(event.amount)}</span>
@@ -244,19 +358,21 @@ function OperationEventCard({ event }: Readonly<EventProps<TimelineCalendarEvent
   )
 }
 
-function OperationResourceHeader({
-  resource,
-}: Readonly<ResourceHeaderProps<OperationTimelineResource>>) {
+function OperationResourceHeader({ resource }: Readonly<ResourceHeaderProps<OperationTimelineResource>>) {
   const tone = getCashSessionTone(resource.status)
 
   return (
     <div className="flex min-h-[56px] flex-col justify-center gap-1 px-2 py-2">
       <p className="truncate text-sm font-semibold text-white">{resource.title}</p>
       <div className="flex items-center gap-2">
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${tone.className}`}>
+        <span
+          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${tone.className}`}
+        >
           {tone.label}
         </span>
-        {resource.subtitle ? <span className="truncate text-[11px] text-[var(--text-soft)]">{resource.subtitle}</span> : null}
+        {resource.subtitle ? (
+          <span className="truncate text-[11px] text-[var(--text-soft)]">{resource.subtitle}</span>
+        ) : null}
       </div>
     </div>
   )

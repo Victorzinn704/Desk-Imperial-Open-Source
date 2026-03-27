@@ -116,9 +116,9 @@ export type OperationsRealtimeEnvelope<TEvent extends OperationsRealtimeEventNam
   payload: OperationsRealtimeEventPayload<TEvent>
 }
 
-export type OperationsRealtimeWorkspaceListener<TEvent extends OperationsRealtimeEventName = OperationsRealtimeEventName> = (
-  envelope: OperationsRealtimeEnvelope<TEvent>,
-) => void
+export type OperationsRealtimeWorkspaceListener<
+  TEvent extends OperationsRealtimeEventName = OperationsRealtimeEventName,
+> = (envelope: OperationsRealtimeEnvelope<TEvent>) => void
 
 export interface OperationsRealtimeNamespaceLike {
   to(room: string): {

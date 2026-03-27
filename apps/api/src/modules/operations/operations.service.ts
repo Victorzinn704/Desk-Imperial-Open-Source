@@ -45,7 +45,7 @@ export class OperationsService {
     const businessDate = resolveBusinessDate(query.businessDate)
     const scopedEmployeeId =
       auth.role === 'STAFF'
-        ? (await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth))?.id ?? null
+        ? ((await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth))?.id ?? null)
         : null
 
     return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId)
@@ -114,7 +114,12 @@ export class OperationsService {
         select: { id: true, mesaId: true, currentEmployeeId: true, status: true },
       }),
     ])
-    return mesas.map((m) => toMesaRecord(m, openComandas.filter((c) => c.mesaId === m.id)))
+    return mesas.map((m) =>
+      toMesaRecord(
+        m,
+        openComandas.filter((c) => c.mesaId === m.id),
+      ),
+    )
   }
 
   async createMesa(auth: AuthContext, dto: CreateMesaDto, context: RequestContext): Promise<MesaRecord> {
@@ -151,7 +156,12 @@ export class OperationsService {
     return toMesaRecord(mesa, [])
   }
 
-  async updateMesa(auth: AuthContext, mesaId: string, dto: UpdateMesaDto, context: RequestContext): Promise<MesaRecord> {
+  async updateMesa(
+    auth: AuthContext,
+    mesaId: string,
+    dto: UpdateMesaDto,
+    context: RequestContext,
+  ): Promise<MesaRecord> {
     assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
@@ -165,7 +175,9 @@ export class OperationsService {
     const updated = await this.prisma.mesa.update({
       where: { id: mesaId },
       data: {
-        ...(dto.label !== undefined && { label: sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })! }),
+        ...(dto.label !== undefined && {
+          label: sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })!,
+        }),
         ...(dto.capacity !== undefined && { capacity: dto.capacity }),
         ...(dto.section !== undefined && { section: dto.section }),
         ...(dto.positionX !== undefined && { positionX: dto.positionX }),

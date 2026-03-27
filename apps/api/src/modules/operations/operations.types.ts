@@ -44,7 +44,16 @@ type CashSessionLike = Pick<
 
 type ComandaItemLike = Pick<
   ComandaItem,
-  'id' | 'productId' | 'productName' | 'quantity' | 'unitPrice' | 'totalAmount' | 'notes' | 'kitchenStatus' | 'kitchenQueuedAt' | 'kitchenReadyAt'
+  | 'id'
+  | 'productId'
+  | 'productName'
+  | 'quantity'
+  | 'unitPrice'
+  | 'totalAmount'
+  | 'notes'
+  | 'kitchenStatus'
+  | 'kitchenQueuedAt'
+  | 'kitchenReadyAt'
 >
 
 type MesaLike = Pick<
@@ -247,10 +256,7 @@ export function toComandaItemRecord(item: ComandaItemLike): ComandaItemRecord {
   }
 }
 
-export function toMesaRecord(
-  mesa: MesaLike,
-  openComandas: Pick<Comanda, 'id' | 'currentEmployeeId'>[],
-): MesaRecord {
+export function toMesaRecord(mesa: MesaLike, openComandas: Pick<Comanda, 'id' | 'currentEmployeeId'>[]): MesaRecord {
   const comanda = openComandas.find((c) => c.id) // will be matched by mesaId in service
   return {
     id: mesa.id,

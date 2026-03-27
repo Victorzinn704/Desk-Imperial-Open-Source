@@ -15,10 +15,33 @@ function calcMarginPct(unitPrice: number, unitCost: number): number | null {
 }
 
 function marginTone(pct: number) {
-  if (pct >= 50) return { label: `${pct.toFixed(0)}%`, textClass: 'text-[#34f27f]', borderClass: 'border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)]', accentColor: '#34f27f' }
-  if (pct >= 30) return { label: `${pct.toFixed(0)}%`, textClass: 'text-[#c9a96e]', borderClass: 'border-[rgba(201,169,110,0.28)] bg-[rgba(201,169,110,0.07)]', accentColor: '#c9a96e' }
-  if (pct >= 15) return { label: `${pct.toFixed(0)}%`, textClass: 'text-[#fbbf24]', borderClass: 'border-[rgba(251,191,36,0.22)] bg-[rgba(251,191,36,0.07)]', accentColor: '#fbbf24' }
-  return { label: `${pct.toFixed(0)}%`, textClass: 'text-[#f87171]', borderClass: 'border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.07)]', accentColor: '#f87171' }
+  if (pct >= 50)
+    return {
+      label: `${pct.toFixed(0)}%`,
+      textClass: 'text-[#34f27f]',
+      borderClass: 'border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)]',
+      accentColor: '#34f27f',
+    }
+  if (pct >= 30)
+    return {
+      label: `${pct.toFixed(0)}%`,
+      textClass: 'text-[#c9a96e]',
+      borderClass: 'border-[rgba(201,169,110,0.28)] bg-[rgba(201,169,110,0.07)]',
+      accentColor: '#c9a96e',
+    }
+  if (pct >= 15)
+    return {
+      label: `${pct.toFixed(0)}%`,
+      textClass: 'text-[#fbbf24]',
+      borderClass: 'border-[rgba(251,191,36,0.22)] bg-[rgba(251,191,36,0.07)]',
+      accentColor: '#fbbf24',
+    }
+  return {
+    label: `${pct.toFixed(0)}%`,
+    textClass: 'text-[#f87171]',
+    borderClass: 'border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.07)]',
+    accentColor: '#f87171',
+  }
 }
 
 function stockTone(stock: number) {
@@ -63,10 +86,7 @@ export const ProductCard = memo(function ProductCard({
 
   const measurementLabel = formatMeasurement(product.measurementValue, product.measurementUnit)
   const stockBreakdown = formatStockBreakdown(product.stock, product.unitsPerPackage)
-  const packageHelper =
-    product.unitsPerPackage > 1
-      ? `${product.unitsPerPackage} und/caixa`
-      : 'por unidade'
+  const packageHelper = product.unitsPerPackage > 1 ? `${product.unitsPerPackage} und/caixa` : 'por unidade'
 
   const marginPct = calcMarginPct(product.unitPrice, product.unitCost)
   const margin = marginPct !== null ? marginTone(marginPct) : null
@@ -96,7 +116,9 @@ export const ProductCard = memo(function ProductCard({
               {product.active ? 'ativo' : 'arquivado'}
             </span>
             {margin ? (
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-[0.1em] border ${margin.borderClass} ${margin.textClass}`}>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-[0.1em] border ${margin.borderClass} ${margin.textClass}`}
+              >
                 {margin.label} margem
               </span>
             ) : null}
@@ -195,13 +217,10 @@ function StatTile({
           </span>
         ) : null}
       </div>
-      <p
-        className="mt-2 text-sm font-semibold text-white"
-        style={accent ? { color: accent } : undefined}
-      >
+      <p className="mt-2 text-sm font-semibold text-white" style={accent ? { color: accent } : undefined}>
         {primary}
       </p>
-      {secondary ?? dotLabel ? (
+      {(secondary ?? dotLabel) ? (
         <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-soft)] truncate">{secondary ?? dotLabel}</p>
       ) : null}
     </div>

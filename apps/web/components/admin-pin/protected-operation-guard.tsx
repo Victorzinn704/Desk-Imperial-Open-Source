@@ -13,10 +13,7 @@ type ProtectedOperationGuardProps = {
  * Wrapper component that provides PIN protection for sensitive operations.
  * Use the `useProtectedOperationGuard()` hook in your component to open the dialog.
  */
-export function ProtectedOperationGuard({
-  onConfirm,
-  onError,
-}: Readonly<ProtectedOperationGuardProps>) {
+export function ProtectedOperationGuard({ onConfirm, onError }: Readonly<ProtectedOperationGuardProps>) {
   const {
     isDialogOpen,
     dialogTitle,

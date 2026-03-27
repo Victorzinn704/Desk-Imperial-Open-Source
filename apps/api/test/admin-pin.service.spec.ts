@@ -88,15 +88,15 @@ let mockAuthContext: ReturnType<typeof makeAuthContext>
 
 beforeEach(() => {
   jest.clearAllMocks()
-  
+
   adminPinService = new AdminPinService(
     mockPrisma as unknown as PrismaService,
     mockConfigService as unknown as ConfigService,
     mockCache as unknown as CacheService,
   )
-  
+
   mockAuthContext = makeAuthContext()
-  
+
   // Defaults
   mockCache.isReady.mockReturnValue(true)
   mockCache.ratelimitKey.mockImplementation((prefix: string, key: string) => `${prefix}:${key}`)
@@ -135,10 +135,7 @@ describe('AdminPinService', () => {
 
       await adminPinService.setupPin('user-1', '5678', '1234')
 
-      expect(argon2.verify).toHaveBeenCalledWith(
-        '$argon2id$v=19$m=65536,t=3,p=4$mockedhash',
-        '1234',
-      )
+      expect(argon2.verify).toHaveBeenCalledWith('$argon2id$v=19$m=65536,t=3,p=4$mockedhash', '1234')
       expect(argon2.hash).toHaveBeenCalledWith('5678', { type: argon2.argon2id })
     })
 
@@ -146,12 +143,8 @@ describe('AdminPinService', () => {
       const userWithPin = makeUser()
       mockPrisma.user.findUnique.mockResolvedValue(userWithPin)
 
-      await expect(adminPinService.setupPin('user-1', '5678')).rejects.toThrow(
-        ForbiddenException,
-      )
-      await expect(adminPinService.setupPin('user-1', '5678')).rejects.toThrow(
-        'PIN atual é necessário',
-      )
+      await expect(adminPinService.setupPin('user-1', '5678')).rejects.toThrow(ForbiddenException)
+      await expect(adminPinService.setupPin('user-1', '5678')).rejects.toThrow('PIN atual é necessário')
     })
 
     it('deve rejeitar alteração de PIN com PIN atual incorreto', async () => {
@@ -159,23 +152,15 @@ describe('AdminPinService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(userWithPin)
       ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
-      await expect(adminPinService.setupPin('user-1', '5678', 'wrong')).rejects.toThrow(
-        UnauthorizedException,
-      )
-      await expect(adminPinService.setupPin('user-1', '5678', 'wrong')).rejects.toThrow(
-        'PIN atual incorreto',
-      )
+      await expect(adminPinService.setupPin('user-1', '5678', 'wrong')).rejects.toThrow(UnauthorizedException)
+      await expect(adminPinService.setupPin('user-1', '5678', 'wrong')).rejects.toThrow('PIN atual incorreto')
     })
 
     it('deve rejeitar setup para usuário inexistente', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null)
 
-      await expect(adminPinService.setupPin('user-inexistente', '1234')).rejects.toThrow(
-        UnauthorizedException,
-      )
-      await expect(adminPinService.setupPin('user-inexistente', '1234')).rejects.toThrow(
-        'Usuário não encontrado',
-      )
+      await expect(adminPinService.setupPin('user-inexistente', '1234')).rejects.toThrow(UnauthorizedException)
+      await expect(adminPinService.setupPin('user-inexistente', '1234')).rejects.toThrow('Usuário não encontrado')
     })
   })
 
@@ -188,10 +173,7 @@ describe('AdminPinService', () => {
 
       await adminPinService.removePin('user-1', '1234')
 
-      expect(argon2.verify).toHaveBeenCalledWith(
-        '$argon2id$v=19$m=65536,t=3,p=4$mockedhash',
-        '1234',
-      )
+      expect(argon2.verify).toHaveBeenCalledWith('$argon2id$v=19$m=65536,t=3,p=4$mockedhash', '1234')
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         data: { adminPinHash: null },
@@ -202,12 +184,8 @@ describe('AdminPinService', () => {
       const userWithoutPin = makeUser({ adminPinHash: null })
       mockPrisma.user.findUnique.mockResolvedValue(userWithoutPin)
 
-      await expect(adminPinService.removePin('user-1', '1234')).rejects.toThrow(
-        NotFoundException,
-      )
-      await expect(adminPinService.removePin('user-1', '1234')).rejects.toThrow(
-        'Nenhum PIN configurado',
-      )
+      await expect(adminPinService.removePin('user-1', '1234')).rejects.toThrow(NotFoundException)
+      await expect(adminPinService.removePin('user-1', '1234')).rejects.toThrow('Nenhum PIN configurado')
     })
 
     it('deve rejeitar remoção com PIN inválido', async () => {
@@ -215,20 +193,14 @@ describe('AdminPinService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(userWithPin)
       ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
-      await expect(adminPinService.removePin('user-1', 'wrong')).rejects.toThrow(
-        UnauthorizedException,
-      )
-      await expect(adminPinService.removePin('user-1', 'wrong')).rejects.toThrow(
-        'PIN inválido',
-      )
+      await expect(adminPinService.removePin('user-1', 'wrong')).rejects.toThrow(UnauthorizedException)
+      await expect(adminPinService.removePin('user-1', 'wrong')).rejects.toThrow('PIN inválido')
     })
 
     it('deve rejeitar remoção para usuário inexistente', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null)
 
-      await expect(adminPinService.removePin('user-inexistente', '1234')).rejects.toThrow(
-        NotFoundException,
-      )
+      await expect(adminPinService.removePin('user-inexistente', '1234')).rejects.toThrow(NotFoundException)
     })
   })
 
@@ -285,12 +257,8 @@ describe('AdminPinService', () => {
     it('deve rejeitar quando sessão é inválida', async () => {
       const invalidAuth = makeAuthContext({ sessionId: null })
 
-      await expect(
-        adminPinService.issueVerificationChallenge(invalidAuth, '1234'),
-      ).rejects.toThrow(ForbiddenException)
-      await expect(
-        adminPinService.issueVerificationChallenge(invalidAuth, '1234'),
-      ).rejects.toThrow('Sessão inválida')
+      await expect(adminPinService.issueVerificationChallenge(invalidAuth, '1234')).rejects.toThrow(ForbiddenException)
+      await expect(adminPinService.issueVerificationChallenge(invalidAuth, '1234')).rejects.toThrow('Sessão inválida')
     })
 
     it('deve rejeitar quando Redis não está disponível', async () => {
@@ -298,24 +266,24 @@ describe('AdminPinService', () => {
       const userWithPin = makeUser()
       mockPrisma.user.findUnique.mockResolvedValue(userWithPin)
 
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, '1234'),
-      ).rejects.toThrow(ServiceUnavailableException)
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, '1234'),
-      ).rejects.toThrow('Redis indisponível')
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, '1234')).rejects.toThrow(
+        ServiceUnavailableException,
+      )
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, '1234')).rejects.toThrow(
+        'Redis indisponível',
+      )
     })
 
     it('deve rejeitar quando usuário não tem PIN configurado', async () => {
       const userWithoutPin = makeUser({ adminPinHash: null })
       mockPrisma.user.findUnique.mockResolvedValue(userWithoutPin)
 
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, '1234'),
-      ).rejects.toThrow(NotFoundException)
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, '1234'),
-      ).rejects.toThrow('Nenhum PIN configurado')
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, '1234')).rejects.toThrow(
+        NotFoundException,
+      )
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, '1234')).rejects.toThrow(
+        'Nenhum PIN configurado',
+      )
     })
 
     it('deve rejeitar quando PIN é inválido', async () => {
@@ -323,12 +291,10 @@ describe('AdminPinService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(userWithPin)
       ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong'),
-      ).rejects.toThrow(UnauthorizedException)
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong'),
-      ).rejects.toThrow('PIN inválido')
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong')).rejects.toThrow(
+        UnauthorizedException,
+      )
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong')).rejects.toThrow('PIN inválido')
     })
 
     it('deve registrar falha de tentativa e aplicar rate limiting', async () => {
@@ -342,9 +308,9 @@ describe('AdminPinService', () => {
       })
       mockCache.set.mockResolvedValue(undefined)
 
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong'),
-      ).rejects.toThrow(UnauthorizedException)
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, 'wrong')).rejects.toThrow(
+        UnauthorizedException,
+      )
 
       expect(mockCache.set).toHaveBeenCalledWith(
         'admin-pin:user-1:session-1:user-1',
@@ -362,9 +328,9 @@ describe('AdminPinService', () => {
         lockedUntil: Date.now() + 5 * 60 * 1000, // 5 minutos
       })
 
-      await expect(
-        adminPinService.issueVerificationChallenge(mockAuthContext, '1234'),
-      ).rejects.toThrow('Muitas tentativas')
+      await expect(adminPinService.issueVerificationChallenge(mockAuthContext, '1234')).rejects.toThrow(
+        'Muitas tentativas',
+      )
     })
   })
 

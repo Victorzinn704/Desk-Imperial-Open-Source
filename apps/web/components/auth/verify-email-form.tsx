@@ -121,7 +121,11 @@ export function VerifyEmailForm({
         <div className="flex justify-center">
           <span className="flex size-16 items-center justify-center rounded-[24px] border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <svg className="size-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </span>
         </div>
@@ -129,9 +133,8 @@ export function VerifyEmailForm({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Verifique seu email</p>
           <h2 className="text-2xl font-semibold text-white">Enviamos um código para você</h2>
           <p className="text-sm leading-7 text-[var(--text-soft)]">
-            Procure na caixa de entrada de{' '}
-            <span className="font-semibold text-white">{email}</span>
-            . Se não encontrar, verifique spam e promoções.
+            Procure na caixa de entrada de <span className="font-semibold text-white">{email}</span>. Se não encontrar,
+            verifique spam e promoções.
           </p>
         </div>
         <div className="imperial-card-soft space-y-3 px-4 py-4 text-sm text-[var(--text-soft)]">
@@ -152,12 +155,11 @@ export function VerifyEmailForm({
   return (
     <div>
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Confirmacao de email
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Confirmacao de email</p>
         <h2 className="text-3xl font-semibold text-white">Valide o codigo enviado para o seu email.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
-          A conta so e liberada depois da confirmacao. Se precisar, voce pode reenviar o codigo. Vale conferir spam, promocoes e atualizacoes.
+          A conta so e liberada depois da confirmacao. Se precisar, voce pode reenviar o codigo. Vale conferir spam,
+          promocoes e atualizacoes.
         </p>
       </div>
 
@@ -211,7 +213,8 @@ export function VerifyEmailForm({
         ) : null}
 
         <div className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-          Dica: o codigo chega por email transacional. Se nao aparecer na caixa principal, procure por mensagens do DESK IMPERIAL no spam ou na aba de promocoes.
+          Dica: o codigo chega por email transacional. Se nao aparecer na caixa principal, procure por mensagens do DESK
+          IMPERIAL no spam ou na aba de promocoes.
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

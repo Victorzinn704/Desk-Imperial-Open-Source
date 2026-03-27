@@ -25,8 +25,7 @@ export function MapRankingPanel({
 }>) {
   const regions = finance.topRegions ?? []
 
-  const getValue = (r: (typeof regions)[0]) =>
-    tab === 'revenue' ? r.revenue : tab === 'orders' ? r.orders : r.profit
+  const getValue = (r: (typeof regions)[0]) => (tab === 'revenue' ? r.revenue : tab === 'orders' ? r.orders : r.profit)
 
   const maxValue = Math.max(1, ...regions.map(getValue))
 
@@ -63,10 +62,7 @@ export function MapRankingPanel({
           regions.map((region, i) => {
             const value = getValue(region)
             const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0
-            const displayValue =
-              tab === 'orders'
-                ? String(region.orders)
-                : formatCurrency(value, displayCurrency)
+            const displayValue = tab === 'orders' ? String(region.orders) : formatCurrency(value, displayCurrency)
 
             return (
               <div className="imperial-card-soft p-4" key={region.label}>

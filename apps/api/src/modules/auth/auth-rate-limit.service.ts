@@ -175,7 +175,8 @@ export class AuthRateLimitService {
   private getPasswordResetCodePolicy(): AttemptPolicy {
     return {
       maxAttempts: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      windowMs:
+        Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
       lockMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
     }
@@ -184,7 +185,8 @@ export class AuthRateLimitService {
   private getEmailVerificationPolicy(): AttemptPolicy {
     return {
       maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_MAX_ATTEMPTS') ?? 3), 1),
-      windowMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      windowMs:
+        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
       lockMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
     }
@@ -193,10 +195,11 @@ export class AuthRateLimitService {
   private getEmailVerificationCodePolicy(): AttemptPolicy {
     return {
       maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
+      windowMs:
+        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
+      lockMs:
+        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
       message: 'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
     }
   }
 }
-

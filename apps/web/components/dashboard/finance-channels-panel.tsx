@@ -18,14 +18,10 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
   const { recentOrders, salesByChannel, displayCurrency } = finance
   const [activeChannel, setActiveChannel] = useState<string>(ALL_TAB)
 
-  const channels = salesByChannel
-    .filter((c) => c.orders > 0)
-    .map((c) => c.channel)
+  const channels = salesByChannel.filter((c) => c.orders > 0).map((c) => c.channel)
 
   const filteredOrders =
-    activeChannel === ALL_TAB
-      ? recentOrders
-      : recentOrders.filter((o) => o.channel === activeChannel)
+    activeChannel === ALL_TAB ? recentOrders : recentOrders.filter((o) => o.channel === activeChannel)
 
   if (isLoading) {
     return <TableSkeleton rows={6} />

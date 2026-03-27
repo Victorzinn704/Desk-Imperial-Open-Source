@@ -82,7 +82,7 @@ describe('resolveBusinessDate()', () => {
 
   it('aceita o primeiro e o último dia do ano', () => {
     const inicio = resolveBusinessDate('2026-01-01')
-    expect(inicio.getMonth()).toBe(0)  // janeiro
+    expect(inicio.getMonth()).toBe(0) // janeiro
     expect(inicio.getDate()).toBe(1)
 
     const fim = resolveBusinessDate('2026-12-31')
@@ -124,7 +124,7 @@ describe('buildBusinessDateWindow()', () => {
     const ultimoDiaMarco = new Date(2026, 2, 31) // 31 de março
     const { end } = buildBusinessDateWindow(ultimoDiaMarco)
 
-    expect(end.getMonth()).toBe(3)  // abril
+    expect(end.getMonth()).toBe(3) // abril
     expect(end.getDate()).toBe(1)
   })
 
@@ -133,7 +133,7 @@ describe('buildBusinessDateWindow()', () => {
     const { end } = buildBusinessDateWindow(ultimoDiaAno)
 
     expect(end.getFullYear()).toBe(2027)
-    expect(end.getMonth()).toBe(0)  // janeiro
+    expect(end.getMonth()).toBe(0) // janeiro
     expect(end.getDate()).toBe(1)
   })
 
@@ -264,8 +264,8 @@ describe('resolveBuyerTypeFromDocument()', () => {
 
     it('retorna null para número de dígitos inválido (ex: 10 ou 13)', () => {
       // Não deve classificar documentos com comprimento diferente de 11 ou 14
-      expect(resolveBuyerTypeFromDocument('1234567890')).toBeNull()     // 10 dígitos
-      expect(resolveBuyerTypeFromDocument('1234567890123')).toBeNull()  // 13 dígitos
+      expect(resolveBuyerTypeFromDocument('1234567890')).toBeNull() // 10 dígitos
+      expect(resolveBuyerTypeFromDocument('1234567890123')).toBeNull() // 13 dígitos
     })
 
     it('retorna null para strings com apenas letras', () => {
@@ -349,9 +349,9 @@ describe('buildCashUpdatedPayload()', () => {
   it('calcula inflowAmount como soma de SUPPLY + ADJUSTMENT (entradas)', () => {
     const session = makeSession({
       movements: [
-        { type: CashMovementType.SUPPLY, amount: 300 },      // entrada
-        { type: CashMovementType.ADJUSTMENT, amount: 50 },   // entrada
-        { type: CashMovementType.WITHDRAWAL, amount: 100 },  // saída — não entra aqui
+        { type: CashMovementType.SUPPLY, amount: 300 }, // entrada
+        { type: CashMovementType.ADJUSTMENT, amount: 50 }, // entrada
+        { type: CashMovementType.WITHDRAWAL, amount: 100 }, // saída — não entra aqui
       ],
     })
     const payload = buildCashUpdatedPayload(session)
@@ -381,10 +381,12 @@ describe('buildCashUpdatedPayload()', () => {
   })
 
   it('retorna null para countedAmount e differenceAmount quando caixa ainda está aberto', () => {
-    const payload = buildCashUpdatedPayload(makeSession({
-      countedCashAmount: null,
-      differenceAmount: null,
-    }))
+    const payload = buildCashUpdatedPayload(
+      makeSession({
+        countedCashAmount: null,
+        differenceAmount: null,
+      }),
+    )
     expect(payload.countedAmount).toBeNull()
     expect(payload.differenceAmount).toBeNull()
   })
@@ -393,9 +395,7 @@ describe('buildCashUpdatedPayload()', () => {
     const session = makeSession({
       openingCashAmount: { toNumber: () => 200 },
       expectedCashAmount: { toNumber: () => 700 },
-      movements: [
-        { type: CashMovementType.SUPPLY, amount: { toNumber: () => 300 } },
-      ],
+      movements: [{ type: CashMovementType.SUPPLY, amount: { toNumber: () => 300 } }],
     })
     const payload = buildCashUpdatedPayload(session as any)
     expect(payload.openingAmount).toBe(200)
@@ -433,10 +433,10 @@ describe('buildComandaUpdatedPayload()', () => {
   }
 
   it.each([
-    [ComandaStatus.OPEN,           'ABERTA'],
+    [ComandaStatus.OPEN, 'ABERTA'],
     [ComandaStatus.IN_PREPARATION, 'EM_PREPARO'],
-    [ComandaStatus.READY,          'PRONTA'],
-    [ComandaStatus.CLOSED,         'FECHADA'],
+    [ComandaStatus.READY, 'PRONTA'],
+    [ComandaStatus.CLOSED, 'FECHADA'],
   ])('mapeia status %s → "%s" (rótulo do kanban)', (status, expected) => {
     const payload = buildComandaUpdatedPayload(makeComanda(status))
     expect(payload.status).toBe(expected)

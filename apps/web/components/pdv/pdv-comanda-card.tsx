@@ -35,15 +35,9 @@ export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<Pdv
           <div
             className="rounded-[18px] border p-4 transition-all duration-200"
             style={{
-              background: snapshot.isDragging
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(255,255,255,0.03)',
-              borderColor: snapshot.isDragging
-                ? column.borderColor
-                : 'rgba(255,255,255,0.08)',
-              boxShadow: snapshot.isDragging
-                ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${column.dotColor}33`
-                : 'none',
+              background: snapshot.isDragging ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+              borderColor: snapshot.isDragging ? column.borderColor : 'rgba(255,255,255,0.08)',
+              boxShadow: snapshot.isDragging ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${column.dotColor}33` : 'none',
             }}
           >
             {/* Header */}
@@ -57,10 +51,7 @@ export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<Pdv
                   {comanda.mesa ? `Mesa ${comanda.mesa}` : `#${comanda.id.slice(-4).toUpperCase()}`}
                 </span>
               </div>
-              <span
-                className="text-sm font-bold"
-                style={{ color: column.dotColor }}
-              >
+              <span className="text-sm font-bold" style={{ color: column.dotColor }}>
                 {formatCurrency(total, 'BRL')}
               </span>
             </div>
@@ -82,7 +73,9 @@ export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<Pdv
                 </span>
               </div>
 
-              <div className={`flex items-center gap-1.5 ${isOld && comanda.status !== 'fechada' ? 'text-[#fb923c]' : 'text-[var(--text-soft)]'}`}>
+              <div
+                className={`flex items-center gap-1.5 ${isOld && comanda.status !== 'fechada' ? 'text-[#fb923c]' : 'text-[var(--text-soft)]'}`}
+              >
                 <Clock className="size-3" />
                 <span className="text-xs font-medium">{elapsed}</span>
               </div>
@@ -93,14 +86,12 @@ export function PdvComandaCard({ comanda, index, column, onClick }: Readonly<Pdv
               <div className="mt-3 flex gap-1.5">
                 {comanda.desconto > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#36f57c]">
-                    <Percent className="size-2.5" />
-                    -{comanda.desconto}%
+                    <Percent className="size-2.5" />-{comanda.desconto}%
                   </span>
                 )}
                 {comanda.acrescimo > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(251,146,60,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#fb923c]">
-                    <Percent className="size-2.5" />
-                    +{comanda.acrescimo}%
+                    <Percent className="size-2.5" />+{comanda.acrescimo}%
                   </span>
                 )}
               </div>

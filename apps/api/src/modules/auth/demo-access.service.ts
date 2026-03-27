@@ -42,9 +42,7 @@ export class DemoAccessService {
 
     const ipAddress = normalizeIpAddress(params.ipAddress)
     if (!ipAddress) {
-      throw new BadRequestException(
-        'Nao foi possivel validar o IP deste dispositivo para liberar o modo avaliacao.',
-      )
+      throw new BadRequestException('Nao foi possivel validar o IP deste dispositivo para liberar o modo avaliacao.')
     }
 
     const now = new Date()
@@ -89,11 +87,7 @@ export class DemoAccessService {
     }
   }
 
-  async attachGrant(params: {
-    userId: string
-    sessionId: string
-    reservation: DemoReservation
-  }) {
+  async attachGrant(params: { userId: string; sessionId: string; reservation: DemoReservation }) {
     await this.prisma.demoAccessGrant.create({
       data: {
         userId: params.userId,
@@ -116,10 +110,7 @@ export class DemoAccessService {
       return
     }
 
-    const safeEndTime = Math.min(
-      Math.max(endedAt.getTime(), grant.startedAt.getTime()),
-      grant.expiresAt.getTime(),
-    )
+    const safeEndTime = Math.min(Math.max(endedAt.getTime(), grant.startedAt.getTime()), grant.expiresAt.getTime())
 
     await this.prisma.demoAccessGrant.update({
       where: {
@@ -142,9 +133,7 @@ export class DemoAccessService {
       },
     })
 
-    await Promise.all(
-      grants.map((grant: { sessionId: string }) => this.closeGrantForSession(grant.sessionId, endedAt)),
-    )
+    await Promise.all(grants.map((grant: { sessionId: string }) => this.closeGrantForSession(grant.sessionId, endedAt)))
   }
 
   buildEvaluationAccess(email: string, sessionExpiresAt: Date): EvaluationAccess | null {
@@ -170,9 +159,7 @@ export class DemoAccessService {
 
   private hashDeviceSignature(ipAddress: string, userAgent: string | null) {
     const normalizedUserAgent = normalizeUserAgent(userAgent)
-    return createHash('sha256')
-      .update(`demo-device:${ipAddress}:${normalizedUserAgent}`)
-      .digest('hex')
+    return createHash('sha256').update(`demo-device:${ipAddress}:${normalizedUserAgent}`).digest('hex')
   }
 
   private getDayKey(date: Date) {

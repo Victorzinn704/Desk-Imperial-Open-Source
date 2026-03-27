@@ -7,15 +7,15 @@ export type Mesa = {
   numero: string
   capacidade: number
   status: MesaStatus
-  comandaId?: string  // comanda vinculada (quando ocupada)
-  garcomId?: string   // garçom responsável
-  garcomNome?: string  // nome do garçom para exibição
+  comandaId?: string // comanda vinculada (quando ocupada)
+  garcomId?: string // garçom responsável
+  garcomNome?: string // nome do garçom para exibição
 }
 
 export type Garcom = {
   id: string
   nome: string
-  cor: string         // cor de destaque da coluna
+  cor: string // cor de destaque da coluna
 }
 
 export type ComandaItem = {

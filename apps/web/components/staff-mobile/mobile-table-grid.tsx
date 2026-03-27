@@ -34,9 +34,7 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
         <p className="text-sm font-medium text-white">Nenhuma mesa cadastrada</p>
-        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">
-          O dono pode adicionar mesas pelo painel web
-        </p>
+        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">O dono pode adicionar mesas pelo painel web</p>
       </div>
     )
   }
@@ -62,7 +60,7 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
                 style={{
                   borderColor: 'rgba(54,245,124,0.3)',
                   backgroundColor: 'rgba(54,245,124,0.06)',
-                  WebkitTapHighlightColor: 'transparent' 
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
                 <div className="absolute -inset-2 rounded-full bg-[rgba(54,245,124,0.15)] opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
@@ -70,7 +68,9 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
                   {mesa.numero}
                 </span>
                 <div className="relative z-10 flex flex-col items-center justify-center gap-0.5 mt-0.5">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#36f57c] opacity-90">Livre</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#36f57c] opacity-90">
+                    Livre
+                  </span>
                   <span className="text-[10px] font-medium text-[var(--accent,#9b8460)]">Novo PdV</span>
                 </div>
               </button>
@@ -103,25 +103,27 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
                   style={{
                     borderColor: isOcupada ? 'rgba(248,113,113,0.45)' : `${color}44`,
                     backgroundColor: isOcupada ? 'rgba(248,113,113,0.1)' : `${color}08`,
-                    boxShadow: isOcupada ? '0 0 20px rgba(248,113,113,0.15), inset 0 0 30px rgba(248,113,113,0.04)' : 'none',
+                    boxShadow: isOcupada
+                      ? '0 0 20px rgba(248,113,113,0.15), inset 0 0 30px rgba(248,113,113,0.04)'
+                      : 'none',
                     backdropFilter: 'blur(12px)',
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
                   {/* Glow vermelho pulsante para mesas ocupadas */}
                   {isOcupada && (
-                    <div 
+                    <div
                       className="pointer-events-none absolute -bottom-4 -right-4 size-20 rounded-full opacity-[0.2] blur-xl animate-pulse"
                       style={{ background: 'radial-gradient(circle, #f87171 0%, transparent 70%)' }}
                     />
                   )}
-                  
+
                   <span className="relative z-10 text-[26px] font-extrabold tracking-tighter" style={{ color }}>
                     {mesa.numero}
                   </span>
-                  
+
                   <div className="relative z-10 flex flex-col items-center justify-center gap-1 mt-0.5 mx-auto max-w-full">
-                    <span 
+                    <span
                       className="rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.15em] border whitespace-nowrap"
                       style={{ color, backgroundColor: `${color}15`, borderColor: `${color}30` }}
                     >

@@ -21,8 +21,18 @@ import { formatCurrency } from '@/lib/currency'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 
 const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ]
 
 export function PayrollEnvironment({
@@ -86,12 +96,16 @@ export function PayrollEnvironment({
   )
 
   function prevMonth() {
-    if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear((y) => y - 1) }
-    else setSelectedMonth((m) => m - 1)
+    if (selectedMonth === 0) {
+      setSelectedMonth(11)
+      setSelectedYear((y) => y - 1)
+    } else setSelectedMonth((m) => m - 1)
   }
   function nextMonth() {
-    if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear((y) => y + 1) }
-    else setSelectedMonth((m) => m + 1)
+    if (selectedMonth === 11) {
+      setSelectedMonth(0)
+      setSelectedYear((y) => y + 1)
+    } else setSelectedMonth((m) => m + 1)
   }
 
   function togglePaid(id: string) {
@@ -109,15 +123,17 @@ export function PayrollEnvironment({
 
   function exportCsv() {
     const header = 'Nome,Código,Salário Base (R$),Vendas (R$),Comissão (R$),Total (R$),Status'
-    const csvRows = rows.map((r) => [
-      r.emp.displayName,
-      r.emp.employeeCode,
-      r.salarioBaseReais.toFixed(2),
-      r.vendasDoMes.toFixed(2),
-      r.comissao.toFixed(2),
-      r.totalAPagar.toFixed(2),
-      paidIds.has(r.emp.id) ? 'Pago' : 'Pendente',
-    ].join(','))
+    const csvRows = rows.map((r) =>
+      [
+        r.emp.displayName,
+        r.emp.employeeCode,
+        r.salarioBaseReais.toFixed(2),
+        r.vendasDoMes.toFixed(2),
+        r.comissao.toFixed(2),
+        r.totalAPagar.toFixed(2),
+        paidIds.has(r.emp.id) ? 'Pago' : 'Pendente',
+      ].join(','),
+    )
     const blob = new Blob([[header, ...csvRows].join('\n')], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -147,7 +163,9 @@ export function PayrollEnvironment({
             <ChevronLeft className="size-4" />
           </button>
           <div className="imperial-card-soft min-w-[160px] px-4 py-2 text-center">
-            <p className="text-sm font-semibold text-white">{MONTHS[selectedMonth]} {selectedYear}</p>
+            <p className="text-sm font-semibold text-white">
+              {MONTHS[selectedMonth]} {selectedYear}
+            </p>
           </div>
           <button
             className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.14)] hover:text-white"
@@ -220,7 +238,8 @@ export function PayrollEnvironment({
           <h3 className="text-base font-semibold text-white">Colaboradores — {MONTHS[selectedMonth]}</h3>
           {maiorComissionado && maiorComissionado.comissao > 0 && (
             <span className="rounded-full border border-[rgba(251,146,60,0.25)] bg-[rgba(251,146,60,0.08)] px-3 py-1 text-xs font-semibold text-[#fb923c]">
-              Top: {maiorComissionado.emp.displayName.split(' ')[0]} · {formatCurrency(maiorComissionado.comissao, currency)}
+              Top: {maiorComissionado.emp.displayName.split(' ')[0]} ·{' '}
+              {formatCurrency(maiorComissionado.comissao, currency)}
             </span>
           )}
         </div>
@@ -306,16 +325,13 @@ export function PayrollEnvironment({
                           min="0"
                           step="10"
                           type="number"
-                          onBlur={(e) =>
-                            commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))
-                          }
+                          onBlur={(e) => commitField(emp.id, 'salarioBase', Math.round(Number(e.target.value) * 100))}
                         />
                       </div>
 
                       <div className="min-w-0">
                         <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-                          <Percent className="size-3" />
-                          % sobre vendas
+                          <Percent className="size-3" />% sobre vendas
                         </label>
                         <input
                           key={`${emp.id}-pct-${config.percentualVendas}`}
@@ -339,11 +355,15 @@ export function PayrollEnvironment({
                       </div>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Comissão ({config.percentualVendas}%)</span>
-                        <span className="shrink-0 font-medium text-[#fb923c]">{formatCurrency(comissao, currency)}</span>
+                        <span className="shrink-0 font-medium text-[#fb923c]">
+                          {formatCurrency(comissao, currency)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-[var(--text-soft)]">Salário base</span>
-                        <span className="shrink-0 font-medium text-white">{formatCurrency(salarioBaseReais, currency)}</span>
+                        <span className="shrink-0 font-medium text-white">
+                          {formatCurrency(salarioBaseReais, currency)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                         <span className="text-white">Total a pagar</span>

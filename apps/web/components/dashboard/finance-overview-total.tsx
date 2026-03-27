@@ -38,11 +38,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
     }
   }, [value])
 
-  return (
-    <span className="text-3xl font-bold text-white sm:text-4xl">
-      {formatCurrency(displayed, currency)}
-    </span>
-  )
+  return <span className="text-3xl font-bold text-white sm:text-4xl">{formatCurrency(displayed, currency)}</span>
 }
 
 export function FinanceOverviewTotal({ finance, isLoading }: Props) {
@@ -56,10 +52,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
 
   return (
     <div className="imperial-card flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
-      <FinanceDoughnutChart
-        categoryBreakdown={categoryBreakdown}
-        displayCurrency={displayCurrency}
-      />
+      <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
@@ -76,7 +69,8 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
               <TrendingDown className="size-4 text-red-400" />
             )}
             <span className={`text-sm font-semibold ${isPositive ? 'text-[#36f57c]' : 'text-red-400'}`}>
-              {isPositive ? '+' : ''}{growth.toFixed(1)}% vs mês anterior
+              {isPositive ? '+' : ''}
+              {growth.toFixed(1)}% vs mês anterior
             </span>
           </div>
 

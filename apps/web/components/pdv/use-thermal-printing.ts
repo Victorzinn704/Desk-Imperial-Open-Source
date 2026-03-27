@@ -9,11 +9,7 @@ import {
   resolvePreferredPrinterName,
   setPreferredThermalPrinter,
 } from '@/lib/printing'
-import type {
-  PrintableComanda,
-  ThermalPrinter,
-  ThermalPrinterConnectionState,
-} from '@/lib/printing'
+import type { PrintableComanda, ThermalPrinter, ThermalPrinterConnectionState } from '@/lib/printing'
 
 export function useThermalPrinting() {
   const [provider] = useState(() => getPreferredThermalProvider())
@@ -27,49 +23,52 @@ export function useThermalPrinting() {
     setIsHydrated(true)
   }, [])
 
-  const refreshPrinters = useCallback(async (options?: { silent?: boolean }) => {
-    if (!options?.silent) {
-      setConnectionState('discovering')
-      setStatusMessage('Buscando impressoras termicas conectadas ao QZ Tray...')
-    }
-
-    try {
-      const discoveredPrinters = await listThermalPrinters(provider)
-      const resolvedPrinterName = resolvePreferredPrinterName(provider, discoveredPrinters)
-
-      setPrinters(discoveredPrinters)
-      setSelectedPrinterName(resolvedPrinterName)
-      if (resolvedPrinterName) {
-        setPreferredThermalPrinter(provider, resolvedPrinterName)
+  const refreshPrinters = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!options?.silent) {
+        setConnectionState('discovering')
+        setStatusMessage('Buscando impressoras termicas conectadas ao QZ Tray...')
       }
 
-      setConnectionState('connected')
-      setStatusMessage(
-        discoveredPrinters.length
-          ? `${discoveredPrinters.length} impressora(s) encontrada(s) no QZ Tray.`
-          : 'QZ Tray conectado, mas nenhuma impressora termica foi encontrada.',
-      )
+      try {
+        const discoveredPrinters = await listThermalPrinters(provider)
+        const resolvedPrinterName = resolvePreferredPrinterName(provider, discoveredPrinters)
 
-      return {
-        printers: discoveredPrinters,
-        selectedPrinterName: resolvedPrinterName,
+        setPrinters(discoveredPrinters)
+        setSelectedPrinterName(resolvedPrinterName)
+        if (resolvedPrinterName) {
+          setPreferredThermalPrinter(provider, resolvedPrinterName)
+        }
+
+        setConnectionState('connected')
+        setStatusMessage(
+          discoveredPrinters.length
+            ? `${discoveredPrinters.length} impressora(s) encontrada(s) no QZ Tray.`
+            : 'QZ Tray conectado, mas nenhuma impressora termica foi encontrada.',
+        )
+
+        return {
+          printers: discoveredPrinters,
+          selectedPrinterName: resolvedPrinterName,
+        }
+      } catch (error) {
+        setPrinters([])
+        if (options?.silent) {
+          // Auto-detect silencioso: QZ Tray nao instalado, nao mostrar erro
+          setConnectionState('idle')
+          setStatusMessage('QZ Tray nao detectado. Clique em "Atualizar" para tentar conectar.')
+        } else {
+          setConnectionState('error')
+          setStatusMessage(normalizeThermalError(error))
+        }
+        return {
+          printers: [] as ThermalPrinter[],
+          selectedPrinterName: '',
+        }
       }
-    } catch (error) {
-      setPrinters([])
-      if (options?.silent) {
-        // Auto-detect silencioso: QZ Tray nao instalado, nao mostrar erro
-        setConnectionState('idle')
-        setStatusMessage('QZ Tray nao detectado. Clique em "Atualizar" para tentar conectar.')
-      } else {
-        setConnectionState('error')
-        setStatusMessage(normalizeThermalError(error))
-      }
-      return {
-        printers: [] as ThermalPrinter[],
-        selectedPrinterName: '',
-      }
-    }
-  }, [provider])
+    },
+    [provider],
+  )
 
   useEffect(() => {
     if (!isHydrated || provider !== DEFAULT_THERMAL_PROVIDER) {
@@ -89,9 +88,7 @@ export function useThermalPrinting() {
     setStatusMessage('Enviando comanda para a impressora termica...')
 
     try {
-      const printerName =
-        selectedPrinterName ||
-        (await refreshPrinters()).selectedPrinterName
+      const printerName = selectedPrinterName || (await refreshPrinters()).selectedPrinterName
 
       if (!printerName) {
         throw new Error('Nenhuma impressora termica foi selecionada.')

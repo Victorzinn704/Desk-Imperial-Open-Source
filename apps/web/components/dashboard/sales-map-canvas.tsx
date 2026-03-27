@@ -42,13 +42,20 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
       }).addTo(map)
 
       L.control.zoom({ position: 'topright' }).addTo(map)
-      L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>')
+      L.control
+        .attribution({ position: 'bottomright', prefix: false })
+        .addAttribution(
+          '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        )
         .addTo(map)
 
       mapRef.current = map
-      setTimeout(() => { map.invalidateSize() }, 100)
-      setTimeout(() => { map.invalidateSize() }, 300)
+      setTimeout(() => {
+        map.invalidateSize()
+      }, 100)
+      setTimeout(() => {
+        map.invalidateSize()
+      }, 300)
       if (active) setMapReady(true)
     }
 
@@ -120,7 +127,9 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
 
     updateMarkers()
 
-    return () => { active = false }
+    return () => {
+      active = false
+    }
   }, [displayCurrency, points, mapReady])
 
   return <div className="h-full w-full min-h-[420px]" ref={containerRef} />

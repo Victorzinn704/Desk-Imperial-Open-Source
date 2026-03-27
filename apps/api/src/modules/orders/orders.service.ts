@@ -1,11 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import type { Request } from 'express'
-import {
-  isValidCnpj,
-  isValidCpf,
-  sanitizeDocument,
-} from '../../common/utils/document-validation.util'
+import { isValidCnpj, isValidCpf, sanitizeDocument } from '../../common/utils/document-validation.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -40,9 +36,16 @@ export class OrdersService {
     const hasFilters = !!(query.includeCancelled || (query.limit && query.limit !== 10))
 
     if (!hasFilters) {
-      const cached = await this.cache.get<{ items: ReturnType<typeof toOrderRecord>[]; totals: { completedOrders: number; cancelledOrders: number; realizedRevenue: number; realizedProfit: number; soldUnits: number } }>(
-        CacheService.ordersKey(workspaceUserId),
-      )
+      const cached = await this.cache.get<{
+        items: ReturnType<typeof toOrderRecord>[]
+        totals: {
+          completedOrders: number
+          cancelledOrders: number
+          realizedRevenue: number
+          realizedProfit: number
+          soldUnits: number
+        }
+      }>(CacheService.ordersKey(workspaceUserId))
       if (cached) return cached
     }
 
@@ -124,13 +127,7 @@ export class OrdersService {
     await this.cache.del(CacheService.ordersKey(userId))
   }
 
-
-  async createForUser(
-    auth: AuthContext,
-    dto: CreateOrderDto,
-    context: RequestContext,
-    request: Request,
-  ) {
+  async createForUser(auth: AuthContext, dto: CreateOrderDto, context: RequestContext, request: Request) {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const requestedItems = dto.items.map((item, index) => ({
       ...item,
@@ -163,10 +160,7 @@ export class OrdersService {
 
     const requestedStockByProduct = new Map<string, number>()
     for (const item of requestedItems) {
-      requestedStockByProduct.set(
-        item.productId,
-        (requestedStockByProduct.get(item.productId) ?? 0) + item.quantity,
-      )
+      requestedStockByProduct.set(item.productId, (requestedStockByProduct.get(item.productId) ?? 0) + item.quantity)
     }
 
     this.assertRequestedStockAvailability(productsById, requestedStockByProduct)
@@ -188,10 +182,11 @@ export class OrdersService {
       allowEmpty: true,
       rejectFormula: true,
     })
-    const buyerCountry = sanitizePlainText(dto.buyerCountry ?? 'Brasil', 'Pais da venda', {
-      allowEmpty: false,
-      rejectFormula: true,
-    }) ?? 'Brasil'
+    const buyerCountry =
+      sanitizePlainText(dto.buyerCountry ?? 'Brasil', 'Pais da venda', {
+        allowEmpty: false,
+        rejectFormula: true,
+      }) ?? 'Brasil'
     const channel = sanitizePlainText(dto.channel, 'Canal', {
       allowEmpty: true,
       rejectFormula: true,
@@ -254,12 +249,7 @@ export class OrdersService {
         throw new NotFoundException(`Produto nao encontrado para o item ${item.index + 1}.`)
       }
 
-      const unitCost = this.currencyService.convert(
-        Number(product.unitCost),
-        product.currency,
-        orderCurrency,
-        snapshot,
-      )
+      const unitCost = this.currencyService.convert(Number(product.unitCost), product.currency, orderCurrency, snapshot)
       const defaultUnitPrice = this.currencyService.convert(
         Number(product.unitPrice),
         product.currency,
@@ -269,9 +259,7 @@ export class OrdersService {
       const unitPrice = item.unitPrice ?? defaultUnitPrice
       const discounted = unitPrice < defaultUnitPrice
       const discountPercent =
-        discounted && defaultUnitPrice > 0
-          ? roundPercent(((defaultUnitPrice - unitPrice) / defaultUnitPrice) * 100)
-          : 0
+        discounted && defaultUnitPrice > 0 ? roundPercent(((defaultUnitPrice - unitPrice) / defaultUnitPrice) * 100) : 0
       const lineRevenue = roundCurrency(unitPrice * item.quantity)
       const lineCost = roundCurrency(unitCost * item.quantity)
       const lineProfit = roundCurrency(lineRevenue - lineCost)
@@ -295,84 +283,85 @@ export class OrdersService {
       preparedItems,
       request,
     })
-    const totalRevenue = roundCurrency(
-      preparedItems.reduce((total, item) => total + item.lineRevenue, 0),
-    )
+    const totalRevenue = roundCurrency(preparedItems.reduce((total, item) => total + item.lineRevenue, 0))
     const totalCost = roundCurrency(preparedItems.reduce((total, item) => total + item.lineCost, 0))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
     const totalItems = preparedItems.reduce((total, item) => total + item.quantity, 0)
 
-    const order = await this.prisma.$transaction(async (transaction) => {
-      for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
-        const product = productsById.get(productId)
-        const stockUpdate = await transaction.product.updateMany({
-          where: {
-            id: productId,
+    const order = await this.prisma.$transaction(
+      async (transaction) => {
+        for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
+          const product = productsById.get(productId)
+          const stockUpdate = await transaction.product.updateMany({
+            where: {
+              id: productId,
+              userId: workspaceUserId,
+              active: true,
+              stock: {
+                gte: requestedQuantity,
+              },
+            },
+            data: {
+              stock: {
+                decrement: requestedQuantity,
+              },
+            },
+          })
+
+          if (stockUpdate.count !== 1) {
+            throw new BadRequestException(
+              `Estoque insuficiente para ${product?.name ?? 'o produto selecionado'}. Revise a quantidade e tente novamente.`,
+            )
+          }
+        }
+
+        return transaction.order.create({
+          data: {
             userId: workspaceUserId,
-            active: true,
-            stock: {
-              gte: requestedQuantity,
+            customerName,
+            buyerType: dto.buyerType,
+            buyerDocument,
+            buyerDistrict: geocodedLocation?.district ?? buyerDistrict,
+            buyerCity: geocodedLocation?.city ?? buyerCity,
+            buyerState: geocodedLocation?.state ?? buyerState,
+            buyerCountry: geocodedLocation?.country ?? buyerCountry,
+            buyerLatitude: geocodedLocation?.latitude,
+            buyerLongitude: geocodedLocation?.longitude,
+            employeeId: seller?.id,
+            sellerCode: seller?.employeeCode,
+            sellerName: seller?.displayName,
+            channel,
+            notes,
+            currency: orderCurrency,
+            status: OrderStatus.COMPLETED,
+            totalRevenue,
+            totalCost,
+            totalProfit,
+            totalItems,
+            items: {
+              create: preparedItems.map((item) => ({
+                productId: item.product.id,
+                productName: item.product.name,
+                category: item.product.category,
+                quantity: item.quantity,
+                currency: orderCurrency,
+                unitCost: item.unitCost,
+                unitPrice: item.unitPrice,
+                lineRevenue: item.lineRevenue,
+                lineCost: item.lineCost,
+                lineProfit: item.lineProfit,
+              })),
             },
           },
-          data: {
-            stock: {
-              decrement: requestedQuantity,
-            },
+          include: {
+            items: true,
           },
         })
-
-        if (stockUpdate.count !== 1) {
-          throw new BadRequestException(
-            `Estoque insuficiente para ${product?.name ?? 'o produto selecionado'}. Revise a quantidade e tente novamente.`,
-          )
-        }
-      }
-
-      return transaction.order.create({
-        data: {
-          userId: workspaceUserId,
-          customerName,
-          buyerType: dto.buyerType,
-          buyerDocument,
-          buyerDistrict: geocodedLocation?.district ?? buyerDistrict,
-          buyerCity: geocodedLocation?.city ?? buyerCity,
-          buyerState: geocodedLocation?.state ?? buyerState,
-          buyerCountry: geocodedLocation?.country ?? buyerCountry,
-          buyerLatitude: geocodedLocation?.latitude,
-          buyerLongitude: geocodedLocation?.longitude,
-          employeeId: seller?.id,
-          sellerCode: seller?.employeeCode,
-          sellerName: seller?.displayName,
-          channel,
-          notes,
-          currency: orderCurrency,
-          status: OrderStatus.COMPLETED,
-          totalRevenue,
-          totalCost,
-          totalProfit,
-          totalItems,
-          items: {
-            create: preparedItems.map((item) => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              category: item.product.category,
-              quantity: item.quantity,
-              currency: orderCurrency,
-              unitCost: item.unitCost,
-              unitPrice: item.unitPrice,
-              lineRevenue: item.lineRevenue,
-              lineCost: item.lineCost,
-              lineProfit: item.lineProfit,
-            })),
-          },
-        },
-        include: {
-          items: true,
-        },
-      })
-    }, {
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-    })
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    )
 
     await this.auditLogService.record({
       actorUserId: auth.userId,
@@ -398,8 +387,7 @@ export class OrdersService {
         discountItemCount: discountAuthorization.discountedItems.length,
         maxDiscountPercent: discountAuthorization.maxDiscountPercent,
         buyerLocation:
-          geocodedLocation?.label ??
-          [buyerDistrict, buyerCity, buyerState, buyerCountry].filter(Boolean).join(', '),
+          geocodedLocation?.label ?? [buyerDistrict, buyerCity, buyerState, buyerCountry].filter(Boolean).join(', '),
         sellerCode: seller?.employeeCode,
         sellerName: seller?.displayName,
       },
@@ -599,10 +587,7 @@ export class OrdersService {
       }
     }
 
-    const maxDiscountPercent = discountedItems.reduce(
-      (current, item) => Math.max(current, item.discountPercent),
-      0,
-    )
+    const maxDiscountPercent = discountedItems.reduce((current, item) => Math.max(current, item.discountPercent), 0)
 
     if (params.auth.role !== 'OWNER' && maxDiscountPercent > MAX_STAFF_DISCOUNT_PERCENT) {
       throw new ForbiddenException('Descontos acima de 15% so podem ser autorizados pelo dono da empresa.')
@@ -632,4 +617,3 @@ export class OrdersService {
     }
   }
 }
-

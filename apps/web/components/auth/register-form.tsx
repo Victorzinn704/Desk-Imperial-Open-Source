@@ -6,19 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { LucideIcon } from 'lucide-react'
-import {
-  ArrowLeft,
-  Building2,
-  Eye,
-  EyeOff,
-  Globe2,
-  Hash,
-  LockKeyhole,
-  Mail,
-  MapPin,
-  User,
-  Users,
-} from 'lucide-react'
+import { ArrowLeft, Building2, Eye, EyeOff, Globe2, Hash, LockKeyhole, Mail, MapPin, User, Users } from 'lucide-react'
 import { ApiError, fetchConsentDocuments, lookupPostalCode, register } from '@/lib/api'
 import { saveEmailVerificationChallenge } from '@/lib/auth-challenge-storage'
 import { readCookieConsentChoice } from '@/lib/cookie-consent'
@@ -95,9 +83,9 @@ export function RegisterForm() {
     },
   })
 
-  const documents = (
-    consentDocumentsQuery.data?.length ? consentDocumentsQuery.data : fallbackConsentDocuments
-  ).filter((doc) => doc.required)
+  const documents = (consentDocumentsQuery.data?.length ? consentDocumentsQuery.data : fallbackConsentDocuments).filter(
+    (doc) => doc.required,
+  )
 
   const passwordValue = useWatch({
     control,
@@ -156,13 +144,7 @@ export function RegisterForm() {
       }
 
       setValue('companyCountry', data.country, { shouldDirty: true, shouldValidate: true })
-      clearErrors([
-        'companyPostalCode',
-        'companyStreetLine1',
-        'companyDistrict',
-        'companyCity',
-        'companyState',
-      ])
+      clearErrors(['companyPostalCode', 'companyStreetLine1', 'companyDistrict', 'companyCity', 'companyState'])
       setPostalCodeFeedback('CEP validado. Rua, bairro, cidade e UF foram preenchidos.')
 
       if (!getValues('companyStreetNumber')?.trim()) {
@@ -177,10 +159,7 @@ export function RegisterForm() {
       setPostalCodeFeedback(null)
       setError('companyPostalCode', {
         type: 'manual',
-        message:
-          error instanceof ApiError
-            ? error.message
-            : 'Nao foi possivel consultar esse CEP agora.',
+        message: error instanceof ApiError ? error.message : 'Nao foi possivel consultar esse CEP agora.',
       })
     },
   })
@@ -251,15 +230,12 @@ export function RegisterForm() {
   const isLoading = registerMutation.isPending || isRouting
   const confirmPasswordError =
     confirmPassword && passwordValue !== confirmPassword ? 'As senhas precisam ser iguais.' : null
-  const passwordHint = errors.password?.message
-    ?? '12+ caracteres com maiúscula, minúscula, número e símbolo.'
+  const passwordHint = errors.password?.message ?? '12+ caracteres com maiúscula, minúscula, número e símbolo.'
 
   return (
     <div className="w-full space-y-4">
       <div className="space-y-1">
-        <h2 className="text-[1.7rem] font-semibold tracking-tight text-white">
-          Crie sua empresa e ative o acesso
-        </h2>
+        <h2 className="text-[1.7rem] font-semibold tracking-tight text-white">Crie sua empresa e ative o acesso</h2>
         <p className="text-[13px] leading-5 text-white/40">
           Cadastre responsável, endereço exato e estrutura da equipe antes da validação por e-mail.
         </p>
@@ -304,7 +280,7 @@ export function RegisterForm() {
             hint={
               isPostalCodeLookupPending
                 ? 'Consultando endereco pelo CEP...'
-                : postalCodeFeedback ?? 'Informe um CEP valido para preencher rua, bairro, cidade e UF.'
+                : (postalCodeFeedback ?? 'Informe um CEP valido para preencher rua, bairro, cidade e UF.')
             }
             icon={Hash}
             label="CEP"
@@ -395,11 +371,7 @@ export function RegisterForm() {
           <FieldShell error={errors.employeeCount?.message} icon={Users} label="Equipe">
             <div className="flex w-full items-center gap-3">
               <label className="flex shrink-0 items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/50">
-                <input
-                  className="size-3.5 accent-white"
-                  type="checkbox"
-                  {...registerField('hasEmployees')}
-                />
+                <input className="size-3.5 accent-white" type="checkbox" {...registerField('hasEmployees')} />
                 Possui funcionários
               </label>
               <input
@@ -453,7 +425,8 @@ export function RegisterForm() {
 
         <div className="space-y-2 pt-0.5">
           <p className="text-[11px] leading-4 text-white/34">
-            Ao continuar, você aceita os termos obrigatórios e reconhece que o endereço exato ficará restrito aos fluxos autorizados da plataforma.
+            Ao continuar, você aceita os termos obrigatórios e reconhece que o endereço exato ficará restrito aos fluxos
+            autorizados da plataforma.
           </p>
 
           <div className="grid gap-2 md:grid-cols-2">
@@ -464,7 +437,11 @@ export function RegisterForm() {
                     key={doc.key}
                     className="flex items-start gap-2 rounded-md px-0.5 py-0.5 text-[12px] text-white/72"
                   >
-                    <input className="mt-0.5 size-3.5 shrink-0 accent-white" type="checkbox" {...registerField('acceptTerms')} />
+                    <input
+                      className="mt-0.5 size-3.5 shrink-0 accent-white"
+                      type="checkbox"
+                      {...registerField('acceptTerms')}
+                    />
                     <span className="leading-4">
                       Aceito os <span className="font-medium text-white">{doc.title.toLowerCase()}</span>.
                     </span>
@@ -478,7 +455,11 @@ export function RegisterForm() {
                     key={doc.key}
                     className="flex items-start gap-2 rounded-md px-0.5 py-0.5 text-[12px] text-white/72"
                   >
-                    <input className="mt-0.5 size-3.5 shrink-0 accent-white" type="checkbox" {...registerField('acceptPrivacy')} />
+                    <input
+                      className="mt-0.5 size-3.5 shrink-0 accent-white"
+                      type="checkbox"
+                      {...registerField('acceptPrivacy')}
+                    />
                     <span className="leading-4">
                       Li e aceito o <span className="font-medium text-white">{doc.title.toLowerCase()}</span>.
                     </span>
@@ -487,13 +468,11 @@ export function RegisterForm() {
               }
 
               return null
-          })}
+            })}
           </div>
 
           {(errors.acceptTerms?.message || errors.acceptPrivacy?.message) && (
-            <p className="text-[11px] text-red-400">
-              {errors.acceptTerms?.message ?? errors.acceptPrivacy?.message}
-            </p>
+            <p className="text-[11px] text-red-400">{errors.acceptTerms?.message ?? errors.acceptPrivacy?.message}</p>
           )}
         </div>
 
@@ -519,7 +498,6 @@ export function RegisterForm() {
           </button>
         </div>
       </form>
-
     </div>
   )
 }

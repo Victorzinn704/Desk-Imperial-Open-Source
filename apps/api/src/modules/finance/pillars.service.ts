@@ -108,7 +108,10 @@ export class PillarsService {
         value: Math.round(currentWeekRevenue * 100) / 100,
         currency: userPref,
         previousValue: Math.round(previousWeekRevenue * 100) / 100,
-        changePercent: previousWeekRevenue > 0 ? Math.round(((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100) : 0,
+        changePercent:
+          previousWeekRevenue > 0
+            ? Math.round(((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100)
+            : 0,
         trend: last7DaysWeekly,
       },
       monthlyRevenue: {
@@ -116,7 +119,10 @@ export class PillarsService {
         value: Math.round(currentMonthRevenue * 100) / 100,
         currency: userPref,
         previousValue: Math.round(previousMonthRevenue * 100) / 100,
-        changePercent: previousMonthRevenue > 0 ? Math.round(((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100) : 0,
+        changePercent:
+          previousMonthRevenue > 0
+            ? Math.round(((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100)
+            : 0,
         trend: last7DaysMonthly,
       },
       profit: {
@@ -172,12 +178,7 @@ export class PillarsService {
       orders.reduce(
         (sum, order) =>
           sum +
-          this.currencyService.convert(
-            Number(order.totalRevenue ?? 0),
-            order.currency,
-            displayCurrency,
-            snapshot,
-          ),
+          this.currencyService.convert(Number(order.totalRevenue ?? 0), order.currency, displayCurrency, snapshot),
         0,
       ),
     )
@@ -191,13 +192,7 @@ export class PillarsService {
     return roundCurrency(
       orders.reduce(
         (sum, order) =>
-          sum +
-          this.currencyService.convert(
-            Number(order.totalProfit ?? 0),
-            order.currency,
-            displayCurrency,
-            snapshot,
-          ),
+          sum + this.currencyService.convert(Number(order.totalProfit ?? 0), order.currency, displayCurrency, snapshot),
         0,
       ),
     )

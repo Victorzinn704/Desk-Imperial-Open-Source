@@ -13,9 +13,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
     ],
     apple: [{ url: '/icons/icon-180.png', sizes: '180x180', type: 'image/png' }],
-    other: [
-      { rel: 'mask-icon', url: '/favicon.svg', color: '#9b8460' },
-    ],
+    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#9b8460' }],
   },
 }
 

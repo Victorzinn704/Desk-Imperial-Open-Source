@@ -18,10 +18,7 @@ export async function POST(request: Request) {
   const normalizedPostalCode = normalizePostalCode(body?.postalCode)
 
   if (!normalizedPostalCode) {
-    return NextResponse.json(
-      { message: 'Informe um CEP valido.' },
-      { status: 400 },
-    )
+    return NextResponse.json({ message: 'Informe um CEP valido.' }, { status: 400 })
   }
 
   try {
@@ -33,10 +30,7 @@ export async function POST(request: Request) {
     })
 
     if (response.status === 400) {
-      return NextResponse.json(
-        { message: 'Informe um CEP valido.' },
-        { status: 400 },
-      )
+      return NextResponse.json({ message: 'Informe um CEP valido.' }, { status: 400 })
     }
 
     if (!response.ok) {
@@ -49,10 +43,7 @@ export async function POST(request: Request) {
     const payload = (await response.json()) as ViaCepResponse
 
     if (payload.erro) {
-      return NextResponse.json(
-        { message: 'CEP nao encontrado. Confira o numero informado.' },
-        { status: 404 },
-      )
+      return NextResponse.json({ message: 'CEP nao encontrado. Confira o numero informado.' }, { status: 404 })
     }
 
     return NextResponse.json({

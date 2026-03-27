@@ -254,9 +254,7 @@ export class AuthService {
     ]
 
     try {
-      await this.assertAllowedForKeys(rateLimitKeys, (key) =>
-        this.authRateLimitService.assertLoginAllowed(key),
-      )
+      await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
     } catch (error) {
       await this.auditLogService.record({
         event: 'auth.login.blocked',
@@ -416,9 +414,7 @@ export class AuthService {
       this.authRateLimitService.buildPasswordResetEmailKey(normalizedEmail),
     ]
 
-    await this.assertAllowedForKeys(rateLimitKeys, (key) =>
-      this.authRateLimitService.assertPasswordResetAllowed(key),
-    )
+    await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertPasswordResetAllowed(key))
     const rateLimitState = this.pickMostRestrictiveRateLimitState(
       await this.recordAttemptsForKeys(rateLimitKeys, (key) =>
         this.authRateLimitService.recordPasswordResetAttempt(key),
@@ -437,9 +433,7 @@ export class AuthService {
           email: normalizedEmail,
           userFound: false,
           attempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil
-            ? new Date(rateLimitState.lockedUntil).toISOString()
-            : null,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
         },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
@@ -477,9 +471,7 @@ export class AuthService {
           email: user.email,
           deliveryMode: delivery.mode,
           attempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil
-            ? new Date(rateLimitState.lockedUntil).toISOString()
-            : null,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
         },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
@@ -496,9 +488,7 @@ export class AuthService {
             email: user.email,
             reason: error instanceof Error ? error.message : 'unknown',
             attempts: rateLimitState.count,
-            lockedUntil: rateLimitState.lockedUntil
-              ? new Date(rateLimitState.lockedUntil).toISOString()
-              : null,
+            lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
           },
           ipAddress: context.ipAddress,
           userAgent: context.userAgent,
@@ -601,9 +591,7 @@ export class AuthService {
         metadata: {
           email: normalizedEmail,
           failedAttempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil
-            ? new Date(rateLimitState.lockedUntil).toISOString()
-            : null,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
         },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
@@ -795,9 +783,7 @@ export class AuthService {
         metadata: {
           email: normalizedEmail,
           failedAttempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil
-            ? new Date(rateLimitState.lockedUntil).toISOString()
-            : null,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
         },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
@@ -1116,9 +1102,7 @@ export class AuthService {
 
   private getCsrfSecret() {
     return (
-      this.configService.get<string>('CSRF_SECRET') ??
-      this.configService.get<string>('COOKIE_SECRET') ??
-      'change-me'
+      this.configService.get<string>('CSRF_SECRET') ?? this.configService.get<string>('COOKIE_SECRET') ?? 'change-me'
     )
   }
 
@@ -1135,9 +1119,7 @@ export class AuthService {
     context: RequestContext
   }): Promise<never> {
     const rateLimitState = this.pickMostRestrictiveRateLimitState(
-      await this.recordAttemptsForKeys(params.rateLimitKeys, (key) =>
-        this.authRateLimitService.recordFailure(key),
-      ),
+      await this.recordAttemptsForKeys(params.rateLimitKeys, (key) => this.authRateLimitService.recordFailure(key)),
     )
 
     await this.auditLogService.record({
@@ -1269,9 +1251,7 @@ export class AuthService {
             reason: 'log_delivery_mode',
             deliveryMode: delivery.mode,
             attempts: rateLimitState?.count ?? null,
-            lockedUntil: rateLimitState?.lockedUntil
-              ? new Date(rateLimitState.lockedUntil).toISOString()
-              : null,
+            lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
           },
           ipAddress: params.context.ipAddress,
           userAgent: params.context.userAgent,
@@ -1294,9 +1274,7 @@ export class AuthService {
           trigger: params.trigger,
           deliveryMode: delivery.mode,
           attempts: rateLimitState?.count ?? null,
-          lockedUntil: rateLimitState?.lockedUntil
-            ? new Date(rateLimitState.lockedUntil).toISOString()
-            : null,
+          lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
         },
         ipAddress: params.context.ipAddress,
         userAgent: params.context.userAgent,
@@ -1318,9 +1296,7 @@ export class AuthService {
             trigger: params.trigger,
             reason: error instanceof Error ? error.message : 'unknown',
             attempts: rateLimitState?.count ?? null,
-            lockedUntil: rateLimitState?.lockedUntil
-              ? new Date(rateLimitState.lockedUntil).toISOString()
-              : null,
+            lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
           },
           ipAddress: params.context.ipAddress,
           userAgent: params.context.userAgent,
@@ -1523,10 +1499,7 @@ export class AuthService {
       return
     }
 
-    const threshold = Math.max(
-      Number(this.configService.get<string>('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3),
-      1,
-    )
+    const threshold = Math.max(Number(this.configService.get<string>('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3), 1)
 
     if (failedAttempts < threshold) {
       return
@@ -1566,17 +1539,11 @@ export class AuthService {
     }
   }
 
-  private async assertAllowedForKeys(
-    keys: string[],
-    assertion: (key: string) => Promise<void>,
-  ) {
+  private async assertAllowedForKeys(keys: string[], assertion: (key: string) => Promise<void>) {
     await Promise.all(keys.map((key) => assertion(key)))
   }
 
-  private async recordAttemptsForKeys(
-    keys: string[],
-    recorder: (key: string) => Promise<RateLimitState>,
-  ) {
+  private async recordAttemptsForKeys(keys: string[], recorder: (key: string) => Promise<RateLimitState>) {
     return Promise.all(keys.map((key) => recorder(key)))
   }
 

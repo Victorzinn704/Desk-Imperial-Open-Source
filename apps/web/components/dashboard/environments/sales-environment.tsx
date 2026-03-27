@@ -33,7 +33,9 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
 
   const ordersError = ordersQuery.error instanceof ApiError ? ordersQuery.error.message : null
   const employeesError = employeesQuery.error instanceof ApiError ? employeesQuery.error.message : null
-  const orderMutationError = [createOrderMutation.error, cancelOrderMutation.error].find((error) => error instanceof ApiError)
+  const orderMutationError = [createOrderMutation.error, cancelOrderMutation.error].find(
+    (error) => error instanceof ApiError,
+  )
   const employeeMutationError = [
     createEmployeeMutation.error,
     archiveEmployeeMutation.error,
@@ -69,18 +71,10 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
           value={String(ordersTotals?.soldUnits ?? 0)}
         />
         <MetricCard
-          hint={
-            user.role === 'OWNER'
-              ? 'Funcionarios com vendas atribuidas'
-              : 'Seu acesso operacional no workspace'
-          }
+          hint={user.role === 'OWNER' ? 'Funcionarios com vendas atribuidas' : 'Seu acesso operacional no workspace'}
           icon={UserRound}
           label={user.role === 'OWNER' ? 'Equipe ativa' : 'Perfil'}
-          value={
-            user.role === 'OWNER'
-              ? String(employeesTotals?.activeEmployees ?? 0)
-              : 'Staff'
-          }
+          value={user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : 'Staff'}
         />
       </div>
 
@@ -119,27 +113,20 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
                 <UserRound className="size-5" />
               </span>
               <div>
-                <p className="text-sm text-[var(--text-soft)]">
-                  Acesso operacional
-                </p>
-                <h2 className="text-xl font-semibold text-white">
-                  Conta compacta do funcionário
-                </h2>
+                <p className="text-sm text-[var(--text-soft)]">Acesso operacional</p>
+                <h2 className="text-xl font-semibold text-white">Conta compacta do funcionário</h2>
               </div>
             </div>
 
             <div className="mt-6 space-y-3">
               <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
-                Você opera vendas, PDV e calendário com trilha de auditoria
-                vinculada ao seu acesso.
+                Você opera vendas, PDV e calendário com trilha de auditoria vinculada ao seu acesso.
               </div>
               <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
-                Cadastros sensíveis, estrutura da equipe, edição e exclusão
-                ficam restritos ao dono da empresa.
+                Cadastros sensíveis, estrutura da equipe, edição e exclusão ficam restritos ao dono da empresa.
               </div>
               <div className="imperial-card-soft px-4 py-4 text-sm leading-7 text-[var(--text-soft)]">
-                Descontos com preço manual pedem validação do dono por PIN
-                quando essa proteção estiver ativa.
+                Descontos com preço manual pedem validação do dono por PIN quando essa proteção estiver ativa.
               </div>
             </div>
           </div>
@@ -153,28 +140,18 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
           </span>
           <div>
             <p className="text-sm text-[var(--text-soft)]">Vendas recentes</p>
-            <h2 className="text-xl font-semibold text-white">
-              Pedidos da operação
-            </h2>
+            <h2 className="text-xl font-semibold text-white">Pedidos da operação</h2>
           </div>
         </div>
 
-        {ordersError ? (
-          <p className="mt-4 text-sm text-[var(--danger)]">{ordersError}</p>
-        ) : null}
-        {orderMutationError ? (
-          <p className="mt-4 text-sm text-[var(--danger)]">
-            {orderMutationError.message}
-          </p>
-        ) : null}
+        {ordersError ? <p className="mt-4 text-sm text-[var(--danger)]">{ordersError}</p> : null}
+        {orderMutationError ? <p className="mt-4 text-sm text-[var(--danger)]">{orderMutationError.message}</p> : null}
 
         <div className="mt-6 space-y-4">
           {orders.length > 0 ? (
             orders.map((order) => (
               <OrderCard
-                busy={
-                  createOrderMutation.isPending || cancelOrderMutation.isPending
-                }
+                busy={createOrderMutation.isPending || cancelOrderMutation.isPending}
                 canCancel={user.role === 'OWNER'}
                 key={order.id}
                 onCancel={cancelOrderMutation.mutate}
@@ -183,8 +160,7 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
             ))
           ) : (
             <p className="imperial-card-soft px-4 py-3 text-sm text-[var(--text-soft)]">
-              Nenhuma venda registrada ainda. Use o formulario acima para criar
-              o primeiro pedido.
+              Nenhuma venda registrada ainda. Use o formulario acima para criar o primeiro pedido.
             </p>
           )}
         </div>

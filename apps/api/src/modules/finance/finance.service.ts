@@ -207,14 +207,28 @@ export class FinanceService {
       // Clientes: cap de 5000
       this.prisma.order.findMany({
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
-        select: { customerName: true, buyerType: true, buyerDocument: true, currency: true, totalRevenue: true, totalProfit: true },
+        select: {
+          customerName: true,
+          buyerType: true,
+          buyerDocument: true,
+          currency: true,
+          totalRevenue: true,
+          totalProfit: true,
+        },
         orderBy: { createdAt: 'desc' },
         take: 5_000,
       }),
       // Funcionários: cap de 2000
       this.prisma.order.findMany({
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
-        select: { employeeId: true, sellerCode: true, sellerName: true, currency: true, totalRevenue: true, totalProfit: true },
+        select: {
+          employeeId: true,
+          sellerCode: true,
+          sellerName: true,
+          currency: true,
+          totalRevenue: true,
+          totalProfit: true,
+        },
         orderBy: { createdAt: 'desc' },
         take: 2_000,
       }),
@@ -222,8 +236,15 @@ export class FinanceService {
       this.prisma.order.findMany({
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, buyerLatitude: { not: null } },
         select: {
-          buyerDistrict: true, buyerCity: true, buyerState: true, buyerCountry: true,
-          buyerLatitude: true, buyerLongitude: true, currency: true, totalRevenue: true, totalProfit: true,
+          buyerDistrict: true,
+          buyerCity: true,
+          buyerState: true,
+          buyerCountry: true,
+          buyerLatitude: true,
+          buyerLongitude: true,
+          currency: true,
+          totalRevenue: true,
+          totalProfit: true,
         },
         orderBy: { createdAt: 'desc' },
         take: 2_000,
@@ -240,29 +261,69 @@ export class FinanceService {
     )
 
     // Totais computados a partir dos agregados por moeda (O(3) em vez de O(N pedidos))
-    let realizedRevenue = 0, realizedCost = 0, realizedProfit = 0, completedOrdersCount = 0
+    let realizedRevenue = 0,
+      realizedCost = 0,
+      realizedProfit = 0,
+      completedOrdersCount = 0
     for (const agg of allTimeAggregates) {
-      realizedRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
-      realizedCost += this.currencyService.convert(agg._sum.totalCost?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
-      realizedProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      realizedRevenue += this.currencyService.convert(
+        agg._sum.totalRevenue?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
+      realizedCost += this.currencyService.convert(
+        agg._sum.totalCost?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
+      realizedProfit += this.currencyService.convert(
+        agg._sum.totalProfit?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
       completedOrdersCount += agg._count._all
     }
     realizedRevenue = roundCurrency(realizedRevenue)
     realizedCost = roundCurrency(realizedCost)
     realizedProfit = roundCurrency(realizedProfit)
 
-    let currentMonthRevenue = 0, currentMonthProfit = 0
+    let currentMonthRevenue = 0,
+      currentMonthProfit = 0
     for (const agg of currentMonthAggregates) {
-      currentMonthRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
-      currentMonthProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      currentMonthRevenue += this.currencyService.convert(
+        agg._sum.totalRevenue?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
+      currentMonthProfit += this.currencyService.convert(
+        agg._sum.totalProfit?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
     }
     currentMonthRevenue = roundCurrency(currentMonthRevenue)
     currentMonthProfit = roundCurrency(currentMonthProfit)
 
-    let previousMonthRevenue = 0, previousMonthProfit = 0
+    let previousMonthRevenue = 0,
+      previousMonthProfit = 0
     for (const agg of previousMonthAggregates) {
-      previousMonthRevenue += this.currencyService.convert(agg._sum.totalRevenue?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
-      previousMonthProfit += this.currencyService.convert(agg._sum.totalProfit?.toNumber() ?? 0, agg.currency, displayCurrency, snapshot)
+      previousMonthRevenue += this.currencyService.convert(
+        agg._sum.totalRevenue?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
+      previousMonthProfit += this.currencyService.convert(
+        agg._sum.totalProfit?.toNumber() ?? 0,
+        agg.currency,
+        displayCurrency,
+        snapshot,
+      )
     }
     previousMonthRevenue = roundCurrency(previousMonthRevenue)
     previousMonthProfit = roundCurrency(previousMonthProfit)
@@ -297,15 +358,14 @@ export class FinanceService {
     const categoryProductsMap = new Map<string, typeof records>()
 
     for (const record of records) {
-      const current =
-        categoryMap.get(record.category) ?? {
-          category: record.category,
-          products: 0,
-          units: 0,
-          inventoryCostValue: 0,
-          inventorySalesValue: 0,
-          potentialProfit: 0,
-        }
+      const current = categoryMap.get(record.category) ?? {
+        category: record.category,
+        products: 0,
+        units: 0,
+        inventoryCostValue: 0,
+        inventorySalesValue: 0,
+        potentialProfit: 0,
+      }
 
       current.products += 1
       current.units += record.stock
@@ -380,12 +440,7 @@ export class FinanceService {
           displayCurrency,
           snapshot,
         ),
-        totalProfit: this.currencyService.convert(
-          Number(order.totalProfit),
-          order.currency,
-          displayCurrency,
-          snapshot,
-        ),
+        totalProfit: this.currencyService.convert(Number(order.totalProfit), order.currency, displayCurrency, snapshot),
         originalTotalRevenue: Number(order.totalRevenue),
         originalTotalProfit: Number(order.totalProfit),
         totalItems: order.totalItems,
@@ -530,13 +585,12 @@ function buildSalesByChannel(
 
   for (const order of orders) {
     const channelKey = order.channel?.trim() || 'Direto'
-    const current =
-      channels.get(channelKey) ?? {
-        channel: channelKey,
-        orders: 0,
-        revenue: 0,
-        profit: 0,
-      }
+    const current = channels.get(channelKey) ?? {
+      channel: channelKey,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    }
 
     current.orders += 1
     current.revenue = roundCurrency(
@@ -593,15 +647,14 @@ function buildTopCustomers(
   for (const order of orders) {
     const customerName = order.customerName?.trim() || 'Cliente nao informado'
     const key = `${customerName}:${order.buyerType ?? 'unknown'}:${order.buyerDocument ?? ''}`
-    const current =
-      customers.get(key) ?? {
-        customerName,
-        buyerType: order.buyerType,
-        buyerDocument: order.buyerDocument,
-        orders: 0,
-        revenue: 0,
-        profit: 0,
-      }
+    const current = customers.get(key) ?? {
+      customerName,
+      buyerType: order.buyerType,
+      buyerDocument: order.buyerDocument,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    }
 
     current.orders += 1
     current.revenue = roundCurrency(
@@ -669,19 +722,18 @@ function buildSalesMap(
 
     const label = buildRegionLabel(order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry)
     const key = `${label}:${order.buyerLatitude.toFixed(4)}:${order.buyerLongitude.toFixed(4)}`
-    const current =
-      points.get(key) ?? {
-        label,
-        district: order.buyerDistrict,
-        city: order.buyerCity,
-        state: order.buyerState,
-        country: order.buyerCountry,
-        latitude: order.buyerLatitude,
-        longitude: order.buyerLongitude,
-        orders: 0,
-        revenue: 0,
-        profit: 0,
-      }
+    const current = points.get(key) ?? {
+      label,
+      district: order.buyerDistrict,
+      city: order.buyerCity,
+      state: order.buyerState,
+      country: order.buyerCountry,
+      latitude: order.buyerLatitude,
+      longitude: order.buyerLongitude,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    }
 
     current.orders += 1
     current.revenue = roundCurrency(
@@ -744,16 +796,15 @@ function buildTopRegions(
     }
 
     const label = buildRegionLabel(order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry)
-    const current =
-      regions.get(label) ?? {
-        label,
-        city: order.buyerCity,
-        state: order.buyerState,
-        country: order.buyerCountry,
-        orders: 0,
-        revenue: 0,
-        profit: 0,
-      }
+    const current = regions.get(label) ?? {
+      label,
+      city: order.buyerCity,
+      state: order.buyerState,
+      country: order.buyerCountry,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    }
 
     current.orders += 1
     current.revenue = roundCurrency(
@@ -815,15 +866,14 @@ function buildTopEmployees(
 
     const employeeName = order.sellerName?.trim() || 'Funcionario nao identificado'
     const employeeKey = order.employeeId ?? order.sellerCode ?? employeeName
-    const current =
-      employees.get(employeeKey) ?? {
-        employeeId: order.employeeId,
-        employeeCode: order.sellerCode,
-        employeeName,
-        orders: 0,
-        revenue: 0,
-        profit: 0,
-      }
+    const current = employees.get(employeeKey) ?? {
+      employeeId: order.employeeId,
+      employeeCode: order.sellerCode,
+      employeeName,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
+    }
 
     current.orders += 1
     current.revenue = roundCurrency(
@@ -864,12 +914,6 @@ function toNumber(value: { toNumber(): number } | number) {
   return typeof value === 'number' ? value : value.toNumber()
 }
 
-function buildRegionLabel(
-  district: string | null,
-  city: string | null,
-  state: string | null,
-  country: string | null,
-) {
+function buildRegionLabel(district: string | null, city: string | null, state: string | null, country: string | null) {
   return [district, city, state, country].filter(Boolean).join(', ') || 'Regiao nao identificada'
 }
-

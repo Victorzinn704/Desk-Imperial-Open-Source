@@ -14,7 +14,9 @@ export function LetterCard() {
         role="button"
         aria-label={isOpen ? 'Fechar carta' : 'Abrir carta'}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsOpen((v) => !v) }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') setIsOpen((v) => !v)
+        }}
       >
         {/* ── Carta interna (abre ao hover/click) ─────────────────────── */}
         <div

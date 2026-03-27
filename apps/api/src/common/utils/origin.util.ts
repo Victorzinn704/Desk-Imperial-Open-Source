@@ -22,9 +22,7 @@ export function getAllowedOrigins(configService: ConfigService) {
 
   const appUrl = normalizeOrigin(configService.get<string>('APP_URL'))
   const publicAppUrl = normalizeOrigin(configService.get<string>('NEXT_PUBLIC_APP_URL'))
-  const railwayWebUrl = normalizeOrigin(
-    configService.get<string>('RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'),
-  )
+  const railwayWebUrl = normalizeOrigin(configService.get<string>('RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'))
 
   ;[appUrl, publicAppUrl, railwayWebUrl, 'http://localhost:3000'].forEach((origin) => {
     if (origin) {

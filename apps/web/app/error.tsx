@@ -3,13 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string }
-  reset: () => void
-}) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('[GlobalError]', error)
   }, [error])
@@ -24,9 +18,7 @@ export default function GlobalError({
         <p className="max-w-sm text-sm leading-6 text-[var(--text-soft)]">
           Ocorreu um erro inesperado. Tente novamente ou volte para o início.
         </p>
-        {error.digest && (
-          <p className="text-xs text-[var(--text-soft)] opacity-50">Código: {error.digest}</p>
-        )}
+        {error.digest && <p className="text-xs text-[var(--text-soft)] opacity-50">Código: {error.digest}</p>}
       </div>
       <div className="flex gap-3">
         <button

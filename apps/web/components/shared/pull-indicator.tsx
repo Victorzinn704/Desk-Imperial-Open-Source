@@ -15,9 +15,7 @@ interface PullIndicatorProps {
 export function PullIndicator({ style, isRefreshing, progress }: PullIndicatorProps) {
   return (
     <div style={style}>
-      <div
-        className="flex size-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(15,15,15,0.9)] shadow-lg backdrop-blur-md"
-      >
+      <div className="flex size-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(15,15,15,0.9)] shadow-lg backdrop-blur-md">
         <RefreshCw
           className="size-4 text-[var(--accent,#9b8460)]"
           style={{

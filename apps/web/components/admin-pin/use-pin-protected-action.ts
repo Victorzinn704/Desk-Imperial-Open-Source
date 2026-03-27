@@ -21,73 +21,76 @@ export function usePinProtectedAction() {
     secondsLeft: 0,
   })
 
-  const executeWithPin = useCallback(async (action: () => Promise<void>, pin?: string) => {
-    try {
-      if (state.isPinConfigured === null && !pin) {
-        // Tentar determinar se PIN existe
-        try {
-          // Se tentamos chamar com PIN vazio e recebemos 404, PIN não está configurado
-          await verifyAdminPin('')
-        } catch (err) {
-          if (err instanceof ApiError && err.status === 404) {
-            // PIN não está configurado — executar ação direto
-            setState((prev) => ({
-              ...prev,
-              isPinConfigured: false,
-              isPinDialogOpen: false,
-            }))
-            await action()
+  const executeWithPin = useCallback(
+    async (action: () => Promise<void>, pin?: string) => {
+      try {
+        if (state.isPinConfigured === null && !pin) {
+          // Tentar determinar se PIN existe
+          try {
+            // Se tentamos chamar com PIN vazio e recebemos 404, PIN não está configurado
+            await verifyAdminPin('')
+          } catch (err) {
+            if (err instanceof ApiError && err.status === 404) {
+              // PIN não está configurado — executar ação direto
+              setState((prev) => ({
+                ...prev,
+                isPinConfigured: false,
+                isPinDialogOpen: false,
+              }))
+              await action()
+              return
+            }
+            // PIN está configurado mas não foi fornecido — abrir diálogo
+            setState((prev) => ({ ...prev, isPinConfigured: true, isPinDialogOpen: true }))
             return
           }
-          // PIN está configurado mas não foi fornecido — abrir diálogo
-          setState((prev) => ({ ...prev, isPinConfigured: true, isPinDialogOpen: true }))
-          return
         }
-      }
 
-      if (pin) {
-        // Verificar PIN fornecido
-        const response = await verifyAdminPin(pin)
-        rememberAdminPinVerification(response.verifiedUntil)
+        if (pin) {
+          // Verificar PIN fornecido
+          const response = await verifyAdminPin(pin)
+          rememberAdminPinVerification(response.verifiedUntil)
 
-        // PIN correto — executar ação
-        await action()
-        setState((prev) => ({
-          ...prev,
-          isPinDialogOpen: false,
-          pinError: null,
-        }))
-      }
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 423) {
-          // Rate limited
-          const match = err.message.match(/(\d+)\s*s/i)
-          const secs = match ? Number(match[1]) : 300
+          // PIN correto — executar ação
+          await action()
           setState((prev) => ({
             ...prev,
-            isBlocked: true,
-            secondsLeft: secs,
+            isPinDialogOpen: false,
+            pinError: null,
           }))
-        } else if (err.status === 401) {
-          setState((prev) => ({
-            ...prev,
-            pinError: 'PIN incorreto. Tente novamente.',
-          }))
+        }
+      } catch (err) {
+        if (err instanceof ApiError) {
+          if (err.status === 423) {
+            // Rate limited
+            const match = err.message.match(/(\d+)\s*s/i)
+            const secs = match ? Number(match[1]) : 300
+            setState((prev) => ({
+              ...prev,
+              isBlocked: true,
+              secondsLeft: secs,
+            }))
+          } else if (err.status === 401) {
+            setState((prev) => ({
+              ...prev,
+              pinError: 'PIN incorreto. Tente novamente.',
+            }))
+          } else {
+            setState((prev) => ({
+              ...prev,
+              pinError: err.message || 'Erro ao verificar PIN',
+            }))
+          }
         } else {
           setState((prev) => ({
             ...prev,
-            pinError: err.message || 'Erro ao verificar PIN',
+            pinError: 'Erro inesperado',
           }))
         }
-      } else {
-        setState((prev) => ({
-          ...prev,
-          pinError: 'Erro inesperado',
-        }))
       }
-    }
-  }, [state.isPinConfigured])
+    },
+    [state.isPinConfigured],
+  )
 
   const openDialog = useCallback(() => {
     setState((prev) => ({ ...prev, isPinDialogOpen: true, pinError: null }))

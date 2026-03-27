@@ -27,12 +27,7 @@ export function AdminPinDialog({
   const ref1 = useRef<HTMLInputElement>(null)
   const ref2 = useRef<HTMLInputElement>(null)
   const ref3 = useRef<HTMLInputElement>(null)
-  const refs = [
-    ref0,
-    ref1,
-    ref2,
-    ref3,
-  ]
+  const refs = [ref0, ref1, ref2, ref3]
 
   // Countdown interval when blocked by server (423)
   useEffect(() => {
@@ -128,10 +123,7 @@ export function AdminPinDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
 
-      <div
-        className="imperial-card relative w-full max-w-xs"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="imperial-card relative w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
         <button
           className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:text-white"
           type="button"
@@ -141,7 +133,9 @@ export function AdminPinDialog({
         </button>
 
         <div className="p-6 text-center">
-          <span className={`mx-auto flex size-14 items-center justify-center rounded-[20px] border ${isBlocked ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-red-400' : 'border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'}`}>
+          <span
+            className={`mx-auto flex size-14 items-center justify-center rounded-[20px] border ${isBlocked ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-red-400' : 'border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'}`}
+          >
             {isBlocked ? <ShieldAlert className="size-6" /> : <LockKeyhole className="size-6" />}
           </span>
           <h3 className="mt-4 text-base font-semibold text-white">{title}</h3>
@@ -153,9 +147,7 @@ export function AdminPinDialog({
             <div className="rounded-[14px] border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.06)] px-4 py-5">
               <p className="text-sm font-semibold text-[#fca5a5]">Acesso bloqueado</p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">Muitas tentativas incorretas.</p>
-              <p className="mt-4 text-3xl font-bold tabular-nums text-white">
-                {formatCountdown(secondsLeft)}
-              </p>
+              <p className="mt-4 text-3xl font-bold tabular-nums text-white">{formatCountdown(secondsLeft)}</p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">Aguarde para tentar novamente</p>
             </div>
           </div>
@@ -190,9 +182,7 @@ export function AdminPinDialog({
             </div>
 
             <div className="px-6 pb-6 pt-3">
-              {error && (
-                <p className="mb-3 text-center text-sm font-medium text-[#fca5a5]">{error}</p>
-              )}
+              {error && <p className="mb-3 text-center text-sm font-medium text-[#fca5a5]">{error}</p>}
 
               <div className="flex h-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
                 <div

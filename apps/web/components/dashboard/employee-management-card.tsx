@@ -119,10 +119,7 @@ export function EmployeeManagementCard({
       <div className="mt-6 space-y-3">
         {employees.length ? (
           employees.map((employee) => (
-            <div
-              className="imperial-card-soft p-4"
-              key={employee.id}
-            >
+            <div className="imperial-card-soft p-4" key={employee.id}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">

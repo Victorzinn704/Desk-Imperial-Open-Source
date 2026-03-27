@@ -26,7 +26,14 @@ type KitchenTab = 'QUEUED' | 'IN_PREPARATION' | 'READY'
 
 const STATUS_CONFIG: Record<
   KitchenTab,
-  { label: string; Icon: React.FC<{ className?: string; strokeWidth?: number }>; color: string; bg: string; nextStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'; nextLabel: string }
+  {
+    label: string
+    Icon: React.FC<{ className?: string; strokeWidth?: number }>
+    color: string
+    bg: string
+    nextStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+    nextLabel: string
+  }
 > = {
   QUEUED: {
     label: 'Na fila',
@@ -109,29 +116,19 @@ function KitchenCard({
   const elapsed = elapsedLabel(item.kitchenQueuedAt)
 
   return (
-    <div
-      className="rounded-2xl border border-[rgba(255,255,255,0.07)] p-4"
-      style={{ background: config.bg }}
-    >
+    <div className="rounded-2xl border border-[rgba(255,255,255,0.07)] p-4" style={{ background: config.bg }}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span
-              className="text-xs font-bold uppercase tracking-wider"
-              style={{ color: config.color }}
-            >
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: config.color }}>
               Mesa {item.mesaLabel}
             </span>
-            {elapsed && (
-              <span className="text-[10px] text-[#7a8896]">{elapsed}</span>
-            )}
+            {elapsed && <span className="text-[10px] text-[#7a8896]">{elapsed}</span>}
           </div>
           <p className="text-sm font-semibold text-white leading-snug">
             {item.quantity}× {item.productName}
           </p>
-          {item.notes && (
-            <p className="mt-1 text-xs text-[#7a8896] italic">"{item.notes}"</p>
-          )}
+          {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">"{item.notes}"</p>}
         </div>
         <button
           type="button"
@@ -182,41 +179,45 @@ export function KitchenOrdersView({ snapshot }: KitchenOrdersViewProps) {
     <div className="flex flex-col h-full">
       {/* Tab bar */}
       <div className="flex shrink-0 gap-1 px-4 pt-4 pb-3">
-        {(Object.entries(STATUS_CONFIG) as [KitchenTab, typeof STATUS_CONFIG[KitchenTab]][]).map(
-          ([tab, config]) => {
-            const isActive = activeTab === tab
-            const count = counts[tab]
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
-                style={{
-                  background: isActive ? config.bg : 'rgba(255,255,255,0.04)',
-                  color: isActive ? config.color : '#7a8896',
-                  border: `1px solid ${isActive ? config.color + '40' : 'rgba(255,255,255,0.06)'}`,
-                }}
-              >
-                {config.label}
-                {count > 0 && (
-                  <span
-                    className="ml-1.5 inline-flex size-4 items-center justify-center rounded-full text-[10px]"
-                    style={{ background: config.color, color: '#000' }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          },
-        )}
+        {(Object.entries(STATUS_CONFIG) as [KitchenTab, (typeof STATUS_CONFIG)[KitchenTab]][]).map(([tab, config]) => {
+          const isActive = activeTab === tab
+          const count = counts[tab]
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
+              style={{
+                background: isActive ? config.bg : 'rgba(255,255,255,0.04)',
+                color: isActive ? config.color : '#7a8896',
+                border: `1px solid ${isActive ? config.color + '40' : 'rgba(255,255,255,0.06)'}`,
+              }}
+            >
+              {config.label}
+              {count > 0 && (
+                <span
+                  className="ml-1.5 inline-flex size-4 items-center justify-center rounded-full text-[10px]"
+                  style={{ background: config.color, color: '#000' }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {error && (
         <div className="mx-4 mb-3 rounded-xl bg-[rgba(248,113,113,0.08)] px-4 py-2 text-sm text-[#fca5a5] border border-[rgba(248,113,113,0.2)]">
           {error}
-          <button type="button" className="ml-3 text-xs font-semibold underline opacity-70" onClick={() => setError(null)}>OK</button>
+          <button
+            type="button"
+            className="ml-3 text-xs font-semibold underline opacity-70"
+            onClick={() => setError(null)}
+          >
+            OK
+          </button>
         </div>
       )}
 

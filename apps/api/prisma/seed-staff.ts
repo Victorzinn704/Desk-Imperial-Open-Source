@@ -5,18 +5,18 @@ const prisma = new PrismaClient()
 
 async function main() {
   const companyEmail = 'demo@deskimperial.online'
-  
+
   const owner = await prisma.user.findUnique({
-    where: { email: companyEmail }
+    where: { email: companyEmail },
   })
 
   // Achando o VD-001
   const employee = await prisma.employee.findFirst({
-    where: { userId: owner.id, employeeCode: 'VD-001' }
+    where: { userId: owner.id, employeeCode: 'VD-001' },
   })
 
   if (!employee) {
-    console.log("VD-001 não encontrado.")
+    console.log('VD-001 não encontrado.')
     return
   }
 
@@ -39,16 +39,18 @@ async function main() {
       role: UserRole.STAFF,
       status: UserStatus.ACTIVE,
       emailVerifiedAt: new Date(),
-    }
+    },
   })
 
   // Linking employee to the loginUser
   await prisma.employee.update({
     where: { id: employee.id },
-    data: { loginUserId: staffUser.id }
+    data: { loginUserId: staffUser.id },
   })
 
-  console.log("Demo Staff User Created/Updated successfully!")
+  console.log('Demo Staff User Created/Updated successfully!')
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect())
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect())

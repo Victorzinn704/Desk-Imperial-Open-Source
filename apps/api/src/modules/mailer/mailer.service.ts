@@ -32,12 +32,7 @@ export class MailerService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  async sendPasswordResetEmail(params: {
-    to: string
-    fullName: string
-    code: string
-    expiresInMinutes: number
-  }) {
+  async sendPasswordResetEmail(params: { to: string; fullName: string; code: string; expiresInMinutes: number }) {
     const content = buildPasswordResetEmailContent({
       appName: this.getAppName(),
       supportEmail: this.getSupportEmail(),
@@ -56,12 +51,7 @@ export class MailerService {
     })
   }
 
-  async sendEmailVerificationEmail(params: {
-    to: string
-    fullName: string
-    code: string
-    expiresInMinutes: number
-  }) {
+  async sendEmailVerificationEmail(params: { to: string; fullName: string; code: string; expiresInMinutes: number }) {
     const content = buildEmailVerificationContent({
       appName: this.getAppName(),
       supportEmail: this.getSupportEmail(),
@@ -80,12 +70,7 @@ export class MailerService {
     })
   }
 
-  async sendPasswordChangedEmail(params: {
-    to: string
-    fullName: string
-    changedAt: Date
-    ipAddress?: string | null
-  }) {
+  async sendPasswordChangedEmail(params: { to: string; fullName: string; changedAt: Date; ipAddress?: string | null }) {
     const content = buildPasswordChangedEmailContent({
       appName: this.getAppName(),
       supportEmail: this.getSupportEmail(),
@@ -210,15 +195,11 @@ export class MailerService {
     return this.sendWithBrevoApi(params, brevoApiKey)
   }
 
-  private async sendWithBrevoApi(
-    params: TransactionalEmailPayload,
-    apiKey: string,
-  ): Promise<DeliveryResult> {
+  private async sendWithBrevoApi(params: TransactionalEmailPayload, apiKey: string): Promise<DeliveryResult> {
     const fromEmail = this.getSenderEmail()
     const fromName = this.getSenderName()
     const replyTo = this.getReplyToEmail(fromEmail)
-    const apiUrl =
-      this.configService.get<string>('BREVO_API_URL')?.trim() ?? 'https://api.brevo.com/v3/smtp/email'
+    const apiUrl = this.configService.get<string>('BREVO_API_URL')?.trim() ?? 'https://api.brevo.com/v3/smtp/email'
 
     try {
       const response = await fetch(apiUrl, {
@@ -250,9 +231,7 @@ export class MailerService {
         const payload = await response.text()
         const normalizedPayload = payload.toLowerCase()
 
-        this.logger.error(
-          `Falha na API da Brevo ao enviar email para ${params.to}: ${response.status} ${payload}`,
-        )
+        this.logger.error(`Falha na API da Brevo ao enviar email para ${params.to}: ${response.status} ${payload}`)
 
         if (
           response.status === 401 &&
@@ -276,9 +255,7 @@ export class MailerService {
           )
         }
 
-        throw new ServiceUnavailableException(
-          'Nao foi possivel enviar o email agora. Tente novamente em instantes.',
-        )
+        throw new ServiceUnavailableException('Nao foi possivel enviar o email agora. Tente novamente em instantes.')
       }
 
       const payload = (await response.json().catch(() => null)) as { messageId?: string } | null
@@ -295,9 +272,7 @@ export class MailerService {
         throw error
       }
 
-      throw new ServiceUnavailableException(
-        'O servico de email nao respondeu a tempo. Tente novamente em instantes.',
-      )
+      throw new ServiceUnavailableException('O servico de email nao respondeu a tempo. Tente novamente em instantes.')
     }
   }
 
@@ -356,8 +331,7 @@ export class MailerService {
   }
 
   private getDeliveryPreference(): DeliveryPreference {
-    const rawPreference =
-      this.configService.get<string>('EMAIL_PROVIDER')?.trim().toLowerCase() ?? 'auto'
+    const rawPreference = this.configService.get<string>('EMAIL_PROVIDER')?.trim().toLowerCase() ?? 'auto'
 
     if (rawPreference === 'brevo' || rawPreference === 'brevo-api') {
       return 'brevo-api'

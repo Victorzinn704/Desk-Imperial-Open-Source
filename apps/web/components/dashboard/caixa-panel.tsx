@@ -32,12 +32,7 @@ function parseAmount(raw: string): number {
 function calcOpenRevenue(operations: OperationsLiveResponse): number {
   const allGroups = [operations.unassigned, ...operations.employees]
   return allGroups.reduce((sum, group) => {
-    return (
-      sum +
-      group.comandas
-        .filter((c) => c.status !== 'CLOSED')
-        .reduce((s, c) => s + c.totalAmount, 0)
-    )
+    return sum + group.comandas.filter((c) => c.status !== 'CLOSED').reduce((s, c) => s + c.totalAmount, 0)
   }, 0)
 }
 
@@ -97,13 +92,7 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
 
 // ── modal: abrir caixa ────────────────────────────────────────────────────────
 
-function AbrirCaixaModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void
-  onSuccess: () => void
-}) {
+function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -142,7 +131,9 @@ function AbrirCaixaModal({
       <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Operação financeira</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Operação financeira
+            </p>
             <h2 className="mt-1.5 text-xl font-semibold text-white">Abrir caixa</h2>
           </div>
           <button
@@ -273,7 +264,9 @@ function FecharCaixaModal({
       <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Encerramento do dia</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Encerramento do dia
+            </p>
             <h2 className="mt-1.5 text-xl font-semibold text-white">Fechar caixa</h2>
           </div>
           <button
@@ -290,11 +283,13 @@ function FecharCaixaModal({
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="size-4 shrink-0 text-[#fbbf24]" />
               <p className="text-sm font-semibold text-[#fbbf24]">
-                {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta{openComandasCount > 1 ? 's' : ''}
+                {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta
+                {openComandasCount > 1 ? 's' : ''}
               </p>
             </div>
             <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">
-              O caixa só pode ser fechado após todas as comandas serem pagas. Ative o fechamento forçado apenas em caso de emergência.
+              O caixa só pode ser fechado após todas as comandas serem pagas. Ative o fechamento forçado apenas em caso
+              de emergência.
             </p>
             <label className="mt-3 flex items-center gap-2.5 cursor-pointer">
               <input
@@ -331,7 +326,8 @@ function FecharCaixaModal({
               <span>Esperado: {fmtBRL(expectedCashAmount)}</span>
               {showDelta ? (
                 <span className={delta >= 0 ? 'text-[#34f27f] font-semibold' : 'text-[#f87171] font-semibold'}>
-                  {delta >= 0 ? '+' : ''}{fmtBRL(delta)}
+                  {delta >= 0 ? '+' : ''}
+                  {fmtBRL(delta)}
                 </span>
               ) : null}
             </div>
@@ -404,7 +400,9 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
         {/* header */}
         <header className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Financeiro operacional</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Financeiro operacional
+            </p>
             <h2 className="mt-2 text-2xl font-semibold text-white">Caixa do dia</h2>
             <p className="mt-1.5 text-sm leading-6 text-[var(--text-soft)]">
               {caixaAberto
@@ -491,14 +489,19 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
         {caixaAberto ? (
           <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Caixa esperado</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                Caixa esperado
+              </p>
               <p className="mt-1.5 text-2xl font-semibold text-white">{fmtBRL(caixaEsperado)}</p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
             </div>
             {openComandasCount > 0 ? (
               <div className="flex items-center gap-2 rounded-[12px] border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3.5 py-2.5 text-xs text-[#fbbf24]">
                 <AlertTriangle className="size-3.5 shrink-0" />
-                <span className="font-semibold">{openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta{openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa</span>
+                <span className="font-semibold">
+                  {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
+                  {openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
+                </span>
               </div>
             ) : null}
           </div>

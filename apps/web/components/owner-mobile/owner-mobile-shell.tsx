@@ -3,7 +3,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { Mesa } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BarChart3, Building2, ChefHat, ClipboardList, Cog, Crown, LogOut, Package, TrendingUp, Users } from 'lucide-react'
+import {
+  BarChart3,
+  Building2,
+  ChefHat,
+  ClipboardList,
+  Cog,
+  Crown,
+  LogOut,
+  Package,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import type { ComandaStatus } from '@/components/pdv/pdv-types'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -14,14 +25,7 @@ import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
-import {
-  fetchOperationsLive,
-  fetchOrders,
-  closeComanda,
-  logout,
-
-  updateComandaStatus,
-} from '@/lib/api'
+import { fetchOperationsLive, fetchOrders, closeComanda, logout, updateComandaStatus } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import {
   buildPdvComandas,
@@ -94,19 +98,31 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       toast.success('Status atualizado')
       haptic.medium()
     },
-    onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status'); haptic.error() },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status')
+      haptic.error()
+    },
   })
 
   const closeComandaMutation = useMutation({
-    mutationFn: ({ comandaId, discountAmount, serviceFeeAmount }: {
-      comandaId: string; discountAmount: number; serviceFeeAmount: number
+    mutationFn: ({
+      comandaId,
+      discountAmount,
+      serviceFeeAmount,
+    }: {
+      comandaId: string
+      discountAmount: number
+      serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
     onSuccess: () => {
       invalidateOwnerWorkspace(queryClient)
       toast.success('Comanda fechada')
       haptic.heavy()
     },
-    onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao fechar comanda'); haptic.error() },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Erro ao fechar comanda')
+      haptic.error()
+    },
   })
 
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
@@ -154,10 +170,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const todayRevenue = todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0)
   const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
 
-  const totalItems = activeComandas.reduce(
-    (sum, c) => sum + c.itens.reduce((s, i) => s + i.quantidade, 0),
-    0,
-  )
+  const totalItems = activeComandas.reduce((sum, c) => sum + c.itens.reduce((s, i) => s + i.quantidade, 0), 0)
 
   // Ranking garçons — a partir do snapshot
   const garconRanking = useMemo(() => {
@@ -221,7 +234,12 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
               <span
                 className="size-1.5 rounded-full"
                 style={{
-                  background: realtimeStatus === 'connected' ? '#34f27f' : realtimeStatus === 'connecting' ? '#fbbf24' : '#f87171',
+                  background:
+                    realtimeStatus === 'connected'
+                      ? '#34f27f'
+                      : realtimeStatus === 'connecting'
+                        ? '#fbbf24'
+                        : '#f87171',
                 }}
               />
             </div>
@@ -293,9 +311,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
         {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
 
-        {activeTab === 'comandas' ? (
-          <OwnerComandasView comandas={comandas} />
-        ) : null}
+        {activeTab === 'comandas' ? <OwnerComandasView comandas={comandas} /> : null}
 
         {activeTab === 'resumo' ? (
           <OwnerResumoTab
@@ -397,18 +413,44 @@ function OwnerResumoTab({
 }) {
   return (
     <div className="p-4 pb-8 space-y-5">
-
       {/* KPIs do dia */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">Hoje</p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Receita', value: formatCurrency(todayRevenue), sub: 'faturado', color: '#36f57c', Icon: TrendingUp },
-            { label: 'Ticket médio', value: formatCurrency(ticketMedio), sub: 'por atendimento', color: '#fb923c', Icon: BarChart3 },
-            { label: 'Pedidos', value: String(todayOrderCount), sub: 'encerrados', color: '#60a5fa', Icon: ClipboardList },
-            { label: 'Comandas', value: String(activeComandas), sub: 'abertas agora', color: '#a78bfa', Icon: Building2 },
+            {
+              label: 'Receita',
+              value: formatCurrency(todayRevenue),
+              sub: 'faturado',
+              color: '#36f57c',
+              Icon: TrendingUp,
+            },
+            {
+              label: 'Ticket médio',
+              value: formatCurrency(ticketMedio),
+              sub: 'por atendimento',
+              color: '#fb923c',
+              Icon: BarChart3,
+            },
+            {
+              label: 'Pedidos',
+              value: String(todayOrderCount),
+              sub: 'encerrados',
+              color: '#60a5fa',
+              Icon: ClipboardList,
+            },
+            {
+              label: 'Comandas',
+              value: String(activeComandas),
+              sub: 'abertas agora',
+              color: '#a78bfa',
+              Icon: Building2,
+            },
           ].map(({ label, value, sub, color, Icon }) => (
-            <div key={label} className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
+            <div
+              key={label}
+              className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4"
+            >
               <div className="mb-1 flex items-center gap-1.5">
                 <Icon className="size-3.5" style={{ color }} />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">{label}</p>
@@ -426,7 +468,9 @@ function OwnerResumoTab({
 
       {/* Mesas + Cozinha ao vivo */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">Ao vivo</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+          Ao vivo
+        </p>
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
             <p className="text-2xl font-bold text-[#34d399]">{mesasLivres}</p>
@@ -446,14 +490,18 @@ function OwnerResumoTab({
       {/* Ranking garçons */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          <Users className="inline size-3 mr-1" />Ranking garçons
+          <Users className="inline size-3 mr-1" />
+          Ranking garçons
         </p>
         {garconRanking.length === 0 ? (
           <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum garçom com vendas hoje</p>
         ) : (
           <ul className="space-y-2">
             {garconRanking.map((g, i) => (
-              <li key={g.nome} className="flex items-center justify-between rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+              <li
+                key={g.nome}
+                className="flex items-center justify-between rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+              >
                 <div className="flex items-center gap-2.5">
                   <span className="text-xs font-bold" style={{ color: i === 0 ? '#eab308' : '#7a8896' }}>
                     {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
@@ -473,7 +521,8 @@ function OwnerResumoTab({
       {/* Top produtos */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          <Package className="inline size-3 mr-1" />Top produtos
+          <Package className="inline size-3 mr-1" />
+          Top produtos
         </p>
         {topProdutos.length === 0 ? (
           <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum produto vendido hoje ainda</p>
@@ -483,7 +532,10 @@ function OwnerResumoTab({
               const maxValor = topProdutos[0]?.valor ?? 1
               const pct = Math.round((p.valor / maxValor) * 100)
               return (
-                <li key={p.nome} className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                <li
+                  key={p.nome}
+                  className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+                >
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-semibold text-white truncate max-w-[65%]">{p.nome}</p>
                     <div className="text-right">

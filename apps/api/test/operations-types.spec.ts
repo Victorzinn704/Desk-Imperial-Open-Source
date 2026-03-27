@@ -160,31 +160,28 @@ describe('buildEmployeeOperationsRecord', () => {
   const employee = { id: 'emp-1', employeeCode: 'E001', displayName: 'Maria', active: true }
 
   it('counts open and closed tables', () => {
-    const comandas = [
-      { status: 'OPEN' },
-      { status: 'IN_PREPARATION' },
-      { status: 'CLOSED' },
-      { status: 'READY' },
-    ].map((c, i) => ({
-      id: `com-${i}`,
-      companyOwnerId: 'owner-1',
-      cashSessionId: null,
-      mesaId: null,
-      currentEmployeeId: 'emp-1',
-      tableLabel: `T${i}`,
-      customerName: null,
-      customerDocument: null,
-      participantCount: 1,
-      status: c.status as any,
-      subtotalAmount: { toNumber: () => 0 },
-      discountAmount: { toNumber: () => 0 },
-      serviceFeeAmount: { toNumber: () => 0 },
-      totalAmount: { toNumber: () => 0 },
-      notes: null,
-      openedAt: new Date(),
-      closedAt: null,
-      items: [],
-    }))
+    const comandas = [{ status: 'OPEN' }, { status: 'IN_PREPARATION' }, { status: 'CLOSED' }, { status: 'READY' }].map(
+      (c, i) => ({
+        id: `com-${i}`,
+        companyOwnerId: 'owner-1',
+        cashSessionId: null,
+        mesaId: null,
+        currentEmployeeId: 'emp-1',
+        tableLabel: `T${i}`,
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: c.status as any,
+        subtotalAmount: { toNumber: () => 0 },
+        discountAmount: { toNumber: () => 0 },
+        serviceFeeAmount: { toNumber: () => 0 },
+        totalAmount: { toNumber: () => 0 },
+        notes: null,
+        openedAt: new Date(),
+        closedAt: null,
+        items: [],
+      }),
+    )
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const record = buildEmployeeOperationsRecord({ employee, cashSession: null, comandas: comandas as any })

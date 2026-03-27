@@ -42,10 +42,7 @@ function ThinkingIndicator() {
         <p className="text-sm font-semibold text-white">Processando análise...</p>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="ai-dot size-2 rounded-full bg-[var(--accent)]"
-            />
+            <span key={i} className="ai-dot size-2 rounded-full bg-[var(--accent)]" />
           ))}
         </div>
       </div>
@@ -80,10 +77,7 @@ function AnalysisSection({ title, color, icon: Icon, delay = 0, children }: Anal
         >
           <Icon className="size-3.5" />
         </span>
-        <h4
-          className="ai-section-label"
-          style={{ color }}
-        >
+        <h4 className="ai-section-label" style={{ color }}>
           {title}
         </h4>
       </div>
@@ -154,7 +148,6 @@ export default function AIConsultantPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
-
       {/* ── Header ── */}
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(8,11,14,0.82)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3.5">
@@ -174,9 +167,7 @@ export default function AIConsultantPage() {
               </div>
               <div>
                 <h1 className="text-sm font-semibold text-white">Consultor IA</h1>
-                <p className="text-[11px] text-[var(--text-soft)]">
-                  Gemini Flash · análise em tempo real
-                </p>
+                <p className="text-[11px] text-[var(--text-soft)]">Gemini Flash · análise em tempo real</p>
               </div>
             </div>
           </div>
@@ -187,9 +178,7 @@ export default function AIConsultantPage() {
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 Foco ativo
               </span>
-              <span className="max-w-[160px] truncate text-[11px] text-[var(--text-muted)]">
-                {activeFocus}
-              </span>
+              <span className="max-w-[160px] truncate text-[11px] text-[var(--text-muted)]">{activeFocus}</span>
             </div>
 
             <Button
@@ -208,7 +197,6 @@ export default function AIConsultantPage() {
 
       {/* ── Body ── */}
       <div className="mx-auto grid max-w-[1400px] gap-0 px-0 xl:grid-cols-[280px_minmax(0,1fr)]">
-
         {/* ── Left sidebar ── */}
         <aside className="sticky top-[57px] hidden h-[calc(100vh-57px)] overflow-y-auto border-r border-[var(--border)] xl:block">
           <div className="space-y-6 p-5">
@@ -253,7 +241,6 @@ export default function AIConsultantPage() {
 
         {/* ── Main content ── */}
         <main className="min-h-[calc(100vh-57px)] space-y-5 p-5 sm:p-6">
-
           {/* Input card */}
           <div className="imperial-card p-6 sm:p-8">
             <div className="mb-5 flex items-start gap-3">
@@ -287,10 +274,13 @@ export default function AIConsultantPage() {
                 <svg className="size-5 -rotate-90" viewBox="0 0 20 20" aria-hidden>
                   <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="2.5" />
                   <circle
-                    cx="10" cy="10" r="8" fill="none"
+                    cx="10"
+                    cy="10"
+                    r="8"
+                    fill="none"
                     stroke={charPercent > 80 ? 'var(--danger)' : 'var(--accent)'}
                     strokeWidth="2.5"
-                    strokeDasharray={`${50.27 * charPercent / 100} 50.27`}
+                    strokeDasharray={`${(50.27 * charPercent) / 100} 50.27`}
                     strokeLinecap="round"
                     style={{ transition: 'stroke-dasharray 0.2s ease' }}
                   />
@@ -303,12 +293,7 @@ export default function AIConsultantPage() {
                 </span>
               </div>
 
-              <Button
-                size="md"
-                type="button"
-                disabled={!draftFocus.trim()}
-                onClick={handleApplyFocus}
-              >
+              <Button size="md" type="button" disabled={!draftFocus.trim()} onClick={handleApplyFocus}>
                 <Sparkles className="size-4" />
                 Gerar consultoria
               </Button>
@@ -330,7 +315,10 @@ export default function AIConsultantPage() {
                 <span className="flex items-center gap-1.5 text-xs text-[var(--text-soft)]">
                   <TrendingUp className="size-3 text-[var(--success)]" />
                   {new Date(insightQuery.data.generatedAt).toLocaleString('pt-BR', {
-                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
                 </span>
               )}
@@ -381,16 +369,12 @@ export default function AIConsultantPage() {
                   >
                     {/* Summary */}
                     <AnalysisSection title="Resumo Executivo" color="#c3a46f" icon={Activity} delay={0}>
-                      <p className="text-sm leading-7 text-[var(--text-primary)]">
-                        {insightQuery.data.summary}
-                      </p>
+                      <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.summary}</p>
                     </AnalysisSection>
 
                     {/* Forecast */}
                     <AnalysisSection title="Previsão" color="#5a95c4" icon={TrendingUp} delay={0.06}>
-                      <p className="text-sm leading-7 text-[var(--text-primary)]">
-                        {insightQuery.data.forecast}
-                      </p>
+                      <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.forecast}</p>
                     </AnalysisSection>
 
                     {/* Opportunities */}

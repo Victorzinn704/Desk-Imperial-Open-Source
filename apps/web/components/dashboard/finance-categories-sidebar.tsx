@@ -41,31 +41,21 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
 
   const handleBack = () => setSelectedCategory(null)
 
-  const selectedCat = selectedCategory
-    ? categoryBreakdown.find((c) => c.category === selectedCategory)
-    : null
+  const selectedCat = selectedCategory ? categoryBreakdown.find((c) => c.category === selectedCategory) : null
 
-  const selectedCatIndex = selectedCategory
-    ? categoryBreakdown.findIndex((c) => c.category === selectedCategory)
-    : -1
+  const selectedCatIndex = selectedCategory ? categoryBreakdown.findIndex((c) => c.category === selectedCategory) : -1
 
   const selectedColor =
-    selectedCatIndex >= 0
-      ? CATEGORY_COLORS[selectedCatIndex % CATEGORY_COLORS.length]
-      : CATEGORY_COLORS[0]
+    selectedCatIndex >= 0 ? CATEGORY_COLORS[selectedCatIndex % CATEGORY_COLORS.length] : CATEGORY_COLORS[0]
 
-  const categoryProducts = selectedCategory
-    ? (finance.categoryTopProducts[selectedCategory] ?? [])
-    : []
+  const categoryProducts = selectedCategory ? (finance.categoryTopProducts[selectedCategory] ?? []) : []
 
   // ── Detail view ─────────────────────────────────────────────────────────────
 
   if (selectedCategory && selectedCat) {
     const catPct = total > 0 ? (selectedCat.inventorySalesValue / total) * 100 : 0
     const catMargin =
-      selectedCat.inventorySalesValue > 0
-        ? (selectedCat.potentialProfit / selectedCat.inventorySalesValue) * 100
-        : 0
+      selectedCat.inventorySalesValue > 0 ? (selectedCat.potentialProfit / selectedCat.inventorySalesValue) * 100 : 0
 
     return (
       <div className="imperial-card flex flex-col gap-4 p-6">
@@ -80,16 +70,11 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-white">{selectedCategory}</p>
             <p className="text-[10px] text-[var(--text-soft)]">
-              {selectedCat.products} produto{selectedCat.products !== 1 ? 's' : ''} ·{' '}
-              {catPct.toFixed(0)}% do portfólio
+              {selectedCat.products} produto{selectedCat.products !== 1 ? 's' : ''} · {catPct.toFixed(0)}% do portfólio
             </p>
           </div>
           <span
-            className={cn(
-              'shrink-0 rounded-md px-2 py-0.5 text-xs font-bold',
-              selectedColor.bg,
-              selectedColor.text,
-            )}
+            className={cn('shrink-0 rounded-md px-2 py-0.5 text-xs font-bold', selectedColor.bg, selectedColor.text)}
           >
             {formatCompactCurrency(selectedCat.inventorySalesValue, displayCurrency)}
           </span>
@@ -152,9 +137,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
 
                     <div className="rounded-lg border border-[rgba(167,139,250,0.12)] bg-[rgba(167,139,250,0.08)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Margem</p>
-                      <p className="text-xs font-bold text-purple-400">
-                        {product.marginPercent.toFixed(1)}%
-                      </p>
+                      <p className="text-xs font-bold text-purple-400">{product.marginPercent.toFixed(1)}%</p>
                     </div>
                   </div>
 
@@ -211,9 +194,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                   style={{ width: `${catPct}%` }}
                 />
               </div>
-              <p className={cn('mt-1 text-right text-xs font-bold', selectedColor.text)}>
-                {catPct.toFixed(0)}%
-              </p>
+              <p className={cn('mt-1 text-right text-xs font-bold', selectedColor.text)}>{catPct.toFixed(0)}%</p>
             </div>
           </div>
         )}

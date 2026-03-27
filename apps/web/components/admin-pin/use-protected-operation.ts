@@ -13,24 +13,19 @@ type ProtectedOperation = {
 export function useProtectedOperation() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogTitle, setDialogTitle] = useState('Ação protegida')
-  const [dialogDescription, setDialogDescription] = useState(
-    'Digite o PIN de administrador para continuar.',
-  )
+  const [dialogDescription, setDialogDescription] = useState('Digite o PIN de administrador para continuar.')
   const [isBlocked, setIsBlocked] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const operationRef = useRef<ProtectedOperation | null>(null)
 
-  const open = useCallback(
-    (operation: ProtectedOperation) => {
-      setDialogTitle(operation.title ?? 'Ação protegida')
-      setDialogDescription(operation.description ?? 'Digite o PIN de administrador para continuar.')
-      setIsDialogOpen(true)
-      setIsBlocked(false)
-      setSecondsLeft(0)
-      operationRef.current = operation
-    },
-    [],
-  )
+  const open = useCallback((operation: ProtectedOperation) => {
+    setDialogTitle(operation.title ?? 'Ação protegida')
+    setDialogDescription(operation.description ?? 'Digite o PIN de administrador para continuar.')
+    setIsDialogOpen(true)
+    setIsBlocked(false)
+    setSecondsLeft(0)
+    operationRef.current = operation
+  }, [])
 
   const handleConfirm = useCallback(async (pin: string) => {
     try {

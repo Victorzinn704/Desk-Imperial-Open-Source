@@ -1,10 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { timingSafeEqual } from 'node:crypto'
 import type { SessionRequest } from '../auth.types'
@@ -53,11 +47,7 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('Origem nao autorizada.')
     }
 
-    if (
-      !origin &&
-      referer &&
-      !allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin))
-    ) {
+    if (!origin && referer && !allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin))) {
       throw new ForbiddenException('Referer nao autorizado.')
     }
   }

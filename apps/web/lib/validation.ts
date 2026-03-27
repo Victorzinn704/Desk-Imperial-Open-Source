@@ -1,7 +1,5 @@
 import { z } from 'zod'
-import {
-  STRONG_PASSWORD_REGEX,
-} from '@contracts/contracts'
+import { STRONG_PASSWORD_REGEX } from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
@@ -62,17 +60,8 @@ const postalCodeSchema = z
 
 export const registerSchema = z
   .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(3, 'Digite seu nome completo.')
-      .max(120, 'O nome está longo demais.'),
-    companyName: z
-      .string()
-      .trim()
-      .max(160, 'O nome da empresa está longo demais.')
-      .optional()
-      .or(z.literal('')),
+    fullName: z.string().trim().min(3, 'Digite seu nome completo.').max(120, 'O nome está longo demais.'),
+    companyName: z.string().trim().max(160, 'O nome da empresa está longo demais.').optional().or(z.literal('')),
     email: z.string().trim().email('Digite um e-mail válido.'),
     companyStreetLine1: z
       .string()
@@ -95,22 +84,10 @@ export const registerSchema = z
       .trim()
       .min(2, 'Informe o bairro ou a região.')
       .max(120, 'O bairro/região ficou longo demais.'),
-    companyCity: z
-      .string()
-      .trim()
-      .min(2, 'Informe a cidade.')
-      .max(120, 'A cidade ficou longa demais.'),
-    companyState: z
-      .string()
-      .trim()
-      .min(2, 'Informe o estado.')
-      .max(120, 'O estado ficou longo demais.'),
+    companyCity: z.string().trim().min(2, 'Informe a cidade.').max(120, 'A cidade ficou longa demais.'),
+    companyState: z.string().trim().min(2, 'Informe o estado.').max(120, 'O estado ficou longo demais.'),
     companyPostalCode: postalCodeSchema,
-    companyCountry: z
-      .string()
-      .trim()
-      .min(2, 'Informe o país.')
-      .max(120, 'O país ficou longo demais.'),
+    companyCountry: z.string().trim().min(2, 'Informe o país.').max(120, 'O país ficou longo demais.'),
     hasEmployees: z.boolean(),
     employeeCount: z.coerce.number().int('Use um número inteiro.').min(0, 'Informe zero ou mais funcionários.'),
     password: z
@@ -164,42 +141,40 @@ export const resetPasswordSchema = z
     }
   })
 
-export const productSchema = z.object({
-  name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
-  brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
-  category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
-  packagingClass: z
-    .string()
-    .trim()
-    .min(2, 'Escolha ou cadastre uma classe de embalagem.')
-    .max(120, 'A classe de cadastro ficou longa demais.'),
-  measurementUnit: z
-    .string()
-    .trim()
-    .min(1, 'Informe a unidade de medida.')
-    .max(24, 'A unidade de medida ficou longa demais.'),
-  measurementValue: z.coerce.number().min(0.01, 'A medida por item precisa ser maior que zero.'),
-  unitsPerPackage: z
-    .coerce
-    .number()
-    .int('Use um número inteiro para a quantidade por caixa/fardo.')
-    .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
-  description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
-  unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),
-  unitPrice: z.coerce.number().min(0, 'O preço não pode ser negativo.'),
-  currency: currencyCodeSchema,
-  stockPackages: z
-    .coerce
-    .number()
-    .int('Use um número inteiro para caixas/fardos.')
-    .min(0, 'A quantidade de caixas/fardos não pode ser negativa.'),
-  stockLooseUnits: z
-    .coerce
-    .number()
-    .int('Use um número inteiro para unidades avulsas.')
-    .min(0, 'A quantidade de unidades avulsas não pode ser negativa.'),
-  requiresKitchen: z.boolean().optional().default(false),
-})
+export const productSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
+    brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
+    category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
+    packagingClass: z
+      .string()
+      .trim()
+      .min(2, 'Escolha ou cadastre uma classe de embalagem.')
+      .max(120, 'A classe de cadastro ficou longa demais.'),
+    measurementUnit: z
+      .string()
+      .trim()
+      .min(1, 'Informe a unidade de medida.')
+      .max(24, 'A unidade de medida ficou longa demais.'),
+    measurementValue: z.coerce.number().min(0.01, 'A medida por item precisa ser maior que zero.'),
+    unitsPerPackage: z.coerce
+      .number()
+      .int('Use um número inteiro para a quantidade por caixa/fardo.')
+      .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
+    description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
+    unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),
+    unitPrice: z.coerce.number().min(0, 'O preço não pode ser negativo.'),
+    currency: currencyCodeSchema,
+    stockPackages: z.coerce
+      .number()
+      .int('Use um número inteiro para caixas/fardos.')
+      .min(0, 'A quantidade de caixas/fardos não pode ser negativa.'),
+    stockLooseUnits: z.coerce
+      .number()
+      .int('Use um número inteiro para unidades avulsas.')
+      .min(0, 'A quantidade de unidades avulsas não pode ser negativa.'),
+    requiresKitchen: z.boolean().optional().default(false),
+  })
   .superRefine((values, context) => {
     if (values.unitsPerPackage > 1 && values.stockLooseUnits >= values.unitsPerPackage) {
       context.addIssue({
@@ -215,17 +190,8 @@ export const productSchema = z.object({
   }))
 
 export const profileSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(3, 'Digite o nome do responsável.')
-    .max(120, 'O nome ficou longo demais.'),
-  companyName: z
-    .string()
-    .trim()
-    .max(160, 'O nome da empresa ficou longo demais.')
-    .optional()
-    .or(z.literal('')),
+  fullName: z.string().trim().min(3, 'Digite o nome do responsável.').max(120, 'O nome ficou longo demais.'),
+  companyName: z.string().trim().max(160, 'O nome da empresa ficou longo demais.').optional().or(z.literal('')),
   preferredCurrency: currencyCodeSchema,
 })
 
@@ -240,9 +206,7 @@ export const employeeSchema = z.object({
     .trim()
     .min(3, 'Digite o nome do funcionário.')
     .max(120, 'O nome do funcionário ficou longo demais.'),
-  temporaryPassword: z
-    .string()
-    .regex(/^\d{6}$/, 'O PIN precisa ter exatamente 6 dígitos numéricos.'),
+  temporaryPassword: z.string().regex(/^\d{6}$/, 'O PIN precisa ter exatamente 6 dígitos numéricos.'),
 })
 
 export const orderItemSchema = z.object({
@@ -267,7 +231,13 @@ export const orderSchema = z
     buyerDistrict: z.string().trim().max(120, 'O bairro/região ficou longo demais.').optional().or(z.literal('')),
     buyerCity: z.string().trim().min(2, 'Informe a cidade da venda.').max(120, 'A cidade ficou longa demais.'),
     buyerState: z.string().trim().min(2, 'Informe o estado da venda.').max(120, 'O estado ficou longo demais.'),
-    buyerCountry: z.string().trim().max(120, 'O país ficou longo demais.').optional().or(z.literal('')).transform((v) => (!v || v.trim() === '') ? 'Brasil' : v),
+    buyerCountry: z
+      .string()
+      .trim()
+      .max(120, 'O país ficou longo demais.')
+      .optional()
+      .or(z.literal(''))
+      .transform((v) => (!v || v.trim() === '' ? 'Brasil' : v)),
     sellerEmployeeId: z.string().trim().optional().or(z.literal('')),
     currency: currencyCodeSchema,
     channel: z.string().trim().max(60, 'O canal ficou longo demais.').optional().or(z.literal('')),

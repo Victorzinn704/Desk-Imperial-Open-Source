@@ -19,10 +19,7 @@ const OPERATIONS_EVENTS = [
 
 export type RealtimeStatus = 'connecting' | 'connected' | 'disconnected'
 
-export function useOperationsRealtime(
-  enabled: boolean,
-  queryClient: QueryClient,
-): { status: RealtimeStatus } {
+export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient): { status: RealtimeStatus } {
   const [status, setStatus] = useState<RealtimeStatus>('connecting')
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 

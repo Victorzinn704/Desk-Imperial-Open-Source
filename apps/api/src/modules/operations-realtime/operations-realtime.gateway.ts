@@ -11,10 +11,17 @@ import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
 import { AuthService } from '../auth/auth.service'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { buildWorkspaceChannel, OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
+import {
+  buildWorkspaceChannel,
+  OPERATIONS_REALTIME_NAMESPACE,
+  type OperationsRealtimeNamespaceLike,
+} from './operations-realtime.types'
 import { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
-import type { OperationsRealtimeConnectionContext, OperationsRealtimeSocketLike } from './operations-realtime.socket.types'
+import type {
+  OperationsRealtimeConnectionContext,
+  OperationsRealtimeSocketLike,
+} from './operations-realtime.socket.types'
 
 /**
  * Transport bridge for the operations realtime module.

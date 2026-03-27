@@ -21,7 +21,9 @@
     "gulp:images": "gulp images",
     "gulp:clean": "gulp clean",
     "gulp:watch": "gulp watch",
-    "refactor:desk-styles": "node scripts/refactor-desk-tailwind.mjs"
+    "refactor:desk-styles": "node scripts/refactor-desk-tailwind.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -29,6 +31,7 @@
     "del": "^8.0.1",
     "globals": "^16.4.0",
     "gulp": "^5.0.1",
+    "prettier": "^3.8.1",
     "turbo": "^2.5.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1"

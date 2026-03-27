@@ -25,20 +25,14 @@ export function EmployeeRankingCard({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--success)]">
             Performance comercial
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">
-            Ranking de rendimento por funcionario
-          </h2>
+          <h2 className="mt-3 text-3xl font-semibold text-white">Ranking de rendimento por funcionario</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
             O painel cruza receita, lucro e ticket medio com base no vendedor vinculado em cada pedido.
           </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <TopMetric
-            icon={UserRoundCog}
-            label="Funcionarios no ranking"
-            value={String(topEmployees.length)}
-          />
+          <TopMetric icon={UserRoundCog} label="Funcionarios no ranking" value={String(topEmployees.length)} />
           <TopMetric
             icon={BadgeDollarSign}
             label="Receita da equipe"
@@ -73,7 +67,7 @@ export function EmployeeRankingCard({
 
             return (
               <div
-              className="imperial-card-soft p-4"
+                className="imperial-card-soft p-4"
                 key={employee.employeeId ?? employee.employeeCode ?? `${employee.employeeName}-${index}`}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -99,14 +93,8 @@ export function EmployeeRankingCard({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                    <EmployeeStat
-                      label="Receita"
-                      value={formatCurrency(employee.revenue, displayCurrency)}
-                    />
-                    <EmployeeStat
-                      label="Lucro"
-                      value={formatCurrency(employee.profit, displayCurrency)}
-                    />
+                    <EmployeeStat label="Receita" value={formatCurrency(employee.revenue, displayCurrency)} />
+                    <EmployeeStat label="Lucro" value={formatCurrency(employee.profit, displayCurrency)} />
                     <EmployeeStat
                       label="Ticket medio"
                       value={formatCurrency(employee.averageTicket, displayCurrency)}
@@ -155,9 +143,7 @@ function TopMetric({
 function EmployeeStat({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="imperial-card-stat px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-        {label}
-      </p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
   )

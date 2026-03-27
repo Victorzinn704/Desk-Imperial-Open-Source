@@ -5,11 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import {
-  CashSessionStatus,
-  ComandaStatus,
-  KitchenItemStatus,
-} from '@prisma/client'
+import { CashSessionStatus, ComandaStatus, KitchenItemStatus } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -105,7 +101,11 @@ export class ComandaService {
       businessDate = openSession.businessDate
     } else {
       if (dto.employeeId) {
-        const assignedEmployee = await this.helpers.requireOwnedEmployee(this.prisma, workspaceOwnerUserId, dto.employeeId)
+        const assignedEmployee = await this.helpers.requireOwnedEmployee(
+          this.prisma,
+          workspaceOwnerUserId,
+          dto.employeeId,
+        )
         const employeeOpenSession = await this.prisma.cashSession.findFirst({
           where: {
             companyOwnerId: workspaceOwnerUserId,
@@ -189,9 +189,7 @@ export class ComandaService {
         await transaction.comandaItem.createMany({
           data: draftItems.map((item) => {
             const prod = item.productId ? productMap.get(item.productId) : undefined
-            const needsKitchen = prod
-              ? (prod.requiresKitchen || isKitchenCategory(prod.category))
-              : false
+            const needsKitchen = prod ? prod.requiresKitchen || isKitchenCategory(prod.category) : false
             return {
               comandaId: createdComanda.id,
               productId: item.productId,
@@ -270,7 +268,13 @@ export class ComandaService {
   async addComandaItem(auth: AuthContext, comandaId: string, dto: AddComandaItemDto, context: RequestContext) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(this.prisma, workspaceOwnerUserId, auth, comandaId, actorEmployee)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
 
     if (!isOpenComandaStatus(comanda.status)) {
       throw new ConflictException('Nao e possivel adicionar itens em uma comanda encerrada ou cancelada.')
@@ -394,7 +398,13 @@ export class ComandaService {
   async replaceComanda(auth: AuthContext, comandaId: string, dto: ReplaceComandaDto, context: RequestContext) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(this.prisma, workspaceOwnerUserId, auth, comandaId, actorEmployee)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
 
     if (!isOpenComandaStatus(comanda.status)) {
       throw new ConflictException('Nao e possivel editar uma comanda encerrada ou cancelada.')
@@ -602,7 +612,13 @@ export class ComandaService {
   ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(this.prisma, workspaceOwnerUserId, auth, comandaId, actorEmployee)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
 
     if (dto.status === ComandaStatus.CLOSED || dto.status === ComandaStatus.CANCELLED) {
       throw new BadRequestException('Use o endpoint especifico para fechar a comanda.')
@@ -698,8 +714,8 @@ export class ComandaService {
     let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
 
     if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
-      const allReady = kitchenItems.every((i) =>
-        i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
+      const allReady = kitchenItems.every(
+        (i) => i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
       )
       const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
 
@@ -721,10 +737,11 @@ export class ComandaService {
 
     // If status didn't change, still fetch the comanda for the realtime event
     if (!refreshedComanda) {
-      refreshedComanda = await this.prisma.comanda.findUnique({
-        where: { id: item.comanda.id },
-        include: { items: { orderBy: { createdAt: 'asc' } } },
-      }) ?? undefined
+      refreshedComanda =
+        (await this.prisma.comanda.findUnique({
+          where: { id: item.comanda.id },
+          include: { items: { orderBy: { createdAt: 'asc' } } },
+        })) ?? undefined
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -753,10 +770,7 @@ export class ComandaService {
 
     // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
     if (refreshedComanda) {
-      this.operationsRealtimeService.publishComandaUpdated(
-        auth,
-        buildComandaUpdatedPayload(refreshedComanda),
-      )
+      this.operationsRealtimeService.publishComandaUpdated(auth, buildComandaUpdatedPayload(refreshedComanda))
     }
 
     return { itemId, status: dto.status }
@@ -765,7 +779,13 @@ export class ComandaService {
   async closeComanda(auth: AuthContext, comandaId: string, dto: CloseComandaDto, context: RequestContext) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(this.prisma, workspaceOwnerUserId, auth, comandaId, actorEmployee)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
 
     if (comanda.status === ComandaStatus.CLOSED) {
       throw new ConflictException('Esta comanda ja foi encerrada.')

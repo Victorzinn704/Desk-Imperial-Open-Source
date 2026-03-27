@@ -33,7 +33,7 @@ function getCsrfToken(): string | null {
   const cookie = document.cookie
     .split('; ')
     .find((entry) => CSRF_COOKIE_NAMES.some((name) => entry.startsWith(`${name}=`)))
-  
+
   const cookieToken = cookie ? (cookie.split('=')[1] ?? null) : null
   if (cookieToken) return cookieToken
 
@@ -75,18 +75,14 @@ async function adminApiFetch<T>(
   if (!response.ok) {
     const contentType = response.headers.get('content-type') ?? ''
     const fallback =
-      response.status >= 500
-        ? 'O servidor encontrou um erro inesperado.'
-        : 'Não foi possível concluir a requisição.'
+      response.status >= 500 ? 'O servidor encontrou um erro inesperado.' : 'Não foi possível concluir a requisição.'
 
     if (!contentType.includes('application/json')) {
       throw new ApiError(fallback, response.status)
     }
 
     const payload = (await response.json()) as { message?: string | string[] }
-    const message = Array.isArray(payload.message)
-      ? payload.message.join(' ')
-      : payload.message
+    const message = Array.isArray(payload.message) ? payload.message.join(' ') : payload.message
     throw new ApiError(message || fallback, response.status)
   }
 

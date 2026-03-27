@@ -47,7 +47,9 @@ export function LoginForm() {
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
-      startTransition(() => { router.push('/dashboard') })
+      startTransition(() => {
+        router.push('/dashboard')
+      })
     },
     onError: (error, variables) => {
       if (
@@ -95,10 +97,7 @@ export function LoginForm() {
   })
   const isLoading = loginMutation.isPending || isRouting
 
-  const errorMessage =
-    loginMutation.error instanceof ApiError
-      ? loginMutation.error.message
-      : null
+  const errorMessage = loginMutation.error instanceof ApiError ? loginMutation.error.message : null
 
   return (
     <div className="w-full space-y-8">
@@ -153,7 +152,9 @@ export function LoginForm() {
                   {...registerField('companyEmail')}
                 />
               </div>
-              {errors.companyEmail?.message ? <p className="text-xs text-red-400">{errors.companyEmail.message}</p> : null}
+              {errors.companyEmail?.message ? (
+                <p className="text-xs text-red-400">{errors.companyEmail.message}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -169,7 +170,9 @@ export function LoginForm() {
                   {...registerField('employeeCode')}
                 />
               </div>
-              {errors.employeeCode?.message ? <p className="text-xs text-red-400">{errors.employeeCode.message}</p> : null}
+              {errors.employeeCode?.message ? (
+                <p className="text-xs text-red-400">{errors.employeeCode.message}</p>
+              ) : null}
             </div>
           </>
         ) : (
@@ -265,7 +268,9 @@ export function LoginForm() {
           }}
         >
           <div>
-            <p className="text-sm font-semibold text-white">Acessar Sessão Demo {isStaffMode ? 'Funcionário' : 'Empresa'}</p>
+            <p className="text-sm font-semibold text-white">
+              Acessar Sessão Demo {isStaffMode ? 'Funcionário' : 'Empresa'}
+            </p>
             <p className="text-xs text-white/40">Experimente sem compromisso</p>
           </div>
           <svg className="size-4 text-white/30" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -276,14 +281,16 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-white/40">
         Não possui uma conta?{' '}
-        <Link className="font-semibold text-white underline underline-offset-4 hover:text-white/70 transition-colors" href="/cadastro">
+        <Link
+          className="font-semibold text-white underline underline-offset-4 hover:text-white/70 transition-colors"
+          href="/cadastro"
+        >
           Solicitar acesso
         </Link>
       </p>
 
       <p className="text-center text-xs leading-5 text-white/20">
-        Ao acessar, você atesta compromisso com os guias de uso restrito interno
-        de Governança e Operação.
+        Ao acessar, você atesta compromisso com os guias de uso restrito interno de Governança e Operação.
       </p>
     </div>
   )

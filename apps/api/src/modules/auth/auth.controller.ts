@@ -29,11 +29,7 @@ export class AuthController {
   }
 
   @Post('login')
-  login(
-    @Body() body: LoginDto,
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  login(@Body() body: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return this.authService.login(body, response, extractRequestContext(request))
   }
 
@@ -59,11 +55,7 @@ export class AuthController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('logout')
-  logout(
-    @CurrentAuth() auth: AuthContext,
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  logout(@CurrentAuth() auth: AuthContext, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return this.authService.logout(auth, response, extractRequestContext(request))
   }
 
@@ -75,11 +67,7 @@ export class AuthController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Patch('profile')
-  updateProfile(
-    @CurrentAuth() auth: AuthContext,
-    @Body() body: UpdateProfileDto,
-    @Req() request: Request,
-  ) {
+  updateProfile(@CurrentAuth() auth: AuthContext, @Body() body: UpdateProfileDto, @Req() request: Request) {
     return this.authService.updateProfile(auth, body, extractRequestContext(request))
   }
 

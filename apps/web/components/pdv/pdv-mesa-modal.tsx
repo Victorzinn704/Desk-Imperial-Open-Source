@@ -39,17 +39,13 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
           <X className="size-4" />
         </button>
 
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Nova Mesa
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Nova Mesa</p>
         <h2 className="mt-1 text-xl font-semibold text-white">Criar mesa</h2>
 
         <div className="mt-6 space-y-4">
           {/* Número / label da mesa */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">
-              Número / Identificação
-            </label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Número / Identificação</label>
             <input
               autoFocus
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
@@ -63,9 +59,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
 
           {/* Capacidade */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">
-              Capacidade (pessoas)
-            </label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Capacidade (pessoas)</label>
             <div className="flex items-center gap-3">
               <button
                 className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-white transition hover:bg-[rgba(255,255,255,0.08)]"
@@ -87,9 +81,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
 
           {/* Status inicial */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">
-              Status inicial
-            </label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Status inicial</label>
             <div className="flex gap-2">
               {STATUS_OPTIONS.map((opt) => (
                 <button

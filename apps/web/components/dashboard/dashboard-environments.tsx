@@ -8,10 +8,7 @@ import { PortfolioEnvironment } from './environments/portfolio-environment'
 import { PdvEnvironment } from './environments/pdv-environment'
 import { OverviewEnvironment } from './environments/overview-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
-import type {
-  DashboardSectionId,
-  DashboardSettingsSectionId,
-} from '@/components/dashboard/dashboard-navigation'
+import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser } from '@/lib/api'
 
 // ── Heavy environments — lazy loaded only when the user navigates to them ──────
@@ -25,31 +22,22 @@ const CalendarioEnvironment = dynamic(
 )
 
 // MapEnvironment: Leaflet tiles + markers (~320 KB)
-const MapEnvironment = dynamic(
-  () => import('./environments/map-environment').then((m) => m.MapEnvironment),
-  {
-    loading: () => <EnvironmentSkeleton rows={1} tall />,
-    ssr: false,
-  },
-)
+const MapEnvironment = dynamic(() => import('./environments/map-environment').then((m) => m.MapEnvironment), {
+  loading: () => <EnvironmentSkeleton rows={1} tall />,
+  ssr: false,
+})
 
 // PayrollEnvironment: multiple sub-tables, AG-Grid-like (~180 KB)
-const PayrollEnvironment = dynamic(
-  () => import('./payroll-environment').then((m) => m.PayrollEnvironment),
-  {
-    loading: () => <EnvironmentSkeleton rows={5} />,
-    ssr: false,
-  },
-)
+const PayrollEnvironment = dynamic(() => import('./payroll-environment').then((m) => m.PayrollEnvironment), {
+  loading: () => <EnvironmentSkeleton rows={5} />,
+  ssr: false,
+})
 
 // SalaoEnvironment: floor-plan drag-and-drop via @dnd-kit (~41 KB component + dnd-kit)
-const SalaoEnvironment = dynamic(
-  () => import('./salao-environment').then((m) => m.SalaoEnvironment),
-  {
-    loading: () => <EnvironmentSkeleton rows={4} />,
-    ssr: false,
-  },
-)
+const SalaoEnvironment = dynamic(() => import('./salao-environment').then((m) => m.SalaoEnvironment), {
+  loading: () => <EnvironmentSkeleton rows={4} />,
+  ssr: false,
+})
 
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId

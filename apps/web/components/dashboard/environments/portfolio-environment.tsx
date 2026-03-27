@@ -118,8 +118,7 @@ export function PortfolioEnvironment() {
 
   const archiveProductMutation = {
     isPending: _archiveProductMutation.isPending,
-    mutate: (id: string) =>
-      _archiveProductMutation.mutate(id, { onSuccess: () => setEditingProduct(null) }),
+    mutate: (id: string) => _archiveProductMutation.mutate(id, { onSuccess: () => setEditingProduct(null) }),
   }
 
   const updateProductMutation = {
@@ -193,11 +192,7 @@ export function PortfolioEnvironment() {
           label="Total em estoque"
           value={productsTotals ? `${productsTotals.stockUnits} und` : '—'}
         />
-        <SummaryPill
-          icon={TrendingUp}
-          label="Margem média"
-          value={avgMargin}
-        />
+        <SummaryPill icon={TrendingUp} label="Margem média" value={avgMargin} />
         <SummaryPill
           icon={Tags}
           label="SKUs cadastrados"
@@ -223,7 +218,9 @@ export function PortfolioEnvironment() {
               <Tags className="size-4 text-[var(--accent)]" />
             </span>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Categorias</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                Categorias
+              </p>
               <h2 className="text-base font-semibold text-white leading-snug">Fluxo por categoria</h2>
             </div>
           </div>

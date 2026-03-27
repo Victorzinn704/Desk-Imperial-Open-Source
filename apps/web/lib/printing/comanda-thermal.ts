@@ -70,7 +70,8 @@ function formatMeta(label: string, value: string) {
 
 function formatMoneyLine(label: string, amount: number, currency: string) {
   const value = formatCurrency(amount, currency)
-  const safeLabel = label.length > LINE_WIDTH - value.length - 1 ? `${label.slice(0, LINE_WIDTH - value.length - 4)}...` : label
+  const safeLabel =
+    label.length > LINE_WIDTH - value.length - 1 ? `${label.slice(0, LINE_WIDTH - value.length - 4)}...` : label
   return `${padRight(safeLabel, LINE_WIDTH - value.length)}${value}\n`
 }
 

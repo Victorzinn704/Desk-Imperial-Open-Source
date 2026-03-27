@@ -40,11 +40,11 @@ const DnDCalendar = withDragAndDrop<CommercialActivity>(Calendar)
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
 const ACTIVITY_COLORS: Record<ActivityType, { bg: string; border: string; text: string; dot: string }> = {
-  evento:   { bg: 'rgba(239,68,68,0.16)',   border: 'rgba(239,68,68,0.4)',   text: '#fca5a5', dot: '#ef4444' },
-  jogo:     { bg: 'rgba(234,179,8,0.16)',   border: 'rgba(234,179,8,0.4)',   text: '#fde047', dot: '#eab308' },
-  promocao: { bg: 'rgba(54,245,124,0.14)',  border: 'rgba(54,245,124,0.38)', text: '#86efac', dot: '#36f57c' },
-  reuniao:  { bg: 'rgba(96,165,250,0.14)',  border: 'rgba(96,165,250,0.38)', text: '#93c5fd', dot: '#60a5fa' },
-  outro:    { bg: 'rgba(168,85,247,0.14)',  border: 'rgba(168,85,247,0.38)', text: '#c4b5fd', dot: '#a855f7' },
+  evento: { bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.4)', text: '#fca5a5', dot: '#ef4444' },
+  jogo: { bg: 'rgba(234,179,8,0.16)', border: 'rgba(234,179,8,0.4)', text: '#fde047', dot: '#eab308' },
+  promocao: { bg: 'rgba(54,245,124,0.14)', border: 'rgba(54,245,124,0.38)', text: '#86efac', dot: '#36f57c' },
+  reuniao: { bg: 'rgba(96,165,250,0.14)', border: 'rgba(96,165,250,0.38)', text: '#93c5fd', dot: '#60a5fa' },
+  outro: { bg: 'rgba(168,85,247,0.14)', border: 'rgba(168,85,247,0.38)', text: '#c4b5fd', dot: '#a855f7' },
 }
 
 const ACTIVITY_LABELS: Record<ActivityType, string> = {
@@ -126,9 +126,7 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 
   const [startStr, setStartStr] = useState(toInput(activity?.start ?? defaultDate))
-  const [endStr, setEndStr] = useState(
-    toInput(activity?.end ?? new Date(defaultDate.getTime() + 2 * 60 * 60 * 1000)),
-  )
+  const [endStr, setEndStr] = useState(toInput(activity?.end ?? new Date(defaultDate.getTime() + 2 * 60 * 60 * 1000)))
 
   function handleSave() {
     if (!title.trim()) return
@@ -163,7 +161,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
 
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Nome</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+              Nome
+            </label>
             <input
               autoFocus
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
@@ -174,7 +174,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Tipo</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+              Tipo
+            </label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
                 const isActive = type === t
@@ -201,7 +203,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Início</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+                Início
+              </label>
               <input
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
                 type="datetime-local"
@@ -210,7 +214,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Fim</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+                Fim
+              </label>
               <input
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
                 type="datetime-local"
@@ -221,7 +227,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Descrição (opcional)</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+              Descrição (opcional)
+            </label>
             <textarea
               className="w-full resize-none rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
               placeholder="Detalhes da atividade..."
@@ -252,7 +260,10 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
             <button
               className="rounded-[14px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm font-semibold text-[#fca5a5] hover:bg-[rgba(239,68,68,0.14)]"
               type="button"
-              onClick={() => { onDelete(activity.id); onClose() }}
+              onClick={() => {
+                onDelete(activity.id)
+                onClose()
+              }}
             >
               Excluir
             </button>
@@ -298,9 +309,7 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">{a.title}</p>
               </div>
-              <p className="shrink-0 text-xs text-[var(--text-soft)]">
-                {format(a.start, 'dd/MM', { locale: ptBR })}
-              </p>
+              <p className="shrink-0 text-xs text-[var(--text-soft)]">{format(a.start, 'dd/MM', { locale: ptBR })}</p>
               {a.impactoEsperado && (
                 <span className="shrink-0 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-bold text-[#36f57c]">
                   +{a.impactoEsperado}%
@@ -328,11 +337,7 @@ export function CommercialCalendar() {
   const onEventDrop = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventDrop']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((a) =>
-          a.id === event.id
-            ? { ...a, start: new Date(start), end: new Date(end) }
-            : a,
-        ),
+        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
       )
     },
     [],
@@ -342,11 +347,7 @@ export function CommercialCalendar() {
   const onEventResize = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventResize']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((a) =>
-          a.id === event.id
-            ? { ...a, start: new Date(start), end: new Date(end) }
-            : a,
-        ),
+        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
       )
     },
     [],
@@ -359,9 +360,7 @@ export function CommercialCalendar() {
 
   function handleSave(data: Omit<CommercialActivity, 'id'>) {
     if (editingActivity) {
-      setActivities((prev) =>
-        prev.map((a) => (a.id === editingActivity.id ? { ...a, ...data } : a)),
-      )
+      setActivities((prev) => prev.map((a) => (a.id === editingActivity.id ? { ...a, ...data } : a)))
       setEditingActivity(null)
     } else {
       setActivities((prev) => [...prev, { ...data, id: String(Date.now()) }])
@@ -427,7 +426,10 @@ export function CommercialCalendar() {
           <button
             className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
             type="button"
-            onClick={() => { setSelectedSlotStart(new Date()); setShowModal(true) }}
+            onClick={() => {
+              setSelectedSlotStart(new Date())
+              setShowModal(true)
+            }}
           >
             <Plus className="size-4" />
             Nova Atividade
@@ -540,9 +542,7 @@ export function CommercialCalendar() {
                     <span className="text-sm text-white">{ACTIVITY_LABELS[t]}</span>
                     <span className="text-xs text-[var(--text-soft)]">({count})</span>
                   </div>
-                  {impact > 0 && (
-                    <span className="text-xs font-semibold text-[#36f57c]">+{impact}%</span>
-                  )}
+                  {impact > 0 && <span className="text-xs font-semibold text-[#36f57c]">+{impact}%</span>}
                 </div>
               )
             })}
@@ -569,7 +569,10 @@ export function CommercialCalendar() {
       {showModal && (
         <ActivityModal
           initialStart={selectedSlotStart}
-          onClose={() => { setShowModal(false); setSelectedSlotStart(undefined) }}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedSlotStart(undefined)
+          }}
           onSave={handleSave}
         />
       )}
