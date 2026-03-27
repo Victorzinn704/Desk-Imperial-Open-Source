@@ -15,6 +15,7 @@ import {
   productPackagingPresets,
 } from '@/lib/product-packaging'
 import { productSchema, type ProductFormInputValues, type ProductFormValues } from '@/lib/validation'
+import { isKitchenCategory } from '@/lib/is-kitchen-category'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 import { SelectField } from '@/components/shared/select-field'
@@ -68,6 +69,19 @@ export function ProductForm({
   const stockPackages = Number(watch('stockPackages') ?? 0)
   const stockLooseUnits = Number(watch('stockLooseUnits') ?? 0)
   const requiresKitchenValue = watch('requiresKitchen')
+  const categoryValue = watch('category')
+
+  // Auto-toggle requiresKitchen when category name suggests food/prep
+  useEffect(() => {
+    if (!categoryValue) return
+    const shouldBeKitchen = isKitchenCategory(categoryValue)
+    // Only auto-set to true — never force to false (user override respected)
+    if (shouldBeKitchen && !requiresKitchenValue) {
+      setValue('requiresKitchen', true, { shouldDirty: true })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryValue])
+
   const selectedPresetIsManual = selectedPreset === manualPackagingOption
   const manualMeasurementMode = measurementMode === customMeasurementOption
   const calculatedStockTotal = buildStockTotalUnits(stockPackages, stockLooseUnits, unitsPerPackage)
@@ -312,7 +326,14 @@ export function ProductForm({
 
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
           <div>
-            <p className="text-sm font-medium text-white">Envia para a cozinha</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-white">Envia para a cozinha</p>
+              {categoryValue && isKitchenCategory(categoryValue) && (
+                <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#9b8460)]">
+                  auto
+                </span>
+              )}
+            </div>
             <p className="mt-0.5 text-xs text-[var(--text-soft)]">
               Ative para que os pedidos desse item entrem automaticamente na fila da cozinha (KDS).
             </p>

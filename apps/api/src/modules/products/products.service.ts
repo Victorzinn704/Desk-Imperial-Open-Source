@@ -13,6 +13,7 @@ import { ListProductsQueryDto } from './dto/list-products.query'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
+import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -126,7 +127,9 @@ export class ProductsService {
           unitPrice: dto.unitPrice,
           currency: dto.currency,
           stock: dto.stock,
-          requiresKitchen: dto.requiresKitchen ?? false,
+          // requiresKitchen: explicit DTO value takes priority;
+          // if not sent, infer from category name as safety net
+          requiresKitchen: dto.requiresKitchen ?? isKitchenCategory(dto.category),
           active: true,
         },
       })
@@ -152,7 +155,7 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(this.cache.financeKey(workspaceUserId))
+      void this.cache.del(CacheService.financeKey(workspaceUserId))
       void this.invalidateProductsCache(workspaceUserId)
 
       return {
@@ -248,7 +251,7 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(this.cache.financeKey(workspaceUserId))
+      void this.cache.del(CacheService.financeKey(workspaceUserId))
       void this.invalidateProductsCache(workspaceUserId)
 
       return {
@@ -393,6 +396,7 @@ export class ProductsService {
             unitPrice: row.unitPrice,
             currency: row.currency as CurrencyCode,
             stock: row.stock,
+            requiresKitchen: isKitchenCategory(safeCategory),
             active: true,
           },
           update: {
@@ -407,6 +411,9 @@ export class ProductsService {
             unitPrice: row.unitPrice,
             currency: row.currency as CurrencyCode,
             stock: row.stock,
+            // On update via CSV, only override requiresKitchen if it
+            // was explicitly false (i.e. not yet set) — preserve manual config
+            requiresKitchen: isKitchenCategory(safeCategory) ? true : undefined,
             active: true,
           },
         })
@@ -440,7 +447,7 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
     void this.invalidateProductsCache(workspaceUserId)
 
     return {
@@ -478,7 +485,7 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
     void this.invalidateProductsCache(workspaceUserId)
 
     const snapshot = await this.currencyService.getSnapshot()
@@ -519,3 +526,4 @@ function handleProductConflict(error: unknown): never {
 
   throw error
 }
+

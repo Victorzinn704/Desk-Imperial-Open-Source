@@ -1,12 +1,13 @@
 'use client'
 
+import { memo } from 'react'
 import { Ban, ReceiptText } from 'lucide-react'
 import type { OrderRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
 import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
 import { Button } from '@/components/shared/button'
 
-export function OrderCard({
+export const OrderCard = memo(function OrderCard({
   order,
   onCancel,
   canCancel = true,
@@ -126,4 +127,5 @@ export function OrderCard({
       </div>
     </article>
   )
-}
+})
+OrderCard.displayName = 'OrderCard'

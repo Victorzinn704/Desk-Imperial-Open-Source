@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Archive, Package, PencilLine, RotateCcw } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
@@ -28,7 +29,7 @@ function stockTone(stock: number) {
 
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function ProductCard({
+export const ProductCard = memo(function ProductCard({
   product,
   onEdit,
   onArchive,
@@ -166,7 +167,8 @@ export function ProductCard({
       </div>
     </article>
   )
-}
+})
+ProductCard.displayName = 'ProductCard'
 
 function StatTile({
   label,

@@ -25,6 +25,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Skeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
 import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
 import { cn } from '@/lib/utils'
@@ -45,7 +46,7 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#36f57c', '#38bdf8', '#C9A84C', '#f04438', '#a78bfa', '#fb923c', '#e879f9', '#2265d8']
+const palette = ['#639371', '#5a95c4', '#C9A84C', '#d47373', '#a78bfa', '#fb923c', '#e879f9', '#2265d8']
 
 const chartViews: ChartViewOption[] = [
   {
@@ -275,18 +276,26 @@ export function FinanceChart({
             </p>
           </div>
 
-          {insightCards.map((insight) => (
-            <div
-              className="imperial-card-stat p-5"
-              key={insight.label}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                {insight.label}
-              </p>
-              <p className="mt-3 text-2xl font-semibold text-white">{insight.value}</p>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{insight.helper}</p>
-            </div>
-          ))}
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <div className="imperial-card-stat space-y-3 p-5" key={`insight-skeleton-${index}`}>
+                  <Skeleton className="h-3 w-28 rounded-full" />
+                  <Skeleton className="h-8 w-36 rounded-lg" />
+                  <Skeleton className="h-3 w-full rounded-full" />
+                </div>
+              ))
+            : insightCards.map((insight) => (
+                <div
+                  className="imperial-card-stat p-5"
+                  key={insight.label}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    {insight.label}
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{insight.value}</p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{insight.helper}</p>
+                </div>
+              ))}
         </div>
       </div>
     </section>
@@ -344,8 +353,8 @@ function renderChart({
 }: RenderChartProps) {
   if (isLoading) {
     return (
-      <div className="imperial-card-soft flex h-full items-center justify-center border-dashed">
-        <p className="text-sm text-[var(--text-soft)]">Carregando indicadores visuais...</p>
+      <div className="flex h-full items-center justify-center">
+        <Skeleton className="h-full w-full rounded-[20px]" />
       </div>
     )
   }

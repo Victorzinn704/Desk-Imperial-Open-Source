@@ -29,10 +29,12 @@ import {
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
+import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
+import { MobileHistoricoView } from '@/components/staff-mobile/mobile-historico-view'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { useOfflineQueue } from '@/components/shared/use-offline-queue'
 
-type Tab = 'mesas' | 'cozinha' | 'pedido' | 'ativo'
+type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
 type PendingAction =
   | { type: 'new'; mesa: Mesa }
@@ -369,27 +371,12 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
 
   function handleSelectMesa(mesa: Mesa) {
     if (mesa.status === 'ocupada' && mesa.comandaId) {
-      // Verifica se a mesa é do garçom logado ou de outro
-      const myName = currentUser?.fullName ?? currentUser?.name
-      const isMyTable = !mesa.garcomNome || (myName && mesa.garcomNome.toLowerCase().includes(myName.split(' ')[0].toLowerCase()))
-      
-      if (isMyTable) {
-        // Mesa minha → abre PDV para adicionar itens
-        setPendingAction({ type: 'add', comandaId: mesa.comandaId, mesaLabel: mesa.numero })
-        setFocusedComandaId(null)
-        setActiveTab('pedido')
-      } else {
-        // Mesa de outro garçom → popup de aviso
-        const goAnyway = window.confirm(
-          `⚠️ Mesa ${mesa.numero} está sendo atendida por ${mesa.garcomNome}.\n\nDeseja visualizar a comanda mesmo assim?`
-        )
-        if (goAnyway) {
-          setFocusedComandaId(mesa.comandaId)
-          setActiveTab('ativo')
-        }
-      }
+      // Mesa ocupada → foca a comanda na aba Ativo para o garçom ver o estado atual
+      // O botão "Adicionar itens" dentro do card da comanda leva ao order builder
+      setFocusedComandaId(mesa.comandaId)
+      setActiveTab('pedidos')
     } else {
-      // livre → open PDV first so the staff can add items before creating the comanda
+      // Mesa livre → cria nova comanda direto no builder de pedido
       setPendingAction({ type: 'new', mesa })
       setFocusedComandaId(null)
       setActiveTab('pedido')
@@ -402,7 +389,6 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
   }
 
   function handleNewComanda() {
-    // clear pending and go to mesas to pick a free table
     setPendingAction(null)
     setFocusedComandaId(null)
     setActiveTab('mesas')
@@ -428,13 +414,13 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         }
         await invalidateMobileWorkspace(queryClient)
         setPendingAction(null)
-        setActiveTab('ativo')
+        setActiveTab('pedidos')
         return
       }
 
       // type === 'new' — tenta abrir comanda, com auto-open caixa se necessário
       const comParams = {
-        tableLabel: pendingAction.mesa.numero,
+        tableLabel: normalizeTableLabel(pendingAction.mesa.numero),
         items: items.map((item) => ({
           productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
           productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
@@ -461,7 +447,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         }
       }
       setPendingAction(null)
-      setActiveTab('ativo')
+      setActiveTab('pedidos')
     } catch (error) {
       // Erro de rede (offline) → enfileira a ação para retry ao reconectar
       const isNetworkError =
@@ -562,7 +548,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
 
   const mesaLabel = pendingAction
     ? pendingAction.type === 'new'
-      ? pendingAction.mesa.numero
+      ? normalizeTableLabel(pendingAction.mesa.numero)
       : pendingAction.mesaLabel
     : '?'
   const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
@@ -663,7 +649,8 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
           )}
         </div>
 
-        <div style={{ display: activeTab === 'ativo' ? undefined : 'none' }}>
+        {/* Pedidos — comandas ativas */}
+        <div style={{ display: activeTab === 'pedidos' ? undefined : 'none' }}>
           <MobileComandaList
             comandas={activeComandas}
             focusedId={focusedComandaId}
@@ -675,6 +662,11 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             onNewComanda={handleNewComanda}
           />
         </div>
+
+        {/* Histórico — todos os atendimentos do dia */}
+        <div style={{ display: activeTab === 'historico' ? undefined : 'none' }}>
+          <MobileHistoricoView comandas={comandas} />
+        </div>
       </main>
 
       <nav
@@ -684,20 +676,20 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
           {(
             [
-              { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
-              { id: 'cozinha', label: 'Cozinha', Icon: ChefHat, badge: kitchenBadge },
-              { id: 'pedido', label: 'Pedido', Icon: ShoppingCart, badge: 0 },
-              { id: 'ativo', label: 'Ativo', Icon: ClipboardList, badge: activeComandas.length },
+              { id: 'mesas',    label: 'Mesas',    Icon: Grid2x2,      badge: 0 },
+              { id: 'cozinha',  label: 'Cozinha',  Icon: ChefHat,      badge: kitchenBadge },
+              { id: 'pedidos',  label: 'Pedidos',  Icon: ClipboardList, badge: activeComandas.length },
+              { id: 'historico', label: 'Histórico', Icon: ShoppingCart, badge: 0 },
             ] as const
           ).map(({ id, label, Icon, badge }) => {
-            const isActive = activeTab === id
+            const isActive = activeTab === id || (id === 'pedidos' && activeTab === 'pedido')
             return (
               <button
                 key={id}
                 type="button"
                 onClick={() => {
                   setActiveTab(id)
-                  if (id !== 'ativo') setFocusedComandaId(null)
+                  if (id !== 'pedidos') setFocusedComandaId(null)
                 }}
                 className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
                 style={{ WebkitTapHighlightColor: 'transparent' }}

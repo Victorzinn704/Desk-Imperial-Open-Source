@@ -27,7 +27,7 @@
         "./*"
       ],
       "@contracts/contracts": [
-        "./lib/contracts"
+        "../../packages/types/src/index"
       ]
     },
     "allowJs": true,

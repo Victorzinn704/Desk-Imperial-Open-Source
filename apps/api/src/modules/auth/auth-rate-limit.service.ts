@@ -65,7 +65,7 @@ export class AuthRateLimitService {
   }
 
   async clear(key: string): Promise<void> {
-    await this.cache.del(this.cache.ratelimitKey('auth', key))
+    await this.cache.del(CacheService.ratelimitKey('auth', key))
   }
 
   buildLoginKey(email: string, ipAddress: string | null) {
@@ -109,7 +109,7 @@ export class AuthRateLimitService {
   }
 
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
-    const redisKey = this.cache.ratelimitKey('auth', key)
+    const redisKey = CacheService.ratelimitKey('auth', key)
     const entry = await this.cache.get<AttemptEntry>(redisKey)
 
     if (!entry) return
@@ -130,7 +130,7 @@ export class AuthRateLimitService {
   }
 
   private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
-    const redisKey = this.cache.ratelimitKey('auth', key)
+    const redisKey = CacheService.ratelimitKey('auth', key)
     const now = Date.now()
 
     const existing = await this.cache.get<AttemptEntry>(redisKey)
@@ -199,3 +199,4 @@ export class AuthRateLimitService {
     }
   }
 }
+

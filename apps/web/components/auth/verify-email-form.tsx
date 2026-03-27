@@ -17,7 +17,15 @@ import { type VerifyEmailFormValues, verifyEmailSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 
-export function VerifyEmailForm({ email, firstAccess }: Readonly<{ email?: string; firstAccess?: boolean }>) {
+export function VerifyEmailForm({
+  email,
+  firstAccess,
+  successRedirectTo = '/login',
+}: Readonly<{
+  email?: string
+  firstAccess?: boolean
+  successRedirectTo?: string
+}>) {
   const router = useRouter()
   const [isRouting, startTransition] = useTransition()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -45,7 +53,7 @@ export function VerifyEmailForm({ email, firstAccess }: Readonly<{ email?: strin
       clearEmailVerificationChallenge(currentEmail)
       setSuccessMessage(payload.message)
       startTransition(() => {
-        router.push('/login')
+        router.push(successRedirectTo)
       })
     },
   })

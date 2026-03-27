@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
+import { Skeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
 import {
   Bar,
@@ -89,15 +90,7 @@ export function SalesPerformanceCard({
         {/* chart */}
         <div className="mb-4 h-[188px] w-full">
           {isLoading ? (
-            <div className="flex h-full items-end justify-between gap-1.5 px-1">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  className="skeleton-shimmer flex-1 rounded-sm"
-                  key={i}
-                  style={{ height: `${45 + (i % 3) * 18}%` }}
-                />
-              ))}
-            </div>
+            <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <ComposedChart
@@ -201,7 +194,7 @@ function MetricTile({
     >
       <p className="text-[11px] font-medium text-[var(--text-soft)]">{label}</p>
       {isLoading ? (
-        <div className="skeleton-shimmer mt-1.5 h-6 w-24 rounded-md" />
+        <Skeleton className="mt-1.5 h-6 w-24 rounded-md" />
       ) : (
         <p className="mt-1 text-base font-semibold text-white">{value}</p>
       )}

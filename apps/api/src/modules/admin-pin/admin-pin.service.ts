@@ -159,7 +159,7 @@ export class AdminPinService {
     }
 
     await this.cache.set(this.buildChallengeKey(workspaceOwnerUserId, auth.sessionId, auth.userId), record, Math.ceil(ADMIN_PIN_VERIFICATION_TTL_MS / 1000))
-    await this.cache.del(this.cache.ratelimitKey('admin-pin', rateLimitKey))
+    await this.cache.del(CacheService.ratelimitKey('admin-pin', rateLimitKey))
 
     return {
       challengeId,
@@ -265,7 +265,7 @@ export class AdminPinService {
   }
 
   private buildChallengeKey(workspaceOwnerUserId: string, sessionId: string, userId: string) {
-    return this.cache.ratelimitKey('admin-pin-proof', `${workspaceOwnerUserId}:${sessionId}:${userId}`)
+    return CacheService.ratelimitKey('admin-pin-proof', `${workspaceOwnerUserId}:${sessionId}:${userId}`)
   }
 
   private buildAttemptKey(workspaceOwnerUserId: string, sessionId: string, userId: string) {
@@ -273,7 +273,7 @@ export class AdminPinService {
   }
 
   private async assertPinAllowed(key: string): Promise<void> {
-    const redisKey = this.cache.ratelimitKey('admin-pin', key)
+    const redisKey = CacheService.ratelimitKey('admin-pin', key)
     const entry = await this.cache.get<PinAttemptEntry>(redisKey)
     if (!entry) return
 
@@ -293,7 +293,7 @@ export class AdminPinService {
   }
 
   private async recordPinFailure(key: string): Promise<void> {
-    const redisKey = this.cache.ratelimitKey('admin-pin', key)
+    const redisKey = CacheService.ratelimitKey('admin-pin', key)
     const now = Date.now()
     const existing = await this.cache.get<PinAttemptEntry>(redisKey)
 
@@ -348,3 +348,4 @@ export class AdminPinService {
 function fingerprintPinHash(adminPinHash: string) {
   return createHash('sha256').update(adminPinHash).digest('base64url')
 }
+

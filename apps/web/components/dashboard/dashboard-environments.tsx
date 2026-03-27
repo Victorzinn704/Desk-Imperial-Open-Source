@@ -1,20 +1,55 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-import { PayrollEnvironment } from '@/components/dashboard/payroll-environment'
-import { SalaoEnvironment } from '@/components/dashboard/salao-environment'
-import { CalendarioEnvironment } from './environments/calendario-environment'
-import { MapEnvironment } from './environments/map-environment'
-import { OverviewEnvironment } from './environments/overview-environment'
-import { PdvEnvironment } from './environments/pdv-environment'
-import { PortfolioEnvironment } from './environments/portfolio-environment'
+// Lightweight environments — loaded eagerly (small, always needed)
 import { SalesEnvironment } from './environments/sales-environment'
+import { PortfolioEnvironment } from './environments/portfolio-environment'
+import { PdvEnvironment } from './environments/pdv-environment'
+import { OverviewEnvironment } from './environments/overview-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
 import type {
   DashboardSectionId,
   DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser } from '@/lib/api'
+
+// ── Heavy environments — lazy loaded only when the user navigates to them ──────
+// CalendarioEnvironment: react-big-calendar (~180 KB)
+const CalendarioEnvironment = dynamic(
+  () => import('./environments/calendario-environment').then((m) => m.CalendarioEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={6} />,
+    ssr: false,
+  },
+)
+
+// MapEnvironment: Leaflet tiles + markers (~320 KB)
+const MapEnvironment = dynamic(
+  () => import('./environments/map-environment').then((m) => m.MapEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={1} tall />,
+    ssr: false,
+  },
+)
+
+// PayrollEnvironment: multiple sub-tables, AG-Grid-like (~180 KB)
+const PayrollEnvironment = dynamic(
+  () => import('./payroll-environment').then((m) => m.PayrollEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={5} />,
+    ssr: false,
+  },
+)
+
+// SalaoEnvironment: floor-plan drag-and-drop via @dnd-kit (~41 KB component + dnd-kit)
+const SalaoEnvironment = dynamic(
+  () => import('./salao-environment').then((m) => m.SalaoEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={4} />,
+    ssr: false,
+  },
+)
 
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId
@@ -62,4 +97,31 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
     default:
       return <OverviewEnvironment />
   }
+}
+
+// ── Skeleton genérico para estados de loading dos ambientes pesados ────────────
+function EnvironmentSkeleton({ rows = 4, tall = false }: { rows?: number; tall?: boolean }) {
+  return (
+    <div className="flex flex-col gap-4 animate-pulse">
+      <div className="imperial-card p-6">
+        <div className="skeleton-shimmer h-4 w-40 rounded-full" />
+        <div className="skeleton-shimmer mt-3 h-3 w-64 rounded-full" />
+      </div>
+      {tall ? (
+        <div className="imperial-card p-0 overflow-hidden">
+          <div className="skeleton-shimmer h-[520px] w-full" />
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div className="imperial-card p-5" key={i}>
+              <div className="skeleton-shimmer h-3 w-24 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-8 w-32 rounded-xl" />
+              <div className="skeleton-shimmer mt-3 h-3 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }

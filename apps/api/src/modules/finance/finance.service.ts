@@ -134,7 +134,7 @@ export class FinanceService {
   async getSummaryForUser(auth: AuthContext): Promise<FinanceSummaryResponse> {
     assertOwnerRole(auth, 'Apenas o dono pode acessar o resumo financeiro executivo.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
-    const cacheKey = this.cache.financeKey(workspaceUserId)
+    const cacheKey = CacheService.financeKey(workspaceUserId)
     const cached = await this.cache.get<FinanceSummaryResponse>(cacheKey)
     if (cached) return cached
     const snapshot = await this.currencyService.getSnapshot()
@@ -428,7 +428,7 @@ export class FinanceService {
   }
 
   async invalidateSummaryCache(userId: string): Promise<void> {
-    await this.cache.del(this.cache.financeKey(userId))
+    await this.cache.del(CacheService.financeKey(userId))
   }
 }
 
@@ -872,3 +872,4 @@ function buildRegionLabel(
 ) {
   return [district, city, state, country].filter(Boolean).join(', ') || 'Regiao nao identificada'
 }
+

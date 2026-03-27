@@ -2,6 +2,7 @@
 
 import { Award, BadgeDollarSign, Target, Trophy, UserRoundCog, type LucideIcon } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
+import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { formatCurrency } from '@/lib/currency'
 
 export function EmployeeRankingCard({
@@ -58,8 +59,8 @@ export function EmployeeRankingCard({
       </div>
 
       {isLoading ? (
-        <div className="imperial-card-soft mt-6 border-dashed px-5 py-14 text-center">
-          <p className="text-sm text-[var(--text-soft)]">Carregando ranking da equipe...</p>
+        <div className="mt-6">
+          <CardRowSkeleton rows={5} />
         </div>
       ) : error ? (
         <div className="mt-6 rounded-[28px] border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.08)] px-5 py-6 text-sm text-[var(--danger)]">

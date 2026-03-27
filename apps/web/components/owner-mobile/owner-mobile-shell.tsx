@@ -3,13 +3,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { Mesa } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BarChart3, Building2, ChefHat, ClipboardList, Cog, LogOut, TrendingUp } from 'lucide-react'
+import { BarChart3, Building2, ChefHat, ClipboardList, Cog, Crown, LogOut, Package, TrendingUp, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ComandaStatus } from '@/components/pdv/pdv-types'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { KitchenOrdersView } from '../staff-mobile/kitchen-orders-view'
-import { MobileComandaList } from '../staff-mobile/mobile-comanda-list'
 import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
+import { OwnerComandasView } from './owner-comandas-view'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
@@ -148,16 +148,60 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     }
   }
 
-  // KPIs para aba Resumo
   const today = new Date().toISOString().slice(0, 10)
   const orders = ordersQuery.data?.items ?? []
   const todayOrders = orders.filter((o) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
   const todayRevenue = todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0)
+  const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
 
   const totalItems = activeComandas.reduce(
     (sum, c) => sum + c.itens.reduce((s, i) => s + i.quantidade, 0),
     0,
   )
+
+  // Ranking garçons — a partir do snapshot
+  const garconRanking = useMemo(() => {
+    const snapshot = operationsQuery.data
+    if (!snapshot) return []
+    const map = new Map<string, { nome: string; valor: number; comandas: number }>()
+    for (const emp of snapshot.employees) {
+      if (!emp.employeeId) continue
+      let valor = 0
+      let cmds = 0
+      for (const c of emp.comandas) {
+        valor += c.totalAmount
+        cmds++
+      }
+      if (cmds > 0 || valor > 0) {
+        map.set(emp.employeeId, { nome: emp.displayName, valor, comandas: cmds })
+      }
+    }
+    return [...map.values()].sort((a, b) => b.valor - a.valor).slice(0, 5)
+  }, [operationsQuery.data])
+
+  // Top produtos — a partir do snapshot (todos os itens do dia)
+  const topProdutos = useMemo(() => {
+    const snapshot = operationsQuery.data
+    if (!snapshot) return []
+    const map = new Map<string, { nome: string; qtd: number; valor: number }>()
+    const groups = [...snapshot.employees, snapshot.unassigned]
+    for (const g of groups) {
+      for (const c of g.comandas) {
+        for (const item of c.items) {
+          const key = item.productName
+          const entry = map.get(key) ?? { nome: item.productName, qtd: 0, valor: 0 }
+          entry.qtd += item.quantity
+          entry.valor += item.quantity * item.unitPrice
+          map.set(key, entry)
+        }
+      }
+    }
+    return [...map.values()].sort((a, b) => b.valor - a.valor).slice(0, 5)
+  }, [operationsQuery.data])
+
+  // Mesas ao vivo
+  const mesasLivres = mesas.filter((m) => m.status === 'livre').length
+  const mesasOcupadas = mesas.filter((m) => m.status === 'ocupada').length
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
@@ -250,19 +294,20 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
 
         {activeTab === 'comandas' ? (
-          <MobileComandaList
-            comandas={activeComandas}
-            onUpdateStatus={handleUpdateStatus}
-            focusedId={focusedComandaId}
-          />
+          <OwnerComandasView comandas={comandas} />
         ) : null}
 
         {activeTab === 'resumo' ? (
           <OwnerResumoTab
             todayRevenue={todayRevenue}
+            ticketMedio={ticketMedio}
             todayOrderCount={todayOrders.length}
             activeComandas={activeComandas.length}
-            totalActiveItems={totalItems}
+            mesasLivres={mesasLivres}
+            mesasOcupadas={mesasOcupadas}
+            kitchenBadge={kitchenBadge}
+            garconRanking={garconRanking}
+            topProdutos={topProdutos}
             isLoading={ordersQuery.isLoading || operationsQuery.isLoading}
             onOpenFullDashboard={() => router.push('/dashboard')}
           />
@@ -327,82 +372,145 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
 function OwnerResumoTab({
   todayRevenue,
+  ticketMedio,
   todayOrderCount,
   activeComandas,
-  totalActiveItems,
+  mesasLivres,
+  mesasOcupadas,
+  kitchenBadge,
+  garconRanking,
+  topProdutos,
   isLoading,
   onOpenFullDashboard,
 }: {
   todayRevenue: number
+  ticketMedio: number
   todayOrderCount: number
   activeComandas: number
-  totalActiveItems: number
+  mesasLivres: number
+  mesasOcupadas: number
+  kitchenBadge: number
+  garconRanking: { nome: string; valor: number; comandas: number }[]
+  topProdutos: { nome: string; qtd: number; valor: number }[]
   isLoading: boolean
   onOpenFullDashboard: () => void
 }) {
   return (
-    <div className="p-4 pb-8">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-        Visão geral de hoje
-      </p>
+    <div className="p-4 pb-8 space-y-5">
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
-          <div className="mb-1 flex items-center gap-1.5">
-            <TrendingUp className="size-3.5 text-[var(--accent,#9b8460)]" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">Receita</p>
-          </div>
-          {isLoading ? (
-            <div className="h-6 w-20 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
-          ) : (
-            <p className="text-lg font-bold text-white">{formatCurrency(todayRevenue)}</p>
-          )}
-          <p className="mt-1 text-[10px] text-[#7a8896]">hoje</p>
+      {/* KPIs do dia */}
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">Hoje</p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Receita', value: formatCurrency(todayRevenue), sub: 'faturado', color: '#36f57c', Icon: TrendingUp },
+            { label: 'Ticket médio', value: formatCurrency(ticketMedio), sub: 'por atendimento', color: '#fb923c', Icon: BarChart3 },
+            { label: 'Pedidos', value: String(todayOrderCount), sub: 'encerrados', color: '#60a5fa', Icon: ClipboardList },
+            { label: 'Comandas', value: String(activeComandas), sub: 'abertas agora', color: '#a78bfa', Icon: Building2 },
+          ].map(({ label, value, sub, color, Icon }) => (
+            <div key={label} className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
+              <div className="mb-1 flex items-center gap-1.5">
+                <Icon className="size-3.5" style={{ color }} />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">{label}</p>
+              </div>
+              {isLoading ? (
+                <div className="h-6 w-20 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
+              ) : (
+                <p className="text-lg font-bold text-white">{value}</p>
+              )}
+              <p className="mt-1 text-[10px] text-[#7a8896]">{sub}</p>
+            </div>
+          ))}
         </div>
+      </div>
 
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
-          <div className="mb-1 flex items-center gap-1.5">
-            <ClipboardList className="size-3.5 text-[#60a5fa]" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">Pedidos</p>
+      {/* Mesas + Cozinha ao vivo */}
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">Ao vivo</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+            <p className="text-2xl font-bold text-[#34d399]">{mesasLivres}</p>
+            <p className="text-[10px] text-[#7a8896] mt-0.5">Livres</p>
           </div>
-          {isLoading ? (
-            <div className="h-6 w-12 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
-          ) : (
-            <p className="text-lg font-bold text-white">{todayOrderCount}</p>
-          )}
-          <p className="mt-1 text-[10px] text-[#7a8896]">hoje</p>
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+            <p className="text-2xl font-bold text-[#f87171]">{mesasOcupadas}</p>
+            <p className="text-[10px] text-[#7a8896] mt-0.5">Ocupadas</p>
+          </div>
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+            <p className="text-2xl font-bold text-[#eab308]">{kitchenBadge}</p>
+            <p className="text-[10px] text-[#7a8896] mt-0.5">Cozinha</p>
+          </div>
         </div>
+      </div>
 
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
-          <div className="mb-1 flex items-center gap-1.5">
-            <Building2 className="size-3.5 text-[#fb923c]" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">Comandas</p>
-          </div>
-          <p className="text-lg font-bold text-white">{activeComandas}</p>
-          <p className="mt-1 text-[10px] text-[#7a8896]">abertas agora</p>
-        </div>
+      {/* Ranking garçons */}
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+          <Users className="inline size-3 mr-1" />Ranking garçons
+        </p>
+        {garconRanking.length === 0 ? (
+          <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum garçom com vendas hoje</p>
+        ) : (
+          <ul className="space-y-2">
+            {garconRanking.map((g, i) => (
+              <li key={g.nome} className="flex items-center justify-between rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-bold" style={{ color: i === 0 ? '#eab308' : '#7a8896' }}>
+                    {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{g.nome}</p>
+                    <p className="text-[10px] text-[#7a8896]">{g.comandas} comandas</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-[#36f57c]">{formatCurrency(g.valor)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4">
-          <div className="mb-1 flex items-center gap-1.5">
-            <Cog className="size-3.5 text-[#a78bfa]" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">Itens</p>
-          </div>
-          <p className="text-lg font-bold text-white">{totalActiveItems}</p>
-          <p className="mt-1 text-[10px] text-[#7a8896]">em andamento</p>
-        </div>
+      {/* Top produtos */}
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+          <Package className="inline size-3 mr-1" />Top produtos
+        </p>
+        {topProdutos.length === 0 ? (
+          <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum produto vendido hoje ainda</p>
+        ) : (
+          <ul className="space-y-2">
+            {topProdutos.map((p, i) => {
+              const maxValor = topProdutos[0]?.valor ?? 1
+              const pct = Math.round((p.valor / maxValor) * 100)
+              return (
+                <li key={p.nome} className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold text-white truncate max-w-[65%]">{p.nome}</p>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
+                      <span className="ml-2 text-[10px] text-[#7a8896]">×{p.qtd}</span>
+                    </div>
+                  </div>
+                  <div className="h-1 w-full rounded-full bg-[rgba(255,255,255,0.06)]">
+                    <div
+                      className="h-1 rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: i === 0 ? '#36f57c' : 'rgba(96,165,250,0.6)' }}
+                    />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
 
       <button
         type="button"
         onClick={onOpenFullDashboard}
-        className="mt-6 w-full rounded-2xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.08)] px-4 py-4 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
+        className="w-full rounded-2xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
       >
-        Abrir painel completo →
+        Painel completo →
       </button>
-
-      <p className="mt-4 text-center text-[10px] text-[#7a8896]">
-        Para finanças detalhadas, folha de pagamento e configurações, acesse o painel completo no desktop.
-      </p>
     </div>
   )
 }

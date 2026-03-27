@@ -87,7 +87,9 @@ export function MobileComandaList({
       })
     : active
 
-  if (active.length === 0) {
+  const fechadas = comandas.filter((c) => c.status === 'fechada')
+
+  if (active.length === 0 && fechadas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
@@ -354,6 +356,121 @@ export function MobileComandaList({
           )
         })}
       </ul>
+
+      {/* Comprovantes — tocáveis para ver extrato */}
+      {fechadas.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+            Comprovantes — {fechadas.length}
+          </p>
+          <ul className="space-y-2">
+            {fechadas.map((comanda) => (
+              <ExtratoCard key={comanda.id} comanda={comanda} />
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
+  )
+}
+
+// ── Extrato expandível ────────────────────────────────────────────────────────
+const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
+  aberta:     { label: 'Aberta',     color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
+  pronta:     { label: 'Pronta',     color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
+  fechada:    { label: 'Paga',       color: '#7a8896', bg: 'rgba(122,136,150,0.12)' },
+}
+
+function ExtratoCard({ comanda }: { comanda: Comanda }) {
+  const [open, setOpen] = useState(false)
+  const total = calcTotal(comanda)
+  const subtotal = comanda.itens.reduce((s, i) => s + i.quantidade * i.precoUnitario, 0)
+  const descontoVal = subtotal * (comanda.desconto / 100)
+  const acrescimoVal = subtotal * (comanda.acrescimo / 100)
+  const badge = STATUS_BADGE[comanda.status] ?? STATUS_BADGE.aberta
+
+  return (
+    <li className="overflow-hidden rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)]">
+      {/* Header — clicável */}
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-4 py-3 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="text-left">
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className="text-sm font-semibold text-white">Mesa {comanda.mesa ?? '—'}</p>
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              style={{ color: badge.color, background: badge.bg }}
+            >
+              {badge.label}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-soft,#7a8896)]">
+            {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens · {formatElapsed(comanda.abertaEm)} atrás
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
+          {open
+            ? <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
+            : <ChevronRight className="size-4 text-[var(--text-soft,#7a8896)]" />
+          }
+        </div>
+      </button>
+
+      {/* Extrato expandido */}
+      {open && (
+        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-3">
+          {/* Itens */}
+          <ul className="space-y-2 mb-4">
+            {comanda.itens.map((item, idx) => (
+              <li key={idx} className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">
+                    {item.quantidade}× {item.nome}
+                  </p>
+                  {item.observacao && (
+                    <p className="text-[10px] italic text-[var(--text-soft,#7a8896)]">
+                      {item.observacao}
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-white shrink-0">
+                  {formatCurrency(item.quantidade * item.precoUnitario)}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Totais */}
+          <div className="space-y-1 border-t border-[rgba(255,255,255,0.06)] pt-3 text-xs">
+            <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
+              <span>Subtotal</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            {comanda.desconto > 0 && (
+              <div className="flex justify-between text-[#f87171]">
+                <span>Desconto ({comanda.desconto}%)</span>
+                <span>– {formatCurrency(descontoVal)}</span>
+              </div>
+            )}
+            {comanda.acrescimo > 0 && (
+              <div className="flex justify-between text-[#fb923c]">
+                <span>Serviço ({comanda.acrescimo}%)</span>
+                <span>+ {formatCurrency(acrescimoVal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-1 font-semibold text-white">
+              <span>Total</span>
+              <span className="text-[#36f57c]">{formatCurrency(total)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </li>
   )
 }

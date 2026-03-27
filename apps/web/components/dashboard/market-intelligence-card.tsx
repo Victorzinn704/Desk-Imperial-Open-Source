@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { BrainCircuit, Bot, RefreshCcw, Sparkles, TrendingUp } from 'lucide-react'
 import { ApiError, fetchMarketInsight } from '@/lib/api'
 import { Button } from '@/components/shared/button'
+import { CardSkeleton } from '@/components/shared/skeleton'
 import { cn } from '@/lib/utils'
 
 const quickFocuses = [
@@ -129,13 +130,8 @@ export function MarketIntelligenceCard() {
         </div>
 
         {insightQuery.isLoading ? (
-          <div className="imperial-card-soft mt-6 border-dashed px-5 py-12 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              Processando leitura
-            </p>
-            <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-              O consultor está montando a previsão executiva com base na operação atual.
-            </p>
+          <div className="mt-6">
+            <CardSkeleton rows={3} />
           </div>
         ) : insightQuery.error ? (
           <div className="mt-6 rounded-[24px] border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.06)] px-5 py-5">

@@ -149,13 +149,18 @@ export class OperationsController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('mesas')
-  createMesa(@CurrentAuth() auth: AuthContext, @Body() body: CreateMesaDto) {
-    return this.operationsService.createMesa(auth, body)
+  createMesa(@CurrentAuth() auth: AuthContext, @Body() body: CreateMesaDto, @Req() request: Request) {
+    return this.operationsService.createMesa(auth, body, extractRequestContext(request))
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Patch('mesas/:mesaId')
-  updateMesa(@CurrentAuth() auth: AuthContext, @Param('mesaId') mesaId: string, @Body() body: UpdateMesaDto) {
-    return this.operationsService.updateMesa(auth, mesaId, body)
+  updateMesa(
+    @CurrentAuth() auth: AuthContext,
+    @Param('mesaId') mesaId: string,
+    @Body() body: UpdateMesaDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.updateMesa(auth, mesaId, body, extractRequestContext(request))
   }
 }

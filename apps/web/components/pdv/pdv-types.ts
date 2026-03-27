@@ -32,6 +32,8 @@ export type Comanda = {
   mesa?: string
   clienteNome?: string
   clienteDocumento?: string
+  garcomId?: string
+  garcomNome?: string
   itens: ComandaItem[]
   desconto: number
   acrescimo: number

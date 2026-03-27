@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import type { LucideIcon } from 'lucide-react'
 import { Globe2, MapPinned } from 'lucide-react'
+import { ChartSkeleton } from '@/components/shared/skeleton'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -56,9 +57,7 @@ export function SalesMapCard({
 
         <div className="mt-6 h-[420px] overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-soft)]">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center px-6 text-center">
-              <p className="text-sm text-[var(--text-soft)]">Carregando análise geográfica...</p>
-            </div>
+            <ChartSkeleton />
           ) : error ? (
             <div className="flex h-full items-center justify-center px-6 text-center">
               <p className="text-sm text-[var(--danger)]">{error}</p>

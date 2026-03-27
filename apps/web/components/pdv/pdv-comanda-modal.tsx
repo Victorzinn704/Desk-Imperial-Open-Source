@@ -9,6 +9,7 @@ import { AdminPinDialog } from '@/components/admin-pin/admin-pin-dialog'
 import type { Comanda, ComandaItem } from './pdv-types'
 import { calcTotal } from './pdv-types'
 import { useThermalPrinting } from './use-thermal-printing'
+import { normalizeTableLabel } from './normalize-table-label'
 
 type SimpleProduct = {
   id: string
@@ -117,6 +118,7 @@ export function PdvComandaModal({
     return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
   }
 
+  function addItem(product: SimpleProduct) {
     setItens((prev) => {
       const existing = prev.find((item) => item.produtoId === product.id)
       if (existing) {
@@ -473,9 +475,25 @@ export function PdvComandaModal({
                     }}
                     type="button"
                     disabled={isBusy}
-                    onClick={async () => {
-                      await onStatusChange(comanda, option.value)
-                      onClose()
+                    onClick={() => {
+                      // Protect status changes, especially "Fechar Comanda"
+                      const requiresPin = option.value === 'fechada'
+                      if (requiresPin) {
+                        requirePin(
+                          async () => {
+                            await onStatusChange(comanda, option.value)
+                            onClose()
+                          },
+                          'Fechar Comanda',
+                          'Confirme com seu PIN para fechar completamente esta comanda.',
+                        )
+                      } else {
+                        // No PIN required for intermediate statuses
+                        void (async () => {
+                          await onStatusChange(comanda, option.value)
+                          onClose()
+                        })()
+                      }
                     }}
                   >
                     {option.label}
@@ -698,6 +716,15 @@ export function PdvComandaModal({
           </div>
         </div>
       </div>
+
+      {isPinDialogOpen && (
+        <AdminPinDialog
+          title={pinDialogTitle}
+          description={pinDialogDescription}
+          onConfirm={handlePinConfirm}
+          onCancel={handlePinCancel}
+        />
+      )}
     </div>
   )
 }
@@ -707,7 +734,7 @@ function buildPrintableComanda(comanda: Comanda): PrintableComanda {
 
   return {
     id: comanda.id,
-    tableLabel: comanda.mesa,
+    tableLabel: normalizeTableLabel(comanda.mesa ?? ''),
     customerName: comanda.clienteNome,
     customerDocument: comanda.clienteDocumento,
     items: comanda.itens.map((item) => ({

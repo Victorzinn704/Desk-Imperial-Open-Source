@@ -1,5 +1,3 @@
-'use client'
-
 import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
 import type { Mesa, Comanda, ComandaItem, Garcom } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
@@ -15,7 +13,13 @@ export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): 
 
   const groups = [...snapshot.employees, snapshot.unassigned]
   return groups
-    .flatMap((group) => group.comandas.map(toPdvComanda))
+    .flatMap((group) =>
+      group.comandas.map((c) => ({
+        ...toPdvComanda(c),
+        garcomId: group.employeeId ?? undefined,
+        garcomNome: group.displayName ?? undefined,
+      })),
+    )
     .sort((left, right) => right.abertaEm.getTime() - left.abertaEm.getTime())
 }
 
@@ -104,18 +108,18 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
     })
   }
 
-  // Build active comandas map by tableLabel for cross-reference
+  // Build active comandas map by normalized tableLabel for cross-reference
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
   const comandaByTable = new Map<string, typeof activeComandas[0]>()
   for (const c of activeComandas) {
-    if (c.tableLabel) comandaByTable.set(c.tableLabel, c)
+    if (c.tableLabel) comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
   }
 
   return snapshot.mesas
     .filter((mesa) => mesa.active)
     .map((mesa) => {
-      // Cross-reference: if backend mesa status is 'livre' but there's an active comanda, override
-      const matchedComanda = comandaByTable.get(mesa.label)
+      // Cross-reference: match by normalized label
+      const matchedComanda = comandaByTable.get(normalizeTableLabel(mesa.label))
       const isOccupied = mesa.status === 'ocupada' || Boolean(matchedComanda)
       const gId = mesa.currentEmployeeId ?? matchedComanda?.currentEmployeeId ?? undefined
       return {

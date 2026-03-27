@@ -2,6 +2,7 @@
 
 import { Activity, AlertTriangle, Ban, ClipboardList, LogIn, ReceiptText, Shield, TrendingUp, UserRound, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { fetchActivityFeed, type ActivityFeedEntry } from '@/lib/api'
 
 const getRelativeTime = (date: Date) => {
@@ -64,15 +65,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
         {isLoading ? (
           <div className="space-y-4">
-            {[...Array(5)].map((_, index) => (
-              <div key={index} className="flex gap-4">
-                <div className="size-8 animate-pulse rounded-full bg-[rgba(255,255,255,0.06)]" />
-                <div className="flex-1 space-y-2 pt-1">
-                  <div className="h-3 w-2/3 animate-pulse rounded bg-[rgba(255,255,255,0.06)]" />
-                  <div className="h-2.5 w-1/2 animate-pulse rounded bg-[rgba(255,255,255,0.04)]" />
-                </div>
-              </div>
-            ))}
+            <CardRowSkeleton rows={5} />
           </div>
         ) : null}
 

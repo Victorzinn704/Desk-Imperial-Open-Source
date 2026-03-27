@@ -62,7 +62,7 @@ export class MarketIntelligenceService {
         rejectFormula: true,
       }) ?? 'Visao executiva geral'
 
-    const insightCacheKey = this.cache.geminiKey(auth.userId, auth.preferredCurrency, normalizedFocus)
+    const insightCacheKey = CacheService.geminiKey(auth.userId, auth.preferredCurrency, normalizedFocus)
     const cached = await this.cache.get<MarketInsightResponse>(insightCacheKey)
 
     if (cached) {
@@ -84,7 +84,7 @@ export class MarketIntelligenceService {
       )
     }
 
-    const rateLimitKey = this.cache.ratelimitKey('gemini', this.buildRateLimitKey(auth.userId, context.ipAddress))
+    const rateLimitKey = CacheService.ratelimitKey('gemini', this.buildRateLimitKey(auth.userId, context.ipAddress))
     await this.assertRequestAllowed(rateLimitKey)
     const rateLimitState = await this.recordRequest(rateLimitKey)
 
@@ -349,3 +349,4 @@ function normalizeStringArray(value: unknown, maxItems: number) {
     .filter(Boolean)
     .slice(0, maxItems)
 }
+

@@ -407,7 +407,7 @@ export class OrdersService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
     void this.invalidateOrdersCache(workspaceUserId)
 
     return {
@@ -489,7 +489,7 @@ export class OrdersService {
 
     const snapshot = await this.currencyService.getSnapshot()
 
-    void this.cache.del(this.cache.financeKey(workspaceUserId))
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
     void this.invalidateOrdersCache(workspaceUserId)
 
     return {
@@ -632,3 +632,4 @@ export class OrdersService {
     }
   }
 }
+

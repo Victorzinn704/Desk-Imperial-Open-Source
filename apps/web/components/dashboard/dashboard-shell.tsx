@@ -15,6 +15,7 @@ import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQu
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { formatCurrency } from '@/lib/currency'
 import { BrandMark } from '@/components/shared/brand-mark'
+import { VerifyEmailForm } from '@/components/auth/verify-email-form'
 import { Button } from '@/components/shared/button'
 import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
@@ -253,6 +254,11 @@ export function DashboardShell({
   }
 
   const user = sessionQuery.data.user
+
+  // Hard gate: bloqueia totalmente o dashboard enquanto o email nao for confirmado.
+  if (!user.emailVerified) {
+    return <EmailVerificationLockState email={user.email} />
+  }
 
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
@@ -635,6 +641,31 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
           <Link href="/cadastro">
             <Button size="lg" variant="secondary">Criar conta</Button>
           </Link>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
+  return (
+    <main className="min-h-screen bg-[var(--bg)] px-6 py-8 text-[var(--text-primary)]">
+      <div className="imperial-card mx-auto max-w-2xl p-8 sm:p-10">
+        <BrandMark />
+        <p className="mt-10 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+          Confirmacao obrigatoria
+        </p>
+        <h1 className="mt-4 text-3xl font-semibold text-white">Valide seu email para liberar o sistema</h1>
+        <p className="mt-4 text-base leading-8 text-muted-foreground">
+          Por seguranca, o painel so e liberado apos a confirmacao do codigo enviado para o email cadastrado.
+        </p>
+
+        <div className="mt-8 rounded-[24px] border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.06)] p-4 text-sm text-[var(--text-soft)]">
+          Email em validacao: <span className="font-semibold text-white">{email}</span>
+        </div>
+
+        <div className="mt-8">
+          <VerifyEmailForm email={email} firstAccess={false} successRedirectTo="/dashboard" />
         </div>
       </div>
     </main>

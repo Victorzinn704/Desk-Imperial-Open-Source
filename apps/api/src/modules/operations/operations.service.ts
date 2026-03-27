@@ -25,6 +25,7 @@ import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
+import { AuditLogService } from '../monitoring/audit-log.service'
 
 @Injectable()
 export class OperationsService {
@@ -34,6 +35,7 @@ export class OperationsService {
     private readonly comanda: ComandaService,
     private readonly helpers: OperationsHelpersService,
     private readonly realtime: OperationsRealtimeService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   // ── Live snapshot ─────────────────────────────────────────────────────────
@@ -115,7 +117,7 @@ export class OperationsService {
     return mesas.map((m) => toMesaRecord(m, openComandas.filter((c) => c.mesaId === m.id)))
   }
 
-  async createMesa(auth: AuthContext, dto: CreateMesaDto): Promise<MesaRecord> {
+  async createMesa(auth: AuthContext, dto: CreateMesaDto, context: RequestContext): Promise<MesaRecord> {
     assertOwnerRole(auth, 'Somente o dono pode criar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const label = sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })!
@@ -136,11 +138,20 @@ export class OperationsService {
         positionY: dto.positionY ?? null,
       },
     })
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'operations.mesa.created',
+      resource: 'mesa',
+      resourceId: mesa.id,
+      metadata: { label, capacity: dto.capacity ?? 4, section },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
     this.realtime.publishMesaUpserted(auth, { mesaId: mesa.id, label: mesa.label, status: 'livre' })
     return toMesaRecord(mesa, [])
   }
 
-  async updateMesa(auth: AuthContext, mesaId: string, dto: UpdateMesaDto): Promise<MesaRecord> {
+  async updateMesa(auth: AuthContext, mesaId: string, dto: UpdateMesaDto, context: RequestContext): Promise<MesaRecord> {
     assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
@@ -164,6 +175,15 @@ export class OperationsService {
           reservedUntil: dto.reservedUntil ? new Date(dto.reservedUntil) : null,
         }),
       },
+    })
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'operations.mesa.updated',
+      resource: 'mesa',
+      resourceId: mesaId,
+      metadata: { label: dto.label, active: dto.active },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
     })
     this.realtime.publishMesaUpserted(auth, { mesaId: updated.id, label: updated.label, status: 'livre' })
     return toMesaRecord(updated, [])

@@ -28,6 +28,7 @@ import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
+import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import {
   buildCashClosurePayload,
   buildCashUpdatedPayload,
@@ -173,16 +174,36 @@ export class ComandaService {
       })
 
       if (draftItems.length) {
+        // Enrich draft items with kitchen routing
+        // We need to look up product categories to determine kitchenStatus
+        const productIds = draftItems.map((i) => i.productId).filter(Boolean) as string[]
+        const products = productIds.length
+          ? await transaction.product.findMany({
+              where: { id: { in: productIds } },
+              select: { id: true, category: true, requiresKitchen: true },
+            })
+          : []
+        const productMap = new Map(products.map((p) => [p.id, p]))
+        const now = new Date()
+
         await transaction.comandaItem.createMany({
-          data: draftItems.map((item) => ({
-            comandaId: createdComanda.id,
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalAmount: item.totalAmount,
-            notes: item.notes,
-          })),
+          data: draftItems.map((item) => {
+            const prod = item.productId ? productMap.get(item.productId) : undefined
+            const needsKitchen = prod
+              ? (prod.requiresKitchen || isKitchenCategory(prod.category))
+              : false
+            return {
+              comandaId: createdComanda.id,
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalAmount: item.totalAmount,
+              notes: item.notes,
+              kitchenStatus: needsKitchen ? KitchenItemStatus.QUEUED : null,
+              kitchenQueuedAt: needsKitchen ? now : null,
+            }
+          }),
         })
       }
 
@@ -276,7 +297,9 @@ export class ComandaService {
       productId = product.id
       productName = product.name
       unitPrice = roundCurrency(dto.unitPrice ?? toNumber(product.unitPrice))
-      requiresKitchen = product.requiresKitchen
+      // requiresKitchen: use product flag; if false but category suggests food, infer true
+      // This handles products created before the auto-detection feature
+      requiresKitchen = product.requiresKitchen || isKitchenCategory(product.category)
     } else {
       productName = sanitizePlainText(dto.productName, 'Nome do item da comanda', {
         allowEmpty: false,
@@ -632,7 +655,18 @@ export class ComandaService {
 
     const item = await this.prisma.comandaItem.findUnique({
       where: { id: itemId },
-      include: { comanda: { select: { id: true, companyOwnerId: true, tableLabel: true } } },
+      include: {
+        comanda: {
+          select: {
+            id: true,
+            companyOwnerId: true,
+            tableLabel: true,
+            status: true,
+            cashSessionId: true,
+            openedAt: true,
+          },
+        },
+      },
     })
 
     if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
@@ -645,6 +679,7 @@ export class ComandaService {
 
     const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
 
+    // Update the individual item
     const updatedItem = await this.prisma.comandaItem.update({
       where: { id: itemId },
       data: {
@@ -652,6 +687,46 @@ export class ComandaService {
         kitchenReadyAt: kitchenReadyAt ?? null,
       },
     })
+
+    // ── Propagate to comanda status ──────────────────────────────────────────
+    const allItems = await this.prisma.comandaItem.findMany({
+      where: { comandaId: item.comanda.id },
+      select: { kitchenStatus: true },
+    })
+
+    const kitchenItems = allItems.filter((i) => i.kitchenStatus !== null)
+    let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
+
+    if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
+      const allReady = kitchenItems.every((i) =>
+        i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
+      )
+      const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
+
+      let newComandaStatus: ComandaStatus | null = null
+      if (allReady) {
+        newComandaStatus = ComandaStatus.READY
+      } else if (anyInPrep && item.comanda.status === ComandaStatus.OPEN) {
+        newComandaStatus = ComandaStatus.IN_PREPARATION
+      }
+
+      if (newComandaStatus) {
+        refreshedComanda = await this.prisma.comanda.update({
+          where: { id: item.comanda.id },
+          data: { status: newComandaStatus },
+          include: { items: { orderBy: { createdAt: 'asc' } } },
+        })
+      }
+    }
+
+    // If status didn't change, still fetch the comanda for the realtime event
+    if (!refreshedComanda) {
+      refreshedComanda = await this.prisma.comanda.findUnique({
+        where: { id: item.comanda.id },
+        include: { items: { orderBy: { createdAt: 'asc' } } },
+      }) ?? undefined
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     await this.auditLogService.record({
       actorUserId: auth.userId,
@@ -663,6 +738,7 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
+    // Emit kitchen item event (for Cozinha tab)
     this.operationsRealtimeService.publishKitchenItemUpdated(auth, {
       itemId: updatedItem.id,
       comandaId: item.comanda.id,
@@ -674,6 +750,14 @@ export class ComandaService {
       kitchenQueuedAt: updatedItem.kitchenQueuedAt?.toISOString() ?? null,
       kitchenReadyAt: updatedItem.kitchenReadyAt?.toISOString() ?? null,
     })
+
+    // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
+    if (refreshedComanda) {
+      this.operationsRealtimeService.publishComandaUpdated(
+        auth,
+        buildComandaUpdatedPayload(refreshedComanda),
+      )
+    }
 
     return { itemId, status: dto.status }
   }
@@ -773,7 +857,7 @@ export class ComandaService {
 
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
-    void this.cache.del(this.cache.financeKey(workspaceOwnerUserId))
+    void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
 
     return {
       comanda: toComandaRecord(refreshedComanda),

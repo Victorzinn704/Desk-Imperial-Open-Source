@@ -29,21 +29,21 @@ import { CustomCursor } from '@/components/marketing/custom-cursor'
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'PDV em tempo real', value: 'Comandas abertas, em preparo e fechadas num kanban visual' },
-  { label: 'Folha de pagamento', value: 'Salário base + comissão calculados automaticamente' },
-  { label: 'Calendário comercial', value: 'Eventos, promoções e jogos com impacto em vendas' },
+  { label: 'Comandas ao vivo', value: 'Abra, arraste e feche comandas em drag and drop sem travar o salão.' },
+  { label: 'Mapa de vendas', value: 'Monitore pedidos por bairro, cidade e região com pontos reais no mapa.' },
+  { label: 'Fechamento do dia', value: 'Financeiro, folha, ranking e exportação CSV no mesmo fluxo operacional.' },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Sem complicação',
-    description: 'Você abre, vende, confere e fecha o dia — tudo aqui dentro.',
+    title: 'Operação em tempo real',
+    description: 'Pedido entrou, a comanda muda na hora. Equipe e gestão enxergam o mesmo cenário.',
   },
   {
     icon: Radar,
-    title: 'Com identidade',
-    description: 'Seu comércio tem nome, história e números que provam valor.',
+    title: 'Controle de ponta a ponta',
+    description: 'Do atendimento ao fechamento, com monitoramento financeiro e territorial da venda.',
   },
 ]
 
@@ -113,10 +113,10 @@ const capabilityCards: Array<{
 ]
 
 const heroLines = [
-  'Não adianta ter o poder da caneta,',
-  'se você não sabe a mesa certa onde se sentar.',
-  'Isso não é sobre mesas...',
-  '— Desk Imperial.',
+  'Projeto sem fins lucrativos,',
+  'feito para comerciantes brasileiros',
+  'organizarem suas vendas e produtos,',
+  'focado no seu crescimento',
 ]
 
 const footerColumns = [
@@ -385,8 +385,7 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              PDV com kanban, folha de pagamento, calendário comercial, portfólio e financeiro em tempo real —
-              tudo em um único portal seguro para o seu negócio.
+              Comandas ao vivo, drag and drop no PDV, mapa de vendas por região e fechamento com dados reais.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -399,15 +398,9 @@ export function LandingPage() {
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-3">
-              {metrics.map((metric, index) => (
+              {metrics.map((metric) => (
                 <div
-                  className={
-                    index === 1
-                      ? 'glass-card p-5'
-                      : index === 2
-                        ? 'glass-card p-5'
-                        : 'glass-card p-5'
-                  }
+                  className="glass-card p-5"
                   key={metric.label}
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{metric.label}</p>
@@ -461,7 +454,7 @@ export function LandingPage() {
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
               transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
             >
-              Módulos
+              Operação real
             </motion.p>
             <motion.h2
               className="mt-1 max-w-2xl text-center text-4xl font-semibold leading-tight text-white sm:text-5xl"
@@ -470,7 +463,7 @@ export function LandingPage() {
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
               transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             >
-              Oito módulos integrados para operar o seu negócio inteiro.
+              Funcionalidades que já estão rodando no dia a dia do negócio.
             </motion.h2>
           </div>
 
@@ -498,7 +491,7 @@ export function LandingPage() {
             side: 'left' as const,
             tag: 'PDV & Kanban',
             title: 'Cada comanda no lugar certo, em tempo real.',
-            body: 'Abra comandas com CPF, CNPJ ou nome, arraste entre as colunas — Aberto, Em preparo e Fechado — e aplique desconto ou acréscimo por item. O kanban reflete a operação do salão sem delay e sem papel.',
+            body: 'Abra comandas com CPF, CNPJ ou nome, arraste entre as colunas em drag and drop e aplique desconto ou acréscimo quando necessário. O kanban reflete a operação do salão sem delay e sem papel.',
             stat: { label: 'Colunas kanban', value: '3' },
             icon: Tags,
           },
@@ -517,6 +510,14 @@ export function LandingPage() {
             body: 'Arraste eventos para qualquer dia do calendário comercial — promoções, jogos, datas especiais — e veja o impacto direto nas vendas daquele período. Decisão com contexto, não com achismo.',
             stat: { label: 'Visão unificada', value: '360°' },
             icon: CalendarDays,
+          },
+          {
+            side: 'right' as const,
+            tag: 'Mapa de monitoramento',
+            title: 'Acompanhe onde as vendas estão acontecendo.',
+            body: 'O mapa cruza os pedidos com localização e mostra a concentração por bairro, cidade e região. Você identifica rápido onde a operação está forte e onde precisa agir.',
+            stat: { label: 'Leitura territorial', value: 'Ao vivo' },
+            icon: Globe2,
           },
         ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
           <motion.div
@@ -561,17 +562,16 @@ export function LandingPage() {
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso principal</p>
                 <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                  Acesso rápido para cadastro, login e entrada no painel.
+                  Entrada rápida para começar a operar sem fricção.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
-                  Os principais fluxos do portal ficam disponiveis logo na abertura da pagina para acelerar a entrada no
-                  sistema.
+                  Cadastro, login e painel ficam acessíveis logo de cara para você entrar e já acompanhar comandas,
+                  vendas e indicadores do dia.
                 </p>
               </div>
 
               <div className="glass-card px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
-                Entre no portal ou crie sua conta sem precisar rolar a home inteira. O acesso principal fica no topo da
-                experiencia.
+                Menos clique para entrar, mais tempo para operar: do acesso ao monitoramento em poucos segundos.
               </div>
             </div>
 
@@ -579,30 +579,30 @@ export function LandingPage() {
               <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
                   <Waypoints className="size-5 text-[var(--info)]" />
-                  <p className="text-sm font-semibold text-white">Fluxo contínuo</p>
+                  <p className="text-sm font-semibold text-white">Comandas ao vivo</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Da autenticação ate a venda registrada, o caminho fica organizado em poucas etapas.
+                  Abra, mova e feche comandas no fluxo real do atendimento com drag and drop.
                 </p>
               </div>
 
               <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
                   <Crown className="size-5 text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-white">Governança visível</p>
+                  <p className="text-sm font-semibold text-white">Mapa de vendas</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Sessão, consentimento e rastreabilidade aparecem sem ficar escondidos no produto.
+                  Monitore concentração de pedidos por região e direcione melhor ações comerciais.
                 </p>
               </div>
 
               <div className="glass-card p-5">
                 <div className="flex items-center gap-3">
-                  <Globe2 className="size-5 text-[#8fffb9]" />
-                  <p className="text-sm font-semibold text-white">Domínio próprio</p>
+                  <Globe2 className="size-5 text-[var(--info)]" />
+                  <p className="text-sm font-semibold text-white">Fechamento com dados</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  O ambiente ja responde em domínio próprio, pronto para evoluir como produto de verdade.
+                  Exporte CSV, acompanhe ranking e feche o dia com leitura financeira consolidada.
                 </p>
               </div>
             </div>
@@ -655,7 +655,7 @@ export function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-            <p>DESK IMPERIAL © 2026. Plataforma comercial com leitura executiva, portfolio e conformidade.</p>
+            <p>DESK IMPERIAL © 2026. Comandas ao vivo, monitoramento de vendas no mapa e operação comercial em tempo real.</p>
             <div className="flex flex-wrap gap-4">
               <Link className="transition hover:text-white" href="https://app.deskimperial.online">
                 app.deskimperial.online
