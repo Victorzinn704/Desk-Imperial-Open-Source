@@ -2,17 +2,15 @@
 
 import { useState } from 'react'
 import { Boxes, Package, Search, Tags, TrendingUp } from 'lucide-react'
-import type { FinanceSummaryResponse, ProductImportResponse, ProductRecord } from '@contracts/contracts'
+import type { ProductRecord } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
-import { downloadPortfolioCsv, downloadProductTemplateCsv } from '@/lib/portfolio-csv'
 import type { ProductFormValues } from '@/lib/validation'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { ProductCard } from '@/components/dashboard/product-card'
 import { ProductForm } from '@/components/dashboard/product-form'
-import { ProductImportCard } from '@/components/dashboard/product-import-card'
 import { ProductSearchField } from '@/components/dashboard/product-search-field'
 
 // ── category card ─────────────────────────────────────────────────────────────
@@ -97,7 +95,6 @@ function calcAvgMargin(products: ProductRecord[]): string {
 
 export function PortfolioEnvironment() {
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
-  const [lastImport, setLastImport] = useState<ProductImportResponse | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { financeQuery, productsQuery } = useDashboardQueries()
@@ -106,7 +103,6 @@ export function PortfolioEnvironment() {
     updateProductMutation: _updateProductMutation,
     archiveProductMutation: _archiveProductMutation,
     restoreProductMutation,
-    importProductsMutation: _importProductsMutation,
   } = useDashboardMutations()
 
   const finance = financeQuery.data
@@ -119,8 +115,6 @@ export function PortfolioEnvironment() {
     _archiveProductMutation.error,
     restoreProductMutation.error,
   ].find((error) => error instanceof ApiError)
-  const importMutationError =
-    _importProductsMutation.error instanceof ApiError ? _importProductsMutation.error.message : null
 
   const archiveProductMutation = {
     isPending: _archiveProductMutation.isPending,
@@ -132,12 +126,6 @@ export function PortfolioEnvironment() {
     isPending: _updateProductMutation.isPending,
     mutate: (payload: Parameters<typeof _updateProductMutation.mutate>[0]) =>
       _updateProductMutation.mutate(payload, { onSuccess: () => setEditingProduct(null) }),
-  }
-
-  const importProductsMutation = {
-    isPending: _importProductsMutation.isPending,
-    mutate: (file: File) =>
-      _importProductsMutation.mutate(file, { onSuccess: (payload) => setLastImport(payload) }),
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
@@ -224,16 +212,6 @@ export function PortfolioEnvironment() {
             onCancelEdit={() => setEditingProduct(null)}
             onSubmit={handleProductSubmit}
             product={editingProduct}
-          />
-
-          <ProductImportCard
-            error={importMutationError}
-            hasProducts={products.length > 0}
-            lastImport={lastImport}
-            loading={importProductsMutation.isPending}
-            onDownloadPortfolio={() => downloadPortfolioCsv(products)}
-            onDownloadTemplate={() => downloadProductTemplateCsv()}
-            onImport={importProductsMutation.mutate}
           />
         </div>
 

@@ -4,6 +4,9 @@ import {
   Controller,
   Delete,
   Get,
+  GoneException,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -50,34 +53,9 @@ export class ProductsController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('import')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 256 * 1024,
-        files: 1,
-      },
-      fileFilter: (_request, file, callback) => {
-        const allowedMimeTypes = ['text/csv', 'application/csv', 'application/vnd.ms-excel', 'text/plain']
-        const hasValidMime = allowedMimeTypes.includes(file.mimetype)
-        const hasValidExtension = file.originalname.toLowerCase().endsWith('.csv')
-        // Rejeita extensões duplas como "malware.exe.csv"
-        const hasSuspiciousExtension = /\.(exe|bat|sh|ps1|cmd|js|php|py)\./i.test(file.originalname)
-
-        if ((!hasValidMime && !hasValidExtension) || hasSuspiciousExtension) {
-          callback(new BadRequestException('Envie um arquivo CSV válido.'), false)
-          return
-        }
-
-        callback(null, true)
-      },
-    }),
-  )
-  importProducts(
-    @CurrentAuth() auth: AuthContext,
-    @UploadedFile() file: UploadedCsvFile | undefined,
-    @Req() request: Request,
-  ) {
-    return this.productsService.importForUser(auth, file, extractRequestContext(request))
+  @HttpCode(HttpStatus.GONE)
+  importProducts() {
+    throw new GoneException('A importação via CSV foi desativada. Em breve disponível via integração direta.')
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
