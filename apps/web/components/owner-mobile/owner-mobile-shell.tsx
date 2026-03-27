@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import type { Mesa } from '@/components/pdv/pdv-types'
+import type { Mesa, ComandaItem } from '@/components/pdv/pdv-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3,
@@ -16,7 +16,6 @@ import {
   Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { ComandaStatus } from '@/components/pdv/pdv-types'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { KitchenOrdersView } from '../staff-mobile/kitchen-orders-view'
 import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
@@ -29,12 +28,7 @@ import { useOperationsRealtime } from '@/components/operations/use-operations-re
 import { MobileOrderBuilder } from '../staff-mobile/mobile-order-builder'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { useRouter } from 'next/navigation'
-import {
-  buildPdvComandas,
-  buildPdvMesas,
-  toOperationAmounts,
-  toOperationsStatus,
-} from '@/components/pdv/pdv-operations'
+import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import {
   fetchOperationsLive,
   fetchOrders,
@@ -66,7 +60,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
-  const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
+  const [, setFocusedComandaId] = useState<string | null>(null)
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
 
@@ -199,32 +193,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Proprietário'
   const companyName = currentUser?.companyName ?? 'Desk Imperial'
 
-  async function handleUpdateStatus(id: string, status: ComandaStatus) {
-    const comanda = comandas.find((c) => c.id === id)
-    if (!comanda) return
-    try {
-      setScreenError(null)
-      if (status === 'fechada') {
-        const amounts = toOperationAmounts(comanda)
-        await closeComandaMutation.mutateAsync({ comandaId: id, ...amounts })
-        return
-      }
-      await updateComandaStatusMutation.mutateAsync({ comandaId: id, status: toOperationsStatus(status) })
-    } catch (error) {
-      setScreenError(error instanceof Error ? error.message : 'Não foi possível atualizar a comanda.')
-    }
-  }
-
   const today = new Date().toISOString().slice(0, 10)
   const orders = ordersQuery.data?.items ?? []
   const todayOrders = orders.filter((o: any) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
   const todayRevenue = todayOrders.reduce((sum: number, o: any) => sum + o.totalRevenue, 0)
   const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
-
-  const totalItems = activeComandas.reduce(
-    (sum: number, c: any) => sum + c.itens.reduce((s: number, i: any) => s + i.quantidade, 0),
-    0,
-  )
 
   // Ranking garçons — a partir do snapshot
   const garconRanking = useMemo(() => {
@@ -272,7 +245,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending
 
-  async function handleSubmit(items: import('@/components/pdv/pdv-types').ComandaItem[]) {
+  async function handleSubmit(items: ComandaItem[]) {
     if (!pendingAction) return
     setScreenError(null)
 
@@ -441,7 +414,6 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
               mode={orderMode}
               produtos={productsQuery.data?.items ?? []}
               busy={isBusy}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onSubmit={handleSubmit as any}
               onCancel={() => {
                 setPendingAction(null)
