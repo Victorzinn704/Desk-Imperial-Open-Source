@@ -172,7 +172,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
-  const activeComandas = useMemo(() => comandas.filter((c: any) => c.status !== 'fechada'), [comandas])
+  const activeComandas = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
 
   const kitchenBadge = useMemo(() => {
     const snapshot = operationsQuery.data
@@ -195,8 +195,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const today = new Date().toISOString().slice(0, 10)
   const orders = ordersQuery.data?.items ?? []
-  const todayOrders = orders.filter((o: any) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
-  const todayRevenue = todayOrders.reduce((sum: number, o: any) => sum + o.totalRevenue, 0)
+  const todayOrders = orders.filter((o) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0)
   const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
 
   // Ranking garçons — a partir do snapshot
@@ -319,6 +319,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       {/* Header */}
       {/* Header Minimalista */}
       <header
+        data-testid="owner-header"
         className="relative z-50 flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
@@ -341,7 +342,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               />
             </div>
-            <span className="text-sm font-medium text-white">{displayName.split(' ')[0]}</span>
+            <span data-testid="user-display-name" className="text-sm font-medium text-white">
+              {displayName.split(' ')[0]}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -363,6 +366,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           </button>
           <button
             type="button"
+            data-testid="logout-button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-white transition-transform active:scale-95"
@@ -414,7 +418,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
               mode={orderMode}
               produtos={productsQuery.data?.items ?? []}
               busy={isBusy}
-              onSubmit={handleSubmit as any}
+              onSubmit={handleSubmit}
               onCancel={() => {
                 setPendingAction(null)
                 setActiveTab('mesas')
@@ -467,6 +471,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                   setActiveTab(id)
                   if (id !== 'comandas') setFocusedComandaId(null)
                 }}
+                data-testid={`nav-${id}`}
                 className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >

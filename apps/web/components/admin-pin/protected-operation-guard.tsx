@@ -63,10 +63,7 @@ export function ProtectedOperationGuard({ onConfirm, onError }: Readonly<Protect
     <AdminPinDialog
       title={dialogTitle}
       description={dialogDescription}
-      onConfirm={() => {
-        // Dialog will call handlePinConfirm before this callback
-        handleCancel()
-      }}
+      onConfirm={handlePinConfirm}
       onCancel={handleCancel}
     />
   )

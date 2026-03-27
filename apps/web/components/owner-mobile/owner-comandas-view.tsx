@@ -148,7 +148,7 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                     <p className="text-xs font-medium text-white truncate">
                       {item.quantidade}× {item.nome}
                     </p>
-                    {item.observacao && <p className="text-[10px] italic text-[#7a8896]">"{item.observacao}"</p>}
+                    {item.observacao && <p className="text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>}
                   </div>
                   <span className="text-xs font-semibold text-white shrink-0">
                     {formatCurrency(item.quantidade * item.precoUnitario)}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
 import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
-import { Plus, X, Trash2, Edit2, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
@@ -262,7 +262,7 @@ export function MobileComandaList({
                                 <div className="flex flex-col">
                                   <span className="font-medium text-white/90">{item.nome}</span>
                                   {item.observacao && (
-                                    <span className="text-[10px] text-white/40 italic">"{item.observacao}"</span>
+                                    <span className="text-[10px] text-white/40 italic">{`"${item.observacao}"`}</span>
                                   )}
                                 </div>
                               </div>

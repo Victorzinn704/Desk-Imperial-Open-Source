@@ -20,15 +20,6 @@ const STATUS_LABEL: Record<MesaStatus, string> = {
   reservada: 'Reservada',
 }
 
-function StatusDot({ status }: { status: MesaStatus }) {
-  return (
-    <span
-      className="inline-block size-2 rounded-full"
-      style={{ backgroundColor: STATUS_COLOR[status], boxShadow: `0 0 6px ${STATUS_COLOR[status]}` }}
-    />
-  )
-}
-
 export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
   if (mesas.length === 0) {
     return (

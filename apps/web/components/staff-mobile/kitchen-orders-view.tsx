@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChefHat, CheckCircle2, Clock, Flame, Package } from 'lucide-react'
+import { ChefHat, CheckCircle2, Clock, Flame } from 'lucide-react'
 import { useState } from 'react'
 import type { KitchenItemStatus, OperationsLiveResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
@@ -128,7 +128,7 @@ function KitchenCard({
           <p className="text-sm font-semibold text-white leading-snug">
             {item.quantity}× {item.productName}
           </p>
-          {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">"{item.notes}"</p>}
+          {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">{`"${item.notes}"`}</p>}
         </div>
         <button
           type="button"
@@ -227,7 +227,9 @@ export function KitchenOrdersView({ snapshot }: KitchenOrdersViewProps) {
             <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
               <ChefHat className="size-7 text-[#7a8896]" />
             </div>
-            <p className="text-sm font-medium text-white">Cozinha livre</p>
+            <p data-testid="kitchen-view-empty" className="text-sm font-medium text-white">
+              Cozinha livre
+            </p>
             <p className="mt-1 text-xs text-[#7a8896]">Nenhum pedido aguardando preparo</p>
           </div>
         ) : tabItems.length === 0 ? (

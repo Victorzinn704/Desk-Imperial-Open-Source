@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import type { Map as LeafletMap, LayerGroup } from 'leaflet'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -17,8 +18,8 @@ const DEFAULT_ZOOM = 4
 
 export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<import('leaflet').Map | null>(null)
-  const layerGroupRef = useRef<import('leaflet').LayerGroup | null>(null)
+  const mapRef = useRef<LeafletMap | null>(null)
+  const layerGroupRef = useRef<LayerGroup | null>(null)
   const [mapReady, setMapReady] = useState(false)
 
   // Init map once

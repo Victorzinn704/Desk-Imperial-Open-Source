@@ -19,7 +19,7 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
   const ref = useRef<HTMLSpanElement | null>(null)
 
   useEffect(() => {
-    setMounted(true)
+    setMounted(true) // eslint-disable-line react-hooks/set-state-in-effect -- hydration guard
   }, [])
 
   function handleShow() {

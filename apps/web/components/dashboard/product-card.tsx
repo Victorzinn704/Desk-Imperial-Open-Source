@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { Archive, Package, PencilLine, RotateCcw } from 'lucide-react'
+import { Archive, PencilLine, RotateCcw } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
 import { formatMeasurement, formatStockBreakdown } from '@/lib/product-packaging'

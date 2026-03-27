@@ -1,9 +1,10 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactPlugin from 'eslint-plugin-react';
 
 /**
  * Root ESLint configuration for the monorepo.
- * Delegates to sub-app configurations or provides a base for all packages.
  */
 export default tseslint.config(
   {
@@ -20,10 +21,20 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
+    plugins: {
+      'react-hooks': reactHooks,
+      'react': reactPlugin,
+    },
     rules: {
+      ...reactHooks.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'warn',
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
     },
   }
 );

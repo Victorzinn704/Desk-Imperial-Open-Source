@@ -68,20 +68,6 @@ function clamp(value: number, min: number, maxValue: number) {
   return Math.max(min, Math.min(maxValue, value))
 }
 
-const URGENCY_BORDER: Record<0 | 1 | 2 | 3, string> = {
-  0: 'rgba(248,113,113,0.25)',
-  1: 'rgba(251,191,36,0.28)',
-  2: 'rgba(251,191,36,0.55)',
-  3: 'rgba(248,113,113,0.65)',
-}
-
-const URGENCY_SHADOW: Record<0 | 1 | 2 | 3, string | undefined> = {
-  0: undefined,
-  1: undefined,
-  2: '0 0 10px rgba(251,191,36,0.12)',
-  3: '0 0 18px rgba(248,113,113,0.2)',
-}
-
 // ── main component ─────────────────────────────────────────────────────────────
 
 export function SalaoEnvironment() {
@@ -673,6 +659,7 @@ function OperacionalView({
   garcomNames: Record<string, string>
   isLoading: boolean
 }) {
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
 
   if (isLoading) {

@@ -1,5 +1,5 @@
 import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
-import type { Mesa, Comanda, ComandaItem, Garcom } from './pdv-types'
+import type { Mesa, Comanda, Garcom } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']

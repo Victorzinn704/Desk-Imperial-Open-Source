@@ -16,7 +16,6 @@ export default function OwnerAppPage() {
   })
 
   const user = sessionQuery.data?.user
-  const isAuthed = Boolean(user)
   const isOwner = user?.role === 'OWNER'
 
   // Redireciona se não autenticado ou se for staff

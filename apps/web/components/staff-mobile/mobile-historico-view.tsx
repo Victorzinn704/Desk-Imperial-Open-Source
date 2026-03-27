@@ -105,7 +105,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
                       {item.quantidade}× {item.nome}
                     </p>
                     {item.observacao && (
-                      <p className="text-[10px] italic text-[var(--text-soft,#7a8896)]">"{item.observacao}"</p>
+                      <p className="text-[10px] italic text-[var(--text-soft,#7a8896)]">{`"${item.observacao}"`}</p>
                     )}
                   </div>
                   <span className="text-xs font-semibold text-white shrink-0">

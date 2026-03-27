@@ -2,6 +2,7 @@
 
 import type { ThermalPrinter } from './thermal-print.types'
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 type QzTrayModule = typeof import('qz-tray')
 
 let qzModulePromise: Promise<QzTrayModule> | null = null

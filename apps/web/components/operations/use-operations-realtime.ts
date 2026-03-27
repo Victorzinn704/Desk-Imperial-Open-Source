@@ -25,11 +25,11 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
 
   useEffect(() => {
     if (!enabled) {
-      setStatus('disconnected')
+      setStatus('disconnected') // eslint-disable-line react-hooks/set-state-in-effect
       return
     }
 
-    setStatus('connecting')
+    setStatus('connecting')  
 
     const socket = io(buildOperationsSocketUrl(), {
       withCredentials: true,

@@ -48,7 +48,7 @@ type ActiveTab = 'comandas' | 'salao'
 
 type AddMesaForm = { label: string; capacity: string }
 
-export function PdvBoard({ currentUser, operations, products }: Readonly<PdvBoardProps>) {
+export function PdvBoard({ currentUser: _currentUser, operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ActiveTab>('comandas')
   const [showNewModal, setShowNewModal] = useState(false)

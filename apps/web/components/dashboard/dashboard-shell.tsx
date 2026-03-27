@@ -1,13 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
 import { ApiError } from '@/lib/api'
-import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
+import { useDashboardQueries, useDashboardMutations } from '@/components/dashboard/hooks'
+import { useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
+import { useDashboardNavigation } from '@/components/dashboard/hooks/useDashboardNavigation'
+import { useScrollMemory } from '@/components/dashboard/hooks/useScrollMemory'
+import { useEvaluationCountdown } from '@/components/dashboard/hooks/useEvaluationCountdown'
+import { useDashboardLogout } from '@/components/dashboard/hooks/useDashboardLogout'
 import { formatCurrency } from '@/lib/currency'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { VerifyEmailForm } from '@/components/auth/verify-email-form'
@@ -19,10 +23,6 @@ import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import {
   dashboardDefaultSection,
   dashboardDefaultSettingsSection,
-  dashboardNavigationGroups,
-  dashboardQuickActions,
-  parseDashboardSectionParam,
-  parseDashboardSettingsSectionParam,
   type DashboardQuickAction,
   type DashboardSectionId,
   type DashboardSettingsSectionId,
@@ -31,14 +31,9 @@ import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 import { StaffMobileShell } from '@/components/staff-mobile'
 import { OwnerMobileShell } from '@/components/owner-mobile/owner-mobile-shell'
 
-const sectionHeroCopy: Record<
-  DashboardSectionId,
-  {
-    badge: string
-    title: string
-    description: string
-  }
-> = {
+// ── Static hero copy per section ────────────────────────────────────────────────
+
+const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string; description: string }> = {
   overview: {
     badge: 'Ambiente executivo',
     title: 'Visão consolidada da empresa em um único ambiente.',
@@ -95,6 +90,8 @@ const sectionHeroCopy: Record<
   },
 }
 
+// ── Main component ──────────────────────────────────────────────────────────────
+
 type DashboardShellProps = {
   initialSection?: DashboardSectionId
   initialSettingsSection?: DashboardSettingsSectionId
@@ -106,87 +103,62 @@ export function DashboardShell({
 }: Readonly<DashboardShellProps>) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [isRouting, startTransition] = useTransition()
-  const [activeSection, setActiveSection] = useState<DashboardSectionId>(initialSection)
-  const [activeSettingsSection, setActiveSettingsSection] = useState<DashboardSettingsSectionId>(initialSettingsSection)
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
-  const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const workspaceScrollRef = useRef<HTMLDivElement | null>(null)
-  const sectionScrollMemory = useRef<Partial<Record<DashboardSectionId, number>>>({})
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
+  // ── Hooks ─────────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    setActiveSection(initialSection)
-  }, [initialSection])
-
-  useEffect(() => {
-    setActiveSettingsSection(initialSettingsSection)
-  }, [initialSettingsSection])
+  const { isMobile } = useMobileDetection()
 
   const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
-  const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
-
-  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
-
-  useEffect(() => {
-    if (!evaluationAccess) {
-      return
-    }
-
-    const expirationTime = new Date(evaluationAccess.sessionExpiresAt).getTime()
-    const intervalId = window.setInterval(() => {
-      setCountdownNow(Date.now())
-    }, 1000)
-    const timeoutId = window.setTimeout(
-      () => {
-        queryClient.clear()
-        startTransition(() => {
-          router.replace('/login')
-        })
-      },
-      Math.max(0, expirationTime - Date.now()) + 150,
-    )
-
-    return () => {
-      window.clearInterval(intervalId)
-      window.clearTimeout(timeoutId)
-    }
-  }, [evaluationAccess, queryClient, router, startTransition])
-
-  const { logoutMutation: _logoutMutation } = useDashboardMutations()
-
-  // Wrapper com side-effect de navegação após logout
-  const logoutMutation = {
-    isPending: _logoutMutation.isPending,
-    mutate: () =>
-      _logoutMutation.mutate(undefined, {
-        onSuccess: () => startTransition(() => router.push('/login')),
-      }),
-  }
+  const { logoutMutation: rawLogoutMutation } = useDashboardMutations()
 
   const currentUser = sessionQuery.data?.user ?? null
   const isStaffUser = currentUser?.role === 'STAFF'
-  const quickActions = isStaffUser ? [] : dashboardQuickActions
-  const navigationGroups = useMemo(
-    () =>
-      isStaffUser
-        ? dashboardNavigationGroups
-            .map((group) => ({
-              ...group,
-              items: group.items.filter((item) => ['sales', 'pdv', 'calendario'].includes(item.id)),
-            }))
-            .filter((group) => group.items.length > 0)
-        : dashboardNavigationGroups,
-    [isStaffUser],
-  )
+
+  const {
+    activeSection,
+    activeSettingsSection,
+    navigationGroups,
+    quickActions,
+    navigateToSection,
+    navigateToSettings,
+  } = useDashboardNavigation({ initialSection, initialSettingsSection, isStaffUser })
+
+  const { scrollRef, onScroll, scrollIntoView } = useScrollMemory(activeSection, isMobile)
+
+  const { logout, isPending: isLoggingOut, startTransition } = useDashboardLogout(rawLogoutMutation)
+
+  const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
+  const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, () => {
+    queryClient.clear()
+    startTransition(() => router.replace('/login'))
+  })
+
+  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
+
+  // ── Quick action handler (orchestrates navigation + scroll) ───────────────────
+
+  const handleQuickAction = (action: DashboardQuickAction) => {
+    navigateToSection(action.target)
+
+    if (typeof document === 'undefined') return
+
+    window.setTimeout(() => {
+      const targetElement = action.anchorId
+        ? document.getElementById(action.anchorId)
+        : document.getElementById('workspace-header')
+      if (targetElement instanceof HTMLElement) {
+        scrollIntoView(targetElement)
+      }
+    }, 80)
+  }
+
+  // ── Early returns (loading, auth, verification) ───────────────────────────────
+
+  if (sessionQuery.isLoading) {
+    return <LoadingState />
+  }
 
   const isUnauthorized = sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401
   const sessionError =
@@ -194,129 +166,22 @@ export function DashboardShell({
       ? sessionQuery.error.message
       : 'Conecte a API e autentique a sessão para ver o painel.'
 
-  const allowedSections = useMemo(
-    () =>
-      new Set<DashboardSectionId>([
-        ...navigationGroups.flatMap((group) => group.items.map((item) => item.id)),
-        'settings',
-      ]),
-    [navigationGroups],
-  )
-  const resolvedActiveSection = allowedSections.has(activeSection)
-    ? activeSection
-    : isStaffUser
-      ? 'sales'
-      : dashboardDefaultSection
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const syncFromLocation = () => {
-      const params = new URLSearchParams(window.location.search)
-      const sectionFromUrl = parseDashboardSectionParam(params.get('view'))
-      const settingsSectionFromUrl = parseDashboardSettingsSectionParam(params.get('panel'))
-
-      if (sectionFromUrl && allowedSections.has(sectionFromUrl)) {
-        setActiveSection(sectionFromUrl)
-      }
-
-      if (settingsSectionFromUrl) {
-        setActiveSettingsSection(settingsSectionFromUrl)
-      }
-    }
-
-    syncFromLocation()
-    window.addEventListener('popstate', syncFromLocation)
-    return () => window.removeEventListener('popstate', syncFromLocation)
-  }, [allowedSections])
-
-  useEffect(() => {
-    if (isMobile) {
-      return
-    }
-
-    const container = workspaceScrollRef.current
-    if (!container) {
-      return
-    }
-
-    container.scrollTop = sectionScrollMemory.current[resolvedActiveSection] ?? 0
-  }, [isMobile, resolvedActiveSection])
-
-  if (sessionQuery.isLoading) {
-    return <LoadingState />
-  }
-
   if (!sessionQuery.data?.user || isUnauthorized) {
     return <UnauthorizedState message={sessionError} />
   }
 
   const user = sessionQuery.data.user
 
-  // Hard gate: bloqueia totalmente o dashboard enquanto o email nao for confirmado.
   if (!user.emailVerified) {
     return <EmailVerificationLockState email={user.email} />
   }
 
+  // ── Derived data ──────────────────────────────────────────────────────────────
+
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
-  const products = productsQuery.data?.items ?? []
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
-
-  const scrollWorkspaceTargetIntoView = (targetElement: HTMLElement) => {
-    if (isMobile || !workspaceScrollRef.current) {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      return
-    }
-
-    const container = workspaceScrollRef.current
-    const top =
-      targetElement.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 24
-
-    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
-  }
-
-  const navigateWithinWorkspace = (
-    sectionId: DashboardSectionId,
-    settingsSectionId: DashboardSettingsSectionId = activeSettingsSection,
-  ) => {
-    setActiveSection(sectionId)
-    if (sectionId === 'settings') {
-      setActiveSettingsSection(settingsSectionId)
-    }
-
-    if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', buildDashboardUrl(sectionId, settingsSectionId))
-    }
-  }
-
-  const handleSectionNavigate = (sectionId: DashboardSectionId) => {
-    navigateWithinWorkspace(sectionId)
-  }
-
-  const handleSettingsSectionChange = (sectionId: DashboardSettingsSectionId) => {
-    navigateWithinWorkspace('settings', sectionId)
-  }
-
-  const handleQuickAction = (action: DashboardQuickAction) => {
-    navigateWithinWorkspace(action.target)
-
-    if (typeof document === 'undefined') {
-      return
-    }
-
-    window.setTimeout(() => {
-      const targetElement = action.anchorId
-        ? document.getElementById(action.anchorId)
-        : document.getElementById('workspace-header')
-      if (targetElement instanceof HTMLElement) {
-        scrollWorkspaceTargetIntoView(targetElement)
-      }
-    }, 80)
-  }
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
 
   const signals = isStaffUser
@@ -331,11 +196,7 @@ export function DashboardShell({
           value: String(productsQuery.data?.totals.activeProducts ?? 0),
           helper: 'produtos ativos para venda',
         },
-        {
-          label: 'Perfil',
-          value: 'Staff',
-          helper: 'acesso operacional com auditoria',
-        },
+        { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
       ]
     : [
         {
@@ -356,24 +217,23 @@ export function DashboardShell({
       ]
 
   const activeNavigation =
-    navigationGroups.flatMap((group) => group.items).find((item) => item.id === resolvedActiveSection) ??
-    (resolvedActiveSection === 'settings'
-      ? {
-          id: 'settings',
-          label: 'Conta e preferências',
-          description: 'Conta, segurança e conformidade',
-          icon: Clock,
-        }
+    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
+    (activeSection === 'settings'
+      ? { id: 'settings', label: 'Conta e preferências', description: 'Conta, segurança e conformidade', icon: Clock }
       : navigationGroups[0]?.items[0])
-  const activeHero = sectionHeroCopy[resolvedActiveSection]
+  const activeHero = sectionHeroCopy[activeSection]
 
-  if (isStaffUser && isMobile && resolvedActiveSection !== 'settings') {
+  // ── Mobile shells ─────────────────────────────────────────────────────────────
+
+  if (isStaffUser && isMobile && activeSection !== 'settings') {
     return <StaffMobileShell currentUser={currentUser} produtos={productsQuery.data?.items ?? []} />
   }
 
   if (!isStaffUser && isMobile) {
     return <OwnerMobileShell currentUser={currentUser} />
   }
+
+  // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
     <main className="bg-background text-foreground xl:h-screen xl:overflow-hidden">
@@ -382,32 +242,22 @@ export function DashboardShell({
         style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
       >
         <DashboardSidebar
-          activeSection={resolvedActiveSection}
+          activeSection={activeSection}
           companyName={user.companyName}
           email={user.email}
           groups={navigationGroups}
           onCollapseChange={setSidebarCollapsed}
           quickActions={quickActions}
-          onNavigate={handleSectionNavigate}
-          onOpenSettings={handleSettingsSectionChange}
+          onNavigate={navigateToSection}
+          onOpenSettings={navigateToSettings}
           onQuickAction={handleQuickAction}
-          onSignOut={() => logoutMutation.mutate()}
+          onSignOut={logout}
           role={user.role}
           status={user.status}
           userName={user.fullName}
         />
 
-        <div
-          ref={workspaceScrollRef}
-          className="workspace-shell__main xl:h-screen xl:overflow-y-auto"
-          onScroll={(event) => {
-            if (isMobile) {
-              return
-            }
-
-            sectionScrollMemory.current[resolvedActiveSection] = event.currentTarget.scrollTop
-          }}
-        >
+        <div ref={scrollRef} className="workspace-shell__main xl:h-screen xl:overflow-y-auto" onScroll={onScroll}>
           <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
             <header className="imperial-card p-6 md:p-8" id="workspace-header">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
@@ -473,10 +323,7 @@ export function DashboardShell({
                       <Clock className="size-4" />
                       Atividades
                     </Button>
-                    <SpotlightButton
-                      loading={logoutMutation.isPending || isRouting}
-                      onClick={() => logoutMutation.mutate()}
-                    >
+                    <SpotlightButton loading={isLoggingOut} onClick={logout}>
                       <LogOut className="size-4" />
                       Encerrar sessão
                     </SpotlightButton>
@@ -485,23 +332,20 @@ export function DashboardShell({
               </div>
             </header>
 
-            {user.evaluationAccess ? (
+            {isEvaluation ? (
               <EvaluationModeBanner
-                dailyLimitMinutes={user.evaluationAccess.dailyLimitMinutes}
-                remainingSeconds={Math.max(
-                  0,
-                  Math.ceil((new Date(user.evaluationAccess.sessionExpiresAt).getTime() - countdownNow) / 1000),
-                )}
+                dailyLimitMinutes={user.evaluationAccess!.dailyLimitMinutes}
+                remainingSeconds={remainingSeconds}
               />
             ) : null}
 
             {renderActiveEnvironment({
-              activeSection: resolvedActiveSection,
+              activeSection,
               activeSettingsSection,
               employees,
               finance,
-              onNavigateSection: handleSectionNavigate,
-              onSettingsSectionChange: handleSettingsSectionChange,
+              onNavigateSection: navigateToSection,
+              onSettingsSectionChange: navigateToSettings,
               user,
             })}
           </div>
@@ -513,11 +357,12 @@ export function DashboardShell({
   )
 }
 
+// ── Sub-components ──────────────────────────────────────────────────────────────
+
 function LoadingState() {
   return (
     <main className="min-h-screen bg-background text-foreground xl:h-screen xl:overflow-hidden">
       <div className="workspace-shell xl:grid xl:h-full" style={{ gridTemplateColumns: '288px minmax(0,1fr)' }}>
-        {/* Sidebar skeleton */}
         <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
           <div className="workspace-sidebar flex h-full flex-col gap-4 px-4 py-5">
             <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
@@ -531,10 +376,8 @@ function LoadingState() {
           </div>
         </aside>
 
-        {/* Main content skeleton */}
         <div className="workspace-shell__main xl:h-screen xl:overflow-y-auto">
           <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
-            {/* Header skeleton */}
             <div className="imperial-card p-6 md:p-8">
               <div className="skeleton-shimmer h-6 w-32 rounded-full" />
               <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
@@ -542,7 +385,6 @@ function LoadingState() {
               <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
             </div>
 
-            {/* Metric cards skeleton */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div className="imperial-card-stat p-5" key={i}>
@@ -554,7 +396,6 @@ function LoadingState() {
               ))}
             </div>
 
-            {/* Chart area skeleton */}
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
               <div className="imperial-card p-6">
                 <div className="skeleton-shimmer h-4 w-32 rounded-full" />
@@ -583,6 +424,10 @@ function EvaluationModeBanner({
   dailyLimitMinutes: number
   remainingSeconds: number
 }>) {
+  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60)
+  const seconds = Math.max(0, remainingSeconds) % 60
+  const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+
   return (
     <section className="imperial-card-soft px-5 py-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -603,7 +448,7 @@ function EvaluationModeBanner({
 
         <div className="imperial-card-stat px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tempo restante</p>
-          <p className="mt-2 text-2xl font-semibold text-white">{formatDuration(remainingSeconds)}</p>
+          <p className="mt-2 text-2xl font-semibold text-white">{formatted}</p>
         </div>
       </div>
     </section>
@@ -657,26 +502,4 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
       </div>
     </main>
   )
-}
-
-function buildDashboardUrl(sectionId: DashboardSectionId, settingsSectionId: DashboardSettingsSectionId) {
-  const params = new URLSearchParams()
-
-  if (sectionId !== dashboardDefaultSection) {
-    params.set('view', sectionId)
-  }
-
-  if (sectionId === 'settings') {
-    params.set('panel', settingsSectionId)
-  }
-
-  const queryString = params.toString()
-  return queryString ? `/dashboard?${queryString}` : '/dashboard'
-}
-
-function formatDuration(totalSeconds: number) {
-  const safeSeconds = Math.max(0, totalSeconds)
-  const minutes = Math.floor(safeSeconds / 60)
-  const seconds = safeSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }

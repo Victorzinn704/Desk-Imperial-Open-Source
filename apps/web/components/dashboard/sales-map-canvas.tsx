@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import type { Map as LeafletMap, CircleMarker } from 'leaflet'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -14,8 +15,8 @@ const DEFAULT_ZOOM = 4
 
 export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCanvasProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<import('leaflet').Map | null>(null)
-  const markersRef = useRef<import('leaflet').CircleMarker[]>([])
+  const mapRef = useRef<LeafletMap | null>(null)
+  const markersRef = useRef<CircleMarker[]>([])
   const [mapReady, setMapReady] = useState(false)
 
   useEffect(() => {

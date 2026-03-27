@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
 import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
-import type { ProductRecord } from '@contracts/contracts'
+import type { ProductRecord, OperationsLiveResponse, ComandaRecord, ComandaItemRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
@@ -50,7 +50,7 @@ interface StaffMobileShellProps {
   produtos: ProductRecord[]
 }
 
-export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProps) {
+export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
@@ -132,10 +132,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     mutationFn: openComanda,
     onMutate: async (vars) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
-        'operations',
-        'live',
-      ])
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
       // Insert optimistic comanda into snapshot.unassigned.comandas
       if (snapshot) {
         const optimistic = {
@@ -168,7 +165,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
             kitchenQueuedAt: null,
             kitchenReadyAt: null,
           })),
-        } as import('@contracts/contracts').ComandaRecord
+        } as ComandaRecord
         queryClient.setQueryData(['operations', 'live'], {
           ...snapshot,
           unassigned: {
@@ -194,12 +191,9 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       addComandaItem(comandaId, payload),
     onMutate: async ({ comandaId, payload }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
-        'operations',
-        'live',
-      ])
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
       if (snapshot) {
-        const newItem: import('@contracts/contracts').ComandaItemRecord = {
+        const newItem: ComandaItemRecord = {
           id: `opt-item-${Date.now()}`,
           productId: payload.productId ?? null,
           productName: payload.productName ?? 'Item',
@@ -253,10 +247,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
       updateComandaStatus(comandaId, status),
     onMutate: async ({ comandaId, status }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
-        'operations',
-        'live',
-      ])
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
@@ -304,10 +295,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
     onMutate: async ({ comandaId }) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
-        'operations',
-        'live',
-      ])
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
@@ -347,10 +335,7 @@ export function StaffMobileShell({ currentUser, produtos }: StaffMobileShellProp
     mutationFn: cancelComanda,
     onMutate: async (comandaId) => {
       await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<import('@contracts/contracts').OperationsLiveResponse>([
-        'operations',
-        'live',
-      ])
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
       if (snapshot) {
         const groups = [...snapshot.employees, snapshot.unassigned]
         for (const group of groups) {
