@@ -47,6 +47,11 @@ body {
   color: var(--text-primary);
 }
 
+/* Prevenir scroll duplo quando o layout força altura da tela */
+body:has(main.h-screen) {
+  overflow: hidden;
+}
+
 /* Custom cursor active on landing page */
 body.cursor-none,
 body.cursor-none * {
@@ -63,7 +68,7 @@ body::before {
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 72px 72px;
-  mask-image: radial-gradient(circle at center, black, transparent 85%);
+  mask-image: radial-gradient(circle at center, black, transparent 95%);
 }
 
 body > * {

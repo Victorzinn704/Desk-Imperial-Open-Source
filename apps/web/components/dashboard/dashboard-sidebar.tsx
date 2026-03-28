@@ -151,7 +151,7 @@ export function DashboardSidebar({
       {/* ═══════════════════════════════════════════
           SIDEBAR DESKTOP — visível em xl+
           ═══════════════════════════════════════════ */}
-      <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
+      <aside className="hidden xl:flex xl:h-screen xl:overflow-hidden">
         <div
           className={cn(
             'workspace-sidebar flex h-full flex-col overflow-hidden transition-[padding] duration-300',

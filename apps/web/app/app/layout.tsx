@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/providers/query-provider'
 import { ServiceWorkerRegistrar } from '@/components/shared/sw-registrar'
-import '../globals.css'
 
 export const metadata: Metadata = {
   title: 'Desk Imperial — Operacional',
@@ -30,26 +29,21 @@ export default function AppMobileLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
-      </head>
-      <body style={{ background: '#0a0a0a', overscrollBehavior: 'none' }}>
-        <QueryProvider>{children}</QueryProvider>
-        <ServiceWorkerRegistrar />
-        <Toaster
-          theme="dark"
-          position="top-center"
-          richColors
-          toastOptions={{
-            style: {
-              background: 'rgba(15,15,15,0.95)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(12px)',
-            },
-          }}
-        />
-      </body>
-    </html>
+    <>
+      <ServiceWorkerRegistrar />
+      <QueryProvider>{children}</QueryProvider>
+      <Toaster
+        theme="dark"
+        position="top-center"
+        richColors
+        toastOptions={{
+          style: {
+            background: 'rgba(15,15,15,0.95)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(12px)',
+          },
+        }}
+      />
+    </>
   )
 }

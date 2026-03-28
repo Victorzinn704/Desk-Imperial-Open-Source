@@ -236,7 +236,7 @@ export function DashboardShell({
   // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
-    <main className="bg-background text-foreground xl:h-screen xl:overflow-hidden">
+    <main className="bg-background text-foreground h-screen overflow-hidden">
       <div
         className="workspace-shell xl:grid xl:h-full"
         style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
@@ -257,7 +257,7 @@ export function DashboardShell({
           userName={user.fullName}
         />
 
-        <div ref={scrollRef} className="workspace-shell__main xl:h-screen xl:overflow-y-auto" onScroll={onScroll}>
+        <div ref={scrollRef} className="workspace-shell__main h-screen overflow-y-auto" onScroll={onScroll}>
           <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
             <header className="imperial-card p-6 md:p-8" id="workspace-header">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
