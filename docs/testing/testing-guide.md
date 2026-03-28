@@ -82,7 +82,12 @@ npm test
 
 # Run a focused frontend suite
 npm --workspace @partner/web test -- owner-mobile-shell
+
+# Run the stable Chromium E2E smoke suite
+npm --workspace @partner/web run test:e2e
 ```
+
+The web E2E baseline is intentionally scoped to `Chromium` for stability and signal quality.
 
 ### Focused Operations Stability Suite
 
@@ -204,6 +209,7 @@ Result validated in this phase:
 - API typecheck passing
 - Web typecheck passing
 - `owner-mobile-shell` passing
+- `19` Playwright Chromium E2E tests passing
 
 ### Minimal E2E Baseline
 
@@ -220,6 +226,20 @@ Result:
 - HTTP real smoke coverage for:
   - `GET /api/health`
   - `POST /api/auth/login`
+
+### Load Test Baseline
+
+Versioned load scripts now live in:
+
+- `tests/load/k6/api-health.js`
+- `tests/load/k6/api-auth-login.js`
+- `tests/load/k6/web-login-page.js`
+
+Execution guide:
+
+- [`load-testing.md`](/c:/Users/Desktop/Documents/desk-imperial/docs/testing/load-testing.md)
+
+These scripts were versioned in this phase but were not executed as part of the local baseline.
 
 ## Jest Configuration
 
