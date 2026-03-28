@@ -27,8 +27,12 @@ interface Props {
 }
 
 function SummaryCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+  const testId = `summary-card-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
-    <div className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
+    <div
+      data-testid={testId}
+      className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-4 py-3"
+    >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-white">{value}</p>
       <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{hint}</p>

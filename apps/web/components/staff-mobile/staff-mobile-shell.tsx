@@ -617,6 +617,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
                   setActiveTab(id)
                   if (id !== 'pedidos') setFocusedComandaId(null)
                 }}
+                data-testid={`nav-${id}`}
                 className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >

@@ -113,6 +113,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
                 placeholder="Buscar por mesa, cliente, documento, item ou responsável"
+                aria-label="Buscar comandas"
                 className="w-full rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] py-3 pl-10 pr-4 text-sm text-white placeholder:text-[var(--text-soft)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
               />
             </label>
@@ -120,6 +121,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
             <select
               value={responsavel}
               onChange={(event) => setResponsavel(event.target.value)}
+              aria-label="Filtrar por responsável"
               className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-white focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
             >
               {responsaveis.map((item) => (
@@ -132,6 +134,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
             <select
               value={ordenacao}
               onChange={(event) => setOrdenacao(event.target.value as Ordenacao)}
+              aria-label="Ordenar comandas"
               className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-white focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
             >
               <option className="bg-[#11161d] text-white" value="recentes">

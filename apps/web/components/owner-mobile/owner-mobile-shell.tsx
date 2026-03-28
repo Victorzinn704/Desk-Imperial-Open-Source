@@ -547,6 +547,7 @@ function OwnerResumoTab({
           ].map(({ label, value, sub, color, Icon }) => (
             <div
               key={label}
+              data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
               className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4"
             >
               <div className="mb-1 flex items-center gap-1.5">
