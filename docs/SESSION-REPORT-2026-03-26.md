@@ -1,4 +1,5 @@
 # Relatório de Testes — Desk Imperial
+
 **Data:** 26 de março de 2026
 **Sessão:** Auditoria técnica + correções de produção
 
@@ -6,14 +7,14 @@
 
 ## Visão Geral (Consolidado)
 
-| Métrica | Valor |
-|---|---|
-| Suítes de teste | 13 |
-| Testes totais | 337 |
-| Passando | 337 (100%) |
-| Falhando | 0 (0%) |
-| Suítes com falha | 0 |
-| Tempo de execução | ~1.4s |
+| Métrica           | Valor      |
+| ----------------- | ---------- |
+| Suítes de teste   | 13         |
+| Testes totais     | 337        |
+| Passando          | 337 (100%) |
+| Falhando          | 0 (0%)     |
+| Suítes com falha  | 0          |
+| Tempo de execução | ~1.4s      |
 
 ---
 
@@ -21,31 +22,31 @@
 
 ### Passando (13 suítes)
 
-| Arquivo | Testes | O que cobre |
-|---|---|---|
-| `auth.service.spec.ts` | 15 | Login, registro, CSRF, rate limit, LGPD (acceptTerms/acceptPrivacy), argon2 mock ESM |
-| `operations-domain.utils.spec.ts` | 24 | Todas as funções puras do domínio: `resolveBusinessDate`, `buildBusinessDateWindow`, `formatBusinessDateKey`, `toNumber`, `resolveBuyerTypeFromDocument`, `isOpenComandaStatus`, payloads de comanda e caixa |
-| `operations-service.spec.ts` | 18 | CRUD de mesas (in-memory Map), isolamento de workspace, soft delete, fórmula de caixa esperado, guard `isOpenComandaStatus` |
-| `operations-types.spec.ts` | - | Enums e tipos de operações |
-| `period-classifier.spec.ts` | - | Classificação de períodos comerciais (manhã/tarde/noite/madrugada) |
-| `utils.spec.ts` | - | Utilitários gerais (document validation, input hardening, number rounding) |
-| `app.service.spec.ts` | - | Health check de DB e Redis |
-| `mailer-templates.spec.ts` | - | Renderização de templates de email |
-| `products.service.spec.ts` | - | Portfólio, importação CSV, cache e conflitos Prisma |
-| `orders.service.spec.ts` | - | Pedidos, cancelamento, estoque, resumo e cache |
-| `employees.service.spec.ts` | - | Funcionários, criação/update, vínculo de login e cache |
-| `admin-pin.service.spec.ts` | - | Challenge/proof, rate limit e validação segura |
-| `cache.service.spec.ts` | - | Operações de cache e key builders |
+| Arquivo                           | Testes | O que cobre                                                                                                                                                                                                  |
+| --------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `auth.service.spec.ts`            | 15     | Login, registro, CSRF, rate limit, LGPD (acceptTerms/acceptPrivacy), argon2 mock ESM                                                                                                                         |
+| `operations-domain.utils.spec.ts` | 24     | Todas as funções puras do domínio: `resolveBusinessDate`, `buildBusinessDateWindow`, `formatBusinessDateKey`, `toNumber`, `resolveBuyerTypeFromDocument`, `isOpenComandaStatus`, payloads de comanda e caixa |
+| `operations-service.spec.ts`      | 18     | CRUD de mesas (in-memory Map), isolamento de workspace, soft delete, fórmula de caixa esperado, guard `isOpenComandaStatus`                                                                                  |
+| `operations-types.spec.ts`        | -      | Enums e tipos de operações                                                                                                                                                                                   |
+| `period-classifier.spec.ts`       | -      | Classificação de períodos comerciais (manhã/tarde/noite/madrugada)                                                                                                                                           |
+| `utils.spec.ts`                   | -      | Utilitários gerais (document validation, input hardening, number rounding)                                                                                                                                   |
+| `app.service.spec.ts`             | -      | Health check de DB e Redis                                                                                                                                                                                   |
+| `mailer-templates.spec.ts`        | -      | Renderização de templates de email                                                                                                                                                                           |
+| `products.service.spec.ts`        | -      | Portfólio, importação CSV, cache e conflitos Prisma                                                                                                                                                          |
+| `orders.service.spec.ts`          | -      | Pedidos, cancelamento, estoque, resumo e cache                                                                                                                                                               |
+| `employees.service.spec.ts`       | -      | Funcionários, criação/update, vínculo de login e cache                                                                                                                                                       |
+| `admin-pin.service.spec.ts`       | -      | Challenge/proof, rate limit e validação segura                                                                                                                                                               |
+| `cache.service.spec.ts`           | -      | Operações de cache e key builders                                                                                                                                                                            |
 
 ### Consolidação das suítes anteriormente falhando
 
-| Arquivo | Situação final | Evidência |
-|---|---|---|
-| `admin-pin.service.spec.ts` | ✅ Corrigido | `extractVerificationProof` alinhado ao cookie `partner_admin_pin`; remoção de teste de método inexistente |
-| `products.service.spec.ts` | ✅ Corrigido | Chaves `products:list:*` e conflito `P2002` via `PrismaClientKnownRequestError` |
-| `orders.service.spec.ts` | ✅ Corrigido | Factories ajustadas (`updatedAt`, `cancelledAt`) e cache `orders:summary:*` |
-| `employees.service.spec.ts` | ✅ Corrigido | Email de login alinhado para `staff.<owner>.<code>@login.deskimperial.internal` e cache `employees:list:*` |
-| `cache.service.spec.ts` | ✅ Corrigido | Mocks e chamadas alinhadas ao contrato atual do serviço |
+| Arquivo                     | Situação final | Evidência                                                                                                  |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `admin-pin.service.spec.ts` | ✅ Corrigido   | `extractVerificationProof` alinhado ao cookie `partner_admin_pin`; remoção de teste de método inexistente  |
+| `products.service.spec.ts`  | ✅ Corrigido   | Chaves `products:list:*` e conflito `P2002` via `PrismaClientKnownRequestError`                            |
+| `orders.service.spec.ts`    | ✅ Corrigido   | Factories ajustadas (`updatedAt`, `cancelledAt`) e cache `orders:summary:*`                                |
+| `employees.service.spec.ts` | ✅ Corrigido   | Email de login alinhado para `staff.<owner>.<code>@login.deskimperial.internal` e cache `employees:list:*` |
+| `cache.service.spec.ts`     | ✅ Corrigido   | Mocks e chamadas alinhadas ao contrato atual do serviço                                                    |
 
 ---
 
@@ -79,11 +80,12 @@ argon2
 ```
 
 **Padrão de mock ESM (argon2):**
+
 ```typescript
 const mockArgon2Verify = jest.fn(async () => false)
 jest.mock('argon2', () => ({
   hash: jest.fn(async () => '$argon2id$v=19$m=65536,t=3,p=4$mocked'),
-  verify: mockArgon2Verify,  // referência direta, sem wrapper
+  verify: mockArgon2Verify, // referência direta, sem wrapper
   argon2id: 2,
 }))
 ```
@@ -130,13 +132,13 @@ Caixa
 
 Um dos trabalhos desta sessão foi decompor o `operations.service.ts` original de **1969 linhas** em 4 arquivos:
 
-| Arquivo | Linhas | Responsabilidade |
-|---|---|---|
-| `operations.service.ts` | 153 | Facade — delega para os 3 serviços abaixo |
-| `cash-session.service.ts` | 382 | Abertura/fechamento de caixa, movimentações |
-| `comanda.service.ts` | 707 | Ciclo de vida das comandas |
-| `operations-helpers.service.ts` | 754 | Métodos auxiliares (antes privados) |
-| `operations-domain.utils.ts` | 156 | Funções puras testáveis isoladamente |
+| Arquivo                         | Linhas | Responsabilidade                            |
+| ------------------------------- | ------ | ------------------------------------------- |
+| `operations.service.ts`         | 153    | Facade — delega para os 3 serviços abaixo   |
+| `cash-session.service.ts`       | 382    | Abertura/fechamento de caixa, movimentações |
+| `comanda.service.ts`            | 707    | Ciclo de vida das comandas                  |
+| `operations-helpers.service.ts` | 754    | Métodos auxiliares (antes privados)         |
+| `operations-domain.utils.ts`    | 156    | Funções puras testáveis isoladamente        |
 
 Esse refactor foi o que permitiu escrever `operations-domain.utils.spec.ts` com 100% de cobertura — funções puras não têm dependências externas.
 
@@ -144,19 +146,19 @@ Esse refactor foi o que permitiu escrever `operations-domain.utils.spec.ts` com 
 
 ## Cobertura por Módulo
 
-| Módulo | Statements | Branch | Functions | Linhas |
-|---|---|---|---|---|
-| `period-classifier.service.ts` | 92.3% | 81% | 87.5% | ~92% |
-| `document-validation.util.ts` | 95.5% | 80% | 100% | ~95% |
-| `input-hardening.util.ts` | 100% | 100% | 100% | 100% |
-| `number-rounding.util.ts` | 100% | 100% | 100% | 100% |
-| `operations-domain.utils.ts` | 100% | 100% | 100% | 100% |
-| `auth.service.ts` | ~27% | ~19% | ~31% | ~27% |
-| `admin-pin.service.ts` | ~72% | — | — | — |
-| `products.service.ts` | ~61% | — | — | — |
-| `employees.service.ts` | ~54% | — | — | — |
-| `orders.service.ts` | ~52% | — | — | — |
-| `cache.service.ts` | ~58% | — | — | — |
+| Módulo                         | Statements | Branch | Functions | Linhas |
+| ------------------------------ | ---------- | ------ | --------- | ------ |
+| `period-classifier.service.ts` | 92.3%      | 81%    | 87.5%     | ~92%   |
+| `document-validation.util.ts`  | 95.5%      | 80%    | 100%      | ~95%   |
+| `input-hardening.util.ts`      | 100%       | 100%   | 100%      | 100%   |
+| `number-rounding.util.ts`      | 100%       | 100%   | 100%      | 100%   |
+| `operations-domain.utils.ts`   | 100%       | 100%   | 100%      | 100%   |
+| `auth.service.ts`              | ~27%       | ~19%   | ~31%      | ~27%   |
+| `admin-pin.service.ts`         | ~72%       | —      | —         | —      |
+| `products.service.ts`          | ~61%       | —      | —         | —      |
+| `employees.service.ts`         | ~54%       | —      | —         | —      |
+| `orders.service.ts`            | ~52%       | —      | —         | —      |
+| `cache.service.ts`             | ~58%       | —      | —         | —      |
 
 **Cobertura geral estimada:** ~18%
 
@@ -195,14 +197,14 @@ Os testes rodam em paralelo com o job de lint/typecheck. O build só inicia se *
 
 ## Próximos Passos de Teste
 
-| Prioridade | Tarefa | Esforço |
-|---|---|---|
-| Alta | Manter suíte de API estável com revisão em PR (sem regressões) | Contínuo |
-| Alta | Testes para `finance.service.ts` | 1 dia |
-| Média | Testes para `consent.service.ts` | 4h |
-| Média | Testes para `currency.service.ts` | 4h |
-| Baixa | Testes E2E com TestContainers | 3-5 dias |
-| Baixa | Coverage gate no CI (threshold 50%) | 1h |
+| Prioridade | Tarefa                                                         | Esforço  |
+| ---------- | -------------------------------------------------------------- | -------- |
+| Alta       | Manter suíte de API estável com revisão em PR (sem regressões) | Contínuo |
+| Alta       | Testes para `finance.service.ts`                               | 1 dia    |
+| Média      | Testes para `consent.service.ts`                               | 4h       |
+| Média      | Testes para `currency.service.ts`                              | 4h       |
+| Baixa      | Testes E2E com TestContainers                                  | 3-5 dias |
+| Baixa      | Coverage gate no CI (threshold 50%)                            | 1h       |
 
 ---
 
@@ -210,12 +212,40 @@ Os testes rodam em paralelo com o job de lint/typecheck. O build só inicia se *
 
 Além dos testes, a sessão corrigiu 3 problemas críticos de produção:
 
-| Problema | Causa | Fix |
-|---|---|---|
-| API não iniciava | Dependência circular `AuthModule ↔ GeocodingModule` — `forwardRef` só em um lado | Adicionar `forwardRef(() => GeocodingModule)` em `auth.module.ts` |
-| `/operations/mesas` → 500 | Migrations `add_mesa_model` e `link_comandas_orders` nunca aplicadas no Neon de produção | `railway run prisma migrate deploy` |
-| Cadastro → 503 | Chave Brevo expirada; nova chave atualizada no Railway mas container não releu | `railway redeploy` |
+| Problema                  | Causa                                                                                    | Fix                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| API não iniciava          | Dependência circular `AuthModule ↔ GeocodingModule` — `forwardRef` só em um lado         | Adicionar `forwardRef(() => GeocodingModule)` em `auth.module.ts` |
+| `/operations/mesas` → 500 | Migrations `add_mesa_model` e `link_comandas_orders` nunca aplicadas no Neon de produção | `railway run prisma migrate deploy`                               |
+| Cadastro → 503            | Chave Brevo expirada; nova chave atualizada no Railway mas container não releu           | `railway redeploy`                                                |
 
 ---
 
-*Gerado em 26/03/2026*
+_Gerado em 26/03/2026_
+
+---
+
+## Atualizacao de Baseline - 28/03/2026
+
+Esta baseline foi superada pela rodada de refinamento estrutural do backend e da fundacao de testes.
+
+| Métrica         | Valor atualizado |
+| --------------- | ---------------- |
+| Suítes de teste | 16               |
+| Testes totais   | 396              |
+| Passando        | 396 (100%)       |
+| Falhando        | 0 (0%)           |
+
+Pacote de validacao usado nesta rodada:
+
+```bash
+npm --workspace @partner/api test -- --runInBand
+npm --workspace @partner/api test -- --runInBand finance.service.spec.ts auth.service.spec.ts orders.service.spec.ts employees.service.spec.ts operations-service.spec.ts
+npx tsc --noEmit -p apps/api/tsconfig.json
+```
+
+Avanco documentado nesta fase:
+
+- `finance.service.spec.ts` passou a fazer parte da baseline viva com 28 testes cobrindo cache, crescimento, conversao de moeda e agregacoes executivas
+- `finance-analytics.util.spec.ts` passou a proteger a extracao analitica do modulo financeiro com testes puros
+- o backend passou a ter 396 testes verdes documentados
+- a trilha de refino do `finance.service.ts` ficou protegida para futuras extracoes e limpezas arquiteturais

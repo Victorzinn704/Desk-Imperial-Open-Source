@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { LoggerModule } from 'nestjs-pino'
 import { resolve } from 'node:path'
+import { randomUUID } from 'node:crypto'
 import { PrismaModule } from './database/prisma.module'
 import { CacheModule } from './cache/cache.module'
 import { AppController } from './app.controller'
@@ -19,6 +22,7 @@ import { OperationsModule } from './modules/operations/operations.module'
 import { OperationsRealtimeModule } from './modules/operations-realtime.module'
 import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
+import { validateEnvironment } from './config/env.validation'
 
 @Module({
   imports: [
@@ -32,17 +36,36 @@ import { ProductsModule } from './modules/products/products.module'
           resolve(process.cwd(), '../../.env'),
         ]),
       ),
+      validate: validateEnvironment,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 120,
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         autoLogging: true,
+        genReqId: (req, res) => {
+          const incoming = req.headers['x-request-id']
+          const requestId = typeof incoming === 'string' && incoming.trim() ? incoming.trim() : randomUUID()
+          res.setHeader('x-request-id', requestId)
+          return requestId
+        },
+        customProps: (req) => ({
+          requestId: req.id,
+        }),
         redact: {
           paths: [
             'req.headers.authorization',
             'req.headers.cookie',
+            'req.headers.x-csrf-token',
+            'req.headers.x-admin-pin',
             'req.body.fullName',
             'req.body.companyName',
             'req.body.email',
+            'req.body.companyEmail',
             'req.body.companyStreetLine1',
             'req.body.companyStreetNumber',
             'req.body.companyAddressComplement',
@@ -54,9 +77,18 @@ import { ProductsModule } from './modules/products/products.module'
             'req.body.companyCountry',
             'req.body.hasEmployees',
             'req.body.employeeCount',
+            'req.body.employeeCode',
             'req.body.password',
             'req.body.confirmPassword',
+            'req.body.currentPassword',
+            'req.body.newPassword',
+            'req.body.pin',
+            'req.body.currentPin',
+            'req.body.newPin',
             'req.body.token',
+            'req.body.code',
+            'req.body.customerDocument',
+            'req.body.document',
           ],
           censor: '[REDACTED]',
         },
@@ -79,6 +111,12 @@ import { ProductsModule } from './modules/products/products.module'
     FinanceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

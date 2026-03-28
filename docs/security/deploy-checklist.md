@@ -1,6 +1,6 @@
 # Checklist de Deploy Seguro
 
-Use esta lista antes de publicar o projeto em ambiente publico.
+Use esta lista antes de publicar o projeto em ambiente público.
 
 ## 1. Rotacione todos os segredos expostos
 
@@ -9,7 +9,8 @@ Use esta lista antes de publicar o projeto em ambiente publico.
 - revogue as credenciais antigas
 - atualize os segredos no provedor de deploy
 
-Observacao:
+Observação:
+
 - qualquer segredo compartilhado fora do sistema deve ser tratado como comprometido
 
 ## 2. Proteja a conta e o projeto no Neon
@@ -21,7 +22,7 @@ Observacao:
 - se o plano permitir, ative `IP Allow`
 - se o plano permitir, use branch protegida para producao
 
-## 3. Segredos e variaveis de ambiente
+## 3. Segredos e variáveis de ambiente
 
 Somente no servidor:
 
@@ -40,12 +41,13 @@ Somente no servidor:
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL`
 
-Observacao:
-- para email transacional funcionando em producao, configure `BREVO_API_KEY`
+Observação:
+
+- para email transacional funcionando em produção, configure `BREVO_API_KEY`
 - confirme no painel da Brevo que `EMAIL_FROM_EMAIL` existe como sender validado
 - `GEMINI_API_URL`
 
-Podem ser publicas:
+Podem ser públicas:
 
 - `APP_URL`
 - `NEXT_PUBLIC_APP_URL`
@@ -57,10 +59,12 @@ Regras:
 - nunca usar `NEXT_PUBLIC_` para segredos
 - nunca commitar `.env`
 - configure os segredos diretamente no host de deploy
+- mantenha `.env.example` como referência canônica das variáveis compartilhadas do projeto
+- trate `apps/api/.env` e `apps/web/.env.local` apenas como arquivos locais de execução
 
 ## 4. GitHub
 
-- confirme que `.env` nao esta versionado
+- confirme que `.env` não está versionado
 - habilite `push protection` e `secret scanning`
 - revise `git status` antes de cada push
 - mantenha o repositorio privado ate terminar a limpeza final
@@ -72,7 +76,7 @@ Regras:
 - valide recuperacao e redefinicao de senha com email real
 - valide reenvio de codigo de confirmacao
 - valide o aviso de senha alterada
-- confirme que cookies estao `HttpOnly`, `SameSite` e `Secure` em producao
+- confirme que cookies estão `HttpOnly`, `SameSite` e `Secure` em produção
 - confirme que o modo demo continua limitado por IP e tempo
 
 ## 6. Banco e dados
@@ -80,7 +84,7 @@ Regras:
 - rode `prisma migrate deploy`
 - rode o seed apenas se quiser ambiente demo pronto
 - valide se a conta demo e os dados seedados fazem sentido para avaliacao
-- nao use dados reais de clientes em ambiente publico de portfolio
+- não use dados reais de clientes em ambiente público de portfolio
 
 ## 7. Observabilidade
 
@@ -92,7 +96,7 @@ Regras:
 ## 8. Frontend e exposicao publica
 
 - confirme que nenhum segredo aparece em `next.config`
-- confirme que o bundle do frontend usa apenas variaveis `NEXT_PUBLIC_*`
+- confirme que o bundle do frontend usa apenas variáveis `NEXT_PUBLIC_*`
 - revise textos de demo, onboarding e branding antes do deploy
 - teste desktop e mobile
 
@@ -118,13 +122,13 @@ Fluxos minimos:
 
 - publique primeiro em ambiente de teste
 - valide tudo com dominio real
-- so depois publique o link final no curriculo e no GitHub
+- só depois publique o link final no currículo e no GitHub
 
 ## Fontes oficiais
 
 - Neon 2FA: https://neon.com/docs/changelog/2026-03-06
 - Neon IP Allow: https://neon.com/blog/restrict-access-to-your-neon-database-with-ip-allow
 - Neon API keys e endpoints: https://neon.com/docs/manage/endpoints/
-- Next.js variaveis de ambiente: https://nextjs.org/docs/pages/guides/environment-variables
+- Next.js variáveis de ambiente: https://nextjs.org/docs/pages/guides/environment-variables
 - GitHub push protection: https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection
 - GitHub secret scanning: https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection

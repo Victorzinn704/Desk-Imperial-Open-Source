@@ -12,6 +12,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "ts-node --project tsconfig.json --transpile-only prisma/seed.ts",
     "test": "jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@nestjs/platform-express": "^11.1.17",
     "@nestjs/platform-socket.io": "^11.1.17",
     "@nestjs/swagger": "^11.2.0",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.1.17",
     "@prisma/client": "^6.16.2",
     "@socket.io/redis-adapter": "^8.3.0",

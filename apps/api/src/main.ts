@@ -20,7 +20,7 @@ async function bootstrap() {
   const csrfSecret = configService.get<string>('CSRF_SECRET') ?? 'change-me'
   const isProduction = configService.get<string>('NODE_ENV') === 'production'
   const allowedOrigins = getAllowedOrigins(configService)
-  const swaggerEnabled = configService.get<string>('ENABLE_SWAGGER') === 'true'
+  const swaggerEnabled = !isProduction || configService.get<string>('ENABLE_SWAGGER') === 'true'
   const swaggerAllowedInProduction = configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
 
@@ -45,7 +45,8 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id'],
   })
   app.setGlobalPrefix('api')
   app.useGlobalFilters(new HttpExceptionFilter())
@@ -58,25 +59,25 @@ async function bootstrap() {
   )
 
   if (isProduction && (cookieSecret === 'change-me' || csrfSecret === 'change-me')) {
-    throw new Error('Defina COOKIE_SECRET e CSRF_SECRET antes de iniciar em producao.')
+    throw new Error('Defina COOKIE_SECRET e CSRF_SECRET antes de iniciar em produção.')
   }
 
   const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
   if (isProduction && portfolioFallback === 'true') {
     throw new Error(
-      'PORTFOLIO_EMAIL_FALLBACK=true em producao expoe codigos de verificacao via HTTP. Desative esta variavel antes de iniciar a API.',
+      'PORTFOLIO_EMAIL_FALLBACK=true em produção expõe códigos de verificação via HTTP. Desative esta variável antes de iniciar a API.',
     )
   }
 
   if (!isProduction && portfolioFallback === 'true') {
     logger.warn(
-      'PORTFOLIO_EMAIL_FALLBACK=true esta ativo apenas para requisicoes locais em localhost/127.0.0.1. Origens publicas nao recebem preview de codigo.',
+      'PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1. Origens públicas não recebem preview de código.',
     )
   }
 
   if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
     throw new Error(
-      'ENABLE_SWAGGER=true em producao exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
+      'ENABLE_SWAGGER=true em produção exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
     )
   }
 

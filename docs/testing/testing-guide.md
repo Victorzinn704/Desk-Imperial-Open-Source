@@ -79,6 +79,9 @@ cd apps/web
 
 # Run Next.js tests
 npm test
+
+# Run a focused frontend suite
+npm --workspace @partner/web test -- owner-mobile-shell
 ```
 
 ### Focused Operations Stability Suite
@@ -106,6 +109,21 @@ Recommended when touching:
 - `staff-mobile-shell.tsx`
 - `owner-mobile-shell.tsx`
 - `use-operations-realtime.ts`
+
+### Minimal API E2E Smoke
+
+Use this smoke suite to validate the HTTP layer without external infrastructure:
+
+```bash
+npm --workspace @partner/api run test:e2e
+```
+
+It currently covers:
+
+- `GET /api/health`
+- `POST /api/auth/login`
+
+The smoke app uses mocked infrastructure providers so it stays executable in local and CI contexts without needing Postgres or Redis.
 
 ### Test Foundation Refinement
 
@@ -152,8 +170,56 @@ Current validation baseline:
   - `admin-pin.service.spec.ts`
   - `utils.spec.ts`
   - `auth.service.spec.ts`
+- finance refinement suite passing:
+  - `finance.service.spec.ts` with 28 tests validating cache, growth, currency conversion and executive aggregations after the analytics extraction
 - `npx tsc --noEmit -p apps/api/tsconfig.json` passing after the migration cleanup
 - shared factories are now the default path for API unit tests touching auth, session or request context
+
+### Current Documented Baseline
+
+Validated on `2026-03-28`:
+
+```bash
+npm --workspace @partner/api test -- --runInBand
+```
+
+Result:
+
+- `16` backend suites passing
+- `396` backend tests passing
+- `0` backend failures
+
+Focused stability pack currently used during refinements:
+
+```bash
+npm --workspace @partner/api test -- --runInBand finance.service.spec.ts auth.service.spec.ts orders.service.spec.ts employees.service.spec.ts operations-service.spec.ts
+npx tsc --noEmit -p apps/api/tsconfig.json
+npx tsc --noEmit -p apps/web/tsconfig.json
+npm --workspace @partner/web test -- owner-mobile-shell
+```
+
+Result validated in this phase:
+
+- `132` backend tests passing in the focused pack
+- API typecheck passing
+- Web typecheck passing
+- `owner-mobile-shell` passing
+
+### Minimal E2E Baseline
+
+Backend smoke coverage now also includes a dedicated E2E layer:
+
+```bash
+npm --workspace @partner/api run test:e2e
+```
+
+Result:
+
+- `1` E2E suite passing
+- `4` E2E tests passing
+- HTTP real smoke coverage for:
+  - `GET /api/health`
+  - `POST /api/auth/login`
 
 ## Jest Configuration
 

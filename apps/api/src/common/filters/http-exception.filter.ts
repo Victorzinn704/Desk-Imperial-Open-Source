@@ -1,4 +1,5 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import type { ArgumentsHost, ExceptionFilter} from '@nestjs/common';
+import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import type { Request, Response } from 'express'
 
 @Catch()
@@ -11,12 +12,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>()
 
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
+    const requestId = response.getHeader('x-request-id') ?? request.headers['x-request-id'] ?? null
 
     const isClientError = status >= 400 && status < 500
 
     if (!isClientError) {
       this.logger.error(
-        `[${request.method}] ${request.url} → ${status}`,
+        `[${String(requestId ?? 'no-request-id')}] [${request.method}] ${request.url} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       )
     }
@@ -42,6 +44,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
       path: request.url,
       timestamp: new Date().toISOString(),
+      requestId,
     })
   }
 }

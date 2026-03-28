@@ -5,6 +5,7 @@ import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
 import type { AuthService } from '../auth/auth.service'
+import { getAllowedOriginsFromValues } from '../../common/utils/origin.util'
 import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
 import type { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
@@ -21,10 +22,7 @@ import type {
  * are available, a thin Nest gateway can delegate to this bridge without
  * changing the auth or room logic below.
  */
-const ALLOWED_ORIGINS = [
-  'https://app.deskimperial.online',
-  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : []),
-]
+const ALLOWED_ORIGINS = getAllowedOriginsFromValues(process.env)
 
 @WebSocketGateway({
   namespace: OPERATIONS_REALTIME_NAMESPACE,
