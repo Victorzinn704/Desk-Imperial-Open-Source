@@ -34,7 +34,7 @@ import {
 } from './auth.constants'
 import type { AuthContext } from './auth.types'
 import type { ForgotPasswordDto } from './dto/forgot-password.dto'
-import type { LoginDto} from './dto/login.dto';
+import type { LoginDto } from './dto/login.dto'
 import { LoginModeDto } from './dto/login.dto'
 import type { RegisterDto } from './dto/register.dto'
 import type { ResetPasswordDto } from './dto/reset-password.dto'
