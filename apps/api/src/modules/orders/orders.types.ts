@@ -55,6 +55,20 @@ type OrderWithItems = Order & {
   items: OrderItem[]
 }
 
+function maskDocument(doc: string | null): string | null {
+  if (!doc) return null
+  const digits = doc.replace(/\D/g, '')
+  if (digits.length === 11) {
+    // CPF: 161.***.**-98
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(-2)}`
+  }
+  if (digits.length === 14) {
+    // CNPJ: 12.***.***/****-34
+    return `${digits.slice(0, 2)}.***.***/${digits.slice(8, 12)}-${digits.slice(-2)}`
+  }
+  return '***'
+}
+
 export function toOrderRecord(
   order: OrderWithItems,
   options: {
@@ -72,13 +86,13 @@ export function toOrderRecord(
     comandaId: order.comandaId,
     customerName: order.customerName,
     buyerType: order.buyerType,
-    buyerDocument: order.buyerDocument,
+    buyerDocument: maskDocument(order.buyerDocument),
     buyerDistrict: order.buyerDistrict,
     buyerCity: order.buyerCity,
     buyerState: order.buyerState,
     buyerCountry: order.buyerCountry,
-    buyerLatitude: order.buyerLatitude,
-    buyerLongitude: order.buyerLongitude,
+    buyerLatitude: null,
+    buyerLongitude: null,
     employeeId: order.employeeId,
     sellerCode: order.sellerCode,
     sellerName: order.sellerName,

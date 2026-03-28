@@ -29,6 +29,11 @@ export function maskBuyerDocument(document: string | null | undefined) {
     return 'Documento não informado'
   }
 
+  // Already masked by the API — pass through
+  if (document.includes('*')) {
+    return document
+  }
+
   const digits = document.replace(/\D/g, '')
 
   // CPF: mostra apenas 3 primeiros e 2 últimos dígitos — padrão LGPD

@@ -83,7 +83,7 @@ export function SalesPerformanceCard({
           {isLoading ? (
             <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
-            <ResponsiveContainer height="100%" width="100%">
+            <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
               <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
                 <defs>
                   <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">

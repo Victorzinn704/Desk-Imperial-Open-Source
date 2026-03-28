@@ -10,6 +10,11 @@ async function main() {
     where: { email: companyEmail },
   })
 
+  if (!owner) {
+    console.log('Owner demo@deskimperial.online não encontrado.')
+    return
+  }
+
   // Achando o VD-001
   const employee = await prisma.employee.findFirst({
     where: { userId: owner.id, employeeCode: 'VD-001' },
