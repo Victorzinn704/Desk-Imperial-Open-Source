@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import { Users, Plus } from 'lucide-react'
 import type { Mesa, Comanda, MesaStatus } from './pdv-types'
@@ -33,6 +34,10 @@ const COLUMNS = [
     glow: 'rgba(96,165,250,0.12)',
   },
 ]
+
+function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda>) {
+  return mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
+}
 
 function MesaSquare({
   mesa,
@@ -182,16 +187,29 @@ export function PdvMesasKanban({
   onClickOcupada,
   onAddMesa,
 }: Readonly<Props>) {
+  const mesaById = useMemo(() => new Map(mesas.map((mesa) => [mesa.id, mesa])), [mesas])
+  const comandaById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
+  const livres = useMemo(() => mesas.filter((mesa) => mesa.status === 'livre'), [mesas])
+  const mesasByStatus = useMemo(
+    () =>
+      COLUMNS.reduce(
+        (acc, column) => {
+          acc[column.id] = mesas.filter((mesa) => mesa.status === column.id)
+          return acc
+        },
+        {} as Record<(typeof COLUMNS)[number]['id'], Mesa[]>,
+      ),
+    [mesas],
+  )
+
   function handleDragEnd(result: DropResult) {
     const { draggableId, destination } = result
     if (!destination) return
     const newStatus = destination.droppableId as MesaStatus
-    const mesa = mesas.find((m) => m.id === draggableId)
+    const mesa = mesaById.get(draggableId)
     if (!mesa || mesa.status === newStatus) return
     onStatusChange(draggableId, newStatus)
   }
-
-  const livres = mesas.filter((m) => m.status === 'livre')
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -257,7 +275,7 @@ export function PdvMesasKanban({
         {/* ── Colunas Ocupada / Reservada ── */}
         <div className="grid grid-cols-2 gap-4">
           {COLUMNS.map((col) => {
-            const colMesas = mesas.filter((m) => m.status === col.id)
+            const colMesas = mesasByStatus[col.id]
             return (
               <div key={col.id} className="rounded-2xl border" style={{ borderColor: col.border, background: col.bg }}>
                 {/* Column header */}
@@ -295,7 +313,7 @@ export function PdvMesasKanban({
                         <MesaRectCard
                           key={mesa.id}
                           mesa={mesa}
-                          comanda={mesa.comandaId ? comandas.find((c) => c.id === mesa.comandaId) : undefined}
+                          comanda={resolveMesaComanda(mesa, comandaById)}
                           index={i}
                           colColor={col.color}
                           onClickLivre={onClickLivre}

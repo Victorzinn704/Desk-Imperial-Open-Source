@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common'
+import type { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -112,5 +113,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
   static ordersKey(userId: string) {
     return `orders:summary:${userId}`
+  }
+
+  static operationsLiveKey(workspaceOwnerUserId: string, businessDate: string, includeCashMovements: boolean) {
+    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}`
   }
 }

@@ -138,6 +138,7 @@ model User {
   comandasClosed      Comanda[]            @relation("ComandaClosedBy")
   companyComandaAssignments ComandaAssignment[] @relation("CompanyComandaAssignments")
   comandaAssignmentsGranted ComandaAssignment[] @relation("ComandaAssignmentGrantedBy")
+  workspaceSessions   Session[]            @relation("WorkspaceSessions")
 
   @@index([companyOwnerId, role])
   @@index([companyCity, companyState])
@@ -146,7 +147,9 @@ model User {
 
 model Session {
   id         String    @id @default(cuid())
-  userId     String
+  userId     String?
+  employeeId String?
+  workspaceOwnerUserId String
   tokenHash  String    @unique
   expiresAt  DateTime
   createdAt  DateTime  @default(now())
@@ -154,10 +157,14 @@ model Session {
   revokedAt  DateTime?
   ipAddress  String?
   userAgent  String?
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  workspaceOwner User  @relation("WorkspaceSessions", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
   demoAccessGrant DemoAccessGrant?
 
   @@index([userId, expiresAt])
+  @@index([employeeId, expiresAt])
+  @@index([workspaceOwnerUserId, expiresAt])
 }
 
 model DemoAccessGrant {
@@ -305,6 +312,7 @@ model Employee {
   id               String   @id @default(cuid())
   userId           String
   loginUserId      String?  @unique
+  passwordHash     String?
   employeeCode     String
   displayName      String
   active           Boolean  @default(true)
@@ -314,6 +322,7 @@ model Employee {
   updatedAt        DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   loginUser    User?    @relation("EmployeeLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
+  sessions     Session[]
   sales        Order[]
   cashSessions CashSession[]
   cashMovements CashMovement[]

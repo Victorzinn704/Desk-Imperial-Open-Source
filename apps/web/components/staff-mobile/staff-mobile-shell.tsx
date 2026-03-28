@@ -1,11 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
 import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
-import type { ProductRecord, OperationsLiveResponse, ComandaRecord, ComandaItemRecord } from '@contracts/contracts'
+import type { ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
@@ -38,6 +38,17 @@ import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { MobileHistoricoView } from '@/components/staff-mobile/mobile-historico-view'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { useOfflineQueue } from '@/components/shared/use-offline-queue'
+import {
+  appendOptimisticComandaMutation,
+  buildOptimisticComandaRecord,
+  buildPerformerKpis,
+  countKitchenPendingItems,
+  invalidateOperationsWorkspace,
+  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  rollbackOperationsSnapshot,
+  appendOptimisticComandaItem,
+  setOptimisticComandaStatus,
+} from '@/lib/operations'
 
 type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
@@ -46,7 +57,7 @@ type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: str
 // null = no focus; string = scroll-to & highlight that comanda
 
 interface StaffMobileShellProps {
-  currentUser: { name?: string; fullName?: string } | null
+  currentUser: { name?: string; fullName?: string; employeeId?: string | null } | null
   produtos: ProductRecord[]
 }
 
@@ -96,7 +107,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
-    await queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+    await queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
   }, [queryClient])
 
   const {
@@ -107,9 +118,13 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
   } = usePullToRefresh({ onRefresh: handlePullRefresh })
 
   const operationsQuery = useQuery({
-    queryKey: ['operations', 'live'],
-    queryFn: () => fetchOperationsLive(),
+    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: realtimeStatus !== 'connected',
     // socket ativo = sem polling; socket offline = fallback a cada 20s
     refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
   })
@@ -118,6 +133,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     queryKey: ['products'],
     queryFn: () => fetchProducts(),
     enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const logoutMutation = useMutation({
@@ -129,111 +147,43 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     },
   })
   const openComandaMutation = useMutation({
-    mutationFn: openComanda,
+    mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
     onMutate: async (vars) => {
-      await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
-      // Insert optimistic comanda into snapshot.unassigned.comandas
-      if (snapshot) {
-        const optimistic = {
-          id: `optimistic-${Date.now()}`,
-          companyOwnerId: '',
-          mesaId: null,
-          status: 'OPEN',
+      const snapshot = await appendOptimisticComandaMutation(
+        queryClient,
+        OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+        buildOptimisticComandaRecord({
           tableLabel: vars.tableLabel,
           customerName: vars.customerName ?? null,
           customerDocument: vars.customerDocument ?? null,
           participantCount: vars.participantCount ?? 1,
           notes: vars.notes ?? null,
           cashSessionId: vars.cashSessionId ?? null,
-          currentEmployeeId: null,
-          discountAmount: 0,
-          serviceFeeAmount: 0,
-          subtotalAmount: 0,
-          totalAmount: 0,
-          openedAt: new Date().toISOString(),
-          closedAt: null,
-          items: (vars.items ?? []).map((it, idx) => ({
-            id: `opt-item-${idx}`,
-            productId: it.productId ?? null,
-            productName: it.productName ?? 'Item',
-            quantity: it.quantity,
-            unitPrice: it.unitPrice ?? 0,
-            totalAmount: (it.quantity ?? 0) * (it.unitPrice ?? 0),
-            notes: it.notes ?? null,
-            kitchenStatus: null,
-            kitchenQueuedAt: null,
-            kitchenReadyAt: null,
-          })),
-        } as ComandaRecord
-        queryClient.setQueryData(['operations', 'live'], {
-          ...snapshot,
-          unassigned: {
-            ...snapshot.unassigned,
-            comandas: [...snapshot.unassigned.comandas, optimistic],
-          },
-        })
-      }
+          items: vars.items,
+        }),
+      )
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) queryClient.setQueryData(['operations', 'live'], ctx.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       haptic.error()
     },
     onSuccess: () => {
-      invalidateMobileWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
   })
   const addComandaItemMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
-      addComandaItem(comandaId, payload),
+      addComandaItem(comandaId, payload, { includeSnapshot: false }),
     onMutate: async ({ comandaId, payload }) => {
-      await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
-      if (snapshot) {
-        const newItem: ComandaItemRecord = {
-          id: `opt-item-${Date.now()}`,
-          productId: payload.productId ?? null,
-          productName: payload.productName ?? 'Item',
-          quantity: payload.quantity,
-          unitPrice: payload.unitPrice ?? 0,
-          totalAmount: (payload.quantity ?? 0) * (payload.unitPrice ?? 0),
-          notes: payload.notes ?? null,
-          kitchenStatus: null,
-          kitchenQueuedAt: null,
-          kitchenReadyAt: null,
-        }
-        const groups = [...snapshot.employees, snapshot.unassigned]
-        for (const group of groups) {
-          const comandaIdx = group.comandas.findIndex((c) => c.id === comandaId)
-          if (comandaIdx !== -1) {
-            const updatedComanda = {
-              ...group.comandas[comandaIdx],
-              items: [...group.comandas[comandaIdx].items, newItem],
-            }
-            const updatedComandas = [...group.comandas]
-            updatedComandas[comandaIdx] = updatedComanda
-            if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], {
-                ...snapshot,
-                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
-              })
-            } else {
-              const empIdx = snapshot.employees.findIndex((e) => e === group)
-              const updatedEmployees = [...snapshot.employees]
-              updatedEmployees[empIdx] = { ...group, comandas: updatedComandas }
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, employees: updatedEmployees })
-            }
-            break
-          }
-        }
-      }
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, payload)
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) queryClient.setQueryData(['operations', 'live'], ctx.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao adicionar item')
       haptic.error()
     },
@@ -244,41 +194,19 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
-      updateComandaStatus(comandaId, status),
+      updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onMutate: async ({ comandaId, status }) => {
-      await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
-      if (snapshot) {
-        const groups = [...snapshot.employees, snapshot.unassigned]
-        for (const group of groups) {
-          const comandaIdx = group.comandas.findIndex((c) => c.id === comandaId)
-          if (comandaIdx !== -1) {
-            const updatedComandas = [...group.comandas]
-            updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status }
-            if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], {
-                ...snapshot,
-                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
-              })
-            } else {
-              const empIdx = snapshot.employees.findIndex((e) => e === group)
-              const updatedEmployees = [...snapshot.employees]
-              updatedEmployees[empIdx] = { ...group, comandas: updatedComandas }
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, employees: updatedEmployees })
-            }
-            break
-          }
-        }
-      }
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, status)
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) queryClient.setQueryData(['operations', 'live'], ctx.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao atualizar status')
       haptic.error()
     },
     onSuccess: () => {
-      invalidateMobileWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Status atualizado')
       haptic.medium()
     },
@@ -292,81 +220,42 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       comandaId: string
       discountAmount: number
       serviceFeeAmount: number
-    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
+    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onMutate: async ({ comandaId }) => {
-      await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
-      if (snapshot) {
-        const groups = [...snapshot.employees, snapshot.unassigned]
-        for (const group of groups) {
-          const comandaIdx = group.comandas.findIndex((c) => c.id === comandaId)
-          if (comandaIdx !== -1) {
-            const updatedComandas = [...group.comandas]
-            updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status: 'CLOSED' }
-            if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], {
-                ...snapshot,
-                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
-              })
-            } else {
-              const empIdx = snapshot.employees.findIndex((e) => e === group)
-              const updatedEmployees = [...snapshot.employees]
-              updatedEmployees[empIdx] = { ...group, comandas: updatedComandas }
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, employees: updatedEmployees })
-            }
-            break
-          }
-        }
-      }
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, 'CLOSED')
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) queryClient.setQueryData(['operations', 'live'], ctx.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao fechar comanda')
       haptic.error()
     },
     onSuccess: () => {
-      invalidateMobileWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Comanda fechada — pagamento efetuado')
       haptic.heavy()
     },
   })
   const cancelComandaMutation = useMutation({
-    mutationFn: cancelComanda,
+    mutationFn: (comandaId: string) => cancelComanda(comandaId, { includeSnapshot: false }),
     onMutate: async (comandaId) => {
-      await queryClient.cancelQueries({ queryKey: ['operations', 'live'] })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(['operations', 'live'])
-      if (snapshot) {
-        const groups = [...snapshot.employees, snapshot.unassigned]
-        for (const group of groups) {
-          const comandaIdx = group.comandas.findIndex((c) => c.id === comandaId)
-          if (comandaIdx !== -1) {
-            const updatedComandas = [...group.comandas]
-            updatedComandas[comandaIdx] = { ...group.comandas[comandaIdx], status: 'CANCELLED' }
-            if (group === snapshot.unassigned) {
-              queryClient.setQueryData(['operations', 'live'], {
-                ...snapshot,
-                unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
-              })
-            } else {
-              const empIdx = snapshot.employees.findIndex((e) => e === group)
-              const updatedEmployees = [...snapshot.employees]
-              updatedEmployees[empIdx] = { ...group, comandas: updatedComandas }
-              queryClient.setQueryData(['operations', 'live'], { ...snapshot, employees: updatedEmployees })
-            }
-            break
-          }
-        }
-      }
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(
+        queryClient,
+        OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+        comandaId,
+        'CANCELLED',
+      )
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) queryClient.setQueryData(['operations', 'live'], ctx.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao cancelar comanda')
       haptic.error()
     },
     onSuccess: () => {
-      invalidateMobileWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Comanda cancelada')
       haptic.heavy()
     },
@@ -374,24 +263,14 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
-  const activeComandas = comandas.filter((comanda) => comanda.status !== 'fechada')
+  const comandasById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
+  const activeComandas = useMemo(() => comandas.filter((comanda) => comanda.status !== 'fechada'), [comandas])
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
-
-  const kitchenBadge = useMemo(() => {
-    const snapshot = operationsQuery.data
-    if (!snapshot) return 0
-    const groups = [...snapshot.employees, snapshot.unassigned]
-    let count = 0
-    for (const group of groups) {
-      for (const comanda of group.comandas) {
-        if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
-        for (const item of comanda.items) {
-          if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') count++
-        }
-      }
-    }
-    return count
-  }, [operationsQuery.data])
+  const performerKpis = useMemo(
+    () => buildPerformerKpis(operationsQuery.data, currentUser?.employeeId ?? null),
+    [currentUser?.employeeId, operationsQuery.data],
+  )
+  const kitchenBadge = useMemo(() => countKitchenPendingItems(operationsQuery.data), [operationsQuery.data])
 
   const isBusy =
     openComandaMutation.isPending ||
@@ -442,7 +321,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
             },
           })
         }
-        await invalidateMobileWorkspace(queryClient)
+        await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         setPendingAction(null)
         setActiveTab('pedidos')
         return
@@ -470,8 +349,8 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
         if (isCaixaError) {
           toast.dismiss() // Limpa o toast de erro do mutation
           toast.info('Abrindo caixa automaticamente...')
-          await openCashSession({ openingCashAmount: 0 })
-          await invalidateMobileWorkspace(queryClient)
+          await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
+          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
           await openComandaMutation.mutateAsync(comParams)
         } else {
           throw err
@@ -529,7 +408,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
   }
 
   async function handleUpdateStatus(id: string, status: ComandaStatus) {
-    const comanda = comandas.find((item) => item.id === id)
+    const comanda = comandasById.get(id)
     if (!comanda) return
 
     try {
@@ -563,7 +442,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
   }
 
   async function handleCloseWithDiscount(id: string, discountPercent: number, surchargePercent: number) {
-    const comanda = comandas.find((item) => item.id === id)
+    const comanda = comandasById.get(id)
     if (!comanda) return
     try {
       setScreenError(null)
@@ -643,11 +522,15 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       <main ref={pullRef} className="flex-1 overflow-y-auto relative">
         <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
         <div style={{ display: activeTab === 'mesas' ? undefined : 'none' }}>
-          <MobileTableGrid mesas={mesas} onSelectMesa={handleSelectMesa} />
+          <MobileTableGrid
+            mesas={mesas}
+            onSelectMesa={handleSelectMesa}
+            isLoading={operationsQuery.isLoading && !operationsQuery.data}
+          />
         </div>
 
         <div style={{ display: activeTab === 'cozinha' ? undefined : 'none' }}>
-          <KitchenOrdersView snapshot={operationsQuery.data} />
+          <KitchenOrdersView snapshot={operationsQuery.data} operationsQueryKey={OPERATIONS_LIVE_COMPACT_QUERY_KEY} />
         </div>
 
         {/* MobileOrderBuilder fica montado (hidden) para preservar estado do pedido */}
@@ -701,7 +584,14 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
         {/* Histórico — todos os atendimentos do dia */}
         <div style={{ display: activeTab === 'historico' ? undefined : 'none' }}>
-          <MobileHistoricoView comandas={comandas} />
+          <MobileHistoricoView
+            comandas={comandas}
+            summary={{
+              receitaRealizada: performerKpis.receitaRealizada,
+              receitaEsperada: performerKpis.receitaEsperada,
+              openComandasCount: performerKpis.openComandasCount,
+            }}
+          />
         </div>
       </main>
 
@@ -758,12 +648,4 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       </nav>
     </div>
   )
-}
-
-async function invalidateMobileWorkspace(queryClient: ReturnType<typeof useQueryClient>) {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ['operations', 'live'] }),
-    queryClient.invalidateQueries({ queryKey: ['orders'] }),
-    queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] }),
-  ])
 }

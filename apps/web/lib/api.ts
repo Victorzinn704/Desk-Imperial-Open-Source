@@ -38,7 +38,10 @@ export type AuthUser = {
   userId: string
   sessionId: string
   role: 'OWNER' | 'STAFF'
+  workspaceOwnerUserId: string
   companyOwnerUserId: string | null
+  employeeId: string | null
+  employeeCode: string | null
   fullName: string
   companyName: string | null
   companyLocation: {
@@ -473,10 +476,26 @@ export async function fetchEmployees() {
   })
 }
 
-export async function fetchOperationsLive(businessDate?: string) {
+export type OperationsLiveOptions = {
+  businessDate?: string
+  includeCashMovements?: boolean
+}
+
+export async function fetchOperationsLive(input?: string | OperationsLiveOptions) {
   const params = new URLSearchParams()
-  if (businessDate?.trim()) {
-    params.set('businessDate', businessDate.trim())
+  const options =
+    typeof input === 'string'
+      ? {
+          businessDate: input,
+        }
+      : input
+
+  if (options?.businessDate?.trim()) {
+    params.set('businessDate', options.businessDate.trim())
+  }
+
+  if (options?.includeCashMovements !== undefined) {
+    params.set('includeCashMovements', String(options.includeCashMovements))
   }
 
   const suffix = params.toString() ? `?${params.toString()}` : ''
@@ -583,11 +602,18 @@ export type CloseComandaPayload = {
   serviceFeeAmount?: number
 }
 
-export async function openComanda(payload: OpenComandaPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>('/operations/comandas', {
-    method: 'POST',
-    body: payload,
-  })
+type OperationsRequestOptions = {
+  includeSnapshot?: boolean
+}
+
+export async function openComanda(payload: OpenComandaPayload, options?: OperationsRequestOptions) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions('/operations/comandas', options),
+    {
+      method: 'POST',
+      body: payload,
+    },
+  )
 }
 
 export type AddComandaItemPayload = {
@@ -598,9 +624,13 @@ export type AddComandaItemPayload = {
   notes?: string
 }
 
-export async function addComandaItem(comandaId: string, payload: AddComandaItemPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
-    `/operations/comandas/${comandaId}/items`,
+export async function addComandaItem(
+  comandaId: string,
+  payload: AddComandaItemPayload,
+  options?: OperationsRequestOptions,
+) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/items`, options),
     {
       method: 'POST',
       body: payload as JsonBody,
@@ -608,16 +638,23 @@ export async function addComandaItem(comandaId: string, payload: AddComandaItemP
   )
 }
 
-export async function replaceComanda(comandaId: string, payload: ReplaceComandaPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(`/operations/comandas/${comandaId}`, {
-    method: 'PATCH',
-    body: payload,
-  })
+export async function replaceComanda(
+  comandaId: string,
+  payload: ReplaceComandaPayload,
+  options?: OperationsRequestOptions,
+) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}`, options),
+    {
+      method: 'PATCH',
+      body: payload,
+    },
+  )
 }
 
-export async function assignComanda(comandaId: string, employeeId?: string) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
-    `/operations/comandas/${comandaId}/assign`,
+export async function assignComanda(comandaId: string, employeeId?: string, options?: OperationsRequestOptions) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/assign`, options),
     {
       method: 'POST',
       body: employeeId ? { employeeId } : {},
@@ -628,9 +665,10 @@ export async function assignComanda(comandaId: string, employeeId?: string) {
 export async function updateComandaStatus(
   comandaId: string,
   status: Extract<ComandaStatus, 'OPEN' | 'IN_PREPARATION' | 'READY'>,
+  options?: OperationsRequestOptions,
 ) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
-    `/operations/comandas/${comandaId}/status`,
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/status`, options),
     {
       method: 'POST',
       body: { status },
@@ -638,9 +676,9 @@ export async function updateComandaStatus(
   )
 }
 
-export async function cancelComanda(comandaId: string) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
-    `/operations/comandas/${comandaId}/status`,
+export async function cancelComanda(comandaId: string, options?: OperationsRequestOptions) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/status`, options),
     {
       method: 'POST',
       body: { status: 'CANCELLED' },
@@ -648,9 +686,13 @@ export async function cancelComanda(comandaId: string) {
   )
 }
 
-export async function closeComanda(comandaId: string, payload: CloseComandaPayload) {
-  return apiFetch<{ comanda: ComandaRecord; snapshot: OperationsLiveResponse }>(
-    `/operations/comandas/${comandaId}/close`,
+export async function closeComanda(
+  comandaId: string,
+  payload: CloseComandaPayload,
+  options?: OperationsRequestOptions,
+) {
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/close`, options),
     {
       method: 'POST',
       body: payload,
@@ -669,18 +711,60 @@ export type CloseCashClosurePayload = {
   notes?: string
 }
 
-export async function openCashSession(payload: OpenCashSessionPayload) {
-  return apiFetch<{ cashSession: CashSessionRecord; snapshot: OperationsLiveResponse }>('/operations/cash-sessions', {
+export async function openCashSession(payload: OpenCashSessionPayload, options?: OperationsRequestOptions) {
+  return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions('/operations/cash-sessions', options),
+    {
+      method: 'POST',
+      body: payload as JsonBody,
+    },
+  )
+}
+
+export async function closeCashClosure(payload: CloseCashClosurePayload, options?: OperationsRequestOptions) {
+  return apiFetch<{ snapshot?: OperationsLiveResponse }>(withOperationsOptions('/operations/closures/close', options), {
     method: 'POST',
     body: payload as JsonBody,
   })
 }
 
-export async function closeCashClosure(payload: CloseCashClosurePayload) {
-  return apiFetch<{ snapshot: OperationsLiveResponse }>('/operations/closures/close', {
-    method: 'POST',
-    body: payload as JsonBody,
-  })
+export type CreateCashMovementPayload = {
+  type: string
+  amount: number
+  note?: string
+}
+
+export async function createCashMovement(
+  cashSessionId: string,
+  payload: CreateCashMovementPayload,
+  options?: OperationsRequestOptions,
+) {
+  return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/movements`, options),
+    {
+      method: 'POST',
+      body: payload as JsonBody,
+    },
+  )
+}
+
+export type CloseCashSessionPayload = {
+  countedCashAmount: number
+  notes?: string
+}
+
+export async function closeCashSession(
+  cashSessionId: string,
+  payload: CloseCashSessionPayload,
+  options?: OperationsRequestOptions,
+) {
+  return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/close`, options),
+    {
+      method: 'POST',
+      body: payload as JsonBody,
+    },
+  )
 }
 
 export async function updateKitchenItemStatus(itemId: string, status: 'IN_PREPARATION' | 'READY' | 'DELIVERED') {
@@ -812,6 +896,19 @@ async function apiFetch<T>(
 function buildApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${API_BASE_URL}/api${normalizedPath}`
+}
+
+function withOperationsOptions(path: string, options?: OperationsRequestOptions) {
+  if (options?.includeSnapshot === undefined) {
+    return path
+  }
+
+  const [basePath, existingQuery = ''] = path.split('?')
+  const params = new URLSearchParams(existingQuery)
+  params.set('includeSnapshot', String(options.includeSnapshot))
+  const query = params.toString()
+
+  return query ? `${basePath}?${query}` : basePath
 }
 
 async function toApiError(response: Response) {

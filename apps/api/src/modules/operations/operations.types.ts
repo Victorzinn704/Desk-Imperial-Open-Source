@@ -256,8 +256,10 @@ export function toComandaItemRecord(item: ComandaItemLike): ComandaItemRecord {
   }
 }
 
-export function toMesaRecord(mesa: MesaLike, openComandas: Pick<Comanda, 'id' | 'currentEmployeeId'>[]): MesaRecord {
-  const comanda = openComandas.find((c) => c.id) // will be matched by mesaId in service
+export function toMesaRecord(
+  mesa: MesaLike,
+  openComanda: Pick<Comanda, 'id' | 'currentEmployeeId'> | null,
+): MesaRecord {
   return {
     id: mesa.id,
     label: mesa.label,
@@ -267,9 +269,9 @@ export function toMesaRecord(mesa: MesaLike, openComandas: Pick<Comanda, 'id' | 
     positionY: mesa.positionY,
     active: mesa.active,
     reservedUntil: mesa.reservedUntil?.toISOString() ?? null,
-    status: mesa.reservedUntil && mesa.reservedUntil > new Date() ? 'reservada' : comanda ? 'ocupada' : 'livre',
-    comandaId: comanda?.id ?? null,
-    currentEmployeeId: comanda?.currentEmployeeId ?? null,
+    status: mesa.reservedUntil && mesa.reservedUntil > new Date() ? 'reservada' : openComanda ? 'ocupada' : 'livre',
+    comandaId: openComanda?.id ?? null,
+    currentEmployeeId: openComanda?.currentEmployeeId ?? null,
   }
 }
 
@@ -300,6 +302,7 @@ export function buildEmployeeOperationsRecord(input: {
   employee: EmployeeLike | null
   cashSession: CashSessionLike | null
   comandas: ComandaLike[]
+  fallbackDisplayName?: string
 }): EmployeeOperationsRecord {
   const cashSession = input.cashSession ? toCashSessionRecord(input.cashSession) : null
   const comandas = input.comandas.map(toComandaRecord)
@@ -309,7 +312,7 @@ export function buildEmployeeOperationsRecord(input: {
   return {
     employeeId: input.employee?.id ?? null,
     employeeCode: input.employee?.employeeCode ?? null,
-    displayName: input.employee?.displayName ?? 'Operacao sem responsavel',
+    displayName: input.employee?.displayName ?? input.fallbackDisplayName ?? 'Operacao sem responsavel',
     active: input.employee?.active ?? true,
     cashSession,
     comandas,

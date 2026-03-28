@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import {
   Plus,
@@ -87,6 +87,10 @@ function urgencyShadow(level: 0 | 1 | 2 | 3): string | undefined {
   if (level === 3) return '0 0 18px rgba(248,113,113,0.22)'
   if (level === 2) return '0 0 10px rgba(251,191,36,0.15)'
   return undefined
+}
+
+function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda>) {
+  return mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
 }
 
 // ─── GarcomAvatar ─────────────────────────────────────────────────────────────
@@ -586,6 +590,7 @@ function SalaoView({
   allowStatusDragging: boolean
 }) {
   const [compactLivres, setCompactLivres] = useState(false)
+  const comandaById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
 
   function handleDragEnd(result: DropResult) {
     if (!allowStatusDragging) return
@@ -600,8 +605,7 @@ function SalaoView({
   const filtered = mesas.filter((m) => {
     if (filter === 'todos') return true
     if (filter === 'sem_garcom') return !m.garcomId && m.status !== 'livre'
-    if (filter === 'atencao')
-      return urgencyLevel(m, m.comandaId ? comandas.find((c) => c.id === m.comandaId) : undefined, now) >= 2
+    if (filter === 'atencao') return urgencyLevel(m, resolveMesaComanda(m, comandaById), now) >= 2
     return m.status === filter
   })
 
@@ -756,7 +760,7 @@ function SalaoView({
                         key={mesa.id}
                         mesa={mesa}
                         garcons={garcons}
-                        comanda={mesa.comandaId ? comandas.find((c) => c.id === mesa.comandaId) : undefined}
+                        comanda={resolveMesaComanda(mesa, comandaById)}
                         index={i}
                         view="salao"
                         now={now}
@@ -809,6 +813,7 @@ function EquipeView({
   const [showAdd, setShowAdd] = useState(false)
   const [newNome, setNewNome] = useState('')
   const semGarcom = mesas.filter((m) => !m.garcomId && m.status !== 'livre')
+  const comandaById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
 
   return (
     <div className="space-y-4">
@@ -851,7 +856,7 @@ function EquipeView({
                   key={mesa.id}
                   mesa={mesa}
                   garcons={garcons}
-                  comanda={mesa.comandaId ? comandas.find((c) => c.id === mesa.comandaId) : undefined}
+                  comanda={resolveMesaComanda(mesa, comandaById)}
                   index={0}
                   view="equipe"
                   now={now}
@@ -869,7 +874,7 @@ function EquipeView({
           const cor = garcomCor(garcom, garcons)
           const garcomMesas = mesas.filter((m) => m.garcomId === garcom.id && m.status !== 'livre')
           const totalAtivo = garcomMesas.reduce((sum, m) => {
-            const c = m.comandaId ? comandas.find((co) => co.id === m.comandaId) : undefined
+            const c = resolveMesaComanda(m, comandaById)
             return sum + (c ? calcTotal(c) : 0)
           }, 0)
 
@@ -920,7 +925,7 @@ function EquipeView({
                     key={mesa.id}
                     mesa={mesa}
                     garcons={garcons}
-                    comanda={mesa.comandaId ? comandas.find((c) => c.id === mesa.comandaId) : undefined}
+                    comanda={resolveMesaComanda(mesa, comandaById)}
                     index={0}
                     view="equipe"
                     now={now}
@@ -1033,6 +1038,7 @@ export function SalaoUnificado({
   const [filter, setFilter] = useState<FilterStatus>('todos')
   const [now, setNow] = useState(() => Date.now())
   const [assigningGarcomId, setAssigning] = useState<string | null>(null)
+  const comandaById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
 
   // Tick ao vivo a cada 60s
   useEffect(() => {
@@ -1064,13 +1070,11 @@ export function SalaoUnificado({
   const livres = mesas.filter((m) => m.status === 'livre').length
   const ocupadas = mesas.filter((m) => m.status === 'ocupada').length
   const semGarcom = mesas.filter((m) => m.status !== 'livre' && !m.garcomId).length
-  const comAtencao = mesas.filter(
-    (m) => urgencyLevel(m, m.comandaId ? comandas.find((c) => c.id === m.comandaId) : undefined, now) >= 2,
-  ).length
+  const comAtencao = mesas.filter((m) => urgencyLevel(m, resolveMesaComanda(m, comandaById), now) >= 2).length
   const totalAberto = mesas
     .filter((m) => m.status === 'ocupada' && m.comandaId)
     .reduce((sum, m) => {
-      const c = comandas.find((co) => co.id === m.comandaId)
+      const c = resolveMesaComanda(m, comandaById)
       return sum + (c ? calcTotal(c) : 0)
     }, 0)
 

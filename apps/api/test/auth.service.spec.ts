@@ -23,6 +23,7 @@ import type { ConfigService } from '@nestjs/config'
 import { UserRole, UserStatus, CurrencyCode } from '@prisma/client'
 import { AuthService } from '../src/modules/auth/auth.service'
 import * as argon2 from 'argon2'
+import { makeRequestContext } from './helpers/request-context.factory'
 
 // ── argon2 mock (ESM-safe) ────────────────────────────────────────────────────
 //
@@ -70,20 +71,6 @@ function makeUser(overrides: Partial<Record<string, unknown>> = {}) {
     hasEmployees: false,
     employeeCount: 0,
     ...overrides,
-  }
-}
-
-/**
- * RequestContext completo para evitar erros de campo faltando nos guards internos.
- * Em produção esse objeto é extraído do header HTTP pelo middleware.
- */
-function makeRequestContext() {
-  return {
-    ipAddress: '127.0.0.1',
-    userAgent: 'Mozilla/5.0 (Jest test runner)',
-    host: 'localhost:3000',
-    origin: 'http://localhost:3000',
-    referer: 'http://localhost:3000/login',
   }
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, Users, X } from 'lucide-react'
 import type { Mesa, Comanda, Garcom } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
@@ -25,6 +25,10 @@ const GARCOM_CORES = [
   '#e879f9', // fúcsia
   '#2dd4bf', // teal
 ]
+
+function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda>) {
+  return mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
+}
 
 // Bonequinho SVG estilizado
 function StickFigure({ color }: { color: string }) {
@@ -257,6 +261,7 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
 export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom, onRemoveGarcom }: Readonly<Props>) {
   const [showAddGarcom, setShowAddGarcom] = useState(false)
   const [showAssign, setShowAssign] = useState(false)
+  const comandaById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
 
   // Garçom index → cor
   function getGarcomCor(garcom: Garcom) {
@@ -324,7 +329,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
           const cor = getGarcomCor(garcom)
           const garcomMesas = mesas.filter((m) => m.garcomId === garcom.id)
           const totalAtivo = garcomMesas.reduce((sum, m) => {
-            const c = m.comandaId ? comandas.find((co) => co.id === m.comandaId) : undefined
+            const c = resolveMesaComanda(m, comandaById)
             return sum + (c ? calcTotal(c) : 0)
           }, 0)
 
@@ -381,7 +386,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
                   <MesaChip
                     key={mesa.id}
                     mesa={mesa}
-                    comanda={mesa.comandaId ? comandas.find((c) => c.id === mesa.comandaId) : undefined}
+                    comanda={resolveMesaComanda(mesa, comandaById)}
                     garcomCor={cor}
                     onUnassign={() => onAssign(mesa.id, undefined)}
                   />

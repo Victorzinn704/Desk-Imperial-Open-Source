@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import type { Mesa, ComandaItem } from '@/components/pdv/pdv-types'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3,
   Building2,
@@ -41,11 +41,18 @@ import {
   addComandaItem,
   ApiError,
 } from '@/lib/api'
+import {
+  buildOperationsExecutiveKpis,
+  buildPerformerRanking,
+  buildTopProducts,
+  countKitchenPendingItems,
+  invalidateOperationsWorkspace,
+  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+} from '@/lib/operations'
 
 type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
 
 type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
-
 interface OwnerMobileShellProps {
   currentUser: { name?: string; fullName?: string; companyName?: string | null } | null
 }
@@ -66,7 +73,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
-    await queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+    await queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
   }, [queryClient])
 
   const {
@@ -77,9 +84,13 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   } = usePullToRefresh({ onRefresh: handlePullRefresh })
 
   const operationsQuery = useQuery({
-    queryKey: ['operations', 'live'],
-    queryFn: () => fetchOperationsLive(),
+    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: realtimeStatus !== 'connected',
     // socket ativo = sem polling; socket offline = fallback a cada 20s
     refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
   })
@@ -88,13 +99,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     queryKey: ['products'],
     queryFn: () => fetchProducts(),
     enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const ordersQuery = useQuery({
     queryKey: ['orders'],
     queryFn: () => fetchOrders(),
     enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const logoutMutation = useMutation({
@@ -110,9 +126,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   })
 
   const openComandaMutation = useMutation({
-    mutationFn: openComanda,
+    mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOwnerWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -124,7 +140,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const addComandaItemMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
-      addComandaItem(comandaId, payload),
+      addComandaItem(comandaId, payload, { includeSnapshot: false }),
     onSuccess: () => {
       toast.success('Item adicionado')
       haptic.light()
@@ -137,9 +153,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
-      updateComandaStatus(comandaId, status),
+      updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOwnerWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Status atualizado')
       haptic.medium()
     },
@@ -158,9 +174,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       comandaId: string
       discountAmount: number
       serviceFeeAmount: number
-    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }),
+    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOwnerWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       toast.success('Comanda fechada')
       haptic.heavy()
     },
@@ -173,71 +189,31 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const activeComandas = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
-
-  const kitchenBadge = useMemo(() => {
-    const snapshot = operationsQuery.data
-    if (!snapshot) return 0
-    const groups = [...snapshot.employees, snapshot.unassigned]
-    let count = 0
-    for (const group of groups) {
-      for (const comanda of group.comandas) {
-        if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
-        for (const item of comanda.items) {
-          if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') count++
-        }
-      }
-    }
-    return count
-  }, [operationsQuery.data])
+  const kitchenBadge = useMemo(() => countKitchenPendingItems(operationsQuery.data), [operationsQuery.data])
 
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Proprietário'
   const companyName = currentUser?.companyName ?? 'Desk Imperial'
+  const executiveKpis = useMemo(() => buildOperationsExecutiveKpis(operationsQuery.data), [operationsQuery.data])
 
   const today = new Date().toISOString().slice(0, 10)
-  const orders = ordersQuery.data?.items ?? []
-  const todayOrders = orders.filter((o) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED')
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0)
-  const ticketMedio = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0
+  const todayOrders = useMemo(
+    () => (ordersQuery.data?.items ?? []).filter((o) => o.createdAt.slice(0, 10) === today && o.status === 'COMPLETED'),
+    [ordersQuery.data?.items, today],
+  )
+  const todayRevenue = useMemo(() => todayOrders.reduce((sum, o) => sum + o.totalRevenue, 0), [todayOrders])
+  const ticketMedio = useMemo(
+    () => (todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0),
+    [todayOrders, todayRevenue],
+  )
 
   // Ranking garçons — a partir do snapshot
-  const garconRanking = useMemo(() => {
-    const snapshot = operationsQuery.data
-    if (!snapshot) return []
-    const map = new Map<string, { nome: string; valor: number; comandas: number }>()
-    for (const emp of snapshot.employees) {
-      if (!emp.employeeId) continue
-      let valor = 0
-      let cmds = 0
-      for (const c of emp.comandas) {
-        valor += c.totalAmount
-        cmds++
-      }
-      if (cmds > 0 || valor > 0) {
-        map.set(emp.employeeId, { nome: emp.displayName, valor, comandas: cmds })
-      }
-    }
-    return [...map.values()].sort((a, b) => b.valor - a.valor).slice(0, 5)
-  }, [operationsQuery.data])
+  const garconRanking = useMemo(
+    () => buildPerformerRanking(operationsQuery.data, displayName),
+    [displayName, operationsQuery.data],
+  )
 
   // Top produtos — a partir do snapshot (todos os itens do dia)
-  const topProdutos = useMemo(() => {
-    const snapshot = operationsQuery.data
-    if (!snapshot) return []
-    const map = new Map<string, { nome: string; qtd: number; valor: number }>()
-    const groups = [...snapshot.employees, snapshot.unassigned]
-    for (const g of groups) {
-      for (const c of g.comandas) {
-        for (const item of c.items) {
-          const key = item.productName
-          const entry = map.get(key) ?? { nome: item.productName, qtd: 0, valor: 0 }
-          entry.qtd += item.quantity
-          entry.valor += item.quantity * item.unitPrice
-          map.set(key, entry)
-        }
-      }
-    }
-    return [...map.values()].sort((a, b) => b.valor - a.valor).slice(0, 5)
-  }, [operationsQuery.data])
+  const topProdutos = useMemo(() => buildTopProducts(operationsQuery.data), [operationsQuery.data])
 
   const isBusy =
     openComandaMutation.isPending ||
@@ -263,7 +239,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             },
           })
         }
-        await invalidateOwnerWorkspace(queryClient)
+        await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         setPendingAction(null)
         setActiveTab('comandas')
         return
@@ -289,8 +265,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         if (isCaixaError) {
           toast.dismiss()
           toast.info('Abrindo caixa automaticamente...')
-          await openCashSession({ openingCashAmount: 0 })
-          await invalidateOwnerWorkspace(queryClient)
+          await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
+          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
           await openComandaMutation.mutateAsync(comParams)
         } else {
           throw err
@@ -311,8 +287,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
 
   // Mesas ao vivo
-  const mesasLivres = mesas.filter((m) => m.status === 'livre').length
-  const mesasOcupadas = mesas.filter((m) => m.status === 'ocupada').length
+  const mesasLivres = useMemo(() => mesas.filter((m) => m.status === 'livre').length, [mesas])
+  const mesasOcupadas = useMemo(() => mesas.filter((m) => m.status === 'ocupada').length, [mesas])
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
@@ -398,6 +374,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         {activeTab === 'mesas' ? (
           <MobileTableGrid
             mesas={mesas}
+            isLoading={operationsQuery.isLoading && !operationsQuery.data}
             onSelectMesa={(mesa: Mesa) => {
               if (mesa.status === 'ocupada' && mesa.comandaId) {
                 setFocusedComandaId(mesa.comandaId)
@@ -427,16 +404,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           ) : null}
         </div>
 
-        {activeTab === 'cozinha' ? <KitchenOrdersView snapshot={operationsQuery.data} /> : null}
+        {activeTab === 'cozinha' ? (
+          <KitchenOrdersView snapshot={operationsQuery.data} operationsQueryKey={OPERATIONS_LIVE_COMPACT_QUERY_KEY} />
+        ) : null}
 
         {activeTab === 'comandas' ? <OwnerComandasView comandas={comandas} /> : null}
 
         {activeTab === 'resumo' ? (
           <OwnerResumoTab
-            todayRevenue={todayRevenue}
+            todayRevenue={executiveKpis.receitaRealizada}
             ticketMedio={ticketMedio}
             todayOrderCount={todayOrders.length}
-            activeComandas={activeComandas.length}
+            activeComandas={executiveKpis.openComandasCount}
             mesasLivres={mesasLivres}
             mesasOcupadas={mesasOcupadas}
             kitchenBadge={kitchenBadge}
@@ -684,12 +663,4 @@ function OwnerResumoTab({
       </button>
     </div>
   )
-}
-
-async function invalidateOwnerWorkspace(queryClient: ReturnType<typeof useQueryClient>) {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ['operations', 'live'] }),
-    queryClient.invalidateQueries({ queryKey: ['orders'] }),
-    queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] }),
-  ])
 }

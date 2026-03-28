@@ -27,7 +27,7 @@ export interface OperationsRealtimeEventPayloadMap {
   }
   'cash.updated': {
     cashSessionId: string
-    status: 'OPEN' | 'CLOSED' | 'PENDING'
+    status: 'OPEN' | 'CLOSED'
     openingAmount: number
     inflowAmount: number
     outflowAmount: number
@@ -69,10 +69,12 @@ export interface OperationsRealtimeEventPayloadMap {
     openedAt: string | null
     closedAt: string | null
     expectedAmount: number
+    grossRevenueAmount: number
+    realizedProfitAmount: number
     countedAmount: number | null
     differenceAmount: number | null
+    openComandasCount: number
     pendingCashSessions: number
-    closedCashSessions: number
   }
   'kitchen.item.queued': {
     itemId: string

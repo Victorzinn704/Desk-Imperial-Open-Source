@@ -19,6 +19,8 @@ import type { PrismaService } from '../src/database/prisma.service'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import type { CacheService } from '../src/common/services/cache.service'
 import * as argon2 from 'argon2'
+import { makeAuthContext } from './helpers/auth-context.factory'
+import { makeRequestContext } from './helpers/request-context.factory'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -37,7 +39,6 @@ const mockPrisma = {
     findFirst: jest.fn(),
   },
   user: {
-    create: jest.fn(),
     update: jest.fn(),
     findUnique: jest.fn(),
   },
@@ -57,20 +58,11 @@ const mockCache = {
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 
-function makeAuthContext(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    userId: 'owner-1',
-    sessionId: 'session-1',
-    role: 'OWNER',
-    companyOwnerUserId: null,
-    ...overrides,
-  }
-}
-
-function makeEmployee(overrides: Partial<Record<string, unknown>> = {}) {
+function makeEmployee(overrides: object = {}) {
   return {
     id: 'employee-1',
     userId: 'owner-1',
+    passwordHash: '$argon2id$hashed',
     loginUserId: 'user-employee-1',
     employeeCode: '001',
     displayName: 'João Funcionário',
@@ -83,27 +75,6 @@ function makeEmployee(overrides: Partial<Record<string, unknown>> = {}) {
       role: UserRole.STAFF,
       status: UserStatus.ACTIVE,
     },
-    ...overrides,
-  }
-}
-
-function makeOwnerUser(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: 'owner-1',
-    email: 'owner@empresa.com',
-    fullName: 'Owner da Empresa',
-    companyName: 'Empresa Ltda',
-    companyStreetLine1: 'Rua Principal',
-    companyStreetNumber: '123',
-    companyAddressComplement: 'Sala 1',
-    companyDistrict: 'Centro',
-    companyCity: 'São Paulo',
-    companyState: 'SP',
-    companyPostalCode: '01000-000',
-    companyCountry: 'Brasil',
-    companyLatitude: -23.5505,
-    companyLongitude: -46.6333,
-    preferredCurrency: 'BRL',
     ...overrides,
   }
 }
@@ -173,7 +144,6 @@ describe('EmployeesService', () => {
 
       expect(mockPrisma.employee.findMany).toHaveBeenCalledWith({
         where: { userId: 'owner-1' },
-        include: { loginUser: true },
         orderBy: [{ active: 'desc' }, { employeeCode: 'asc' }],
       })
       expect(result.items).toHaveLength(2)
@@ -199,24 +169,12 @@ describe('EmployeesService', () => {
   })
 
   describe('createForUser', () => {
-    const mockContext = {
-      ipAddress: '127.0.0.1',
-      userAgent: 'Jest Test',
-    }
+    const mockContext = makeRequestContext()
 
-    it('deve criar funcionário com login vinculado', async () => {
-      const ownerUser = makeOwnerUser()
+    it('deve criar funcionário com credencial operacional no employee', async () => {
       const createdEmployee = makeEmployee()
 
-      mockPrisma.user.findUnique = jest.fn().mockResolvedValue(ownerUser)
-      mockPrisma.user.create.mockResolvedValue({ id: 'user-employee-1' })
       mockPrisma.employee.create.mockResolvedValue(createdEmployee)
-      mockPrisma.$transaction.mockImplementation(async (fn) =>
-        fn({
-          user: mockPrisma.user,
-          employee: mockPrisma.employee,
-        }),
-      )
 
       const result = await employeesService.createForUser(
         mockAuthContext,
@@ -229,14 +187,14 @@ describe('EmployeesService', () => {
       )
 
       expect(argon2.hash).toHaveBeenCalledWith('Temp@123', { type: argon2.argon2id })
-      expect(mockPrisma.user.create).toHaveBeenCalledWith(
+      expect(mockPrisma.employee.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            companyOwnerId: 'owner-1',
-            role: UserRole.STAFF,
-            email: expect.stringContaining('staff.owner-1.002@login.deskimperial.internal'),
+            userId: 'owner-1',
+            employeeCode: '002',
+            displayName: 'Maria Funcionária',
             passwordHash: '$argon2id$hashed',
-            emailVerifiedAt: expect.any(Date),
+            active: true,
           }),
         }),
       )
@@ -244,10 +202,6 @@ describe('EmployeesService', () => {
     })
 
     it('deve rejeitar payload com HTML em campos sensíveis', async () => {
-      const ownerUser = makeOwnerUser()
-
-      mockPrisma.user.findUnique = jest.fn().mockResolvedValue(ownerUser)
-
       await expect(
         employeesService.createForUser(
           mockAuthContext,
@@ -262,18 +216,9 @@ describe('EmployeesService', () => {
     })
 
     it('deve registrar audit log após criação', async () => {
-      const ownerUser = makeOwnerUser()
       const createdEmployee = makeEmployee({ employeeCode: '002', displayName: 'Novo Funcionário' })
 
-      mockPrisma.user.findUnique = jest.fn().mockResolvedValue(ownerUser)
-      mockPrisma.user.create.mockResolvedValue({ id: 'user-employee-1' })
       mockPrisma.employee.create.mockResolvedValue(createdEmployee)
-      mockPrisma.$transaction.mockImplementation(async (fn) =>
-        fn({
-          user: mockPrisma.user,
-          employee: mockPrisma.employee,
-        }),
-      )
 
       await employeesService.createForUser(
         mockAuthContext,
@@ -298,18 +243,9 @@ describe('EmployeesService', () => {
     })
 
     it('deve invalidar cache de funcionários após criação', async () => {
-      const ownerUser = makeOwnerUser()
       const createdEmployee = makeEmployee()
 
-      mockPrisma.user.findUnique = jest.fn().mockResolvedValue(ownerUser)
-      mockPrisma.user.create.mockResolvedValue({ id: 'user-employee-1' })
       mockPrisma.employee.create.mockResolvedValue(createdEmployee)
-      mockPrisma.$transaction.mockImplementation(async (fn) =>
-        fn({
-          user: mockPrisma.user,
-          employee: mockPrisma.employee,
-        }),
-      )
 
       await employeesService.createForUser(
         mockAuthContext,
@@ -325,10 +261,7 @@ describe('EmployeesService', () => {
     })
 
     it('deve lançar ConflictException em caso de duplicate employeeCode', async () => {
-      const ownerUser = makeOwnerUser()
-
-      mockPrisma.user.findUnique = jest.fn().mockResolvedValue(ownerUser)
-      mockPrisma.$transaction.mockRejectedValue(makePrismaUniqueError())
+      mockPrisma.employee.create.mockRejectedValue(makePrismaUniqueError())
 
       await expect(
         employeesService.createForUser(
@@ -361,10 +294,7 @@ describe('EmployeesService', () => {
   })
 
   describe('updateForUser', () => {
-    const mockContext = {
-      ipAddress: '127.0.0.1',
-      userAgent: 'Jest Test',
-    }
+    const mockContext = makeRequestContext()
 
     it('deve atualizar funcionário existente', async () => {
       const existingEmployee = makeEmployee()
@@ -372,6 +302,12 @@ describe('EmployeesService', () => {
 
       mockPrisma.employee.findFirst = jest.fn().mockResolvedValue(existingEmployee)
       mockPrisma.employee.update.mockResolvedValue(updatedEmployee)
+      mockPrisma.$transaction.mockImplementation(async (fn) =>
+        fn({
+          user: mockPrisma.user,
+          employee: mockPrisma.employee,
+        }),
+      )
 
       const result = await employeesService.updateForUser(
         mockAuthContext,
@@ -398,6 +334,12 @@ describe('EmployeesService', () => {
 
       mockPrisma.employee.findFirst = jest.fn().mockResolvedValue(existingEmployee)
       mockPrisma.employee.update.mockResolvedValue(updatedEmployee)
+      mockPrisma.$transaction.mockImplementation(async (fn) =>
+        fn({
+          user: mockPrisma.user,
+          employee: mockPrisma.employee,
+        }),
+      )
 
       await employeesService.updateForUser(
         mockAuthContext,

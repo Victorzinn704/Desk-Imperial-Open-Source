@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChefHat, CheckCircle2, Clock, Flame } from 'lucide-react'
-import { useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { KitchenItemStatus, OperationsLiveResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
 
@@ -20,6 +20,7 @@ interface KitchenItem {
 
 interface KitchenOrdersViewProps {
   snapshot: OperationsLiveResponse | undefined
+  operationsQueryKey?: readonly unknown[]
 }
 
 type KitchenTab = 'QUEUED' | 'IN_PREPARATION' | 'READY'
@@ -147,31 +148,94 @@ function KitchenCard({
   )
 }
 
-export function KitchenOrdersView({ snapshot }: KitchenOrdersViewProps) {
+export function KitchenOrdersView({ snapshot, operationsQueryKey = ['operations', 'live'] }: KitchenOrdersViewProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<KitchenTab>('QUEUED')
   const [error, setError] = useState<string | null>(null)
 
-  const allItems = extractKitchenItems(snapshot)
-  const tabItems = allItems.filter((i) => i.kitchenStatus === activeTab)
+  const allItems = useMemo(() => extractKitchenItems(snapshot), [snapshot])
+  const tabItems = useMemo(() => allItems.filter((i) => i.kitchenStatus === activeTab), [activeTab, allItems])
 
   const advanceMutation = useMutation({
     mutationFn: ({ itemId, status }: { itemId: string; status: 'IN_PREPARATION' | 'READY' | 'DELIVERED' }) =>
       updateKitchenItemStatus(itemId, status),
+    onMutate: async ({ itemId, status }) => {
+      await queryClient.cancelQueries({ queryKey: operationsQueryKey })
+      const snapshotBefore = queryClient.getQueryData<OperationsLiveResponse>(operationsQueryKey)
+
+      if (snapshotBefore) {
+        queryClient.setQueryData<OperationsLiveResponse>(operationsQueryKey, {
+          ...snapshotBefore,
+          employees: snapshotBefore.employees.map((group) => ({
+            ...group,
+            comandas: group.comandas.map((comanda) => ({
+              ...comanda,
+              items: comanda.items.flatMap((item) => {
+                if (item.id !== itemId) {
+                  return [item]
+                }
+
+                if (status === 'DELIVERED') {
+                  return []
+                }
+
+                return [
+                  {
+                    ...item,
+                    kitchenStatus: status,
+                    kitchenReadyAt: status === 'READY' ? new Date().toISOString() : item.kitchenReadyAt,
+                  },
+                ]
+              }),
+            })),
+          })),
+          unassigned: {
+            ...snapshotBefore.unassigned,
+            comandas: snapshotBefore.unassigned.comandas.map((comanda) => ({
+              ...comanda,
+              items: comanda.items.flatMap((item) => {
+                if (item.id !== itemId) {
+                  return [item]
+                }
+
+                if (status === 'DELIVERED') {
+                  return []
+                }
+
+                return [
+                  {
+                    ...item,
+                    kitchenStatus: status,
+                    kitchenReadyAt: status === 'READY' ? new Date().toISOString() : item.kitchenReadyAt,
+                  },
+                ]
+              }),
+            })),
+          },
+        })
+      }
+
+      return { snapshotBefore }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
       setError(null)
     },
-    onError: (err) => {
+    onError: (err, _vars, context) => {
+      if (context?.snapshotBefore) {
+        queryClient.setQueryData(operationsQueryKey, context.snapshotBefore)
+      }
       setError(err instanceof Error ? err.message : 'Erro ao atualizar item.')
     },
   })
 
-  const counts = {
-    QUEUED: allItems.filter((i) => i.kitchenStatus === 'QUEUED').length,
-    IN_PREPARATION: allItems.filter((i) => i.kitchenStatus === 'IN_PREPARATION').length,
-    READY: allItems.filter((i) => i.kitchenStatus === 'READY').length,
-  }
+  const counts = useMemo(
+    () => ({
+      QUEUED: allItems.filter((i) => i.kitchenStatus === 'QUEUED').length,
+      IN_PREPARATION: allItems.filter((i) => i.kitchenStatus === 'IN_PREPARATION').length,
+      READY: allItems.filter((i) => i.kitchenStatus === 'READY').length,
+    }),
+    [allItems],
+  )
 
   const hasItems = allItems.length > 0
 
@@ -239,7 +303,7 @@ export function KitchenOrdersView({ snapshot }: KitchenOrdersViewProps) {
         ) : (
           <div className="flex flex-col gap-3">
             {tabItems.map((item) => (
-              <KitchenCard
+              <MemoKitchenCard
                 key={item.itemId}
                 item={item}
                 onAdvance={(itemId, status) => advanceMutation.mutate({ itemId, status })}
@@ -252,3 +316,5 @@ export function KitchenOrdersView({ snapshot }: KitchenOrdersViewProps) {
     </div>
   )
 }
+
+const MemoKitchenCard = memo(KitchenCard)

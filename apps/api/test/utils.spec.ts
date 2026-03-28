@@ -2,6 +2,7 @@ import { roundCurrency, roundPercent } from '../src/common/utils/number-rounding
 import { sanitizePlainText } from '../src/common/utils/input-hardening.util'
 import { sanitizeDocument, isValidCpf, isValidCnpj } from '../src/common/utils/document-validation.util'
 import { resolveWorkspaceOwnerUserId, assertOwnerRole } from '../src/common/utils/workspace-access.util'
+import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
 describe('roundCurrency', () => {
   it('rounds to 2 decimal places', () => {
@@ -116,17 +117,28 @@ describe('isValidCnpj', () => {
 
 describe('resolveWorkspaceOwnerUserId', () => {
   it('returns userId for OWNER', () => {
-    const auth = { userId: 'owner-123', companyOwnerUserId: null, role: 'OWNER' as const }
+    const auth = makeOwnerAuthContext({
+      userId: 'owner-123',
+      workspaceOwnerUserId: 'owner-123',
+    })
     expect(resolveWorkspaceOwnerUserId(auth)).toBe('owner-123')
   })
 
   it('returns companyOwnerUserId for STAFF', () => {
-    const auth = { userId: 'staff-456', companyOwnerUserId: 'owner-123', role: 'STAFF' as const }
+    const auth = makeStaffAuthContext({
+      userId: 'staff-456',
+      workspaceOwnerUserId: 'owner-123',
+      companyOwnerUserId: 'owner-123',
+    })
     expect(resolveWorkspaceOwnerUserId(auth)).toBe('owner-123')
   })
 
   it('falls back to userId when companyOwnerUserId is null for STAFF', () => {
-    const auth = { userId: 'staff-456', companyOwnerUserId: null, role: 'STAFF' as const }
+    const auth = makeStaffAuthContext({
+      userId: 'staff-456',
+      workspaceOwnerUserId: undefined,
+      companyOwnerUserId: null,
+    })
     expect(resolveWorkspaceOwnerUserId(auth)).toBe('staff-456')
   })
 })

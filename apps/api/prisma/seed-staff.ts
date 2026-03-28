@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, UserStatus } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import * as argon2 from 'argon2'
 
 const prisma = new PrismaClient()
@@ -25,35 +25,16 @@ async function main() {
     return
   }
 
-  const staffEmail = 'staff.vd001@deskimperial.online'
   const passwordHash = await argon2.hash('123456', { type: argon2.argon2id })
 
-  const staffUser = await prisma.user.upsert({
-    where: { email: staffEmail },
-    update: {
-      passwordHash,
-      companyOwnerId: owner.id,
-      role: UserRole.STAFF,
-      status: UserStatus.ACTIVE,
-    },
-    create: {
-      fullName: employee.displayName,
-      email: staffEmail,
-      passwordHash,
-      companyOwnerId: owner.id,
-      role: UserRole.STAFF,
-      status: UserStatus.ACTIVE,
-      emailVerifiedAt: new Date(),
-    },
-  })
-
-  // Linking employee to the loginUser
   await prisma.employee.update({
     where: { id: employee.id },
-    data: { loginUserId: staffUser.id },
+    data: {
+      passwordHash,
+      loginUserId: null,
+    },
   })
-
-  console.log('Demo Staff User Created/Updated successfully!')
+  console.log('Demo staff credentials synced directly on Employee.')
 }
 
 main()

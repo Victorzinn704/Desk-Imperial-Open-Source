@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
+import { buildOperationsExecutiveKpis } from '@/lib/operations'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,13 +28,6 @@ function parseAmount(raw: string): number {
   const normalized = raw.replace(/\./g, '').replace(',', '.')
   const n = parseFloat(normalized)
   return isNaN(n) ? 0 : n
-}
-
-function calcOpenRevenue(operations: OperationsLiveResponse): number {
-  const allGroups = [operations.unassigned, ...operations.employees]
-  return allGroups.reduce((sum, group) => {
-    return sum + group.comandas.filter((c) => c.status !== 'CLOSED').reduce((s, c) => s + c.totalAmount, 0)
-  }, 0)
 }
 
 // ── sub-components ────────────────────────────────────────────────────────────
@@ -381,18 +375,17 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
   const [showFecharModal, setShowFecharModal] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const closure = operations?.closure ?? null
-  const caixaAberto = closure !== null && closure.openSessionsCount > 0
-
-  // Receita das comandas ainda em aberto
-  const openRevenue = operations ? calcOpenRevenue(operations) : 0
-
-  // KPI derivados
-  const receitaRealizada = closure?.grossRevenueAmount ?? 0
-  const lucroRealizado = closure?.realizedProfitAmount ?? 0
-  const projecaoTotal = receitaRealizada + openRevenue
-  const caixaEsperado = closure?.expectedCashAmount ?? 0
-  const openComandasCount = closure?.openComandasCount ?? 0
+  const {
+    receitaRealizada,
+    faturamentoAberto,
+    projecaoTotal,
+    lucroRealizado,
+    lucroEsperado,
+    caixaEsperado,
+    openComandasCount,
+    openSessionsCount,
+  } = buildOperationsExecutiveKpis(operations)
+  const caixaAberto = openSessionsCount > 0
 
   return (
     <>
@@ -406,7 +399,7 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
             <h2 className="mt-2 text-2xl font-semibold text-white">Caixa do dia</h2>
             <p className="mt-1.5 text-sm leading-6 text-[var(--text-soft)]">
               {caixaAberto
-                ? `Caixa aberto · ${closure!.openSessionsCount} sessão ativa · ${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} em aberto`
+                ? `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} em aberto`
                 : 'Nenhuma sessão de caixa ativa no momento.'}
             </p>
           </div>
@@ -472,9 +465,9 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           <KpiCard
             icon={ChevronDown}
             label="Em aberto"
-            value={fmtBRL(openRevenue)}
+            value={fmtBRL(faturamentoAberto)}
             hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
-            highlight={openRevenue > 0 ? 'accent' : 'neutral'}
+            highlight={faturamentoAberto > 0 ? 'accent' : 'neutral'}
           />
           <KpiCard
             icon={Banknote}
@@ -483,6 +476,16 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
             hint="Realizado + em aberto"
             highlight={projecaoTotal > 0 ? 'accent' : 'neutral'}
           />
+        </div>
+
+        <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Lucro esperado
+          </p>
+          <p className="mt-1.5 text-2xl font-semibold text-white">{fmtBRL(lucroEsperado)}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">
+            Leitura provisória: lucro realizado + faturamento em aberto
+          </p>
         </div>
 
         {/* caixa esperado — linha separada */}

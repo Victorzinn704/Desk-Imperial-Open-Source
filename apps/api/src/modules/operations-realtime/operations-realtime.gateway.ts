@@ -1,22 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common'
-import {
+import type {
   OnGatewayConnection,
   OnGatewayDisconnect,
-  OnGatewayInit,
+  OnGatewayInit} from '@nestjs/websockets';
+import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets'
 import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
-import { AuthService } from '../auth/auth.service'
-import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import {
-  buildWorkspaceChannel,
-  OPERATIONS_REALTIME_NAMESPACE,
-  type OperationsRealtimeNamespaceLike,
-} from './operations-realtime.types'
-import { OperationsRealtimeService } from './operations-realtime.service'
+import type { AuthService } from '../auth/auth.service'
+import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
+import type { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
 import type {
   OperationsRealtimeConnectionContext,
@@ -46,7 +42,6 @@ const ALLOWED_ORIGINS = [
 @Injectable()
 export class OperationsRealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(OperationsRealtimeGateway.name)
-  private namespace: OperationsRealtimeNamespaceLike | null = null
 
   @WebSocketServer()
   server!: Namespace
@@ -76,9 +71,8 @@ export class OperationsRealtimeGateway implements OnGatewayInit, OnGatewayConnec
   }
 
   bindNamespace(namespace: OperationsRealtimeNamespaceLike) {
-    this.namespace = namespace
     this.operationsRealtimeService.attachNamespace(namespace)
-    this.logger.log(`Bridge realtime operacional pronta em ${OPERATIONS_REALTIME_NAMESPACE}`)
+    this.logger.log(`Realtime operacional pronto em ${OPERATIONS_REALTIME_NAMESPACE}`)
   }
 
   async authenticateConnection(socket: OperationsRealtimeSocketLike): Promise<OperationsRealtimeConnectionContext> {
@@ -91,7 +85,7 @@ export class OperationsRealtimeGateway implements OnGatewayInit, OnGatewayConnec
       await socket.join(connection.workspaceChannel)
 
       this.logger.debug(
-        `Socket ${socket.id} conectado em ${connection.workspaceChannel} (${connection.auth.userId} -> ${resolveWorkspaceOwnerUserId(connection.auth)})`,
+        `Socket ${socket.id} conectado em ${connection.workspaceChannel} (${connection.auth.userId} -> ${connection.workspaceOwnerUserId})`,
       )
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Falha ao autenticar socket operacional.'
@@ -108,12 +102,5 @@ export class OperationsRealtimeGateway implements OnGatewayInit, OnGatewayConnec
     }
 
     this.logger.debug(`Socket ${socket.id} desconectado sem workspace resolvido`)
-  }
-
-  emitWorkspaceSync<TPayload>(workspaceOwnerUserId: string, event: string, payload: TPayload) {
-    const namespace = this.namespace
-    const channel = buildWorkspaceChannel(workspaceOwnerUserId)
-
-    namespace?.to(channel).emit(event, payload)
   }
 }

@@ -5,14 +5,14 @@ import { isValidCnpj, isValidCpf, sanitizeDocument } from '../../common/utils/do
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { AdminPinService } from '../admin-pin/admin-pin.service'
-import { CurrencyService } from '../currency/currency.service'
-import { GeocodingService } from '../geocoding/geocoding.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
-import { CreateOrderDto } from './dto/create-order.dto'
-import { ListOrdersQueryDto } from './dto/list-orders.query'
+import type { AdminPinService } from '../admin-pin/admin-pin.service'
+import type { CurrencyService } from '../currency/currency.service'
+import type { GeocodingService } from '../geocoding/geocoding.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
+import type { CreateOrderDto } from './dto/create-order.dto'
+import type { ListOrdersQueryDto } from './dto/list-orders.query'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toOrderRecord } from './orders.types'
 import { CacheService } from '../../common/services/cache.service'
@@ -208,13 +208,15 @@ export class OrdersService {
 
     const seller =
       auth.role === 'STAFF'
-        ? await this.prisma.employee.findFirst({
-            where: {
-              userId: workspaceUserId,
-              loginUserId: auth.userId,
-              active: true,
-            },
-          })
+        ? auth.employeeId
+          ? await this.prisma.employee.findFirst({
+              where: {
+                id: auth.employeeId,
+                userId: workspaceUserId,
+                active: true,
+              },
+            })
+          : null
         : dto.sellerEmployeeId
           ? await this.prisma.employee.findFirst({
               where: {

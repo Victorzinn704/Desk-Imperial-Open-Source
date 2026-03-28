@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Cookie, ShieldCheck } from 'lucide-react'
-import { fetchCurrentUser, updateCookiePreferences } from '@/lib/api'
+import { updateCookiePreferences } from '@/lib/api'
 import { persistCookieConsent, readCookieConsentChoice, type CookieConsentChoice } from '@/lib/cookie-consent'
 import { Button } from '@/components/shared/button'
 
@@ -52,12 +52,13 @@ export function CookieConsentBanner() {
       persistCookieConsent(choice)
 
       try {
-        await fetchCurrentUser()
         await updateCookiePreferences({
           analytics: choice === 'accepted',
           marketing: choice === 'accepted',
         })
-      } catch {}
+      } catch {
+        // A preferencia local continua valendo mesmo sem sincronismo remoto.
+      }
 
       setHasDecision(true)
     } catch {

@@ -1,15 +1,15 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { Prisma, UserRole, UserStatus } from '@prisma/client'
+import { Prisma, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import { CacheService } from '../../common/services/cache.service'
-import { CreateEmployeeDto } from './dto/create-employee.dto'
-import { UpdateEmployeeDto } from './dto/update-employee.dto'
+import type { CreateEmployeeDto } from './dto/create-employee.dto'
+import type { UpdateEmployeeDto } from './dto/update-employee.dto'
 import { toEmployeeRecord } from './employees.types'
 
 @Injectable()
@@ -35,9 +35,6 @@ export class EmployeesService {
       where: {
         userId: workspaceUserId,
       },
-      include: {
-        loginUser: true,
-      },
       orderBy: [{ active: 'desc' }, { employeeCode: 'asc' }],
     })
 
@@ -61,7 +58,6 @@ export class EmployeesService {
   async createForUser(auth: AuthContext, dto: CreateEmployeeDto, context: RequestContext) {
     assertOwnerRole(auth, 'Apenas o dono pode cadastrar funcionarios.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
-    const ownerUser = await this.requireWorkspaceOwner(workspaceUserId)
     const employeeCode = sanitizeEmployeeCode(dto.employeeCode)
     const displayName = sanitizePlainText(dto.displayName, 'Nome do funcionario', {
       allowEmpty: false,
@@ -70,46 +66,14 @@ export class EmployeesService {
     const passwordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id })
 
     try {
-      const employee = await this.prisma.$transaction(async (transaction) => {
-        const loginUser = await transaction.user.create({
-          data: {
-            companyOwnerId: workspaceUserId,
-            fullName: displayName,
-            companyName: ownerUser.companyName,
-            companyStreetLine1: ownerUser.companyStreetLine1,
-            companyStreetNumber: ownerUser.companyStreetNumber,
-            companyAddressComplement: ownerUser.companyAddressComplement,
-            companyDistrict: ownerUser.companyDistrict,
-            companyCity: ownerUser.companyCity,
-            companyState: ownerUser.companyState,
-            companyPostalCode: ownerUser.companyPostalCode,
-            companyCountry: ownerUser.companyCountry,
-            companyLatitude: ownerUser.companyLatitude,
-            companyLongitude: ownerUser.companyLongitude,
-            hasEmployees: false,
-            employeeCount: 0,
-            role: UserRole.STAFF,
-            email: buildEmployeeLoginEmail(workspaceUserId, employeeCode),
-            passwordHash,
-            status: UserStatus.ACTIVE,
-            preferredCurrency: ownerUser.preferredCurrency,
-            emailVerifiedAt: new Date(),
-            passwordChangedAt: null,
-          },
-        })
-
-        return transaction.employee.create({
-          data: {
-            userId: workspaceUserId,
-            loginUserId: loginUser.id,
-            employeeCode,
-            displayName,
-            active: true,
-          },
-          include: {
-            loginUser: true,
-          },
-        })
+      const employee = await this.prisma.employee.create({
+        data: {
+          userId: workspaceUserId,
+          passwordHash,
+          employeeCode,
+          displayName,
+          active: true,
+        },
       })
 
       await this.auditLogService.record({
@@ -120,7 +84,7 @@ export class EmployeesService {
         metadata: {
           employeeCode: employee.employeeCode,
           displayName: employee.displayName,
-          loginEnabled: Boolean(employee.loginUserId),
+          loginEnabled: Boolean(employee.passwordHash),
           accessMode: 'company_email_plus_employee_id',
         },
         ipAddress: context.ipAddress,
@@ -152,12 +116,23 @@ export class EmployeesService {
 
     try {
       const employee = await this.prisma.$transaction(async (transaction) => {
-        if (dto.temporaryPassword && existingEmployee.loginUserId) {
-          await transaction.user.update({
-            where: { id: existingEmployee.loginUserId },
+        if (dto.temporaryPassword) {
+          const nextPasswordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id })
+
+          if (existingEmployee.loginUserId) {
+            await transaction.user.update({
+              where: { id: existingEmployee.loginUserId },
+              data: {
+                passwordHash: nextPasswordHash,
+                passwordChangedAt: null,
+              },
+            })
+          }
+
+          await transaction.employee.update({
+            where: { id: existingEmployee.id },
             data: {
-              passwordHash: await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id }),
-              passwordChangedAt: null,
+              passwordHash: nextPasswordHash,
             },
           })
         }
@@ -180,9 +155,6 @@ export class EmployeesService {
             ...(dto.active !== undefined ? { active: dto.active } : {}),
             ...(dto.salarioBase !== undefined ? { salarioBase: dto.salarioBase } : {}),
             ...(dto.percentualVendas !== undefined ? { percentualVendas: dto.percentualVendas } : {}),
-          },
-          include: {
-            loginUser: true,
           },
         })
       })
@@ -234,9 +206,6 @@ export class EmployeesService {
       return transaction.employee.update({
         where: { id: existingEmployee.id },
         data: { active },
-        include: {
-          loginUser: true,
-        },
       })
     })
 
@@ -266,9 +235,6 @@ export class EmployeesService {
         id: employeeId,
         userId,
       },
-      include: {
-        loginUser: true,
-      },
     })
 
     if (!employee) {
@@ -277,42 +243,10 @@ export class EmployeesService {
 
     return employee
   }
-
-  private async requireWorkspaceOwner(userId: string) {
-    const owner = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        companyName: true,
-        companyStreetLine1: true,
-        companyStreetNumber: true,
-        companyAddressComplement: true,
-        companyDistrict: true,
-        companyCity: true,
-        companyState: true,
-        companyPostalCode: true,
-        companyCountry: true,
-        companyLatitude: true,
-        companyLongitude: true,
-        preferredCurrency: true,
-      },
-    })
-
-    if (!owner) {
-      throw new NotFoundException('Empresa proprietaria nao encontrada.')
-    }
-
-    return owner
-  }
 }
 
 function sanitizeEmployeeCode(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, '-')
-}
-
-function buildEmployeeLoginEmail(workspaceUserId: string, employeeCode: string) {
-  const normalizedCode = employeeCode.toLowerCase().replace(/[^a-z0-9-]/g, '')
-  return `staff.${workspaceUserId}.${normalizedCode}@login.deskimperial.internal`
 }
 
 function handleEmployeeConflict(error: unknown): never {

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
+import { Clock3, LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
 import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
 import {
   assignComanda,
@@ -16,6 +16,7 @@ import {
 } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
+import { invalidateOperationsWorkspace } from '@/lib/operations'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
 import {
@@ -29,6 +30,7 @@ import {
 import { type Comanda, type ComandaItem, type ComandaStatus, type Mesa, KANBAN_COLUMNS, calcTotal } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 import { SalaoUnificado } from './pdv-salao-unified'
+import { PdvHistoricoView } from './pdv-historico-view'
 
 type SimpleProduct = {
   id: string
@@ -44,7 +46,7 @@ type PdvBoardProps = {
   products: SimpleProduct[]
 }
 
-type ActiveTab = 'comandas' | 'salao'
+type ActiveTab = 'comandas' | 'salao' | 'historico'
 
 type AddMesaForm = { label: string; capacity: string }
 
@@ -60,26 +62,40 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
   const comandas = useMemo(() => buildPdvComandas(operations), [operations])
   const mesas = useMemo(() => buildPdvMesas(operations), [operations])
   const garcons = useMemo(() => buildPdvGarcons(operations), [operations])
-  const editingComanda = comandas.find((item) => item.id === editingComandaId) ?? null
+  const comandasById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
+  const mesasById = useMemo(() => new Map(mesas.map((mesa) => [mesa.id, mesa])), [mesas])
+  const comandasByStatus = useMemo(
+    () =>
+      KANBAN_COLUMNS.reduce(
+        (acc, column) => {
+          acc[column.id] = comandas.filter((comanda) => comanda.status === column.id)
+          return acc
+        },
+        {} as Record<(typeof KANBAN_COLUMNS)[number]['id'], Comanda[]>,
+      ),
+    [comandas],
+  )
+  const abertas = useMemo(() => comandas.filter((comanda) => comanda.status !== 'fechada'), [comandas])
+  const editingComanda = (editingComandaId ? comandasById.get(editingComandaId) : null) ?? null
 
   const openComandaMutation = useMutation({
-    mutationFn: openComanda,
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    mutationFn: (payload: OpenComandaPayload) => openComanda(payload),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const replaceComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: ReplaceComandaPayload }) =>
       replaceComanda(comandaId, payload),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const assignComandaMutation = useMutation({
     mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) =>
       assignComanda(comandaId, employeeId),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const closeComandaMutation = useMutation({
     mutationFn: ({
@@ -89,19 +105,19 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
       comandaId: string
       payload: { discountAmount: number; serviceFeeAmount: number }
     }) => closeComanda(comandaId, payload),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const createMesaMutation = useMutation({
     mutationFn: (body: CreateMesaInput) => createMesa(body),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient)
+      invalidateOperationsWorkspace(queryClient, ['operations', 'live'])
       setAddMesaForm(null)
     },
   })
 
   const updateMesaMutation = useMutation({
     mutationFn: ({ mesaId, body }: { mesaId: string; body: UpdateMesaInput }) => updateMesa(mesaId, body),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
 
   async function persistComandaDraft(data: {
@@ -186,7 +202,7 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
   }
 
   async function handleAssignGarcom(mesaId: string, garcomId: string | undefined) {
-    const mesa = mesas.find((item) => item.id === mesaId)
+    const mesa = mesasById.get(mesaId)
     if (!mesa?.comandaId) {
       setActionError('Abra uma comanda nessa mesa antes de atribuir um garçom.')
       return
@@ -207,7 +223,7 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
     const { source, destination, draggableId } = result
     if (!destination || source.droppableId === destination.droppableId) return
 
-    const comanda = comandas.find((item) => item.id === draggableId)
+    const comanda = comandasById.get(draggableId)
     if (!comanda) return
 
     await transitionComanda(comanda, destination.droppableId as ComandaStatus)
@@ -223,7 +239,6 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
     setActiveTab('comandas')
   }
 
-  const abertas = comandas.filter((comanda) => comanda.status !== 'fechada')
   const totalEmAberto = abertas.reduce((sum, comanda) => sum + calcTotal(comanda), 0)
   const mesasLivres = mesas.filter((mesa) => mesa.status === 'livre').length
   const mesasOcupadas = mesas.filter((mesa) => mesa.status === 'ocupada').length
@@ -286,6 +301,7 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
           [
             { id: 'comandas' as ActiveTab, label: 'Comandas', icon: ShoppingBag },
             { id: 'salao' as ActiveTab, label: 'Salão', icon: LayoutGrid },
+            { id: 'historico' as ActiveTab, label: 'Histórico', icon: Clock3 },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <button
@@ -329,21 +345,21 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
                 <PdvColumn
                   key={column.id}
                   column={column}
-                  comandas={comandas.filter((comanda) => comanda.status === column.id)}
+                  comandas={comandasByStatus[column.id]}
                   onCardClick={(comanda) => setEditingComandaId(comanda.id)}
                 />
               ))}
             </div>
           </DragDropContext>
         </>
-      ) : (
+      ) : activeTab === 'salao' ? (
         <>
           <SalaoUnificado
             mesas={mesas}
             garcons={garcons}
             comandas={comandas}
             onStatusChange={(mesaId, newStatus) => {
-              const mesa = mesas.find((item) => item.id === mesaId)
+              const mesa = mesasById.get(mesaId)
               if (!mesa) return
               // Arrastar para ocupada = abrir comanda (status é derivado da comanda)
               if (newStatus === 'ocupada' && mesa.status === 'livre') {
@@ -415,6 +431,8 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
             />
           ) : null}
         </>
+      ) : (
+        <PdvHistoricoView comandas={comandas} />
       )}
 
       {showNewModal ? (
@@ -518,12 +536,4 @@ function AddMesaModal({
       </div>
     </div>
   )
-}
-
-async function invalidateOperationsWorkspace(queryClient: ReturnType<typeof useQueryClient>) {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ['operations', 'live'] }),
-    queryClient.invalidateQueries({ queryKey: ['orders'] }),
-    queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] }),
-  ])
 }

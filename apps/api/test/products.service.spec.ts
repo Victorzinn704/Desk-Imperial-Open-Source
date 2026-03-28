@@ -27,12 +27,15 @@ import type { CacheService } from '../src/common/services/cache.service'
 import type { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
 import type { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
 import type { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
+import { makeAuthContext } from './helpers/auth-context.factory'
+import { makeRequestContext } from './helpers/request-context.factory'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockPrisma = {
   product: {
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -60,20 +63,7 @@ const mockCache = {
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 
-function makeAuthContext(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    userId: 'user-1',
-    sessionId: 'session-1',
-    role: 'OWNER',
-    companyOwnerUserId: null,
-    fullName: 'João Silva',
-    email: 'joao@empresa.com',
-    preferredCurrency: CurrencyCode.BRL,
-    ...overrides,
-  }
-}
-
-function makeProduct(overrides: Partial<Record<string, unknown>> = {}) {
+function makeProduct(overrides: object = {}) {
   return {
     id: 'product-1',
     userId: 'user-1',
@@ -139,6 +129,7 @@ function makePrismaUniqueError() {
 
 let productsService: ProductsService
 let mockContext: ReturnType<typeof makeAuthContext>
+let requestContext: ReturnType<typeof makeRequestContext>
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -150,7 +141,13 @@ beforeEach(() => {
     mockCache as unknown as CacheService,
   )
 
-  mockContext = makeAuthContext()
+  mockContext = makeAuthContext({
+    userId: 'user-1',
+    workspaceOwnerUserId: 'user-1',
+    email: 'joao@empresa.com',
+    fullName: 'João Silva',
+  })
+  requestContext = makeRequestContext()
 
   // Defaults
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
@@ -312,10 +309,7 @@ describe('ProductsService', () => {
 
       mockPrisma.product.create.mockResolvedValue(createdProduct)
 
-      const result = await productsService.createForUser(mockContext, dto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.createForUser(mockContext, dto, requestContext)
 
       expect(mockPrisma.product.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -344,21 +338,9 @@ describe('ProductsService', () => {
 
       mockPrisma.product.create.mockResolvedValue(makeProduct())
 
+      await expect(productsService.createForUser(mockContext, dto, requestContext)).rejects.toThrow(BadRequestException)
       await expect(
-        productsService.createForUser(mockContext, dto, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow(BadRequestException)
-      await expect(
-        productsService.createForUser(
-          mockContext,
-          { ...dto, description: 'ok' },
-          {
-            ipAddress: '127.0.0.1',
-            userAgent: 'Jest Test',
-          },
-        ),
+        productsService.createForUser(mockContext, { ...dto, description: 'ok' }, requestContext),
       ).rejects.toThrow(BadRequestException)
     })
 
@@ -369,12 +351,7 @@ describe('ProductsService', () => {
 
       mockPrisma.product.create.mockResolvedValue(makeProduct())
 
-      await expect(
-        productsService.createForUser(mockContext, dto, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow(BadRequestException)
+      await expect(productsService.createForUser(mockContext, dto, requestContext)).rejects.toThrow(BadRequestException)
     })
 
     it('deve permitir campos opcionais vazios', async () => {
@@ -385,10 +362,7 @@ describe('ProductsService', () => {
 
       mockPrisma.product.create.mockResolvedValue(makeProduct())
 
-      await productsService.createForUser(mockContext, dto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.createForUser(mockContext, dto, requestContext)
 
       expect(mockPrisma.product.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -404,22 +378,14 @@ describe('ProductsService', () => {
       const dto = makeCreateProductDto()
       mockPrisma.product.create.mockRejectedValue(makePrismaUniqueError())
 
-      await expect(
-        productsService.createForUser(mockContext, dto, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow(ConflictException)
+      await expect(productsService.createForUser(mockContext, dto, requestContext)).rejects.toThrow(ConflictException)
     })
 
     it('deve registrar audit log após criação', async () => {
       const dto = makeCreateProductDto()
       mockPrisma.product.create.mockResolvedValue(makeProduct(dto))
 
-      await productsService.createForUser(mockContext, dto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.createForUser(mockContext, dto, requestContext)
 
       expect(mockAuditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -437,10 +403,7 @@ describe('ProductsService', () => {
       const dto = makeCreateProductDto()
       mockPrisma.product.create.mockResolvedValue(makeProduct(dto))
 
-      await productsService.createForUser(mockContext, dto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.createForUser(mockContext, dto, requestContext)
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1')
@@ -450,12 +413,9 @@ describe('ProductsService', () => {
       const dto = makeCreateProductDto()
       const staffContext = makeAuthContext({ role: 'STAFF' })
 
-      await expect(
-        productsService.createForUser(staffContext, dto, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow('Apenas o dono pode cadastrar produtos.')
+      await expect(productsService.createForUser(staffContext, dto, requestContext)).rejects.toThrow(
+        'Apenas o dono pode cadastrar produtos.',
+      )
     })
   })
 
@@ -473,10 +433,7 @@ describe('ProductsService', () => {
         ...updateDto,
       })
 
-      const result = await productsService.updateForUser(mockContext, 'product-1', updateDto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
 
       expect(mockPrisma.product.update).toHaveBeenCalledWith({
         where: { id: 'product-1' },
@@ -500,10 +457,7 @@ describe('ProductsService', () => {
         stock: 200,
       })
 
-      await productsService.updateForUser(mockContext, 'product-1', updateDto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
 
       expect(mockPrisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -518,10 +472,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(null)
 
       await expect(
-        productsService.updateForUser(mockContext, 'product-inexistente', makeCreateProductDto(), {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
+        productsService.updateForUser(mockContext, 'product-inexistente', makeCreateProductDto(), requestContext),
       ).rejects.toThrow(NotFoundException)
     })
 
@@ -532,10 +483,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({ ...existingProduct, ...updateDto })
 
-      await productsService.updateForUser(mockContext, 'product-1', updateDto, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
 
       expect(mockAuditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -551,12 +499,9 @@ describe('ProductsService', () => {
       const staffContext = makeAuthContext({ role: 'STAFF' })
       const updateDto: UpdateProductDto = { name: 'Novo Nome' }
 
-      await expect(
-        productsService.updateForUser(staffContext, 'product-1', updateDto, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow('Apenas o dono pode editar produtos.')
+      await expect(productsService.updateForUser(staffContext, 'product-1', updateDto, requestContext)).rejects.toThrow(
+        'Apenas o dono pode editar produtos.',
+      )
     })
   })
 
@@ -566,10 +511,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({ ...existingProduct, active: false })
 
-      const result = await productsService.archiveForUser(mockContext, 'product-1', {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.archiveForUser(mockContext, 'product-1', requestContext)
 
       expect(mockPrisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -584,10 +526,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({ ...existingProduct, active: true })
 
-      const result = await productsService.restoreForUser(mockContext, 'product-1', {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.restoreForUser(mockContext, 'product-1', requestContext)
 
       expect(mockPrisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -602,10 +541,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({ ...existingProduct, active: false })
 
-      await productsService.archiveForUser(mockContext, 'product-1', {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.archiveForUser(mockContext, 'product-1', requestContext)
 
       expect(mockAuditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -629,10 +565,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findUnique.mockResolvedValue(null)
       mockPrisma.product.upsert.mockResolvedValue(makeProduct())
 
-      const result = await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(result.summary.totalRows).toBe(2)
       expect(result.summary.createdCount).toBeGreaterThanOrEqual(0)
@@ -645,10 +578,7 @@ describe('ProductsService', () => {
 
       mockPrisma.product.findUnique.mockResolvedValue(null)
 
-      const result = await productsService.importForUser(mockContext, makeCsvFile(invalidCsvContent), {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.importForUser(mockContext, makeCsvFile(invalidCsvContent), requestContext)
 
       expect(result.errors).toHaveLength(1)
       expect(result.errors[0].message).toContain('nome valido')
@@ -657,21 +587,15 @@ describe('ProductsService', () => {
     it('deve rejeitar arquivo vazio', async () => {
       const emptyCsv = makeCsvFile('')
 
-      await expect(
-        productsService.importForUser(mockContext, emptyCsv, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow(BadRequestException)
+      await expect(productsService.importForUser(mockContext, emptyCsv, requestContext)).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('deve rejeitar sem arquivo', async () => {
-      await expect(
-        productsService.importForUser(mockContext, undefined, {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
-      ).rejects.toThrow(BadRequestException)
+      await expect(productsService.importForUser(mockContext, undefined, requestContext)).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('deve rejeitar moeda não suportada', async () => {
@@ -682,10 +606,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findUnique.mockResolvedValue(null)
       mockPrisma.product.upsert.mockResolvedValue(makeProduct())
 
-      const result = await productsService.importForUser(mockContext, invalidCurrencyCsv, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.importForUser(mockContext, invalidCurrencyCsv, requestContext)
 
       expect(result.errors).toHaveLength(1)
       expect(result.errors[0].message).toContain('moeda')
@@ -699,10 +620,7 @@ describe('ProductsService', () => {
         makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
     <script>XSS</script>Produto,Categoria A,Classe A,UN,1,1,Desc,10.00,20.00,BRL,100`)
 
-      const result = await productsService.importForUser(mockContext, csvWithHtml, {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      const result = await productsService.importForUser(mockContext, csvWithHtml, requestContext)
 
       expect(result.summary.failedCount).toBe(1)
       expect(result.errors[0].message).toContain('HTML')
@@ -712,10 +630,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findUnique.mockResolvedValue(null)
       mockPrisma.product.upsert.mockResolvedValue(makeProduct())
 
-      await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(mockAuditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -732,10 +647,7 @@ describe('ProductsService', () => {
       mockPrisma.product.findUnique.mockResolvedValue(null)
       mockPrisma.product.upsert.mockResolvedValue(makeProduct())
 
-      await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), {
-        ipAddress: '127.0.0.1',
-        userAgent: 'Jest Test',
-      })
+      await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1')
@@ -745,10 +657,7 @@ describe('ProductsService', () => {
       const staffContext = makeAuthContext({ role: 'STAFF' })
 
       await expect(
-        productsService.importForUser(staffContext, makeCsvFile(validCsvContent), {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Jest Test',
-        }),
+        productsService.importForUser(staffContext, makeCsvFile(validCsvContent), requestContext),
       ).rejects.toThrow('Apenas o dono pode importar produtos.')
     })
   })

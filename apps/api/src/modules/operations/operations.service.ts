@@ -1,31 +1,32 @@
 import { Injectable } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { CashSessionService } from './cash-session.service'
-import { ComandaService } from './comanda.service'
-import { OperationsHelpersService } from './operations-helpers.service'
-import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import { AssignComandaDto } from './dto/assign-comanda.dto'
-import { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import { CloseComandaDto } from './dto/close-comanda.dto'
-import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import { OpenComandaDto } from './dto/open-comanda.dto'
-import { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
+import type { CashSessionService } from './cash-session.service'
+import type { ComandaService } from './comanda.service'
+import type { OperationsHelpersService } from './operations-helpers.service'
+import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { AssignComandaDto } from './dto/assign-comanda.dto'
+import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
+import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
+import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
+import type { CloseComandaDto } from './dto/close-comanda.dto'
+import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
+import type { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
+import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
+import type { OpenComandaDto } from './dto/open-comanda.dto'
+import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
+import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
+import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { toMesaRecord, type MesaRecord } from './operations.types'
 import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 
 @Injectable()
 export class OperationsService {
@@ -43,56 +44,107 @@ export class OperationsService {
   async getLiveSnapshot(auth: AuthContext, query: GetOperationsLiveQueryDto) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
-    const scopedEmployeeId =
-      auth.role === 'STAFF'
-        ? ((await this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth))?.id ?? null)
-        : null
+    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
 
-    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId)
+    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
+      includeCashMovements: query.includeCashMovements,
+    })
   }
 
   // ── Cash session delegation ───────────────────────────────────────────────
 
-  openCashSession(auth: AuthContext, dto: OpenCashSessionDto, context: RequestContext) {
-    return this.cashSession.openCashSession(auth, dto, context)
+  openCashSession(
+    auth: AuthContext,
+    dto: OpenCashSessionDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.cashSession.openCashSession(auth, dto, context, options)
   }
 
-  createCashMovement(auth: AuthContext, cashSessionId: string, dto: CreateCashMovementDto, context: RequestContext) {
-    return this.cashSession.createCashMovement(auth, cashSessionId, dto, context)
+  createCashMovement(
+    auth: AuthContext,
+    cashSessionId: string,
+    dto: CreateCashMovementDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.cashSession.createCashMovement(auth, cashSessionId, dto, context, options)
   }
 
-  closeCashSession(auth: AuthContext, cashSessionId: string, dto: CloseCashSessionDto, context: RequestContext) {
-    return this.cashSession.closeCashSession(auth, cashSessionId, dto, context)
+  closeCashSession(
+    auth: AuthContext,
+    cashSessionId: string,
+    dto: CloseCashSessionDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.cashSession.closeCashSession(auth, cashSessionId, dto, context, options)
   }
 
-  closeCashClosure(auth: AuthContext, dto: CloseCashClosureDto, context: RequestContext) {
-    return this.cashSession.closeCashClosure(auth, dto, context)
+  closeCashClosure(
+    auth: AuthContext,
+    dto: CloseCashClosureDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.cashSession.closeCashClosure(auth, dto, context, options)
   }
 
   // ── Comanda delegation ────────────────────────────────────────────────────
 
-  openComanda(auth: AuthContext, dto: OpenComandaDto, context: RequestContext) {
-    return this.comanda.openComanda(auth, dto, context)
+  openComanda(auth: AuthContext, dto: OpenComandaDto, context: RequestContext, options?: OperationsResponseOptionsDto) {
+    return this.comanda.openComanda(auth, dto, context, options)
   }
 
-  addComandaItem(auth: AuthContext, comandaId: string, dto: AddComandaItemDto, context: RequestContext) {
-    return this.comanda.addComandaItem(auth, comandaId, dto, context)
+  addComandaItem(
+    auth: AuthContext,
+    comandaId: string,
+    dto: AddComandaItemDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.addComandaItem(auth, comandaId, dto, context, options)
   }
 
-  replaceComanda(auth: AuthContext, comandaId: string, dto: ReplaceComandaDto, context: RequestContext) {
-    return this.comanda.replaceComanda(auth, comandaId, dto, context)
+  replaceComanda(
+    auth: AuthContext,
+    comandaId: string,
+    dto: ReplaceComandaDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.replaceComanda(auth, comandaId, dto, context, options)
   }
 
-  assignComanda(auth: AuthContext, comandaId: string, dto: AssignComandaDto, context: RequestContext) {
-    return this.comanda.assignComanda(auth, comandaId, dto, context)
+  assignComanda(
+    auth: AuthContext,
+    comandaId: string,
+    dto: AssignComandaDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.assignComanda(auth, comandaId, dto, context, options)
   }
 
-  updateComandaStatus(auth: AuthContext, comandaId: string, dto: UpdateComandaStatusDto, context: RequestContext) {
-    return this.comanda.updateComandaStatus(auth, comandaId, dto, context)
+  updateComandaStatus(
+    auth: AuthContext,
+    comandaId: string,
+    dto: UpdateComandaStatusDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.updateComandaStatus(auth, comandaId, dto, context, options)
   }
 
-  closeComanda(auth: AuthContext, comandaId: string, dto: CloseComandaDto, context: RequestContext) {
-    return this.comanda.closeComanda(auth, comandaId, dto, context)
+  closeComanda(
+    auth: AuthContext,
+    comandaId: string,
+    dto: CloseComandaDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.closeComanda(auth, comandaId, dto, context, options)
   }
 
   updateKitchenItemStatus(auth: AuthContext, itemId: string, dto: UpdateKitchenItemStatusDto, context: RequestContext) {
@@ -114,12 +166,7 @@ export class OperationsService {
         select: { id: true, mesaId: true, currentEmployeeId: true, status: true },
       }),
     ])
-    return mesas.map((m) =>
-      toMesaRecord(
-        m,
-        openComandas.filter((c) => c.mesaId === m.id),
-      ),
-    )
+    return mesas.map((m) => toMesaRecord(m, openComandas.find((c) => c.mesaId === m.id) ?? null))
   }
 
   async createMesa(auth: AuthContext, dto: CreateMesaDto, context: RequestContext): Promise<MesaRecord> {
@@ -153,7 +200,7 @@ export class OperationsService {
       userAgent: context.userAgent,
     })
     this.realtime.publishMesaUpserted(auth, { mesaId: mesa.id, label: mesa.label, status: 'livre' })
-    return toMesaRecord(mesa, [])
+    return toMesaRecord(mesa, null)
   }
 
   async updateMesa(
@@ -198,6 +245,6 @@ export class OperationsService {
       userAgent: context.userAgent,
     })
     this.realtime.publishMesaUpserted(auth, { mesaId: updated.id, label: updated.label, status: 'livre' })
-    return toMesaRecord(updated, [])
+    return toMesaRecord(updated, null)
   }
 }

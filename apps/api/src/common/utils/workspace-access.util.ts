@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common'
-import type { AuthContext } from '../../modules/auth/auth.types'
+import type { AuthContext, WorkspaceScopedAuthContext } from '../../modules/auth/auth.types'
 
-export function resolveWorkspaceOwnerUserId(auth: Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role'>) {
-  return auth.role === 'OWNER' ? auth.userId : (auth.companyOwnerUserId ?? auth.userId)
+export function resolveWorkspaceOwnerUserId(auth: WorkspaceScopedAuthContext) {
+  return auth.workspaceOwnerUserId ?? (auth.role === 'OWNER' ? auth.userId : (auth.companyOwnerUserId ?? auth.userId))
 }
 
 export function assertOwnerRole(

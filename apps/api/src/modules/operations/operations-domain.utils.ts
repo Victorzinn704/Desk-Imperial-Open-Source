@@ -7,7 +7,10 @@ import {
   ComandaStatus,
   type CashClosure,
 } from '@prisma/client'
+import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
+import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
+import type { OperationsHelpersService } from './operations-helpers.service'
 
 export const OPEN_COMANDA_STATUSES: ComandaStatus[] = [
   ComandaStatus.OPEN,
@@ -39,6 +42,31 @@ export function formatBusinessDateKey(date: Date) {
   const day = String(date.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+export function invalidateOperationsLiveCache(
+  cache: Pick<CacheService, 'del'>,
+  workspaceOwnerUserId: string,
+  businessDate: Date,
+) {
+  const dateKey = formatBusinessDateKey(businessDate)
+  void cache.del(CacheService.operationsLiveKey(workspaceOwnerUserId, dateKey, true))
+  void cache.del(CacheService.operationsLiveKey(workspaceOwnerUserId, dateKey, false))
+}
+
+export async function buildOptionalOperationsSnapshot(
+  helpers: Pick<OperationsHelpersService, 'buildLiveSnapshot'>,
+  workspaceOwnerUserId: string,
+  businessDate: Date,
+  options?: OperationsResponseOptionsDto,
+) {
+  if (options?.includeSnapshot === false) {
+    return {}
+  }
+
+  return {
+    snapshot: await helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate),
+  }
 }
 
 export function toNumber(value: { toNumber(): number } | number | null | undefined): number {
@@ -144,9 +172,11 @@ export function buildCashClosurePayload(closure: CashClosure) {
     openedAt: closure.createdAt.toISOString(),
     closedAt: closure.closedAt?.toISOString() ?? null,
     expectedAmount: toNumber(closure.expectedCashAmount),
+    grossRevenueAmount: toNumber(closure.grossRevenueAmount),
+    realizedProfitAmount: toNumber(closure.realizedProfitAmount),
     countedAmount: closure.countedCashAmount == null ? null : toNumber(closure.countedCashAmount),
     differenceAmount: closure.differenceAmount == null ? null : toNumber(closure.differenceAmount),
+    openComandasCount: closure.openComandasCount,
     pendingCashSessions: closure.openSessionsCount,
-    closedCashSessions: 0,
   } as const
 }

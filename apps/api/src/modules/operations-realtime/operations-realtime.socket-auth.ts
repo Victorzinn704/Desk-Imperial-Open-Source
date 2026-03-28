@@ -1,9 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common'
-import type { AuthContext } from '../auth/auth.types'
 import { DEV_SESSION_COOKIE_NAME, PROD_SESSION_COOKIE_NAME } from '../auth/auth.constants'
-import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { assertOperationsRealtimeWorkspaceAccess } from './operations-realtime.auth'
-import { buildWorkspaceChannel } from './operations-realtime.types'
+import { resolveOperationsRealtimeWorkspace } from './operations-realtime.auth'
 import type {
   OperationsRealtimeConnectionContext,
   OperationsRealtimeSocketHandshakeLike,
@@ -81,22 +78,22 @@ export async function authenticateOperationsRealtimeSocket(
     throw new UnauthorizedException('Sessao invalida ou expirada.')
   }
 
-  const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-  const workspaceChannel = buildWorkspaceChannel(workspaceOwnerUserId)
-
-  assertOperationsRealtimeWorkspaceAccess(
-    auth as Pick<AuthContext, 'userId' | 'companyOwnerUserId' | 'role' | 'status'>,
-    workspaceOwnerUserId,
-  )
+  const workspace = resolveOperationsRealtimeWorkspace({
+    userId: auth.userId,
+    role: auth.role,
+    status: auth.status,
+    workspaceOwnerUserId: auth.workspaceOwnerUserId,
+    companyOwnerUserId: auth.companyOwnerUserId,
+  })
 
   socket.data.auth = auth
-  socket.data.workspaceOwnerUserId = workspaceOwnerUserId
-  socket.data.workspaceChannel = workspaceChannel
+  socket.data.workspaceOwnerUserId = workspace.workspaceOwnerUserId
+  socket.data.workspaceChannel = workspace.channel
 
   return {
     auth,
-    workspaceOwnerUserId,
-    workspaceChannel,
+    workspaceOwnerUserId: workspace.workspaceOwnerUserId,
+    workspaceChannel: workspace.channel,
     rawToken,
   }
 }

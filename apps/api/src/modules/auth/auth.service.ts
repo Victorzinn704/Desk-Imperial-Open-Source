@@ -9,23 +9,23 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
-import { ConsentService } from '../consent/consent.service'
-import { GeocodingService } from '../geocoding/geocoding.service'
-import { MailerService } from '../mailer/mailer.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { PrismaService } from '../../database/prisma.service'
+import type { ConsentService } from '../consent/consent.service'
+import type { GeocodingService } from '../geocoding/geocoding.service'
+import type { MailerService } from '../mailer/mailer.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import {
   getAdminPinVerificationCookieName,
   getAdminPinVerificationCookieOptions,
 } from '../admin-pin/admin-pin.constants'
-import { AuthRateLimitService } from './auth-rate-limit.service'
+import type { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   DEV_CSRF_COOKIE_NAME,
   DEV_SESSION_COOKIE_NAME,
@@ -33,13 +33,14 @@ import {
   PROD_SESSION_COOKIE_NAME,
 } from './auth.constants'
 import type { AuthContext } from './auth.types'
-import { ForgotPasswordDto } from './dto/forgot-password.dto'
-import { LoginDto, LoginModeDto } from './dto/login.dto'
-import { RegisterDto } from './dto/register.dto'
-import { ResetPasswordDto } from './dto/reset-password.dto'
-import { UpdateProfileDto } from './dto/update-profile.dto'
-import { VerifyEmailDto } from './dto/verify-email.dto'
-import { DemoAccessService } from './demo-access.service'
+import type { ForgotPasswordDto } from './dto/forgot-password.dto'
+import type { LoginDto} from './dto/login.dto';
+import { LoginModeDto } from './dto/login.dto'
+import type { RegisterDto } from './dto/register.dto'
+import type { ResetPasswordDto } from './dto/reset-password.dto'
+import type { UpdateProfileDto } from './dto/update-profile.dto'
+import type { VerifyEmailDto } from './dto/verify-email.dto'
+import type { DemoAccessService } from './demo-access.service'
 
 @Injectable()
 export class AuthService {
@@ -268,9 +269,9 @@ export class AuthService {
       throw error
     }
 
-    const user = await this.resolveLoginUser(dto)
+    const actor = await this.resolveLoginActor(dto)
 
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    if (!actor || actor.status !== UserStatus.ACTIVE) {
       await this.handleFailedLogin({
         email: normalizedEmail,
         reason: 'user_not_found_or_disabled',
@@ -279,13 +280,13 @@ export class AuthService {
       })
     }
 
-    const activeUser = user!
-    const isValidPassword = await argon2.verify(activeUser.passwordHash, dto.password)
+    const activeActor = actor!
+    const isValidPassword = await argon2.verify(activeActor.passwordHash, dto.password)
 
     if (!isValidPassword) {
       await this.handleFailedLogin({
-        actorUserId: activeUser.id,
-        actorFullName: activeUser.fullName,
+        actorUserId: activeActor.actorUserId,
+        actorFullName: activeActor.fullName,
         email: normalizedEmail,
         reason: 'invalid_password',
         rateLimitKeys,
@@ -293,9 +294,9 @@ export class AuthService {
       })
     }
 
-    if (!activeUser.emailVerifiedAt) {
+    if (!activeActor.emailVerifiedAt) {
       await this.clearRateLimitKeys(rateLimitKeys)
-      const verificationMessage = await this.handleUnverifiedLogin(activeUser, context)
+      const verificationMessage = await this.handleUnverifiedLogin(activeActor.ownerUser, context)
       throw new ForbiddenException(verificationMessage)
     }
 
@@ -306,15 +307,17 @@ export class AuthService {
     try {
       session = await this.createSession(
         {
-          id: activeUser.id,
-          email: activeUser.email,
+          userId: activeActor.sessionUserId,
+          employeeId: activeActor.employeeId,
+          workspaceOwnerUserId: activeActor.workspaceOwnerUserId,
+          email: activeActor.ownerUser.email,
         },
         context,
       )
     } catch (error) {
-      if (this.demoAccessService.isDemoAccount(activeUser.email)) {
+      if (this.demoAccessService.isDemoAccount(activeActor.ownerUser.email)) {
         await this.auditLogService.record({
-          actorUserId: activeUser.id,
+          actorUserId: activeActor.actorUserId,
           event: 'auth.demo.blocked',
           resource: 'session',
           severity: AuditSeverity.WARN,
@@ -333,7 +336,7 @@ export class AuthService {
     this.setSessionCookies(response, session.token, session.sessionId, session.expiresAt)
 
     await this.auditLogService.record({
-      actorUserId: activeUser.id,
+      actorUserId: activeActor.actorUserId,
       event: 'auth.login.succeeded',
       resource: 'session',
       resourceId: session.sessionId,
@@ -342,14 +345,16 @@ export class AuthService {
       userAgent: context.userAgent,
     })
 
-    void this.sendLoginAlertIfEnabled(activeUser, context, session.sessionId)
+    void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
 
     return {
-      user: toAuthUser(activeUser, {
+      user: toAuthUser(activeActor.authUser, {
         sessionId: session.sessionId,
-        analytics: activeUser.cookiePreference?.analytics ?? false,
-        marketing: activeUser.cookiePreference?.marketing ?? false,
+        analytics: activeActor.cookiePreference?.analytics ?? false,
+        marketing: activeActor.cookiePreference?.marketing ?? false,
         evaluationAccess: session.evaluationAccess,
+        employeeId: activeActor.employeeId,
+        employeeCode: activeActor.employeeCode,
       }),
       csrfToken: this.buildCsrfToken(session.sessionId),
       session: {
@@ -358,7 +363,7 @@ export class AuthService {
     }
   }
 
-  private async resolveLoginUser(dto: LoginDto) {
+  private async resolveLoginActor(dto: LoginDto) {
     if (dto.loginMode === LoginModeDto.STAFF) {
       const companyEmail = normalizeEmail(dto.companyEmail ?? '')
       const employeeCode = sanitizeEmployeeCodeForLogin(dto.employeeCode ?? '')
@@ -378,33 +383,105 @@ export class AuthService {
         return null
       }
 
-      const employee = await this.prisma.employee.findFirst({
-        where: {
-          userId: owner.id,
-          employeeCode,
-          active: true,
-          loginUser: {
-            status: UserStatus.ACTIVE,
-          },
-        },
-        include: {
-          loginUser: {
-            include: {
-              cookiePreference: true,
-            },
-          },
-        },
-      })
+      const employee = await this.findActiveEmployeeLoginActor(owner.id, employeeCode)
 
-      return employee?.loginUser ?? null
+      if (!employee) {
+        return null
+      }
+
+      const ownerUser = employee.user
+      const legacyLoginUser = employee.loginUser
+      const passwordHash = this.resolveEmployeePasswordHash(employee)
+
+      if (!passwordHash || ownerUser.status !== UserStatus.ACTIVE) {
+        return null
+      }
+
+      return {
+        actorUserId: legacyLoginUser?.id ?? ownerUser.id,
+        sessionUserId: legacyLoginUser?.id ?? null,
+        workspaceOwnerUserId: ownerUser.id,
+        employeeId: employee.id,
+        employeeCode: employee.employeeCode,
+        passwordHash,
+        status: employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
+        emailVerifiedAt: ownerUser.emailVerifiedAt,
+        fullName: employee.displayName,
+        cookiePreference: ownerUser.cookiePreference,
+        ownerUser,
+        authUser: {
+          ...ownerUser,
+          fullName: employee.displayName,
+          role: UserRole.STAFF,
+          companyOwnerId: ownerUser.id,
+          email: ownerUser.email,
+        },
+      }
     }
 
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: normalizeEmail(dto.email ?? '') },
       include: {
         cookiePreference: true,
+        employeeAccount: {
+          select: {
+            id: true,
+            employeeCode: true,
+          },
+        },
       },
     })
+
+    if (!user) {
+      return null
+    }
+
+    return {
+      actorUserId: user.id,
+      sessionUserId: user.id,
+      workspaceOwnerUserId: user.id,
+      employeeId: user.employeeAccount?.id ?? null,
+      employeeCode: user.employeeAccount?.employeeCode ?? null,
+      passwordHash: user.passwordHash,
+      status: user.status,
+      emailVerifiedAt: user.emailVerifiedAt,
+      fullName: user.fullName,
+      cookiePreference: user.cookiePreference,
+      ownerUser: user,
+      authUser: user,
+    }
+  }
+
+  private findActiveEmployeeLoginActor(ownerUserId: string, employeeCode: string) {
+    return this.prisma.employee.findFirst({
+      where: {
+        userId: ownerUserId,
+        employeeCode,
+        active: true,
+      },
+      include: {
+        user: {
+          include: {
+            cookiePreference: true,
+          },
+        },
+        loginUser: {
+          select: {
+            id: true,
+            passwordHash: true,
+          },
+        },
+      },
+    })
+  }
+
+  private resolveEmployeePasswordHash(employee: {
+    passwordHash: string | null
+    loginUser: {
+      passwordHash: string
+    } | null
+  }) {
+    return employee.passwordHash ?? employee.loginUser?.passwordHash ?? null
   }
 
   async requestPasswordReset(dto: ForgotPasswordDto, context: RequestContext) {
@@ -892,6 +969,26 @@ export class AuthService {
         user: {
           include: {
             cookiePreference: true,
+            employeeAccount: {
+              select: {
+                id: true,
+                employeeCode: true,
+              },
+            },
+          },
+        },
+        employee: {
+          include: {
+            user: {
+              include: {
+                cookiePreference: true,
+              },
+            },
+          },
+        },
+        workspaceOwner: {
+          include: {
+            cookiePreference: true,
           },
         },
       },
@@ -901,7 +998,12 @@ export class AuthService {
       return null
     }
 
-    if (session.revokedAt || session.expiresAt <= new Date() || session.user.status !== UserStatus.ACTIVE) {
+    const sessionUserStatus = session.employee
+      ? session.employee.active
+        ? UserStatus.ACTIVE
+        : UserStatus.DISABLED
+      : session.user?.status
+    if (session.revokedAt || session.expiresAt <= new Date() || sessionUserStatus !== UserStatus.ACTIVE) {
       await this.demoAccessService.closeGrantForSession(session.id)
       return null
     }
@@ -914,11 +1016,40 @@ export class AuthService {
       })
     }
 
+    if (session.employee) {
+      return toAuthUser(
+        {
+          ...session.workspaceOwner,
+          fullName: session.employee.displayName,
+          role: UserRole.STAFF,
+          companyOwnerId: session.workspaceOwner.id,
+          email: session.workspaceOwner.email,
+        },
+        {
+          sessionId: session.id,
+          analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
+          marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
+          evaluationAccess: this.demoAccessService.buildEvaluationAccess(
+            session.workspaceOwner.email,
+            session.expiresAt,
+          ),
+          employeeId: session.employee.id,
+          employeeCode: session.employee.employeeCode,
+        },
+      )
+    }
+
+    if (!session.user) {
+      return null
+    }
+
     return toAuthUser(session.user, {
       sessionId: session.id,
       analytics: session.user.cookiePreference?.analytics ?? false,
       marketing: session.user.cookiePreference?.marketing ?? false,
       evaluationAccess: this.demoAccessService.buildEvaluationAccess(session.user.email, session.expiresAt),
+      employeeId: session.user.employeeAccount?.id ?? null,
+      employeeCode: session.user.employeeAccount?.employeeCode ?? null,
     })
   }
   async getCurrentUser(auth: AuthContext, response: Response) {
@@ -971,13 +1102,17 @@ export class AuthService {
         analytics: user.cookiePreference?.analytics ?? false,
         marketing: user.cookiePreference?.marketing ?? false,
         evaluationAccess: auth.evaluationAccess,
+        employeeId: auth.employeeId,
+        employeeCode: auth.employeeCode,
       }),
     }
   }
 
   private async createSession(
     user: {
-      id: string
+      userId: string | null
+      employeeId: string | null
+      workspaceOwnerUserId: string
       email: string
     },
     context: RequestContext,
@@ -994,7 +1129,9 @@ export class AuthService {
 
     const session = await this.prisma.session.create({
       data: {
-        userId: user.id,
+        userId: user.userId,
+        employeeId: user.employeeId,
+        workspaceOwnerUserId: user.workspaceOwnerUserId,
         tokenHash: hashToken(token),
         expiresAt,
         ipAddress: context.ipAddress,
@@ -1004,7 +1141,7 @@ export class AuthService {
 
     if (demoReservation) {
       await this.demoAccessService.attachGrant({
-        userId: user.id,
+        userId: user.workspaceOwnerUserId,
         sessionId: session.id,
         reservation: demoReservation,
       })
@@ -1038,17 +1175,16 @@ export class AuthService {
   }
 
   private getSessionCookieBaseOptions() {
-    return {
-      httpOnly: true,
-      secure: this.shouldUseSecureCookies(),
-      sameSite: this.getCookieSameSitePolicy(),
-      path: '/',
-    }
+    return this.buildCookieBaseOptions(true)
   }
 
   private getCsrfCookieBaseOptions() {
+    return this.buildCookieBaseOptions(false)
+  }
+
+  private buildCookieBaseOptions(httpOnly: boolean) {
     return {
-      httpOnly: false,
+      httpOnly,
       secure: this.shouldUseSecureCookies(),
       sameSite: this.getCookieSameSitePolicy(),
       path: '/',
@@ -1623,6 +1759,10 @@ function toAuthUser(
     companyLongitude?: number | null
     hasEmployees?: boolean
     employeeCount?: number
+    employeeAccount?: {
+      id: string
+      employeeCode: string
+    } | null
     role?: UserRole
     email: string
     emailVerifiedAt?: Date | null
@@ -1634,13 +1774,22 @@ function toAuthUser(
     analytics: boolean
     marketing: boolean
     evaluationAccess: AuthContext['evaluationAccess']
+    employeeId?: string | null
+    employeeCode?: string | null
   },
 ): AuthContext {
+  const workspaceOwnerUserId = user.role === UserRole.STAFF ? (user.companyOwnerId ?? user.id) : user.id
+  const employeeId = options.employeeId ?? user.employeeAccount?.id ?? null
+  const employeeCode = options.employeeCode ?? user.employeeAccount?.employeeCode ?? null
+
   return {
     userId: user.id,
     sessionId: options.sessionId ?? '',
     role: user.role ?? UserRole.OWNER,
+    workspaceOwnerUserId,
     companyOwnerUserId: user.companyOwnerId,
+    employeeId,
+    employeeCode,
     email: user.email,
     fullName: user.fullName,
     companyName: user.companyName,

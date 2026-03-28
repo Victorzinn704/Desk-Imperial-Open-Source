@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
+import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -18,26 +19,52 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
 
 interface Props {
   comandas: Comanda[]
+  summary?: {
+    receitaRealizada: number
+    receitaEsperada: number
+    openComandasCount: number
+  }
 }
 
-export function MobileHistoricoView({ comandas }: Props) {
-  // Mais recente primeiro
-  const sorted = [...comandas].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime())
+function SummaryCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+      <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{hint}</p>
+    </div>
+  )
+}
 
-  if (sorted.length === 0) {
+export function MobileHistoricoView({ comandas, summary }: Props) {
+  const sorted = useMemo(() => [...comandas].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime()), [comandas])
+
+  if (sorted.length === 0 && !summary) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
-          <span className="text-3xl">📋</span>
-        </div>
-        <p className="text-sm font-medium text-white">Nenhum atendimento hoje</p>
-        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">Os atendimentos do dia aparecerão aqui</p>
-      </div>
+      <OperationEmptyState
+        title="Nenhum atendimento hoje"
+        description="Os atendimentos do dia aparecerão aqui."
+        Icon={ClipboardList}
+      />
     )
   }
 
   return (
     <div className="p-4">
+      {summary ? (
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SummaryCard
+            label="Receita realizada"
+            value={formatCurrency(summary.receitaRealizada)}
+            hint="Somente vendas já fechadas por você"
+          />
+          <SummaryCard
+            label="Receita esperada"
+            value={formatCurrency(summary.receitaEsperada)}
+            hint={`${summary.openComandasCount} comanda${summary.openComandasCount !== 1 ? 's' : ''} em aberto no seu atendimento`}
+          />
+        </div>
+      ) : null}
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
         Atendimentos — {sorted.length}
       </p>

@@ -16,7 +16,7 @@ export function PdvEnvironment() {
   const user = sessionQuery.data?.user
   const operationsQuery = useQuery({
     queryKey: ['operations', 'live'],
-    queryFn: () => fetchOperationsLive(),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     enabled: Boolean(user?.userId),
     refetchInterval: 15_000,
   })

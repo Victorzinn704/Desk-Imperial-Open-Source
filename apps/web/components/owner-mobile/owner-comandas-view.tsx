@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { calcTotal } from '@/components/pdv/pdv-types'
+import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -29,16 +30,20 @@ interface Props {
 export function OwnerComandasView({ comandas }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('tudo')
 
-  const filtered = comandas.filter((c) => {
-    if (filtro === 'abertas') return c.status !== 'fechada'
-    if (filtro === 'fechadas') return c.status === 'fechada'
-    return true
-  })
+  const filtered = useMemo(
+    () =>
+      comandas.filter((c) => {
+        if (filtro === 'abertas') return c.status !== 'fechada'
+        if (filtro === 'fechadas') return c.status === 'fechada'
+        return true
+      }),
+    [comandas, filtro],
+  )
 
-  const sorted = [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime())
+  const sorted = useMemo(() => [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime()), [filtered])
 
-  const countAbertas = comandas.filter((c) => c.status !== 'fechada').length
-  const countFechadas = comandas.filter((c) => c.status === 'fechada').length
+  const countAbertas = useMemo(() => comandas.filter((c) => c.status !== 'fechada').length, [comandas])
+  const countFechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada').length, [comandas])
 
   return (
     <div className="p-4">
@@ -68,13 +73,11 @@ export function OwnerComandasView({ comandas }: Props) {
       </div>
 
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <span className="text-3xl mb-3">📋</span>
-          <p className="text-sm text-white font-medium">
-            Nenhuma comanda {filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : ''}
-          </p>
-          <p className="text-xs text-[#7a8896] mt-1">Nenhum registro encontrado para este filtro</p>
-        </div>
+        <OperationEmptyState
+          title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
+          description="Nenhum registro encontrado para este filtro."
+          Icon={ClipboardList}
+        />
       ) : (
         <ul className="space-y-2">
           {sorted.map((comanda) => (

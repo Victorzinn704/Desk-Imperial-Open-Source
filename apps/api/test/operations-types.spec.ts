@@ -21,7 +21,7 @@ describe('toMesaRecord', () => {
   }
 
   it('returns livre when no open comandas', () => {
-    const record = toMesaRecord(baseMesa, [])
+    const record = toMesaRecord(baseMesa, null)
     expect(record.status).toBe('livre')
     expect(record.comandaId).toBeNull()
     expect(record.currentEmployeeId).toBeNull()
@@ -29,7 +29,7 @@ describe('toMesaRecord', () => {
 
   it('returns ocupada when has open comanda', () => {
     const comanda = { id: 'com-1', currentEmployeeId: 'emp-1' }
-    const record = toMesaRecord(baseMesa, [comanda])
+    const record = toMesaRecord(baseMesa, comanda)
     expect(record.status).toBe('ocupada')
     expect(record.comandaId).toBe('com-1')
     expect(record.currentEmployeeId).toBe('emp-1')
@@ -38,19 +38,19 @@ describe('toMesaRecord', () => {
   it('returns reservada when reservedUntil is in the future', () => {
     const futureDate = new Date(Date.now() + 3600000)
     const mesa = { ...baseMesa, reservedUntil: futureDate }
-    const record = toMesaRecord(mesa, [])
+    const record = toMesaRecord(mesa, null)
     expect(record.status).toBe('reservada')
   })
 
   it('returns livre when reservation expired', () => {
     const pastDate = new Date(Date.now() - 3600000)
     const mesa = { ...baseMesa, reservedUntil: pastDate }
-    const record = toMesaRecord(mesa, [])
+    const record = toMesaRecord(mesa, null)
     expect(record.status).toBe('livre')
   })
 
   it('maps all fields correctly', () => {
-    const record = toMesaRecord(baseMesa, [])
+    const record = toMesaRecord(baseMesa, null)
     expect(record.id).toBe('mesa-1')
     expect(record.label).toBe('Mesa 1')
     expect(record.capacity).toBe(4)

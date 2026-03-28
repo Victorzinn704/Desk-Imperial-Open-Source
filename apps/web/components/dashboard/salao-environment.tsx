@@ -16,6 +16,7 @@ function fmtBRL(value: number) {
 // ── constants ──────────────────────────────────────────────────────────────────
 
 const QUERY_KEY = ['mesas'] as const
+const LIVE_QUERY_KEY = ['operations', 'live', 'compact'] as const
 const CANVAS_H = 560
 const CARD_W = 112
 const CARD_H = 76
@@ -95,8 +96,8 @@ export function SalaoEnvironment() {
   })
 
   const { data: liveData, isLoading: liveLoading } = useQuery({
-    queryKey: ['operations', 'live'],
-    queryFn: () => fetchOperationsLive(),
+    queryKey: LIVE_QUERY_KEY,
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
     enabled: view === 'operacional',
   })
@@ -112,7 +113,7 @@ export function SalaoEnvironment() {
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-    void queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+    void queryClient.invalidateQueries({ queryKey: LIVE_QUERY_KEY })
   }
 
   // ── mutations ─────────────────────────────────────────────────────────────────

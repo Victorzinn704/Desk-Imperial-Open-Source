@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { CacheService } from '../../common/services/cache.service'
 
 type AttemptEntry = {
@@ -69,43 +69,43 @@ export class AuthRateLimitService {
   }
 
   buildLoginKey(email: string, ipAddress: string | null) {
-    return `login:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+    return this.buildScopedKey('login', email, ipAddress)
   }
 
   buildLoginEmailKey(email: string) {
-    return `login:email:${email.trim().toLowerCase()}`
+    return this.buildEmailScopedKey('login', email)
   }
 
   buildPasswordResetKey(email: string, ipAddress: string | null) {
-    return `password-reset:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+    return this.buildScopedKey('password-reset', email, ipAddress)
   }
 
   buildPasswordResetEmailKey(email: string) {
-    return `password-reset:email:${email.trim().toLowerCase()}`
+    return this.buildEmailScopedKey('password-reset', email)
   }
 
   buildPasswordResetCodeKey(email: string, ipAddress: string | null) {
-    return `password-reset-code:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+    return this.buildScopedKey('password-reset-code', email, ipAddress)
   }
 
   buildPasswordResetCodeEmailKey(email: string) {
-    return `password-reset-code:email:${email.trim().toLowerCase()}`
+    return this.buildEmailScopedKey('password-reset-code', email)
   }
 
   buildEmailVerificationKey(email: string, ipAddress: string | null) {
-    return `email-verification:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+    return this.buildScopedKey('email-verification', email, ipAddress)
   }
 
   buildEmailVerificationEmailKey(email: string) {
-    return `email-verification:email:${email.trim().toLowerCase()}`
+    return this.buildEmailScopedKey('email-verification', email)
   }
 
   buildEmailVerificationCodeKey(email: string, ipAddress: string | null) {
-    return `email-verification-code:${ipAddress ?? 'unknown'}:${email.trim().toLowerCase()}`
+    return this.buildScopedKey('email-verification-code', email, ipAddress)
   }
 
   buildEmailVerificationCodeEmailKey(email: string) {
-    return `email-verification-code:email:${email.trim().toLowerCase()}`
+    return this.buildEmailScopedKey('email-verification-code', email)
   }
 
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
@@ -155,51 +155,77 @@ export class AuthRateLimitService {
   }
 
   private getLoginPolicy(): AttemptPolicy {
-    return {
-      maxAttempts: Math.max(Number(this.configService.get<string>('LOGIN_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs: Math.max(Number(this.configService.get<string>('LOGIN_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs: Math.max(Number(this.configService.get<string>('LOGIN_LOCK_MINUTES') ?? 15), 1) * 60 * 1000,
-      message: 'Muitas tentativas de acesso. Tente novamente mais tarde.',
-    }
+    return this.buildAttemptPolicy('LOGIN', 5, 15, 15, 'Muitas tentativas de acesso. Tente novamente mais tarde.')
   }
 
   private getPasswordResetPolicy(): AttemptPolicy {
-    return {
-      maxAttempts: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_MAX_ATTEMPTS') ?? 3), 1),
-      windowMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
-      message: 'Muitas solicitações de redefinição. Tente novamente mais tarde.',
-    }
+    return this.buildAttemptPolicy(
+      'PASSWORD_RESET',
+      3,
+      15,
+      30,
+      'Muitas solicitações de redefinição. Tente novamente mais tarde.',
+    )
   }
 
   private getPasswordResetCodePolicy(): AttemptPolicy {
-    return {
-      maxAttempts: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs:
-        Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs: Math.max(Number(this.configService.get<string>('PASSWORD_RESET_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
-      message: 'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
-    }
+    return this.buildAttemptPolicy(
+      'PASSWORD_RESET_CODE',
+      5,
+      15,
+      30,
+      'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
+    )
   }
 
   private getEmailVerificationPolicy(): AttemptPolicy {
-    return {
-      maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_MAX_ATTEMPTS') ?? 3), 1),
-      windowMs:
-        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
-      message: 'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
-    }
+    return this.buildAttemptPolicy(
+      'EMAIL_VERIFICATION',
+      3,
+      15,
+      30,
+      'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
+    )
   }
 
   private getEmailVerificationCodePolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'EMAIL_VERIFICATION_CODE',
+      5,
+      15,
+      30,
+      'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
+    )
+  }
+
+  private normalizeKeyValue(value: string) {
+    return value.trim().toLowerCase()
+  }
+
+  private buildScopedKey(prefix: string, email: string, ipAddress: string | null) {
+    return `${prefix}:${ipAddress ?? 'unknown'}:${this.normalizeKeyValue(email)}`
+  }
+
+  private buildEmailScopedKey(prefix: string, email: string) {
+    return `${prefix}:email:${this.normalizeKeyValue(email)}`
+  }
+
+  private buildAttemptPolicy(
+    configPrefix: string,
+    defaultMaxAttempts: number,
+    defaultWindowMinutes: number,
+    defaultLockMinutes: number,
+    message: string,
+  ): AttemptPolicy {
     return {
-      maxAttempts: Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_MAX_ATTEMPTS') ?? 5), 1),
-      windowMs:
-        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_WINDOW_MINUTES') ?? 15), 1) * 60 * 1000,
-      lockMs:
-        Math.max(Number(this.configService.get<string>('EMAIL_VERIFICATION_CODE_LOCK_MINUTES') ?? 30), 1) * 60 * 1000,
-      message: 'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
+      maxAttempts: this.getPositiveConfigNumber(`${configPrefix}_MAX_ATTEMPTS`, defaultMaxAttempts),
+      windowMs: this.getPositiveConfigNumber(`${configPrefix}_WINDOW_MINUTES`, defaultWindowMinutes) * 60 * 1000,
+      lockMs: this.getPositiveConfigNumber(`${configPrefix}_LOCK_MINUTES`, defaultLockMinutes) * 60 * 1000,
+      message,
     }
+  }
+
+  private getPositiveConfigNumber(configKey: string, fallback: number) {
+    return Math.max(Number(this.configService.get<string>(configKey) ?? fallback), 1)
   }
 }

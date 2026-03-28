@@ -45,7 +45,7 @@ export default function StaffAppPage() {
 
   return (
     <StaffMobileShell
-      currentUser={{ name: user.fullName, fullName: user.fullName }}
+      currentUser={{ name: user.fullName, fullName: user.fullName, employeeId: user.employeeId }}
       produtos={productsQuery.data?.items ?? []}
     />
   )

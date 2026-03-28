@@ -3,6 +3,7 @@
 This document covers the testing infrastructure, practices, and guidelines for DESK IMPERIAL.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Running Tests](#running-tests)
 - [Jest Configuration](#jest-configuration)
@@ -22,6 +23,7 @@ DESK IMPERIAL uses a comprehensive testing stack:
 - **@nestjs/testing** - NestJS testing utilities
 
 **Test Types:**
+
 - **Unit Tests** - Individual functions and classes (`.spec.ts`)
 - **Integration Tests** - API endpoints and services (`.e2e-spec.ts`)
 - **End-to-End Tests** - Complete user flows
@@ -79,6 +81,80 @@ cd apps/web
 npm test
 ```
 
+### Focused Operations Stability Suite
+
+Use this focused suite while refining login, staff auth, live operations and mobile synchronization:
+
+```bash
+# Backend critical path
+npm --workspace @partner/api test -- --runInBand operations-service.spec.ts auth.service.spec.ts orders.service.spec.ts employees.service.spec.ts
+
+# Frontend type safety for the live shells
+npx tsc --noEmit -p apps/web/tsconfig.json
+
+# Frontend smoke test for owner mobile shell
+npm --workspace @partner/web test -- owner-mobile-shell
+```
+
+Recommended when touching:
+
+- `auth.service.ts`
+- `employees.service.ts`
+- `orders.service.ts`
+- `operations.service.ts`
+- `operations-helpers.service.ts`
+- `staff-mobile-shell.tsx`
+- `owner-mobile-shell.tsx`
+- `use-operations-realtime.ts`
+
+### Test Foundation Refinement
+
+Use these helpers as the default foundation for new API unit tests:
+
+- [`apps/api/test/helpers/auth-context.factory.ts`](/c:/Users/Desktop/Documents/desk-imperial/apps/api/test/helpers/auth-context.factory.ts)
+- [`apps/api/test/helpers/request-context.factory.ts`](/c:/Users/Desktop/Documents/desk-imperial/apps/api/test/helpers/request-context.factory.ts)
+
+They exist to keep the test suite aligned with the current auth/session architecture:
+
+- shared `AuthContext` shape with `workspaceOwnerUserId`, `employeeId` and modern session fields
+- shared `RequestContext` shape with `host`, `origin` and `referer`
+- less duplication between specs
+- fewer silent breaks when auth or request contracts evolve
+
+Focused regression suite for the migrated test foundation:
+
+```bash
+npm --workspace @partner/api test -- --runInBand employees.service.spec.ts finance.service.spec.ts products.service.spec.ts auth.service.spec.ts orders.service.spec.ts operations-types.spec.ts geocoding.service.spec.ts admin-pin.service.spec.ts utils.spec.ts
+npx tsc --noEmit -p apps/api/tsconfig.json
+```
+
+Current migration status:
+
+- `employees.service.spec.ts` migrated to shared auth/request factories
+- `finance.service.spec.ts` migrated and aligned to current aggregation behavior
+- `products.service.spec.ts` migrated and aligned to current Prisma/request contracts
+- `orders.service.spec.ts` migrated to shared auth/request factories and aligned to the current HTTP/request split
+- `operations-types.spec.ts` aligned to the current `toMesaRecord()` contract
+- `geocoding.service.spec.ts` aligned to the current cache/config/signature behavior
+- `admin-pin.service.spec.ts` aligned to the shared auth factory
+- `utils.spec.ts` aligned to shared owner/staff auth factories
+- `auth.service.spec.ts` now uses the shared request factory
+
+Current validation baseline:
+
+- focused foundation suites passing:
+  - `employees.service.spec.ts`
+  - `finance.service.spec.ts`
+  - `products.service.spec.ts`
+  - `orders.service.spec.ts`
+  - `operations-types.spec.ts`
+  - `geocoding.service.spec.ts`
+  - `admin-pin.service.spec.ts`
+  - `utils.spec.ts`
+  - `auth.service.spec.ts`
+- `npx tsc --noEmit -p apps/api/tsconfig.json` passing after the migration cleanup
+- shared factories are now the default path for API unit tests touching auth, session or request context
+
 ## Jest Configuration
 
 ### API Configuration
@@ -115,6 +191,7 @@ export default config
 ```
 
 **Key Settings:**
+
 - **Test Pattern:** `*.spec.ts` files
 - **Transform:** TypeScript via `ts-jest`
 - **Coverage Exclusions:** Modules, DTOs, interfaces, main entry
@@ -216,16 +293,10 @@ describe('AuthService', () => {
         usedAt: null,
       }
 
-      jest.spyOn(prisma.verificationCode, 'findFirst')
-        .mockResolvedValue(mockCode as any)
-      jest.spyOn(prisma.verificationCode, 'update')
-        .mockResolvedValue({ ...mockCode, usedAt: new Date() } as any)
+      jest.spyOn(prisma.verificationCode, 'findFirst').mockResolvedValue(mockCode as any)
+      jest.spyOn(prisma.verificationCode, 'update').mockResolvedValue({ ...mockCode, usedAt: new Date() } as any)
 
-      const result = await service.validateOTP(
-        'user-456',
-        '12345678',
-        'password-reset'
-      )
+      const result = await service.validateOTP('user-456', '12345678', 'password-reset')
 
       expect(result).toBe(true)
       expect(prisma.verificationCode.findFirst).toHaveBeenCalledWith({
@@ -253,16 +324,14 @@ describe('AuthService', () => {
         usedAt: null,
       }
 
-      jest.spyOn(prisma.verificationCode, 'findFirst')
-        .mockResolvedValue(mockCode as any)
-      jest.spyOn(prisma.verificationCode, 'update')
-        .mockResolvedValue({ ...mockCode, usedAt: new Date() } as any)
+      jest.spyOn(prisma.verificationCode, 'findFirst').mockResolvedValue(mockCode as any)
+      jest.spyOn(prisma.verificationCode, 'update').mockResolvedValue({ ...mockCode, usedAt: new Date() } as any)
 
       // Code with trailing space
       const result = await service.validateOTP(
         'user-456',
-        '12345678 ',  // Space at end
-        'password-reset'
+        '12345678 ', // Space at end
+        'password-reset',
       )
 
       expect(result).toBe(true)
@@ -270,36 +339,29 @@ describe('AuthService', () => {
       expect(prisma.verificationCode.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            code: '12345678',  // No space
+            code: '12345678', // No space
           }),
-        })
+        }),
       )
     })
 
     it('should reject invalid OTP format', async () => {
-      await expect(
-        service.validateOTP('user-456', '123', 'password-reset')
-      ).rejects.toThrow(BadRequestException)
+      await expect(service.validateOTP('user-456', '123', 'password-reset')).rejects.toThrow(BadRequestException)
 
-      await expect(
-        service.validateOTP('user-456', '', 'password-reset')
-      ).rejects.toThrow(BadRequestException)
+      await expect(service.validateOTP('user-456', '', 'password-reset')).rejects.toThrow(BadRequestException)
     })
 
     it('should reject expired OTP', async () => {
-      jest.spyOn(prisma.verificationCode, 'findFirst')
-        .mockResolvedValue(null)
+      jest.spyOn(prisma.verificationCode, 'findFirst').mockResolvedValue(null)
 
-      await expect(
-        service.validateOTP('user-456', '12345678', 'password-reset')
-      ).rejects.toThrow(BadRequestException)
+      await expect(service.validateOTP('user-456', '12345678', 'password-reset')).rejects.toThrow(BadRequestException)
     })
   })
 
   describe('generateOTP', () => {
     it('should generate 8-digit numeric code', () => {
       const code = service.generateOTP()
-      
+
       expect(code).toMatch(/^\d{8}$/)
       expect(code.length).toBe(8)
       expect(parseInt(code)).toBeGreaterThanOrEqual(10000000)
@@ -311,7 +373,7 @@ describe('AuthService', () => {
       for (let i = 0; i < 100; i++) {
         codes.add(service.generateOTP())
       }
-      
+
       // Should have at least 95 unique codes out of 100
       expect(codes.size).toBeGreaterThanOrEqual(95)
     })
@@ -340,18 +402,18 @@ describe('AuthController (e2e)', () => {
     }).compile()
 
     app = moduleFixture.createNestApplication()
-    
+
     // Apply same pipes as production
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-      })
+      }),
     )
 
     await app.init()
-    
+
     prisma = app.get<PrismaService>(PrismaService)
   })
 
@@ -375,7 +437,7 @@ describe('AuthController (e2e)', () => {
         .expect(200)
 
       expect(response.body).toHaveProperty('message')
-      
+
       // Verify OTP was created in database
       const code = await prisma.verificationCode.findFirst({
         where: {
@@ -383,7 +445,7 @@ describe('AuthController (e2e)', () => {
           purpose: 'password-reset',
         },
       })
-      
+
       expect(code).toBeDefined()
       expect(code.code).toMatch(/^\d{8}$/)
       expect(code.expiresAt.getTime()).toBeGreaterThan(Date.now())
@@ -419,7 +481,7 @@ describe('AuthController (e2e)', () => {
       const user = await prisma.user.findFirst({
         where: { email: 'test@example.com' },
       })
-      
+
       const code = await prisma.verificationCode.create({
         data: {
           userId: user.id,
@@ -440,12 +502,12 @@ describe('AuthController (e2e)', () => {
         .expect(200)
 
       expect(response.body).toHaveProperty('message')
-      
+
       // Verify OTP was marked as used
       const usedCode = await prisma.verificationCode.findUnique({
         where: { id: code.id },
       })
-      
+
       expect(usedCode.usedAt).toBeDefined()
     })
 
@@ -453,7 +515,7 @@ describe('AuthController (e2e)', () => {
       const user = await prisma.user.findFirst({
         where: { email: 'test@example.com' },
       })
-      
+
       await prisma.verificationCode.create({
         data: {
           userId: user.id,
@@ -468,7 +530,7 @@ describe('AuthController (e2e)', () => {
         .post('/auth/password-reset/verify')
         .send({
           email: 'test@example.com',
-          code: '12345678 ',  // Trailing space
+          code: '12345678 ', // Trailing space
           newPassword: 'NewSecurePassword123!',
         })
         .expect(200)
@@ -487,7 +549,7 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty('user')
       expect(response.headers['set-cookie']).toBeDefined()
-      
+
       const cookies = response.headers['set-cookie']
       expect(cookies.some((c: string) => c.startsWith('session='))).toBe(true)
       expect(cookies.some((c: string) => c.includes('HttpOnly'))).toBe(true)
@@ -512,7 +574,7 @@ describe('Button', () => {
   it('calls onClick when clicked', () => {
     const handleClick = jest.fn()
     render(<Button onClick={handleClick}>Click me</Button>)
-    
+
     fireEvent.click(screen.getByText('Click me'))
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
@@ -624,19 +686,14 @@ export class RequestHelper {
   constructor(private app: INestApplication) {}
 
   async login(email: string, password: string) {
-    const response = await request(this.app.getHttpServer())
-      .post('/auth/login')
-      .send({ email, password })
-      .expect(200)
+    const response = await request(this.app.getHttpServer()).post('/auth/login').send({ email, password }).expect(200)
 
     const cookies = response.headers['set-cookie']
     return cookies.find((c: string) => c.startsWith('session='))
   }
 
   async authenticatedRequest(method: string, path: string, sessionCookie: string) {
-    return request(this.app.getHttpServer())
-      [method.toLowerCase()](path)
-      .set('Cookie', sessionCookie)
+    return request(this.app.getHttpServer())[method.toLowerCase()](path).set('Cookie', sessionCookie)
   }
 }
 ```
@@ -651,14 +708,14 @@ export class RequestHelper {
 
 ### Module-Specific Targets
 
-| Module | Target | Priority |
-|--------|--------|----------|
-| **Auth** | 80% | Critical |
-| **Mailer** | 75% | High |
-| **Users** | 75% | High |
-| **Products** | 70% | Medium |
-| **Orders** | 70% | Medium |
-| **Dashboard** | 60% | Low |
+| Module        | Target | Priority |
+| ------------- | ------ | -------- |
+| **Auth**      | 80%    | Critical |
+| **Mailer**    | 75%    | High     |
+| **Users**     | 75%    | High     |
+| **Products**  | 70%    | Medium   |
+| **Orders**    | 70%    | Medium   |
+| **Dashboard** | 60%    | Low      |
 
 ### Coverage Report
 
@@ -672,6 +729,7 @@ start coverage/lcov-report/index.html  # Windows
 ```
 
 **Example Output:**
+
 ```
 --------------------------|---------|----------|---------|---------|
 File                      | % Stmts | % Branch | % Funcs | % Lines |
@@ -688,6 +746,7 @@ All files                 |   78.45 |    72.31 |   81.22 |   78.92 |
 ### What to Cover
 
 **Must Cover:**
+
 - ✅ Business logic (calculations, validations)
 - ✅ Error handling (try/catch, custom exceptions)
 - ✅ Conditional branches (if/else, switch)
@@ -695,6 +754,7 @@ All files                 |   78.45 |    72.31 |   81.22 |   78.92 |
 - ✅ Data transformations
 
 **Can Skip:**
+
 - ⏭️ Simple getters/setters
 - ⏭️ DTOs and interfaces
 - ⏭️ NestJS module configurations
@@ -849,8 +909,12 @@ beforeEach(async () => {
 })
 
 // ❌ BAD: Tests depend on each other
-it('creates user', () => { /* user-123 created */ })
-it('updates user', () => { /* depends on user-123 existing */ })
+it('creates user', () => {
+  /* user-123 created */
+})
+it('updates user', () => {
+  /* depends on user-123 existing */
+})
 ```
 
 ### 5. Mock External Dependencies
@@ -869,12 +933,12 @@ await mailerService.sendPasswordResetEmail(...)  // Real API call
 
 ```typescript
 describe('validateOTP', () => {
-  it('should validate correct OTP')            // Happy path
-  it('should reject wrong OTP')                // Error case
-  it('should reject expired OTP')              // Edge case
-  it('should reject OTP with whitespace')      // Edge case (fixed bug!)
-  it('should reject empty OTP')                // Edge case
-  it('should reject already-used OTP')         // Edge case
+  it('should validate correct OTP') // Happy path
+  it('should reject wrong OTP') // Error case
+  it('should reject expired OTP') // Edge case
+  it('should reject OTP with whitespace') // Edge case (fixed bug!)
+  it('should reject empty OTP') // Edge case
+  it('should reject already-used OTP') // Edge case
 })
 ```
 
@@ -884,10 +948,10 @@ describe('validateOTP', () => {
 // ✅ GOOD: Use test.each for similar tests
 test.each([
   ['12345678', true],
-  ['12345678 ', true],   // Trailing space
-  [' 12345678', true],   // Leading space
-  ['123', false],        // Too short
-  ['', false],           // Empty
+  ['12345678 ', true], // Trailing space
+  [' 12345678', true], // Leading space
+  ['123', false], // Too short
+  ['', false], // Empty
 ])('validateOTP("%s") should return %s', async (code, expected) => {
   // Test implementation
 })
@@ -915,6 +979,7 @@ afterAll(async () => {
 **Problem:** Tests fail with "Can't reach database server"
 
 **Fix:**
+
 ```bash
 # Ensure DATABASE_URL is set for test environment
 export DATABASE_URL="postgresql://user:pass@localhost:5432/desk_test"
@@ -928,11 +993,12 @@ npx prisma migrate deploy
 **Problem:** Tests time out after 5 seconds
 
 **Fix:**
+
 ```typescript
 // Increase timeout for specific test
 it('should complete slow operation', async () => {
   // Test code
-}, 15000)  // 15 second timeout
+}, 15000) // 15 second timeout
 
 // Or globally in jest.config.ts
 testTimeout: 10000
@@ -943,6 +1009,7 @@ testTimeout: 10000
 **Problem:** Mock function not called
 
 **Fix:**
+
 ```typescript
 // ❌ WRONG: Mock after service is created
 const service = new AuthService(...)
@@ -958,6 +1025,7 @@ const result = await service.validateOTP(...)
 **Problem:** Coverage report is empty
 
 **Fix:**
+
 ```bash
 # Ensure collectCoverageFrom is configured
 # In jest.config.ts:
@@ -972,30 +1040,30 @@ collectCoverageFrom: [
 ### Common Jest Matchers
 
 ```typescript
-expect(value).toBe(expected)                // Strict equality (===)
-expect(value).toEqual(expected)             // Deep equality
-expect(value).toBeDefined()                 // Not undefined
-expect(value).toBeNull()                    // Is null
-expect(value).toBeTruthy()                  // Truthy value
-expect(value).toBeFalsy()                   // Falsy value
-expect(array).toContain(item)               // Array contains item
-expect(string).toMatch(/regex/)             // String matches regex
-expect(fn).toThrow(Error)                   // Function throws
-expect(mock).toHaveBeenCalled()             // Mock was called
-expect(mock).toHaveBeenCalledWith(arg)      // Mock called with arg
-expect(mock).toHaveBeenCalledTimes(n)       // Mock called n times
+expect(value).toBe(expected) // Strict equality (===)
+expect(value).toEqual(expected) // Deep equality
+expect(value).toBeDefined() // Not undefined
+expect(value).toBeNull() // Is null
+expect(value).toBeTruthy() // Truthy value
+expect(value).toBeFalsy() // Falsy value
+expect(array).toContain(item) // Array contains item
+expect(string).toMatch(/regex/) // String matches regex
+expect(fn).toThrow(Error) // Function throws
+expect(mock).toHaveBeenCalled() // Mock was called
+expect(mock).toHaveBeenCalledWith(arg) // Mock called with arg
+expect(mock).toHaveBeenCalledTimes(n) // Mock called n times
 ```
 
 ### Supertest Methods
 
 ```typescript
 request(app.getHttpServer())
-  .post('/auth/login')                      // HTTP method
-  .send({ email: 'test@example.com' })      // Request body
-  .set('Authorization', 'Bearer token')     // Set header
-  .set('Cookie', 'session=abc123')          // Set cookie
-  .expect(200)                              // Expect status code
-  .expect('Content-Type', /json/)           // Expect header
+  .post('/auth/login') // HTTP method
+  .send({ email: 'test@example.com' }) // Request body
+  .set('Authorization', 'Bearer token') // Set header
+  .set('Cookie', 'session=abc123') // Set cookie
+  .expect(200) // Expect status code
+  .expect('Content-Type', /json/) // Expect header
 ```
 
 ---

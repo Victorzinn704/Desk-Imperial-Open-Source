@@ -19,7 +19,7 @@
  */
 
 import { ServiceUnavailableException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { GeocodingService } from '../src/modules/geocoding/geocoding.service'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -71,7 +71,20 @@ beforeEach(() => {
   mockFetch = jest.fn()
   global.fetch = mockFetch
 
-  mockConfigService.get.mockReturnValue('https://nominatim.openstreetmap.org')
+  mockConfigService.get.mockImplementation((key: string) => {
+    switch (key) {
+      case 'GEOCODING_URL':
+        return 'https://nominatim.openstreetmap.org/search'
+      case 'POSTAL_CODE_LOOKUP_URL':
+        return 'https://viacep.com.br/ws/'
+      case 'GEOCODING_CACHE_SECONDS':
+        return '86400'
+      case 'APP_NAME':
+        return 'desk-imperial'
+      default:
+        return undefined
+    }
+  })
 
   geocodingService = new GeocodingService(mockConfigService as unknown as ConfigService)
 })
@@ -114,10 +127,7 @@ describe('GeocodingService', () => {
       await geocodingService.lookupPostalCode('01310-100')
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('01310100'),
-        expect.any(Object),
-      )
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('01310100'), expect.any(Object))
     })
 
     it('deve retornar null para CEP inválido', async () => {
@@ -140,11 +150,7 @@ describe('GeocodingService', () => {
       // Arrange
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      // Act
-      const result = await geocodingService.lookupPostalCode('01310100')
-
-      // Assert
-      expect(result).toBeNull()
+      await expect(geocodingService.lookupPostalCode('01310100')).rejects.toThrow(ServiceUnavailableException)
     })
 
     it('deve lidar com CEP não encontrado', async () => {
@@ -326,7 +332,7 @@ describe('GeocodingService', () => {
       expect(result).not.toBeNull()
       expect(result?.city).toBe('São Paulo')
       expect(result?.state).toBe('SP')
-      expect(result?.precision).toBe('city')
+      expect(result?.precision).toBe('address')
     })
 
     it('deve gerar label do endereço', async () => {
@@ -369,7 +375,7 @@ describe('GeocodingService', () => {
       })
 
       // Act
-      const result = await geocodingService.geocodeCityLocation('São Paulo', 'SP', 'Brasil')
+      const result = await geocodingService.geocodeCityLocation({ city: 'São Paulo', state: 'SP', country: 'Brasil' })
 
       // Assert
       expect(result).not.toBeNull()
@@ -388,7 +394,11 @@ describe('GeocodingService', () => {
       })
 
       // Act
-      const result = await geocodingService.geocodeCityLocation('Cidade Inexistente', 'XX', 'Brasil')
+      const result = await geocodingService.geocodeCityLocation({
+        city: 'Cidade Inexistente',
+        state: 'XX',
+        country: 'Brasil',
+      })
 
       // Assert
       expect(result).toBeNull()
@@ -399,7 +409,7 @@ describe('GeocodingService', () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
       // Act
-      const result = await geocodingService.geocodeCityLocation('São Paulo', 'SP', 'Brasil')
+      const result = await geocodingService.geocodeCityLocation({ city: 'São Paulo', state: 'SP', country: 'Brasil' })
 
       // Assert
       expect(result).toBeNull()
@@ -420,10 +430,10 @@ describe('GeocodingService', () => {
       })
 
       // Act - Primeira busca
-      await geocodingService.geocodeCityLocation('São Paulo', 'SP', 'Brasil')
+      await geocodingService.geocodeCityLocation({ city: 'São Paulo', state: 'SP', country: 'Brasil' })
 
       // Act - Segunda busca (deve usar cache)
-      await geocodingService.geocodeCityLocation('São Paulo', 'SP', 'Brasil')
+      await geocodingService.geocodeCityLocation({ city: 'São Paulo', state: 'SP', country: 'Brasil' })
 
       // Assert
       expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -444,7 +454,7 @@ describe('GeocodingService', () => {
       })
 
       // Act
-      const result = await geocodingService.geocodeCityLocation('São Paulo', 'SP')
+      const result = await geocodingService.geocodeCityLocation({ city: 'São Paulo', state: 'SP' })
 
       // Assert
       expect(result).not.toBeNull()
@@ -628,15 +638,9 @@ describe('GeocodingService', () => {
       })
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
 
       jest.useRealTimers()
     })
   })
 })
-
-// ── Helper Functions ──────────────────────────────────────────────────────────
-
-function normalizePostalCode(postalCode: string): string {
-  return postalCode.replace(/\D/g, '')
-}

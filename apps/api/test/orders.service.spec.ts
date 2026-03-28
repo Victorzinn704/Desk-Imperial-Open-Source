@@ -28,6 +28,8 @@ import type { AuditLogService } from '../src/modules/monitoring/audit-log.servic
 import type { AdminPinService } from '../src/modules/admin-pin/admin-pin.service'
 import type { CacheService } from '../src/common/services/cache.service'
 import type { CreateOrderDto } from '../src/modules/orders/dto/create-order.dto'
+import { makeAuthContext } from './helpers/auth-context.factory'
+import { makeRequestContext } from './helpers/request-context.factory'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -83,19 +85,6 @@ const mockCache = {
 }
 
 // ── Factories ─────────────────────────────────────────────────────────────────
-
-function makeAuthContext(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    userId: 'user-1',
-    sessionId: 'session-1',
-    role: 'OWNER',
-    companyOwnerUserId: null,
-    fullName: 'João Silva',
-    email: 'joao@empresa.com',
-    preferredCurrency: CurrencyCode.BRL,
-    ...overrides,
-  }
-}
 
 function makeProduct(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -178,18 +167,12 @@ function makeCurrencySnapshot() {
   }
 }
 
-function makeRequestContext() {
-  return {
-    ipAddress: '127.0.0.1',
-    userAgent: 'Jest Test',
-  }
-}
-
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 let ordersService: OrdersService
 let mockContext: ReturnType<typeof makeAuthContext>
 let mockRequest: ReturnType<typeof makeRequestContext>
+let mockHttpRequest: any
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -203,8 +186,14 @@ beforeEach(() => {
     mockCache as unknown as CacheService,
   )
 
-  mockContext = makeAuthContext()
+  mockContext = makeAuthContext({
+    userId: 'user-1',
+    workspaceOwnerUserId: 'user-1',
+    email: 'joao@empresa.com',
+    fullName: 'João Silva',
+  })
   mockRequest = makeRequestContext()
+  mockHttpRequest = { headers: {}, cookies: {} }
 
   // Defaults
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
@@ -314,7 +303,7 @@ describe('OrdersService', () => {
         label: 'Centro, São Paulo, SP, Brasil',
       })
 
-      const result = await ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)
+      const result = await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
 
       expect(mockPrisma.order.create).toHaveBeenCalled()
       expect(result.order).toBeDefined()
@@ -323,10 +312,10 @@ describe('OrdersService', () => {
     it('deve rejeitar pedido sem itens', async () => {
       const dto = makeCreateOrderDto({ items: [] })
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         BadRequestException,
       )
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         'Adicione pelo menos um produto ao pedido.',
       )
     })
@@ -335,7 +324,7 @@ describe('OrdersService', () => {
       const dto = makeCreateOrderDto()
       mockPrisma.product.findMany.mockResolvedValue([])
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         NotFoundException,
       )
     })
@@ -349,7 +338,7 @@ describe('OrdersService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         BadRequestException,
       )
     })
@@ -363,10 +352,10 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         BadRequestException,
       )
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         'CPF valido',
       )
     })
@@ -380,10 +369,10 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         BadRequestException,
       )
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         'CNPJ valido',
       )
     })
@@ -403,11 +392,11 @@ describe('OrdersService', () => {
         label: 'São Paulo, Brasil',
       })
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).resolves.toBeDefined()
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).resolves.toBeDefined()
     })
 
     it('deve exigir Admin PIN para desconto > 15% com STAFF', async () => {
-      const staffContext = makeAuthContext({ role: 'STAFF' })
+      const staffContext = makeAuthContext({ role: 'STAFF', employeeId: 'emp-1', workspaceOwnerUserId: 'user-1' })
       const dto = makeCreateOrderDto({
         items: [{ productId: 'product-1', quantity: 1, unitPrice: 10.0 }],
       })
@@ -419,13 +408,13 @@ describe('OrdersService', () => {
       mockAdminPinService.extractVerificationProof.mockReturnValue('invalid-proof')
       mockAdminPinService.validateVerificationProof.mockResolvedValue(false)
 
-      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         ForbiddenException,
       )
     })
 
     it('deve permitir desconto até 15% para STAFF sem PIN', async () => {
-      const staffContext = makeAuthContext({ role: 'STAFF' })
+      const staffContext = makeAuthContext({ role: 'STAFF', employeeId: 'emp-1', workspaceOwnerUserId: 'user-1' })
       const dto = makeCreateOrderDto({
         items: [{ productId: 'product-1', quantity: 1, unitPrice: 17.0 }], // 15% desconto
       })
@@ -441,11 +430,11 @@ describe('OrdersService', () => {
       })
       mockAdminPinService.hasPinConfigured.mockResolvedValue(false)
 
-      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).resolves.toBeDefined()
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockHttpRequest)).resolves.toBeDefined()
     })
 
     it('deve exigir funcionário ativo para STAFF', async () => {
-      const staffContext = makeAuthContext({ role: 'STAFF' })
+      const staffContext = makeAuthContext({ role: 'STAFF', employeeId: 'emp-1', workspaceOwnerUserId: 'user-1' })
       const dto = makeCreateOrderDto({
         items: [{ productId: 'product-1', quantity: 1 }],
       })
@@ -454,7 +443,7 @@ describe('OrdersService', () => {
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.employee.findFirst.mockResolvedValue(null)
 
-      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(staffContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         ForbiddenException,
       )
     })
@@ -471,7 +460,7 @@ describe('OrdersService', () => {
         label: 'São Paulo, Brasil',
       })
 
-      await ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)
+      await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
 
       expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(2)
     })
@@ -489,7 +478,7 @@ describe('OrdersService', () => {
         label: 'São Paulo, Brasil',
       })
 
-      await ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)
+      await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
 
       expect(mockAuditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -512,7 +501,7 @@ describe('OrdersService', () => {
         label: 'São Paulo, Brasil',
       })
 
-      await ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)
+      await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-1')
@@ -527,7 +516,7 @@ describe('OrdersService', () => {
       const products = [makeProduct()]
       mockPrisma.product.findMany.mockResolvedValue(products)
 
-      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockRequest)).rejects.toThrow(
+      await expect(ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)).rejects.toThrow(
         BadRequestException,
       )
     })

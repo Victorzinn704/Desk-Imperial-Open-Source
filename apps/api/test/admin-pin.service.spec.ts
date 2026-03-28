@@ -31,6 +31,7 @@ import type { ConfigService } from '@nestjs/config'
 import type { CacheService } from '../src/common/services/cache.service'
 import * as argon2 from 'argon2'
 import { createHash } from 'node:crypto'
+import { makeAuthContext } from './helpers/auth-context.factory'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -60,25 +61,6 @@ jest.mock('argon2', () => ({
   argon2id: 2,
 }))
 
-// ── Factories ─────────────────────────────────────────────────────────────────
-
-function makeAuthContext(
-  overrides: Partial<{
-    userId: string
-    sessionId: string
-    role: 'OWNER' | 'STAFF'
-    companyOwnerUserId: string | null
-  }> = {},
-) {
-  return {
-    userId: 'user-1',
-    sessionId: 'session-1',
-    role: 'OWNER' as const,
-    companyOwnerUserId: null,
-    ...overrides,
-  }
-}
-
 function makeUser(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 'user-1',
@@ -102,7 +84,10 @@ beforeEach(() => {
     mockCache as unknown as CacheService,
   )
 
-  mockAuthContext = makeAuthContext()
+  mockAuthContext = makeAuthContext({
+    userId: 'user-1',
+    workspaceOwnerUserId: 'user-1',
+  })
 
   // Defaults
   mockCache.isReady.mockReturnValue(true)

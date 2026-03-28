@@ -4,7 +4,10 @@ export type AuthContext = {
   userId: string
   sessionId: string
   role: 'OWNER' | 'STAFF'
+  workspaceOwnerUserId?: string
   companyOwnerUserId: string | null
+  employeeId?: string | null
+  employeeCode?: string | null
   email: string
   fullName: string
   companyName: string | null
@@ -39,6 +42,16 @@ export type AuthContext = {
     marketing: boolean
   }
 }
+
+export type WorkspaceScopedAuthContext = Pick<
+  AuthContext,
+  'userId' | 'role' | 'workspaceOwnerUserId' | 'companyOwnerUserId'
+>
+
+export type ActiveWorkspaceScopedAuthContext = Pick<
+  AuthContext,
+  'userId' | 'role' | 'status' | 'workspaceOwnerUserId' | 'companyOwnerUserId'
+>
 
 export type SessionRequest = Request & {
   auth?: AuthContext

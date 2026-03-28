@@ -1,11 +1,13 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import type { Mesa, MesaStatus } from '@/components/pdv/pdv-types'
 import { Plus } from 'lucide-react'
 
 interface MobileTableGridProps {
   mesas: Mesa[]
   onSelectMesa: (mesa: Mesa) => void
+  isLoading?: boolean
 }
 
 const STATUS_COLOR: Record<MesaStatus, string> = {
@@ -20,7 +22,35 @@ const STATUS_LABEL: Record<MesaStatus, string> = {
   reservada: 'Reservada',
 }
 
-export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
+export const MobileTableGrid = memo(function MobileTableGrid({
+  mesas,
+  onSelectMesa,
+  isLoading = false,
+}: MobileTableGridProps) {
+  const { livres, ocupadas } = useMemo(
+    () => ({
+      livres: mesas.filter((m) => m.status === 'livre'),
+      ocupadas: mesas.filter((m) => m.status !== 'livre'),
+    }),
+    [mesas],
+  )
+
+  if (isLoading && mesas.length === 0) {
+    return (
+      <div className="p-4 pb-6">
+        <div className="mb-3 ml-1 h-3 w-32 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
+        <div className="grid grid-cols-3 gap-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div
+              key={index}
+              className="min-h-[96px] rounded-[18px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (mesas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -29,9 +59,6 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
       </div>
     )
   }
-
-  const livres = mesas.filter((m) => m.status === 'livre')
-  const ocupadas = mesas.filter((m) => m.status !== 'livre')
 
   return (
     <div className="p-4 pb-6">
@@ -157,4 +184,4 @@ export function MobileTableGrid({ mesas, onSelectMesa }: MobileTableGridProps) {
       )}
     </div>
   )
-}
+})

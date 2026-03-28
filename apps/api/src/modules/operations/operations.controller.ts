@@ -6,21 +6,22 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { AssignComandaDto } from './dto/assign-comanda.dto'
-import { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import { CloseComandaDto } from './dto/close-comanda.dto'
-import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import { CreateMesaDto } from './dto/create-mesa.dto'
-import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import { OpenComandaDto } from './dto/open-comanda.dto'
-import { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import { UpdateMesaDto } from './dto/update-mesa.dto'
-import { OperationsService } from './operations.service'
+import type { AssignComandaDto } from './dto/assign-comanda.dto'
+import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
+import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
+import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
+import type { CloseComandaDto } from './dto/close-comanda.dto'
+import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
+import type { CreateMesaDto } from './dto/create-mesa.dto'
+import type { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
+import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
+import type { OpenComandaDto } from './dto/open-comanda.dto'
+import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
+import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
+import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
+import type { UpdateMesaDto } from './dto/update-mesa.dto'
+import type { OperationsService } from './operations.service'
 
 @ApiTags('operations')
 @Controller('operations')
@@ -35,8 +36,13 @@ export class OperationsController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('cash-sessions')
-  openCashSession(@CurrentAuth() auth: AuthContext, @Body() body: OpenCashSessionDto, @Req() request: Request) {
-    return this.operationsService.openCashSession(auth, body, extractRequestContext(request))
+  openCashSession(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: OpenCashSessionDto,
+    @Query() options: OperationsResponseOptionsDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.openCashSession(auth, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -45,9 +51,10 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('cashSessionId') cashSessionId: string,
     @Body() body: CreateCashMovementDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.createCashMovement(auth, cashSessionId, body, extractRequestContext(request))
+    return this.operationsService.createCashMovement(auth, cashSessionId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -56,15 +63,21 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('cashSessionId') cashSessionId: string,
     @Body() body: CloseCashSessionDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.closeCashSession(auth, cashSessionId, body, extractRequestContext(request))
+    return this.operationsService.closeCashSession(auth, cashSessionId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('comandas')
-  openComanda(@CurrentAuth() auth: AuthContext, @Body() body: OpenComandaDto, @Req() request: Request) {
-    return this.operationsService.openComanda(auth, body, extractRequestContext(request))
+  openComanda(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: OpenComandaDto,
+    @Query() options: OperationsResponseOptionsDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.openComanda(auth, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -73,9 +86,10 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
     @Body() body: AddComandaItemDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.addComandaItem(auth, comandaId, body, extractRequestContext(request))
+    return this.operationsService.addComandaItem(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -84,9 +98,10 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
     @Body() body: ReplaceComandaDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.replaceComanda(auth, comandaId, body, extractRequestContext(request))
+    return this.operationsService.replaceComanda(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -95,9 +110,10 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
     @Body() body: AssignComandaDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.assignComanda(auth, comandaId, body, extractRequestContext(request))
+    return this.operationsService.assignComanda(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -106,9 +122,10 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
     @Body() body: UpdateComandaStatusDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.updateComandaStatus(auth, comandaId, body, extractRequestContext(request))
+    return this.operationsService.updateComandaStatus(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
@@ -117,15 +134,21 @@ export class OperationsController {
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
     @Body() body: CloseComandaDto,
+    @Query() options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
-    return this.operationsService.closeComanda(auth, comandaId, body, extractRequestContext(request))
+    return this.operationsService.closeComanda(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('closures/close')
-  closeCashClosure(@CurrentAuth() auth: AuthContext, @Body() body: CloseCashClosureDto, @Req() request: Request) {
-    return this.operationsService.closeCashClosure(auth, body, extractRequestContext(request))
+  closeCashClosure(
+    @CurrentAuth() auth: AuthContext,
+    @Body() body: CloseCashClosureDto,
+    @Query() options: OperationsResponseOptionsDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.closeCashClosure(auth, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
