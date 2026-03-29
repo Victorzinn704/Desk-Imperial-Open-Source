@@ -37,6 +37,22 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
       },
     ],
+    // Otimização mobile: formatos modernos e qualidade balanceada
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+  },
+  // Otimização de bundle para mobile
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      'framer-motion',
+      'date-fns',
+      '@hello-pangea/dnd',
+      'react-big-calendar',
+      'zod',
+    ],
   },
   async headers() {
     return [

@@ -1,6 +1,66 @@
-/* build: 20260323-1 */
+/* build: 20260328-mobile-perf */
 @import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Respeitar preferência de movimento reduzido (acessibilidade + economia de bateria) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch devices: garantir área mínima de toque de 44x44px */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a[href],
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  .touchable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Inputs precisam de altura confortável */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  textarea {
+    min-height: 48px;
+    font-size: 16px; /* Previne zoom automático no iOS */
+  }
+}
+
+/* GPU acceleration hints para elementos animados */
+.will-animate {
+  will-change: transform, opacity;
+}
+
+/* Otimização de scroll em listas longas */
+.scroll-optimized {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* Content visibility para lazy rendering de seções */
+.content-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
 
 :root {
   color-scheme: dark;
@@ -1367,4 +1427,145 @@ select {
 @media (hover: none) {
   .fcard-obj { transform: rotateX(-10deg) rotateY(8deg); animation: none; }
   .fcard-face { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE-SPECIFIC PERFORMANCE OPTIMIZATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Mobile: simplificar/pausar animações pesadas para economia de bateria */
+@media (max-width: 768px) {
+  /* Desativar animações rotativas nos cards (GPU intensive) */
+  .imperial-card::after,
+  .imperial-card-soft::after,
+  .imperial-card-stat::after {
+    animation: none;
+    opacity: 0.03;
+  }
+  
+  /* Simplificar hover effects que usam 3D transforms */
+  .rainbow-hover:hover {
+    transform: scale(1.01);
+  }
+  
+  .imperial-card-tilt:hover,
+  .imperial-card-tilt-alt:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Reduzir complexidade do grid de fundo */
+  body::before {
+    background-size: 48px 48px;
+    opacity: 0.5;
+  }
+  
+  /* Skeleton shimmer mais leve */
+  .skeleton-shimmer {
+    animation-duration: 2.5s;
+  }
+  
+  /* Desativar floating cards 3D completamente */
+  .fcard-spin,
+  .fcard-spin::after {
+    animation: none;
+  }
+  
+  .fcard-face {
+    animation: none;
+    transform: translateZ(0);
+  }
+}
+
+/* Pausar animações em elementos fora do viewport (Intersection Observer fallback) */
+.animation-paused {
+  animation-play-state: paused !important;
+}
+
+/* Otimização para listas virtualizadas */
+.virtual-list-container {
+  contain: strict;
+  will-change: scroll-position;
+}
+
+.virtual-list-item {
+  contain: layout style paint;
+}
+
+/* Safe area insets para dispositivos com notch */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Pull to refresh indicator otimizado */
+.pull-indicator {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Haptic feedback visual para botões em touch */
+@media (pointer: coarse) {
+  .btn-haptic:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease-out;
+  }
+}
+
+/* Scrollbar customizada para mobile (mais fina) */
+@media (max-width: 768px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(155, 132, 96, 0.3);
+    border-radius: 3px;
+  }
+}
+
+/* Loading skeleton otimizado para mobile */
+.skeleton-mobile {
+  background: linear-gradient(
+    90deg,
+    var(--surface-soft) 0%,
+    var(--surface-muted) 50%,
+    var(--surface-soft) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+}
+
+/* Transições suaves para navegação entre telas */
+.screen-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.screen-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.screen-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.screen-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.15s ease-in, transform 0.15s ease-in;
 }

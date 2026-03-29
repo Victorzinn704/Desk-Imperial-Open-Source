@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useMemo, useCallback, memo } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import {
@@ -28,29 +29,95 @@ interface MobileOrderBuilderProps {
 
 type CartEntry = ComandaItem & { _key: string }
 
+const ITEM_HEIGHT = 64 // altura estimada de cada item em pixels
+
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+
+// Componente memoizado para cada item de produto
+const ProductItem = memo(function ProductItem({
+  produto,
+  qty,
+  onAdd,
+  onRemove,
+}: {
+  produto: ProductRecord
+  qty: number
+  onAdd: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-white">{produto.name}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-soft,#7a8896)]">
+          {produto.category} · {formatCurrency(produto.unitPrice)}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {qty > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex size-11 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.06)] text-[var(--text-soft,#7a8896)] transition-colors active:bg-[rgba(255,255,255,0.12)] btn-haptic"
+            >
+              <Minus className="size-4" />
+            </button>
+            <span className="min-w-[24px] text-center text-sm font-semibold text-white">{qty}</span>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex size-11 items-center justify-center rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.25)] btn-haptic"
+        >
+          <Plus className="size-4" />
+        </button>
+      </div>
+    </div>
+  )
+})
 
 export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartEntry[]>([])
+  const parentRef = useRef<HTMLDivElement>(null)
 
-  const activeProdutos = produtos.filter((p) => p.active)
-  const categories = Array.from(new Set(activeProdutos.map((p) => p.category)))
-    .filter(Boolean)
-    .sort()
+  // Memoização para evitar recálculos desnecessários
+  const activeProdutos = useMemo(() => produtos.filter((p) => p.active), [produtos])
 
-  const filtered = activeProdutos.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
-    const matchCat = selectedCategory ? p.category === selectedCategory : true
-    return matchSearch && matchCat
+  const categories = useMemo(
+    () =>
+      Array.from(new Set(activeProdutos.map((p) => p.category)))
+        .filter(Boolean)
+        .sort(),
+    [activeProdutos],
+  )
+
+  const filtered = useMemo(() => {
+    const searchLower = search.toLowerCase()
+    return activeProdutos.filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(searchLower) || p.category.toLowerCase().includes(searchLower)
+      const matchCat = selectedCategory ? p.category === selectedCategory : true
+      return matchSearch && matchCat
+    })
+  }, [activeProdutos, search, selectedCategory])
+
+  // Virtualização para lista de produtos (performance em listas longas)
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer é seguro neste contexto
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5, // Renderiza 5 itens extras acima/abaixo da viewport
   })
 
   // Heuristic icon mapper
-  function getCategoryIcon(cat: string) {
+  const getCategoryIcon = useCallback((cat: string) => {
     const low = cat.toLowerCase()
     if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
       return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -63,13 +130,18 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
     if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
       return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
     return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  }
+  }, [])
 
-  function getQty(produtoId: string): number {
-    return cart.find((c) => c.produtoId === produtoId)?.quantidade ?? 0
-  }
+  // Mapa de quantidades para lookup O(1)
+  const qtyMap = useMemo(() => {
+    const map = new Map<string, number>()
+    cart.forEach((c) => map.set(c.produtoId, c.quantidade))
+    return map
+  }, [cart])
 
-  function addItem(produto: ProductRecord) {
+  const getQty = useCallback((produtoId: string): number => qtyMap.get(produtoId) ?? 0, [qtyMap])
+
+  const addItem = useCallback((produto: ProductRecord) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.produtoId === produto.id)
       if (existing) {
@@ -86,25 +158,25 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
         },
       ]
     })
-  }
+  }, [])
 
-  function removeItem(produtoId: string) {
+  const removeItem = useCallback((produtoId: string) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.produtoId === produtoId)
       if (!existing) return prev
       if (existing.quantidade === 1) return prev.filter((c) => c.produtoId !== produtoId)
       return prev.map((c) => (c.produtoId === produtoId ? { ...c, quantidade: c.quantidade - 1 } : c))
     })
-  }
+  }, [])
 
-  const totalItems = cart.reduce((sum, c) => sum + c.quantidade, 0)
-  const totalValue = cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0)
+  const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
+  const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
     if (cart.length === 0 || busy) return
     const items: ComandaItem[] = cart.map(({ _key: _k, ...rest }) => rest)
     await onSubmit(items)
-  }
+  }, [cart, busy, onSubmit])
 
   const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
   const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
@@ -126,7 +198,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
+            className="rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-white min-h-[44px]"
           >
             Cancelar
           </button>
@@ -140,19 +212,19 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             placeholder="Buscar produto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-2.5 pl-9 pr-4 text-sm text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
+            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
           />
         </div>
 
         {/* Categories Kanban Squares */}
         {categories.length > 0 && (
-          <div className="mt-4 flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2 custom-scrollbar scroll-optimized">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] transition-all hover:-translate-y-0.5 ${
+              className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] min-h-[72px] transition-all active:scale-95 ${
                 selectedCategory === null
                   ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] hover:border-[rgba(255,255,255,0.2)]'
+                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
               }`}
             >
               <Search
@@ -171,10 +243,10 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] transition-all hover:-translate-y-0.5 ${
+                  className={`group flex shrink-0 flex-col items-center justify-center rounded-2xl border px-4 py-3 min-w-[80px] min-h-[72px] transition-all active:scale-95 ${
                     isActive
                       ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] hover:border-[rgba(255,255,255,0.2)]'
+                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
                   }`}
                 >
                   {getCategoryIcon(cat)}
@@ -188,56 +260,56 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
         )}
       </div>
 
-      {/* Product list — scrollable */}
-      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom,0px))' }}>
+      {/* Product list — virtualized for performance */}
+      <div
+        ref={parentRef}
+        className="flex-1 overflow-y-auto scroll-optimized virtual-list-container"
+        style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom,0px))' }}
+      >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
           </div>
         ) : (
-          <ul className="divide-y divide-[rgba(255,255,255,0.04)]">
-            {filtered.map((produto) => {
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+              const produto = filtered[virtualItem.index]
               const qty = getQty(produto.id)
               return (
-                <li key={produto.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">{produto.name}</p>
-                    <p className="mt-0.5 text-xs text-[var(--text-soft,#7a8896)]">
-                      {produto.category} · {formatCurrency(produto.unitPrice)}
-                    </p>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-2">
-                    {qty > 0 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(produto.id)}
-                          className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.06)] text-[var(--text-soft,#7a8896)] transition-colors active:bg-[rgba(255,255,255,0.12)]"
-                        >
-                          <Minus className="size-4" />
-                        </button>
-                        <span className="min-w-[20px] text-center text-sm font-semibold text-white">{qty}</span>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => addItem(produto)}
-                      className="flex size-9 items-center justify-center rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.25)]"
-                    >
-                      <Plus className="size-4" />
-                    </button>
-                  </div>
-                </li>
+                <div
+                  key={produto.id}
+                  className="virtual-list-item border-b border-[rgba(255,255,255,0.04)]"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualItem.size}px`,
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  <ProductItem
+                    produto={produto}
+                    qty={qty}
+                    onAdd={() => addItem(produto)}
+                    onRemove={() => removeItem(produto.id)}
+                  />
+                </div>
               )
             })}
-          </ul>
+          </div>
         )}
       </div>
 
       {/* Sticky bottom cart bar — safe-area aware */}
       <div
-        className="fixed left-0 right-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3 shadow-lg"
+        className="fixed left-0 right-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3 shadow-lg safe-area-bottom"
         style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="flex items-center gap-3">
@@ -259,7 +331,7 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
             type="button"
             onClick={() => void handleSubmit()}
             disabled={cart.length === 0 || busy}
-            className="rounded-xl bg-[var(--accent,#9b8460)] px-4 py-2.5 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80"
+            className="rounded-xl bg-[var(--accent,#9b8460)] px-5 py-3 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80 min-h-[48px] btn-haptic"
           >
             {busy ? 'Enviando...' : submitLabel}
           </button>
