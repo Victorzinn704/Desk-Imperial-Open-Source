@@ -12,7 +12,7 @@ import {
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import {

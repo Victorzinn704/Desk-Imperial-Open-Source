@@ -21,7 +21,7 @@ import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
-import type { OperationsService } from './operations.service'
+import { OperationsService } from './operations.service'
 
 @ApiTags('operations')
 @Controller('operations')

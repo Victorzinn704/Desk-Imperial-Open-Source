@@ -4,10 +4,10 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
 import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
-import type { AuthService } from '../auth/auth.service'
+import { AuthService } from '../auth/auth.service'
 import { getAllowedOriginsFromValues } from '../../common/utils/origin.util'
 import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
-import type { OperationsRealtimeService } from './operations-realtime.service'
+import { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
 import type {
   OperationsRealtimeConnectionContext,

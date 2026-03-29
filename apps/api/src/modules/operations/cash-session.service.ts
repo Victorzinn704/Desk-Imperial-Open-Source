@@ -8,14 +8,14 @@ import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access
 import { assertOwnerRole } from '../../common/utils/workspace-access.util'
 import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import type { AuditLogService } from '../monitoring/audit-log.service'
-import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
+import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { OperationsHelpersService } from './operations-helpers.service'
+import { OperationsHelpersService } from './operations-helpers.service'
 import { toCashMovementRecord, toCashSessionRecord, toClosureRecord } from './operations.types'
 import {
   buildOptionalOperationsSnapshot,
