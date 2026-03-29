@@ -78,6 +78,22 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async delByPrefix(prefix: string): Promise<void> {
+    if (!this.enabled || !this.client) return
+    try {
+      let cursor = '0'
+      do {
+        const [nextCursor, keys] = await this.client.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', '100')
+        cursor = nextCursor
+        if (keys.length > 0) {
+          await this.client.del(...keys)
+        }
+      } while (cursor !== '0')
+    } catch {
+      // Falha silenciosa
+    }
+  }
+
   isReady(): boolean {
     return this.enabled && !!this.client
   }
@@ -107,8 +123,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     return `gemini:insight:${userId}:${currency}:${focus.toLowerCase()}`
   }
 
-  static productsKey(userId: string) {
-    return `products:list:${userId}`
+  static productsKey(userId: string, scope: 'active' | 'all' = 'active') {
+    return `products:list:${userId}:${scope}`
   }
   static employeesKey(userId: string) {
     return `employees:list:${userId}`
@@ -117,7 +133,17 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     return `orders:summary:${userId}`
   }
 
-  static operationsLiveKey(workspaceOwnerUserId: string, businessDate: string, includeCashMovements: boolean) {
-    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}`
+  static operationsLivePrefix(workspaceOwnerUserId: string, businessDate: string) {
+    return `operations:live:${workspaceOwnerUserId}:${businessDate}:`
+  }
+
+  static operationsLiveKey(
+    workspaceOwnerUserId: string,
+    businessDate: string,
+    includeCashMovements: boolean,
+    scopedEmployeeId?: string | null,
+  ) {
+    const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
+    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${scopeSegment}`
   }
 }

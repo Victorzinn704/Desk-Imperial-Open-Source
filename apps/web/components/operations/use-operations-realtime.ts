@@ -48,8 +48,11 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
       debounceTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
-        queryClient.invalidateQueries({ queryKey: ['mesas'] })
       }, 200)
+    }
+
+    const queueMesasRefresh = () => {
+      queryClient.invalidateQueries({ queryKey: ['mesas'] })
     }
 
     const queueCommercialRefresh = () => {
@@ -71,6 +74,11 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
       queueCommercialRefresh()
     }
 
+    const handleMesaUpserted = (envelope?: OperationsRealtimeEnvelope) => {
+      handleEvent(envelope)
+      queueMesasRefresh()
+    }
+
     socket.on('connect', () => setStatus('connected'))
     socket.on('disconnect', () => setStatus('disconnected'))
     socket.on('connect_error', () => {
@@ -79,18 +87,19 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
       handleEvent()
     })
 
-    for (const eventName of OPERATIONS_EVENTS) {
+    for (const eventName of OPERATIONS_EVENTS.filter((eventName) => eventName !== 'mesa.upserted')) {
       socket.on(eventName, handleEvent)
     }
-
+    socket.on('mesa.upserted', handleMesaUpserted)
     socket.on('comanda.closed', handleComandaClosed)
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-      for (const eventName of OPERATIONS_EVENTS) {
+      for (const eventName of OPERATIONS_EVENTS.filter((eventName) => eventName !== 'mesa.upserted')) {
         socket.off(eventName, handleEvent)
       }
 
+      socket.off('mesa.upserted', handleMesaUpserted)
       socket.off('comanda.closed', handleComandaClosed)
       socket.off('connect')
       socket.off('disconnect')

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   fetchConsentOverview,
   fetchCurrentUser,
@@ -17,6 +17,8 @@ export function useDashboardQueries() {
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
     retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const userId = sessionQuery.data?.user.userId
@@ -26,18 +28,26 @@ export function useDashboardQueries() {
     queryFn: fetchConsentOverview,
     enabled: Boolean(userId),
     retry: false,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const productsQuery = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
     enabled: Boolean(userId),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const ordersQuery = useQuery({
     queryKey: ['orders'],
     queryFn: fetchOrders,
     enabled: Boolean(userId),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const isOwner = sessionQuery.data?.user.role === 'OWNER'
@@ -46,12 +56,18 @@ export function useDashboardQueries() {
     queryKey: ['employees'],
     queryFn: fetchEmployees,
     enabled: Boolean(userId) && isOwner,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const financeQuery = useQuery({
     queryKey: ['finance', 'summary'],
     queryFn: fetchFinanceSummary,
     enabled: Boolean(userId) && isOwner,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   })
 
   return {

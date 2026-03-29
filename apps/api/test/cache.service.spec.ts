@@ -8,6 +8,7 @@
  *   ✅ get() — obtenção de dados do cache
  *   ✅ set() — armazenamento com TTL
  *   ✅ del() — remoção de chaves
+ *   ✅ delByPrefix() — remoção por prefixo
  *   ✅ isReady() — verificação de disponibilidade
  *   ✅ Graceful degradation (Redis indisponível)
  *   ✅ Chaves específicas (finance, products, orders, employees)
@@ -23,6 +24,7 @@ jest.mock('ioredis', () => {
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
+    scan: jest.fn(),
     disconnect: jest.fn(),
     on: jest.fn(),
     connect: jest.fn().mockResolvedValue(undefined),
@@ -190,6 +192,33 @@ describe('CacheService', () => {
     })
   })
 
+  describe('delByPrefix', () => {
+    it('deve deletar chaves encontradas por prefixo', async () => {
+      const mockRedis = new Redis()
+      ;(mockRedis.scan as jest.Mock)
+        .mockResolvedValueOnce(['1', ['operations:live:key-1', 'operations:live:key-2']])
+        .mockResolvedValueOnce(['0', []])
+      ;(mockRedis.del as jest.Mock).mockResolvedValue(2)
+
+      const service = new CacheService(mockConfigService as any)
+      ;(service as any).client = mockRedis
+      ;(service as any).enabled = true
+
+      await service.delByPrefix('operations:live:')
+
+      expect(mockRedis.scan).toHaveBeenNthCalledWith(1, '0', 'MATCH', 'operations:live:*', 'COUNT', '100')
+      expect(mockRedis.scan).toHaveBeenNthCalledWith(2, '1', 'MATCH', 'operations:live:*', 'COUNT', '100')
+      expect(mockRedis.del).toHaveBeenCalledWith('operations:live:key-1', 'operations:live:key-2')
+    })
+
+    it('deve retornar void silenciosamente quando cache está desabilitado', async () => {
+      mockConfigService.get.mockReturnValue(undefined)
+      const service = new CacheService(mockConfigService as any)
+
+      await expect(service.delByPrefix('operations:live:')).resolves.toBeUndefined()
+    })
+  })
+
   describe('isReady', () => {
     it('deve retornar true quando Redis está conectado', () => {
       const service = new CacheService(mockConfigService as any)
@@ -231,7 +260,13 @@ describe('CacheService', () => {
     it('deve gerar chave estática de products correta', () => {
       const key = CacheService.productsKey('user-123')
 
-      expect(key).toBe('products:list:user-123')
+      expect(key).toBe('products:list:user-123:active')
+    })
+
+    it('deve gerar chave estática de products all correta', () => {
+      const key = CacheService.productsKey('user-123', 'all')
+
+      expect(key).toBe('products:list:user-123:all')
     })
 
     it('deve gerar chave estática de employees correta', () => {

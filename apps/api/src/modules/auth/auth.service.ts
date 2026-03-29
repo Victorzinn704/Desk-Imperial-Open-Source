@@ -9,23 +9,23 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
-import { ConsentService } from '../consent/consent.service'
-import { GeocodingService } from '../geocoding/geocoding.service'
-import { MailerService } from '../mailer/mailer.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { PrismaService } from '../../database/prisma.service'
+import type { ConsentService } from '../consent/consent.service'
+import type { GeocodingService } from '../geocoding/geocoding.service'
+import type { MailerService } from '../mailer/mailer.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import {
   getAdminPinVerificationCookieName,
   getAdminPinVerificationCookieOptions,
 } from '../admin-pin/admin-pin.constants'
-import { AuthRateLimitService } from './auth-rate-limit.service'
+import type { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   DEV_CSRF_COOKIE_NAME,
   DEV_SESSION_COOKIE_NAME,
@@ -40,7 +40,62 @@ import type { RegisterDto } from './dto/register.dto'
 import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
-import { DemoAccessService } from './demo-access.service'
+import type { DemoAccessService } from './demo-access.service'
+
+const authCookiePreferenceSelect = {
+  analytics: true,
+  marketing: true,
+} as const
+
+const authWorkspaceUserSelect = {
+  id: true,
+  companyOwnerId: true,
+  fullName: true,
+  companyName: true,
+  companyStreetLine1: true,
+  companyStreetNumber: true,
+  companyAddressComplement: true,
+  companyDistrict: true,
+  companyCity: true,
+  companyState: true,
+  companyPostalCode: true,
+  companyCountry: true,
+  companyLatitude: true,
+  companyLongitude: true,
+  hasEmployees: true,
+  employeeCount: true,
+  email: true,
+  emailVerifiedAt: true,
+  preferredCurrency: true,
+  status: true,
+} as const
+
+const authSessionUserSelect = {
+  ...authWorkspaceUserSelect,
+  cookiePreference: {
+    select: authCookiePreferenceSelect,
+  },
+  employeeAccount: {
+    select: {
+      id: true,
+      employeeCode: true,
+    },
+  },
+} as const
+
+const authSessionWorkspaceOwnerSelect = {
+  ...authWorkspaceUserSelect,
+  cookiePreference: {
+    select: authCookiePreferenceSelect,
+  },
+} as const
+
+const authSessionEmployeeSelect = {
+  id: true,
+  active: true,
+  employeeCode: true,
+  displayName: true,
+} as const
 
 @Injectable()
 export class AuthService {
@@ -965,31 +1020,19 @@ export class AuthService {
     const tokenHash = hashToken(rawToken)
     const session = await this.prisma.session.findUnique({
       where: { tokenHash },
-      include: {
+      select: {
+        id: true,
+        expiresAt: true,
+        revokedAt: true,
+        lastSeenAt: true,
         user: {
-          include: {
-            cookiePreference: true,
-            employeeAccount: {
-              select: {
-                id: true,
-                employeeCode: true,
-              },
-            },
-          },
+          select: authSessionUserSelect,
         },
         employee: {
-          include: {
-            user: {
-              include: {
-                cookiePreference: true,
-              },
-            },
-          },
+          select: authSessionEmployeeSelect,
         },
         workspaceOwner: {
-          include: {
-            cookiePreference: true,
-          },
+          select: authSessionWorkspaceOwnerSelect,
         },
       },
     })

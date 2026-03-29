@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { fetchCurrentUser, fetchProducts } from '@/lib/api'
+import { fetchCurrentUser } from '@/lib/api'
 import { StaffMobileShell } from '@/components/staff-mobile'
 
 export default function StaffAppPage() {
@@ -13,17 +13,12 @@ export default function StaffAppPage() {
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
     retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const user = sessionQuery.data?.user
-  const isAuthed = Boolean(user)
   const isStaff = user?.role === 'STAFF'
-
-  const productsQuery = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    enabled: isAuthed,
-  })
 
   // Redireciona se não autenticado ou se for owner
   useEffect(() => {
@@ -46,7 +41,7 @@ export default function StaffAppPage() {
   return (
     <StaffMobileShell
       currentUser={{ name: user.fullName, fullName: user.fullName, employeeId: user.employeeId }}
-      produtos={productsQuery.data?.items ?? []}
+      produtos={[]}
     />
   )
 }

@@ -1,10 +1,10 @@
 'use client'
 
 import { Tags } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApiError, fetchOperationsLive } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import { buildOperationsViewModel } from '@/lib/operations'
+import { buildOperationsViewModel, OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { CaixaPanel } from '@/components/dashboard/caixa-panel'
 import { OperationsExecutiveGrid, OperationsTimeline } from '@/components/operations'
@@ -15,9 +15,12 @@ export function PdvEnvironment() {
 
   const user = sessionQuery.data?.user
   const operationsQuery = useQuery({
-    queryKey: ['operations', 'live'],
+    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     enabled: Boolean(user?.userId),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
     refetchInterval: 15_000,
   })
 

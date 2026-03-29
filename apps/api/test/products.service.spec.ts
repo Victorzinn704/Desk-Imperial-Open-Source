@@ -171,7 +171,7 @@ describe('ProductsService', () => {
       const result = await productsService.listForUser(mockContext, {})
 
       expect(result).toEqual(cachedResponse)
-      expect(mockCache.get).toHaveBeenCalledWith('products:list:user-1')
+      expect(mockCache.get).toHaveBeenCalledWith('products:list:user-1:active')
       expect(mockPrisma.product.findMany).not.toHaveBeenCalled()
     })
 
@@ -192,7 +192,7 @@ describe('ProductsService', () => {
           userId: 'user-1',
           active: true,
         },
-        orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [{ createdAt: 'desc' }],
       })
       expect(result.items).toHaveLength(2)
     })
@@ -289,7 +289,7 @@ describe('ProductsService', () => {
 
       await productsService.listForUser(mockContext, {})
 
-      expect(mockCache.set).toHaveBeenCalledWith('products:list:user-1', expect.any(Object), 300)
+      expect(mockCache.set).toHaveBeenCalledWith('products:list:user-1:active', expect.any(Object), 300)
     })
 
     it('NÃO deve fazer cache quando há filtros', async () => {
@@ -299,6 +299,16 @@ describe('ProductsService', () => {
       await productsService.listForUser(mockContext, makeListProductsQueryDto({ category: 'Bebidas' }))
 
       expect(mockCache.set).not.toHaveBeenCalled()
+    })
+
+    it('deve usar cache dedicado para OWNER com includeInactive=true', async () => {
+      mockCache.get.mockResolvedValue(null)
+      mockPrisma.product.findMany.mockResolvedValue([])
+
+      await productsService.listForUser({ ...mockContext, role: 'OWNER' }, { includeInactive: true })
+
+      expect(mockCache.get).toHaveBeenCalledWith('products:list:user-1:all')
+      expect(mockCache.set).toHaveBeenCalledWith('products:list:user-1:all', expect.any(Object), 300)
     })
   })
 
@@ -406,7 +416,8 @@ describe('ProductsService', () => {
       await productsService.createForUser(mockContext, dto, requestContext)
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
-      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:active')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:all')
     })
 
     it('deve rejeitar criação para role STAFF', async () => {
@@ -650,7 +661,8 @@ describe('ProductsService', () => {
       await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
-      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:active')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:all')
     })
 
     it('deve rejeitar importação para role STAFF', async () => {
@@ -666,7 +678,8 @@ describe('ProductsService', () => {
     it('deve deletar cache de produtos do usuário', async () => {
       await productsService.invalidateProductsCache('user-123')
 
-      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-123')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-123:active')
+      expect(mockCache.del).toHaveBeenCalledWith('products:list:user-123:all')
     })
   })
 })

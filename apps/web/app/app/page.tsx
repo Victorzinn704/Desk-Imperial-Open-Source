@@ -16,6 +16,8 @@ export default function AppEntryPage() {
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
     retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const user = sessionQuery.data?.user

@@ -1,16 +1,18 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { CurrencyCode, Prisma } from '@prisma/client'
+import type { CurrencyCode} from '@prisma/client';
+import { Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { CurrencyService } from '../currency/currency.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { CurrencyService } from '../currency/currency.service'
+import type { ExchangeRatesSnapshot } from '../currency/currency.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import { parseProductImportCsv } from './products-import.util'
-import { CreateProductDto } from './dto/create-product.dto'
-import { ListProductsQueryDto } from './dto/list-products.query'
-import { UpdateProductDto } from './dto/update-product.dto'
+import type { CreateProductDto } from './dto/create-product.dto'
+import type { ListProductsQueryDto } from './dto/list-products.query'
+import type { UpdateProductDto } from './dto/update-product.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
@@ -32,17 +34,16 @@ export class ProductsService {
   async listForUser(auth: AuthContext, query: ListProductsQueryDto) {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const includeInactive = auth.role === 'OWNER' && query.includeInactive
-    const hasFilters = !!(query.category || query.search || includeInactive || query.cursor)
     const limit = Math.min(query.limit ?? 200, 2000)
+    const shouldUseListCache = !(query.category || query.search || query.cursor || query.limit)
+    const cacheScope = includeInactive ? 'all' : 'active'
+    const cacheKey = shouldUseListCache ? CacheService.productsKey(workspaceUserId, cacheScope) : null
 
-    if (!hasFilters && !query.limit) {
-      const cached = await this.cache.get<ReturnType<typeof buildProductsResponse>>(
-        CacheService.productsKey(workspaceUserId),
-      )
+    if (cacheKey) {
+      const cached = await this.cache.get<ReturnType<typeof buildProductsResponse>>(cacheKey)
       if (cached) return cached
     }
 
-    const snapshot = await this.currencyService.getSnapshot()
     const items = await this.prisma.product.findMany({
       take: limit,
       ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
@@ -69,8 +70,9 @@ export class ProductsService {
             }
           : {}),
       },
-      orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
+      orderBy: includeInactive ? [{ active: 'desc' }, { createdAt: 'desc' }] : [{ createdAt: 'desc' }],
     })
+    const snapshot = await this.resolveProductsSnapshot(items, auth.preferredCurrency)
 
     const result = buildProductsResponse(items, {
       displayCurrency: auth.preferredCurrency,
@@ -79,15 +81,18 @@ export class ProductsService {
       ratesUpdatedAt: snapshot.updatedAt,
     })
 
-    if (!hasFilters) {
-      void this.cache.set(CacheService.productsKey(workspaceUserId), result, 300)
+    if (cacheKey) {
+      void this.cache.set(cacheKey, result, 300)
     }
 
     return result
   }
 
   async invalidateProductsCache(userId: string) {
-    await this.cache.del(CacheService.productsKey(userId))
+    await Promise.all([
+      this.cache.del(CacheService.productsKey(userId, 'active')),
+      this.cache.del(CacheService.productsKey(userId, 'all')),
+    ])
   }
 
   async createForUser(auth: AuthContext, dto: CreateProductDto, context: RequestContext) {
@@ -508,6 +513,24 @@ export class ProductsService {
     }
 
     return product
+  }
+
+  private async resolveProductsSnapshot(
+    items: Array<{
+      currency: CurrencyCode
+    }>,
+    displayCurrency: CurrencyCode,
+  ): Promise<ExchangeRatesSnapshot> {
+    if (items.length === 0 || items.every((item) => item.currency === displayCurrency)) {
+      return {
+        updatedAt: null,
+        source: 'live',
+        notice: null,
+        rates: {},
+      }
+    }
+
+    return this.currencyService.getSnapshot()
   }
 }
 

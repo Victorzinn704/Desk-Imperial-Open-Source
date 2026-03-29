@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Armchair, Clock, ClipboardList, Grid3X3, List, Pencil, Plus, Power, Zap, X } from 'lucide-react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import { calcTotal, formatElapsed, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
+import { OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
 
 function fmtBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -16,7 +17,7 @@ function fmtBRL(value: number) {
 // ── constants ──────────────────────────────────────────────────────────────────
 
 const QUERY_KEY = ['mesas'] as const
-const LIVE_QUERY_KEY = ['operations', 'live', 'compact'] as const
+const LIVE_QUERY_KEY = OPERATIONS_LIVE_COMPACT_QUERY_KEY
 const CANVAS_H = 560
 const CARD_W = 112
 const CARD_H = 76
@@ -93,11 +94,17 @@ export function SalaoEnvironment() {
   const { data: mesas = [], isLoading: mesasLoading } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchMesas,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   })
 
   const { data: liveData, isLoading: liveLoading } = useQuery({
     queryKey: LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
     refetchInterval: 15_000,
     enabled: view === 'operacional',
   })

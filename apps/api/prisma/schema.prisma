@@ -163,6 +163,7 @@ model Session {
   demoAccessGrant DemoAccessGrant?
 
   @@index([userId, expiresAt])
+  @@index([userId, createdAt])
   @@index([employeeId, expiresAt])
   @@index([workspaceOwnerUserId, expiresAt])
 }
@@ -303,6 +304,7 @@ model Product {
   comandaItems ComandaItem[]
 
   @@index([userId, active])
+  @@index([userId, active, createdAt])
   @@index([userId, category])
   @@index([userId, currency, createdAt])
   @@unique([userId, name])
@@ -360,6 +362,7 @@ model CashSession {
   comandas           Comanda[]
 
   @@index([companyOwnerId, businessDate, status])
+  @@index([companyOwnerId, businessDate, openedAt])
   @@index([employeeId, businessDate])
   @@index([openedByUserId, businessDate])
 }

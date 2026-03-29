@@ -13,6 +13,8 @@ export default function OwnerAppPage() {
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
     retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 
   const user = sessionQuery.data?.user

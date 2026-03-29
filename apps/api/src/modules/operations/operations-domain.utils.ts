@@ -56,13 +56,12 @@ export function formatBusinessDateKey(date: Date) {
 }
 
 export function invalidateOperationsLiveCache(
-  cache: Pick<CacheService, 'del'>,
+  cache: Pick<CacheService, 'delByPrefix'>,
   workspaceOwnerUserId: string,
   businessDate: Date,
 ) {
   const dateKey = formatBusinessDateKey(businessDate)
-  void cache.del(CacheService.operationsLiveKey(workspaceOwnerUserId, dateKey, true))
-  void cache.del(CacheService.operationsLiveKey(workspaceOwnerUserId, dateKey, false))
+  void cache.delByPrefix(CacheService.operationsLivePrefix(workspaceOwnerUserId, dateKey))
 }
 
 export async function buildOptionalOperationsSnapshot(

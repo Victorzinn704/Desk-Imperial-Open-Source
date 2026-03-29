@@ -168,14 +168,12 @@ export class OperationsHelpersService {
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements !== false
-    const cacheKey =
-      scopedEmployeeId == null
-        ? CacheService.operationsLiveKey(
-            workspaceOwnerUserId,
-            formatBusinessDateKey(businessDate),
-            includeCashMovements,
-          )
-        : null
+    const cacheKey = CacheService.operationsLiveKey(
+      workspaceOwnerUserId,
+      formatBusinessDateKey(businessDate),
+      includeCashMovements,
+      scopedEmployeeId,
+    )
 
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
@@ -303,9 +301,7 @@ export class OperationsHelpersService {
       }),
     }
 
-    if (cacheKey) {
-      void this.cache.set(cacheKey, snapshot, 2)
-    }
+    void this.cache.set(cacheKey, snapshot, 2)
 
     return snapshot
   }
