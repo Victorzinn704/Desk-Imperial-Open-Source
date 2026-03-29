@@ -5,7 +5,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
 import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
-import type { ProductRecord } from '@contracts/contracts'
+import type { OperationsLiveResponse, ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
@@ -25,6 +25,7 @@ import {
   openCashSession,
   updateComandaStatus,
   addComandaItem,
+  addComandaItems,
   ApiError,
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -125,9 +126,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: realtimeStatus !== 'connected',
-    // socket ativo = sem polling; socket offline = fallback a cada 20s
-    refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
+    refetchOnReconnect: true,
   })
 
   const productsQuery = useQuery({
@@ -190,6 +189,27 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     },
     onSuccess: () => {
       toast.success('Item adicionado')
+      haptic.light()
+    },
+  })
+  const addComandaItemsMutation = useMutation({
+    mutationFn: ({ comandaId, items }: { comandaId: string; items: Parameters<typeof addComandaItems>[1] }) =>
+      addComandaItems(comandaId, items, { includeSnapshot: false }),
+    onMutate: async ({ comandaId, items }) => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      for (const item of items) {
+        appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, item)
+      }
+      return { snapshot }
+    },
+    onError: (_err, _vars, ctx) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      toast.error('Erro ao adicionar itens')
+      haptic.error()
+    },
+    onSuccess: () => {
+      toast.success('Itens adicionados')
       haptic.light()
     },
   })
@@ -282,6 +302,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
   const isBusy =
     openComandaMutation.isPending ||
     addComandaItemMutation.isPending ||
+    addComandaItemsMutation.isPending ||
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending
 
@@ -316,18 +337,16 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
     try {
       if (pendingAction.type === 'add') {
-        for (const item of items) {
-          await addComandaItemMutation.mutateAsync({
-            comandaId: pendingAction.comandaId,
-            payload: {
-              productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-              productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-              quantity: item.quantidade,
-              unitPrice: item.precoUnitario,
-              notes: item.observacao,
-            },
-          })
-        }
+        await addComandaItemsMutation.mutateAsync({
+          comandaId: pendingAction.comandaId,
+          items: items.map((item) => ({
+            productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+            productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+            quantity: item.quantidade,
+            unitPrice: item.precoUnitario,
+            notes: item.observacao,
+          })),
+        })
         if (shouldFallbackRefetch) {
           await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         }

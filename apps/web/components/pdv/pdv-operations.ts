@@ -30,13 +30,16 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     mesa: comanda.tableLabel,
     clienteNome: comanda.customerName ?? undefined,
     clienteDocumento: comanda.customerDocument ?? undefined,
-    itens: comanda.items.map((item) => ({
-      produtoId: item.productId ?? `manual-${item.id}`,
-      nome: item.productName,
-      quantidade: item.quantity,
-      precoUnitario: item.unitPrice,
-      observacao: item.notes ?? undefined,
-    })),
+    itens: comanda.items.map((item) => {
+      const quantidade = Math.max(1, toFiniteNumber(item.quantity) ?? 1)
+      return {
+        produtoId: item.productId ?? `manual-${item.id}`,
+        nome: item.productName,
+        quantidade,
+        precoUnitario: resolveItemUnitPrice(item, quantidade),
+        observacao: item.notes ?? undefined,
+      }
+    }),
     desconto: toPercent(comanda.discountAmount, comanda.subtotalAmount),
     acrescimo: toPercent(comanda.serviceFeeAmount, comanda.subtotalAmount),
     abertaEm: new Date(comanda.openedAt),
@@ -187,6 +190,33 @@ function toPercent(amount: number, subtotal: number) {
   }
 
   return roundMoney((amount / subtotal) * 100)
+}
+
+function resolveItemUnitPrice(item: ComandaRecord['items'][number], quantity: number) {
+  const directPrice = toFiniteNumber(item.unitPrice)
+  if (directPrice != null && directPrice >= 0) {
+    return roundMoney(directPrice)
+  }
+
+  const totalAmount = toFiniteNumber(item.totalAmount)
+  if (totalAmount != null && quantity > 0) {
+    return roundMoney(totalAmount / quantity)
+  }
+
+  return 0
+}
+
+function toFiniteNumber(value: unknown) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
 }
 
 function roundMoney(value: number) {

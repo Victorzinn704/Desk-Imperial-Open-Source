@@ -1,13 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
-import { ApiError, login } from '@/lib/api'
+import { ApiError, login, loginDemo } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 
 // Conta de avaliação pública — credenciais visíveis por design
@@ -19,6 +19,10 @@ export function LoginForm() {
   const queryClient = useQueryClient()
   const [isRouting, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
+
+  useEffect(() => {
+    router.prefetch('/dashboard')
+  }, [router])
 
   const {
     register: registerField,
@@ -66,6 +70,17 @@ export function LoginForm() {
     },
   })
 
+  const demoLoginMutation = useMutation({
+    mutationFn: loginDemo,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['auth', 'me'], { user: data.user })
+      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
+      startTransition(() => {
+        router.push('/dashboard')
+      })
+    },
+  })
+
   const setLoginMode = (mode: 'OWNER' | 'STAFF') => {
     setValue('loginMode', mode, { shouldDirty: true, shouldValidate: true })
 
@@ -95,9 +110,11 @@ export function LoginForm() {
       password: values.password,
     })
   })
-  const isLoading = loginMutation.isPending || isRouting
+  const isLoading = loginMutation.isPending || demoLoginMutation.isPending || isRouting
 
-  const errorMessage = loginMutation.error instanceof ApiError ? loginMutation.error.message : null
+  const errorMessage =
+    (loginMutation.error instanceof ApiError ? loginMutation.error.message : null) ??
+    (demoLoginMutation.error instanceof ApiError ? demoLoginMutation.error.message : null)
 
   return (
     <div className="w-full space-y-8">
@@ -252,18 +269,9 @@ export function LoginForm() {
           type="button"
           onClick={() => {
             if (isStaffMode) {
-              loginMutation.mutate({
-                loginMode: 'STAFF',
-                companyEmail: DEMO_EMAIL,
-                employeeCode: 'VD-001',
-                password: '123456',
-              })
+              demoLoginMutation.mutate({ loginMode: 'STAFF', employeeCode: 'VD-001' })
             } else {
-              loginMutation.mutate({
-                loginMode: 'OWNER',
-                email: DEMO_EMAIL,
-                password: DEMO_PASSWORD,
-              })
+              demoLoginMutation.mutate({ loginMode: 'OWNER' })
             }
           }}
         >

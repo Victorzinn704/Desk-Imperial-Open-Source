@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "nest start --watch",
-    "build": "npm run prisma:generate && nest build",
-    "start": "node dist/main.js",
+    "build": "npm run prisma:generate && nest build --builder tsc",
+    "postbuild": "node -e \"const fs=require('fs');if(fs.existsSync('dist/src/main.js'))fs.copyFileSync('dist/src/main.js','dist/main.js')\"",
+    "start": "node dist/src/main.js",
     "lint": "eslint .",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",

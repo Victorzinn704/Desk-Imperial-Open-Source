@@ -10,6 +10,7 @@ import { OperationsHelpersService } from './operations-helpers.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { AssignComandaDto } from './dto/assign-comanda.dto'
 import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
+import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import type { CloseComandaDto } from './dto/close-comanda.dto'
@@ -105,6 +106,16 @@ export class OperationsService {
     options?: OperationsResponseOptionsDto,
   ) {
     return this.comanda.addComandaItem(auth, comandaId, dto, context, options)
+  }
+
+  addComandaItems(
+    auth: AuthContext,
+    comandaId: string,
+    dto: AddComandaItemsBatchDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.addComandaItems(auth, comandaId, dto, context, options)
   }
 
   replaceComanda(

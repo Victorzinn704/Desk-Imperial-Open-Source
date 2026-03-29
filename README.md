@@ -274,6 +274,7 @@ COOKIE_SECRET=change-me-min-32-chars
 CSRF_SECRET=change-me-min-32-chars
 
 # Cache (opcional em desenvolvimento)
+# A API aceita REDIS_URL, REDIS_PRIVATE_URL ou REDIS_PUBLIC_URL
 REDIS_URL=redis://localhost:6379
 
 # Email
@@ -365,12 +366,13 @@ npm --workspace @partner/api test
 
 ```env
 NODE_ENV=production
+# Priorize REDIS_URL; fallback aceito: REDIS_PRIVATE_URL/REDIS_PUBLIC_URL
 REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}
 DATABASE_URL=<neon-pooler-url com -pooler no hostname>
 PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
-> Em produção, `REDIS_URL` não é opcional. O sistema usa WebSocket/Socket.IO como transporte ao vivo e usa Redis para propagar os eventos entre instâncias da API. Sem Redis, o deploy pode subir, mas web/mobile ficam sujeitos a divergência de estado em escala horizontal.
+> Em produção, uma URL de Redis é obrigatória (`REDIS_URL`, `REDIS_PRIVATE_URL` ou `REDIS_PUBLIC_URL`). O sistema usa WebSocket/Socket.IO como transporte ao vivo e usa Redis para propagar os eventos entre instâncias da API. Sem Redis, o deploy pode subir, mas web/mobile ficam sujeitos a divergência de estado em escala horizontal.
 
 ### Infraestrutura
 
@@ -387,7 +389,7 @@ PORTFOLIO_EMAIL_FALLBACK=false
 ### Checklist Railway
 
 1. Provisione um serviço Redis no mesmo projeto Railway da API.
-2. Configure `REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}` na API.
+2. Configure `REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}` na API (ou use `REDIS_PRIVATE_URL` diretamente).
 3. Garanta que `DATABASE_URL`, `COOKIE_SECRET` e `CSRF_SECRET` estejam preenchidos.
 4. Rode `npm --workspace @partner/api run prisma:migrate:deploy` antes de promover tráfego.
 5. Use build command da API: `npm --workspace @partner/api run build`.

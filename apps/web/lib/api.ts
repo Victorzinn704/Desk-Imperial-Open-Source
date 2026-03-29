@@ -18,6 +18,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
 const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
+const DEFAULT_API_TIMEOUT_MS = 20_000
+const AUTH_API_TIMEOUT_MS = 10_000
+const POSTAL_LOOKUP_TIMEOUT_MS = 6_000
 
 type JsonBody = Record<string, unknown>
 type ApiBody = JsonBody | FormData
@@ -135,6 +138,13 @@ export type ProductPayload = {
   measurementUnit: string
   measurementValue: number
   unitsPerPackage: number
+  isCombo?: boolean
+  comboDescription?: string
+  comboItems?: Array<{
+    productId: string
+    quantityPackages: number
+    quantityUnits: number
+  }>
   description?: string
   unitCost: number
   unitPrice: number
@@ -247,6 +257,16 @@ export class ApiError extends Error {
   }
 }
 
+class ApiTimeoutError extends Error {
+  constructor(
+    public readonly timeoutMs: number,
+    public readonly requestPath: string,
+  ) {
+    super(`Request timed out after ${timeoutMs}ms`)
+    this.name = 'ApiTimeoutError'
+  }
+}
+
 export async function login(payload: LoginPayload) {
   clearPersistedAdminPinHint()
   const normalizedPayload = normalizeLoginPayload(payload)
@@ -255,6 +275,8 @@ export async function login(payload: LoginPayload) {
     return await apiFetch<AuthResponse>('/auth/login', {
       method: 'POST',
       body: normalizedPayload,
+      skipCsrf: true,
+      timeoutMs: AUTH_API_TIMEOUT_MS,
     })
   } catch (error) {
     if (payload.loginMode === 'OWNER' && error instanceof ApiError && isLegacyOwnerLoginContractError(error)) {
@@ -264,6 +286,8 @@ export async function login(payload: LoginPayload) {
           email: normalizedPayload.email,
           password: normalizedPayload.password,
         },
+        skipCsrf: true,
+        timeoutMs: AUTH_API_TIMEOUT_MS,
       })
     }
 
@@ -271,22 +295,52 @@ export async function login(payload: LoginPayload) {
   }
 }
 
+export type DemoLoginPayload = {
+  loginMode: 'OWNER' | 'STAFF'
+  employeeCode?: string
+}
+
+export async function loginDemo(payload: DemoLoginPayload) {
+  clearPersistedAdminPinHint()
+  return apiFetch<AuthResponse>('/auth/demo', {
+    method: 'POST',
+    body: payload,
+    skipCsrf: true,
+    timeoutMs: AUTH_API_TIMEOUT_MS,
+  })
+}
+
 export async function register(payload: RegisterPayload) {
   return apiFetch<VerificationChallengeResponse>('/auth/register', {
     method: 'POST',
     body: payload,
+    timeoutMs: AUTH_API_TIMEOUT_MS,
   })
 }
 
 export async function lookupPostalCode(postalCode: string) {
-  const response = await fetch('/api/postal-code/lookup', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ postalCode }),
-  })
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      '/api/postal-code/lookup',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postalCode }),
+      },
+      POSTAL_LOOKUP_TIMEOUT_MS,
+      '/api/postal-code/lookup',
+    )
+  } catch (error) {
+    if (error instanceof ApiTimeoutError) {
+      throw new ApiError('Consulta de CEP demorou demais. Tente novamente em instantes.', 504)
+    }
+    throw new ApiError('Nao foi possivel consultar o CEP agora.', 0)
+  }
 
   if (!response.ok) {
     throw await toApiError(response)
@@ -609,8 +663,9 @@ type OperationsRequestOptions = {
 }
 
 export async function openComanda(payload: OpenComandaPayload, options?: OperationsRequestOptions) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions('/operations/comandas', options),
+    withOperationsOptions('/operations/comandas', resolvedOptions),
     {
       method: 'POST',
       body: payload,
@@ -631,11 +686,27 @@ export async function addComandaItem(
   payload: AddComandaItemPayload,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}/items`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}/items`, resolvedOptions),
     {
       method: 'POST',
       body: payload as JsonBody,
+    },
+  )
+}
+
+export async function addComandaItems(
+  comandaId: string,
+  items: AddComandaItemPayload[],
+  options?: OperationsRequestOptions,
+) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/items/batch`, resolvedOptions),
+    {
+      method: 'POST',
+      body: { items } as JsonBody,
     },
   )
 }
@@ -645,8 +716,9 @@ export async function replaceComanda(
   payload: ReplaceComandaPayload,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}`, resolvedOptions),
     {
       method: 'PATCH',
       body: payload,
@@ -655,8 +727,9 @@ export async function replaceComanda(
 }
 
 export async function assignComanda(comandaId: string, employeeId?: string, options?: OperationsRequestOptions) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}/assign`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}/assign`, resolvedOptions),
     {
       method: 'POST',
       body: employeeId ? { employeeId } : {},
@@ -669,8 +742,9 @@ export async function updateComandaStatus(
   status: Extract<ComandaStatus, 'OPEN' | 'IN_PREPARATION' | 'READY'>,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}/status`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}/status`, resolvedOptions),
     {
       method: 'POST',
       body: { status },
@@ -679,8 +753,9 @@ export async function updateComandaStatus(
 }
 
 export async function cancelComanda(comandaId: string, options?: OperationsRequestOptions) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}/status`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}/status`, resolvedOptions),
     {
       method: 'POST',
       body: { status: 'CANCELLED' },
@@ -693,8 +768,9 @@ export async function closeComanda(
   payload: CloseComandaPayload,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/comandas/${comandaId}/close`, options),
+    withOperationsOptions(`/operations/comandas/${comandaId}/close`, resolvedOptions),
     {
       method: 'POST',
       body: payload,
@@ -714,8 +790,9 @@ export type CloseCashClosurePayload = {
 }
 
 export async function openCashSession(payload: OpenCashSessionPayload, options?: OperationsRequestOptions) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions('/operations/cash-sessions', options),
+    withOperationsOptions('/operations/cash-sessions', resolvedOptions),
     {
       method: 'POST',
       body: payload as JsonBody,
@@ -724,10 +801,14 @@ export async function openCashSession(payload: OpenCashSessionPayload, options?:
 }
 
 export async function closeCashClosure(payload: CloseCashClosurePayload, options?: OperationsRequestOptions) {
-  return apiFetch<{ snapshot?: OperationsLiveResponse }>(withOperationsOptions('/operations/closures/close', options), {
-    method: 'POST',
-    body: payload as JsonBody,
-  })
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
+  return apiFetch<{ snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions('/operations/closures/close', resolvedOptions),
+    {
+      method: 'POST',
+      body: payload as JsonBody,
+    },
+  )
 }
 
 export type CreateCashMovementPayload = {
@@ -741,8 +822,9 @@ export async function createCashMovement(
   payload: CreateCashMovementPayload,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/movements`, options),
+    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/movements`, resolvedOptions),
     {
       method: 'POST',
       body: payload as JsonBody,
@@ -760,8 +842,9 @@ export async function closeCashSession(
   payload: CloseCashSessionPayload,
   options?: OperationsRequestOptions,
 ) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
   return apiFetch<{ cashSession: CashSessionRecord; snapshot?: OperationsLiveResponse }>(
-    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/close`, options),
+    withOperationsOptions(`/operations/cash-sessions/${cashSessionId}/close`, resolvedOptions),
     {
       method: 'POST',
       body: payload as JsonBody,
@@ -836,6 +919,7 @@ async function apiFetch<T>(
   options: Omit<RequestInit, 'body'> & {
     body?: ApiBody
     skipCsrf?: boolean
+    timeoutMs?: number
   },
 ) {
   const headers = new Headers(options.headers)
@@ -864,13 +948,22 @@ async function apiFetch<T>(
   let response: Response
 
   try {
-    response = await fetch(buildApiUrl(path), {
-      ...options,
-      credentials: 'include',
-      headers,
-      body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
-    })
-  } catch {
+    response = await fetchWithTimeout(
+      buildApiUrl(path),
+      {
+        ...options,
+        credentials: 'include',
+        headers,
+        body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
+      },
+      options.timeoutMs ?? resolveApiTimeoutMs(path),
+      path,
+    )
+  } catch (error) {
+    if (error instanceof ApiTimeoutError) {
+      throw new ApiError(`A requisicao demorou demais (${Math.ceil(error.timeoutMs / 1000)}s). Tente novamente.`, 504)
+    }
+
     throw new ApiError(
       `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
       0,
@@ -1019,4 +1112,39 @@ function isLegacyOwnerLoginContractError(error: ApiError) {
     normalizedMessage.includes('property companyemail should not exist') ||
     normalizedMessage.includes('property employeecode should not exist')
   )
+}
+
+function resolveApiTimeoutMs(path: string) {
+  if (path.startsWith('/auth/')) {
+    return AUTH_API_TIMEOUT_MS
+  }
+
+  return DEFAULT_API_TIMEOUT_MS
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  requestPath: string,
+) {
+  const controller = new AbortController()
+  const timeoutHandle = setTimeout(() => {
+    controller.abort()
+  }, timeoutMs)
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiTimeoutError(timeoutMs, requestPath)
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
 import { currencyOptions } from '@/lib/currency'
@@ -28,6 +28,9 @@ const emptyValues: ProductFormInputValues = {
   measurementUnit: 'UN',
   measurementValue: 1,
   unitsPerPackage: 1,
+  isCombo: false,
+  comboDescription: '',
+  comboItems: [],
   description: '',
   unitCost: 0,
   unitPrice: 0,
@@ -39,11 +42,13 @@ const emptyValues: ProductFormInputValues = {
 
 export function ProductForm({
   product,
+  availableProducts,
   onSubmit,
   onCancelEdit,
   loading,
 }: Readonly<{
   product: ProductRecord | null
+  availableProducts: ProductRecord[]
   onSubmit: (values: ProductFormValues) => void
   onCancelEdit: () => void
   loading?: boolean
@@ -56,20 +61,45 @@ export function ProductForm({
     reset,
     setValue,
     watch,
+    control,
     formState: { errors },
   } = useForm<ProductFormInputValues, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
+  })
+  const { fields: comboFields, append: appendComboItem, remove: removeComboItem } = useFieldArray({
+    control,
+    name: 'comboItems',
   })
 
   const packagingClassValue = watch('packagingClass')
   const measurementUnitValue = watch('measurementUnit')
   const measurementValue = Number(watch('measurementValue') ?? 1)
   const unitsPerPackage = Number(watch('unitsPerPackage') ?? 1)
+  const isComboValue = watch('isCombo')
   const stockPackages = Number(watch('stockPackages') ?? 0)
   const stockLooseUnits = Number(watch('stockLooseUnits') ?? 0)
   const requiresKitchenValue = watch('requiresKitchen')
   const categoryValue = watch('category')
+  const comboItemsRootError = typeof errors.comboItems?.message === 'string' ? errors.comboItems.message : undefined
+  const componentProducts = useMemo(
+    () => availableProducts.filter((item) => item.active && item.id !== product?.id),
+    [availableProducts, product?.id],
+  )
+  const componentProductsById = useMemo(
+    () => new Map(componentProducts.map((item) => [item.id, item])),
+    [componentProducts],
+  )
+  const comboComponentOptions = useMemo(
+    () => [
+      { label: 'Selecione um componente', value: '' },
+      ...componentProducts.map((item) => ({
+        label: `${item.name} (${item.unitsPerPackage} und/caixa)`,
+        value: item.id,
+      })),
+    ],
+    [componentProducts],
+  )
 
   // Auto-toggle requiresKitchen when category name suggests food/prep
   useEffect(() => {
@@ -105,6 +135,14 @@ export function ProductForm({
       measurementUnit: product.measurementUnit,
       measurementValue: product.measurementValue,
       unitsPerPackage: product.unitsPerPackage,
+      isCombo: product.isCombo ?? false,
+      comboDescription: product.comboDescription ?? '',
+      comboItems:
+        product.comboItems?.map((item) => ({
+          productId: item.componentProductId,
+          quantityPackages: item.quantityPackages,
+          quantityUnits: item.quantityUnits,
+        })) ?? [],
       description: product.description ?? '',
       unitCost: product.originalUnitCost,
       unitPrice: product.originalUnitPrice,
@@ -298,6 +336,120 @@ export function ProductForm({
         ) : (
           <input type="hidden" value={measurementUnitValue} {...register('measurementUnit')} />
         )}
+
+        <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
+          <div>
+            <p className="text-sm font-medium text-white">Produto do tipo combo</p>
+            <p className="mt-0.5 text-xs text-[var(--text-soft)]">
+              Ative para montar composição de itens por caixa/unidade para venda em combo no PDV.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isComboValue}
+            onClick={() => setValue('isCombo', !isComboValue, { shouldDirty: true, shouldValidate: true })}
+            className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
+            style={{ background: isComboValue ? 'var(--accent, #9b8460)' : 'rgba(255,255,255,0.12)' }}
+          >
+            <span
+              className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
+              style={{ transform: isComboValue ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+
+        {isComboValue ? (
+          <div className="imperial-card-soft space-y-4 px-4 py-4">
+            <InputField
+              error={errors.comboDescription?.message}
+              hint="Descreva rapidamente o que vem no combo para o operador."
+              label="Descrição do combo"
+              placeholder="Ex.: 1 hambúrguer + 1 batata + 1 refrigerante lata"
+              {...register('comboDescription')}
+            />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-white">Componentes do combo</p>
+                <button
+                  type="button"
+                  className="rounded-[10px] border border-[rgba(255,255,255,0.14)] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[rgba(255,255,255,0.24)]"
+                  onClick={() =>
+                    appendComboItem({
+                      productId: '',
+                      quantityPackages: 0,
+                      quantityUnits: 1,
+                    })
+                  }
+                >
+                  Adicionar item
+                </button>
+              </div>
+
+              {comboItemsRootError ? <p className="text-xs text-[var(--danger)]">{comboItemsRootError}</p> : null}
+
+              {comboFields.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[rgba(255,255,255,0.14)] px-4 py-3 text-xs text-[var(--text-soft)]">
+                  Adicione os produtos que fazem parte do combo para habilitar a conversão por métrica.
+                </div>
+              ) : null}
+
+              {comboFields.map((field, index) => {
+                const selectedProductId = watch(`comboItems.${index}.productId` as const)
+                const selectedProduct = selectedProductId ? componentProductsById.get(selectedProductId) : null
+                const quantityPackages = Number(watch(`comboItems.${index}.quantityPackages` as const) ?? 0)
+                const quantityUnits = Number(watch(`comboItems.${index}.quantityUnits` as const) ?? 0)
+                const unitsPerPackageForComponent = Math.max(1, selectedProduct?.unitsPerPackage ?? 1)
+                const totalUnitsForComponent = quantityPackages * unitsPerPackageForComponent + quantityUnits
+
+                return (
+                  <div
+                    key={field.id}
+                    className="space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3"
+                  >
+                    <SelectField
+                      error={errors.comboItems?.[index]?.productId?.message}
+                      label={`Componente ${index + 1}`}
+                      options={comboComponentOptions}
+                      {...register(`comboItems.${index}.productId` as const)}
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <InputField
+                        error={errors.comboItems?.[index]?.quantityPackages?.message}
+                        label="Caixas / fardos"
+                        step="1"
+                        type="number"
+                        {...register(`comboItems.${index}.quantityPackages` as const)}
+                      />
+                      <InputField
+                        error={errors.comboItems?.[index]?.quantityUnits?.message}
+                        label="Unidades avulsas"
+                        step="1"
+                        type="number"
+                        {...register(`comboItems.${index}.quantityUnits` as const)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-[var(--text-soft)]">
+                        {selectedProduct
+                          ? `${selectedProduct.name}: ${totalUnitsForComponent} und equivalentes`
+                          : 'Selecione um produto para calcular o equivalente.'}
+                      </p>
+                      <button
+                        type="button"
+                        className="rounded-[8px] border border-[rgba(248,113,113,0.35)] px-2.5 py-1 text-[11px] font-semibold text-[#f87171] transition hover:bg-[rgba(248,113,113,0.12)]"
+                        onClick={() => removeComboItem(index)}
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
 
         <InputField
           error={errors.description?.message}

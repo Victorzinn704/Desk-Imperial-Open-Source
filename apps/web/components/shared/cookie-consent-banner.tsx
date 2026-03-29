@@ -16,22 +16,6 @@ export function CookieConsentBanner() {
     setIsReady(true)
   }, [])
 
-  useEffect(() => {
-    if (!isReady || hasDecision) {
-      document.body.classList.remove('cookie-consent-open')
-      document.documentElement.classList.remove('cookie-consent-open')
-      return
-    }
-
-    document.body.classList.add('cookie-consent-open')
-    document.documentElement.classList.add('cookie-consent-open')
-
-    return () => {
-      document.body.classList.remove('cookie-consent-open')
-      document.documentElement.classList.remove('cookie-consent-open')
-    }
-  }, [hasDecision, isReady])
-
   const content = useMemo(
     () => ({
       title: 'Este site usa cookies',
@@ -70,19 +54,9 @@ export function CookieConsentBanner() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 2147483644,
-          background: 'rgba(5, 7, 10, 0.58)',
-          backdropFilter: 'blur(3px)',
-        }}
-      />
       <section
         aria-labelledby="cookie-consent-title"
-        aria-modal="true"
+        aria-modal="false"
         data-testid="cookie-consent-banner"
         role="dialog"
         style={{
@@ -94,8 +68,8 @@ export function CookieConsentBanner() {
           zIndex: 2147483645,
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: '28px',
-          background: 'rgba(12, 15, 19, 0.985)',
-          boxShadow: '0 32px 120px rgba(0, 0, 0, 0.56)',
+          background: 'rgba(12, 15, 19, 0.96)',
+          boxShadow: '0 18px 64px rgba(0, 0, 0, 0.46)',
           backdropFilter: 'blur(18px)',
           padding: '20px',
         }}
@@ -115,7 +89,7 @@ export function CookieConsentBanner() {
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">{content.description}</p>
               <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                O site só libera a navegação depois da sua escolha.
+                Você pode continuar navegando enquanto decide.
               </p>
             </div>
           </div>

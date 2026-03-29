@@ -17,6 +17,7 @@ import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
+import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
 import type { AssignComandaDto } from './dto/assign-comanda.dto'
 import type { CloseComandaDto } from './dto/close-comanda.dto'
 import type { OpenComandaDto } from './dto/open-comanda.dto'
@@ -368,6 +369,137 @@ export class ComandaService {
 
     if (requiresKitchen && kitchenQueuedAt) {
       this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
+    }
+
+    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+  }
+
+  async addComandaItems(
+    auth: AuthContext,
+    comandaId: string,
+    dto: AddComandaItemsBatchDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
+
+    if (!isOpenComandaStatus(comanda.status)) {
+      throw new ConflictException('Nao e possivel adicionar itens em uma comanda encerrada ou cancelada.')
+    }
+
+    const uniqueProductIds = Array.from(
+      new Set(dto.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
+    )
+    const products = uniqueProductIds.length
+      ? await this.prisma.product.findMany({
+          where: {
+            id: { in: uniqueProductIds },
+            userId: workspaceOwnerUserId,
+            active: true,
+          },
+        })
+      : []
+    const productMap = new Map(products.map((product) => [product.id, product]))
+    const missingProductId = uniqueProductIds.find((productId) => !productMap.has(productId))
+    if (missingProductId) {
+      throw new NotFoundException('Produto nao encontrado para esta conta.')
+    }
+
+    const now = new Date()
+    const preparedItems = dto.items.map((itemDto) => {
+      const product = itemDto.productId ? productMap.get(itemDto.productId) : undefined
+      const productId = product?.id ?? null
+      const productName =
+        product?.name ??
+        sanitizePlainText(itemDto.productName, 'Nome do item da comanda', {
+          allowEmpty: false,
+          rejectFormula: true,
+        })
+      if (!productName) {
+        throw new BadRequestException('Informe o nome do item quando o produto nao estiver vinculado ao catalogo.')
+      }
+
+      if (!product && itemDto.unitPrice === undefined) {
+        throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
+      }
+
+      const unitPrice = roundCurrency(product ? (itemDto.unitPrice ?? toNumber(product.unitPrice)) : itemDto.unitPrice!)
+      const notes = sanitizePlainText(itemDto.notes, 'Observacoes do item', {
+        allowEmpty: true,
+        rejectFormula: false,
+      })
+      const requiresKitchen = product ? product.requiresKitchen || isKitchenCategory(product.category) : false
+
+      return {
+        productId,
+        productName,
+        quantity: itemDto.quantity,
+        unitPrice,
+        totalAmount: roundCurrency(unitPrice * itemDto.quantity),
+        notes,
+        requiresKitchen,
+        kitchenQueuedAt: requiresKitchen ? now : null,
+      }
+    })
+
+    const helpers = this.helpers
+    const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(async (transaction) => {
+      const insertedItems = []
+      for (const item of preparedItems) {
+        const createdItem = await transaction.comandaItem.create({
+          data: {
+            comandaId: comanda.id,
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            notes: item.notes,
+            kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+            kitchenQueuedAt: item.kitchenQueuedAt,
+          },
+        })
+        insertedItems.push(createdItem)
+      }
+
+      const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
+      const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
+
+      return {
+        createdItems: insertedItems,
+        refreshedComanda: updatedComanda,
+        businessDate: resolvedBusinessDate,
+      }
+    })
+
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'operations.comanda_items.batch_created',
+      resource: 'comanda',
+      resourceId: comanda.id,
+      metadata: {
+        itemsCount: createdItems.length,
+        itemIds: createdItems.map((item) => item.id),
+      },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+
+    for (const item of createdItems) {
+      if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
+        this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
+      }
     }
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)

@@ -1,7 +1,6 @@
-import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { Inject, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import Redis from 'ioredis'
+import { resolveRedisUrl } from '../utils/redis-url.util'
 
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
@@ -9,13 +8,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private client: Redis | null = null
   private enabled = false
 
-  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {}
+  constructor() {}
 
   onModuleInit() {
-    const url = this.configService.get<string>('REDIS_URL')
+    const url = resolveRedisUrl(process.env)
     if (!url) {
       this.logger.warn(
-        'REDIS_URL não configurado — cache desabilitado e realtime multi-instância indisponível. Em produção, Redis é obrigatório.',
+        'Redis não configurado (REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL) — cache desabilitado e realtime multi-instância indisponível. Em produção, Redis é obrigatório.',
       )
       return
     }
@@ -86,7 +85,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         const [nextCursor, keys] = await this.client.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', '100')
         cursor = nextCursor
         if (keys.length > 0) {
-          await this.client.del(...keys)
+          await this.client.unlink(...keys)
         }
       } while (cursor !== '0')
     } catch {

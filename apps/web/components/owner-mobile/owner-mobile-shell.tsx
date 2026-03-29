@@ -39,6 +39,7 @@ import {
   openCashSession,
   updateComandaStatus,
   addComandaItem,
+  addComandaItems,
   ApiError,
 } from '@/lib/api'
 import {
@@ -91,9 +92,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: realtimeStatus !== 'connected',
-    // socket ativo = sem polling; socket offline = fallback a cada 20s
-    refetchInterval: realtimeStatus === 'connected' ? false : 20_000,
+    refetchOnReconnect: true,
   })
 
   const productsQuery = useQuery({
@@ -150,6 +149,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     },
     onError: () => {
       toast.error('Erro ao adicionar item')
+      haptic.error()
+    },
+  })
+  const addComandaItemsMutation = useMutation({
+    mutationFn: ({ comandaId, items }: { comandaId: string; items: Parameters<typeof addComandaItems>[1] }) =>
+      addComandaItems(comandaId, items, { includeSnapshot: false }),
+    onSuccess: () => {
+      toast.success('Itens adicionados')
+      haptic.light()
+    },
+    onError: () => {
+      toast.error('Erro ao adicionar itens')
       haptic.error()
     },
   })
@@ -225,6 +236,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const isBusy =
     openComandaMutation.isPending ||
     addComandaItemMutation.isPending ||
+    addComandaItemsMutation.isPending ||
     updateComandaStatusMutation.isPending ||
     closeComandaMutation.isPending
 
@@ -234,18 +246,16 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
     try {
       if (pendingAction.type === 'add') {
-        for (const item of items) {
-          await addComandaItemMutation.mutateAsync({
-            comandaId: pendingAction.comandaId,
-            payload: {
-              productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-              productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-              quantity: item.quantidade,
-              unitPrice: item.precoUnitario,
-              notes: item.observacao,
-            },
-          })
-        }
+        await addComandaItemsMutation.mutateAsync({
+          comandaId: pendingAction.comandaId,
+          items: items.map((item) => ({
+            productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
+            productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
+            quantity: item.quantidade,
+            unitPrice: item.precoUnitario,
+            notes: item.observacao,
+          })),
+        })
         if (shouldFallbackRefetch) {
           await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         }

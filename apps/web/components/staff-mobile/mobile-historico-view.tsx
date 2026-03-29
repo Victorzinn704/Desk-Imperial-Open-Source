@@ -7,7 +7,8 @@ import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const safeValue = Number.isFinite(value) ? value : 0
+  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {

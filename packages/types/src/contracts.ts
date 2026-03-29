@@ -32,6 +32,19 @@ export type ProductRecord = {
   measurementUnit: string
   measurementValue: number
   unitsPerPackage: number
+  isCombo?: boolean
+  comboDescription?: string | null
+  comboItems?: Array<{
+    componentProductId: string
+    componentProductName: string
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: number
+    unitsPerPackage: number
+    quantityPackages: number
+    quantityUnits: number
+    totalUnits: number
+  }>
   stockPackages: number
   stockLooseUnits: number
   description: string | null

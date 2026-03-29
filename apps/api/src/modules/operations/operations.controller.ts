@@ -6,21 +6,22 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import type { AssignComandaDto } from './dto/assign-comanda.dto'
-import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import type { CloseComandaDto } from './dto/close-comanda.dto'
-import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import type { CreateMesaDto } from './dto/create-mesa.dto'
-import type { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import type { UpdateMesaDto } from './dto/update-mesa.dto'
+import { AssignComandaDto } from './dto/assign-comanda.dto'
+import { AddComandaItemDto } from './dto/add-comanda-item.dto'
+import { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
+import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
+import { CloseCashSessionDto } from './dto/close-cash-session.dto'
+import { CloseComandaDto } from './dto/close-comanda.dto'
+import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
+import { CreateMesaDto } from './dto/create-mesa.dto'
+import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
+import { OpenCashSessionDto } from './dto/open-cash-session.dto'
+import { OpenComandaDto } from './dto/open-comanda.dto'
+import { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
+import { ReplaceComandaDto } from './dto/replace-comanda.dto'
+import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
+import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
+import { UpdateMesaDto } from './dto/update-mesa.dto'
 import { OperationsService } from './operations.service'
 
 @ApiTags('operations')
@@ -90,6 +91,18 @@ export class OperationsController {
     @Req() request: Request,
   ) {
     return this.operationsService.addComandaItem(auth, comandaId, body, extractRequestContext(request), options)
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Post('comandas/:comandaId/items/batch')
+  addComandaItems(
+    @CurrentAuth() auth: AuthContext,
+    @Param('comandaId') comandaId: string,
+    @Body() body: AddComandaItemsBatchDto,
+    @Query() options: OperationsResponseOptionsDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.addComandaItems(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
@@ -154,8 +154,8 @@ const mesaSnapshotSelect = {
 @Injectable()
 export class OperationsHelpersService {
   constructor(
-    @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(CacheService) private readonly cache: CacheService,
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
   ) {}
 
   async buildLiveSnapshot(
@@ -168,12 +168,14 @@ export class OperationsHelpersService {
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements !== false
-    const cacheKey = CacheService.operationsLiveKey(
-      workspaceOwnerUserId,
-      formatBusinessDateKey(businessDate),
-      includeCashMovements,
-      scopedEmployeeId,
-    )
+    const cacheKey =
+      scopedEmployeeId == null
+        ? CacheService.operationsLiveKey(
+            workspaceOwnerUserId,
+            formatBusinessDateKey(businessDate),
+            includeCashMovements,
+          )
+        : null
 
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
@@ -301,7 +303,9 @@ export class OperationsHelpersService {
       }),
     }
 
-    void this.cache.set(cacheKey, snapshot, 2)
+    if (cacheKey) {
+      void this.cache.set(cacheKey, snapshot, 2)
+    }
 
     return snapshot
   }

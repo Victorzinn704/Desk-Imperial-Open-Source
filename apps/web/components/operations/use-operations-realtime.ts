@@ -29,7 +29,6 @@ export type RealtimeStatus = 'connecting' | 'connected' | 'disconnected'
 export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient): { status: RealtimeStatus } {
   const [status, setStatus] = useState<RealtimeStatus>('connecting')
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     if (!enabled) {
@@ -41,46 +40,21 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
 
     const socket = io(buildOperationsSocketUrl(), {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
-      tryAllTransports: true,
-      timeout: 8_000,
-      reconnectionDelay: 1_200,
-      reconnectionDelayMax: 5_000,
-      randomizationFactor: 0.4,
-      rememberUpgrade: true,
+      reconnectionDelay: 2_000,
+      reconnectionDelayMax: 10_000,
     })
-
-    const stopFallbackPolling = () => {
-      if (fallbackTimerRef.current) {
-        clearInterval(fallbackTimerRef.current)
-        fallbackTimerRef.current = null
-      }
-    }
 
     const queueOperationsRefresh = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
       debounceTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+        queryClient.invalidateQueries({ queryKey: ['mesas'] })
       }, 200)
-    }
-
-    const queueMesasRefresh = () => {
-      queryClient.invalidateQueries({ queryKey: ['mesas'] })
     }
 
     const queueCommercialRefresh = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
-    }
-
-    const startFallbackPolling = () => {
-      if (fallbackTimerRef.current) {
-        return
-      }
-
-      fallbackTimerRef.current = setInterval(() => {
-        queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
-      }, 6_000)
     }
 
     const handleEvent = (envelope?: OperationsRealtimeEnvelope) => {
@@ -97,51 +71,27 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
       queueCommercialRefresh()
     }
 
-    const handleMesaUpserted = (envelope?: OperationsRealtimeEnvelope) => {
-      handleEvent(envelope)
-      queueMesasRefresh()
-    }
-
-    socket.on('connect', () => {
-      stopFallbackPolling()
-      setStatus('connected')
-      queueOperationsRefresh()
-      queueMesasRefresh()
-      queueCommercialRefresh()
-    })
-    socket.on('disconnect', () => {
-      setStatus('disconnected')
-      startFallbackPolling()
-      queueOperationsRefresh()
-    })
+    socket.on('connect', () => setStatus('connected'))
+    socket.on('disconnect', () => setStatus('disconnected'))
     socket.on('connect_error', () => {
       setStatus('disconnected')
-      startFallbackPolling()
       // fallback: força atualização mesmo sem socket
       handleEvent()
     })
-    socket.on('operations.error', () => {
-      setStatus('disconnected')
-      startFallbackPolling()
-      handleEvent()
-    })
 
-    for (const eventName of OPERATIONS_EVENTS.filter((eventName) => eventName !== 'mesa.upserted')) {
+    for (const eventName of OPERATIONS_EVENTS) {
       socket.on(eventName, handleEvent)
     }
-    socket.on('mesa.upserted', handleMesaUpserted)
+
     socket.on('comanda.closed', handleComandaClosed)
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-      stopFallbackPolling()
-      for (const eventName of OPERATIONS_EVENTS.filter((eventName) => eventName !== 'mesa.upserted')) {
+      for (const eventName of OPERATIONS_EVENTS) {
         socket.off(eventName, handleEvent)
       }
 
-      socket.off('mesa.upserted', handleMesaUpserted)
       socket.off('comanda.closed', handleComandaClosed)
-      socket.off('operations.error')
       socket.off('connect')
       socket.off('disconnect')
       socket.off('connect_error')

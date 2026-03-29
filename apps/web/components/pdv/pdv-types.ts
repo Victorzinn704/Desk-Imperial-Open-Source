@@ -85,9 +85,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
 ]
 
 export function calcTotal(comanda: Comanda): number {
-  const bruto = comanda.itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
-  const comDesconto = bruto * (1 - comanda.desconto / 100)
-  return comDesconto * (1 + comanda.acrescimo / 100)
+  const bruto = comanda.itens.reduce((sum, item) => {
+    const quantidade = Number.isFinite(item.quantidade) ? item.quantidade : 0
+    const precoUnitario = Number.isFinite(item.precoUnitario) ? item.precoUnitario : 0
+    return sum + quantidade * precoUnitario
+  }, 0)
+  const desconto = Number.isFinite(comanda.desconto) ? comanda.desconto : 0
+  const acrescimo = Number.isFinite(comanda.acrescimo) ? comanda.acrescimo : 0
+  const comDesconto = bruto * (1 - desconto / 100)
+  return comDesconto * (1 + acrescimo / 100)
 }
 
 export function formatElapsed(abertaEm: Date): string {

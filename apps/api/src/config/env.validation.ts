@@ -1,3 +1,5 @@
+import { getRedisUrlKeys, hasRedisUrl } from '../common/utils/redis-url.util'
+
 type EnvShape = Record<string, string | undefined>
 
 const BOOLEAN_KEYS = [
@@ -5,9 +7,12 @@ const BOOLEAN_KEYS = [
   'SWAGGER_ALLOW_IN_PRODUCTION',
   'PORTFOLIO_EMAIL_FALLBACK',
   'COOKIE_SECURE',
+  'REGISTRATION_GEOCODING_STRICT',
 ] as const
-const URL_KEYS = ['DATABASE_URL', 'DIRECT_URL', 'REDIS_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL'] as const
+const URL_KEYS = ['DATABASE_URL', 'DIRECT_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL'] as const
 const OPTIONAL_URL_KEYS = ['RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'] as const
+const POSITIVE_NUMBER_KEYS = ['REGISTRATION_GEOCODING_TIMEOUT_MS', 'REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS']
+const REDIS_URL_CANDIDATE_KEYS = getRedisUrlKeys()
 
 export function validateEnvironment(config: EnvShape) {
   const env = { ...config }
@@ -23,6 +28,17 @@ export function validateEnvironment(config: EnvShape) {
   }
 
   for (const key of URL_KEYS) {
+    const value = env[key]
+    if (!value) {
+      continue
+    }
+
+    if (!isValidUrl(value)) {
+      issues.push(`${key} deve ser uma URL válida.`)
+    }
+  }
+
+  for (const key of REDIS_URL_CANDIDATE_KEYS) {
     const value = env[key]
     if (!value) {
       continue
@@ -52,6 +68,18 @@ export function validateEnvironment(config: EnvShape) {
 
     if (!['true', 'false'].includes(value)) {
       issues.push(`${key} deve ser "true" ou "false".`)
+    }
+  }
+
+  for (const key of POSITIVE_NUMBER_KEYS) {
+    const value = env[key]
+    if (value === undefined) {
+      continue
+    }
+
+    const numericValue = Number(value)
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      issues.push(`${key} deve ser um numero positivo.`)
     }
   }
 
@@ -93,8 +121,10 @@ export function validateEnvironment(config: EnvShape) {
       issues.push('CSRF_SECRET é obrigatório em produção.')
     }
 
-    if (!env.REDIS_URL?.trim()) {
-      issues.push('REDIS_URL é obrigatório em produção para garantir cache e sincronização realtime entre instâncias.')
+    if (!hasRedisUrl(env)) {
+      issues.push(
+        `Uma URL Redis é obrigatória em produção para cache e sincronização realtime entre instâncias (${REDIS_URL_CANDIDATE_KEYS.join(' | ')}).`,
+      )
     }
   }
 

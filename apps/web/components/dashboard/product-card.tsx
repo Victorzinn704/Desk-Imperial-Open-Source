@@ -115,6 +115,11 @@ export const ProductCard = memo(function ProductCard({
             >
               {product.active ? 'ativo' : 'arquivado'}
             </span>
+            {product.isCombo ? (
+              <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                combo
+              </span>
+            ) : null}
             {margin ? (
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-[0.1em] border ${margin.borderClass} ${margin.textClass}`}
@@ -146,6 +151,20 @@ export const ProductCard = memo(function ProductCard({
 
           {product.description ? (
             <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-2">{product.description}</p>
+          ) : null}
+
+          {product.isCombo && product.comboDescription ? (
+            <p className="mt-2 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
+          ) : null}
+
+          {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
+            <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft)]">
+              {product.comboItems
+                ?.slice(0, 3)
+                .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
+                .join(' • ')}
+              {(product.comboItems?.length ?? 0) > 3 ? ' • ...' : ''}
+            </p>
           ) : null}
         </div>
 

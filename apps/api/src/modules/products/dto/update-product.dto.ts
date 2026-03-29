@@ -1,7 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { CurrencyCode } from '@prisma/client'
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
+import { ProductComboItemDto } from './product-combo-item.dto'
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Produto Alpha' })
@@ -57,6 +58,32 @@ export class UpdateProductDto {
   @IsString()
   @MaxLength(280)
   description?: string
+
+  @ApiPropertyOptional({ example: true, description: 'Define se este produto funciona como combo.' })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  isCombo?: boolean
+
+  @ApiPropertyOptional({
+    example: 'Combo com lanche + bebida + sobremesa',
+    description: 'Descrição do que compõe o combo.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(420)
+  comboDescription?: string
+
+  @ApiPropertyOptional({
+    type: ProductComboItemDto,
+    isArray: true,
+    description: 'Componentes do combo com quantidade por caixa e unidade.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductComboItemDto)
+  comboItems?: ProductComboItemDto[]
 
   @ApiPropertyOptional({ example: 18.9 })
   @IsOptional()

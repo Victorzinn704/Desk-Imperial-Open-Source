@@ -13,6 +13,7 @@ import { parseProductImportCsv } from './products-import.util'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { ListProductsQueryDto } from './dto/list-products.query'
 import type { UpdateProductDto } from './dto/update-product.dto'
+import type { ProductComboItemDto } from './dto/product-combo-item.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
@@ -21,6 +22,27 @@ type UploadedCsvFile = {
   buffer: Buffer
   originalname: string
 }
+
+const productWithComboInclude = Prisma.validator<Prisma.ProductInclude>()({
+  comboComponents: {
+    include: {
+      componentProduct: {
+        select: {
+          id: true,
+          name: true,
+          packagingClass: true,
+          measurementUnit: true,
+          measurementValue: true,
+          unitsPerPackage: true,
+          active: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  },
+})
 
 @Injectable()
 export class ProductsService {
@@ -47,6 +69,7 @@ export class ProductsService {
     const items = await this.prisma.product.findMany({
       take: limit,
       ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
+      include: productWithComboInclude,
       where: {
         userId: workspaceUserId,
         ...(includeInactive ? {} : { active: true }),
@@ -98,45 +121,79 @@ export class ProductsService {
   async createForUser(auth: AuthContext, dto: CreateProductDto, context: RequestContext) {
     assertOwnerRole(auth, 'Apenas o dono pode cadastrar produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const isCombo = dto.isCombo ?? false
+    const normalizedComboItems = this.normalizeComboItemsInput(dto.comboItems)
+
+    if (isCombo && normalizedComboItems.length === 0) {
+      throw new BadRequestException('Produtos do tipo combo precisam informar pelo menos um componente.')
+    }
+
     try {
-      const product = await this.prisma.product.create({
-        data: {
-          userId: workspaceUserId,
-          name: sanitizePlainText(dto.name, 'Nome do produto', {
-            allowEmpty: false,
-            rejectFormula: true,
-          })!,
-          brand: sanitizePlainText(dto.brand, 'Marca', {
-            allowEmpty: true,
-            rejectFormula: true,
-          }),
-          category: sanitizePlainText(dto.category, 'Categoria', {
-            allowEmpty: false,
-            rejectFormula: true,
-          })!,
-          packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
-            allowEmpty: false,
-            rejectFormula: true,
-          })!,
-          measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
-            allowEmpty: false,
-            rejectFormula: true,
-          })!,
-          measurementValue: dto.measurementValue,
-          unitsPerPackage: dto.unitsPerPackage,
-          description: sanitizePlainText(dto.description, 'Descricao', {
-            allowEmpty: true,
-            rejectFormula: true,
-          }),
-          unitCost: dto.unitCost,
-          unitPrice: dto.unitPrice,
-          currency: dto.currency,
-          stock: dto.stock,
-          // requiresKitchen: explicit DTO value takes priority;
-          // if not sent, infer from category name as safety net
-          requiresKitchen: dto.requiresKitchen ?? isKitchenCategory(dto.category),
-          active: true,
-        },
+      const product = await this.prisma.$transaction(async (transaction) => {
+        const createdProduct = await transaction.product.create({
+          data: {
+            userId: workspaceUserId,
+            name: sanitizePlainText(dto.name, 'Nome do produto', {
+              allowEmpty: false,
+              rejectFormula: true,
+            })!,
+            brand: sanitizePlainText(dto.brand, 'Marca', {
+              allowEmpty: true,
+              rejectFormula: true,
+            }),
+            category: sanitizePlainText(dto.category, 'Categoria', {
+              allowEmpty: false,
+              rejectFormula: true,
+            })!,
+            packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
+              allowEmpty: false,
+              rejectFormula: true,
+            })!,
+            measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
+              allowEmpty: false,
+              rejectFormula: true,
+            })!,
+            measurementValue: dto.measurementValue,
+            unitsPerPackage: dto.unitsPerPackage,
+            isCombo,
+            comboDescription: isCombo
+              ? sanitizePlainText(dto.comboDescription, 'Descricao do combo', {
+                  allowEmpty: true,
+                  rejectFormula: true,
+                })
+              : null,
+            description: sanitizePlainText(dto.description, 'Descricao', {
+              allowEmpty: true,
+              rejectFormula: true,
+            }),
+            unitCost: dto.unitCost,
+            unitPrice: dto.unitPrice,
+            currency: dto.currency,
+            stock: dto.stock,
+            // requiresKitchen: explicit DTO value takes priority;
+            // if not sent, infer from category name as safety net
+            requiresKitchen: dto.requiresKitchen ?? isKitchenCategory(dto.category),
+            active: true,
+          },
+        })
+
+        if (isCombo) {
+          const comboItemsPayload = await this.buildComboItemsPayload(
+            transaction,
+            workspaceUserId,
+            createdProduct.id,
+            normalizedComboItems,
+          )
+
+          await transaction.productComboItem.createMany({
+            data: comboItemsPayload,
+          })
+        }
+
+        return transaction.product.findUniqueOrThrow({
+          where: { id: createdProduct.id },
+          include: productWithComboInclude,
+        })
       })
       const snapshot = await this.currencyService.getSnapshot()
 
@@ -153,6 +210,8 @@ export class ProductsService {
           measurementUnit: product.measurementUnit,
           measurementValue: Number(product.measurementValue),
           unitsPerPackage: product.unitsPerPackage,
+          isCombo: product.isCombo,
+          comboItemsCount: product.comboComponents.length,
           stock: product.stock,
           currency: product.currency,
         },
@@ -179,68 +238,126 @@ export class ProductsService {
     assertOwnerRole(auth, 'Apenas o dono pode editar produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
+    const normalizedComboItems = dto.comboItems ? this.normalizeComboItemsInput(dto.comboItems) : null
+    const nextIsCombo = dto.isCombo ?? existingProduct.isCombo
+
+    if (!nextIsCombo && normalizedComboItems && normalizedComboItems.length > 0) {
+      throw new BadRequestException('Remova os componentes ou marque o produto como combo antes de salvar.')
+    }
+
+    if (nextIsCombo && dto.comboItems !== undefined && normalizedComboItems && normalizedComboItems.length === 0) {
+      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
+    }
+
+    if (dto.isCombo === true && !existingProduct.isCombo && dto.comboItems === undefined) {
+      throw new BadRequestException('Ao ativar um combo, informe os itens de composição.')
+    }
 
     try {
-      const product = await this.prisma.product.update({
-        where: { id: existingProduct.id },
-        data: {
-          ...(dto.name !== undefined
-            ? {
-                name: sanitizePlainText(dto.name, 'Nome do produto', {
-                  allowEmpty: false,
-                  rejectFormula: true,
-                })!,
-              }
-            : {}),
-          ...(dto.brand !== undefined
-            ? {
-                brand: sanitizePlainText(dto.brand, 'Marca', {
-                  allowEmpty: true,
-                  rejectFormula: true,
+      const product = await this.prisma.$transaction(async (transaction) => {
+        const updatedProduct = await transaction.product.update({
+          where: { id: existingProduct.id },
+          data: {
+            ...(dto.name !== undefined
+              ? {
+                  name: sanitizePlainText(dto.name, 'Nome do produto', {
+                    allowEmpty: false,
+                    rejectFormula: true,
+                  })!,
+                }
+              : {}),
+            ...(dto.brand !== undefined
+              ? {
+                  brand: sanitizePlainText(dto.brand, 'Marca', {
+                    allowEmpty: true,
+                    rejectFormula: true,
+                  }),
+                }
+              : {}),
+            ...(dto.category !== undefined
+              ? {
+                  category: sanitizePlainText(dto.category, 'Categoria', {
+                    allowEmpty: false,
+                    rejectFormula: true,
+                  })!,
+                }
+              : {}),
+            ...(dto.packagingClass !== undefined
+              ? {
+                  packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
+                    allowEmpty: false,
+                    rejectFormula: true,
+                  })!,
+                }
+              : {}),
+            ...(dto.measurementUnit !== undefined
+              ? {
+                  measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
+                    allowEmpty: false,
+                    rejectFormula: true,
+                  })!,
+                }
+              : {}),
+            ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
+            ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
+            ...(dto.description !== undefined
+              ? {
+                  description: sanitizePlainText(dto.description, 'Descricao', {
+                    allowEmpty: true,
+                    rejectFormula: true,
+                  }),
+                }
+              : {}),
+            ...(dto.isCombo !== undefined ? { isCombo: dto.isCombo } : {}),
+            ...(nextIsCombo
+              ? dto.comboDescription !== undefined
+                ? {
+                    comboDescription: sanitizePlainText(dto.comboDescription, 'Descricao do combo', {
+                      allowEmpty: true,
+                      rejectFormula: true,
+                    }),
+                  }
+                : {}
+              : {
+                  comboDescription: null,
                 }),
-              }
-            : {}),
-          ...(dto.category !== undefined
-            ? {
-                category: sanitizePlainText(dto.category, 'Categoria', {
-                  allowEmpty: false,
-                  rejectFormula: true,
-                })!,
-              }
-            : {}),
-          ...(dto.packagingClass !== undefined
-            ? {
-                packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
-                  allowEmpty: false,
-                  rejectFormula: true,
-                })!,
-              }
-            : {}),
-          ...(dto.measurementUnit !== undefined
-            ? {
-                measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
-                  allowEmpty: false,
-                  rejectFormula: true,
-                })!,
-              }
-            : {}),
-          ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
-          ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
-          ...(dto.description !== undefined
-            ? {
-                description: sanitizePlainText(dto.description, 'Descricao', {
-                  allowEmpty: true,
-                  rejectFormula: true,
-                }),
-              }
-            : {}),
-          ...(dto.unitCost !== undefined ? { unitCost: dto.unitCost } : {}),
-          ...(dto.unitPrice !== undefined ? { unitPrice: dto.unitPrice } : {}),
-          ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
-          ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
-          ...(dto.active !== undefined ? { active: dto.active } : {}),
-          ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
-        },
+            ...(dto.unitCost !== undefined ? { unitCost: dto.unitCost } : {}),
+            ...(dto.unitPrice !== undefined ? { unitPrice: dto.unitPrice } : {}),
+            ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
+            ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
+            ...(dto.active !== undefined ? { active: dto.active } : {}),
+            ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
+          },
+        })
+
+        if (!nextIsCombo) {
+          await transaction.productComboItem.deleteMany({
+            where: {
+              comboProductId: updatedProduct.id,
+            },
+          })
+        } else if (normalizedComboItems) {
+          const comboItemsPayload = await this.buildComboItemsPayload(
+            transaction,
+            workspaceUserId,
+            updatedProduct.id,
+            normalizedComboItems,
+          )
+
+          await transaction.productComboItem.deleteMany({
+            where: {
+              comboProductId: updatedProduct.id,
+            },
+          })
+          await transaction.productComboItem.createMany({
+            data: comboItemsPayload,
+          })
+        }
+
+        return transaction.product.findUniqueOrThrow({
+          where: { id: updatedProduct.id },
+          include: productWithComboInclude,
+        })
       })
       const snapshot = await this.currencyService.getSnapshot()
 
@@ -251,6 +368,8 @@ export class ProductsService {
         resourceId: product.id,
         metadata: {
           updatedFields: Object.keys(dto),
+          isCombo: product.isCombo,
+          comboItemsCount: product.comboComponents.length,
         },
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
@@ -466,11 +585,15 @@ export class ProductsService {
     assertOwnerRole(auth, 'Apenas o dono pode alterar o status dos produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
-    const product = await this.prisma.product.update({
+    await this.prisma.product.update({
       where: { id: existingProduct.id },
       data: {
         active,
       },
+    })
+    const product = await this.prisma.product.findUniqueOrThrow({
+      where: { id: existingProduct.id },
+      include: productWithComboInclude,
     })
 
     await this.auditLogService.record({
@@ -513,6 +636,117 @@ export class ProductsService {
     }
 
     return product
+  }
+
+  private normalizeComboItemsInput(items: ProductComboItemDto[] | undefined) {
+    if (!items?.length) {
+      return []
+    }
+
+    const groupedByProduct = new Map<
+      string,
+      {
+        productId: string
+        quantityPackages: number
+        quantityUnits: number
+      }
+    >()
+
+    for (const item of items) {
+      const productId = item.productId.trim()
+      if (!productId) {
+        throw new BadRequestException('Cada componente do combo precisa informar um produto válido.')
+      }
+
+      const quantityPackages = Math.max(0, item.quantityPackages ?? 0)
+      const quantityUnits = Math.max(0, item.quantityUnits ?? 0)
+
+      if (quantityPackages === 0 && quantityUnits === 0) {
+        throw new BadRequestException('Cada componente do combo precisa de quantidade em caixa ou unidade.')
+      }
+
+      const existing = groupedByProduct.get(productId)
+      if (existing) {
+        existing.quantityPackages += quantityPackages
+        existing.quantityUnits += quantityUnits
+        continue
+      }
+
+      groupedByProduct.set(productId, {
+        productId,
+        quantityPackages,
+        quantityUnits,
+      })
+    }
+
+    return Array.from(groupedByProduct.values())
+  }
+
+  private async buildComboItemsPayload(
+    transaction: Prisma.TransactionClient,
+    workspaceUserId: string,
+    comboProductId: string,
+    normalizedItems: Array<{
+      productId: string
+      quantityPackages: number
+      quantityUnits: number
+    }>,
+  ) {
+    if (!normalizedItems.length) {
+      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
+    }
+
+    const products = await transaction.product.findMany({
+      where: {
+        userId: workspaceUserId,
+        id: {
+          in: normalizedItems.map((item) => item.productId),
+        },
+      },
+      select: {
+        id: true,
+        unitsPerPackage: true,
+      },
+    })
+    const productsById = new Map(products.map((product) => [product.id, product]))
+
+    for (const item of normalizedItems) {
+      if (item.productId === comboProductId) {
+        throw new BadRequestException('Um combo não pode conter ele mesmo como componente.')
+      }
+
+      if (!productsById.has(item.productId)) {
+        throw new NotFoundException('Um ou mais componentes do combo não foram encontrados nesta conta.')
+      }
+    }
+
+    return normalizedItems.map((item) => {
+      const component = productsById.get(item.productId)!
+      const safeUnitsPerPackage = Math.max(1, component.unitsPerPackage)
+      const totalUnits = item.quantityPackages * safeUnitsPerPackage + item.quantityUnits
+
+      if (totalUnits <= 0) {
+        throw new BadRequestException('A composição do combo precisa resultar em pelo menos uma unidade.')
+      }
+
+      if (safeUnitsPerPackage <= 1) {
+        return {
+          comboProductId,
+          componentProductId: item.productId,
+          quantityPackages: 0,
+          quantityUnits: totalUnits,
+          totalUnits,
+        }
+      }
+
+      return {
+        comboProductId,
+        componentProductId: item.productId,
+        quantityPackages: Math.floor(totalUnits / safeUnitsPerPackage),
+        quantityUnits: totalUnits % safeUnitsPerPackage,
+        totalUnits,
+      }
+    })
   }
 
   private async resolveProductsSnapshot(

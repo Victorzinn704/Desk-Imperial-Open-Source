@@ -5,6 +5,7 @@ import { CurrentAuth } from './decorators/current-auth.decorator'
 import type { AuthContext } from './auth.types'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { DemoLoginDto } from './dto/demo-login.dto'
 import { LoginDto } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
@@ -31,6 +32,11 @@ export class AuthController {
   @Post('login')
   login(@Body() body: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return this.authService.login(body, response, extractRequestContext(request))
+  }
+
+  @Post('demo')
+  loginDemo(@Body() body: DemoLoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    return this.authService.loginDemo(body, response, extractRequestContext(request))
   }
 
   @Post('forgot-password')

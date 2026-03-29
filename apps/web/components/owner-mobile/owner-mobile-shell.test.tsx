@@ -15,6 +15,7 @@ vi.mock('@/lib/api', () => ({
   logout: vi.fn(),
   openComanda: vi.fn(),
   addComandaItem: vi.fn(),
+  addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
   updateComandaStatus: vi.fn(),
   openCashSession: vi.fn(),

@@ -31,6 +31,12 @@ type SimpleProduct = {
   category: string
   unitPrice: number
   currency: string
+  isCombo?: boolean
+  comboDescription?: string | null
+  comboItems?: Array<{
+    componentProductName: string
+    totalUnits: number
+  }>
 }
 
 type SaveComandaPayload = {
@@ -223,15 +229,14 @@ export function PdvComandaModal({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
       <div
-        className="imperial-card relative flex w-full max-w-6xl flex-col gap-0 overflow-hidden"
-        style={{ maxHeight: '90vh' }}
+        className="imperial-card relative flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-6">
+        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-xl font-semibold text-white">
@@ -262,7 +267,7 @@ export function PdvComandaModal({
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
+        <div className="grid min-h-0 flex-1 overflow-y-auto xl:overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
           <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
             <div className="p-4">
               <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
@@ -277,10 +282,10 @@ export function PdvComandaModal({
 
               {/* Categories Kanban Squares */}
               {categories.length > 0 && (
-                <div className="mt-4 flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
                   <button
                     onClick={() => setSelectedCategory(null)}
-                    className={`group flex shrink-0 flex-col items-center justify-center rounded-[14px] border px-3 py-3 min-w-[70px] transition-all hover:-translate-y-0.5 ${
+                    className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
                       selectedCategory === null
                         ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
                         : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
@@ -302,7 +307,7 @@ export function PdvComandaModal({
                       <button
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
-                        className={`group flex shrink-0 flex-col items-center justify-center rounded-[14px] border px-3 py-3 min-w-[70px] transition-all hover:-translate-y-0.5 ${
+                        className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
                           isActive
                             ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
                             : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
@@ -319,27 +324,62 @@ export function PdvComandaModal({
                   })}
                 </div>
               )}
+              {selectedCategory ? (
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+                  Subitens de {selectedCategory}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-1">
                 {filteredProducts.map((product) => {
                   const inCart = itens.find((item) => item.produtoId === product.id)
+                  const initials = product.name
+                    .split(' ')
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((chunk) => chunk[0]!.toUpperCase())
+                    .join('')
                   return (
                     <button
                       key={product.id}
                       draggable
-                      className="flex w-full items-center justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)] cursor-grab active:cursor-grabbing"
+                      className="group flex min-h-[96px] w-full flex-col justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)] cursor-grab active:cursor-grabbing xl:min-h-0 xl:flex-row xl:items-center"
                       type="button"
                       onClick={() => addItem(product)}
                       onDragStart={(e) => e.dataTransfer.setData('productId', product.id)}
                     >
-                      <div>
-                        <p className="text-sm font-medium text-white">{product.name}</p>
-                        <p className="text-xs text-[var(--text-soft)]">{product.category}</p>
+                      <div className="flex items-start gap-2.5">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[11px] font-bold tracking-[0.08em] text-[#36f57c]">
+                          {initials || 'IT'}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-white line-clamp-2">{product.name}</p>
+                          <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
+                          {product.isCombo ? (
+                            <span className="mt-1 inline-flex rounded-full border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.14)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
+                              combo
+                            </span>
+                          ) : null}
+                          {product.isCombo && product.comboDescription ? (
+                            <p className="mt-1 text-[10px] leading-4 text-[var(--accent)] line-clamp-2">
+                              {product.comboDescription}
+                            </p>
+                          ) : null}
+                          {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
+                            <p className="mt-1 text-[10px] leading-4 text-[var(--text-soft)] line-clamp-2">
+                              {product.comboItems
+                                ?.slice(0, 2)
+                                .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
+                                .join(' • ')}
+                              {(product.comboItems?.length ?? 0) > 2 ? ' • ...' : ''}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-[#36f57c]">
+                      <div className="mt-2 flex items-center justify-between gap-3 xl:mt-0">
+                        <span className="text-sm font-semibold text-[#36f57c] group-hover:text-[#5cfb99]">
                           {formatCurrency(product.unitPrice, 'BRL')}
                         </span>
                         {inCart ? (

@@ -96,6 +96,7 @@ function makeMockPrisma(userRow: Record<string, unknown> | null = null) {
     },
     oneTimeCode: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
+      updateMany: jest.fn(async () => ({ count: 0 })),
       create: jest.fn(async () => ({
         code: '123456',
         expiresAt: new Date(Date.now() + 900_000), // 15 min
@@ -108,7 +109,7 @@ function makeMockPrisma(userRow: Record<string, unknown> | null = null) {
  * Mock do ConfigService com variáveis mínimas necessárias para o AuthService funcionar.
  * O parâmetro `env` controla se os cookie names usarão o prefixo __Host- de produção.
  */
-function makeMockConfig(env = 'test') {
+function makeMockConfig(env = 'test', overrides: Record<string, string> = {}) {
   const values: Record<string, string> = {
     NODE_ENV: env,
     // CSRF_SECRET precisa de pelo menos 32 chars para que o HMAC seja seguro
@@ -117,6 +118,10 @@ function makeMockConfig(env = 'test') {
     SESSION_TTL_HOURS: '24',
     PASSWORD_RESET_TTL_MINUTES: '30',
     CONSENT_VERSION: '2026.03',
+    REGISTRATION_GEOCODING_STRICT: 'false',
+    REGISTRATION_GEOCODING_TIMEOUT_MS: '1800',
+    REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS: '2500',
+    ...overrides,
   }
   return { get: jest.fn((key: string) => values[key]) }
 }
@@ -127,7 +132,7 @@ function makeMockConfig(env = 'test') {
  * ou null para simular falha de geocodificação (endereço não encontrado).
  */
 function makeMockGeocoding(result: Record<string, unknown> | null = null) {
-  const successResult = result ?? {
+  const successResult = {
     streetLine1: 'Rua das Flores',
     streetNumber: '100',
     district: 'Centro',
@@ -140,7 +145,7 @@ function makeMockGeocoding(result: Record<string, unknown> | null = null) {
     precision: 'rooftop',
   }
   return {
-    geocodeAddressLocation: jest.fn(async () => successResult),
+    geocodeAddressLocation: jest.fn(async () => (result === null ? null : result ?? successResult)),
   }
 }
 
@@ -178,9 +183,21 @@ function makeMockConsent() {
  * onde assertLoginAllowed() lança um erro HTTP 429.
  */
 function makeMockRateLimit(blocked = false) {
+  const buildKey = (prefix: string, email: string, ip?: string | null) => `${prefix}:${ip ?? 'unknown'}:${email}`
+
   return {
-    buildLoginKey: jest.fn((email: string, ip: string) => `rl:login:${ip}:${email}`),
-    buildLoginEmailKey: jest.fn((email: string) => `rl:email:${email}`),
+    buildLoginKey: jest.fn((email: string, ip: string) => buildKey('rl:login', email, ip)),
+    buildLoginEmailKey: jest.fn((email: string) => `rl:login:email:${email}`),
+    buildPasswordResetKey: jest.fn((email: string, ip: string) => buildKey('rl:password-reset', email, ip)),
+    buildPasswordResetEmailKey: jest.fn((email: string) => `rl:password-reset:email:${email}`),
+    buildPasswordResetCodeKey: jest.fn((email: string, ip: string) => buildKey('rl:password-reset-code', email, ip)),
+    buildPasswordResetCodeEmailKey: jest.fn((email: string) => `rl:password-reset-code:email:${email}`),
+    buildEmailVerificationKey: jest.fn((email: string, ip: string) => buildKey('rl:email-verification', email, ip)),
+    buildEmailVerificationEmailKey: jest.fn((email: string) => `rl:email-verification:email:${email}`),
+    buildEmailVerificationCodeKey: jest.fn((email: string, ip: string) =>
+      buildKey('rl:email-verification-code', email, ip),
+    ),
+    buildEmailVerificationCodeEmailKey: jest.fn((email: string) => `rl:email-verification-code:email:${email}`),
     assertLoginAllowed: jest.fn(async () => {
       if (blocked) {
         const err = new Error('Muitas tentativas de login. Aguarde 5 minutos e tente novamente.')
@@ -193,8 +210,20 @@ function makeMockRateLimit(blocked = false) {
         throw err
       }
     }),
-    incrementAttempt: jest.fn(async () => {}),
-    clearAttempts: jest.fn(async () => {}),
+    assertPasswordResetAllowed: jest.fn(async () => {}),
+    assertPasswordResetCodeAllowed: jest.fn(async () => {}),
+    assertEmailVerificationAllowed: jest.fn(async () => {}),
+    assertEmailVerificationCodeAllowed: jest.fn(async () => {}),
+    recordFailure: jest.fn(async () => ({ count: 1, firstAttemptAt: Date.now(), lockedUntil: null })),
+    recordPasswordResetAttempt: jest.fn(async () => ({ count: 1, firstAttemptAt: Date.now(), lockedUntil: null })),
+    recordPasswordResetCodeAttempt: jest.fn(async () => ({ count: 1, firstAttemptAt: Date.now(), lockedUntil: null })),
+    recordEmailVerificationAttempt: jest.fn(async () => ({ count: 1, firstAttemptAt: Date.now(), lockedUntil: null })),
+    recordEmailVerificationCodeAttempt: jest.fn(async () => ({
+      count: 1,
+      firstAttemptAt: Date.now(),
+      lockedUntil: null,
+    })),
+    clear: jest.fn(async () => {}),
   }
 }
 
@@ -366,12 +395,33 @@ describe('AuthService.register()', () => {
      * validação básica de que o endereço existe.
      * Se o endereço não for encontrado, o cadastro é bloqueado com erro 400.
      */
-    it('rejeita quando a geocodificação não encontra o endereço', async () => {
+    it('mantém cadastro rápido quando a geocodificação não encontra o endereço', async () => {
+      const prisma = makeMockPrisma(null)
       const service = buildService({
-        prisma: makeMockPrisma(null),
+        prisma,
         geocoding: makeMockGeocoding(null), // simula Nominatim retornando vazio
       })
-      await expect(service.register(VALID_REGISTER_DTO, makeRequestContext() as any)).rejects.toBeDefined()
+      const result = await service.register(VALID_REGISTER_DTO, makeRequestContext() as any)
+      expect(result.success).toBe(true)
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            companyLatitude: null,
+            companyLongitude: null,
+          }),
+        }),
+      )
+    })
+
+    it('rejeita no modo estrito quando a geocodificação não encontra o endereço', async () => {
+      const service = buildService({
+        prisma: makeMockPrisma(null),
+        config: makeMockConfig('test', { REGISTRATION_GEOCODING_STRICT: 'true' }) as unknown as ConfigService,
+        geocoding: makeMockGeocoding(null),
+      })
+      await expect(service.register(VALID_REGISTER_DTO, makeRequestContext() as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      )
     })
   })
 

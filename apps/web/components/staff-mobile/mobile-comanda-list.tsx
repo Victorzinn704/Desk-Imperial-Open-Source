@@ -68,7 +68,8 @@ interface ComandaCardProps {
 }
 
 function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const safeValue = Number.isFinite(value) ? value : 0
+  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export function MobileComandaList({

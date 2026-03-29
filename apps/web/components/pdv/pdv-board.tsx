@@ -38,6 +38,12 @@ type SimpleProduct = {
   category: string
   unitPrice: number
   currency: string
+  isCombo?: boolean
+  comboDescription?: string | null
+  comboItems?: Array<{
+    componentProductName: string
+    totalUnits: number
+  }>
 }
 
 type PdvBoardProps = {
@@ -79,22 +85,22 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
   const editingComanda = (editingComandaId ? comandasById.get(editingComandaId) : null) ?? null
 
   const openComandaMutation = useMutation({
-    mutationFn: (payload: OpenComandaPayload) => openComanda(payload),
+    mutationFn: (payload: OpenComandaPayload) => openComanda(payload, { includeSnapshot: false }),
     onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const replaceComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: ReplaceComandaPayload }) =>
-      replaceComanda(comandaId, payload),
+      replaceComanda(comandaId, payload, { includeSnapshot: false }),
     onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const assignComandaMutation = useMutation({
     mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) =>
-      assignComanda(comandaId, employeeId),
+      assignComanda(comandaId, employeeId, { includeSnapshot: false }),
     onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
-      updateComandaStatus(comandaId, status),
+      updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const closeComandaMutation = useMutation({
@@ -104,7 +110,7 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
     }: {
       comandaId: string
       payload: { discountAmount: number; serviceFeeAmount: number }
-    }) => closeComanda(comandaId, payload),
+    }) => closeComanda(comandaId, payload, { includeSnapshot: false }),
     onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
   })
   const createMesaMutation = useMutation({

@@ -10,6 +10,8 @@ case "$service_name" in
     ;;
   imperial-desk-api)
     echo "Starting Railway service: $service_name"
+    echo "Running Prisma migrations (deploy)"
+    npm --workspace @partner/api run prisma:migrate:deploy
     npm --workspace @partner/api run start
     ;;
   *)

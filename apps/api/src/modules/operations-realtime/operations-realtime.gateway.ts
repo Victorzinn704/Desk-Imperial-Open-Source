@@ -6,6 +6,7 @@ import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
 import { AuthService } from '../auth/auth.service'
 import { getAllowedOriginsFromValues, isAllowedOrigin } from '../../common/utils/origin.util'
+import { resolveRedisUrl } from '../../common/utils/redis-url.util'
 import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
 import { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
@@ -69,7 +70,7 @@ export class OperationsRealtimeGateway
       )
     }
 
-    const redisUrl = process.env.REDIS_URL
+    const redisUrl = resolveRedisUrl(process.env)
     if (redisUrl) {
       try {
         const pubClient = new Redis(redisUrl)
@@ -85,7 +86,9 @@ export class OperationsRealtimeGateway
         this.logger.warn(`Redis adapter não inicializado — usando adapter padrão em memória: ${msg}`)
       }
     } else {
-      this.logger.log('REDIS_URL não definido — Socket.IO usando adapter em memória (instância única).')
+      this.logger.log(
+        'Redis não definido (REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL) — Socket.IO usando adapter em memória (instância única).',
+      )
     }
 
     this.bindNamespace(server)

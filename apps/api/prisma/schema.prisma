@@ -290,6 +290,8 @@ model Product {
   measurementUnit String @default("UN")
   measurementValue Decimal @default(1) @db.Decimal(10, 2)
   unitsPerPackage Int @default(1)
+  isCombo     Boolean  @default(false)
+  comboDescription String?
   description String?
   unitCost    Decimal  @db.Decimal(10, 2)
   unitPrice   Decimal  @db.Decimal(10, 2)
@@ -302,12 +304,30 @@ model Product {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderItems  OrderItem[]
   comandaItems ComandaItem[]
+  comboComponents ProductComboItem[] @relation("ComboComponents")
+  usedInCombos ProductComboItem[] @relation("ComboComponentProducts")
 
   @@index([userId, active])
   @@index([userId, active, createdAt])
   @@index([userId, category])
   @@index([userId, currency, createdAt])
   @@unique([userId, name])
+}
+
+model ProductComboItem {
+  id                 String   @id @default(cuid())
+  comboProductId     String
+  componentProductId String
+  quantityPackages   Int      @default(0)
+  quantityUnits      Int      @default(0)
+  totalUnits         Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  comboProduct       Product  @relation("ComboComponents", fields: [comboProductId], references: [id], onDelete: Cascade)
+  componentProduct   Product  @relation("ComboComponentProducts", fields: [componentProductId], references: [id], onDelete: Restrict)
+
+  @@unique([comboProductId, componentProductId])
+  @@index([componentProductId])
 }
 
 model Employee {

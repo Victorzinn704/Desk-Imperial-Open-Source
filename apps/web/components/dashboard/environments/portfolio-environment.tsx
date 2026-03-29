@@ -136,6 +136,9 @@ export function PortfolioEnvironment() {
       measurementUnit: values.measurementUnit,
       measurementValue: values.measurementValue,
       unitsPerPackage: values.unitsPerPackage,
+      isCombo: values.isCombo,
+      comboDescription: values.comboDescription,
+      comboItems: values.comboItems,
       description: values.description,
       unitCost: values.unitCost,
       unitPrice: values.unitPrice,
@@ -204,6 +207,7 @@ export function PortfolioEnvironment() {
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
         <div className="space-y-4">
           <ProductForm
+            availableProducts={products}
             loading={_createProductMutation.isPending || updateProductMutation.isPending}
             onCancelEdit={() => setEditingProduct(null)}
             onSubmit={handleProductSubmit}

@@ -35,6 +35,7 @@ import {
 } from './auth.constants'
 import type { AuthContext } from './auth.types'
 import type { ForgotPasswordDto } from './dto/forgot-password.dto'
+import type { DemoLoginDto } from './dto/demo-login.dto'
 import type { LoginDto } from './dto/login.dto'
 import { LoginModeDto } from './dto/login.dto'
 import type { RegisterDto } from './dto/register.dto'
@@ -181,7 +182,7 @@ export class AuthService {
       rejectFormula: true,
     })!
     const employeeCount = dto.hasEmployees ? dto.employeeCount : 0
-    const companyLocation = await this.geocodingService.geocodeAddressLocation({
+    const companyLocation = await this.resolveRegistrationCompanyLocation({
       streetLine1: companyStreetLine1,
       streetNumber: companyStreetNumber,
       district: companyDistrict,
@@ -191,7 +192,7 @@ export class AuthService {
       country: companyCountry,
     })
 
-    if (!companyLocation) {
+    if (!companyLocation && this.isRegistrationGeocodingStrict()) {
       throw new BadRequestException(
         'Nao foi possivel validar o endereco da empresa com precisao. Revise rua, numero, bairro, cidade, estado e CEP.',
       )
@@ -203,16 +204,16 @@ export class AuthService {
         fullName,
         companyOwnerId: null,
         companyName,
-        companyStreetLine1: companyLocation.streetLine1 ?? companyStreetLine1,
-        companyStreetNumber: companyLocation.streetNumber ?? companyStreetNumber,
+        companyStreetLine1: companyLocation?.streetLine1 ?? companyStreetLine1,
+        companyStreetNumber: companyLocation?.streetNumber ?? companyStreetNumber,
         companyAddressComplement,
-        companyDistrict: companyLocation.district ?? companyDistrict,
-        companyCity: companyLocation.city ?? companyCity,
-        companyState: companyLocation.state ?? companyState,
-        companyPostalCode: companyLocation.postalCode ?? companyPostalCode,
-        companyCountry: companyLocation.country ?? companyCountry,
-        companyLatitude: companyLocation.latitude,
-        companyLongitude: companyLocation.longitude,
+        companyDistrict: companyLocation?.district ?? companyDistrict,
+        companyCity: companyLocation?.city ?? companyCity,
+        companyState: companyLocation?.state ?? companyState,
+        companyPostalCode: companyLocation?.postalCode ?? companyPostalCode,
+        companyCountry: companyLocation?.country ?? companyCountry,
+        companyLatitude: companyLocation?.latitude ?? null,
+        companyLongitude: companyLocation?.longitude ?? null,
         hasEmployees: dto.hasEmployees,
         employeeCount,
         role: UserRole.OWNER,
@@ -240,32 +241,12 @@ export class AuthService {
       context,
     })
 
-    let verificationDelivery: EmailVerificationDeliveryResult
-
-    try {
-      verificationDelivery = await this.sendEmailVerificationCode({
-        userId: user.id,
-        email: user.email,
-        fullName,
-        context,
-        trigger: 'register',
-        bypassRateLimit: true,
-      })
-    } catch (error) {
-      await this.prisma.user.delete({
-        where: {
-          id: user.id,
-        },
-      })
-
-      if (isServiceUnavailable(error)) {
-        throw new ServiceUnavailableException(
-          'Nao foi possivel enviar o codigo de confirmacao agora. O cadastro nao foi concluido. Tente novamente em instantes.',
-        )
-      }
-
-      throw error
-    }
+    const verificationDelivery = await this.sendRegistrationVerificationCodeWithTimeout({
+      userId: user.id,
+      email: user.email,
+      fullName,
+      context,
+    })
 
     await this.auditLogService.record({
       actorUserId: user.id,
@@ -275,8 +256,8 @@ export class AuthService {
       metadata: {
         email: user.email,
         role: user.role,
-        locationCaptured: true,
-        locationPrecision: companyLocation.precision,
+        locationCaptured: Boolean(companyLocation),
+        locationPrecision: companyLocation?.precision ?? 'manual',
         companyCity: user.companyCity,
         companyState: user.companyState,
         hasEmployees: user.hasEmployees,
@@ -290,13 +271,15 @@ export class AuthService {
       success: true,
       requiresEmailVerification: true,
       email: user.email,
-      deliveryMode: verificationDelivery.deliveryMode,
-      previewCode: verificationDelivery.previewCode,
-      previewExpiresAt: verificationDelivery.previewExpiresAt?.toISOString(),
+      deliveryMode: verificationDelivery?.deliveryMode,
+      previewCode: verificationDelivery?.previewCode,
+      previewExpiresAt: verificationDelivery?.previewExpiresAt?.toISOString(),
       message:
-        verificationDelivery.deliveryMode === 'preview'
+        verificationDelivery?.deliveryMode === 'preview'
           ? 'Cadastro concluido. Como o email esta indisponivel agora, liberamos um codigo de apoio para voce concluir a verificacao neste navegador.'
-          : 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.',
+          : verificationDelivery
+            ? 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.'
+            : 'Cadastro concluido. O codigo de confirmacao esta sendo processado. Se nao chegar em instantes, use a opcao de reenviar codigo.',
     }
   }
 
@@ -419,6 +402,185 @@ export class AuthService {
     }
   }
 
+  async loginDemo(dto: DemoLoginDto, response: Response, context: RequestContext) {
+    const demoEmail = normalizeEmail(this.configService.get<string>('DEMO_ACCOUNT_EMAIL') ?? 'demo@deskimperial.online')
+
+    if (!this.demoAccessService.isDemoAccount(demoEmail)) {
+      throw new BadRequestException('Modo demo não está configurado nesta instância.')
+    }
+
+    const normalizedEmail =
+      dto.loginMode === LoginModeDto.STAFF
+        ? `demo:staff:${demoEmail}:${sanitizeEmployeeCodeForLogin(dto.employeeCode ?? 'VD-001')}`
+        : `demo:owner:${demoEmail}`
+    const rateLimitKeys = [
+      this.authRateLimitService.buildLoginKey(normalizedEmail, context.ipAddress),
+      this.authRateLimitService.buildLoginEmailKey(normalizedEmail),
+    ]
+
+    if (!dto.bypassRateLimit) {
+      try {
+        await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
+      } catch (error) {
+        await this.auditLogService.record({
+          event: 'auth.login.blocked',
+          resource: 'session',
+          severity: AuditSeverity.WARN,
+          metadata: { email: normalizedEmail, reason: 'rate_limit', demo: true },
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        })
+
+        throw error
+      }
+    }
+
+    const actor =
+      dto.loginMode === LoginModeDto.STAFF
+        ? await this.resolveDemoStaffActor(demoEmail, dto.employeeCode)
+        : await this.resolveDemoOwnerActor(demoEmail)
+
+    if (!actor || actor.status !== UserStatus.ACTIVE) {
+      await this.handleFailedLogin({
+        email: normalizedEmail,
+        reason: 'user_not_found_or_disabled',
+        rateLimitKeys,
+        context,
+      })
+    }
+
+    const activeActor = actor!
+
+    if (!activeActor.emailVerifiedAt) {
+      await this.clearRateLimitKeys(rateLimitKeys)
+      const verificationMessage = await this.handleUnverifiedLogin(activeActor.ownerUser, context)
+      throw new ForbiddenException(verificationMessage)
+    }
+
+    await this.clearRateLimitKeys(rateLimitKeys)
+
+    const session = await this.createSession(
+      {
+        userId: activeActor.sessionUserId,
+        employeeId: activeActor.employeeId,
+        workspaceOwnerUserId: activeActor.workspaceOwnerUserId,
+        email: activeActor.ownerUser.email,
+      },
+      context,
+    )
+
+    this.setSessionCookies(response, session.token, session.sessionId, session.expiresAt)
+
+    await this.auditLogService.record({
+      actorUserId: activeActor.actorUserId,
+      event: 'auth.login.succeeded',
+      resource: 'session',
+      resourceId: session.sessionId,
+      metadata: { email: normalizedEmail, loginMode: dto.loginMode, demo: true },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
+
+    return {
+      user: toAuthUser(activeActor.authUser, {
+        sessionId: session.sessionId,
+        analytics: activeActor.cookiePreference?.analytics ?? false,
+        marketing: activeActor.cookiePreference?.marketing ?? false,
+        evaluationAccess: session.evaluationAccess,
+        employeeId: activeActor.employeeId,
+        employeeCode: activeActor.employeeCode,
+      }),
+      csrfToken: this.buildCsrfToken(session.sessionId),
+      session: {
+        expiresAt: session.expiresAt,
+      },
+    }
+  }
+
+  private async resolveDemoOwnerActor(demoEmail: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: demoEmail },
+      select: {
+        ...authSessionUserSelect,
+        passwordHash: true,
+        role: true,
+      },
+    })
+
+    if (!user || user.role !== UserRole.OWNER || user.companyOwnerId) {
+      return null
+    }
+
+    return {
+      actorUserId: user.id,
+      sessionUserId: user.id,
+      workspaceOwnerUserId: user.id,
+      employeeId: user.employeeAccount?.id ?? null,
+      employeeCode: user.employeeAccount?.employeeCode ?? null,
+      passwordHash: user.passwordHash,
+      status: user.status,
+      emailVerifiedAt: user.emailVerifiedAt,
+      fullName: user.fullName,
+      cookiePreference: user.cookiePreference,
+      ownerUser: user,
+      authUser: user,
+    }
+  }
+
+  private async resolveDemoStaffActor(demoEmail: string, employeeCode?: string) {
+    const owner = await this.prisma.user.findFirst({
+      where: {
+        email: demoEmail,
+        companyOwnerId: null,
+        role: UserRole.OWNER,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!owner) {
+      return null
+    }
+
+    const safeEmployeeCode = sanitizeEmployeeCodeForLogin(employeeCode ?? 'VD-001')
+    const employee = await this.findActiveEmployeeLoginActor(owner.id, safeEmployeeCode)
+
+    if (!employee) {
+      return null
+    }
+
+    const ownerUser = employee.user
+    const legacyLoginUser = employee.loginUser
+
+    if (ownerUser.status !== UserStatus.ACTIVE) {
+      return null
+    }
+
+    return {
+      actorUserId: legacyLoginUser?.id ?? ownerUser.id,
+      sessionUserId: legacyLoginUser?.id ?? null,
+      workspaceOwnerUserId: ownerUser.id,
+      employeeId: employee.id,
+      employeeCode: employee.employeeCode,
+      passwordHash: 'demo-bypass',
+      status: employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
+      emailVerifiedAt: ownerUser.emailVerifiedAt,
+      fullName: employee.displayName,
+      cookiePreference: ownerUser.cookiePreference,
+      ownerUser,
+      authUser: {
+        ...ownerUser,
+        fullName: employee.displayName,
+        role: UserRole.STAFF,
+        companyOwnerId: ownerUser.id,
+        email: ownerUser.email,
+      },
+    }
+  }
+
   private async resolveLoginActor(dto: LoginDto) {
     if (dto.loginMode === LoginModeDto.STAFF) {
       const companyEmail = normalizeEmail(dto.companyEmail ?? '')
@@ -477,14 +639,10 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalizeEmail(dto.email ?? '') },
-      include: {
-        cookiePreference: true,
-        employeeAccount: {
-          select: {
-            id: true,
-            employeeCode: true,
-          },
-        },
+      select: {
+        ...authSessionUserSelect,
+        passwordHash: true,
+        role: true,
       },
     })
 
@@ -515,11 +673,14 @@ export class AuthService {
         employeeCode,
         active: true,
       },
-      include: {
+      select: {
+        id: true,
+        active: true,
+        employeeCode: true,
+        displayName: true,
+        passwordHash: true,
         user: {
-          include: {
-            cookiePreference: true,
-          },
+          select: authSessionWorkspaceOwnerSelect,
         },
         loginUser: {
           select: {
@@ -1254,6 +1415,93 @@ export class AuthService {
     return Math.max(ttlMinutes, 5)
   }
 
+  private isRegistrationGeocodingStrict() {
+    return parseBoolean(this.configService.get<string>('REGISTRATION_GEOCODING_STRICT'))
+  }
+
+  private getRegistrationGeocodingTimeoutMs() {
+    const configuredTimeout = Number(this.configService.get<string>('REGISTRATION_GEOCODING_TIMEOUT_MS') ?? 1800)
+    if (!Number.isFinite(configuredTimeout)) {
+      return 1800
+    }
+
+    return Math.min(Math.max(configuredTimeout, 300), 5000)
+  }
+
+  private getRegistrationVerificationDispatchTimeoutMs() {
+    const configuredTimeout = Number(
+      this.configService.get<string>('REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS') ?? 2500,
+    )
+    if (!Number.isFinite(configuredTimeout)) {
+      return 2500
+    }
+
+    return Math.min(Math.max(configuredTimeout, 400), 7000)
+  }
+
+  private async resolveRegistrationCompanyLocation(input: {
+    streetLine1: string
+    streetNumber: string
+    district: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+  }) {
+    try {
+      return await withTimeout(
+        this.geocodingService.geocodeAddressLocation(input),
+        this.getRegistrationGeocodingTimeoutMs(),
+      )
+    } catch (error) {
+      this.logger.warn(
+        `Geocodificacao do cadastro excedeu limite de tempo ou falhou: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+      return null
+    }
+  }
+
+  private async sendRegistrationVerificationCodeWithTimeout(params: {
+    userId: string
+    email: string
+    fullName: string
+    context: RequestContext
+  }): Promise<EmailVerificationDeliveryResult | null> {
+    try {
+      return await withTimeout(
+        this.sendEmailVerificationCode({
+          userId: params.userId,
+          email: params.email,
+          fullName: params.fullName,
+          context: params.context,
+          trigger: 'register',
+          bypassRateLimit: true,
+        }),
+        this.getRegistrationVerificationDispatchTimeoutMs(),
+      )
+    } catch (error) {
+      this.logger.warn(
+        `Envio inicial de verificacao de email em cadastro ficou lento/indisponivel para ${params.email}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
+
+      await this.auditLogService.record({
+        actorUserId: params.userId,
+        event: 'auth.email-verification.deferred',
+        resource: 'user',
+        resourceId: params.userId,
+        severity: AuditSeverity.WARN,
+        metadata: {
+          email: params.email,
+          reason: error instanceof Error ? error.message : 'unknown',
+        },
+        ipAddress: params.context.ipAddress,
+        userAgent: params.context.userAgent,
+      })
+
+      return null
+    }
+  }
+
   private shouldUsePortfolioEmailFallback(context: RequestContext) {
     return (
       !this.isProduction() &&
@@ -1877,6 +2125,25 @@ function toAuthUser(
 
 function generateNumericCode() {
   return randomInt(100000, 1000000).toString()
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null
+
+  try {
+    return await Promise.race<T>([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error(`Operation timed out after ${timeoutMs}ms`))
+        }, timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle)
+    }
+  }
 }
 
 function parseBoolean(value: string | undefined) {

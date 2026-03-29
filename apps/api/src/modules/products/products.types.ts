@@ -12,6 +12,8 @@ type ProductLike = Pick<
   | 'measurementUnit'
   | 'measurementValue'
   | 'unitsPerPackage'
+  | 'isCombo'
+  | 'comboDescription'
   | 'description'
   | 'unitCost'
   | 'unitPrice'
@@ -23,6 +25,26 @@ type ProductLike = Pick<
   | 'updatedAt'
 >
 
+type ProductComboComponentLike = {
+  componentProductId: string
+  quantityPackages: number
+  quantityUnits: number
+  totalUnits: number
+  componentProduct: {
+    id: string
+    name: string
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: { toNumber(): number } | number
+    unitsPerPackage: number
+    active: boolean
+  }
+}
+
+type ProductWithComboLike = ProductLike & {
+  comboComponents?: ProductComboComponentLike[]
+}
+
 export type ProductRecord = {
   id: string
   name: string
@@ -32,6 +54,19 @@ export type ProductRecord = {
   measurementUnit: string
   measurementValue: number
   unitsPerPackage: number
+  isCombo: boolean
+  comboDescription: string | null
+  comboItems: Array<{
+    componentProductId: string
+    componentProductName: string
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: number
+    unitsPerPackage: number
+    quantityPackages: number
+    quantityUnits: number
+    totalUnits: number
+  }>
   stockPackages: number
   stockLooseUnits: number
   description: string | null
@@ -79,7 +114,7 @@ export type ProductsResponse = {
 }
 
 export function toProductRecord(
-  product: ProductLike,
+  product: ProductWithComboLike,
   options: {
     displayCurrency: CurrencyCode
     currencyService: CurrencyService
@@ -95,6 +130,17 @@ export function toProductRecord(
   const stockBaseUnits = product.stock
   const stockPackages = product.unitsPerPackage > 1 ? Math.floor(product.stock / product.unitsPerPackage) : 0
   const stockLooseUnits = product.unitsPerPackage > 1 ? product.stock % product.unitsPerPackage : product.stock
+  const comboItems = (product.comboComponents ?? []).map((component) => ({
+    componentProductId: component.componentProductId,
+    componentProductName: component.componentProduct.name,
+    packagingClass: component.componentProduct.packagingClass,
+    measurementUnit: component.componentProduct.measurementUnit,
+    measurementValue: toNumber(component.componentProduct.measurementValue),
+    unitsPerPackage: component.componentProduct.unitsPerPackage,
+    quantityPackages: component.quantityPackages,
+    quantityUnits: component.quantityUnits,
+    totalUnits: component.totalUnits,
+  }))
 
   const unitCost = options.currencyService.convert(
     originalUnitCost,
@@ -132,6 +178,9 @@ export function toProductRecord(
     measurementUnit: product.measurementUnit,
     measurementValue,
     unitsPerPackage: product.unitsPerPackage,
+    isCombo: product.isCombo,
+    comboDescription: product.comboDescription,
+    comboItems,
     stockPackages,
     stockLooseUnits,
     description: product.description,
@@ -158,7 +207,7 @@ export function toProductRecord(
 }
 
 export function buildProductsResponse(
-  items: ProductLike[],
+  items: ProductWithComboLike[],
   options: {
     displayCurrency: CurrencyCode
     currencyService: CurrencyService

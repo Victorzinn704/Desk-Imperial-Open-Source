@@ -161,6 +161,24 @@ export const productSchema = z
       .number()
       .int('Use um número inteiro para a quantidade por caixa/fardo.')
       .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
+    isCombo: z.boolean().optional().default(false),
+    comboDescription: z.string().trim().max(420, 'A descrição do combo ficou longa demais.').optional().or(z.literal('')),
+    comboItems: z
+      .array(
+        z.object({
+          productId: z.string().trim().min(1, 'Selecione o produto componente.'),
+          quantityPackages: z.coerce
+            .number()
+            .int('Use número inteiro para caixas/fardos no combo.')
+            .min(0, 'A quantidade de caixas/fardos não pode ser negativa.'),
+          quantityUnits: z.coerce
+            .number()
+            .int('Use número inteiro para unidades no combo.')
+            .min(0, 'A quantidade de unidades não pode ser negativa.'),
+        }),
+      )
+      .optional()
+      .default([]),
     description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
     unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),
     unitPrice: z.coerce.number().min(0, 'O preço não pode ser negativo.'),
@@ -183,10 +201,42 @@ export const productSchema = z
         message: 'As unidades avulsas devem ser menores que a quantidade por caixa/fardo.',
       })
     }
+
+    if (values.isCombo) {
+      if (!values.comboItems.length) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['comboItems'],
+          message: 'Adicione pelo menos um item para compor o combo.',
+        })
+      }
+
+      const seenProducts = new Set<string>()
+      values.comboItems.forEach((item, index) => {
+        if (item.quantityPackages === 0 && item.quantityUnits === 0) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['comboItems', index, 'quantityUnits'],
+            message: 'Informe quantidade em caixa ou unidade para este componente.',
+          })
+        }
+
+        if (seenProducts.has(item.productId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['comboItems', index, 'productId'],
+            message: 'Este produto já foi adicionado no combo.',
+          })
+        }
+        seenProducts.add(item.productId)
+      })
+    }
   })
   .transform((values) => ({
     ...values,
     stock: values.stockPackages * values.unitsPerPackage + values.stockLooseUnits,
+    comboDescription: values.isCombo ? values.comboDescription : '',
+    comboItems: values.isCombo ? values.comboItems : [],
   }))
 
 export const profileSchema = z.object({

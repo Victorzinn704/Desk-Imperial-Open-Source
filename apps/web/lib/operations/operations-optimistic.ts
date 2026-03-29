@@ -149,18 +149,21 @@ export function buildOptimisticComandaRecord(input: {
     notes?: string | null
   }>
 }): ComandaRecord {
-  const items = (input.items ?? []).map((item, index) => ({
-    id: `opt-item-${index}-${Date.now()}`,
-    productId: item.productId ?? null,
-    productName: item.productName ?? 'Item',
-    quantity: item.quantity,
-    unitPrice: item.unitPrice ?? 0,
-    totalAmount: item.quantity * (item.unitPrice ?? 0),
-    notes: item.notes ?? null,
-    kitchenStatus: null,
-    kitchenQueuedAt: null,
-    kitchenReadyAt: null,
-  }))
+  const items = (input.items ?? []).map((item, index) => {
+    const unitPrice = resolveOptimisticUnitPrice(item.unitPrice, item.quantity)
+    return {
+      id: `opt-item-${index}-${Date.now()}`,
+      productId: item.productId ?? null,
+      productName: item.productName ?? 'Item',
+      quantity: item.quantity,
+      unitPrice,
+      totalAmount: item.quantity * unitPrice,
+      notes: item.notes ?? null,
+      kitchenStatus: null,
+      kitchenQueuedAt: null,
+      kitchenReadyAt: null,
+    }
+  })
   const subtotalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0)
 
   return {
@@ -192,16 +195,29 @@ export function buildOptimisticComandaItem(input: {
   unitPrice?: number
   notes?: string | null
 }): ComandaItemRecord {
+  const unitPrice = resolveOptimisticUnitPrice(input.unitPrice, input.quantity)
   return {
     id: `opt-item-${Date.now()}`,
     productId: input.productId ?? null,
     productName: input.productName ?? 'Item',
     quantity: input.quantity,
-    unitPrice: input.unitPrice ?? 0,
-    totalAmount: input.quantity * (input.unitPrice ?? 0),
+    unitPrice,
+    totalAmount: input.quantity * unitPrice,
     notes: input.notes ?? null,
     kitchenStatus: null,
     kitchenQueuedAt: null,
     kitchenReadyAt: null,
   }
+}
+
+function resolveOptimisticUnitPrice(unitPrice: number | undefined, quantity: number) {
+  if (typeof unitPrice === 'number' && Number.isFinite(unitPrice) && unitPrice >= 0) {
+    return unitPrice
+  }
+
+  if (quantity <= 0) {
+    return 0
+  }
+
+  return 0
 }

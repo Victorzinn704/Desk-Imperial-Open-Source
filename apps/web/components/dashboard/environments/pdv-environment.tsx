@@ -21,7 +21,6 @@ export function PdvEnvironment() {
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchInterval: 15_000,
   })
 
   const products = productsQuery.data?.items ?? []
@@ -36,6 +35,9 @@ export function PdvEnvironment() {
       category: p.category,
       unitPrice: p.unitPrice,
       currency: String(p.currency),
+      isCombo: p.isCombo ?? false,
+      comboDescription: p.comboDescription ?? null,
+      comboItems: p.comboItems ?? [],
     }))
   const operationsView = buildOperationsViewModel(operations)
   const showExecutiveOperations = user?.role === 'OWNER'

@@ -33,13 +33,19 @@ import { makeRequestContext } from './helpers/request-context.factory'
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockPrisma = {
+  $transaction: jest.fn(),
   product: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
     findUnique: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     upsert: jest.fn(),
+  },
+  productComboItem: {
+    createMany: jest.fn(),
+    deleteMany: jest.fn(),
   },
 }
 
@@ -74,12 +80,16 @@ function makeProduct(overrides: object = {}) {
     measurementUnit: 'UN',
     measurementValue: 1,
     unitsPerPackage: 1,
+    isCombo: false,
+    comboDescription: null,
     description: 'Descrição teste',
     unitCost: 10.0,
     unitPrice: 20.0,
     currency: CurrencyCode.BRL,
     stock: 100,
+    requiresKitchen: false,
     active: true,
+    comboComponents: [],
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
     ...overrides,
@@ -150,6 +160,8 @@ beforeEach(() => {
   requestContext = makeRequestContext()
 
   // Defaults
+  mockPrisma.$transaction.mockImplementation(async (callback) => callback(mockPrisma))
+  mockPrisma.product.findUniqueOrThrow.mockResolvedValue(makeProduct())
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
   mockCache.isReady.mockReturnValue(true)
   mockCache.financeKey.mockReturnValue('finance:summary:user-1')
@@ -186,14 +198,16 @@ describe('ProductsService', () => {
 
       const result = await productsService.listForUser(mockContext, makeListProductsQueryDto())
 
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
-        take: 20,
-        where: {
-          userId: 'user-1',
-          active: true,
-        },
-        orderBy: [{ createdAt: 'desc' }],
-      })
+      expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 20,
+          where: {
+            userId: 'user-1',
+            active: true,
+          },
+          orderBy: [{ createdAt: 'desc' }],
+        }),
+      )
       expect(result.items).toHaveLength(2)
     })
 
@@ -394,6 +408,7 @@ describe('ProductsService', () => {
     it('deve registrar audit log após criação', async () => {
       const dto = makeCreateProductDto()
       mockPrisma.product.create.mockResolvedValue(makeProduct(dto))
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue(makeProduct(dto))
 
       await productsService.createForUser(mockContext, dto, requestContext)
 
@@ -440,6 +455,10 @@ describe('ProductsService', () => {
 
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({
+        ...existingProduct,
+        ...updateDto,
+      })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({
         ...existingProduct,
         ...updateDto,
       })
@@ -521,6 +540,7 @@ describe('ProductsService', () => {
       const existingProduct = makeProduct()
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
       mockPrisma.product.update.mockResolvedValue({ ...existingProduct, active: false })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({ ...existingProduct, active: false })
 
       const result = await productsService.archiveForUser(mockContext, 'product-1', requestContext)
 

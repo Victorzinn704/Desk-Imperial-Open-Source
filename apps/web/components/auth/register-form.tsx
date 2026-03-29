@@ -63,6 +63,9 @@ export function RegisterForm() {
     queryKey: ['consent', 'documents'],
     queryFn: fetchConsentDocuments,
     retry: 0,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const registerMutation = useMutation({
@@ -178,7 +181,7 @@ export function RegisterForm() {
     const timeoutId = window.setTimeout(() => {
       setLastPostalCodeLookup(normalizedPostalCode)
       mutatePostalCodeLookup(formatPostalCodeValue(normalizedPostalCode))
-    }, 350)
+    }, 220)
 
     return () => {
       window.clearTimeout(timeoutId)

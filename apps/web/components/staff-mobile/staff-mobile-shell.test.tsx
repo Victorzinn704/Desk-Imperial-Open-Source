@@ -13,6 +13,7 @@ vi.mock('@/lib/api', () => ({
   logout: vi.fn(),
   openComanda: vi.fn(),
   addComandaItem: vi.fn(),
+  addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
   cancelComanda: vi.fn(),
   updateComandaStatus: vi.fn(),

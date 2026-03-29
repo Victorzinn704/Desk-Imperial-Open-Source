@@ -29,7 +29,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch — stale-while-revalidate for API, cache-first for assets
+// Fetch — cache-first only for static assets.
+// Requisições de API (ou cross-origin) nunca são cacheadas no SW para evitar
+// dados operacionais sensíveis obsoletos entre sessões/usuários.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
@@ -39,20 +41,8 @@ self.addEventListener('fetch', (event) => {
   // Skip WebSocket upgrade requests
   if (event.request.headers.get('upgrade') === 'websocket') return
 
-  // API requests: network-first with cache fallback
+  // API/cross-origin: bypass do SW cache
   if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful API responses
-          if (response.ok && response.status === 200) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          }
-          return response
-        })
-        .catch(() => caches.match(event.request))
-    )
     return
   }
 
