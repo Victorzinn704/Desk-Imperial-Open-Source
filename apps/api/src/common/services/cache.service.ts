@@ -1,6 +1,6 @@
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { Injectable, Logger } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { Inject, Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -9,7 +9,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private client: Redis | null = null
   private enabled = false
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {}
 
   onModuleInit() {
     const url = this.configService.get<string>('REDIS_URL')

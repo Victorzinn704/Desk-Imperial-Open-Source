@@ -1,5 +1,5 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
 import type { PrismaService } from '../../database/prisma.service'
 
@@ -23,7 +23,7 @@ export class DemoAccessService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
   isDemoAccount(email: string) {

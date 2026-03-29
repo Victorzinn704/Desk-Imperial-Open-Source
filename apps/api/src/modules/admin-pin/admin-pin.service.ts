@@ -2,13 +2,14 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import * as argon2 from 'argon2'
 import { createHash, randomBytes } from 'node:crypto'
 import type { Request } from 'express'
@@ -49,7 +50,7 @@ export class AdminPinService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
     private readonly cache: CacheService,
   ) {}
 
