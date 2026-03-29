@@ -9,6 +9,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ## O que este projeto entrega
 
 ### Autenticação e Segurança
+
 - Cadastro com confirmação obrigatória de email via OTP de 8 dígitos
 - Login com sessão segura por cookie `HttpOnly` + `SameSite`
 - Proteção CSRF com duplo token (cookie + header)
@@ -19,6 +20,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Bloqueio progressivo por IP em login, verificação e redefinição
 
 ### Dashboard Executivo
+
 - Visão financeira analítica com 10+ métricas em tempo real
 - Gráfico de receita histórica com seleção de período
 - Breakdown por categoria com navegação em abas — produtos, valores, venda em potencial e unidades
@@ -30,6 +32,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - **Premium UI with layout shift prevention** - hover states use CSS containment pattern (no scale/transform)
 
 ### Operação Comercial
+
 - PDV (Ponto de Venda) com sistema de comandas em Kanban
 - Gestão de portfólio com importação CSV validada e em lote
 - Folha de pagamento com vínculo de funcionário por ID em cada venda
@@ -38,6 +41,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Conversão de moeda em tempo real (BRL, USD, EUR) via AwesomeAPI com cache e fallback
 
 ### Conformidade e LGPD
+
 - Banner de consentimento de cookies
 - Registro de aceite de termos e política de privacidade
 - Gestão de preferências de consentimento por usuário
@@ -47,37 +51,40 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ## Stack
 
 ### Frontend
-| Tecnologia | Uso |
-|---|---|
-| `Next.js 16` | Framework principal com App Router |
-| `React 19` | UI com Server e Client Components |
-| `TanStack Query` | Cache e sincronização de estado servidor |
-| `React Hook Form` + `Zod` | Formulários com validação tipada |
-| `Framer Motion` | Animações e transições |
-| `Recharts` | Gráficos financeiros e sparklines |
-| `Leaflet` + CARTO | Mapa de vendas geográfico |
-| `CSS Containment` | Performance optimization for hover states (no layout shift) |
+
+| Tecnologia                | Uso                                                         |
+| ------------------------- | ----------------------------------------------------------- |
+| `Next.js 16`              | Framework principal com App Router                          |
+| `React 19`                | UI com Server e Client Components                           |
+| `TanStack Query`          | Cache e sincronização de estado servidor                    |
+| `React Hook Form` + `Zod` | Formulários com validação tipada                            |
+| `Framer Motion`           | Animações e transições                                      |
+| `Recharts`                | Gráficos financeiros e sparklines                           |
+| `Leaflet` + CARTO         | Mapa de vendas geográfico                                   |
+| `CSS Containment`         | Performance optimization for hover states (no layout shift) |
 
 ### Backend
-| Tecnologia | Uso |
-|---|---|
-| `NestJS 11` | Framework modular com DI, Guards e Pipes |
-| `Prisma 6` | ORM com migrations e tipagem completa |
-| `PostgreSQL` (Neon) | Banco serverless com connection pooling |
-| `Redis` | Cache de respostas pesadas (finance summary) |
-| `argon2id` | Hash de senha e Admin PIN |
-| `Brevo` | Email transacional (OTP, recovery, alertas) |
-| `Pino` | Logging estruturado com slow query detection |
-| `Gemini Flash` | IA aplicada para inteligência de mercado |
+
+| Tecnologia          | Uso                                          |
+| ------------------- | -------------------------------------------- |
+| `NestJS 11`         | Framework modular com DI, Guards e Pipes     |
+| `Prisma 6`          | ORM com migrations e tipagem completa        |
+| `PostgreSQL` (Neon) | Banco serverless com connection pooling      |
+| `Redis`             | Cache de respostas pesadas (finance summary) |
+| `argon2id`          | Hash de senha e Admin PIN                    |
+| `Brevo`             | Email transacional (OTP, recovery, alertas)  |
+| `Pino`              | Logging estruturado com slow query detection |
+| `Gemini Flash`      | IA aplicada para inteligência de mercado     |
 
 ### Infraestrutura
-| Tecnologia | Uso |
-|---|---|
-| `Railway` | Deploy de API e frontend em monorepo |
-| `Neon` | PostgreSQL serverless com pooler ativo |
+
+| Tecnologia        | Uso                                      |
+| ----------------- | ---------------------------------------- |
+| `Railway`         | Deploy de API e frontend em monorepo     |
+| `Neon`            | PostgreSQL serverless com pooler ativo   |
 | `Redis` (Railway) | Cache em rede privada (zero egress cost) |
-| `Cloudflare` | CDN global, proxy, DDoS, SSL/TLS, DNSSEC |
-| `Turbo` | Build system do monorepo |
+| `Cloudflare`      | CDN global, proxy, DDoS, SSL/TLS, DNSSEC |
+| `Turbo`           | Build system do monorepo                 |
 
 ---
 
@@ -113,6 +120,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ## Segurança — Implementação Real
 
 ### Camada de Rede
+
 - Cloudflare proxy em todo tráfego — IPs do servidor nunca expostos
 - DDoS protection automático em toda requisição
 - DNSSEC ativo — assinatura criptográfica de registros DNS
@@ -120,6 +128,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - CSP configurado sem `unsafe-eval`
 
 ### Camada de Aplicação
+
 - CSRF: token duplo (cookie `csrf-token` + header `X-CSRF-Token`)
 - Cookies: `HttpOnly`, `SameSite=Lax`, `Secure` em produção
 - Helmet com headers de segurança completos
@@ -127,6 +136,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Global HTTP Exception Filter — erros 5xx logados com stack trace, 4xx silenciosos
 
 ### Admin PIN
+
 - Hash `argon2id` armazenado no banco — PIN nunca trafega em plaintext após criação
 - Verificação server-side com rate limit dedicado por usuário
 - Emissão de JWT de curta duração (10 minutos) com HMAC-SHA256
@@ -134,6 +144,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Token armazenado em `sessionStorage` — não persiste entre sessões do browser
 
 ### Senhas e OTP
+
 - Hash com `argon2id` (vencedor PHC, recomendação OWASP)
 - OTP de 8 dígitos gerado com `crypto.randomInt` — criptograficamente seguro
 - **OTP validation with automatic whitespace trimming** (fix for copy-paste issues)
@@ -141,6 +152,7 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 - Email templates in formal Portuguese via Brevo API
 
 ### Auditoria
+
 - Modelo `AuditLog` com `resourceId`, `event`, `userId`, `ip`, `userAgent`
 - Indexado por `[resourceId, event]` para queries eficientes
 - Eventos rastreados: login, logout, alteração de senha, verificação de email, Admin PIN
@@ -150,17 +162,20 @@ Portal empresarial full-stack de nível profissional, construído em monorepo co
 ## Performance
 
 ### Cache Redis
+
 - Endpoint `/finance/summary` cacheado por 60 segundos por usuário
 - Invalidação por evento: criação/edição de produto ou pedido limpa o cache
 - Redis em rede privada Railway — zero custo de egress, latência < 1ms
 
 ### Banco de Dados
+
 - Neon connection pooler ativo — cold start eliminado
 - Indexes estratégicos: `[buyerCity, buyerState]`, `[buyerDocument]`, `[resourceId, event]`
 - N+1 eliminado no finance service — 3 queries paralelas com `Promise.all` e filtros no DB
 - Slow query logging no `PrismaService` — queries acima de 500ms logadas automaticamente
 
 ### CDN
+
 - Cloudflare em frente ao frontend — assets servidos do edge global
 - `Cache-Control: s-maxage=31536000` — assets imutáveis em cache por 1 ano
 - Fontes, imagens e bundles JS não chegam ao Railway em visitas recorrentes
@@ -314,18 +329,18 @@ npm --workspace @partner/web run dev
 
 ## Scripts
 
-| Comando | Descrição |
-|---|---|
-| `npm run dev` | Inicia api e web em paralelo |
-| `npm run build` | Build de produção do monorepo |
-| `npm run lint` | ESLint em todos os workspaces |
-| `npm run typecheck` | TypeScript sem emitir arquivos |
-| `npm test` | Jest em todos os workspaces |
+| Comando                  | Descrição                                             |
+| ------------------------ | ----------------------------------------------------- |
+| `npm run dev`            | Inicia api e web em paralelo                          |
+| `npm run build`          | Build de produção do monorepo                         |
+| `npm run lint`           | ESLint em todos os workspaces                         |
+| `npm run typecheck`      | TypeScript sem emitir arquivos                        |
+| `npm test`               | Jest em todos os workspaces                           |
 | `npm test -- --coverage` | Run tests with coverage report (target: 80% for auth) |
-| `npm test -- --watch` | Run tests in watch mode |
-| `npm run db:up` | Sobe PostgreSQL local via Docker |
-| `npm run db:down` | Para e remove o container |
-| `npm run db:studio` | Abre Prisma Studio |
+| `npm test -- --watch`    | Run tests in watch mode                               |
+| `npm run db:up`          | Sobe PostgreSQL local via Docker                      |
+| `npm run db:down`        | Para e remove o container                             |
+| `npm run db:studio`      | Abre Prisma Studio                                    |
 
 ---
 
@@ -355,24 +370,50 @@ DATABASE_URL=<neon-pooler-url com -pooler no hostname>
 PORTFOLIO_EMAIL_FALLBACK=false
 ```
 
+> Em produção, `REDIS_URL` não é opcional. O sistema usa WebSocket/Socket.IO como transporte ao vivo e usa Redis para propagar os eventos entre instâncias da API. Sem Redis, o deploy pode subir, mas web/mobile ficam sujeitos a divergência de estado em escala horizontal.
+
 ### Infraestrutura
 
-| Serviço | Provider | Detalhe |
-|---|---|---|
-| API | Railway | NestJS compilado |
-| Frontend | Railway | Next.js standalone |
-| Banco | Neon | PostgreSQL serverless + pooler |
-| Cache | Railway Redis | Rede privada, zero egress |
-| CDN / Proxy | Cloudflare | SSL Completo, DNSSEC, DDoS |
+| Serviço     | Provider      | Detalhe                        |
+| ----------- | ------------- | ------------------------------ |
+| API         | Railway       | NestJS compilado               |
+| Frontend    | Railway       | Next.js standalone             |
+| Banco       | Neon          | PostgreSQL serverless + pooler |
+| Cache       | Railway Redis | Rede privada, zero egress      |
+| CDN / Proxy | Cloudflare    | SSL Completo, DNSSEC, DDoS     |
+
+---
+
+### Checklist Railway
+
+1. Provisione um serviço Redis no mesmo projeto Railway da API.
+2. Configure `REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}` na API.
+3. Garanta que `DATABASE_URL`, `COOKIE_SECRET` e `CSRF_SECRET` estejam preenchidos.
+4. Rode `npm --workspace @partner/api run prisma:migrate:deploy` antes de promover tráfego.
+5. Use build command da API: `npm --workspace @partner/api run build`.
+6. Use start command da API: `npm --workspace @partner/api run start`.
+7. Verifique `GET /health` após o rollout.
+
+Health esperado:
+
+```json
+{
+  "status": "ok",
+  "dbHealthy": true,
+  "redisHealthy": true
+}
+```
+
+Se `redisHealthy` vier `false`, não considere o deploy pronto para produção multi-instância.
 
 ---
 
 ## Conta Demo
 
-| Campo | Valor |
-|---|---|
-| Email | `demo@partnerportal.com` |
-| Senha | `Demo@123` |
+| Campo | Valor                      |
+| ----- | -------------------------- |
+| Email | `demo@deskimperial.online` |
+| Senha | `Demo@123`                 |
 
 > Cada IP/dispositivo tem 20 minutos de acesso demo por dia. Para avaliação completa, crie sua própria conta em `/cadastro`.
 
@@ -382,30 +423,30 @@ PORTFOLIO_EMAIL_FALLBACK=false
 
 ### Frontend
 
-| Rota | Descrição |
-|---|---|
-| `/` | Landing page |
-| `/login` | Autenticação |
-| `/cadastro` | Criação de conta |
-| `/verificar-email` | Confirmação por OTP |
-| `/recuperar-senha` | Início do fluxo de recovery |
-| `/redefinir-senha` | Nova senha com token |
-| `/dashboard` | Área autenticada |
-| `/dashboard/configuracoes` | Perfil e preferências |
+| Rota                       | Descrição                   |
+| -------------------------- | --------------------------- |
+| `/`                        | Landing page                |
+| `/login`                   | Autenticação                |
+| `/cadastro`                | Criação de conta            |
+| `/verificar-email`         | Confirmação por OTP         |
+| `/recuperar-senha`         | Início do fluxo de recovery |
+| `/redefinir-senha`         | Nova senha com token        |
+| `/dashboard`               | Área autenticada            |
+| `/dashboard/configuracoes` | Perfil e preferências       |
 
 ### API
 
-| Prefixo | Módulo |
-|---|---|
-| `/api/auth` | Autenticação, sessão, OTP |
-| `/api/admin` | Admin PIN |
-| `/api/finance` | Dashboard financeiro |
-| `/api/products` | Portfólio |
-| `/api/orders` | Pedidos |
-| `/api/employees` | Funcionários |
-| `/api/market-intelligence` | Gemini Flash |
-| `/api/currency` | Cotações |
-| `/api/monitoring` | Health check |
+| Prefixo                    | Módulo                    |
+| -------------------------- | ------------------------- |
+| `/api/auth`                | Autenticação, sessão, OTP |
+| `/api/admin`               | Admin PIN                 |
+| `/api/finance`             | Dashboard financeiro      |
+| `/api/products`            | Portfólio                 |
+| `/api/orders`              | Pedidos                   |
+| `/api/employees`           | Funcionários              |
+| `/api/market-intelligence` | Gemini Flash              |
+| `/api/currency`            | Cotações                  |
+| `/api/monitoring`          | Health check              |
 
 Swagger disponível em `/docs` em ambiente de desenvolvimento.
 
@@ -414,24 +455,30 @@ Swagger disponível em `/docs` em ambiente de desenvolvimento.
 ## Documentação Complementar
 
 ### Architecture & Core
+
 - **[Authentication Flow](docs/architecture/authentication-flow.md)** - Complete auth system with OTP validation, rate limiting, session management, and CSRF protection
 - `docs/architecture/overview.md`
 - `docs/architecture/local-development.md`
 
 ### Email & Communications
+
 - **[Brevo Integration](docs/email/brevo-integration.md)** - Email provider setup, DNS configuration, formal Portuguese templates, and delivery troubleshooting
 - `docs/security/brevo-domain-setup.md`
 
 ### Frontend Development
+
 - **[UI Guidelines](docs/frontend/ui-guidelines.md)** - Design system, hover states, layout shift prevention, responsive patterns, and accessibility
 
 ### Testing
+
 - **[Testing Guide](docs/testing/testing-guide.md)** - Jest configuration, writing tests, coverage targets (80% for auth), and CI/CD integration
 
 ### Security
+
 - `docs/security/deploy-checklist.md`
 - `docs/security/security-baseline.md`
 - `docs/security/observability-and-logs.md`
 
 ### Troubleshooting
+
 - **[Troubleshooting Guide](docs/troubleshooting.md)** - Solutions for OTP validation, email delivery, dashboard issues, and performance problems

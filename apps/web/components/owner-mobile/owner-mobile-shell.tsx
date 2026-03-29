@@ -70,6 +70,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const [, setFocusedComandaId] = useState<string | null>(null)
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
+  const shouldFallbackRefetch = realtimeStatus !== 'connected'
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
@@ -128,7 +129,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const openComandaMutation = useMutation({
     mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -155,7 +158,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Status atualizado')
       haptic.medium()
     },
@@ -176,7 +181,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Comanda fechada')
       haptic.heavy()
     },
@@ -239,7 +246,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             },
           })
         }
-        await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        if (shouldFallbackRefetch) {
+          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        }
         setPendingAction(null)
         setActiveTab('comandas')
         return
@@ -247,6 +256,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
       const comParams = {
         tableLabel: normalizeTableLabel(pendingAction.mesa.numero),
+        mesaId: pendingAction.mesa.id,
         items: items.map((item) => ({
           productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
           productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
@@ -266,7 +276,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           toast.dismiss()
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
-          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          if (shouldFallbackRefetch) {
+            await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          }
           await openComandaMutation.mutateAsync(comParams)
         } else {
           throw err

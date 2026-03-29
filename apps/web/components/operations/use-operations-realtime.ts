@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import type { QueryClient } from '@tanstack/react-query'
 import type {
+  CashSessionRecord,
+  ComandaItemRecord,
   ComandaRecord,
   ComandaStatus,
   KitchenItemStatus,
@@ -56,7 +58,9 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
     }
 
     const handleEvent = (envelope?: OperationsRealtimeEnvelope) => {
-      if (envelope?.payload && applyRealtimeEnvelope(queryClient, envelope)) {
+      const supportsLocalPatch = Boolean(envelope?.payload)
+
+      if (supportsLocalPatch && envelope?.payload && applyRealtimeEnvelope(queryClient, envelope)) {
         return
       }
       queueOperationsRefresh()
@@ -134,9 +138,14 @@ function applyRealtimeEnvelope(queryClient: QueryClient, envelope: OperationsRea
 }
 
 function patchOperationsSnapshot(snapshot: OperationsLiveResponse, envelope: OperationsRealtimeEnvelope) {
+  const payloadBusinessDate = asNullableString(envelope.payload.businessDate)
+  if (payloadBusinessDate && payloadBusinessDate !== snapshot.businessDate) {
+    return snapshot
+  }
+
   switch (envelope.event) {
     case 'comanda.opened':
-      return upsertComandaFromEvent(snapshot, envelope.payload, 'OPEN')
+      return upsertComandaFromEvent(snapshot, envelope.payload, 'OPEN', 1)
     case 'comanda.updated':
       return upsertComandaFromEvent(snapshot, envelope.payload)
     case 'comanda.closed':
@@ -162,118 +171,51 @@ function upsertComandaFromEvent(
   snapshot: OperationsLiveResponse,
   payload: Record<string, unknown>,
   fallbackStatus?: Extract<ComandaStatus, 'OPEN'>,
+  fallbackOpenComandasDelta = 0,
 ) {
-  const comandaId = asString(payload.comandaId)
-  const mesaLabel = asString(payload.mesaLabel)
-  const employeeId = asNullableString(payload.employeeId)
-
-  if (!comandaId || !mesaLabel) {
+  const comanda = asComandaRecord(payload.comanda)
+  if (!comanda) {
     return null
   }
 
-  const target = resolveTargetGroup(snapshot, employeeId)
-  if (!target) {
-    return patchMesa(snapshot, { mesaLabel, status: 'ocupada' })
+  const existing = findComandaInSnapshot(snapshot, comanda.id)
+  const nextComanda: ComandaRecord = {
+    ...comanda,
+    status: fallbackStatus ?? comanda.status,
   }
 
-  const existing = findComandaInSnapshot(snapshot, comandaId)
+  const nextSnapshot = upsertComandaRecord(snapshot, nextComanda)
+  const existingWasOpen = existing ? isOpenComandaStatus(existing.status) : false
+  const nextIsOpen = isOpenComandaStatus(nextComanda.status)
 
-  const status = mapRealtimeComandaStatus(asNullableString(payload.status)) ?? fallbackStatus ?? 'OPEN'
-  const openedAt = asString(payload.openedAt) ?? new Date().toISOString()
-  const subtotal = asNumber(payload.subtotal)
-  const totalAmount = asNumber(payload.totalAmount) ?? subtotal ?? 0
-  const discountAmount = asNumber(payload.discountAmount) ?? 0
-  const serviceFeeAmount = Math.max(0, totalAmount - (subtotal ?? totalAmount) + discountAmount)
-
-  const comanda: ComandaRecord = {
-    id: comandaId,
-    companyOwnerId: snapshot.companyOwnerId,
-    cashSessionId: null,
-    mesaId: findMesaByLabel(snapshot.mesas, mesaLabel)?.id ?? null,
-    currentEmployeeId: employeeId,
-    tableLabel: mesaLabel,
-    customerName: null,
-    customerDocument: null,
-    participantCount: 1,
-    status,
-    subtotalAmount: subtotal ?? totalAmount,
-    discountAmount,
-    serviceFeeAmount,
-    totalAmount,
-    notes: null,
-    openedAt,
-    closedAt: null,
-    items: [],
+  if (!existing) {
+    return patchClosureOpenComandasCount(nextSnapshot, nextIsOpen ? fallbackOpenComandasDelta : 0)
   }
 
-  const updatedGroups = snapshot.employees.map((group) => {
-    if (group.employeeId !== target.employeeId) {
-      return {
-        ...group,
-        comandas: group.comandas.filter((item) => item.id !== comandaId),
-      }
-    }
-
-    return {
-      ...group,
-      comandas: upsertComanda(group.comandas, comanda),
-    }
-  })
-
-  const updatedUnassigned =
-    target.employeeId === null
-      ? {
-          ...snapshot.unassigned,
-          comandas: upsertComanda(snapshot.unassigned.comandas, comanda),
-        }
-      : {
-          ...snapshot.unassigned,
-          comandas: snapshot.unassigned.comandas.filter((item) => item.id !== comandaId),
-        }
-
-  const nextSnapshot = {
-    ...snapshot,
-    employees: updatedGroups,
-    unassigned: updatedUnassigned,
-    mesas: upsertMesaStatus(snapshot.mesas, mesaLabel, 'ocupada', comandaId, employeeId),
+  if (existingWasOpen === nextIsOpen) {
+    return nextSnapshot
   }
 
-  if (!existing || existing.status === 'CLOSED' || existing.status === 'CANCELLED') {
-    return patchClosureOpenComandasCount(nextSnapshot, 1)
-  }
-
-  return nextSnapshot
+  return patchClosureOpenComandasCount(nextSnapshot, nextIsOpen ? 1 : -1)
 }
 
 function closeComandaFromEvent(snapshot: OperationsLiveResponse, payload: Record<string, unknown>) {
-  const comandaId = asString(payload.comandaId)
-  const mesaLabel = asString(payload.mesaLabel)
-
-  if (!comandaId || !mesaLabel) {
+  const comanda = asComandaRecord(payload.comanda)
+  if (!comanda) {
     return null
   }
 
-  const existing = findComandaInSnapshot(snapshot, comandaId)
-  const nextSnapshot = {
-    ...snapshot,
-    ...patchComandaCollections(snapshot, (comanda) =>
-      comanda.id === comandaId
-        ? {
-            ...comanda,
-            status: 'CLOSED' as const,
-            closedAt: asString(payload.closedAt) ?? new Date().toISOString(),
-            totalAmount: asNumber(payload.totalAmount) ?? comanda.totalAmount,
-          }
-        : comanda,
-    ),
-    mesas: upsertMesaStatus(snapshot.mesas, mesaLabel, 'livre', null, null),
-  }
+  const existing = findComandaInSnapshot(snapshot, comanda.id)
+  const nextSnapshot = upsertComandaRecord(snapshot, {
+    ...comanda,
+    status: 'CLOSED',
+  })
 
   if (existing && existing.status !== 'CLOSED' && existing.status !== 'CANCELLED') {
     return patchClosureOpenComandasCount(nextSnapshot, -1)
   }
 
-  return nextSnapshot
+  return existing ? nextSnapshot : patchClosureOpenComandasCount(nextSnapshot, -1)
 }
 
 function upsertKitchenItem(
@@ -281,27 +223,15 @@ function upsertKitchenItem(
   payload: Record<string, unknown>,
   fallbackStatus?: KitchenItemStatus,
 ) {
-  const comandaId = asString(payload.comandaId)
-  const itemId = asString(payload.itemId)
-
-  if (!comandaId || !itemId) {
-    return null
+  const comanda = asComandaRecord(payload.comanda)
+  if (comanda) {
+    return upsertComandaRecord(snapshot, comanda)
   }
 
-  const kitchenStatus = mapKitchenStatus(asNullableString(payload.kitchenStatus)) ?? fallbackStatus ?? null
-  const queuedAt = asNullableString(payload.kitchenQueuedAt)
-  const readyAt = asNullableString(payload.kitchenReadyAt)
-  const item = {
-    id: itemId,
-    productId: null,
-    productName: asString(payload.productName) ?? 'Item',
-    quantity: asNumber(payload.quantity) ?? 1,
-    unitPrice: 0,
-    totalAmount: 0,
-    notes: asNullableString(payload.notes),
-    kitchenStatus,
-    kitchenQueuedAt: queuedAt,
-    kitchenReadyAt: readyAt,
+  const item = asComandaItemRecord(payload.item)
+  const comandaId = asString(payload.comandaId)
+  if (!item || !comandaId) {
+    return null
   }
 
   return {
@@ -311,8 +241,9 @@ function upsertKitchenItem(
         ? {
             ...comanda,
             items:
-              kitchenStatus === 'DELIVERED'
-                ? comanda.items.filter((existing) => existing.id !== itemId)
+              (mapKitchenStatus(asNullableString(payload.kitchenStatus)) ?? fallbackStatus ?? item.kitchenStatus) ===
+              'DELIVERED'
+                ? comanda.items.filter((existing) => existing.id !== item.id)
                 : upsertComandaItem(comanda.items, item),
           }
         : comanda,
@@ -321,81 +252,84 @@ function upsertKitchenItem(
 }
 
 function patchCashSession(snapshot: OperationsLiveResponse, payload: Record<string, unknown>) {
-  const cashSessionId = asString(payload.cashSessionId)
+  const cashSession = asCashSessionRecord(payload.cashSession)
+  if (!cashSession) {
+    const cashSessionId = asString(payload.cashSessionId)
+    if (!cashSessionId) {
+      return null
+    }
 
-  if (!cashSessionId) {
-    return null
-  }
-
-  return {
-    ...snapshot,
-    employees: snapshot.employees.map((group) => ({
-      ...group,
-      cashSession:
+    return {
+      ...snapshot,
+      employees: snapshot.employees.map((group) =>
         group.cashSession?.id === cashSessionId
-          ? {
-              ...group.cashSession,
-              status: mapCashSessionStatus(asNullableString(payload.status)) ?? group.cashSession.status,
-              openingCashAmount: asNumber(payload.openingAmount) ?? group.cashSession.openingCashAmount,
-              expectedCashAmount: asNumber(payload.expectedAmount) ?? group.cashSession.expectedCashAmount,
-              countedCashAmount: asNullableNumber(payload.countedAmount) ?? group.cashSession.countedCashAmount,
-              differenceAmount: asNullableNumber(payload.differenceAmount) ?? group.cashSession.differenceAmount,
-            }
-          : group.cashSession,
-    })),
-    unassigned: {
-      ...snapshot.unassigned,
-      cashSession:
+          ? withGroupMetrics({
+              ...group,
+              cashSession: {
+                ...group.cashSession,
+                status: mapCashSessionStatus(asNullableString(payload.status)) ?? group.cashSession.status,
+                openingCashAmount: asNumber(payload.openingAmount) ?? group.cashSession.openingCashAmount,
+                expectedCashAmount: asNumber(payload.expectedAmount) ?? group.cashSession.expectedCashAmount,
+                countedCashAmount: asNullableNumber(payload.countedAmount) ?? group.cashSession.countedCashAmount,
+                differenceAmount: asNullableNumber(payload.differenceAmount) ?? group.cashSession.differenceAmount,
+              },
+            })
+          : group,
+      ),
+      unassigned:
         snapshot.unassigned.cashSession?.id === cashSessionId
-          ? {
-              ...snapshot.unassigned.cashSession,
-              status: mapCashSessionStatus(asNullableString(payload.status)) ?? snapshot.unassigned.cashSession.status,
-              openingCashAmount: asNumber(payload.openingAmount) ?? snapshot.unassigned.cashSession.openingCashAmount,
-              expectedCashAmount:
-                asNumber(payload.expectedAmount) ?? snapshot.unassigned.cashSession.expectedCashAmount,
-              countedCashAmount:
-                asNullableNumber(payload.countedAmount) ?? snapshot.unassigned.cashSession.countedCashAmount,
-              differenceAmount:
-                asNullableNumber(payload.differenceAmount) ?? snapshot.unassigned.cashSession.differenceAmount,
-            }
-          : snapshot.unassigned.cashSession,
-    },
-  }
-}
-
-function patchCashOpened(snapshot: OperationsLiveResponse, payload: Record<string, unknown>) {
-  const employeeId = asNullableString(payload.employeeId)
-  const target = resolveTargetGroup(snapshot, employeeId)
-  const cashSessionId = asString(payload.cashSessionId)
-
-  if (!target || !cashSessionId) {
-    return null
+          ? withGroupMetrics({
+              ...snapshot.unassigned,
+              cashSession: {
+                ...snapshot.unassigned.cashSession,
+                status:
+                  mapCashSessionStatus(asNullableString(payload.status)) ?? snapshot.unassigned.cashSession.status,
+                openingCashAmount: asNumber(payload.openingAmount) ?? snapshot.unassigned.cashSession.openingCashAmount,
+                expectedCashAmount:
+                  asNumber(payload.expectedAmount) ?? snapshot.unassigned.cashSession.expectedCashAmount,
+                countedCashAmount:
+                  asNullableNumber(payload.countedAmount) ?? snapshot.unassigned.cashSession.countedCashAmount,
+                differenceAmount:
+                  asNullableNumber(payload.differenceAmount) ?? snapshot.unassigned.cashSession.differenceAmount,
+              },
+            })
+          : snapshot.unassigned,
+    }
   }
 
-  const nextSession = {
-    id: cashSessionId,
-    companyOwnerId: snapshot.companyOwnerId,
-    employeeId,
-    status: 'OPEN' as const,
-    businessDate: snapshot.businessDate,
-    openingCashAmount: asNumber(payload.openingAmount) ?? 0,
-    countedCashAmount: null,
-    expectedCashAmount: asNumber(payload.openingAmount) ?? 0,
-    differenceAmount: null,
-    grossRevenueAmount: 0,
-    realizedProfitAmount: 0,
-    notes: null,
-    openedAt: asString(payload.openedAt) ?? new Date().toISOString(),
-    closedAt: null,
-    movements: [],
+  const target = resolveTargetGroup(snapshot, cashSession.employeeId)
+  if (!target) {
+    return snapshot
   }
 
   return {
     ...snapshot,
     employees: snapshot.employees.map((group) =>
-      group.employeeId === target.employeeId ? { ...group, cashSession: nextSession } : group,
+      group.employeeId === target.employeeId ? withGroupMetrics({ ...group, cashSession }) : group,
     ),
-    unassigned: target.employeeId === null ? { ...snapshot.unassigned, cashSession: nextSession } : snapshot.unassigned,
+    unassigned:
+      target.employeeId === null ? withGroupMetrics({ ...snapshot.unassigned, cashSession }) : snapshot.unassigned,
+  }
+}
+
+function patchCashOpened(snapshot: OperationsLiveResponse, payload: Record<string, unknown>) {
+  const cashSession = asCashSessionRecord(payload.cashSession)
+  if (!cashSession) {
+    return null
+  }
+
+  const target = resolveTargetGroup(snapshot, cashSession.employeeId)
+  if (!target) {
+    return snapshot
+  }
+
+  return {
+    ...snapshot,
+    employees: snapshot.employees.map((group) =>
+      group.employeeId === target.employeeId ? withGroupMetrics({ ...group, cashSession }) : group,
+    ),
+    unassigned:
+      target.employeeId === null ? withGroupMetrics({ ...snapshot.unassigned, cashSession }) : snapshot.unassigned,
   }
 }
 
@@ -435,6 +369,14 @@ function patchClosureOpenComandasCount(snapshot: OperationsLiveResponse, delta: 
 }
 
 function patchMesa(snapshot: OperationsLiveResponse, payload: Record<string, unknown>) {
+  const mesa = asMesaRecord(payload.mesa)
+  if (mesa) {
+    return {
+      ...snapshot,
+      mesas: upsertMesa(snapshot.mesas, mesa),
+    }
+  }
+
   const mesaId = asNullableString(payload.mesaId)
   const mesaLabel = asNullableString(payload.label) ?? asNullableString(payload.mesaLabel)
   const status = mapMesaStatus(asNullableString(payload.status))
@@ -466,14 +408,11 @@ function resolveTargetGroup(snapshot: OperationsLiveResponse, employeeId: string
 
 function patchComandaCollections(snapshot: OperationsLiveResponse, patcher: (comanda: ComandaRecord) => ComandaRecord) {
   return {
-    employees: snapshot.employees.map((group) => ({
-      ...group,
-      comandas: group.comandas.map(patcher),
-    })),
-    unassigned: {
+    employees: snapshot.employees.map((group) => withGroupMetrics({ ...group, comandas: group.comandas.map(patcher) })),
+    unassigned: withGroupMetrics({
       ...snapshot.unassigned,
       comandas: snapshot.unassigned.comandas.map(patcher),
-    },
+    }),
   }
 }
 
@@ -483,7 +422,7 @@ function upsertComanda(list: ComandaRecord[], next: ComandaRecord) {
     return [next, ...list]
   }
 
-  return list.map((comanda) => (comanda.id === next.id ? { ...existing, ...next, items: existing.items } : comanda))
+  return list.map((comanda) => (comanda.id === next.id ? { ...existing, ...next } : comanda))
 }
 
 function upsertComandaItem(comandaItems: ComandaRecord['items'], nextItem: ComandaRecord['items'][number]) {
@@ -495,29 +434,6 @@ function upsertComandaItem(comandaItems: ComandaRecord['items'], nextItem: Coman
   return comandaItems.map((item) => (item.id === nextItem.id ? { ...item, ...nextItem } : item))
 }
 
-function upsertMesaStatus(
-  mesas: MesaRecord[],
-  mesaLabel: string,
-  status: MesaRecord['status'],
-  comandaId: string | null,
-  currentEmployeeId: string | null,
-) {
-  return mesas.map((mesa) =>
-    mesa.label === mesaLabel
-      ? {
-          ...mesa,
-          status,
-          comandaId,
-          currentEmployeeId,
-        }
-      : mesa,
-  )
-}
-
-function findMesaByLabel(mesas: MesaRecord[], label: string) {
-  return mesas.find((mesa) => mesa.label === label) ?? null
-}
-
 function findComandaInSnapshot(snapshot: OperationsLiveResponse, comandaId: string) {
   for (const group of [...snapshot.employees, snapshot.unassigned]) {
     const comanda = group.comandas.find((item) => item.id === comandaId)
@@ -527,6 +443,144 @@ function findComandaInSnapshot(snapshot: OperationsLiveResponse, comandaId: stri
   }
 
   return null
+}
+
+function upsertComandaRecord(snapshot: OperationsLiveResponse, nextComanda: ComandaRecord) {
+  const groupsWithoutComanda = snapshot.employees.map((group) => ({
+    ...group,
+    comandas: group.comandas.filter((item) => item.id !== nextComanda.id),
+  }))
+  const unassignedWithoutComanda = {
+    ...snapshot.unassigned,
+    comandas: snapshot.unassigned.comandas.filter((item) => item.id !== nextComanda.id),
+  }
+
+  let targetWasVisible = false
+  const employees = groupsWithoutComanda.map((group) => {
+    if (group.employeeId !== nextComanda.currentEmployeeId) {
+      return withGroupMetrics(group)
+    }
+
+    targetWasVisible = true
+    return withGroupMetrics({
+      ...group,
+      comandas: upsertComanda(group.comandas, nextComanda),
+    })
+  })
+
+  const shouldUseUnassigned = nextComanda.currentEmployeeId == null
+  const unassigned = shouldUseUnassigned
+    ? withGroupMetrics({
+        ...unassignedWithoutComanda,
+        comandas: upsertComanda(unassignedWithoutComanda.comandas, nextComanda),
+      })
+    : withGroupMetrics(unassignedWithoutComanda)
+
+  return {
+    ...snapshot,
+    employees,
+    unassigned,
+    mesas: upsertMesaForComanda(
+      snapshot.mesas,
+      nextComanda,
+      shouldUseUnassigned || targetWasVisible || findComandaInSnapshot(snapshot, nextComanda.id) != null,
+    ),
+  }
+}
+
+function upsertMesaForComanda(mesas: MesaRecord[], comanda: ComandaRecord, shouldTrack: boolean) {
+  if (!shouldTrack) {
+    return mesas
+  }
+
+  const nextStatus: MesaRecord['status'] = isOpenComandaStatus(comanda.status) ? 'ocupada' : 'livre'
+  const nextComandaId = nextStatus === 'ocupada' ? comanda.id : null
+  const nextEmployeeId = nextStatus === 'ocupada' ? comanda.currentEmployeeId : null
+
+  return mesas.map((mesa): MesaRecord => {
+    if (mesa.id === comanda.mesaId || mesa.label === comanda.tableLabel) {
+      return {
+        ...mesa,
+        status: nextStatus,
+        comandaId: nextComandaId,
+        currentEmployeeId: nextEmployeeId,
+      }
+    }
+
+    if (nextComandaId && mesa.comandaId === comanda.id) {
+      return {
+        ...mesa,
+        status: 'livre',
+        comandaId: null,
+        currentEmployeeId: null,
+      }
+    }
+
+    return mesa
+  })
+}
+
+function upsertMesa(list: MesaRecord[], next: MesaRecord) {
+  const existing = list.find((mesa) => mesa.id === next.id)
+  if (!existing) {
+    return [next, ...list]
+  }
+
+  return list.map((mesa) => (mesa.id === next.id ? next : mesa))
+}
+
+function withGroupMetrics<
+  TGroup extends OperationsLiveResponse['employees'][number] | OperationsLiveResponse['unassigned'],
+>(group: TGroup): TGroup {
+  const openTables = group.comandas.filter((item) => isOpenComandaStatus(item.status)).length
+  const closedTables = group.comandas.filter((item) => item.status === 'CLOSED').length
+
+  return {
+    ...group,
+    metrics: {
+      openTables,
+      closedTables,
+      grossRevenueAmount: group.cashSession?.grossRevenueAmount ?? 0,
+      realizedProfitAmount: group.cashSession?.realizedProfitAmount ?? 0,
+      expectedCashAmount: group.cashSession?.expectedCashAmount ?? 0,
+    },
+  }
+}
+
+function asComandaRecord(value: unknown): ComandaRecord | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const maybeComanda = value as ComandaRecord
+  return typeof maybeComanda.id === 'string' && Array.isArray(maybeComanda.items) ? maybeComanda : null
+}
+
+function asComandaItemRecord(value: unknown): ComandaItemRecord | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const maybeItem = value as ComandaItemRecord
+  return typeof maybeItem.id === 'string' && typeof maybeItem.productName === 'string' ? maybeItem : null
+}
+
+function asCashSessionRecord(value: unknown): CashSessionRecord | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const maybeSession = value as CashSessionRecord
+  return typeof maybeSession.id === 'string' && Array.isArray(maybeSession.movements) ? maybeSession : null
+}
+
+function asMesaRecord(value: unknown): MesaRecord | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const maybeMesa = value as MesaRecord
+  return typeof maybeMesa.id === 'string' && typeof maybeMesa.label === 'string' ? maybeMesa : null
 }
 
 function asString(value: unknown) {
@@ -543,21 +597,6 @@ function asNumber(value: unknown) {
 
 function asNullableNumber(value: unknown) {
   return typeof value === 'number' ? value : value == null ? null : null
-}
-
-function mapRealtimeComandaStatus(value: string | null): ComandaStatus | null {
-  switch (value) {
-    case 'ABERTA':
-      return 'OPEN'
-    case 'EM_PREPARO':
-      return 'IN_PREPARATION'
-    case 'PRONTA':
-      return 'READY'
-    case 'FECHADA':
-      return 'CLOSED'
-    default:
-      return null
-  }
 }
 
 function mapKitchenStatus(value: string | null): KitchenItemStatus | null {
@@ -606,4 +645,8 @@ function mapMesaStatus(value: string | null): MesaRecord['status'] | null {
     default:
       return null
   }
+}
+
+function isOpenComandaStatus(status: ComandaRecord['status']) {
+  return status === 'OPEN' || status === 'IN_PREPARATION' || status === 'READY'
 }

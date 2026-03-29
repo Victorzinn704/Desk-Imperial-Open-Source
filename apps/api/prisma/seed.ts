@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as argon2 from 'argon2'
 import { BuyerType, OrderStatus, PrismaClient, UserStatus } from '@prisma/client'
+import { isKitchenCategory } from '../src/common/utils/is-kitchen-category.util'
 
 function loadSeedEnv() {
   if (typeof process.loadEnvFile !== 'function') {
@@ -245,12 +246,16 @@ async function main() {
     update: {
       fullName: 'Bar do Pedrão',
       companyName: 'Bar do Pedrão',
+      hasEmployees: true,
+      employeeCount: vendedores.length,
       status: UserStatus.ACTIVE,
       emailVerifiedAt: new Date(),
     },
     create: {
       fullName: 'Bar do Pedrão',
       companyName: 'Bar do Pedrão',
+      hasEmployees: true,
+      employeeCount: vendedores.length,
       email,
       passwordHash,
       status: UserStatus.ACTIVE,
@@ -295,9 +300,18 @@ async function main() {
     employees.push(emp)
   }
 
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      hasEmployees: employees.length > 0,
+      employeeCount: employees.length,
+    },
+  })
+
   // Criar produtos do Bar do Pedrão
   const createdProducts = []
   for (const product of barProducts) {
+    const requiresKitchen = isKitchenCategory(product.category)
     const created = await prisma.product.upsert({
       where: {
         userId_name: {
@@ -311,6 +325,7 @@ async function main() {
         unitCost: product.cost,
         unitPrice: product.price,
         stock: Math.floor(Math.random() * 50) + 20,
+        requiresKitchen,
         active: true,
       },
       create: {
@@ -321,6 +336,7 @@ async function main() {
         unitCost: product.cost,
         unitPrice: product.price,
         stock: Math.floor(Math.random() * 50) + 20,
+        requiresKitchen,
         active: true,
       },
     })

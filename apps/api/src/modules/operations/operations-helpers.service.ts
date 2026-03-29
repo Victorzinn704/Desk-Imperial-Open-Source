@@ -12,7 +12,7 @@ import {
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import {
@@ -214,15 +214,23 @@ export class OperationsHelpersService {
       this.prisma.comanda.findMany({
         where: {
           companyOwnerId: workspaceOwnerUserId,
-          openedAt: {
-            gte: window.start,
-            lt: window.end,
-          },
-          ...(scopedEmployeeId
-            ? {
-                OR: [{ currentEmployeeId: scopedEmployeeId }, { currentEmployeeId: null }],
-              }
-            : {}),
+          OR: [
+            {
+              cashSession: {
+                is: {
+                  businessDate,
+                },
+              },
+            },
+            {
+              cashSessionId: null,
+              openedAt: {
+                gte: window.start,
+                lt: window.end,
+              },
+            },
+          ],
+          ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
         },
         select: comandaSnapshotSelect,
         orderBy: {
@@ -434,10 +442,22 @@ export class OperationsHelpersService {
           status: {
             in: OPEN_COMANDA_STATUSES,
           },
-          openedAt: {
-            gte: window.start,
-            lt: window.end,
-          },
+          OR: [
+            {
+              cashSession: {
+                is: {
+                  businessDate,
+                },
+              },
+            },
+            {
+              cashSessionId: null,
+              openedAt: {
+                gte: window.start,
+                lt: window.end,
+              },
+            },
+          ],
         },
       }),
       transaction.cashClosure.findUnique({

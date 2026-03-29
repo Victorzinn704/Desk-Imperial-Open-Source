@@ -24,7 +24,9 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/consistent-type-imports': 'error',
+      // Nest relies on runtime class symbols for DI metadata; aggressive
+      // auto-fixes to `import type` have been breaking providers at runtime.
+      '@typescript-eslint/consistent-type-imports': 'off',
     },
   },
   {

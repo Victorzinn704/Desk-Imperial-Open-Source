@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { CacheModule } from '../../cache/cache.module'
+import { PrismaModule } from '../../database/prisma.module'
 import { AuthModule } from '../auth/auth.module'
 import { MonitoringModule } from '../monitoring/monitoring.module'
 import { OperationsRealtimeModule } from '../operations-realtime.module'
@@ -10,7 +11,7 @@ import { ComandaService } from './comanda.service'
 import { OperationsHelpersService } from './operations-helpers.service'
 
 @Module({
-  imports: [AuthModule, CacheModule, MonitoringModule, OperationsRealtimeModule],
+  imports: [AuthModule, PrismaModule, CacheModule, MonitoringModule, OperationsRealtimeModule],
   controllers: [OperationsController],
   providers: [OperationsHelpersService, CashSessionService, ComandaService, OperationsService],
   exports: [OperationsService],

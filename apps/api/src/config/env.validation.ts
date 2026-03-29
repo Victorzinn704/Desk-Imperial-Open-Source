@@ -75,6 +75,10 @@ export function validateEnvironment(config: EnvShape) {
     if (!env.CSRF_SECRET?.trim()) {
       issues.push('CSRF_SECRET é obrigatório em produção.')
     }
+
+    if (!env.REDIS_URL?.trim()) {
+      issues.push('REDIS_URL é obrigatório em produção para garantir cache e sincronização realtime entre instâncias.')
+    }
   }
 
   if (issues.length > 0) {

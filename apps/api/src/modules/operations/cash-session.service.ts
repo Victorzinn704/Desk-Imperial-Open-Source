@@ -1,21 +1,21 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { AuditSeverity, CashClosureStatus, CashMovementType, CashSessionStatus } from '@prisma/client'
-import { CacheService } from '../../common/services/cache.service'
+import type { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { assertOwnerRole } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { AuditLogService } from '../monitoring/audit-log.service'
-import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
+import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import { OperationsHelpersService } from './operations-helpers.service'
+import type { OperationsHelpersService } from './operations-helpers.service'
 import { toCashMovementRecord, toCashSessionRecord, toClosureRecord } from './operations.types'
 import {
   buildOptionalOperationsSnapshot,
@@ -198,7 +198,7 @@ export class CashSessionService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, session.businessDate)
-    this.publishCashRealtime(auth, refreshedSession, closure)
+    this.publishCashRealtime(auth, refreshedSession, closure, session.businessDate)
 
     return this.buildCashMovementResponse(
       workspaceOwnerUserId,
@@ -292,7 +292,7 @@ export class CashSessionService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, session.businessDate)
-    this.publishCashRealtime(auth, refreshedSession, closure)
+    this.publishCashRealtime(auth, refreshedSession, closure, session.businessDate)
 
     return this.buildCashSessionResponse(workspaceOwnerUserId, session.businessDate, refreshedSession, options)
   }
@@ -390,8 +390,13 @@ export class CashSessionService {
     auth: AuthContext,
     session: Parameters<typeof buildCashUpdatedPayload>[0],
     closure: Parameters<typeof buildCashClosurePayload>[0],
+    businessDate?: Date,
   ) {
-    this.operationsRealtimeService.publishCashUpdated(auth, buildCashUpdatedPayload(session))
+    this.operationsRealtimeService.publishCashUpdated(auth, {
+      ...buildCashUpdatedPayload(session),
+      businessDate: businessDate ? formatBusinessDateKey(businessDate) : undefined,
+      cashSession: toCashSessionRecord(session),
+    })
     this.publishCashClosureRealtime(auth, closure)
   }
 
@@ -402,6 +407,25 @@ export class CashSessionService {
       openedAt: Date
       openingCashAmount: { toNumber(): number } | number
       employeeId: string | null
+      companyOwnerId: string
+      businessDate: Date
+      status: CashSessionStatus
+      countedCashAmount: { toNumber(): number } | number | null
+      expectedCashAmount: { toNumber(): number } | number
+      differenceAmount: { toNumber(): number } | number | null
+      grossRevenueAmount: { toNumber(): number } | number
+      realizedProfitAmount: { toNumber(): number } | number
+      notes: string | null
+      closedAt: Date | null
+      movements: Array<{
+        id: string
+        cashSessionId: string
+        employeeId: string | null
+        type: CashMovementType
+        amount: { toNumber(): number } | number
+        note: string | null
+        createdAt: Date
+      }>
     },
     closure: Parameters<typeof buildCashClosurePayload>[0],
   ) {
@@ -411,6 +435,8 @@ export class CashSessionService {
       openingAmount: toNumber(session.openingCashAmount),
       currency: auth.preferredCurrency,
       employeeId: session.employeeId,
+      businessDate: formatBusinessDateKey(session.businessDate),
+      cashSession: toCashSessionRecord(session),
     })
     this.publishCashClosureRealtime(auth, closure)
   }

@@ -1,3 +1,5 @@
+import type { CashSessionRecord, ComandaItemRecord, ComandaRecord, MesaRecord } from '../operations/operations.types'
+
 export const OPERATIONS_REALTIME_NAMESPACE = '/operations'
 
 export function buildWorkspaceChannel(workspaceOwnerUserId: string) {
@@ -24,6 +26,8 @@ export interface OperationsRealtimeEventPayloadMap {
     openingAmount: number
     currency: string
     employeeId: string | null
+    businessDate: string
+    cashSession?: CashSessionRecord
   }
   'cash.updated': {
     cashSessionId: string
@@ -35,6 +39,8 @@ export interface OperationsRealtimeEventPayloadMap {
     countedAmount: number | null
     differenceAmount: number | null
     movementCount: number
+    businessDate?: string
+    cashSession?: CashSessionRecord
   }
   'comanda.opened': {
     comandaId: string
@@ -43,6 +49,8 @@ export interface OperationsRealtimeEventPayloadMap {
     employeeId: string | null
     subtotal: number
     totalItems: number
+    businessDate: string
+    comanda: ComandaRecord
   }
   'comanda.updated': {
     comandaId: string
@@ -53,6 +61,8 @@ export interface OperationsRealtimeEventPayloadMap {
     discountAmount: number
     totalAmount: number
     totalItems: number
+    businessDate: string
+    comanda: ComandaRecord
   }
   'comanda.closed': {
     comandaId: string
@@ -62,6 +72,8 @@ export interface OperationsRealtimeEventPayloadMap {
     totalAmount: number
     totalItems: number
     paymentMethod: string | null
+    businessDate: string
+    comanda: ComandaRecord
   }
   'cash.closure.updated': {
     closureId: string
@@ -85,6 +97,9 @@ export interface OperationsRealtimeEventPayloadMap {
     notes: string | null
     kitchenStatus: 'QUEUED'
     kitchenQueuedAt: string
+    businessDate: string
+    item: ComandaItemRecord
+    comanda: ComandaRecord
   }
   'kitchen.item.updated': {
     itemId: string
@@ -96,11 +111,15 @@ export interface OperationsRealtimeEventPayloadMap {
     kitchenStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
     kitchenQueuedAt: string | null
     kitchenReadyAt: string | null
+    businessDate: string
+    item: ComandaItemRecord
+    comanda: ComandaRecord
   }
   'mesa.upserted': {
     mesaId: string
     label: string
     status: 'livre' | 'ocupada' | 'reservada'
+    mesa?: MesaRecord
   }
 }
 

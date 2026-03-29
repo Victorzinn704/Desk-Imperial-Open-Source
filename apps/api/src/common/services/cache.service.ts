@@ -1,6 +1,6 @@
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 
 @Injectable()
@@ -14,7 +14,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const url = this.configService.get<string>('REDIS_URL')
     if (!url) {
-      this.logger.warn('REDIS_URL não configurado — cache desabilitado. Dashboard rodará sem cache.')
+      this.logger.warn(
+        'REDIS_URL não configurado — cache desabilitado e realtime multi-instância indisponível. Em produção, Redis é obrigatório.',
+      )
       return
     }
 

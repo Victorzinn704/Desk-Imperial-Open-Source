@@ -11,6 +11,7 @@
     "prisma:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "ts-node --project tsconfig.json --transpile-only prisma/seed.ts",
+    "prisma:repair-demo": "ts-node --project tsconfig.json --transpile-only prisma/repair-demo.ts",
     "test": "jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "typecheck": "tsc --noEmit"

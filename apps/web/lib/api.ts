@@ -574,6 +574,7 @@ export type ComandaDraftItemPayload = {
 
 export type OpenComandaPayload = {
   tableLabel: string
+  mesaId?: string
   customerName?: string
   customerDocument?: string
   participantCount?: number
@@ -587,6 +588,7 @@ export type OpenComandaPayload = {
 
 export type ReplaceComandaPayload = {
   tableLabel: string
+  mesaId?: string
   customerName?: string
   customerDocument?: string
   participantCount?: number

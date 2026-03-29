@@ -1,7 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 
 type DemoReservation = {
   dailyLimitMinutes: number
@@ -154,7 +154,7 @@ export class DemoAccessService {
   }
 
   private getDemoAccountEmail() {
-    return this.configService.get<string>('DEMO_ACCOUNT_EMAIL') ?? 'demo@partnerportal.com'
+    return this.configService.get<string>('DEMO_ACCOUNT_EMAIL') ?? 'demo@deskimperial.online'
   }
 
   private hashDeviceSignature(ipAddress: string, userAgent: string | null) {

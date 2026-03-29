@@ -71,6 +71,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const { enqueue, drainQueue } = useOfflineQueue()
+  const shouldFallbackRefetch = realtimeStatus !== 'connected'
 
   // Executor reutilizado pelos dois canais de drain (SW + fallback)
   const runDrain = useCallback(() => {
@@ -206,7 +207,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       haptic.error()
     },
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Status atualizado')
       haptic.medium()
     },
@@ -232,7 +235,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       haptic.error()
     },
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Comanda fechada — pagamento efetuado')
       haptic.heavy()
     },
@@ -255,7 +260,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       haptic.error()
     },
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      if (shouldFallbackRefetch) {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      }
       toast.success('Comanda cancelada')
       haptic.heavy()
     },
@@ -321,7 +328,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
             },
           })
         }
-        await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        if (shouldFallbackRefetch) {
+          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        }
         setPendingAction(null)
         setActiveTab('pedidos')
         return
@@ -330,6 +339,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       // type === 'new' — tenta abrir comanda, com auto-open caixa se necessário
       const comParams = {
         tableLabel: normalizeTableLabel(pendingAction.mesa.numero),
+        mesaId: pendingAction.mesa.id,
         items: items.map((item) => ({
           productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
           productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
@@ -350,7 +360,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
           toast.dismiss() // Limpa o toast de erro do mutation
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
-          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          if (shouldFallbackRefetch) {
+            await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          }
           await openComandaMutation.mutateAsync(comParams)
         } else {
           throw err
@@ -386,6 +398,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
             type: 'open-comanda',
             payload: {
               tableLabel: pendingAction.mesa.numero,
+              mesaId: pendingAction.mesa.id,
               items: items.map((item) => ({
                 productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
                 productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,

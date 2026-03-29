@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { CashSessionService } from './cash-session.service'
-import { ComandaService } from './comanda.service'
-import { OperationsHelpersService } from './operations-helpers.service'
-import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { CashSessionService } from './cash-session.service'
+import type { ComandaService } from './comanda.service'
+import type { OperationsHelpersService } from './operations-helpers.service'
+import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { AssignComandaDto } from './dto/assign-comanda.dto'
 import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
@@ -26,7 +26,7 @@ import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 
 @Injectable()
 export class OperationsService {
@@ -199,8 +199,14 @@ export class OperationsService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
-    this.realtime.publishMesaUpserted(auth, { mesaId: mesa.id, label: mesa.label, status: 'livre' })
-    return toMesaRecord(mesa, null)
+    const mesaRecord = toMesaRecord(mesa, null)
+    this.realtime.publishMesaUpserted(auth, {
+      mesaId: mesa.id,
+      label: mesa.label,
+      status: mesaRecord.status,
+      mesa: mesaRecord,
+    })
+    return mesaRecord
   }
 
   async updateMesa(
@@ -244,7 +250,13 @@ export class OperationsService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
-    this.realtime.publishMesaUpserted(auth, { mesaId: updated.id, label: updated.label, status: 'livre' })
-    return toMesaRecord(updated, null)
+    const mesaRecord = toMesaRecord(updated, null)
+    this.realtime.publishMesaUpserted(auth, {
+      mesaId: updated.id,
+      label: updated.label,
+      status: mesaRecord.status,
+      mesa: mesaRecord,
+    })
+    return mesaRecord
   }
 }

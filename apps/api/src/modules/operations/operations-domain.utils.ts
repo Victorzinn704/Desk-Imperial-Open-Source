@@ -10,7 +10,18 @@ import {
 import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { OperationsHelpersService } from './operations-helpers.service'
+import type { OperationsLiveResponse } from './operations.types'
+
+type OperationsSnapshotBuilder = {
+  buildLiveSnapshot(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    scopedEmployeeId?: string | null,
+    options?: {
+      includeCashMovements?: boolean
+    },
+  ): Promise<OperationsLiveResponse>
+}
 
 export const OPEN_COMANDA_STATUSES: ComandaStatus[] = [
   ComandaStatus.OPEN,
@@ -55,7 +66,7 @@ export function invalidateOperationsLiveCache(
 }
 
 export async function buildOptionalOperationsSnapshot(
-  helpers: Pick<OperationsHelpersService, 'buildLiveSnapshot'>,
+  helpers: OperationsSnapshotBuilder,
   workspaceOwnerUserId: string,
   businessDate: Date,
   options?: OperationsResponseOptionsDto,

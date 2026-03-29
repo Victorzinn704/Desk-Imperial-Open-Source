@@ -34,6 +34,11 @@ export class ReplaceComandaDto {
   @MaxLength(240)
   notes?: string
 
+  @ApiPropertyOptional({ example: 'cmabc123mesa' })
+  @IsOptional()
+  @IsString()
+  mesaId?: string
+
   @ApiProperty({ type: [ComandaDraftItemDto] })
   @IsArray()
   @ValidateNested({ each: true })

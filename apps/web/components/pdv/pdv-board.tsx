@@ -142,8 +142,11 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
       abertaEm: editingComanda?.abertaEm ?? new Date(),
     }
     const amounts = toOperationAmounts(draft)
+    const selectedMesa =
+      mesas.find((mesa) => normalizeTableLabel(mesa.numero) === normalizeTableLabel(data.mesa)) ?? null
     const payload = {
       tableLabel: normalizeTableLabel(data.mesa),
+      mesaId: editingComanda ? selectedMesa?.id : mesaPreSelected?.id,
       customerName: data.clienteNome.trim() || undefined,
       customerDocument: data.clienteDocumento.trim() || undefined,
       items: data.itens.map((item) => ({
