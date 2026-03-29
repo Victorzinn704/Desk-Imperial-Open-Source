@@ -90,16 +90,24 @@ export function SalaoEnvironment() {
 
   // ── queries ──────────────────────────────────────────────────────────────────
 
+  // CORREÇÃO: staleTime adicionado para evitar refetch desnecessário
+  // Mesas mudam raramente, 60s é suficiente para evitar requests redundantes
   const { data: mesas = [], isLoading: mesasLoading } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchMesas,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   })
 
+  // CORREÇÃO: staleTime adicionado para live data também
+  // Entre intervalos de 15s, não precisa considerar stale imediatamente
   const { data: liveData, isLoading: liveLoading } = useQuery({
     queryKey: LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
+    staleTime: 10_000,
     enabled: view === 'operacional',
+    refetchOnWindowFocus: false,
   })
 
   const liveMesas = useMemo(() => buildPdvMesas(liveData), [liveData])

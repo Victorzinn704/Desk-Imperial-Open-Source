@@ -306,26 +306,27 @@ function SecurityTab({
     useRef<HTMLInputElement>(null),
   ]
 
+  // Countdown timer para desbloqueio de remoção de PIN
+  // CORREÇÃO: Removido removeSecondsLeft das deps para evitar re-criação
+  // do interval a cada tick (causava memory leak de 60 intervals/min)
   useEffect(() => {
-    if (!removeBlocked || removeSecondsLeft <= 0) {
+    if (!removeBlocked) {
       return
     }
 
     const intervalId = window.setInterval(() => {
       setRemoveSecondsLeft((current) => {
-        const next = current - 1
-        if (next <= 0) {
+        if (current <= 1) {
           window.clearInterval(intervalId)
           setRemoveBlocked(false)
           return 0
         }
-
-        return next
+        return current - 1
       })
     }, 1000)
 
     return () => window.clearInterval(intervalId)
-  }, [removeBlocked, removeSecondsLeft])
+  }, [removeBlocked])
 
   async function handleSavePin() {
     const pin = pinDigits.join('')
