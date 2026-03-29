@@ -1,6 +1,11 @@
 type EnvShape = Record<string, string | undefined>
 
-const BOOLEAN_KEYS = ['ENABLE_SWAGGER', 'SWAGGER_ALLOW_IN_PRODUCTION', 'PORTFOLIO_EMAIL_FALLBACK'] as const
+const BOOLEAN_KEYS = [
+  'ENABLE_SWAGGER',
+  'SWAGGER_ALLOW_IN_PRODUCTION',
+  'PORTFOLIO_EMAIL_FALLBACK',
+  'COOKIE_SECURE',
+] as const
 const URL_KEYS = ['DATABASE_URL', 'DIRECT_URL', 'REDIS_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL'] as const
 const OPTIONAL_URL_KEYS = ['RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'] as const
 
@@ -47,6 +52,18 @@ export function validateEnvironment(config: EnvShape) {
 
     if (!['true', 'false'].includes(value)) {
       issues.push(`${key} deve ser "true" ou "false".`)
+    }
+  }
+
+  if (env.COOKIE_SAME_SITE !== undefined) {
+    const sameSite = env.COOKIE_SAME_SITE.trim().toLowerCase()
+    if (!['lax', 'strict', 'none'].includes(sameSite)) {
+      issues.push('COOKIE_SAME_SITE deve ser "lax", "strict" ou "none".')
+    }
+
+    const secureCookieEnabled = nodeEnv === 'production' || env.COOKIE_SECURE === 'true'
+    if (sameSite === 'none' && !secureCookieEnabled) {
+      issues.push('COOKIE_SAME_SITE=none exige cookie secure (COOKIE_SECURE=true) ou ambiente de produção.')
     }
   }
 

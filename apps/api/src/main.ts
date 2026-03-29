@@ -24,7 +24,21 @@ async function bootstrap() {
   const swaggerAllowedInProduction = configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
 
-  app.use(helmet())
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'no-referrer' },
+      hsts: isProduction
+        ? {
+            maxAge: 15552000,
+            includeSubDomains: true,
+            preload: true,
+          }
+        : false,
+    }),
+  )
   app.use(cookieParser(cookieSecret))
   const httpAdapter = app.getHttpAdapter().getInstance()
   httpAdapter.disable('x-powered-by')

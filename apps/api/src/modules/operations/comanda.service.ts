@@ -24,7 +24,12 @@ import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import type { OperationsHelpersService } from './operations-helpers.service'
-import { toCashSessionRecord, toComandaItemRecord, toComandaRecord } from './operations.types'
+import {
+  toComandaItemRecord,
+  toComandaRecord,
+  toRealtimeCashSessionRecord,
+  toRealtimeComandaRecord,
+} from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import {
   buildOptionalOperationsSnapshot,
@@ -982,7 +987,8 @@ export class ComandaService {
       productName: item.productName,
       quantity: item.quantity,
       notes: item.notes ?? null,
-      kitchenStatus: item.kitchenStatus === 'DELIVERED' ? 'DELIVERED' : (item.kitchenStatus ?? 'QUEUED'),
+      kitchenStatus:
+        item.kitchenStatus === 'DELIVERED' ? 'DELIVERED' : item.kitchenStatus === 'READY' ? 'READY' : 'IN_PREPARATION',
       kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
       kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
       businessDate: formatBusinessDateKey(businessDate),
@@ -1014,14 +1020,14 @@ export class ComandaService {
       totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
       paymentMethod: null,
       businessDate: formatBusinessDateKey(businessDate),
-      comanda: toComandaRecord(comanda),
+      comanda: toRealtimeComandaRecord(comanda),
     })
 
     if (refreshedSession) {
       this.operationsRealtimeService.publishCashUpdated(auth, {
         ...buildCashUpdatedPayload(refreshedSession),
         businessDate: formatBusinessDateKey(businessDate),
-        cashSession: toCashSessionRecord(refreshedSession),
+        cashSession: toRealtimeCashSessionRecord(refreshedSession),
       })
     }
 

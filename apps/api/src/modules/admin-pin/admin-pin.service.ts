@@ -8,14 +8,14 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import * as argon2 from 'argon2'
 import { createHash, randomBytes } from 'node:crypto'
 import type { Request } from 'express'
 import type { Response } from 'express'
 import { CacheService } from '../../common/services/cache.service'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import {
   ADMIN_PIN_VERIFICATION_TTL_MS,
@@ -329,7 +329,16 @@ export class AdminPinService {
   private getCookieSameSitePolicy(): 'lax' | 'strict' | 'none' {
     const configuredPolicy = this.configService.get<string>('COOKIE_SAME_SITE')?.trim().toLowerCase()
 
-    if (configuredPolicy === 'strict' || configuredPolicy === 'none') {
+    if (configuredPolicy === 'strict') {
+      return configuredPolicy
+    }
+
+    if (configuredPolicy === 'none') {
+      if (!this.shouldUseSecureCookies()) {
+        this.logger.warn('COOKIE_SAME_SITE=none sem cookie secure ativo. Aplicando fallback para SameSite=lax.')
+        return 'lax'
+      }
+
       return configuredPolicy
     }
 

@@ -298,6 +298,129 @@ export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
   }
 }
 
+export type RealtimeCashSessionLike = {
+  id: string
+  status: CashSession['status']
+  openingCashAmount: { toNumber(): number } | number
+  countedCashAmount: { toNumber(): number } | number | null
+  expectedCashAmount: { toNumber(): number } | number
+  differenceAmount: { toNumber(): number } | number | null
+  movements: Array<{
+    type: CashMovement['type']
+    amount: { toNumber(): number } | number
+    id?: string
+    cashSessionId?: string
+    employeeId?: string | null
+    note?: string | null
+    createdAt?: Date
+  }>
+  companyOwnerId?: string
+  employeeId?: string | null
+  businessDate?: Date
+  grossRevenueAmount?: { toNumber(): number } | number
+  realizedProfitAmount?: { toNumber(): number } | number
+  notes?: string | null
+  openedAt?: Date
+  closedAt?: Date | null
+}
+
+export function toRealtimeCashSessionRecord(session: RealtimeCashSessionLike): CashSessionRecord {
+  const now = new Date()
+  return {
+    id: session.id,
+    companyOwnerId: session.companyOwnerId ?? '',
+    employeeId: session.employeeId ?? null,
+    status: session.status,
+    businessDate: (session.businessDate ?? now).toISOString(),
+    openingCashAmount: toNumber(session.openingCashAmount) ?? 0,
+    countedCashAmount: toNumber(session.countedCashAmount),
+    expectedCashAmount: toNumber(session.expectedCashAmount) ?? 0,
+    differenceAmount: toNumber(session.differenceAmount),
+    grossRevenueAmount: toNumber(session.grossRevenueAmount) ?? 0,
+    realizedProfitAmount: toNumber(session.realizedProfitAmount) ?? 0,
+    notes: session.notes ?? null,
+    openedAt: (session.openedAt ?? now).toISOString(),
+    closedAt: session.closedAt?.toISOString() ?? null,
+    movements: session.movements.map((movement, index) => ({
+      id: movement.id ?? `${session.id}-movement-${index + 1}`,
+      cashSessionId: movement.cashSessionId ?? session.id,
+      employeeId: movement.employeeId ?? null,
+      type: movement.type,
+      amount: toNumber(movement.amount) ?? 0,
+      note: movement.note ?? null,
+      createdAt: (movement.createdAt ?? now).toISOString(),
+    })),
+  }
+}
+
+export type RealtimeComandaLike = {
+  id: string
+  tableLabel: string
+  currentEmployeeId: string | null
+  totalAmount: { toNumber(): number } | number
+  closedAt: Date | null
+  items: Array<{
+    quantity: number
+    id?: string
+    productId?: string | null
+    productName?: string
+    unitPrice?: { toNumber(): number } | number
+    totalAmount?: { toNumber(): number } | number
+    notes?: string | null
+    kitchenStatus?: KitchenItemStatus | null
+    kitchenQueuedAt?: Date | null
+    kitchenReadyAt?: Date | null
+  }>
+  companyOwnerId?: string
+  cashSessionId?: string | null
+  mesaId?: string | null
+  customerName?: string | null
+  customerDocument?: string | null
+  participantCount?: number
+  status?: Comanda['status']
+  subtotalAmount?: { toNumber(): number } | number
+  discountAmount?: { toNumber(): number } | number
+  serviceFeeAmount?: { toNumber(): number } | number
+  notes?: string | null
+  openedAt?: Date
+}
+
+export function toRealtimeComandaRecord(comanda: RealtimeComandaLike): ComandaRecord {
+  const now = new Date()
+  const totalAmount = toNumber(comanda.totalAmount) ?? 0
+  return {
+    id: comanda.id,
+    companyOwnerId: comanda.companyOwnerId ?? '',
+    cashSessionId: comanda.cashSessionId ?? null,
+    mesaId: comanda.mesaId ?? null,
+    currentEmployeeId: comanda.currentEmployeeId,
+    tableLabel: comanda.tableLabel,
+    customerName: comanda.customerName ?? null,
+    customerDocument: comanda.customerDocument ?? null,
+    participantCount: comanda.participantCount ?? 1,
+    status: comanda.status ?? (comanda.closedAt ? 'CLOSED' : 'OPEN'),
+    subtotalAmount: toNumber(comanda.subtotalAmount) ?? totalAmount,
+    discountAmount: toNumber(comanda.discountAmount) ?? 0,
+    serviceFeeAmount: toNumber(comanda.serviceFeeAmount) ?? 0,
+    totalAmount,
+    notes: comanda.notes ?? null,
+    openedAt: (comanda.openedAt ?? comanda.closedAt ?? now).toISOString(),
+    closedAt: comanda.closedAt?.toISOString() ?? null,
+    items: comanda.items.map((item, index) => ({
+      id: item.id ?? `${comanda.id}-item-${index + 1}`,
+      productId: item.productId ?? null,
+      productName: item.productName ?? 'Item',
+      quantity: item.quantity,
+      unitPrice: toNumber(item.unitPrice) ?? 0,
+      totalAmount: toNumber(item.totalAmount) ?? 0,
+      notes: item.notes ?? null,
+      kitchenStatus: item.kitchenStatus ?? null,
+      kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
+      kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
+    })),
+  }
+}
+
 export function buildEmployeeOperationsRecord(input: {
   employee: EmployeeLike | null
   cashSession: CashSessionLike | null

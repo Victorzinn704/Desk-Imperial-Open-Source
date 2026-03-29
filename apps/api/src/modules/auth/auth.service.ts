@@ -1272,7 +1272,16 @@ export class AuthService {
   private getCookieSameSitePolicy(): 'lax' | 'strict' | 'none' {
     const configuredPolicy = this.configService.get<string>('COOKIE_SAME_SITE')?.trim().toLowerCase()
 
-    if (configuredPolicy === 'strict' || configuredPolicy === 'none') {
+    if (configuredPolicy === 'strict') {
+      return configuredPolicy
+    }
+
+    if (configuredPolicy === 'none') {
+      if (!this.shouldUseSecureCookies()) {
+        this.logger.warn('COOKIE_SAME_SITE=none sem cookie secure ativo. Aplicando fallback para SameSite=lax.')
+        return 'lax'
+      }
+
       return configuredPolicy
     }
 

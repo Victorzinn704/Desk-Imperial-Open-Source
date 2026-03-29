@@ -16,7 +16,12 @@ import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import type { OperationsHelpersService } from './operations-helpers.service'
-import { toCashMovementRecord, toCashSessionRecord, toClosureRecord } from './operations.types'
+import {
+  toCashMovementRecord,
+  toCashSessionRecord,
+  toClosureRecord,
+  toRealtimeCashSessionRecord,
+} from './operations.types'
 import {
   buildOptionalOperationsSnapshot,
   OPEN_COMANDA_STATUSES,
@@ -395,7 +400,7 @@ export class CashSessionService {
     this.operationsRealtimeService.publishCashUpdated(auth, {
       ...buildCashUpdatedPayload(session),
       businessDate: businessDate ? formatBusinessDateKey(businessDate) : undefined,
-      cashSession: toCashSessionRecord(session),
+      cashSession: toRealtimeCashSessionRecord(session),
     })
     this.publishCashClosureRealtime(auth, closure)
   }
@@ -436,7 +441,7 @@ export class CashSessionService {
       currency: auth.preferredCurrency,
       employeeId: session.employeeId,
       businessDate: formatBusinessDateKey(session.businessDate),
-      cashSession: toCashSessionRecord(session),
+      cashSession: toRealtimeCashSessionRecord(session),
     })
     this.publishCashClosureRealtime(auth, closure)
   }
