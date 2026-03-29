@@ -1,14 +1,14 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import type { CurrencyCode} from '@prisma/client';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import type { CurrencyCode } from '@prisma/client'
 import { Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import type { CurrencyService } from '../currency/currency.service'
+import { CurrencyService } from '../currency/currency.service'
 import type { ExchangeRatesSnapshot } from '../currency/currency.service'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 import { parseProductImportCsv } from './products-import.util'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { ListProductsQueryDto } from './dto/list-products.query'
@@ -25,9 +25,9 @@ type UploadedCsvFile = {
 @Injectable()
 export class ProductsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly currencyService: CurrencyService,
-    private readonly auditLogService: AuditLogService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CurrencyService) private readonly currencyService: CurrencyService,
+    @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
     private readonly cache: CacheService,
   ) {}
 

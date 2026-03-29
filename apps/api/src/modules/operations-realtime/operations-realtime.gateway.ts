@@ -1,13 +1,13 @@
-import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common'
+import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common'
 import type { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets'
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
 import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
-import type { AuthService } from '../auth/auth.service'
+import { AuthService } from '../auth/auth.service'
 import { getAllowedOriginsFromValues, isAllowedOrigin } from '../../common/utils/origin.util'
 import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
-import type { OperationsRealtimeService } from './operations-realtime.service'
+import { OperationsRealtimeService } from './operations-realtime.service'
 import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
 import type {
   OperationsRealtimeConnectionContext,
@@ -58,8 +58,8 @@ export class OperationsRealtimeGateway
   server!: Namespace
 
   constructor(
-    private readonly operationsRealtimeService: OperationsRealtimeService,
-    private readonly authService: AuthService,
+    @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
+    @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
   afterInit(server: Namespace) {

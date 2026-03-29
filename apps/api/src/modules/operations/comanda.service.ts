@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
@@ -11,10 +12,10 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CacheService } from '../../common/services/cache.service'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import type { AuditLogService } from '../monitoring/audit-log.service'
-import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
+import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
 import type { AssignComandaDto } from './dto/assign-comanda.dto'
 import type { CloseComandaDto } from './dto/close-comanda.dto'
@@ -23,7 +24,7 @@ import type { OperationsResponseOptionsDto } from './dto/operations-response-opt
 import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import type { OperationsHelpersService } from './operations-helpers.service'
+import { OperationsHelpersService } from './operations-helpers.service'
 import {
   toComandaItemRecord,
   toComandaRecord,
@@ -47,11 +48,11 @@ import {
 @Injectable()
 export class ComandaService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly cache: CacheService,
-    private readonly auditLogService: AuditLogService,
-    private readonly operationsRealtimeService: OperationsRealtimeService,
-    private readonly helpers: OperationsHelpersService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CacheService) private readonly cache: CacheService,
+    @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
+    @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
+    @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
   ) {}
 
   async openComanda(

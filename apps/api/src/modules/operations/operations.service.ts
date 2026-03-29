@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import type { CashSessionService } from './cash-session.service'
-import type { ComandaService } from './comanda.service'
-import type { OperationsHelpersService } from './operations-helpers.service'
-import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import { CashSessionService } from './cash-session.service'
+import { ComandaService } from './comanda.service'
+import { OperationsHelpersService } from './operations-helpers.service'
+import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { AssignComandaDto } from './dto/assign-comanda.dto'
 import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
@@ -26,17 +26,17 @@ import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 
 @Injectable()
 export class OperationsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly cashSession: CashSessionService,
-    private readonly comanda: ComandaService,
-    private readonly helpers: OperationsHelpersService,
-    private readonly realtime: OperationsRealtimeService,
-    private readonly auditLogService: AuditLogService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CashSessionService) private readonly cashSession: CashSessionService,
+    @Inject(ComandaService) private readonly comanda: ComandaService,
+    @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
+    @Inject(OperationsRealtimeService) private readonly realtime: OperationsRealtimeService,
+    @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
   ) {}
 
   // ── Live snapshot ─────────────────────────────────────────────────────────

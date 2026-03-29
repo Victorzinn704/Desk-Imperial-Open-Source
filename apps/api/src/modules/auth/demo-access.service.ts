@@ -1,7 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 
 type DemoReservation = {
   dailyLimitMinutes: number
@@ -22,7 +22,7 @@ export class DemoAccessService {
   private readonly timezone = 'America/Sao_Paulo'
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 

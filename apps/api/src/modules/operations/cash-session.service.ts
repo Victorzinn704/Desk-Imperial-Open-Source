@@ -1,21 +1,21 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common'
 import { AuditSeverity, CashClosureStatus, CashMovementType, CashSessionStatus } from '@prisma/client'
-import type { CacheService } from '../../common/services/cache.service'
+import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { assertOwnerRole } from '../../common/utils/workspace-access.util'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import type { AuditLogService } from '../monitoring/audit-log.service'
-import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
+import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
 import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
 import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
 import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { OperationsHelpersService } from './operations-helpers.service'
+import { OperationsHelpersService } from './operations-helpers.service'
 import {
   toCashMovementRecord,
   toCashSessionRecord,
@@ -36,11 +36,11 @@ import {
 @Injectable()
 export class CashSessionService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly cache: CacheService,
-    private readonly auditLogService: AuditLogService,
-    private readonly operationsRealtimeService: OperationsRealtimeService,
-    private readonly helpers: OperationsHelpersService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CacheService) private readonly cache: CacheService,
+    @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
+    @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
+    @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
   ) {}
 
   async openCashSession(

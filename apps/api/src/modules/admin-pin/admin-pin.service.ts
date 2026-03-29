@@ -16,7 +16,7 @@ import type { Request } from 'express'
 import type { Response } from 'express'
 import { CacheService } from '../../common/services/cache.service'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import {
   ADMIN_PIN_VERIFICATION_TTL_MS,
@@ -49,7 +49,7 @@ export class AdminPinService {
   private readonly logger = new Logger(AdminPinService.name)
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly configService: ConfigService,
     private readonly cache: CacheService,
   ) {}

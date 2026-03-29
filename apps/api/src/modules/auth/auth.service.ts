@@ -17,16 +17,16 @@ import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import type { PrismaService } from '../../database/prisma.service'
-import type { ConsentService } from '../consent/consent.service'
-import type { GeocodingService } from '../geocoding/geocoding.service'
-import type { MailerService } from '../mailer/mailer.service'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { PrismaService } from '../../database/prisma.service'
+import { ConsentService } from '../consent/consent.service'
+import { GeocodingService } from '../geocoding/geocoding.service'
+import { MailerService } from '../mailer/mailer.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 import {
   getAdminPinVerificationCookieName,
   getAdminPinVerificationCookieOptions,
 } from '../admin-pin/admin-pin.constants'
-import type { AuthRateLimitService } from './auth-rate-limit.service'
+import { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   DEV_CSRF_COOKIE_NAME,
   DEV_SESSION_COOKIE_NAME,
@@ -41,7 +41,7 @@ import type { RegisterDto } from './dto/register.dto'
 import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
-import type { DemoAccessService } from './demo-access.service'
+import { DemoAccessService } from './demo-access.service'
 
 const authCookiePreferenceSelect = {
   analytics: true,
@@ -103,14 +103,14 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name)
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly configService: ConfigService,
-    private readonly consentService: ConsentService,
-    private readonly geocodingService: GeocodingService,
-    private readonly mailerService: MailerService,
-    private readonly auditLogService: AuditLogService,
-    private readonly authRateLimitService: AuthRateLimitService,
-    private readonly demoAccessService: DemoAccessService,
+    @Inject(ConsentService) private readonly consentService: ConsentService,
+    @Inject(GeocodingService) private readonly geocodingService: GeocodingService,
+    @Inject(MailerService) private readonly mailerService: MailerService,
+    @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
+    @Inject(AuthRateLimitService) private readonly authRateLimitService: AuthRateLimitService,
+    @Inject(DemoAccessService) private readonly demoAccessService: DemoAccessService,
   ) {}
 
   getSessionCookieName() {

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
@@ -12,7 +12,7 @@ import {
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import type { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import {
@@ -154,8 +154,8 @@ const mesaSnapshotSelect = {
 @Injectable()
 export class OperationsHelpersService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly cache: CacheService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CacheService) private readonly cache: CacheService,
   ) {}
 
   async buildLiveSnapshot(
