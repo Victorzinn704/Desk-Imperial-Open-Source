@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { AuditSeverity, CashClosureStatus, CashMovementType, CashSessionStatus } from '@prisma/client'
-import { CacheService } from '../../common/services/cache.service'
+import type { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
