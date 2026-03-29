@@ -9,23 +9,23 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import type { PrismaService } from '../../database/prisma.service'
-import type { ConsentService } from '../consent/consent.service'
-import type { GeocodingService } from '../geocoding/geocoding.service'
-import type { MailerService } from '../mailer/mailer.service'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { PrismaService } from '../../database/prisma.service'
+import { ConsentService } from '../consent/consent.service'
+import { GeocodingService } from '../geocoding/geocoding.service'
+import { MailerService } from '../mailer/mailer.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 import {
   getAdminPinVerificationCookieName,
   getAdminPinVerificationCookieOptions,
 } from '../admin-pin/admin-pin.constants'
-import type { AuthRateLimitService } from './auth-rate-limit.service'
+import { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   DEV_CSRF_COOKIE_NAME,
   DEV_SESSION_COOKIE_NAME,
@@ -40,7 +40,7 @@ import type { RegisterDto } from './dto/register.dto'
 import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
-import type { DemoAccessService } from './demo-access.service'
+import { DemoAccessService } from './demo-access.service'
 
 @Injectable()
 export class AuthService {
