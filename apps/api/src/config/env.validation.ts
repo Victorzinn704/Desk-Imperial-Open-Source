@@ -17,13 +17,24 @@ export function validateEnvironment(config: EnvShape) {
     issues.push('DATABASE_URL é obrigatório para iniciar a API.')
   }
 
-  for (const key of [...URL_KEYS, ...OPTIONAL_URL_KEYS]) {
+  for (const key of URL_KEYS) {
     const value = env[key]
     if (!value) {
       continue
     }
 
     if (!isValidUrl(value)) {
+      issues.push(`${key} deve ser uma URL válida.`)
+    }
+  }
+
+  for (const key of OPTIONAL_URL_KEYS) {
+    const value = env[key]
+    if (!value) {
+      continue
+    }
+
+    if (!isValidOriginLikeValue(value)) {
       issues.push(`${key} deve ser uma URL válida.`)
     }
   }
@@ -90,4 +101,8 @@ function isValidUrl(value: string) {
   } catch {
     return false
   }
+}
+
+function isValidOriginLikeValue(value: string) {
+  return isValidUrl(value) || isValidUrl(`https://${value}`)
 }
