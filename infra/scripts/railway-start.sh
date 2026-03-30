@@ -15,7 +15,7 @@ case "$service_name" in
     cd apps/api
     node ../../node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
     api_entrypoint=""
-    for candidate in "dist/main.js" "dist/src/main.js" "dist/apps/api/src/main.js"; do
+    for candidate in "dist/apps/api/src/main.js" "dist/src/main.js" "dist/main.js"; do
       if [ -f "$candidate" ]; then
         api_entrypoint="$candidate"
         break
