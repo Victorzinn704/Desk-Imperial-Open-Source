@@ -12,7 +12,21 @@ case "$service_name" in
     echo "Starting Railway service: $service_name"
     echo "Running Prisma migrations (deploy)"
     npm --workspace @partner/api run prisma:migrate:deploy
-    npm --workspace @partner/api run start
+    cd apps/api
+    api_entrypoint=""
+    for candidate in "dist/main.js" "dist/src/main.js" "dist/apps/api/src/main.js"; do
+      if [ -f "$candidate" ]; then
+        api_entrypoint="$candidate"
+        break
+      fi
+    done
+    if [ -z "$api_entrypoint" ]; then
+      echo "Entrypoint da API nao encontrado em apps/api/dist" >&2
+      find dist -maxdepth 4 -name 'main.js' 2>/dev/null || true
+      exit 1
+    fi
+    echo "Starting API with $api_entrypoint"
+    node "$api_entrypoint"
     ;;
   *)
     echo "Servico Railway nao reconhecido para start: $service_name" >&2
