@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
-import type { Mesa, Comanda, ComandaItem, ComandaStatus } from '@/components/pdv/pdv-types'
+import { calcSubtotal, type Mesa, type Comanda, type ComandaItem, type ComandaStatus } from '@/components/pdv/pdv-types'
 import type { OperationsLiveResponse, ProductRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
@@ -13,9 +13,15 @@ import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
 import dynamic from 'next/dynamic'
 
-const KitchenOrdersView = dynamic(() => import('./kitchen-orders-view').then(mod => mod.KitchenOrdersView), { ssr: false })
-const MobileComandaList = dynamic(() => import('./mobile-comanda-list').then(mod => mod.MobileComandaList), { ssr: false })
-const MobileOrderBuilder = dynamic(() => import('./mobile-order-builder').then(mod => mod.MobileOrderBuilder), { ssr: false })
+const KitchenOrdersView = dynamic(() => import('./kitchen-orders-view').then((mod) => mod.KitchenOrdersView), {
+  ssr: false,
+})
+const MobileComandaList = dynamic(() => import('./mobile-comanda-list').then((mod) => mod.MobileComandaList), {
+  ssr: false,
+})
+const MobileOrderBuilder = dynamic(() => import('./mobile-order-builder').then((mod) => mod.MobileOrderBuilder), {
+  ssr: false,
+})
 import { MobileTableGrid } from './mobile-table-grid'
 import {
   fetchOperationsLive,
@@ -39,7 +45,10 @@ import {
   toOperationsStatus,
 } from '@/components/pdv/pdv-operations'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
-const MobileHistoricoView = dynamic(() => import('@/components/staff-mobile/mobile-historico-view').then(mod => mod.MobileHistoricoView), { ssr: false })
+const MobileHistoricoView = dynamic(
+  () => import('@/components/staff-mobile/mobile-historico-view').then((mod) => mod.MobileHistoricoView),
+  { ssr: false },
+)
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { useOfflineQueue } from '@/components/shared/use-offline-queue'
 import {
@@ -356,7 +365,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
     try {
       if (pendingAction.type === 'add') {
-        await addComandaItemsMutation.mutateAsync({
+        const response = await addComandaItemsMutation.mutateAsync({
           comandaId: pendingAction.comandaId,
           items: items.map((item) => ({
             productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
@@ -367,9 +376,10 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
           })),
         })
         if (shouldFallbackRefetch) {
-          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         }
         setPendingAction(null)
+        setFocusedComandaId(response.comanda.id)
         setActiveTab('pedidos')
         return
       }
@@ -399,7 +409,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
           if (shouldFallbackRefetch) {
-            await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
           }
           await openComandaMutation.mutateAsync(comParams)
         } else {
@@ -497,8 +507,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     if (!comanda) return
     try {
       setScreenError(null)
-      // Calculate amounts from percentages
-      const subtotal = comanda.itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
+      const subtotal = calcSubtotal(comanda)
       const discountAmount = Math.round(subtotal * discountPercent) / 100
       const serviceFeeAmount = Math.round(subtotal * surchargePercent) / 100
       await closeComandaMutation.mutateAsync({ comandaId: id, discountAmount, serviceFeeAmount })

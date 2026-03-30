@@ -81,6 +81,9 @@ Desktop.ini
 /test-results/
 /playwright-report/
 /blob-report/
+/apps/web/test-results/
+/apps/web/playwright-report/
+/apps/web/blob-report/
 /playwright/.cache/
 
 # ─── Misc ────────────────────────────────────────────────────────────────────

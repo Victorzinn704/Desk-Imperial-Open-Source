@@ -1,7 +1,8 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
-import type { Comanda, KanbanColumn } from './pdv-types'
+import { calcTotal, type Comanda, type KanbanColumn } from './pdv-types'
 import { PdvComandaCard } from './pdv-comanda-card'
 
 type PdvColumnProps = {
@@ -10,15 +11,8 @@ type PdvColumnProps = {
   onCardClick: (comanda: Comanda) => void
 }
 
-export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnProps>) {
-  const total = comandas.reduce(
-    (sum, c) =>
-      sum +
-      c.itens.reduce((s, i) => s + i.quantidade * i.precoUnitario, 0) *
-        (1 - c.desconto / 100) *
-        (1 + c.acrescimo / 100),
-    0,
-  )
+export const PdvColumn = memo(function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnProps>) {
+  const total = useMemo(() => comandas.reduce((sum, comanda) => sum + calcTotal(comanda), 0), [comandas])
 
   return (
     <div className="flex min-w-[260px] max-w-[300px] flex-1 flex-col">
@@ -73,4 +67,4 @@ export function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnP
       </Droppable>
     </div>
   )
-}
+})

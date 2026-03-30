@@ -19,14 +19,22 @@ import { toast } from 'sonner'
 import { BrandMark } from '@/components/shared/brand-mark'
 import dynamic from 'next/dynamic'
 
-const KitchenOrdersView = dynamic(() => import('../staff-mobile/kitchen-orders-view').then(mod => mod.KitchenOrdersView), { ssr: false })
-const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then(mod => mod.OwnerComandasView), { ssr: false })
+const KitchenOrdersView = dynamic(
+  () => import('../staff-mobile/kitchen-orders-view').then((mod) => mod.KitchenOrdersView),
+  { ssr: false },
+)
+const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then((mod) => mod.OwnerComandasView), {
+  ssr: false,
+})
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
-const MobileOrderBuilder = dynamic(() => import('../staff-mobile/mobile-order-builder').then(mod => mod.MobileOrderBuilder), { ssr: false })
+const MobileOrderBuilder = dynamic(
+  () => import('../staff-mobile/mobile-order-builder').then((mod) => mod.MobileOrderBuilder),
+  { ssr: false },
+)
 import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { useRouter } from 'next/navigation'
@@ -285,7 +293,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           })),
         })
         if (shouldFallbackRefetch) {
-          await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
         }
         setPendingAction(null)
         setActiveTab('comandas')
@@ -315,7 +323,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
           if (shouldFallbackRefetch) {
-            await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
           }
           await openComandaMutation.mutateAsync(comParams)
         } else {
@@ -471,7 +479,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             kitchenBadge={kitchenBadge}
             garconRanking={garconRanking}
             topProdutos={topProdutos}
-            isLoading={ordersQuery.isLoading || operationsQuery.isLoading || kitchenQuery.isLoading || summaryQuery.isLoading}
+            isLoading={
+              ordersQuery.isLoading || operationsQuery.isLoading || kitchenQuery.isLoading || summaryQuery.isLoading
+            }
             onOpenFullDashboard={() => router.push('/dashboard')}
           />
         ) : null}

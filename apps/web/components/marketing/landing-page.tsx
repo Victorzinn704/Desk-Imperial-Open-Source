@@ -180,8 +180,23 @@ export function LandingPage() {
 
   // Cursor none class on body while on landing page
   useEffect(() => {
-    document.body.classList.add('cursor-none')
-    return () => document.body.classList.remove('cursor-none')
+    const coarsePointer = window.matchMedia('(pointer: coarse)')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    const syncCursorMode = () => {
+      const shouldHideNativeCursor = !coarsePointer.matches && !reducedMotion.matches
+      document.body.classList.toggle('cursor-none', shouldHideNativeCursor)
+    }
+
+    syncCursorMode()
+    coarsePointer.addEventListener('change', syncCursorMode)
+    reducedMotion.addEventListener('change', syncCursorMode)
+
+    return () => {
+      coarsePointer.removeEventListener('change', syncCursorMode)
+      reducedMotion.removeEventListener('change', syncCursorMode)
+      document.body.classList.remove('cursor-none')
+    }
   }, [])
 
   const rotateX = useSpring(useTransform(pointerY, [-1, 1], [3, -3]), {

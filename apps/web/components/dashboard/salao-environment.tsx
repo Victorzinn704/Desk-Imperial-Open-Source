@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Armchair, ClipboardList, Grid3X3, List, Plus, Zap } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
@@ -108,7 +108,7 @@ export function SalaoEnvironment() {
     [updateMutation],
   )
 
-  const { dragging, getMesaPosition, handleMouseDown } = useMesaDrag({
+  const { dragging, dragPosition, getMesaPosition, handleMouseDown } = useMesaDrag({
     onPositionSave,
     canvasRef,
   })
@@ -330,26 +330,20 @@ export function SalaoEnvironment() {
             )}
 
             {activeMesas.map((mesa, index) => {
-              const pos = getMesaPosition(mesa, index)
               const isDraggingThis = dragging?.mesaId === mesa.id
+              const basePosition = getMesaPosition(mesa, index)
+              const currentPosition =
+                isDraggingThis && dragPosition ? { x: dragPosition.x, y: dragPosition.y } : basePosition
               return (
-                <div
+                <FloorMesaNode
                   key={mesa.id}
-                  onMouseDown={(e) => handleMouseDown(e, mesa, index)}
-                  style={{
-                    position: 'absolute',
-                    left: pos.x,
-                    top: pos.y,
-                    width: CARD_W,
-                    height: CARD_H,
-                    zIndex: isDraggingThis ? 50 : 1,
-                    transform: isDraggingThis ? 'scale(1.07)' : 'scale(1)',
-                    transition: isDraggingThis ? 'none' : 'transform 0.12s',
-                    cursor: isDraggingThis ? 'grabbing' : 'grab',
-                  }}
-                >
-                  <MesaFloorCard mesa={mesa} isDragging={isDraggingThis} />
-                </div>
+                  mesa={mesa}
+                  index={index}
+                  x={currentPosition.x}
+                  y={currentPosition.y}
+                  isDragging={isDraggingThis}
+                  onMouseDown={handleMouseDown}
+                />
               )
             })}
           </div>
@@ -392,6 +386,42 @@ export function SalaoEnvironment() {
     </div>
   )
 }
+
+const FloorMesaNode = memo(function FloorMesaNode({
+  mesa,
+  index,
+  x,
+  y,
+  isDragging,
+  onMouseDown,
+}: {
+  mesa: MesaRecord
+  index: number
+  x: number
+  y: number
+  isDragging: boolean
+  onMouseDown: (event: React.MouseEvent, mesa: MesaRecord, autoIndex: number) => void
+}) {
+  return (
+    <div
+      onMouseDown={(event) => onMouseDown(event, mesa, index)}
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: CARD_W,
+        height: CARD_H,
+        zIndex: isDragging ? 50 : 1,
+        transform: isDragging ? 'scale(1.07)' : 'scale(1)',
+        transition: isDragging ? 'none' : 'transform 0.12s',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        willChange: isDragging ? 'transform,left,top' : undefined,
+      }}
+    >
+      <MesaFloorCard mesa={mesa} isDragging={isDragging} />
+    </div>
+  )
+})
 
 // ── OperacionalView ─────────────────────────────────────────────────────────────
 

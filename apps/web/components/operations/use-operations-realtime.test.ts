@@ -90,6 +90,7 @@ function createQueryClientMock(
   let currentSummarySnapshot = summarySnapshot
   return {
     getQueriesData: vi.fn(() => [[OPERATIONS_LIVE_COMPACT_QUERY_KEY, currentLiveSnapshot]]),
+    getLiveSnapshot: () => currentLiveSnapshot,
     getQueryData: vi.fn((queryKey: readonly unknown[]) => {
       if (currentKitchenSnapshot && queryKey.length === OPERATIONS_KITCHEN_QUERY_KEY.length) {
         const matchesKitchen = queryKey.every((value, index) => value === OPERATIONS_KITCHEN_QUERY_KEY[index])
@@ -162,6 +163,51 @@ describe('applyRealtimeEnvelope', () => {
     expect(queryClient.setQueryData).toHaveBeenCalled()
   })
 
+  it('prioriza totais novos do payload quando a base local está defasada', () => {
+    const liveSnapshot = buildLiveSnapshot()
+    liveSnapshot.unassigned.comandas.push({
+      id: 'comanda-1',
+      companyOwnerId: 'owner-1',
+      cashSessionId: null,
+      mesaId: null,
+      currentEmployeeId: null,
+      tableLabel: 'Mesa 1',
+      customerName: null,
+      customerDocument: null,
+      participantCount: 1,
+      status: 'OPEN',
+      subtotalAmount: 0,
+      discountAmount: 0,
+      serviceFeeAmount: 0,
+      totalAmount: 0,
+      notes: null,
+      openedAt: '2026-03-30T10:00:00.000Z',
+      closedAt: null,
+      items: [],
+    })
+    const queryClient = createQueryClientMock(liveSnapshot)
+
+    applyRealtimeEnvelope(queryClient as never, {
+      event: 'comanda.updated',
+      payload: {
+        comandaId: 'comanda-1',
+        mesaLabel: 'Mesa 1',
+        status: 'ABERTA',
+        subtotalAmount: 48.5,
+        discountAmount: 3,
+        serviceFeeAmount: 2,
+        totalAmount: 47.5,
+        businessDate: '2026-03-30',
+      },
+    })
+
+    const patched = queryClient.getLiveSnapshot()
+    expect(patched.unassigned.comandas[0]?.subtotalAmount).toBe(48.5)
+    expect(patched.unassigned.comandas[0]?.discountAmount).toBe(3)
+    expect(patched.unassigned.comandas[0]?.serviceFeeAmount).toBe(2)
+    expect(patched.unassigned.comandas[0]?.totalAmount).toBe(47.5)
+  })
+
   it('atualiza a fila da cozinha e remove item entregue sem depender de item completo', () => {
     const queryClient = createQueryClientMock(buildLiveSnapshot(), buildKitchenSnapshot())
 
@@ -179,6 +225,48 @@ describe('applyRealtimeEnvelope', () => {
     })
 
     expect(result.kitchenPatched).toBe(true)
+  })
+
+  it('não injeta item zerado na comanda compacta ao receber patch da cozinha', () => {
+    const liveSnapshot = buildLiveSnapshot()
+    liveSnapshot.unassigned.comandas.push({
+      id: 'comanda-1',
+      companyOwnerId: 'owner-1',
+      cashSessionId: null,
+      mesaId: null,
+      currentEmployeeId: null,
+      tableLabel: 'Mesa 1',
+      customerName: null,
+      customerDocument: null,
+      participantCount: 1,
+      status: 'OPEN',
+      subtotalAmount: 32,
+      discountAmount: 0,
+      serviceFeeAmount: 0,
+      totalAmount: 32,
+      notes: null,
+      openedAt: '2026-03-30T10:00:00.000Z',
+      closedAt: null,
+      items: [],
+    })
+    const queryClient = createQueryClientMock(liveSnapshot, buildKitchenSnapshot())
+
+    applyRealtimeEnvelope(queryClient as never, {
+      event: 'kitchen.item.updated',
+      payload: {
+        itemId: 'item-99',
+        comandaId: 'comanda-1',
+        mesaLabel: 'Mesa 1',
+        productName: 'Hambúrguer',
+        quantity: 1,
+        kitchenStatus: 'IN_PREPARATION',
+        businessDate: '2026-03-30',
+      },
+    })
+
+    const patched = queryClient.getLiveSnapshot()
+    expect(patched.unassigned.comandas[0]?.items).toHaveLength(0)
+    expect(patched.unassigned.comandas[0]?.totalAmount).toBe(32)
   })
 
   it('não força refresh de cozinha quando comanda delta-first não carrega itens de cozinha', () => {

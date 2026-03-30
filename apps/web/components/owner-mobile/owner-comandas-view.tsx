@@ -1,11 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
-import { calcTotal } from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
+import { toPdvComanda } from '@/components/pdv/pdv-operations'
 import { formatBRL as formatCurrency } from '@/lib/currency'
+import { fetchComandaDetails } from '@/lib/api'
 
 function formatDateTime(date: Date): string {
   return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -88,46 +91,73 @@ export function OwnerComandasView({ comandas }: Props) {
 
 function ComandaCard({ comanda }: { comanda: Comanda }) {
   const [open, setOpen] = useState(false)
-  const total = calcTotal(comanda)
-  const subtotal = comanda.itens.reduce((s, i) => s + i.quantidade * i.precoUnitario, 0)
-  const descontoVal = subtotal * (comanda.desconto / 100)
-  const acrescimoVal = subtotal * (comanda.acrescimo / 100)
-  const badge = STATUS_MAP[comanda.status] ?? STATUS_MAP.aberta
+  const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
+    queryKey: ['comanda-details', comanda.id],
+    queryFn: async () => {
+      const response = await fetchComandaDetails(comanda.id)
+      return toPdvComanda(response.comanda)
+    },
+    enabled: open,
+    staleTime: 5_000,
+  })
+
+  const activeComanda = detailsData ?? comanda
+  const total = calcTotal(activeComanda)
+  const subtotal = calcSubtotal(activeComanda)
+  const descontoVal = subtotal * (activeComanda.desconto / 100)
+  const acrescimoVal = subtotal * (activeComanda.acrescimo / 100)
+  const badge = STATUS_MAP[activeComanda.status] ?? STATUS_MAP.aberta
+  const itemCount = activeComanda.itens.reduce((sum, item) => sum + item.quantidade, 0)
+  const detailHint =
+    itemCount > 0
+      ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`
+      : open
+        ? isLoadingDetails
+          ? 'Carregando extrato...'
+          : 'Extrato pronto'
+        : 'Extrato sob demanda'
 
   return (
-    <li className="overflow-hidden rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)]">
+    <li
+      className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.07)] bg-[rgba(7,9,13,0.82)] shadow-[0_16px_34px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+      data-testid={`owner-comanda-card-${comanda.id}`}
+    >
       <button
         type="button"
-        className="flex w-full items-start justify-between px-4 py-3 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-start justify-between gap-3 px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="text-left flex-1 min-w-0">
-          {/* Linha 1: Mesa + Badge */}
-          <div className="flex items-center gap-2 mb-0.5">
-            <p className="text-sm font-semibold text-white">Mesa {comanda.mesa ?? '—'}</p>
+        <div className="min-w-0 flex-1 text-left">
+          <div className="mb-1 flex items-center gap-2">
+            <p className="text-sm font-semibold text-white">Mesa {activeComanda.mesa ?? '—'}</p>
             <span
-              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0"
+              className="shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]"
               style={{ color: badge.color, background: badge.bg }}
             >
               {badge.label}
             </span>
           </div>
-          {/* Linha 2: Garçom + Data/hora */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {comanda.garcomNome && (
-              <span className="text-[11px] text-[#a78bfa] font-medium">👤 {comanda.garcomNome}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {activeComanda.garcomNome && (
+              <span className="rounded-full bg-[rgba(167,139,250,0.14)] px-2 py-0.5 text-[10px] font-semibold text-[#c4b5fd]">
+                {activeComanda.garcomNome}
+              </span>
             )}
-            <span className="text-[11px] text-[#7a8896]">🕐 {formatDateTime(comanda.abertaEm)}</span>
+            <span className="text-[11px] text-[#7a8896]">Aberta em {formatDateTime(activeComanda.abertaEm)}</span>
             <span className="text-[11px] text-[#7a8896]">
-              {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens
+              {detailHint} · há {formatElapsed(activeComanda.abertaEm)}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0 ml-2 pt-1">
-          <span className="text-sm font-bold" style={{ color: badge.color }}>
-            {formatCurrency(total)}
-          </span>
+
+        <div className="ml-2 flex shrink-0 items-center gap-2 pt-0.5">
+          <div className="text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Total final</p>
+            <span className="text-sm font-bold" style={{ color: badge.color }}>
+              {formatCurrency(total)}
+            </span>
+          </div>
           {open ? (
             <ChevronDown className="size-4 text-[#7a8896]" />
           ) : (
@@ -137,20 +167,42 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
       </button>
 
       {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-3">
-          {comanda.itens.length === 0 ? (
-            <p className="py-3 text-center text-xs text-[#7a8896]">Sem itens registrados</p>
+        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Responsável</p>
+              <p className="mt-1 text-sm font-semibold text-white">{activeComanda.garcomNome ?? 'Operação geral'}</p>
+            </div>
+            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Itens</p>
+              <p className="mt-1 text-sm font-semibold text-white">{itemCount}</p>
+            </div>
+          </div>
+
+          {isLoadingDetails ? (
+            <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-6 text-xs text-[#7a8896]">
+              Carregando extrato detalhado...
+            </div>
+          ) : activeComanda.itens.length === 0 ? (
+            <div className="mb-4 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-5 text-center text-xs text-[#7a8896]">
+              Nenhum item detalhado para esta comanda.
+            </div>
           ) : (
-            <ul className="space-y-1.5 mb-3">
-              {comanda.itens.map((item, idx) => (
-                <li key={idx} className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">
+            <ul className="mb-4 space-y-2" data-testid={`owner-comanda-items-${comanda.id}`}>
+              {activeComanda.itens.map((item, idx) => (
+                <li
+                  key={`${item.produtoId}-${idx}`}
+                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-white">
                       {item.quantidade}× {item.nome}
                     </p>
-                    {item.observacao && <p className="text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>}
+                    {item.observacao && (
+                      <p className="mt-1 text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>
+                    )}
                   </div>
-                  <span className="text-xs font-semibold text-white shrink-0">
+                  <span className="shrink-0 text-xs font-semibold text-white">
                     {formatCurrency(item.quantidade * item.precoUnitario)}
                   </span>
                 </li>
@@ -158,25 +210,25 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
             </ul>
           )}
 
-          <div className="space-y-1 border-t border-[rgba(255,255,255,0.06)] pt-3 text-xs">
-            <div className="flex justify-between text-[#7a8896]">
+          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4 text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="flex justify-between text-[#94a3b8]">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            {comanda.desconto > 0 && (
-              <div className="flex justify-between text-[#f87171]">
-                <span>Desconto ({comanda.desconto}%)</span>
+            {activeComanda.desconto > 0 && (
+              <div className="mt-2 flex justify-between text-[#fca5a5]">
+                <span>Desconto ({activeComanda.desconto}%)</span>
                 <span>– {formatCurrency(descontoVal)}</span>
               </div>
             )}
-            {comanda.acrescimo > 0 && (
-              <div className="flex justify-between text-[#fb923c]">
-                <span>Serviço ({comanda.acrescimo}%)</span>
+            {activeComanda.acrescimo > 0 && (
+              <div className="mt-2 flex justify-between text-[#fdba74]">
+                <span>Serviço ({activeComanda.acrescimo}%)</span>
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-1 font-semibold text-white">
-              <span>Total</span>
+            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
+              <span>Total final</span>
               <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
             </div>
           </div>

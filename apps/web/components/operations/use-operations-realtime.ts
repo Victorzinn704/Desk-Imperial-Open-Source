@@ -682,24 +682,28 @@ function buildComandaFromPayload(
       'OPEN',
     subtotalAmount:
       legacy?.subtotalAmount ??
-      existing?.subtotalAmount ??
       (typeof payload.subtotalAmount === 'number'
         ? payload.subtotalAmount
         : typeof payload.subtotal === 'number'
           ? payload.subtotal
-          : 0),
+          : null) ??
+      existing?.subtotalAmount ??
+      0,
     discountAmount:
       legacy?.discountAmount ??
+      (typeof payload.discountAmount === 'number' ? payload.discountAmount : null) ??
       existing?.discountAmount ??
-      (typeof payload.discountAmount === 'number' ? payload.discountAmount : 0),
+      0,
     serviceFeeAmount:
       legacy?.serviceFeeAmount ??
+      (typeof payload.serviceFeeAmount === 'number' ? payload.serviceFeeAmount : null) ??
       existing?.serviceFeeAmount ??
-      (typeof payload.serviceFeeAmount === 'number' ? payload.serviceFeeAmount : 0),
+      0,
     totalAmount:
       legacy?.totalAmount ??
+      (typeof payload.totalAmount === 'number' ? payload.totalAmount : null) ??
       existing?.totalAmount ??
-      (typeof payload.totalAmount === 'number' ? payload.totalAmount : 0),
+      0,
     notes: legacy?.notes ?? existing?.notes ?? asNullableString(payload.notes),
     openedAt,
     closedAt: legacy?.closedAt ?? existing?.closedAt ?? fallbackClosedAt,
@@ -771,6 +775,10 @@ function mergeComandaItemsForKitchenUpdate(items: ComandaRecord['items'], nextIt
     return existingIndex === -1 ? items : items.filter((item) => item.id !== nextItem.item.itemId)
   }
 
+  if (existingIndex === -1) {
+    return items
+  }
+
   const nextComandaItem: ComandaRecord['items'][number] = {
     id: nextItem.item.itemId,
     productId: null,
@@ -782,10 +790,6 @@ function mergeComandaItemsForKitchenUpdate(items: ComandaRecord['items'], nextIt
     kitchenStatus: nextItem.item.kitchenStatus,
     kitchenQueuedAt: nextItem.item.kitchenQueuedAt,
     kitchenReadyAt: nextItem.item.kitchenReadyAt,
-  }
-
-  if (existingIndex === -1) {
-    return [...items, nextComandaItem]
   }
 
   const nextItems = [...items]

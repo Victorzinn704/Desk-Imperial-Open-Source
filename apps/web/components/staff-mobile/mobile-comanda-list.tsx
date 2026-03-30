@@ -2,7 +2,7 @@
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
 import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
-import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
@@ -231,13 +231,17 @@ const ComandaCard = memo(
 
     const config = STATUS_CONFIG[activeComanda.status as Exclude<ComandaStatus, 'fechada'>]
     const total = useMemo(() => calcTotal(activeComanda), [activeComanda])
+    const subtotal = useMemo(() => calcSubtotal(activeComanda), [activeComanda])
     const elapsed = useMemo(() => formatElapsed(activeComanda.abertaEm), [activeComanda.abertaEm])
-    const itemCount = useMemo(() => activeComanda.itens.reduce((sum, i) => sum + i.quantidade, 0), [activeComanda.itens])
+    const itemCount = useMemo(
+      () => activeComanda.itens.reduce((sum, i) => sum + i.quantidade, 0),
+      [activeComanda.itens],
+    )
     const canAddItems = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
     const showDirectClose = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
     const adjustedTotal = useMemo(
-      () => total * (1 - discountPercent / 100) * (1 + surchargePercent / 100),
-      [discountPercent, surchargePercent, total],
+      () => subtotal * (1 - discountPercent / 100) * (1 + surchargePercent / 100),
+      [discountPercent, surchargePercent, subtotal],
     )
 
     return (
@@ -344,29 +348,31 @@ const ComandaCard = memo(
                 <div className="mb-5 flex justify-center py-4">
                   <div className="size-5 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
                 </div>
-              ) : activeComanda.itens.length > 0 && (
-                <div className="mb-5 rounded-[14px] bg-[rgba(0,0,0,0.3)] p-3 border border-[rgba(255,255,255,0.04)]">
-                  <ul className="space-y-2.5">
-                    {activeComanda.itens.map((item, idx) => (
-                      <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
-                        <div className="flex gap-2.5 items-start">
-                          <span className="font-bold text-[var(--accent,#9b8460)] w-4 text-center">
-                            {item.quantidade}x
-                          </span>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-white/90">{item.nome}</span>
-                            {item.observacao && (
-                              <span className="text-[10px] text-white/40 italic">{`"${item.observacao}"`}</span>
-                            )}
+              ) : (
+                activeComanda.itens.length > 0 && (
+                  <div className="mb-5 rounded-[14px] bg-[rgba(0,0,0,0.3)] p-3 border border-[rgba(255,255,255,0.04)]">
+                    <ul className="space-y-2.5">
+                      {activeComanda.itens.map((item, idx) => (
+                        <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
+                          <div className="flex gap-2.5 items-start">
+                            <span className="font-bold text-[var(--accent,#9b8460)] w-4 text-center">
+                              {item.quantidade}x
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-white/90">{item.nome}</span>
+                              {item.observacao && (
+                                <span className="text-[10px] text-white/40 italic">{`"${item.observacao}"`}</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <span className="shrink-0 font-medium text-[var(--text-soft,#7a8896)] ml-3">
-                          {formatCurrency(item.quantidade * item.precoUnitario)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                          <span className="shrink-0 font-medium text-[var(--text-soft,#7a8896)] ml-3">
+                            {formatCurrency(item.quantidade * item.precoUnitario)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
               )}
 
               <div className="mb-4 grid grid-cols-2 gap-3">
@@ -478,36 +484,41 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
 function ExtratoCard({ comanda }: { comanda: Comanda }) {
   const [open, setOpen] = useState(false)
   const total = calcTotal(comanda)
-  const subtotal = comanda.itens.reduce((s, i) => s + i.quantidade * i.precoUnitario, 0)
+  const subtotal = calcSubtotal(comanda)
   const descontoVal = subtotal * (comanda.desconto / 100)
   const acrescimoVal = subtotal * (comanda.acrescimo / 100)
   const badge = STATUS_BADGE[comanda.status] ?? STATUS_BADGE.aberta
 
   return (
-    <li className="overflow-hidden rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)]">
+    <li className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,9,13,0.78)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
       {/* Header — clicável */}
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-3 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
         <div className="text-left">
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="mb-1 flex items-center gap-2">
             <p className="text-sm font-semibold text-white">Mesa {comanda.mesa ?? '—'}</p>
             <span
-              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              className="rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
               style={{ color: badge.color, background: badge.bg }}
             >
               {badge.label}
             </span>
           </div>
           <p className="text-xs text-[var(--text-soft,#7a8896)]">
-            {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens · {formatElapsed(comanda.abertaEm)} atrás
+            {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens · aberta há {formatElapsed(comanda.abertaEm)}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
+          <div className="text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+              Total
+            </p>
+            <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
+          </div>
           {open ? (
             <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
           ) : (
@@ -518,20 +529,23 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
 
       {/* Extrato expandido */}
       {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-3">
+        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
           {/* Itens */}
-          <ul className="space-y-2 mb-4">
+          <ul className="mb-4 space-y-2">
             {comanda.itens.map((item, idx) => (
-              <li key={idx} className="flex items-start justify-between gap-2">
+              <li
+                key={idx}
+                className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+              >
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white truncate">
+                  <p className="truncate text-xs font-semibold text-white">
                     {item.quantidade}× {item.nome}
                   </p>
                   {item.observacao && (
-                    <p className="text-[10px] italic text-[var(--text-soft,#7a8896)]">{item.observacao}</p>
+                    <p className="mt-1 text-[10px] italic text-[var(--text-soft,#7a8896)]">{item.observacao}</p>
                   )}
                 </div>
-                <span className="text-xs font-semibold text-white shrink-0">
+                <span className="shrink-0 text-xs font-semibold text-white">
                   {formatCurrency(item.quantidade * item.precoUnitario)}
                 </span>
               </li>
@@ -539,25 +553,25 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
           </ul>
 
           {/* Totais */}
-          <div className="space-y-1 border-t border-[rgba(255,255,255,0.06)] pt-3 text-xs">
+          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-xs">
             <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             {comanda.desconto > 0 && (
-              <div className="flex justify-between text-[#f87171]">
+              <div className="mt-2 flex justify-between text-[#f87171]">
                 <span>Desconto ({comanda.desconto}%)</span>
                 <span>– {formatCurrency(descontoVal)}</span>
               </div>
             )}
             {comanda.acrescimo > 0 && (
-              <div className="flex justify-between text-[#fb923c]">
+              <div className="mt-2 flex justify-between text-[#fb923c]">
                 <span>Serviço ({comanda.acrescimo}%)</span>
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-1 font-semibold text-white">
-              <span>Total</span>
+            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
+              <span>Total final</span>
               <span className="text-[#36f57c]">{formatCurrency(total)}</span>
             </div>
           </div>

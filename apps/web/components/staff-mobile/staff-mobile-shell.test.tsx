@@ -198,4 +198,172 @@ describe('StaffMobileShell', () => {
       expect(screen.getByText(/1 comanda em aberto no seu atendimento/i)).toBeInTheDocument()
     })
   })
+
+  it('abre uma nova comanda pelo fluxo categorias → produtos e envia o pedido', async () => {
+    const user = userEvent.setup()
+    const flowSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [
+            {
+              id: 'c-1',
+              status: 'OPEN',
+              tableLabel: '1',
+              totalAmount: 80,
+              openedAt: '2026-03-28T11:00:00.000Z',
+              items: [{ id: 'i-2', productName: 'Café', quantity: 1, unitPrice: 10, kitchenStatus: 'QUEUED' }],
+            },
+          ],
+        },
+      ],
+      unassigned: {
+        comandas: [],
+      },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-1',
+          currentEmployeeId: 'emp-1',
+        }),
+        buildMesaRecord({
+          id: 'mesa-3',
+          label: 'Mesa 3',
+          capacity: 4,
+          status: 'livre',
+          comandaId: null,
+          currentEmployeeId: null,
+        }),
+      ],
+    })
+    const mockProductsResponse: Awaited<ReturnType<typeof api.fetchProducts>> = {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      items: [
+        {
+          id: 'prod-1',
+          name: 'Café especial',
+          brand: null,
+          category: 'Bebidas',
+          packagingClass: 'UNIT',
+          measurementUnit: 'ml',
+          measurementValue: 300,
+          unitsPerPackage: 1,
+          stockPackages: 20,
+          stockLooseUnits: 0,
+          description: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          unitCost: 4,
+          unitPrice: 12,
+          originalUnitCost: 4,
+          originalUnitPrice: 12,
+          stock: 20,
+          requiresKitchen: false,
+          active: true,
+          createdAt: '2026-03-28T10:00:00.000Z',
+          updatedAt: '2026-03-28T10:00:00.000Z',
+          inventoryCostValue: 80,
+          inventorySalesValue: 240,
+          potentialProfit: 160,
+          originalInventoryCostValue: 80,
+          originalInventorySalesValue: 240,
+          originalPotentialProfit: 160,
+          stockBaseUnits: 20,
+          marginPercent: 200,
+        },
+      ],
+      totals: {
+        totalProducts: 1,
+        activeProducts: 1,
+        inactiveProducts: 0,
+        stockUnits: 20,
+        stockPackages: 20,
+        stockLooseUnits: 0,
+        stockBaseUnits: 20,
+        inventoryCostValue: 80,
+        inventorySalesValue: 240,
+        potentialProfit: 160,
+        averageMarginPercent: 200,
+        categories: ['Bebidas'],
+      },
+    }
+
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(flowSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], flowSnapshot)
+    vi.mocked(api.fetchProducts).mockResolvedValue(mockProductsResponse)
+    testQueryClient.setQueryData(['products'], mockProductsResponse)
+    vi.mocked(api.openComanda).mockResolvedValue({
+      comanda: {
+        id: 'c-new',
+        companyOwnerId: 'owner-1',
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-2',
+        currentEmployeeId: 'emp-1',
+        tableLabel: '2',
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: 'OPEN',
+        subtotalAmount: 12,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 12,
+        notes: null,
+        openedAt: '2026-03-28T12:00:00.000Z',
+        closedAt: null,
+        items: [
+          {
+            id: 'i-new',
+            productId: 'prod-1',
+            productName: 'Café especial',
+            quantity: 1,
+            unitPrice: 12,
+            totalAmount: 12,
+            notes: null,
+            kitchenStatus: null,
+            kitchenQueuedAt: null,
+            kitchenReadyAt: null,
+          },
+        ],
+      },
+    })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} produtos={[]} />)
+
+    await user.click(screen.getByRole('button', { name: /mesa 3.*novo pdv/i }))
+    expect(await screen.findByText(/Escolha uma categoria/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Bebidas$/i }))
+    await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
+    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+
+    await waitFor(() => {
+      expect(api.openComanda).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tableLabel: '3',
+          mesaId: 'mesa-3',
+          items: [
+            expect.objectContaining({
+              productId: 'prod-1',
+              quantity: 1,
+              unitPrice: 12,
+            }),
+          ],
+        }),
+        { includeSnapshot: false },
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/Comandas ativas/i)).toBeInTheDocument()
+    })
+  })
 })

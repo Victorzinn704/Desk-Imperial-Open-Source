@@ -7,6 +7,7 @@ type CategoryGridProps = {
   categories: string[]
   selectedCategory: string | null
   onSelectCategory: (category: string | null) => void
+  showAllOption?: boolean
 }
 
 function getCategoryIcon(cat: string) {
@@ -28,29 +29,32 @@ export const CategoryGrid = memo(function CategoryGrid({
   categories,
   selectedCategory,
   onSelectCategory,
+  showAllOption = true,
 }: CategoryGridProps) {
   if (categories.length === 0) return null
 
   return (
     <>
       <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-        <button
-          onClick={() => onSelectCategory(null)}
-          className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
-            selectedCategory === null
-              ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-              : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
-          }`}
-        >
-          <Search
-            className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
-          />
-          <span
-            className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+        {showAllOption ? (
+          <button
+            onClick={() => onSelectCategory(null)}
+            className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
+              selectedCategory === null
+                ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
+                : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
+            }`}
           >
-            Todos
-          </span>
-        </button>
+            <Search
+              className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+            />
+            <span
+              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+            >
+              Todos
+            </span>
+          </button>
+        ) : null}
 
         {categories.map((cat) => {
           const isActive = selectedCategory === cat

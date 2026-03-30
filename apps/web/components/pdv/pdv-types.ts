@@ -38,6 +38,7 @@ export type Comanda = {
   desconto: number
   acrescimo: number
   abertaEm: Date
+  subtotalBackend?: number
   // backend provided totals for compact mode:
   totalBackend?: number
 }
@@ -86,23 +87,36 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
   },
 ]
 
-export function calcTotal(comanda: Comanda): number {
-  // If we have items loaded (from details or non-compact), calculate exactly.
-  // Otherwise fallback to backend's pre-calculated total.
-  if (comanda.itens.length === 0 && comanda.totalBackend !== undefined) {
-    return comanda.totalBackend
-  }
-
+export function calcSubtotal(comanda: Pick<Comanda, 'itens' | 'subtotalBackend'>): number {
   const bruto = comanda.itens.reduce((sum, item) => {
     const quantidade = Number.isFinite(item.quantidade) ? item.quantidade : 0
     const precoUnitario = Number.isFinite(item.precoUnitario) ? item.precoUnitario : 0
     return sum + Math.max(0, quantidade) * Math.max(0, precoUnitario)
   }, 0)
-  
+
+  if (
+    (comanda.itens.length === 0 || bruto <= 0) &&
+    comanda.subtotalBackend !== undefined &&
+    comanda.subtotalBackend > 0
+  ) {
+    return comanda.subtotalBackend
+  }
+
+  return bruto
+}
+
+export function calcTotal(comanda: Comanda): number {
+  const bruto = calcSubtotal(comanda)
   const desconto = Number.isFinite(comanda.desconto) ? comanda.desconto : 0
   const acrescimo = Number.isFinite(comanda.acrescimo) ? comanda.acrescimo : 0
   const comDesconto = bruto * (1 - desconto / 100)
-  return comDesconto * (1 + acrescimo / 100)
+  const total = comDesconto * (1 + acrescimo / 100)
+
+  if (total <= 0 && comanda.totalBackend !== undefined && comanda.totalBackend > 0) {
+    return comanda.totalBackend
+  }
+
+  return total
 }
 
 export function formatElapsed(abertaEm: Date): string {

@@ -42,6 +42,7 @@ const config = [
   {
     files: [
       'components/staff-mobile/mobile-order-builder.tsx',
+      'apps/web/components/staff-mobile/mobile-order-builder.tsx',
       'components/dashboard/finance-chart.tsx',
       'components/dashboard/finance-doughnut-chart.tsx',
       'components/dashboard/metric-card.tsx',

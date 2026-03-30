@@ -33,8 +33,11 @@ export const PdvComandaCard = memo(function PdvComandaCard({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className="group cursor-pointer select-none"
-          style={provided.draggableProps.style}
+          className="group cursor-pointer select-none will-change-transform"
+          style={{
+            ...provided.draggableProps.style,
+            willChange: snapshot.isDragging ? 'transform' : undefined,
+          }}
           onClick={() => onClick(comanda)}
         >
           <div

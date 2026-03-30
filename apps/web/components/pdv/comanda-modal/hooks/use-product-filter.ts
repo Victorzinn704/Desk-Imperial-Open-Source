@@ -6,6 +6,7 @@ import type { SimpleProduct } from '../types'
 export function useProductFilter(products: SimpleProduct[]) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const trimmedSearch = search.trim()
 
   const categories = useMemo(
     () =>
@@ -33,5 +34,6 @@ export function useProductFilter(products: SimpleProduct[]) {
     setSelectedCategory,
     categories,
     filtered,
+    showProducts: selectedCategory !== null || trimmedSearch.length > 0 || categories.length === 0,
   }
 }

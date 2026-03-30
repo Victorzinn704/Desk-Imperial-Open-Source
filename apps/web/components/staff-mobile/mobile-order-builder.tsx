@@ -11,6 +11,7 @@ import {
   Minus,
   Search,
   PlusCircle,
+  ChevronLeft,
   Coffee,
   Pizza,
   Beer,
@@ -55,7 +56,9 @@ const ProductItem = memo(function ProductItem({
           </span>
         ) : null}
         {produto.isCombo && produto.comboDescription ? (
-          <p className="mt-1 text-[11px] leading-4 text-[var(--accent,#9b8460)] line-clamp-2">{produto.comboDescription}</p>
+          <p className="mt-1 text-[11px] leading-4 text-[var(--accent,#9b8460)] line-clamp-2">
+            {produto.comboDescription}
+          </p>
         ) : null}
         {produto.isCombo && (produto.comboItems?.length ?? 0) > 0 ? (
           <p className="mt-1 text-[11px] leading-4 text-[var(--text-soft,#7a8896)] line-clamp-2">
@@ -74,6 +77,7 @@ const ProductItem = memo(function ProductItem({
             <button
               type="button"
               onClick={onRemove}
+              aria-label={`Remover ${produto.name}`}
               className="flex size-11 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.06)] text-[var(--text-soft,#7a8896)] transition-colors active:bg-[rgba(255,255,255,0.12)] btn-haptic"
             >
               <Minus className="size-4" />
@@ -84,6 +88,7 @@ const ProductItem = memo(function ProductItem({
         <button
           type="button"
           onClick={onAdd}
+          aria-label={`Adicionar ${produto.name}`}
           className="flex size-11 items-center justify-center rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.25)] btn-haptic"
         >
           <Plus className="size-4" />
@@ -109,7 +114,14 @@ function getCategoryIcon(cat: string) {
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
-export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
+export const MobileOrderBuilder = memo(function MobileOrderBuilder({
+  mesaLabel,
+  mode,
+  busy,
+  produtos,
+  onSubmit,
+  onCancel,
+}: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartEntry[]>([])
@@ -175,6 +187,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, 
 
   const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
   const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
+  const showProducts = selectedCategory !== null || deferredSearch.trim().length > 0 || categories.length === 0
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
@@ -234,25 +247,20 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, 
         {/* Categories — responsivo para mobile (grid + scroll) */}
         {categories.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            <button
-              onClick={() => {
-                startTransition(() => setSelectedCategory(null))
-              }}
-              className={`group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all active:scale-95 ${
-                selectedCategory === null
-                  ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
-              }`}
-            >
-              <Search
-                className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-black' : ''}`}
-              />
-              <span
-                className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${selectedCategory === null ? 'text-black' : ''}`}
+            {showProducts ? (
+              <button
+                onClick={() => {
+                  startTransition(() => {
+                    setSelectedCategory(null)
+                    setSearch('')
+                  })
+                }}
+                className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
               >
-                Todos
-              </span>
-            </button>
+                <Search className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+                <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
+              </button>
+            ) : null}
 
             {categories.map((cat) => {
               const isActive = selectedCategory === cat
@@ -269,7 +277,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, 
                   }`}
                 >
                   {getCategoryIcon(cat)}
-                  <span className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-black' : ''}`}>
+                  <span
+                    className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-black' : ''}`}
+                  >
                     {cat}
                   </span>
                 </button>
@@ -281,43 +291,90 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, 
 
       {/* Product list */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
-        {filtered.length === 0 ? (
+        {!showProducts ? (
+          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+            <p className="text-base font-semibold text-white">Escolha uma categoria</p>
+            <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+              Primeiro selecione a classe dos produtos. A lista abre logo abaixo, sem trocar de fluxo.
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
           </div>
         ) : (
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              position: 'relative',
-            }}
-          >
-            {virtualItems.map((virtualItem) => {
-              const produto = filtered[virtualItem.index]
-              const qty = getQty(produto.id)
-              return (
-                <div
-                  key={produto.id}
-                  className="border-b border-[rgba(255,255,255,0.04)]"
-                  ref={rowVirtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualItem.start}px)`,
-                  }}
-                >
-                  <ProductItem
-                    produto={produto}
-                    qty={qty}
-                    onAdd={() => addItem(produto)}
-                    onRemove={() => removeItem(produto.id)}
-                  />
+          <>
+            <div className="border-b border-[rgba(255,255,255,0.04)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+                    {selectedCategory ?? (deferredSearch.trim().length > 0 ? 'Busca rápida' : 'Todos os produtos')}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">{filtered.length} produtos disponíveis</p>
                 </div>
-              )
-            })}
-          </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    startTransition(() => {
+                      setSelectedCategory(null)
+                      setSearch('')
+                    })
+                  }}
+                  className="inline-flex items-center gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
+                >
+                  <ChevronLeft className="size-3.5" />
+                  Categorias
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                position: 'relative',
+              }}
+            >
+              {virtualItems.length > 0
+                ? virtualItems.map((virtualItem) => {
+                    const produto = filtered[virtualItem.index]
+                    const qty = getQty(produto.id)
+                    return (
+                      <div
+                        key={produto.id}
+                        className="border-b border-[rgba(255,255,255,0.04)]"
+                        ref={rowVirtualizer.measureElement}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                      >
+                        <ProductItem
+                          produto={produto}
+                          qty={qty}
+                          onAdd={() => addItem(produto)}
+                          onRemove={() => removeItem(produto.id)}
+                        />
+                      </div>
+                    )
+                  })
+                : filtered.slice(0, 12).map((produto) => {
+                    const qty = getQty(produto.id)
+                    return (
+                      <div key={produto.id} className="border-b border-[rgba(255,255,255,0.04)]">
+                        <ProductItem
+                          produto={produto}
+                          qty={qty}
+                          onAdd={() => addItem(produto)}
+                          onRemove={() => removeItem(produto.id)}
+                        />
+                      </div>
+                    )
+                  })}
+            </div>
+          </>
         )}
       </div>
 

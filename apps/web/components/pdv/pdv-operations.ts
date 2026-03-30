@@ -1,5 +1,5 @@
 import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
-import type { Mesa, Comanda, Garcom } from './pdv-types'
+import { calcSubtotal, type Mesa, type Comanda, type Garcom } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
@@ -43,6 +43,7 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     desconto: toPercent(comanda.discountAmount, comanda.subtotalAmount),
     acrescimo: toPercent(comanda.serviceFeeAmount, comanda.subtotalAmount),
     abertaEm: new Date(comanda.openedAt),
+    subtotalBackend: typeof comanda.subtotalAmount === 'number' ? comanda.subtotalAmount : undefined,
     totalBackend: typeof comanda.totalAmount === 'number' ? comanda.totalAmount : undefined,
   }
 }
@@ -151,7 +152,7 @@ export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada'>
 }
 
 export function toOperationAmounts(input: Pick<Comanda, 'itens' | 'desconto' | 'acrescimo'>) {
-  const subtotal = input.itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0)
+  const subtotal = calcSubtotal(input)
   return {
     discountAmount: roundMoney((subtotal * input.desconto) / 100),
     serviceFeeAmount: roundMoney((subtotal * input.acrescimo) / 100),

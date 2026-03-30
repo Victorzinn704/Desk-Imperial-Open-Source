@@ -16,7 +16,7 @@ import {
 } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
-import { invalidateOperationsWorkspace } from '@/lib/operations'
+import { invalidateOperationsWorkspace, rollbackOperationsSnapshot, setOptimisticComandaStatus } from '@/lib/operations'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
 import {
@@ -55,6 +55,7 @@ type PdvBoardProps = {
 type ActiveTab = 'comandas' | 'salao' | 'historico'
 
 type AddMesaForm = { label: string; capacity: string }
+const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 
 export function PdvBoard({ currentUser: _currentUser, operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
@@ -86,22 +87,30 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
 
   const openComandaMutation = useMutation({
     mutationFn: (payload: OpenComandaPayload) => openComanda(payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const replaceComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: ReplaceComandaPayload }) =>
       replaceComanda(comandaId, payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const assignComandaMutation = useMutation({
     mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) =>
       assignComanda(comandaId, employeeId, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onMutate: async ({ comandaId, status }) => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_QUERY_KEY, comandaId, status)
+      return { snapshot }
+    },
+    onError: (_error, _vars, context) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot)
+    },
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const closeComandaMutation = useMutation({
     mutationFn: ({
@@ -111,8 +120,16 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
       comandaId: string
       payload: { discountAmount: number; serviceFeeAmount: number }
     }) => closeComanda(comandaId, payload, { includeSnapshot: false }),
+    onMutate: async ({ comandaId }) => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_QUERY_KEY, comandaId, 'CLOSED')
+      return { snapshot }
+    },
+    onError: (_error, _vars, context) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot)
+    },
     onSuccess: () =>
-      invalidateOperationsWorkspace(queryClient, ['operations', 'live'], {
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
         includeOrders: true,
         includeFinance: true,
       }),
@@ -120,14 +137,14 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
   const createMesaMutation = useMutation({
     mutationFn: (body: CreateMesaInput) => createMesa(body),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, ['operations', 'live'])
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY)
       setAddMesaForm(null)
     },
   })
 
   const updateMesaMutation = useMutation({
     mutationFn: ({ mesaId, body }: { mesaId: string; body: UpdateMesaInput }) => updateMesa(mesaId, body),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
 
   async function persistComandaDraft(data: {
