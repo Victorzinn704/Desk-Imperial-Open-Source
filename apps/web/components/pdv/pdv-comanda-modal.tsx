@@ -1,21 +1,7 @@
 'use client'
 
 import { useMemo, useState, useRef } from 'react'
-import {
-  LoaderCircle,
-  Minus,
-  Plus,
-  Printer,
-  RefreshCw,
-  Search,
-  X,
-  Coffee,
-  Pizza,
-  Beer,
-  Package,
-  UtensilsCrossed,
-  Wine,
-} from 'lucide-react'
+import { LoaderCircle, Printer, Search, X } from 'lucide-react'
 import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
 import { maskDocument, validateDocument } from '@/lib/document-validation'
@@ -24,29 +10,16 @@ import type { Comanda, ComandaItem } from './pdv-types'
 import { calcTotal } from './pdv-types'
 import { useThermalPrinting } from './use-thermal-printing'
 import { normalizeTableLabel } from './normalize-table-label'
-
-type SimpleProduct = {
-  id: string
-  name: string
-  category: string
-  unitPrice: number
-  currency: string
-  isCombo?: boolean
-  comboDescription?: string | null
-  comboItems?: Array<{
-    componentProductName: string
-    totalUnits: number
-  }>
-}
-
-type SaveComandaPayload = {
-  mesa: string
-  clienteNome: string
-  clienteDocumento: string
-  itens: ComandaItem[]
-  desconto: number
-  acrescimo: number
-}
+import {
+  type SimpleProduct,
+  type SaveComandaPayload,
+  useProductFilter,
+  ProductCard,
+  CategoryGrid,
+  ComandaItemRow,
+  PrinterSection,
+  StatusButtons,
+} from './comanda-modal'
 
 type PdvComandaModalProps = {
   busy?: boolean
@@ -75,8 +48,6 @@ export function PdvComandaModal({
   const [itens, setItens] = useState<ComandaItem[]>(comanda?.itens ?? [])
   const [desconto, setDesconto] = useState(comanda?.desconto ?? 0)
   const [acrescimo, setAcrescimo] = useState(comanda?.acrescimo ?? 0)
-  const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // PIN protection states
@@ -95,19 +66,17 @@ export function PdvComandaModal({
     printComanda,
   } = useThermalPrinting()
 
+  const {
+    search,
+    setSearch,
+    selectedCategory,
+    setSelectedCategory,
+    categories,
+    filtered: filteredProducts,
+  } = useProductFilter(products)
+
   const docValidation = validateDocument(clienteDocumento)
   const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
-
-  const categories = Array.from(new Set(products.map((p) => p.category)))
-    .filter(Boolean)
-    .sort()
-
-  const filteredProducts = products.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
-    const matchCat = selectedCategory ? p.category === selectedCategory : true
-    return matchSearch && matchCat
-  })
 
   // Helper to require PIN before executing an action
   function requirePin(action: () => void, title: string, description: string) {
@@ -128,22 +97,6 @@ export function PdvComandaModal({
   function handlePinCancel() {
     setIsPinDialogOpen(false)
     pinActionRef.current = null
-  }
-
-  // Heuristic icon mapper
-  function getCategoryIcon(cat: string) {
-    const low = cat.toLowerCase()
-    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-      return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('vinho'))
-      return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-      return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('combo') || low.includes('kit'))
-      return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-      return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
   }
 
   function addItem(product: SimpleProduct) {
@@ -221,13 +174,6 @@ export function PdvComandaModal({
     }
   }
 
-  const statusOptions: Array<{ value: Comanda['status']; label: string; color: string }> = [
-    { value: 'aberta', label: 'Aberta', color: '#60a5fa' },
-    { value: 'em_preparo', label: 'Em Preparo', color: '#fb923c' },
-    { value: 'pronta', label: 'Pronta', color: '#36f57c' },
-    { value: 'fechada', label: 'Fechar Comanda', color: '#7a8896' },
-  ]
-
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -281,114 +227,25 @@ export function PdvComandaModal({
               </div>
 
               {/* Categories Kanban Squares */}
-              {categories.length > 0 && (
-                <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-                  <button
-                    onClick={() => setSelectedCategory(null)}
-                    className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
-                      selectedCategory === null
-                        ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                        : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
-                    }`}
-                  >
-                    <Search
-                      className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
-                    />
-                    <span
-                      className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
-                    >
-                      Todos
-                    </span>
-                  </button>
-
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory === cat
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
-                          isActive
-                            ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                            : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
-                        }`}
-                      >
-                        {getCategoryIcon(cat)}
-                        <span
-                          className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}
-                        >
-                          {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-              {selectedCategory ? (
-                <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
-                  Subitens de {selectedCategory}
-                </p>
-              ) : null}
+              <CategoryGrid
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-1">
                 {filteredProducts.map((product) => {
                   const inCart = itens.find((item) => item.produtoId === product.id)
-                  const initials = product.name
-                    .split(' ')
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((chunk) => chunk[0]!.toUpperCase())
-                    .join('')
                   return (
-                    <button
+                    <ProductCard
                       key={product.id}
-                      draggable
-                      className="group flex min-h-[96px] w-full flex-col justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)] cursor-grab active:cursor-grabbing xl:min-h-0 xl:flex-row xl:items-center"
-                      type="button"
-                      onClick={() => addItem(product)}
+                      product={product}
+                      inCartQty={inCart?.quantidade ?? 0}
+                      onAdd={() => addItem(product)}
                       onDragStart={(e) => e.dataTransfer.setData('productId', product.id)}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[11px] font-bold tracking-[0.08em] text-[#36f57c]">
-                          {initials || 'IT'}
-                        </span>
-                        <div>
-                          <p className="text-sm font-medium text-white line-clamp-2">{product.name}</p>
-                          <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
-                          {product.isCombo ? (
-                            <span className="mt-1 inline-flex rounded-full border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.14)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
-                              combo
-                            </span>
-                          ) : null}
-                          {product.isCombo && product.comboDescription ? (
-                            <p className="mt-1 text-[10px] leading-4 text-[var(--accent)] line-clamp-2">
-                              {product.comboDescription}
-                            </p>
-                          ) : null}
-                          {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
-                            <p className="mt-1 text-[10px] leading-4 text-[var(--text-soft)] line-clamp-2">
-                              {product.comboItems
-                                ?.slice(0, 2)
-                                .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
-                                .join(' • ')}
-                              {(product.comboItems?.length ?? 0) > 2 ? ' • ...' : ''}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between gap-3 xl:mt-0">
-                        <span className="text-sm font-semibold text-[#36f57c] group-hover:text-[#5cfb99]">
-                          {formatCurrency(product.unitPrice, 'BRL')}
-                        </span>
-                        {inCart ? (
-                          <span className="flex size-6 items-center justify-center rounded-full bg-[rgba(52,242,127,0.16)] text-[11px] font-bold text-[#36f57c]">
-                            {inCart.quantidade}
-                          </span>
-                        ) : null}
-                      </div>
-                    </button>
+                    />
                   )
                 })}
 
@@ -529,101 +386,25 @@ export function PdvComandaModal({
             </div>
 
             {isEditing && onStatusChange && comanda ? (
-              <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-                {statusOptions
-                  .filter((option) => option.value !== comanda.status)
-                  .map((option) => (
-                    <button
-                      key={option.value}
-                      className="rounded-[12px] border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
-                      style={{
-                        borderColor: `${option.color}44`,
-                        background: `${option.color}11`,
-                        color: option.color,
-                      }}
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => {
-                        // Protect status changes, especially "Fechar Comanda"
-                        const requiresPin = option.value === 'fechada'
-                        if (requiresPin) {
-                          requirePin(
-                            async () => {
-                              await onStatusChange(comanda, option.value)
-                              onClose()
-                            },
-                            'Fechar Comanda',
-                            'Confirme com seu PIN para fechar completamente esta comanda.',
-                          )
-                        } else {
-                          // No PIN required for intermediate statuses
-                          void (async () => {
-                            await onStatusChange(comanda, option.value)
-                            onClose()
-                          })()
-                        }
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-              </div>
+              <StatusButtons
+                comanda={comanda}
+                isBusy={isBusy}
+                onStatusChange={onStatusChange}
+                onClose={onClose}
+                requirePin={requirePin}
+              />
             ) : null}
 
             <div className="border-t border-[rgba(255,255,255,0.06)] p-4">
-              <div className="rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)]">
-                      <Printer className="size-4" />
-                    </span>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                        Comanda termica
-                      </p>
-                      <p className="mt-1 text-sm text-white">QZ Tray agora. PrintNode fica como segunda via.</p>
-                    </div>
-                  </div>
-
-                  <button
-                    className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-white"
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() => void refreshPrinters()}
-                  >
-                    <RefreshCw className={`size-3.5 ${connectionState === 'discovering' ? 'animate-spin' : ''}`} />
-                    Atualizar
-                  </button>
-                </div>
-
-                <div className="mt-3 grid gap-3">
-                  <select
-                    className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
-                    value={selectedPrinterName}
-                    onChange={(event) => choosePrinter(event.target.value)}
-                  >
-                    <option value="">Selecione uma impressora termica</option>
-                    {printers.map((printer) => (
-                      <option key={printer.id} value={printer.name}>
-                        {printer.name}
-                        {printer.isDefault ? ' (padrao)' : ''}
-                      </option>
-                    ))}
-                  </select>
-
-                  <p
-                    className={`text-xs leading-6 ${
-                      connectionState === 'error'
-                        ? 'text-[#fca5a5]'
-                        : connectionState === 'connected'
-                          ? 'text-[#86efac]'
-                          : 'text-[var(--text-soft)]'
-                    }`}
-                  >
-                    {statusMessage}
-                  </p>
-                </div>
-              </div>
+              <PrinterSection
+                printers={printers}
+                selectedPrinterName={selectedPrinterName}
+                connectionState={connectionState}
+                statusMessage={statusMessage}
+                isBusy={isBusy}
+                onChoosePrinter={choosePrinter}
+                onRefreshPrinters={() => void refreshPrinters()}
+              />
 
               {saveError ? <p className="mt-3 text-xs text-[#fca5a5]">{saveError}</p> : null}
 
@@ -703,63 +484,9 @@ export function PdvComandaModal({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {itens.map((item) => {
-                    const lineTotal = item.quantidade * item.precoUnitario
-
-                    return (
-                      <div
-                        key={item.produtoId}
-                        className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.025)] px-4 py-3"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-white">{item.nome}</p>
-                            <p className="mt-1 text-xs text-[var(--text-soft)]">
-                              {formatCurrency(item.precoUnitario, 'BRL')} por unidade
-                            </p>
-                          </div>
-                          <p className="shrink-0 text-sm font-semibold text-[#36f57c]">
-                            {formatCurrency(lineTotal, 'BRL')}
-                          </p>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <button
-                              className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
-                              type="button"
-                              onClick={() => changeQty(item.produtoId, -1)}
-                            >
-                              <Minus className="size-3.5" />
-                            </button>
-                            <input
-                              type="number"
-                              min={1}
-                              className="w-10 bg-transparent text-center text-sm font-semibold text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              value={item.quantidade}
-                              onChange={(e) => {
-                                const v = Math.max(1, Math.floor(Number(e.target.value) || 1))
-                                setItens((prev) =>
-                                  prev.map((i) => (i.produtoId === item.produtoId ? { ...i, quantidade: v } : i)),
-                                )
-                              }}
-                            />
-                            <button
-                              className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
-                              type="button"
-                              onClick={() => changeQty(item.produtoId, 1)}
-                            >
-                              <Plus className="size-3.5" />
-                            </button>
-                          </div>
-
-                          <span className="rounded-full border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8fffb9]">
-                            {item.quantidade} und
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {itens.map((item) => (
+                    <ComandaItemRow key={item.produtoId} item={item} onChangeQty={changeQty} setItens={setItens} />
+                  ))}
                 </div>
               )}
             </div>

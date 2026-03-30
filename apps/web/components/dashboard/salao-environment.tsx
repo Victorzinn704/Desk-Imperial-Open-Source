@@ -1,73 +1,31 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Armchair, Clock, ClipboardList, Grid3X3, List, Pencil, Plus, Power, Zap, X } from 'lucide-react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { Armchair, ClipboardList, Grid3X3, List, Plus, Zap } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
-import { calcTotal, formatElapsed, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
+import { calcTotal, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
 
-function fmtBRL(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-// ── constants ──────────────────────────────────────────────────────────────────
-
-const QUERY_KEY = ['mesas'] as const
-const LIVE_QUERY_KEY = ['operations', 'live', 'compact'] as const
-const CANVAS_H = 560
-const CARD_W = 112
-const CARD_H = 76
-const GRID_SPACING_X = 136
-const GRID_SPACING_Y = 100
-const GRID_COLS = 7
-const CANVAS_PADDING = 24
-
-// ── types ──────────────────────────────────────────────────────────────────────
-
-type View = 'operacional' | 'comandas' | 'configuracao' | 'planta'
-
-type CreateForm = {
-  mode: 'single' | 'bulk'
-  label: string
-  capacity: string
-  section: string
-  bulkPrefix: string
-  bulkFrom: string
-  bulkTo: string
-}
-
-type EditForm = {
-  label: string
-  capacity: string
-  section: string
-}
-
-type DragState = {
-  mesaId: string
-  startMouseX: number
-  startMouseY: number
-  origX: number
-  origY: number
-}
-
-// ── helpers ────────────────────────────────────────────────────────────────────
-
-function defaultCreateForm(): CreateForm {
-  return { mode: 'single', label: '', capacity: '4', section: '', bulkPrefix: 'Mesa', bulkFrom: '1', bulkTo: '10' }
-}
-
-function getAutoPosition(index: number): { x: number; y: number } {
-  const col = index % GRID_COLS
-  const row = Math.floor(index / GRID_COLS)
-  return { x: CANVAS_PADDING + col * GRID_SPACING_X, y: CANVAS_PADDING + row * GRID_SPACING_Y }
-}
-
-function clamp(value: number, min: number, maxValue: number) {
-  return Math.max(min, Math.min(maxValue, value))
-}
+// Imports from extracted salao module
+import {
+  QUERY_KEY,
+  LIVE_QUERY_KEY,
+  CANVAS_H,
+  CARD_W,
+  CARD_H,
+  STATUS_LABEL,
+  fmtBRL,
+  defaultCreateForm,
+  type View,
+  type CreateForm,
+  type EditForm,
+} from './salao'
+import { useMesaDrag } from './salao'
+import { KpiCard, ModernOperacionalCard, MesaListCard, MesaFloorCard } from './salao'
+import { CreateMesaModal, EditMesaModal } from './salao'
 
 // ── main component ─────────────────────────────────────────────────────────────
 
@@ -80,12 +38,6 @@ export function SalaoEnvironment() {
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm)
   const [editForm, setEditForm] = useState<EditForm>({ label: '', capacity: '4', section: '' })
   const [formError, setFormError] = useState<string | null>(null)
-  const [dragging, setDragging] = useState<DragState | null>(null)
-  const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({})
-  const dragOverridesRef = useRef(dragOverrides)
-  useLayoutEffect(() => {
-    dragOverridesRef.current = dragOverrides
-  })
   const canvasRef = useRef<HTMLDivElement>(null)
 
   // ── queries ──────────────────────────────────────────────────────────────────
@@ -147,53 +99,19 @@ export function SalaoEnvironment() {
     onError: (err) => setFormError(err instanceof Error ? err.message : 'Erro ao atualizar mesa'),
   })
 
-  // ── drag ──────────────────────────────────────────────────────────────────────
+  // ── drag (using extracted hook) ───────────────────────────────────────────────
 
-  function getMesaPosition(mesa: MesaRecord, autoIndex: number): { x: number; y: number } {
-    if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
-    if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
-    return getAutoPosition(autoIndex)
-  }
-
-  function handleMouseDown(e: React.MouseEvent, mesa: MesaRecord, autoIndex: number) {
-    e.preventDefault()
-    const pos = getMesaPosition(mesa, autoIndex)
-    setDragging({ mesaId: mesa.id, startMouseX: e.clientX, startMouseY: e.clientY, origX: pos.x, origY: pos.y })
-  }
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!dragging) return
-      const canvasEl = canvasRef.current
-      const canvasW = canvasEl ? canvasEl.offsetWidth : 800
-      const newX = clamp(dragging.origX + (e.clientX - dragging.startMouseX), 0, canvasW - CARD_W)
-      const newY = clamp(dragging.origY + (e.clientY - dragging.startMouseY), 0, CANVAS_H - CARD_H)
-      setDragOverrides((prev) => ({ ...prev, [dragging.mesaId]: { x: newX, y: newY } }))
+  const onPositionSave = useCallback(
+    (id: string, x: number, y: number) => {
+      updateMutation.mutate({ id, body: { positionX: x, positionY: y } })
     },
-    [dragging],
+    [updateMutation],
   )
 
-  const handleMouseUp = useCallback(() => {
-    if (!dragging) return
-    const pos = dragOverridesRef.current[dragging.mesaId]
-    if (pos) {
-      updateMutation.mutate({
-        id: dragging.mesaId,
-        body: { positionX: Math.round(pos.x), positionY: Math.round(pos.y) },
-      })
-    }
-    setDragging(null)
-  }, [dragging, updateMutation])
-
-  useEffect(() => {
-    if (!dragging) return
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [dragging, handleMouseMove, handleMouseUp])
+  const { dragging, getMesaPosition, handleMouseDown } = useMesaDrag({
+    onPositionSave,
+    canvasRef,
+  })
 
   // ── create / edit ─────────────────────────────────────────────────────────────
 
@@ -443,213 +361,33 @@ export function SalaoEnvironment() {
 
       {/* ── MODAL CRIAR ── */}
       {showCreate && (
-        <Modal
-          title="Nova Mesa"
+        <CreateMesaModal
+          form={createForm}
+          onChange={setCreateForm}
+          onSubmit={(e) => void handleCreateSubmit(e)}
           onClose={() => {
             setShowCreate(false)
             setFormError(null)
           }}
-        >
-          <form onSubmit={(e) => void handleCreateSubmit(e)} className="space-y-4">
-            <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
-              {(['single', 'bulk'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setCreateForm((f) => ({ ...f, mode }))}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${
-                    createForm.mode === mode
-                      ? 'bg-[var(--accent)] text-black'
-                      : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {mode === 'single' ? 'Mesa única' : 'Criar várias de uma vez'}
-                </button>
-              ))}
-            </div>
-
-            {createForm.mode === 'single' ? (
-              <>
-                <Field label="Nome da mesa *">
-                  <input
-                    className="imperial-input w-full"
-                    placeholder="Ex: Mesa 1, VIP, Varanda"
-                    value={createForm.label}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, label: e.target.value }))}
-                    maxLength={40}
-                    autoFocus
-                  />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Capacidade">
-                    <input
-                      type="number"
-                      min={1}
-                      className="imperial-input w-full"
-                      value={createForm.capacity}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, capacity: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Seção">
-                    <input
-                      className="imperial-input w-full"
-                      placeholder="Salão, Varanda, Bar…"
-                      value={createForm.section}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, section: e.target.value }))}
-                    />
-                  </Field>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Prefixo">
-                    <input
-                      className="imperial-input w-full"
-                      placeholder="Mesa"
-                      value={createForm.bulkPrefix}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, bulkPrefix: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="De">
-                    <input
-                      type="number"
-                      min={1}
-                      className="imperial-input w-full"
-                      value={createForm.bulkFrom}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, bulkFrom: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Até">
-                    <input
-                      type="number"
-                      min={1}
-                      className="imperial-input w-full"
-                      value={createForm.bulkTo}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, bulkTo: e.target.value }))}
-                    />
-                  </Field>
-                </div>
-                <p className="rounded-lg bg-[rgba(195,164,111,0.08)] px-3 py-2 text-xs text-[var(--text-soft)]">
-                  Criará:{' '}
-                  <strong className="text-[var(--accent)]">
-                    {createForm.bulkPrefix || 'Mesa'} {createForm.bulkFrom}
-                  </strong>{' '}
-                  até{' '}
-                  <strong className="text-[var(--accent)]">
-                    {createForm.bulkPrefix || 'Mesa'} {createForm.bulkTo}
-                  </strong>{' '}
-                  — {Math.max(0, parseInt(createForm.bulkTo, 10) - parseInt(createForm.bulkFrom, 10) + 1) || 0} mesas
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Capacidade padrão">
-                    <input
-                      type="number"
-                      min={1}
-                      className="imperial-input w-full"
-                      value={createForm.capacity}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, capacity: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Seção">
-                    <input
-                      className="imperial-input w-full"
-                      placeholder="Opcional"
-                      value={createForm.section}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, section: e.target.value }))}
-                    />
-                  </Field>
-                </div>
-              </>
-            )}
-
-            {formError && <p className="text-xs text-red-400">{formError}</p>}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreate(false)
-                  setFormError(null)
-                }}
-                className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
-              >
-                {createMutation.isPending ? 'Criando…' : 'Criar'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          isPending={createMutation.isPending}
+          error={formError}
+        />
       )}
 
       {/* ── MODAL EDITAR ── */}
       {editingMesa && (
-        <Modal
-          title={`Editar — ${editingMesa.label}`}
+        <EditMesaModal
+          mesaLabel={editingMesa.label}
+          form={editForm}
+          onChange={setEditForm}
+          onSubmit={handleEditSubmit}
           onClose={() => {
             setEditingMesa(null)
             setFormError(null)
           }}
-        >
-          <form onSubmit={handleEditSubmit} className="space-y-4">
-            <Field label="Nome da mesa *">
-              <input
-                className="imperial-input w-full"
-                value={editForm.label}
-                onChange={(e) => setEditForm((f) => ({ ...f, label: e.target.value }))}
-                maxLength={40}
-                autoFocus
-              />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Capacidade">
-                <input
-                  type="number"
-                  min={1}
-                  className="imperial-input w-full"
-                  value={editForm.capacity}
-                  onChange={(e) => setEditForm((f) => ({ ...f, capacity: e.target.value }))}
-                />
-              </Field>
-              <Field label="Seção">
-                <input
-                  className="imperial-input w-full"
-                  placeholder="Salão, Varanda, Bar…"
-                  value={editForm.section}
-                  onChange={(e) => setEditForm((f) => ({ ...f, section: e.target.value }))}
-                />
-              </Field>
-            </div>
-
-            {formError && <p className="text-xs text-red-400">{formError}</p>}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingMesa(null)
-                  setFormError(null)
-                }}
-                className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
-              >
-                {updateMutation.isPending ? 'Salvando…' : 'Salvar'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          isPending={updateMutation.isPending}
+          error={formError}
+        />
       )}
     </div>
   )
@@ -748,335 +486,9 @@ function OperacionalView({
   )
 }
 
-function KpiCard({
-  label,
-  value,
-  color,
-  isHighlight,
-  total,
-}: {
-  label: string
-  value: string | number
-  color: string
-  isHighlight?: boolean
-  total?: number
-}) {
-  const percentage = total && typeof value === 'number' ? Math.round((value / total) * 100) : null
-
-  return (
-    <div
-      className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="size-2 rounded-full shadow-[0_0_10px_currentColor]"
-          style={{ backgroundColor: color, color: color }}
-        />
-        <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)]">{label}</p>
-      </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
-        {percentage !== null && (
-          <p className="text-xs font-medium" style={{ color: `${color}99` }}>
-            {percentage}%
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ModernOperacionalCard({
-  mesa,
-  comanda,
-  garcomName,
-  urgency,
-}: {
-  mesa: Mesa
-  comanda: Comanda | undefined
-  garcomName: string | undefined
-  urgency: 0 | 1 | 2 | 3
-}) {
-  const STATUS_CFG = {
-    livre: {
-      label: 'Livre',
-      color: '#36f57c',
-      bgFrom: 'rgba(54,245,124,0.03)',
-      bgTo: 'rgba(54,245,124,0.01)',
-      border: 'rgba(54,245,124,0.15)',
-    },
-    ocupada: {
-      label: 'Ocupada',
-      color: '#f87171',
-      bgFrom: 'rgba(248,113,113,0.04)',
-      bgTo: 'rgba(248,113,113,0.01)',
-      border: 'rgba(248,113,113,0.2)',
-    },
-    reservada: {
-      label: 'Reservada',
-      color: '#60a5fa',
-      bgFrom: 'rgba(96,165,250,0.04)',
-      bgTo: 'rgba(96,165,250,0.01)',
-      border: 'rgba(96,165,250,0.2)',
-    },
-  }
-
-  const cfg = STATUS_CFG[mesa.status]
-
-  // High urgency effects
-  const isCritical = urgency >= 3
-  const isWarning = urgency === 2
-
-  let dynamicBorder = cfg.border
-  let dynamicShadow = '0 4px 20px rgba(0,0,0,0.2)'
-  let pulseClass = ''
-
-  if (mesa.status === 'ocupada') {
-    if (isCritical) {
-      dynamicBorder = 'rgba(248,113,113,0.6)'
-      dynamicShadow = '0 0 30px rgba(248,113,113,0.15)'
-      pulseClass = 'animate-pulse'
-    } else if (isWarning) {
-      dynamicBorder = 'rgba(251,191,36,0.4)'
-      dynamicShadow = '0 0 20px rgba(251,191,36,0.1)'
-    }
-  }
-
-  const total = comanda ? calcTotal(comanda) : 0
-  const itemCount = comanda ? comanda.itens.reduce((s, i) => s + i.quantidade, 0) : 0
-  const elapsed = comanda ? formatElapsed(comanda.abertaEm) : null
-
-  const shortGarcom = garcomName ? garcomName.split(' ')[0] : 'S/ Garçom'
-  const garcomInitials = garcomName ? garcomName.substring(0, 2).toUpperCase() : '?'
-
-  const GARCOM_COLORS = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
-  const colorIndex = garcomName ? garcomName.charCodeAt(0) % GARCOM_COLORS.length : 0
-  const garcomColor = garcomName ? GARCOM_COLORS[colorIndex] : '#7a8896'
-
-  return (
-    <div
-      className="group relative flex h-full min-h-[140px] flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] transition-all duration-500 hover:-translate-y-1 hover:border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.04)]"
-      style={{
-        boxShadow: dynamicShadow,
-        borderColor: dynamicBorder,
-      }}
-    >
-      {/* Background Status Glow */}
-      <div
-        className="absolute inset-0 opacity-40 mix-blend-screen transition-opacity duration-1000 group-hover:opacity-60"
-        style={{
-          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.bgFrom} 0%, ${cfg.bgTo} 50%, transparent 100%)`,
-        }}
-      />
-
-      {/* Critical Glow Effect */}
-      {isCritical && (
-        <div className="absolute inset-x-0 top-0 h-1 bg-red-400 bg-opacity-80 drop-shadow-[0_0_8px_rgba(248,113,113,1)]" />
-      )}
-
-      {/* Inner Content */}
-      <div className="relative flex flex-1 flex-col p-4">
-        {/* Header Row */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span
-              className={`flex h-6 items-center rounded-full px-2.5 text-[9px] font-bold uppercase tracking-widest ${pulseClass}`}
-              style={{ color: cfg.color, backgroundColor: `${cfg.color}15`, border: `1px solid ${cfg.color}30` }}
-            >
-              {cfg.label}
-            </span>
-          </div>
-          {/* Waiter Avatar ("Monitoring TV") */}
-          {mesa.status === 'ocupada' && garcomName && (
-            <div className="flex shrink-0 flex-col items-center justify-center animate-in zoom-in-50 duration-500">
-              <div
-                className="flex size-11 items-center justify-center rounded-full text-[15px] font-black shadow-lg border-[2px]"
-                style={{
-                  backgroundColor: garcomColor,
-                  color: '#111',
-                  borderColor: 'rgba(255,255,255,0.2)',
-                  textShadow: '0 1px 1px rgba(255,255,255,0.5)',
-                  boxShadow: `0 0 20px ${garcomColor}66`,
-                }}
-              >
-                {garcomInitials}
-              </div>
-              <span className="mt-1.5 text-[10px] font-bold text-white tracking-wide drop-shadow-md">
-                {shortGarcom}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Mesa Label - Big & Bold */}
-        <div className="mt-3 flex-1">
-          <h4 className="text-xl font-black tracking-tight text-white drop-shadow-sm">{mesa.numero}</h4>
-          {comanda?.clienteNome && (
-            <p className="mt-1 truncate text-xs font-medium text-[var(--text-soft)]" title={comanda.clienteNome}>
-              {comanda.clienteNome}
-            </p>
-          )}
-        </div>
-
-        {/* Footer Data */}
-        {comanda ? (
-          <div className="mt-4 flex items-end justify-between border-t border-[rgba(255,255,255,0.05)] pt-3">
-            <div className="flex flex-col gap-1.5">
-              <div
-                className="flex items-center gap-1.5 text-[11px] font-semibold"
-                style={{ color: isCritical ? '#f87171' : isWarning ? '#fbbf24' : '#fb923c' }}
-              >
-                <Clock className="size-3.5" />
-                <span>{elapsed}</span>
-              </div>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                {itemCount} {itemCount === 1 ? 'item' : 'itens'}
-              </span>
-            </div>
-
-            <div className="text-right">
-              <span className="flex items-baseline justify-end text-lg font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]">
-                {fmtBRL(total)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.05)] pt-3 opacity-60">
-            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-              <Armchair className="size-3.5" />
-              <span>{mesa.capacidade} lugares</span>
-            </div>
-            {mesa.status === 'reservada' && (
-              <span className="text-[10px] font-medium uppercase tracking-widest text-[#60a5fa]">Reservado</span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── sub-components ─────────────────────────────────────────────────────────────
-
-function MesaListCard({
-  mesa,
-  onEdit,
-  onToggle,
-  isPending,
-}: {
-  mesa: MesaRecord
-  onEdit: () => void
-  onToggle: () => void
-  isPending: boolean
-}) {
-  return (
-    <div className="imperial-card-soft group flex flex-col gap-2 rounded-xl p-3">
-      <div className="flex items-start justify-between gap-1">
-        <span className="truncate font-semibold text-[var(--text-primary)]">{mesa.label}</span>
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          <button
-            onClick={onEdit}
-            title="Editar"
-            className="rounded-lg p-1 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
-          >
-            <Pencil className="size-3.5 text-[var(--text-soft)]" />
-          </button>
-          <button
-            onClick={onToggle}
-            disabled={isPending}
-            title={mesa.active ? 'Desativar' : 'Reativar'}
-            className="rounded-lg p-1 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
-          >
-            <Power className={`size-3.5 ${mesa.active ? 'text-[var(--text-soft)]' : 'text-emerald-400'}`} />
-          </button>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-[var(--text-soft)]">
-        <span>👤 {mesa.capacity}</span>
-        {mesa.section && <span className="truncate">· {mesa.section}</span>}
-      </div>
-      {mesa.active && (
-        <span
-          className="w-fit rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-          style={{
-            background:
-              mesa.status === 'ocupada'
-                ? 'rgba(248,113,113,0.12)'
-                : mesa.status === 'reservada'
-                  ? 'rgba(96,165,250,0.12)'
-                  : 'rgba(52,242,127,0.08)',
-            color: mesa.status === 'ocupada' ? '#f87171' : mesa.status === 'reservada' ? '#60a5fa' : '#36f57c',
-          }}
-        >
-          {mesa.status === 'ocupada' ? 'Ocupada' : mesa.status === 'reservada' ? 'Reservada' : 'Livre'}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function MesaFloorCard({ mesa, isDragging }: { mesa: MesaRecord; isDragging: boolean }) {
-  const statusColor = mesa.status === 'ocupada' ? '#ef4444' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
-
-  return (
-    <div
-      className="imperial-card-soft flex h-full w-full flex-col justify-between rounded-xl p-2.5"
-      style={{
-        boxShadow: isDragging ? '0 12px 40px rgba(0,0,0,0.5)' : undefined,
-        borderColor: isDragging ? 'var(--accent)' : undefined,
-        transition: isDragging ? 'none' : 'box-shadow 0.15s',
-      }}
-    >
-      <div className="flex items-center justify-between gap-1">
-        <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{mesa.label}</span>
-        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} title={mesa.status} />
-      </div>
-      <div className="text-[10px] leading-tight text-[var(--text-soft)]">
-        <span>👤 {mesa.capacity}</span>
-        {mesa.section && <span className="ml-1 truncate opacity-75">· {mesa.section}</span>}
-      </div>
-    </div>
-  )
-}
-
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="imperial-card w-full max-w-md rounded-2xl p-6 shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-[var(--text-soft)]">{label}</label>
-      {children}
-    </div>
-  )
-}
-
 // ── Comandas Table View (desktop) ────────────────────────────────────────────
 
 type ComandasFiltro = 'tudo' | 'abertas' | 'fechadas'
-
-const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> = {
-  aberta: { text: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { text: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { text: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { text: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
-}
 
 function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoading: boolean }) {
   const [filtro, setFiltro] = useState<ComandasFiltro>('tudo')
