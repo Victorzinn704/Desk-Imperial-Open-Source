@@ -156,7 +156,7 @@ export function buildOptimisticComandaRecord(input: {
     notes?: string | null
   }>
 }): ComandaRecord {
-  const items = (input.items ?? []).map((item, index) => {
+  const items = (input.items ?? []).map((item) => {
     const unitPrice = resolveOptimisticUnitPrice(item.unitPrice, item.quantity)
     return {
       id: generateOptimisticId('opt-item'),

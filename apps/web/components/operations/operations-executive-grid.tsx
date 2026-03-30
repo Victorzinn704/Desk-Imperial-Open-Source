@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import { AllCommunityModule, ModuleRegistry, type ColDef } from 'ag-grid-community'
+import { AllCommunityModule, ModuleRegistry, type ColDef, type RowClickedEvent } from 'ag-grid-community'
+import type { AgGridReactProps } from 'ag-grid-react'
 import { LazyAgGrid as AgGridReact } from '@/components/shared/lazy-components'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
@@ -26,6 +27,9 @@ const gridThemeStyle = {
 } as CSSProperties
 
 ModuleRegistry.registerModules([AllCommunityModule])
+
+type AgGridComponent = <TRowData extends object>(props: AgGridReactProps<TRowData>) => React.JSX.Element
+const TypedAgGrid = AgGridReact as unknown as AgGridComponent
 
 export function OperationsExecutiveGrid({
   rows,
@@ -78,8 +82,9 @@ export function OperationsExecutiveGrid({
     currentCash: row.employee.cashCurrentAmount,
     expectedCash: row.employee.cashExpectedAmount,
   }))
+  type SummaryRow = (typeof summaryRows)[number]
 
-  const summaryColumns: ColDef<(typeof summaryRows)[number]>[] = [
+  const summaryColumns: ColDef<SummaryRow>[] = [
     { field: 'employeeName', headerName: 'Funcionário', flex: 1.25, minWidth: 180 },
     { field: 'employeeCode', headerName: 'ID', minWidth: 120 },
     { field: 'role', headerName: 'Perfil', minWidth: 120 },
@@ -112,7 +117,8 @@ export function OperationsExecutiveGrid({
     },
   ]
 
-  const tableColumns: ColDef<(typeof selectedRow.tables)[number]>[] = [
+  type SelectedTableRow = NonNullable<typeof selectedRow>['tables'][number]
+  const tableColumns: ColDef<SelectedTableRow>[] = [
     { field: 'tableLabel', headerName: 'Mesa', minWidth: 110 },
     {
       field: 'status',
@@ -147,7 +153,8 @@ export function OperationsExecutiveGrid({
     },
   ]
 
-  const movementColumns: ColDef<(typeof selectedRow.movements)[number]>[] = [
+  type SelectedMovementRow = NonNullable<typeof selectedRow>['movements'][number]
+  const movementColumns: ColDef<SelectedMovementRow>[] = [
     { field: 'type', headerName: 'Tipo', minWidth: 140 },
     { field: 'reason', headerName: 'Motivo', flex: 1, minWidth: 180 },
     {
@@ -222,15 +229,15 @@ export function OperationsExecutiveGrid({
               className="ag-theme-quartz rounded-[22px] border border-white/6"
               style={{ ...gridThemeStyle, height: 360 }}
             >
-              <AgGridReact
-                columnDefs={summaryColumns as any}
+              <TypedAgGrid<SummaryRow>
+                columnDefs={summaryColumns}
                 domLayout="normal"
-                onRowClicked={(event) => {
+                onRowClicked={(event: RowClickedEvent<SummaryRow>) => {
                   if (event.data) {
-                    setSelectedEmployeeId((event.data as any).employeeId)
+                    setSelectedEmployeeId(event.data.employeeId)
                   }
                 }}
-                rowData={summaryRows as any}
+                rowData={summaryRows}
                 rowSelection="single"
                 suppressCellFocus
                 theme="legacy"
@@ -259,10 +266,10 @@ export function OperationsExecutiveGrid({
                   className="ag-theme-quartz rounded-[22px] border border-white/6"
                   style={{ ...gridThemeStyle, height: 320 }}
                 >
-                  <AgGridReact
-                    columnDefs={tableColumns as any}
+                  <TypedAgGrid<SelectedTableRow>
+                    columnDefs={tableColumns}
                     domLayout="normal"
-                    rowData={selectedRow.tables as any}
+                    rowData={selectedRow.tables}
                     suppressCellFocus
                     theme="legacy"
                   />
@@ -299,10 +306,10 @@ export function OperationsExecutiveGrid({
                     className="ag-theme-quartz rounded-[22px] border border-white/6"
                     style={{ ...gridThemeStyle, height: 260 }}
                   >
-                    <AgGridReact
-                      columnDefs={movementColumns as any}
+                    <TypedAgGrid<SelectedMovementRow>
+                      columnDefs={movementColumns}
                       domLayout="normal"
-                      rowData={selectedRow.movements as any}
+                      rowData={selectedRow.movements}
                       suppressCellFocus
                       theme="legacy"
                     />

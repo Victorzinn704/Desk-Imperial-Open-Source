@@ -51,7 +51,7 @@ export function useWebVitals(onMetric?: VitalsCallback) {
       // Log em development
       if (process.env.NODE_ENV === 'development') {
         const color = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌'
-        console.log(`${color} [Web Vitals] ${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`)
+        console.warn(`${color} [Web Vitals] ${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`)
       }
       onMetric?.(metric)
     }

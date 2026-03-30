@@ -112,13 +112,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
         return
       }
     },
-    [
-      queryClient,
-      queueCommercialRefresh,
-      queueKitchenRefresh,
-      queueOperationsRefresh,
-      queueSummaryRefresh,
-    ],
+    [queryClient, queueCommercialRefresh, queueKitchenRefresh, queueOperationsRefresh, queueSummaryRefresh],
   )
 
   useEffect(() => {
@@ -265,19 +259,24 @@ export function applyRealtimeEnvelope(
     result.livePatched = true
   }
 
-  const kitchenSnapshot = queryClient.getQueryData<{ businessDate: string; companyOwnerId: string; items: Array<{
-    itemId: string
-    comandaId: string
-    mesaLabel: string
-    employeeId: string | null
-    employeeName: string
-    productName: string
-    quantity: number
-    notes: string | null
-    kitchenStatus: 'QUEUED' | 'IN_PREPARATION' | 'READY'
-    kitchenQueuedAt: string | null
-    kitchenReadyAt: string | null
-  }>; statusCounts: { queued: number; inPreparation: number; ready: number } }>(OPERATIONS_KITCHEN_QUERY_KEY)
+  const kitchenSnapshot = queryClient.getQueryData<{
+    businessDate: string
+    companyOwnerId: string
+    items: Array<{
+      itemId: string
+      comandaId: string
+      mesaLabel: string
+      employeeId: string | null
+      employeeName: string
+      productName: string
+      quantity: number
+      notes: string | null
+      kitchenStatus: 'QUEUED' | 'IN_PREPARATION' | 'READY'
+      kitchenQueuedAt: string | null
+      kitchenReadyAt: string | null
+    }>
+    statusCounts: { queued: number; inPreparation: number; ready: number }
+  }>(OPERATIONS_KITCHEN_QUERY_KEY)
 
   if (kitchenSnapshot) {
     const nextKitchenSnapshot = patchKitchenSnapshot(kitchenSnapshot, envelope)
@@ -537,9 +536,7 @@ function extractKitchenItemsFromPayload(payload: Record<string, unknown>): Resol
   const legacyComanda = asComandaRecord(payload.comanda)
   if (legacyComanda?.items?.length) {
     return legacyComanda.items
-      .map((item) =>
-        buildKitchenItemPatchFromLegacyItem(payload, legacyComanda.id, legacyComanda.tableLabel, item),
-      )
+      .map((item) => buildKitchenItemPatchFromLegacyItem(payload, legacyComanda.id, legacyComanda.tableLabel, item))
       .filter((item): item is ResolvedKitchenItemPatch => Boolean(item))
   }
 
@@ -549,7 +546,14 @@ function extractKitchenItemsFromPayload(payload: Record<string, unknown>): Resol
   }
 
   return rawItems
-    .map((rawItem) => buildKitchenItemPatchFromLegacyItem(payload, asString(payload.comandaId), asString(payload.mesaLabel) ?? asString(payload.tableLabel), rawItem))
+    .map((rawItem) =>
+      buildKitchenItemPatchFromLegacyItem(
+        payload,
+        asString(payload.comandaId),
+        asString(payload.mesaLabel) ?? asString(payload.tableLabel),
+        rawItem,
+      ),
+    )
     .filter((item): item is ResolvedKitchenItemPatch => Boolean(item))
 }
 
@@ -664,7 +668,8 @@ function buildComandaFromPayload(
     currentEmployeeId: legacy?.currentEmployeeId ?? existing?.currentEmployeeId ?? fallbackEmployeeId,
     tableLabel: legacy?.tableLabel ?? existing?.tableLabel ?? fallbackTableLabel ?? 'Mesa',
     customerName: legacy?.customerName ?? existing?.customerName ?? asNullableString(payload.customerName),
-    customerDocument: legacy?.customerDocument ?? existing?.customerDocument ?? asNullableString(payload.customerDocument),
+    customerDocument:
+      legacy?.customerDocument ?? existing?.customerDocument ?? asNullableString(payload.customerDocument),
     participantCount:
       legacy?.participantCount ??
       existing?.participantCount ??
@@ -755,10 +760,7 @@ function upsertKitchenItem(
   return nextSnapshot
 }
 
-function mergeComandaItemsForKitchenUpdate(
-  items: ComandaRecord['items'],
-  nextItem: ResolvedKitchenItemPatch | null,
-) {
+function mergeComandaItemsForKitchenUpdate(items: ComandaRecord['items'], nextItem: ResolvedKitchenItemPatch | null) {
   if (!nextItem) {
     return items
   }
@@ -994,16 +996,6 @@ function resolveTargetGroup(snapshot: OperationsLiveResponse, employeeId: string
   return snapshot.employees.find((group) => group.employeeId === employeeId) ?? null
 }
 
-function patchComandaCollections(snapshot: OperationsLiveResponse, patcher: (comanda: ComandaRecord) => ComandaRecord) {
-  return {
-    employees: snapshot.employees.map((group) => withGroupMetrics({ ...group, comandas: group.comandas.map(patcher) })),
-    unassigned: withGroupMetrics({
-      ...snapshot.unassigned,
-      comandas: snapshot.unassigned.comandas.map(patcher),
-    }),
-  }
-}
-
 function upsertComanda(list: ComandaRecord[], next: ComandaRecord) {
   const existing = list.find((comanda) => comanda.id === next.id)
   if (!existing) {
@@ -1011,15 +1003,6 @@ function upsertComanda(list: ComandaRecord[], next: ComandaRecord) {
   }
 
   return list.map((comanda) => (comanda.id === next.id ? { ...existing, ...next } : comanda))
-}
-
-function upsertComandaItem(comandaItems: ComandaRecord['items'], nextItem: ComandaRecord['items'][number]) {
-  const exists = comandaItems.find((item) => item.id === nextItem.id)
-  if (!exists) {
-    return [...comandaItems, nextItem]
-  }
-
-  return comandaItems.map((item) => (item.id === nextItem.id ? { ...item, ...nextItem } : item))
 }
 
 function findComandaInSnapshot(snapshot: OperationsLiveResponse, comandaId: string) {

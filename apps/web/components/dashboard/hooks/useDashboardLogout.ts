@@ -9,8 +9,8 @@ import type { UseMutationResult } from '@tanstack/react-query'
  * Returns `startTransition` so the shell can share the routing state
  * with other transition-aware hooks (e.g. evaluation countdown).
  */
- 
-export function useDashboardLogout(rawMutation: UseMutationResult<any, Error, void>) {
+
+export function useDashboardLogout(rawMutation: UseMutationResult<unknown, Error, void, unknown>) {
   const router = useRouter()
   const [isRouting, startTransition] = useTransition()
 

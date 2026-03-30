@@ -11,11 +11,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   constructor() {}
 
-  private handleFailure(context: string, err?: unknown) {
+  private handleFailure(context: string) {
     this.failureCount++
     if (this.failureCount >= 3 && this.enabled) {
       this.enabled = false
-      this.logger.error(`Redis apresentou 3 falhas consecutivas (${context}). Cache desligado permanentemente via Fail Open.`)
+      this.logger.error(
+        `Redis apresentou 3 falhas consecutivas (${context}). Cache desligado permanentemente via Fail Open.`,
+      )
     }
   }
 
@@ -64,8 +66,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.failureCount = 0
       if (!raw) return null
       return JSON.parse(raw) as T
-    } catch (err) {
-      this.handleFailure('get', err)
+    } catch {
+      this.handleFailure('get')
       return null
     }
   }
@@ -75,8 +77,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds)
       this.failureCount = 0
-    } catch (err) {
-      this.handleFailure('set', err)
+    } catch {
+      this.handleFailure('set')
     }
   }
 
@@ -85,8 +87,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.client.del(key)
       this.failureCount = 0
-    } catch (err) {
-      this.handleFailure('del', err)
+    } catch {
+      this.handleFailure('del')
     }
   }
 
@@ -102,8 +104,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         }
       } while (cursor !== '0')
       this.failureCount = 0
-    } catch (err) {
-      this.handleFailure('delByPrefix', err)
+    } catch {
+      this.handleFailure('delByPrefix')
     }
   }
 
