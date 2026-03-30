@@ -25,6 +25,7 @@ import {
   buildCashUpdatedPayload,
   buildComandaUpdatedPayload,
   formatBusinessDateKey,
+  invalidateOperationsLiveCache,
   isOpenComandaStatus,
   resolveBuyerTypeFromDocument,
   resolveBusinessDate,
@@ -179,6 +180,18 @@ describe('formatBusinessDateKey()', () => {
     const a = formatBusinessDateKey(new Date(2026, 5, 20))
     const b = formatBusinessDateKey(new Date(2026, 5, 20))
     expect(a).toBe(b)
+  })
+})
+
+describe('invalidateOperationsLiveCache()', () => {
+  it('invalida live, kitchen e summary da mesma data operacional', () => {
+    const cache = { delByPrefix: jest.fn() }
+
+    invalidateOperationsLiveCache(cache as any, 'owner-1', new Date(2026, 2, 30))
+
+    expect(cache.delByPrefix).toHaveBeenNthCalledWith(1, 'operations:live:owner-1:2026-03-30:')
+    expect(cache.delByPrefix).toHaveBeenNthCalledWith(2, 'operations:kitchen:owner-1:2026-03-30:')
+    expect(cache.delByPrefix).toHaveBeenNthCalledWith(3, 'operations:summary:owner-1:2026-03-30:')
   })
 })
 

@@ -7,8 +7,17 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name)
   private client: Redis | null = null
   private enabled = false
+  private failureCount = 0
 
   constructor() {}
+
+  private handleFailure(context: string, err?: unknown) {
+    this.failureCount++
+    if (this.failureCount >= 3 && this.enabled) {
+      this.enabled = false
+      this.logger.error(`Redis apresentou 3 falhas consecutivas (${context}). Cache desligado permanentemente via Fail Open.`)
+    }
+  }
 
   onModuleInit() {
     const url = resolveRedisUrl(process.env)
@@ -52,9 +61,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (!this.enabled || !this.client) return null
     try {
       const raw = await this.client.get(key)
+      this.failureCount = 0
       if (!raw) return null
       return JSON.parse(raw) as T
-    } catch {
+    } catch (err) {
+      this.handleFailure('get', err)
       return null
     }
   }
@@ -63,8 +74,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (!this.enabled || !this.client) return
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds)
-    } catch {
-      // Falha silenciosa — não derrubar o fluxo principal
+      this.failureCount = 0
+    } catch (err) {
+      this.handleFailure('set', err)
     }
   }
 
@@ -72,8 +84,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (!this.enabled || !this.client) return
     try {
       await this.client.del(key)
-    } catch {
-      // Falha silenciosa
+      this.failureCount = 0
+    } catch (err) {
+      this.handleFailure('del', err)
     }
   }
 
@@ -88,8 +101,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
           await this.client.unlink(...keys)
         }
       } while (cursor !== '0')
-    } catch {
-      // Falha silenciosa
+      this.failureCount = 0
+    } catch (err) {
+      this.handleFailure('delByPrefix', err)
     }
   }
 
@@ -144,5 +158,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   ) {
     const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
     return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${scopeSegment}`
+  }
+
+  static operationsKitchenPrefix(workspaceOwnerUserId: string, businessDate: string) {
+    return `operations:kitchen:${workspaceOwnerUserId}:${businessDate}:`
+  }
+
+  static operationsKitchenKey(workspaceOwnerUserId: string, businessDate: string, scopedEmployeeId?: string | null) {
+    const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
+    return `operations:kitchen:${workspaceOwnerUserId}:${businessDate}:${scopeSegment}`
+  }
+
+  static operationsSummaryPrefix(workspaceOwnerUserId: string, businessDate: string) {
+    return `operations:summary:${workspaceOwnerUserId}:${businessDate}:`
+  }
+
+  static operationsSummaryKey(workspaceOwnerUserId: string, businessDate: string, scopedEmployeeId?: string | null) {
+    const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
+    return `operations:summary:${workspaceOwnerUserId}:${businessDate}:${scopeSegment}`
   }
 }

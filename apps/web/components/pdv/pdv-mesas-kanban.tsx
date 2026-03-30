@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import { Users, Plus } from 'lucide-react'
 import type { Mesa, Comanda, MesaStatus } from './pdv-types'
@@ -39,7 +39,7 @@ function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda
   return mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
 }
 
-function MesaSquare({
+const MesaSquare = memo(function MesaSquare({
   mesa,
   comanda,
   index,
@@ -93,9 +93,9 @@ function MesaSquare({
       )}
     </Draggable>
   )
-}
+})
 
-function MesaRectCard({
+const MesaRectCard = memo(function MesaRectCard({
   mesa,
   comanda,
   index,
@@ -177,7 +177,7 @@ function MesaRectCard({
       )}
     </Draggable>
   )
-}
+})
 
 export function PdvMesasKanban({
   mesas,

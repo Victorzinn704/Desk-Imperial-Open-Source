@@ -17,6 +17,8 @@ type AdminPinHint = {
   verifiedUntil: string
 }
 
+let __storageLock = false
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -134,30 +136,43 @@ export async function removeAdminPin(pin: string): Promise<void> {
  */
 export function rememberAdminPinVerification(verifiedUntil?: string | Date | null): void {
   if (typeof window === 'undefined') return
+  if (__storageLock) return
 
-  const verifiedAt = new Date().toISOString()
-  const expiryDate =
-    verifiedUntil instanceof Date
-      ? verifiedUntil
-      : typeof verifiedUntil === 'string'
-        ? new Date(verifiedUntil)
-        : new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
+  try {
+    __storageLock = true
+    const verifiedAt = new Date().toISOString()
+    const expiryDate =
+      verifiedUntil instanceof Date
+        ? verifiedUntil
+        : typeof verifiedUntil === 'string'
+          ? new Date(verifiedUntil)
+          : new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
 
-  const resolvedVerifiedUntil = Number.isNaN(expiryDate.getTime())
-    ? new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
-    : expiryDate
+    const resolvedVerifiedUntil = Number.isNaN(expiryDate.getTime())
+      ? new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
+      : expiryDate
 
-  const hint: AdminPinHint = {
-    verifiedAt,
-    verifiedUntil: resolvedVerifiedUntil.toISOString(),
+    const hint: AdminPinHint = {
+      verifiedAt,
+      verifiedUntil: resolvedVerifiedUntil.toISOString(),
+    }
+
+    window.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
+  } finally {
+    __storageLock = false
   }
-
-  window.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
 }
 
 export function clearAdminPinVerification(): void {
   if (typeof window === 'undefined') return
-  window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+  if (__storageLock) return
+  
+  try {
+    __storageLock = true
+    window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+  } finally {
+    __storageLock = false
+  }
 }
 
 export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL_MS): boolean {

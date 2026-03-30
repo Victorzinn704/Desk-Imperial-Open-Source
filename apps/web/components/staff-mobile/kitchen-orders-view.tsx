@@ -3,24 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChefHat, CheckCircle2, Clock, Flame } from 'lucide-react'
 import { memo, useMemo, useState } from 'react'
-import type { KitchenItemStatus, OperationsLiveResponse } from '@contracts/contracts'
+import type { OperationsKitchenItemRecord, OperationsKitchenResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
 
-interface KitchenItem {
-  itemId: string
-  comandaId: string
-  mesaLabel: string
-  productName: string
-  quantity: number
-  notes: string | null
-  kitchenStatus: KitchenItemStatus
-  kitchenQueuedAt: string | null
-  kitchenReadyAt: string | null
-}
-
 interface KitchenOrdersViewProps {
-  snapshot: OperationsLiveResponse | undefined
-  operationsQueryKey?: readonly unknown[]
+  data: OperationsKitchenResponse | undefined
+  queryKey: readonly unknown[]
 }
 
 type KitchenTab = 'QUEUED' | 'IN_PREPARATION' | 'READY'
@@ -62,38 +50,6 @@ const STATUS_CONFIG: Record<
   },
 }
 
-function extractKitchenItems(snapshot: OperationsLiveResponse | undefined): KitchenItem[] {
-  if (!snapshot) return []
-  const groups = [...snapshot.employees, snapshot.unassigned]
-  const items: KitchenItem[] = []
-  for (const group of groups) {
-    for (const comanda of group.comandas) {
-      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
-      for (const item of comanda.items) {
-        if (item.kitchenStatus && item.kitchenStatus !== 'DELIVERED') {
-          items.push({
-            itemId: item.id,
-            comandaId: comanda.id,
-            mesaLabel: comanda.tableLabel,
-            productName: item.productName,
-            quantity: item.quantity,
-            notes: item.notes,
-            kitchenStatus: item.kitchenStatus,
-            kitchenQueuedAt: item.kitchenQueuedAt,
-            kitchenReadyAt: item.kitchenReadyAt,
-          })
-        }
-      }
-    }
-  }
-  // Sort: oldest first
-  return items.sort((a, b) => {
-    const aTime = a.kitchenQueuedAt ? new Date(a.kitchenQueuedAt).getTime() : 0
-    const bTime = b.kitchenQueuedAt ? new Date(b.kitchenQueuedAt).getTime() : 0
-    return aTime - bTime
-  })
-}
-
 function elapsedLabel(isoDate: string | null): string {
   if (!isoDate) return ''
   const diffMs = Date.now() - new Date(isoDate).getTime()
@@ -108,7 +64,7 @@ function KitchenCard({
   onAdvance,
   isBusy,
 }: {
-  item: KitchenItem
+  item: OperationsKitchenItemRecord
   onAdvance: (itemId: string, status: 'IN_PREPARATION' | 'READY' | 'DELIVERED') => void
   isBusy: boolean
 }) {
@@ -148,69 +104,69 @@ function KitchenCard({
   )
 }
 
-export function KitchenOrdersView({ snapshot, operationsQueryKey = ['operations', 'live'] }: KitchenOrdersViewProps) {
+function buildStatusCounts(items: OperationsKitchenItemRecord[]) {
+  return items.reduce(
+    (accumulator, item) => {
+      if (item.kitchenStatus === 'QUEUED') {
+        accumulator.QUEUED += 1
+      } else if (item.kitchenStatus === 'IN_PREPARATION') {
+        accumulator.IN_PREPARATION += 1
+      } else if (item.kitchenStatus === 'READY') {
+        accumulator.READY += 1
+      }
+
+      return accumulator
+    },
+    {
+      QUEUED: 0,
+      IN_PREPARATION: 0,
+      READY: 0,
+    },
+  )
+}
+
+export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<KitchenTab>('QUEUED')
   const [error, setError] = useState<string | null>(null)
 
-  const allItems = useMemo(() => extractKitchenItems(snapshot), [snapshot])
+  const allItems = useMemo(() => data?.items ?? [], [data])
   const tabItems = useMemo(() => allItems.filter((i) => i.kitchenStatus === activeTab), [activeTab, allItems])
 
   const advanceMutation = useMutation({
     mutationFn: ({ itemId, status }: { itemId: string; status: 'IN_PREPARATION' | 'READY' | 'DELIVERED' }) =>
       updateKitchenItemStatus(itemId, status),
     onMutate: async ({ itemId, status }) => {
-      await queryClient.cancelQueries({ queryKey: operationsQueryKey })
-      const snapshotBefore = queryClient.getQueryData<OperationsLiveResponse>(operationsQueryKey)
+      await queryClient.cancelQueries({ queryKey })
+      const snapshotBefore = queryClient.getQueryData<OperationsKitchenResponse>(queryKey)
 
       if (snapshotBefore) {
-        queryClient.setQueryData<OperationsLiveResponse>(operationsQueryKey, {
+        const nextItems = snapshotBefore.items.flatMap((item) => {
+          if (item.itemId !== itemId) {
+            return [item]
+          }
+
+          if (status === 'DELIVERED') {
+            return []
+          }
+
+          return [
+            {
+              ...item,
+              kitchenStatus: status,
+              kitchenReadyAt: status === 'READY' ? new Date().toISOString() : item.kitchenReadyAt,
+            },
+          ]
+        })
+        const nextCounts = buildStatusCounts(nextItems)
+
+        queryClient.setQueryData<OperationsKitchenResponse>(queryKey, {
           ...snapshotBefore,
-          employees: snapshotBefore.employees.map((group) => ({
-            ...group,
-            comandas: group.comandas.map((comanda) => ({
-              ...comanda,
-              items: comanda.items.flatMap((item) => {
-                if (item.id !== itemId) {
-                  return [item]
-                }
-
-                if (status === 'DELIVERED') {
-                  return []
-                }
-
-                return [
-                  {
-                    ...item,
-                    kitchenStatus: status,
-                    kitchenReadyAt: status === 'READY' ? new Date().toISOString() : item.kitchenReadyAt,
-                  },
-                ]
-              }),
-            })),
-          })),
-          unassigned: {
-            ...snapshotBefore.unassigned,
-            comandas: snapshotBefore.unassigned.comandas.map((comanda) => ({
-              ...comanda,
-              items: comanda.items.flatMap((item) => {
-                if (item.id !== itemId) {
-                  return [item]
-                }
-
-                if (status === 'DELIVERED') {
-                  return []
-                }
-
-                return [
-                  {
-                    ...item,
-                    kitchenStatus: status,
-                    kitchenReadyAt: status === 'READY' ? new Date().toISOString() : item.kitchenReadyAt,
-                  },
-                ]
-              }),
-            })),
+          items: nextItems,
+          statusCounts: {
+            queued: nextCounts.QUEUED,
+            inPreparation: nextCounts.IN_PREPARATION,
+            ready: nextCounts.READY,
           },
         })
       }
@@ -222,20 +178,13 @@ export function KitchenOrdersView({ snapshot, operationsQueryKey = ['operations'
     },
     onError: (err, _vars, context) => {
       if (context?.snapshotBefore) {
-        queryClient.setQueryData(operationsQueryKey, context.snapshotBefore)
+        queryClient.setQueryData(queryKey, context.snapshotBefore)
       }
       setError(err instanceof Error ? err.message : 'Erro ao atualizar item.')
     },
   })
 
-  const counts = useMemo(
-    () => ({
-      QUEUED: allItems.filter((i) => i.kitchenStatus === 'QUEUED').length,
-      IN_PREPARATION: allItems.filter((i) => i.kitchenStatus === 'IN_PREPARATION').length,
-      READY: allItems.filter((i) => i.kitchenStatus === 'READY').length,
-    }),
-    [allItems],
-  )
+  const counts = useMemo(() => buildStatusCounts(allItems), [allItems])
 
   const hasItems = allItems.length > 0
 

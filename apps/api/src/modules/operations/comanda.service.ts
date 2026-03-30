@@ -27,17 +27,13 @@ import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import {
-  toComandaItemRecord,
   toComandaRecord,
-  toRealtimeCashSessionRecord,
-  toRealtimeComandaRecord,
 } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import {
   buildOptionalOperationsSnapshot,
   buildCashClosurePayload,
   buildCashUpdatedPayload,
-  buildComandaUpdatedPayload,
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
   OPEN_COMANDA_STATUSES,
@@ -55,6 +51,29 @@ export class ComandaService {
     @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
     @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
   ) {}
+
+  async getComandaDetails(auth: AuthContext, comandaId: string) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    
+    const comanda = await this.prisma.comanda.findUnique({
+      where: { id: comandaId, companyOwnerId: workspaceOwnerUserId },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    })
+
+    if (!comanda) {
+      throw new NotFoundException('Comanda nao encontrada.')
+    }
+
+    return {
+      comanda: toComandaRecord(comanda),
+    }
+  }
 
   async openComanda(
     auth: AuthContext,
@@ -160,7 +179,7 @@ export class ComandaService {
     await this.helpers.assertBusinessDayOpen(workspaceOwnerUserId, businessDate)
 
     const helpers = this.helpers
-    const { comanda } = await this.prisma.$transaction(async (transaction) => {
+    const { comanda, kitchenItems } = await this.prisma.$transaction(async (transaction) => {
       const createdComanda = await transaction.comanda.create({
         data: {
           companyOwnerId: workspaceOwnerUserId,
@@ -232,8 +251,32 @@ export class ComandaService {
             })
           : createdComanda
 
+      const kitchenItems = draftItems.length
+        ? await transaction.comandaItem.findMany({
+            where: {
+              comandaId: createdComanda.id,
+              kitchenStatus: {
+                not: null,
+              },
+            },
+            select: {
+              id: true,
+              productName: true,
+              quantity: true,
+              notes: true,
+              kitchenStatus: true,
+              kitchenQueuedAt: true,
+              kitchenReadyAt: true,
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          })
+        : []
+
       return {
         comanda: recalculatedComanda,
+        kitchenItems,
       }
     })
 
@@ -253,6 +296,12 @@ export class ComandaService {
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
     this.publishComandaOpenedRealtime(auth, comanda, businessDate)
+
+    for (const kitchenItem of kitchenItems) {
+      if (kitchenItem.kitchenStatus === KitchenItemStatus.QUEUED && kitchenItem.kitchenQueuedAt) {
+        this.publishKitchenItemQueuedRealtime(auth, comanda, kitchenItem, businessDate)
+      }
+    }
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, comanda, options)
   }
@@ -494,7 +543,10 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+      replaceKitchenItems: true,
+      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    })
 
     for (const item of createdItems) {
       if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
@@ -633,7 +685,10 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+      replaceKitchenItems: true,
+      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    })
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
@@ -1067,10 +1122,17 @@ export class ComandaService {
     businessDate: Date,
   ) {
     this.operationsRealtimeService.publishComandaOpened(auth, {
-      ...buildComandaUpdatedPayload(comanda),
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
       openedAt: comanda.openedAt.toISOString(),
+      employeeId: comanda.currentEmployeeId,
+      status: comanda.status === 'IN_PREPARATION' ? 'EM_PREPARO' : comanda.status === 'READY' ? 'PRONTA' : 'ABERTA',
+      subtotal: toNumber(comanda.subtotalAmount),
+      discountAmount: toNumber(comanda.discountAmount),
+      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
+      totalAmount: toNumber(comanda.totalAmount),
+      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
       businessDate: formatBusinessDateKey(businessDate),
-      comanda: toComandaRecord(comanda),
     })
   }
 
@@ -1078,55 +1140,89 @@ export class ComandaService {
     auth: AuthContext,
     comanda: Parameters<typeof toComandaRecord>[0],
     businessDate: Date,
+    options?: {
+      requiresKitchenRefresh?: boolean
+      replaceKitchenItems?: boolean
+      kitchenItems?: Array<{
+        itemId: string
+        comandaId: string
+        mesaLabel: string
+        employeeId: string | null
+        productName: string
+        quantity: number
+        notes: string | null
+        kitchenStatus: 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+        kitchenQueuedAt: string | null
+        kitchenReadyAt: string | null
+        businessDate: string
+      }>
+    },
   ) {
     this.operationsRealtimeService.publishComandaUpdated(auth, {
-      ...buildComandaUpdatedPayload(comanda),
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
+      status:
+        comanda.status === 'OPEN'
+          ? 'ABERTA'
+          : comanda.status === 'IN_PREPARATION'
+            ? 'EM_PREPARO'
+            : comanda.status === 'READY'
+              ? 'PRONTA'
+              : 'FECHADA',
+      employeeId: comanda.currentEmployeeId,
+      subtotal: toNumber(comanda.subtotalAmount),
+      discountAmount: toNumber(comanda.discountAmount),
+      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
+      totalAmount: toNumber(comanda.totalAmount),
+      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
       businessDate: formatBusinessDateKey(businessDate),
-      comanda: toComandaRecord(comanda),
+      ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
+      ...(options?.replaceKitchenItems ? { replaceKitchenItems: true } : {}),
+      ...(options?.kitchenItems ? { kitchenItems: options.kitchenItems } : {}),
     })
   }
 
   private publishKitchenItemQueuedRealtime(
     auth: AuthContext,
     comanda: Parameters<typeof toComandaRecord>[0],
-    item: Parameters<typeof toComandaItemRecord>[0],
+    item: {
+      id: string
+      productName: string
+      quantity: number
+      notes: string | null
+      kitchenStatus: KitchenItemStatus | null
+      kitchenQueuedAt: Date | null
+      kitchenReadyAt: Date | null
+    },
     businessDate: Date,
   ) {
+    const payload = this.buildKitchenItemRealtimeDelta(comanda, item, businessDate)
     this.operationsRealtimeService.publishKitchenItemQueued(auth, {
-      itemId: item.id,
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      productName: item.productName,
-      quantity: item.quantity,
-      notes: item.notes ?? null,
+      ...payload,
       kitchenStatus: 'QUEUED',
-      kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? new Date().toISOString(),
-      businessDate: formatBusinessDateKey(businessDate),
-      item: toComandaItemRecord(item),
-      comanda: toComandaRecord(comanda),
+      kitchenQueuedAt: payload.kitchenQueuedAt ?? new Date().toISOString(),
     })
   }
 
   private publishKitchenItemUpdatedRealtime(
     auth: AuthContext,
     comanda: Parameters<typeof toComandaRecord>[0],
-    item: Parameters<typeof toComandaItemRecord>[0],
+    item: {
+      id: string
+      productName: string
+      quantity: number
+      notes: string | null
+      kitchenStatus: KitchenItemStatus | null
+      kitchenQueuedAt: Date | null
+      kitchenReadyAt: Date | null
+    },
     businessDate: Date,
   ) {
+    const payload = this.buildKitchenItemRealtimeDelta(comanda, item, businessDate)
     this.operationsRealtimeService.publishKitchenItemUpdated(auth, {
-      itemId: item.id,
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      productName: item.productName,
-      quantity: item.quantity,
-      notes: item.notes ?? null,
+      ...payload,
       kitchenStatus:
         item.kitchenStatus === 'DELIVERED' ? 'DELIVERED' : item.kitchenStatus === 'READY' ? 'READY' : 'IN_PREPARATION',
-      kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
-      kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
-      businessDate: formatBusinessDateKey(businessDate),
-      item: toComandaItemRecord(item),
-      comanda: toComandaRecord(comanda),
     })
   }
 
@@ -1136,6 +1232,9 @@ export class ComandaService {
       id: string
       tableLabel: string
       currentEmployeeId: string | null
+      subtotalAmount: { toNumber(): number } | number
+      discountAmount: { toNumber(): number } | number
+      serviceFeeAmount: { toNumber(): number } | number
       totalAmount: { toNumber(): number } | number
       closedAt: Date | null
       items: Array<{ quantity: number }>
@@ -1149,22 +1248,76 @@ export class ComandaService {
       mesaLabel: comanda.tableLabel,
       closedAt: comanda.closedAt?.toISOString() ?? new Date().toISOString(),
       employeeId: comanda.currentEmployeeId,
+      status: 'FECHADA',
+      subtotal: toNumber(comanda.subtotalAmount),
+      discountAmount: toNumber(comanda.discountAmount),
+      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
       totalAmount: toNumber(comanda.totalAmount),
       totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
       paymentMethod: null,
       businessDate: formatBusinessDateKey(businessDate),
-      comanda: toRealtimeComandaRecord(comanda),
     })
 
     if (refreshedSession) {
       this.operationsRealtimeService.publishCashUpdated(auth, {
         ...buildCashUpdatedPayload(refreshedSession),
         businessDate: formatBusinessDateKey(businessDate),
-        cashSession: toRealtimeCashSessionRecord(refreshedSession),
       })
     }
 
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+  }
+
+  private buildKitchenItemRealtimeDeltas(
+    comanda: Parameters<typeof toComandaRecord>[0],
+    businessDate: Date,
+  ) {
+    return (comanda.items ?? [])
+      .filter(
+        (
+          item,
+        ): item is NonNullable<Parameters<typeof toComandaRecord>[0]['items']>[number] & {
+          kitchenStatus: KitchenItemStatus
+        } => item.kitchenStatus != null,
+      )
+      .map((item) => this.buildKitchenItemRealtimeDelta(comanda, item, businessDate))
+  }
+
+  private buildKitchenItemRealtimeDelta(
+    comanda: Parameters<typeof toComandaRecord>[0],
+    item: {
+      id: string
+      productName: string
+      quantity: number
+      notes: string | null
+      kitchenStatus: KitchenItemStatus | null
+      kitchenQueuedAt: Date | string | null
+      kitchenReadyAt: Date | string | null
+    },
+    businessDate: Date,
+  ) {
+    return {
+      itemId: item.id,
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
+      employeeId: comanda.currentEmployeeId,
+      productName: item.productName,
+      quantity: item.quantity,
+      notes: item.notes ?? null,
+      kitchenStatus:
+        item.kitchenStatus === 'DELIVERED'
+          ? 'DELIVERED'
+          : item.kitchenStatus === 'READY'
+            ? 'READY'
+            : item.kitchenStatus === 'IN_PREPARATION'
+              ? 'IN_PREPARATION'
+              : 'QUEUED',
+      kitchenQueuedAt:
+        item.kitchenQueuedAt instanceof Date ? item.kitchenQueuedAt.toISOString() : (item.kitchenQueuedAt ?? null),
+      kitchenReadyAt:
+        item.kitchenReadyAt instanceof Date ? item.kitchenReadyAt.toISOString() : (item.kitchenReadyAt ?? null),
+      businessDate: formatBusinessDateKey(businessDate),
+    } as const
   }
 
   private async resolveMesaSelection(

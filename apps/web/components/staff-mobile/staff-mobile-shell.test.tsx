@@ -8,7 +8,7 @@ import { StaffMobileShell } from './staff-mobile-shell'
 
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
-  fetchOrders: vi.fn(),
+  fetchOperationsKitchen: vi.fn(),
   fetchProducts: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
@@ -53,6 +53,9 @@ describe('StaffMobileShell', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     testQueryClient = createTestQueryClient()
+    const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
+    const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
+    const mockFetchProducts = vi.mocked(api.fetchProducts)
 
     const snapshot = buildOperationsSnapshot({
       employees: [
@@ -103,11 +106,80 @@ describe('StaffMobileShell', () => {
       ],
     })
 
-    ;(api.fetchOperationsLive as any).mockResolvedValue(snapshot)
-    ;(api.fetchProducts as any).mockResolvedValue({ items: [], total: 0 })
+    mockFetchOperationsLive.mockResolvedValue(snapshot)
+    mockFetchOperationsKitchen.mockResolvedValue({
+      businessDate: snapshot.businessDate,
+      companyOwnerId: snapshot.companyOwnerId,
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 1,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+    const mockProductsResponse: Awaited<ReturnType<typeof api.fetchProducts>> = {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      items: [],
+      totals: {
+        totalProducts: 0,
+        activeProducts: 0,
+        inactiveProducts: 0,
+        stockUnits: 0,
+        stockPackages: 0,
+        stockLooseUnits: 0,
+        stockBaseUnits: 0,
+        inventoryCostValue: 0,
+        inventorySalesValue: 0,
+        potentialProfit: 0,
+        averageMarginPercent: 0,
+        categories: [],
+      },
+    }
+    mockFetchProducts.mockResolvedValue(mockProductsResponse)
 
     testQueryClient.setQueryData(['operations', 'live', 'compact'], snapshot)
-    testQueryClient.setQueryData(['products'], { items: [], total: 0 })
+    testQueryClient.setQueryData(['operations', 'kitchen'], {
+      businessDate: snapshot.businessDate,
+      companyOwnerId: snapshot.companyOwnerId,
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 1,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+    testQueryClient.setQueryData(['products'], mockProductsResponse)
   })
 
   const renderWithClient = (ui: React.ReactElement) =>

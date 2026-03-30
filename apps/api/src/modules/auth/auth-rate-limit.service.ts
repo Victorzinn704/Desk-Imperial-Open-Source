@@ -226,6 +226,14 @@ export class AuthRateLimitService {
   }
 
   private getPositiveConfigNumber(configKey: string, fallback: number) {
-    return Math.max(Number(this.configService.get<string>(configKey) ?? fallback), 1)
+    const rawValue = this.configService.get<string>(configKey)
+    const parsed = Number(rawValue ?? fallback)
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      this.logger.warn(`${configKey} inválido: "${rawValue}", usando default ${fallback}`)
+      return fallback
+    }
+
+    return parsed
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { AllCommunityModule, ModuleRegistry, type ColDef } from 'ag-grid-community'
-import { AgGridReact } from 'ag-grid-react'
+import { LazyAgGrid as AgGridReact } from '@/components/shared/lazy-components'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 import { Banknote, Layers3, ShieldCheck, Table2, UserRound, type LucideIcon } from 'lucide-react'
@@ -223,14 +223,14 @@ export function OperationsExecutiveGrid({
               style={{ ...gridThemeStyle, height: 360 }}
             >
               <AgGridReact
-                columnDefs={summaryColumns}
+                columnDefs={summaryColumns as any}
                 domLayout="normal"
                 onRowClicked={(event) => {
                   if (event.data) {
-                    setSelectedEmployeeId(event.data.employeeId)
+                    setSelectedEmployeeId((event.data as any).employeeId)
                   }
                 }}
-                rowData={summaryRows}
+                rowData={summaryRows as any}
                 rowSelection="single"
                 suppressCellFocus
                 theme="legacy"
@@ -260,9 +260,9 @@ export function OperationsExecutiveGrid({
                   style={{ ...gridThemeStyle, height: 320 }}
                 >
                   <AgGridReact
-                    columnDefs={tableColumns}
+                    columnDefs={tableColumns as any}
                     domLayout="normal"
-                    rowData={selectedRow.tables}
+                    rowData={selectedRow.tables as any}
                     suppressCellFocus
                     theme="legacy"
                   />
@@ -300,9 +300,9 @@ export function OperationsExecutiveGrid({
                     style={{ ...gridThemeStyle, height: 260 }}
                   >
                     <AgGridReact
-                      columnDefs={movementColumns}
+                      columnDefs={movementColumns as any}
                       domLayout="normal"
-                      rowData={selectedRow.movements}
+                      rowData={selectedRow.movements as any}
                       suppressCellFocus
                       theme="legacy"
                     />

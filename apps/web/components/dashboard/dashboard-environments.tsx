@@ -5,11 +5,25 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 // Lightweight environments — loaded eagerly (small, always needed)
 import { SalesEnvironment } from './environments/sales-environment'
 import { PortfolioEnvironment } from './environments/portfolio-environment'
-import { PdvEnvironment } from './environments/pdv-environment'
-import { OverviewEnvironment } from './environments/overview-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
 import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser } from '@/lib/api'
+
+// ── Medium-heavy environments — lazy loaded ────────────────────────────────────
+// PdvEnvironment: AG Grid (~500 KB) + react-big-calendar (~100 KB)
+const PdvEnvironment = dynamic(() => import('./environments/pdv-environment').then((m) => m.PdvEnvironment), {
+  loading: () => <EnvironmentSkeleton rows={5} />,
+  ssr: false,
+})
+
+// OverviewEnvironment: Recharts (~300 KB) via MetricCard + SalesPerformanceCard
+const OverviewEnvironment = dynamic(
+  () => import('./environments/overview-environment').then((m) => m.OverviewEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={4} />,
+    ssr: false,
+  },
+)
 
 // ── Heavy environments — lazy loaded only when the user navigates to them ──────
 // CalendarioEnvironment: react-big-calendar (~180 KB)

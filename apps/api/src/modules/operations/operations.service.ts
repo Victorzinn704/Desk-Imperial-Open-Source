@@ -28,6 +28,7 @@ import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
 import { AuditLogService } from '../monitoring/audit-log.service'
+import type { OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
 
 @Injectable()
 export class OperationsService {
@@ -49,7 +50,24 @@ export class OperationsService {
 
     return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
       includeCashMovements: query.includeCashMovements,
+      compactMode: query.compactMode,
     })
+  }
+
+  async getKitchenView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsKitchenResponse> {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const businessDate = resolveBusinessDate(query.businessDate)
+    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
+
+    return this.helpers.buildKitchenView(workspaceOwnerUserId, businessDate, scopedEmployeeId)
+  }
+
+  async getSummaryView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsSummaryResponse> {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const businessDate = resolveBusinessDate(query.businessDate)
+    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
+
+    return this.helpers.buildSummaryView(workspaceOwnerUserId, businessDate, scopedEmployeeId)
   }
 
   // ── Cash session delegation ───────────────────────────────────────────────
@@ -148,6 +166,10 @@ export class OperationsService {
     return this.comanda.updateComandaStatus(auth, comandaId, dto, context, options)
   }
 
+  getComandaDetails(auth: AuthContext, comandaId: string) {
+    return this.comanda.getComandaDetails(auth, comandaId)
+  }
+
   closeComanda(
     auth: AuthContext,
     comandaId: string,
@@ -177,7 +199,8 @@ export class OperationsService {
         select: { id: true, mesaId: true, currentEmployeeId: true, status: true },
       }),
     ])
-    return mesas.map((m) => toMesaRecord(m, openComandas.find((c) => c.mesaId === m.id) ?? null))
+    const openComandaByMesa = new Map(openComandas.map((comanda) => [comanda.mesaId, comanda]))
+    return mesas.map((mesa) => toMesaRecord(mesa, openComandaByMesa.get(mesa.id) ?? null))
   }
 
   async createMesa(auth: AuthContext, dto: CreateMesaDto, context: RequestContext): Promise<MesaRecord> {

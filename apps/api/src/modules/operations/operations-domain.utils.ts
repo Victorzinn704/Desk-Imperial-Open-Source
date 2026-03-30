@@ -62,6 +62,8 @@ export function invalidateOperationsLiveCache(
 ) {
   const dateKey = formatBusinessDateKey(businessDate)
   void cache.delByPrefix(CacheService.operationsLivePrefix(workspaceOwnerUserId, dateKey))
+  void cache.delByPrefix(CacheService.operationsKitchenPrefix(workspaceOwnerUserId, dateKey))
+  void cache.delByPrefix(CacheService.operationsSummaryPrefix(workspaceOwnerUserId, dateKey))
 }
 
 export async function buildOptionalOperationsSnapshot(
@@ -149,7 +151,7 @@ export function buildComandaUpdatedPayload(comanda: {
   subtotalAmount: { toNumber(): number } | number
   discountAmount: { toNumber(): number } | number
   totalAmount: { toNumber(): number } | number
-  items: Array<{ quantity: number }>
+  items?: Array<{ quantity: number }>
 }) {
   return {
     comandaId: comanda.id,
@@ -166,7 +168,7 @@ export function buildComandaUpdatedPayload(comanda: {
     subtotal: toNumber(comanda.subtotalAmount),
     discountAmount: toNumber(comanda.discountAmount),
     totalAmount: toNumber(comanda.totalAmount),
-    totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
+    totalItems: comanda.items ? comanda.items.reduce((sum, item) => sum + item.quantity, 0) : 0,
   } as const
 }
 

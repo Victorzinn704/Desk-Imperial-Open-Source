@@ -11,12 +11,15 @@ import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
-import { KitchenOrdersView } from './kitchen-orders-view'
-import { MobileComandaList } from './mobile-comanda-list'
-import { MobileOrderBuilder } from './mobile-order-builder'
+import dynamic from 'next/dynamic'
+
+const KitchenOrdersView = dynamic(() => import('./kitchen-orders-view').then(mod => mod.KitchenOrdersView), { ssr: false })
+const MobileComandaList = dynamic(() => import('./mobile-comanda-list').then(mod => mod.MobileComandaList), { ssr: false })
+const MobileOrderBuilder = dynamic(() => import('./mobile-order-builder').then(mod => mod.MobileOrderBuilder), { ssr: false })
 import { MobileTableGrid } from './mobile-table-grid'
 import {
   fetchOperationsLive,
+  fetchOperationsKitchen,
   fetchProducts,
   closeComanda,
   cancelComanda,
@@ -36,15 +39,15 @@ import {
   toOperationsStatus,
 } from '@/components/pdv/pdv-operations'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
-import { MobileHistoricoView } from '@/components/staff-mobile/mobile-historico-view'
+const MobileHistoricoView = dynamic(() => import('@/components/staff-mobile/mobile-historico-view').then(mod => mod.MobileHistoricoView), { ssr: false })
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { useOfflineQueue } from '@/components/shared/use-offline-queue'
 import {
   appendOptimisticComandaMutation,
   buildOptimisticComandaRecord,
   buildPerformerKpis,
-  countKitchenPendingItems,
   invalidateOperationsWorkspace,
+  OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
   rollbackOperationsSnapshot,
   appendOptimisticComandaItem,
@@ -109,7 +112,10 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
-    await queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }),
+    ])
   }, [queryClient])
 
   const {
@@ -121,7 +127,17 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
   const operationsQuery = useQuery({
     queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
+    enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+  })
+
+  const kitchenQuery = useQuery({
+    queryKey: OPERATIONS_KITCHEN_QUERY_KEY,
+    queryFn: () => fetchOperationsKitchen(),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
     staleTime: 10_000,
@@ -297,7 +313,10 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     () => buildPerformerKpis(operationsQuery.data, currentUser?.employeeId ?? null),
     [currentUser?.employeeId, operationsQuery.data],
   )
-  const kitchenBadge = useMemo(() => countKitchenPendingItems(operationsQuery.data), [operationsQuery.data])
+  const kitchenBadge = useMemo(
+    () => (kitchenQuery.data?.statusCounts.queued ?? 0) + (kitchenQuery.data?.statusCounts.inPreparation ?? 0),
+    [kitchenQuery.data],
+  )
 
   const isBusy =
     openComandaMutation.isPending ||
@@ -553,21 +572,20 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
 
       <main ref={pullRef} className="flex-1 overflow-y-auto relative">
         <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
-        <div style={{ display: activeTab === 'mesas' ? undefined : 'none' }}>
+        {activeTab === 'mesas' ? (
           <MobileTableGrid
             mesas={mesas}
             onSelectMesa={handleSelectMesa}
             isLoading={operationsQuery.isLoading && !operationsQuery.data}
           />
-        </div>
+        ) : null}
 
-        <div style={{ display: activeTab === 'cozinha' ? undefined : 'none' }}>
-          <KitchenOrdersView snapshot={operationsQuery.data} operationsQueryKey={OPERATIONS_LIVE_COMPACT_QUERY_KEY} />
-        </div>
+        {activeTab === 'cozinha' ? (
+          <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
+        ) : null}
 
-        {/* MobileOrderBuilder fica montado (hidden) para preservar estado do pedido */}
-        <div style={{ display: activeTab === 'pedido' ? undefined : 'none' }}>
-          {pendingAction ? (
+        {activeTab === 'pedido' ? (
+          pendingAction ? (
             <MobileOrderBuilder
               mesaLabel={mesaLabel}
               mode={orderMode}
@@ -597,11 +615,10 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
                 Ver mesas
               </button>
             </div>
-          )}
-        </div>
+          )
+        ) : null}
 
-        {/* Pedidos — comandas ativas */}
-        <div style={{ display: activeTab === 'pedidos' ? undefined : 'none' }}>
+        {activeTab === 'pedidos' ? (
           <MobileComandaList
             comandas={activeComandas}
             focusedId={focusedComandaId}
@@ -612,10 +629,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
             onCloseComanda={handleCloseWithDiscount}
             onNewComanda={handleNewComanda}
           />
-        </div>
+        ) : null}
 
-        {/* Histórico — todos os atendimentos do dia */}
-        <div style={{ display: activeTab === 'historico' ? undefined : 'none' }}>
+        {activeTab === 'historico' ? (
           <MobileHistoricoView
             comandas={comandas}
             summary={{
@@ -624,7 +640,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
               openComandasCount: performerKpis.openComandasCount,
             }}
           />
-        </div>
+        ) : null}
       </main>
 
       <nav

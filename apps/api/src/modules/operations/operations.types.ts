@@ -5,9 +5,30 @@ import type {
   Comanda,
   ComandaItem,
   Employee,
-  KitchenItemStatus,
   Mesa,
 } from '@prisma/client'
+
+import type {
+  KitchenItemStatus,
+  CashMovementRecord,
+  CashSessionRecord,
+  ComandaItemRecord,
+  MesaRecord,
+  ComandaRecord,
+  EmployeeOperationsRecord,
+  OperationsLiveResponse,
+} from '@contracts/contracts'
+
+export type {
+  KitchenItemStatus,
+  CashMovementRecord,
+  CashSessionRecord,
+  ComandaItemRecord,
+  MesaRecord,
+  ComandaRecord,
+  EmployeeOperationsRecord,
+  OperationsLiveResponse,
+}
 
 function toNumber(value: { toNumber(): number } | number | null | undefined) {
   if (value == null) {
@@ -81,7 +102,7 @@ type ComandaLike = Pick<
   | 'openedAt'
   | 'closedAt'
 > & {
-  items: ComandaItemLike[]
+  items?: ComandaItemLike[]
 }
 
 type EmployeeLike = Pick<Employee, 'id' | 'employeeCode' | 'displayName' | 'active'>
@@ -98,116 +119,6 @@ type CashClosureLike = Pick<
   | 'openComandasCount'
 >
 
-export type CashMovementRecord = {
-  id: string
-  cashSessionId: string
-  employeeId: string | null
-  type: CashMovement['type']
-  amount: number
-  note: string | null
-  createdAt: string
-}
-
-export type CashSessionRecord = {
-  id: string
-  companyOwnerId: string
-  employeeId: string | null
-  status: CashSession['status']
-  businessDate: string
-  openingCashAmount: number
-  countedCashAmount: number | null
-  expectedCashAmount: number
-  differenceAmount: number | null
-  grossRevenueAmount: number
-  realizedProfitAmount: number
-  notes: string | null
-  openedAt: string
-  closedAt: string | null
-  movements: CashMovementRecord[]
-}
-
-export type ComandaItemRecord = {
-  id: string
-  productId: string | null
-  productName: string
-  quantity: number
-  unitPrice: number
-  totalAmount: number
-  notes: string | null
-  kitchenStatus: KitchenItemStatus | null
-  kitchenQueuedAt: string | null
-  kitchenReadyAt: string | null
-}
-
-export type MesaRecord = {
-  id: string
-  label: string
-  capacity: number
-  section: string | null
-  positionX: number | null
-  positionY: number | null
-  active: boolean
-  reservedUntil: string | null
-  // derived status — computed from open comandas
-  status: 'livre' | 'ocupada' | 'reservada'
-  comandaId: string | null
-  currentEmployeeId: string | null
-}
-
-export type ComandaRecord = {
-  id: string
-  companyOwnerId: string
-  cashSessionId: string | null
-  mesaId: string | null
-  currentEmployeeId: string | null
-  tableLabel: string
-  customerName: string | null
-  customerDocument: string | null
-  participantCount: number
-  status: Comanda['status']
-  subtotalAmount: number
-  discountAmount: number
-  serviceFeeAmount: number
-  totalAmount: number
-  notes: string | null
-  openedAt: string
-  closedAt: string | null
-  items: ComandaItemRecord[]
-}
-
-export type EmployeeOperationsRecord = {
-  employeeId: string | null
-  employeeCode: string | null
-  displayName: string
-  active: boolean
-  cashSession: CashSessionRecord | null
-  comandas: ComandaRecord[]
-  metrics: {
-    openTables: number
-    closedTables: number
-    grossRevenueAmount: number
-    realizedProfitAmount: number
-    expectedCashAmount: number
-  }
-}
-
-export type OperationsLiveResponse = {
-  businessDate: string
-  companyOwnerId: string
-  closure: {
-    status: CashClosure['status']
-    expectedCashAmount: number
-    countedCashAmount: number | null
-    differenceAmount: number | null
-    grossRevenueAmount: number
-    realizedProfitAmount: number
-    openSessionsCount: number
-    openComandasCount: number
-  } | null
-  employees: EmployeeOperationsRecord[]
-  unassigned: EmployeeOperationsRecord
-  mesas: MesaRecord[]
-}
 
 export function toCashMovementRecord(movement: CashMovementLike): CashMovementRecord {
   return {
@@ -294,7 +205,7 @@ export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
     notes: comanda.notes,
     openedAt: comanda.openedAt.toISOString(),
     closedAt: comanda.closedAt?.toISOString() ?? null,
-    items: comanda.items.map(toComandaItemRecord),
+    items: comanda.items ? comanda.items.map(toComandaItemRecord) : [],
   }
 }
 
@@ -406,7 +317,7 @@ export function toRealtimeComandaRecord(comanda: RealtimeComandaLike): ComandaRe
     notes: comanda.notes ?? null,
     openedAt: (comanda.openedAt ?? comanda.closedAt ?? now).toISOString(),
     closedAt: comanda.closedAt?.toISOString() ?? null,
-    items: comanda.items.map((item, index) => ({
+    items: comanda.items ? comanda.items.map((item, index) => ({
       id: item.id ?? `${comanda.id}-item-${index + 1}`,
       productId: item.productId ?? null,
       productName: item.productName ?? 'Item',
@@ -417,7 +328,7 @@ export function toRealtimeComandaRecord(comanda: RealtimeComandaLike): ComandaRe
       kitchenStatus: item.kitchenStatus ?? null,
       kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
       kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
-    })),
+    })) : [],
   }
 }
 
@@ -429,8 +340,6 @@ export function buildEmployeeOperationsRecord(input: {
 }): EmployeeOperationsRecord {
   const cashSession = input.cashSession ? toCashSessionRecord(input.cashSession) : null
   const comandas = input.comandas.map(toComandaRecord)
-  const openTables = comandas.filter((item) => item.status !== 'CLOSED' && item.status !== 'CANCELLED').length
-  const closedTables = comandas.filter((item) => item.status === 'CLOSED').length
 
   return {
     employeeId: input.employee?.id ?? null,
@@ -439,13 +348,6 @@ export function buildEmployeeOperationsRecord(input: {
     active: input.employee?.active ?? true,
     cashSession,
     comandas,
-    metrics: {
-      openTables,
-      closedTables,
-      grossRevenueAmount: cashSession?.grossRevenueAmount ?? 0,
-      realizedProfitAmount: cashSession?.realizedProfitAmount ?? 0,
-      expectedCashAmount: cashSession?.expectedCashAmount ?? 0,
-    },
   }
 }
 

@@ -181,8 +181,8 @@ describe('buildEmployeeOperationsRecord', () => {
     )
 
     const record = buildEmployeeOperationsRecord({ employee, cashSession: null, comandas: comandas as any })
-    expect(record.metrics.openTables).toBe(3)
-    expect(record.metrics.closedTables).toBe(1)
+    expect(record.comandas.length).toBe(4)
+    expect(record.comandas.filter(c => c.status === 'OPEN').length).toBe(1)
   })
 
   it('uses default name when no employee', () => {

@@ -79,6 +79,7 @@ const mockCache = {
   get: jest.fn(),
   set: jest.fn(),
   del: jest.fn(),
+  delByPrefix: jest.fn(),
   isReady: jest.fn(),
   financeKey: jest.fn(),
   ordersKey: jest.fn(),
@@ -231,7 +232,7 @@ describe('OrdersService', () => {
       const result = await ordersService.listForUser(mockContext, { limit: 10 })
 
       expect(result).toEqual(cachedResponse)
-      expect(mockCache.get).toHaveBeenCalledWith('orders:summary:user-1')
+      expect(mockCache.get).toHaveBeenCalledWith('orders:summary:user-1:completed:summary:10')
       expect(mockPrisma.order.findMany).not.toHaveBeenCalled()
     })
 
@@ -283,7 +284,7 @@ describe('OrdersService', () => {
 
       await ordersService.listForUser(mockContext, { limit: 10 })
 
-      expect(mockCache.set).toHaveBeenCalledWith('orders:summary:user-1', expect.any(Object), 90)
+      expect(mockCache.set).toHaveBeenCalledWith('orders:summary:user-1:completed:summary:10', expect.any(Object), 90)
     })
   })
 
@@ -505,6 +506,7 @@ describe('OrdersService', () => {
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-1')
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith('orders:summary:user-1:')
     })
 
     it('deve sanitizar dados do comprador', async () => {
@@ -611,6 +613,7 @@ describe('OrdersService', () => {
 
       expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-1')
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith('orders:summary:user-1:')
     })
 
     it('deve rejeitar cancelamento para role STAFF', async () => {
@@ -627,6 +630,7 @@ describe('OrdersService', () => {
       await ordersService.invalidateOrdersCache('user-123')
 
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-123')
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith('orders:summary:user-123:')
     })
   })
 })

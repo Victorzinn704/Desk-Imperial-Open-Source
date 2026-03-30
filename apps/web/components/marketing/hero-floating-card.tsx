@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { LazyMotionDiv as MotionDiv } from '@/components/shared/lazy-components'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
 
 const signals = [
@@ -11,13 +11,13 @@ const signals = [
 
 export function HeroFloatingCard() {
   return (
-    <motion.div
+    <MotionDiv
       animate={{ y: [0, -8, 0] }}
       className="imperial-card-soft p-4 backdrop-blur-xl"
       transition={{ duration: 6.5, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
     >
       <CardContent />
-    </motion.div>
+    </MotionDiv>
   )
 }
 

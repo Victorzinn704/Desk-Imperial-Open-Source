@@ -134,6 +134,13 @@ export function rollbackOperationsSnapshot(
   queryClient.setQueryData(queryKey, snapshot)
 }
 
+function generateOptimisticId(prefix: string) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `${prefix}-${crypto.randomUUID()}`
+  }
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+}
+
 export function buildOptimisticComandaRecord(input: {
   tableLabel: string
   cashSessionId?: string | null
@@ -152,7 +159,7 @@ export function buildOptimisticComandaRecord(input: {
   const items = (input.items ?? []).map((item, index) => {
     const unitPrice = resolveOptimisticUnitPrice(item.unitPrice, item.quantity)
     return {
-      id: `opt-item-${index}-${Date.now()}`,
+      id: generateOptimisticId('opt-item'),
       productId: item.productId ?? null,
       productName: item.productName ?? 'Item',
       quantity: item.quantity,
@@ -167,7 +174,7 @@ export function buildOptimisticComandaRecord(input: {
   const subtotalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0)
 
   return {
-    id: `optimistic-${Date.now()}`,
+    id: generateOptimisticId('optimistic'),
     companyOwnerId: '',
     mesaId: null,
     status: 'OPEN',
@@ -197,7 +204,7 @@ export function buildOptimisticComandaItem(input: {
 }): ComandaItemRecord {
   const unitPrice = resolveOptimisticUnitPrice(input.unitPrice, input.quantity)
   return {
-    id: `opt-item-${Date.now()}`,
+    id: generateOptimisticId('opt-item'),
     productId: input.productId ?? null,
     productName: input.productName ?? 'Item',
     quantity: input.quantity,

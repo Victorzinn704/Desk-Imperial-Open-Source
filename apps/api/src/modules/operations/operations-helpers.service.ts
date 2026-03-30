@@ -6,6 +6,7 @@ import {
   CashSessionStatus,
   ComandaStatus,
   CurrencyCode,
+  KitchenItemStatus,
   OrderStatus,
   type Employee,
 } from '@prisma/client'
@@ -21,6 +22,14 @@ import {
   toMesaRecord,
   type OperationsLiveResponse,
 } from './operations.types'
+import type {
+  OperationsExecutiveKpis,
+  OperationsKitchenItemRecord,
+  OperationsKitchenResponse,
+  OperationsPerformerRankingEntry,
+  OperationsSummaryResponse,
+  OperationsTopProductEntry,
+} from '@contracts/contracts'
 import {
   OPEN_COMANDA_STATUSES,
   buildBusinessDateWindow,
@@ -129,6 +138,26 @@ const comandaSnapshotSelect = {
   },
 } as const
 
+const comandaSnapshotCompactSelect = {
+  id: true,
+  companyOwnerId: true,
+  cashSessionId: true,
+  mesaId: true,
+  currentEmployeeId: true,
+  tableLabel: true,
+  customerName: true,
+  customerDocument: true,
+  participantCount: true,
+  status: true,
+  subtotalAmount: true,
+  discountAmount: true,
+  serviceFeeAmount: true,
+  totalAmount: true,
+  notes: true,
+  openedAt: true,
+  closedAt: true,
+} as const
+
 const cashClosureSnapshotSelect = {
   status: true,
   expectedCashAmount: true,
@@ -164,18 +193,18 @@ export class OperationsHelpersService {
     scopedEmployeeId?: string | null,
     options?: {
       includeCashMovements?: boolean
+      compactMode?: boolean
     },
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements !== false
     const cacheKey =
-      scopedEmployeeId == null
-        ? CacheService.operationsLiveKey(
-            workspaceOwnerUserId,
-            formatBusinessDateKey(businessDate),
-            includeCashMovements,
-          )
-        : null
+      CacheService.operationsLiveKey(
+        workspaceOwnerUserId,
+        formatBusinessDateKey(businessDate),
+        includeCashMovements,
+        scopedEmployeeId,
+      ) + (options?.compactMode ? ':compact' : '')
 
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
@@ -232,7 +261,7 @@ export class OperationsHelpersService {
           ],
           ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
         },
-        select: comandaSnapshotSelect,
+        select: options?.compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect,
         orderBy: {
           openedAt: 'asc',
         },
@@ -270,9 +299,7 @@ export class OperationsHelpersService {
     }
 
     // Build a map of mesaId → open comanda for status derivation
-    const openComandas = comandas.filter(
-      (c) => c.status === 'OPEN' || c.status === 'IN_PREPARATION' || c.status === 'READY',
-    )
+    const openComandas = comandas.filter((comanda) => OPEN_COMANDA_STATUSES.includes(comanda.status))
     const openComandaByMesa = new Map<string, (typeof openComandas)[number]>()
     for (const comanda of openComandas) {
       if (comanda.mesaId) openComandaByMesa.set(comanda.mesaId, comanda)
@@ -308,6 +335,305 @@ export class OperationsHelpersService {
     }
 
     return snapshot
+  }
+
+  async buildKitchenView(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    scopedEmployeeId?: string | null,
+  ): Promise<OperationsKitchenResponse> {
+    const businessDateKey = formatBusinessDateKey(businessDate)
+    const cacheKey = CacheService.operationsKitchenKey(workspaceOwnerUserId, businessDateKey, scopedEmployeeId)
+    const cached = await this.cache.get<OperationsKitchenResponse>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const [owner, kitchenItems] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: workspaceOwnerUserId },
+        select: {
+          fullName: true,
+          companyName: true,
+        },
+      }),
+      this.prisma.comandaItem.findMany({
+        where: this.buildKitchenItemWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId),
+        select: {
+          id: true,
+          comandaId: true,
+          productName: true,
+          quantity: true,
+          notes: true,
+          kitchenStatus: true,
+          kitchenQueuedAt: true,
+          kitchenReadyAt: true,
+          comanda: {
+            select: {
+              tableLabel: true,
+              currentEmployeeId: true,
+              currentEmployee: {
+                select: {
+                  displayName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ kitchenQueuedAt: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ])
+
+    const ownerOperatorLabel = owner?.fullName?.trim() || owner?.companyName?.trim() || 'Operacao de balcao'
+    const items: OperationsKitchenItemRecord[] = kitchenItems.map((item) => ({
+      itemId: item.id,
+      comandaId: item.comandaId,
+      mesaLabel: item.comanda.tableLabel,
+      employeeId: item.comanda.currentEmployeeId,
+      employeeName: item.comanda.currentEmployee?.displayName ?? ownerOperatorLabel,
+      productName: item.productName,
+      quantity: item.quantity,
+      notes: item.notes,
+      kitchenStatus: item.kitchenStatus as OperationsKitchenItemRecord['kitchenStatus'],
+      kitchenQueuedAt: item.kitchenQueuedAt?.toISOString() ?? null,
+      kitchenReadyAt: item.kitchenReadyAt?.toISOString() ?? null,
+    }))
+    const statusCounts = items.reduce(
+      (accumulator, item) => {
+        if (item.kitchenStatus === 'QUEUED') {
+          accumulator.queued += 1
+        } else if (item.kitchenStatus === 'IN_PREPARATION') {
+          accumulator.inPreparation += 1
+        } else if (item.kitchenStatus === 'READY') {
+          accumulator.ready += 1
+        }
+
+        return accumulator
+      },
+      {
+        queued: 0,
+        inPreparation: 0,
+        ready: 0,
+      },
+    )
+
+    const response = {
+      businessDate: businessDateKey,
+      companyOwnerId: workspaceOwnerUserId,
+      items,
+      statusCounts,
+    }
+
+    void this.cache.set(cacheKey, response, 2)
+
+    return response
+  }
+
+  async buildSummaryView(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    scopedEmployeeId?: string | null,
+  ): Promise<OperationsSummaryResponse> {
+    const businessDateKey = formatBusinessDateKey(businessDate)
+    const cacheKey = CacheService.operationsSummaryKey(workspaceOwnerUserId, businessDateKey, scopedEmployeeId)
+    const cached = await this.cache.get<OperationsSummaryResponse>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const summaryComandaWhere = this.buildOperationsComandaWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId)
+    const openComandaWhere = this.buildOperationsComandaWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
+      statuses: OPEN_COMANDA_STATUSES,
+    })
+
+    const [owner, closure, openComandasAggregate, openSessionsCount, performerGroups, topProductGroups] =
+      await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: workspaceOwnerUserId },
+        select: {
+          fullName: true,
+          companyName: true,
+        },
+      }),
+      this.prisma.cashClosure.findUnique({
+        where: {
+          companyOwnerId_businessDate: {
+            companyOwnerId: workspaceOwnerUserId,
+            businessDate,
+          },
+        },
+        select: cashClosureSnapshotSelect,
+      }),
+      this.prisma.comanda.aggregate({
+        where: openComandaWhere,
+        _sum: {
+          totalAmount: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+      this.prisma.cashSession.count({
+        where: {
+          companyOwnerId: workspaceOwnerUserId,
+          businessDate,
+          status: CashSessionStatus.OPEN,
+          ...(scopedEmployeeId ? { employeeId: scopedEmployeeId } : {}),
+        },
+      }),
+      this.prisma.comanda.groupBy({
+        by: ['currentEmployeeId'],
+        where: summaryComandaWhere,
+        _sum: {
+          totalAmount: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+      this.prisma.comandaItem.groupBy({
+        by: ['productName'],
+        where: {
+          comanda: {
+            is: summaryComandaWhere,
+          },
+        },
+        _sum: {
+          quantity: true,
+          totalAmount: true,
+        },
+      }),
+    ])
+
+    const employeeIds = performerGroups
+      .map((group) => group.currentEmployeeId)
+      .filter((employeeId): employeeId is string => Boolean(employeeId))
+    const employees = employeeIds.length
+      ? await this.prisma.employee.findMany({
+          where: {
+            id: { in: employeeIds },
+            userId: workspaceOwnerUserId,
+          },
+          select: {
+            id: true,
+            displayName: true,
+          },
+        })
+      : []
+    const employeeNameById = new Map(employees.map((employee) => [employee.id, employee.displayName]))
+    const ownerDisplayName = owner?.fullName?.trim() || owner?.companyName?.trim() || 'Operacao de balcao'
+
+    const faturamentoAberto = toNumber(openComandasAggregate._sum.totalAmount)
+    const receitaRealizada = toNumber(closure?.grossRevenueAmount)
+    const lucroRealizado = toNumber(closure?.realizedProfitAmount)
+
+    const kpis: OperationsExecutiveKpis = {
+      receitaRealizada,
+      faturamentoAberto,
+      projecaoTotal: receitaRealizada + faturamentoAberto,
+      lucroRealizado,
+      lucroEsperado: lucroRealizado + faturamentoAberto,
+      caixaEsperado: toNumber(closure?.expectedCashAmount),
+      openComandasCount: closure?.openComandasCount ?? openComandasAggregate._count._all,
+      openSessionsCount: closure?.openSessionsCount ?? openSessionsCount,
+    }
+
+    const performers: OperationsPerformerRankingEntry[] = performerGroups
+      .map((group) => {
+        const valor = toNumber(group._sum.totalAmount)
+        const comandas = group._count._all
+        if (valor <= 0 && comandas <= 0) {
+          return null
+        }
+
+        return {
+          nome: group.currentEmployeeId
+            ? (employeeNameById.get(group.currentEmployeeId) ?? 'Funcionario removido')
+            : ownerDisplayName,
+          valor,
+          comandas,
+        }
+      })
+      .filter((entry): entry is OperationsPerformerRankingEntry => entry !== null)
+      .sort((left, right) => right.valor - left.valor)
+      .slice(0, 5)
+
+    const topProducts: OperationsTopProductEntry[] = topProductGroups
+      .map((group) => ({
+        nome: group.productName,
+        qtd: group._sum.quantity ?? 0,
+        valor: toNumber(group._sum.totalAmount),
+      }))
+      .sort((left, right) => right.valor - left.valor)
+      .slice(0, 5)
+
+    const finalizedResponse: OperationsSummaryResponse = {
+      businessDate: businessDateKey,
+      companyOwnerId: workspaceOwnerUserId,
+      kpis,
+      performers,
+      topProducts,
+    }
+
+    void this.cache.set(cacheKey, finalizedResponse, 2)
+
+    return finalizedResponse
+  }
+
+  private buildOperationsComandaWhere(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    scopedEmployeeId?: string | null,
+    options?: {
+      statuses?: ComandaStatus[]
+    },
+  ): Prisma.ComandaWhereInput {
+    const window = buildBusinessDateWindow(businessDate)
+
+    return {
+      companyOwnerId: workspaceOwnerUserId,
+      ...(options?.statuses?.length
+        ? {
+            status: {
+              in: options.statuses,
+            },
+          }
+        : {}),
+      ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
+      OR: [
+        {
+          cashSession: {
+            is: {
+              businessDate,
+            },
+          },
+        },
+        {
+          cashSessionId: null,
+          openedAt: {
+            gte: window.start,
+            lt: window.end,
+          },
+        },
+      ],
+    }
+  }
+
+  private buildKitchenItemWhere(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    scopedEmployeeId?: string | null,
+  ): Prisma.ComandaItemWhereInput {
+    return {
+      kitchenStatus: {
+        in: [KitchenItemStatus.QUEUED, KitchenItemStatus.IN_PREPARATION, KitchenItemStatus.READY],
+      },
+      comanda: {
+        is: this.buildOperationsComandaWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
+          statuses: OPEN_COMANDA_STATUSES,
+        }),
+      },
+    }
   }
 
   async recalculateCashSession(transaction: TransactionClient, cashSessionId: string) {
@@ -703,6 +1029,32 @@ export class OperationsHelpersService {
       return []
     }
 
+    const productIds: string[] = []
+    const seenProductIds = new Set<string>()
+    for (const item of items) {
+      if (item.productId && !seenProductIds.has(item.productId)) {
+        seenProductIds.add(item.productId)
+        productIds.push(item.productId)
+      }
+    }
+    const products = productIds.length
+      ? await transaction.product.findMany({
+          where: {
+            id: {
+              in: productIds,
+            },
+            userId: workspaceOwnerUserId,
+            active: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            unitPrice: true,
+          },
+        })
+      : []
+    const productById = new Map(products.map((product) => [product.id, product]))
+
     const normalizedItems: Array<{
       productId: string | null
       productName: string
@@ -718,13 +1070,7 @@ export class OperationsHelpersService {
       let unitPrice: number
 
       if (item.productId) {
-        const product = await transaction.product.findFirst({
-          where: {
-            id: item.productId,
-            userId: workspaceOwnerUserId,
-            active: true,
-          },
-        })
+        const product = productById.get(item.productId)
 
         if (!product) {
           throw new NotFoundException('Produto nao encontrado para esta conta.')

@@ -5,11 +5,17 @@ import { OwnerMobileShell } from './owner-mobile-shell'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
-import { OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
+import {
+  OPERATIONS_KITCHEN_QUERY_KEY,
+  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_SUMMARY_QUERY_KEY,
+} from '@/lib/operations'
 
 // Mock das dependências
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
+  fetchOperationsKitchen: vi.fn(),
+  fetchOperationsSummary: vi.fn(),
   fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
   logout: vi.fn(),
@@ -54,6 +60,11 @@ describe('OwnerMobileShell', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     testQueryClient = createTestQueryClient()
+    const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
+    const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
+    const mockFetchOperationsSummary = vi.mocked(api.fetchOperationsSummary)
+    const mockFetchOrders = vi.mocked(api.fetchOrders)
+    const mockFetchProducts = vi.mocked(api.fetchProducts)
 
     const mockSnapshot = buildOperationsSnapshot({
       closure: {
@@ -108,26 +119,296 @@ describe('OwnerMobileShell', () => {
       ],
     })
 
-    ;(api.fetchOperationsLive as any).mockResolvedValue(mockSnapshot)
-    ;(api.fetchOrders as any).mockResolvedValue({
+    mockFetchOperationsLive.mockResolvedValue(mockSnapshot)
+    mockFetchOperationsKitchen.mockResolvedValue({
+      businessDate: mockSnapshot.businessDate,
+      companyOwnerId: mockSnapshot.companyOwnerId,
       items: [
-        { id: 'o-1', createdAt: new Date().toISOString(), status: 'COMPLETED', totalRevenue: 100 },
-        { id: 'o-2', createdAt: new Date().toISOString(), status: 'COMPLETED', totalRevenue: 200 },
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+          kitchenReadyAt: null,
+        },
       ],
-      total: 2,
+      statusCounts: {
+        queued: 1,
+        inPreparation: 0,
+        ready: 1,
+      },
     })
-    ;(api.fetchProducts as any).mockResolvedValue({ items: [], total: 0 })
+    mockFetchOperationsSummary.mockResolvedValue({
+      businessDate: mockSnapshot.businessDate,
+      companyOwnerId: mockSnapshot.companyOwnerId,
+      kpis: {
+        receitaRealizada: 320,
+        faturamentoAberto: 80,
+        projecaoTotal: 400,
+        lucroRealizado: 140,
+        lucroEsperado: 220,
+        caixaEsperado: 500,
+        openComandasCount: 2,
+        openSessionsCount: 0,
+      },
+      performers: [{ nome: 'Marina', valor: 200, comandas: 2 }],
+      topProducts: [
+        { nome: 'Pão de queijo', qtd: 2, valor: 40 },
+        { nome: 'Café', qtd: 1, valor: 10 },
+      ],
+    })
+    const mockOrdersResponse: Awaited<ReturnType<typeof api.fetchOrders>> = {
+      items: [
+        {
+          id: 'o-1',
+          comandaId: null,
+          customerName: null,
+          buyerType: null,
+          buyerDocument: null,
+          buyerDistrict: null,
+          buyerCity: null,
+          buyerState: null,
+          buyerCountry: null,
+          buyerLatitude: null,
+          buyerLongitude: null,
+          employeeId: null,
+          sellerCode: null,
+          sellerName: null,
+          channel: null,
+          notes: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          status: 'COMPLETED',
+          totalRevenue: 100,
+          totalCost: 0,
+          totalProfit: 100,
+          originalTotalRevenue: 100,
+          originalTotalCost: 0,
+          originalTotalProfit: 100,
+          totalItems: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          cancelledAt: null,
+          items: [],
+        },
+        {
+          id: 'o-2',
+          comandaId: null,
+          customerName: null,
+          buyerType: null,
+          buyerDocument: null,
+          buyerDistrict: null,
+          buyerCity: null,
+          buyerState: null,
+          buyerCountry: null,
+          buyerLatitude: null,
+          buyerLongitude: null,
+          employeeId: null,
+          sellerCode: null,
+          sellerName: null,
+          channel: null,
+          notes: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          status: 'COMPLETED',
+          totalRevenue: 200,
+          totalCost: 0,
+          totalProfit: 200,
+          originalTotalRevenue: 200,
+          originalTotalCost: 0,
+          originalTotalProfit: 200,
+          totalItems: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          cancelledAt: null,
+          items: [],
+        },
+      ],
+      totals: {
+        completedOrders: 2,
+        cancelledOrders: 0,
+        realizedRevenue: 300,
+        realizedProfit: 120,
+        soldUnits: 3,
+      },
+    }
+    const mockProductsResponse: Awaited<ReturnType<typeof api.fetchProducts>> = {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      items: [],
+      totals: {
+        totalProducts: 0,
+        activeProducts: 0,
+        inactiveProducts: 0,
+        stockUnits: 0,
+        stockPackages: 0,
+        stockLooseUnits: 0,
+        stockBaseUnits: 0,
+        inventoryCostValue: 0,
+        inventorySalesValue: 0,
+        potentialProfit: 0,
+        averageMarginPercent: 0,
+        categories: [],
+      },
+    }
+    mockFetchOrders.mockResolvedValue(mockOrdersResponse)
+    mockFetchProducts.mockResolvedValue(mockProductsResponse)
 
     // Pré-popula o cache para evitar estados de "loading" nos testes
     testQueryClient.setQueryData(OPERATIONS_LIVE_COMPACT_QUERY_KEY, mockSnapshot)
-    testQueryClient.setQueryData(['orders'], {
+    testQueryClient.setQueryData(OPERATIONS_KITCHEN_QUERY_KEY, {
+      businessDate: mockSnapshot.businessDate,
+      companyOwnerId: mockSnapshot.companyOwnerId,
       items: [
-        { id: 'o-1', createdAt: new Date().toISOString(), status: 'COMPLETED', totalRevenue: 100 },
-        { id: 'o-2', createdAt: new Date().toISOString(), status: 'COMPLETED', totalRevenue: 200 },
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+          kitchenReadyAt: null,
+        },
       ],
-      total: 2,
+      statusCounts: {
+        queued: 1,
+        inPreparation: 0,
+        ready: 1,
+      },
     })
-    testQueryClient.setQueryData(['products'], { items: [], total: 0 })
+    testQueryClient.setQueryData(OPERATIONS_SUMMARY_QUERY_KEY, {
+      businessDate: mockSnapshot.businessDate,
+      companyOwnerId: mockSnapshot.companyOwnerId,
+      kpis: {
+        receitaRealizada: 320,
+        faturamentoAberto: 80,
+        projecaoTotal: 400,
+        lucroRealizado: 140,
+        lucroEsperado: 220,
+        caixaEsperado: 500,
+        openComandasCount: 2,
+        openSessionsCount: 0,
+      },
+      performers: [{ nome: 'Marina', valor: 200, comandas: 2 }],
+      topProducts: [
+        { nome: 'Pão de queijo', qtd: 2, valor: 40 },
+        { nome: 'Café', qtd: 1, valor: 10 },
+      ],
+    })
+    testQueryClient.setQueryData(
+      ['orders', 'summary'],
+      {
+        items: [
+          {
+            id: 'o-1',
+            comandaId: null,
+            customerName: null,
+            buyerType: null,
+            buyerDocument: null,
+            buyerDistrict: null,
+            buyerCity: null,
+            buyerState: null,
+            buyerCountry: null,
+            buyerLatitude: null,
+            buyerLongitude: null,
+            employeeId: null,
+            sellerCode: null,
+            sellerName: null,
+            channel: null,
+            notes: null,
+            currency: 'BRL',
+            displayCurrency: 'BRL',
+            status: 'COMPLETED',
+            totalRevenue: 100,
+            totalCost: 0,
+            totalProfit: 100,
+            originalTotalRevenue: 100,
+            originalTotalCost: 0,
+            originalTotalProfit: 100,
+            totalItems: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            cancelledAt: null,
+            items: [],
+          },
+          {
+            id: 'o-2',
+            comandaId: null,
+            customerName: null,
+            buyerType: null,
+            buyerDocument: null,
+            buyerDistrict: null,
+            buyerCity: null,
+            buyerState: null,
+            buyerCountry: null,
+            buyerLatitude: null,
+            buyerLongitude: null,
+            employeeId: null,
+            sellerCode: null,
+            sellerName: null,
+            channel: null,
+            notes: null,
+            currency: 'BRL',
+            displayCurrency: 'BRL',
+            status: 'COMPLETED',
+            totalRevenue: 200,
+            totalCost: 0,
+            totalProfit: 200,
+            originalTotalRevenue: 200,
+            originalTotalCost: 0,
+            originalTotalProfit: 200,
+            totalItems: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            cancelledAt: null,
+            items: [],
+          },
+        ],
+        totals: {
+          completedOrders: 2,
+          cancelledOrders: 0,
+          realizedRevenue: 300,
+          realizedProfit: 120,
+          soldUnits: 3,
+        },
+      } as unknown as Awaited<ReturnType<typeof api.fetchOrders>>,
+    )
+    testQueryClient.setQueryData(
+      ['products'],
+      {
+        displayCurrency: 'BRL',
+        ratesUpdatedAt: null,
+        ratesSource: 'fallback',
+        ratesNotice: null,
+        items: [],
+        totals: {
+          totalProducts: 0,
+          activeProducts: 0,
+          inactiveProducts: 0,
+          stockUnits: 0,
+          stockPackages: 0,
+          stockLooseUnits: 0,
+          stockBaseUnits: 0,
+          inventoryCostValue: 0,
+          inventorySalesValue: 0,
+          potentialProfit: 0,
+          averageMarginPercent: 0,
+          categories: [],
+        },
+      } as unknown as Awaited<ReturnType<typeof api.fetchProducts>>,
+    )
   })
 
   const renderWithClient = (ui: React.ReactElement) => {
@@ -159,7 +440,7 @@ describe('OwnerMobileShell', () => {
 
   it('deve chamar a API de logout ao clicar no botão de saída', async () => {
     const user = userEvent.setup()
-    ;(api.logout as any).mockResolvedValue({ success: true })
+    vi.mocked(api.logout).mockResolvedValue({ success: true })
 
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
 

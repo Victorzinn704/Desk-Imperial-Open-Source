@@ -5,6 +5,10 @@ import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
 import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
+import { formatBRL as formatCurrency } from '@/lib/currency'
+import { useQuery } from '@tanstack/react-query'
+import { fetchComandaDetails } from '@/lib/api'
+import { toPdvComanda } from '@/components/pdv/pdv-operations'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
@@ -65,11 +69,6 @@ interface ComandaCardProps {
   onCancelComanda?: (id: string) => Promise<void> | void
   onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
   onFocus?: (id: string | null) => void
-}
-
-function formatCurrency(value: number): string {
-  const safeValue = Number.isFinite(value) ? value : 0
-  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export function MobileComandaList({
@@ -218,12 +217,24 @@ const ComandaCard = memo(
     },
     ref,
   ) {
-    const config = STATUS_CONFIG[comanda.status as Exclude<ComandaStatus, 'fechada'>]
-    const total = useMemo(() => calcTotal(comanda), [comanda])
-    const elapsed = useMemo(() => formatElapsed(comanda.abertaEm), [comanda.abertaEm])
-    const itemCount = useMemo(() => comanda.itens.reduce((sum, i) => sum + i.quantidade, 0), [comanda.itens])
-    const canAddItems = comanda.status === 'aberta' || comanda.status === 'em_preparo'
-    const showDirectClose = comanda.status === 'aberta' || comanda.status === 'em_preparo'
+    const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
+      queryKey: ['comanda-details', comanda.id],
+      queryFn: async () => {
+        const res = await fetchComandaDetails(comanda.id)
+        return toPdvComanda(res.comanda)
+      },
+      enabled: isFocused,
+      staleTime: 5000,
+    })
+
+    const activeComanda = detailsData ?? comanda
+
+    const config = STATUS_CONFIG[activeComanda.status as Exclude<ComandaStatus, 'fechada'>]
+    const total = useMemo(() => calcTotal(activeComanda), [activeComanda])
+    const elapsed = useMemo(() => formatElapsed(activeComanda.abertaEm), [activeComanda.abertaEm])
+    const itemCount = useMemo(() => activeComanda.itens.reduce((sum, i) => sum + i.quantidade, 0), [activeComanda.itens])
+    const canAddItems = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
+    const showDirectClose = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
     const adjustedTotal = useMemo(
       () => total * (1 - discountPercent / 100) * (1 + surchargePercent / 100),
       [discountPercent, surchargePercent, total],
@@ -259,7 +270,7 @@ const ComandaCard = memo(
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl font-bold text-white tracking-tight">{comanda.mesa ?? 'Comanda'}</span>
+                <span className="text-xl font-bold text-white tracking-tight">{activeComanda.mesa ?? 'Comanda'}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.15em] border"
                   style={{
@@ -271,8 +282,8 @@ const ComandaCard = memo(
                   {config.label}
                 </span>
               </div>
-              {comanda.clienteNome && (
-                <p className="text-sm font-medium text-white mb-0.5 truncate">{comanda.clienteNome}</p>
+              {activeComanda.clienteNome && (
+                <p className="text-sm font-medium text-white mb-0.5 truncate">{activeComanda.clienteNome}</p>
               )}
               <p className="text-xs text-[var(--text-soft,#7a8896)] flex items-center gap-1.5 opacity-80">
                 <span>
@@ -303,7 +314,7 @@ const ComandaCard = memo(
                 {onAddItems && canAddItems && (
                   <button
                     type="button"
-                    onClick={() => onAddItems(comanda)}
+                    onClick={() => onAddItems(activeComanda)}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.12)] py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-all active:scale-95"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -317,7 +328,7 @@ const ComandaCard = memo(
                     type="button"
                     onClick={() => {
                       if (window.confirm('Tem certeza que deseja cancelar esta comanda inteira?')) {
-                        onCancelComanda(comanda.id)
+                        onCancelComanda(activeComanda.id)
                       }
                     }}
                     className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95"
@@ -329,10 +340,14 @@ const ComandaCard = memo(
                 )}
               </div>
 
-              {comanda.itens.length > 0 && (
+              {isLoadingDetails ? (
+                <div className="mb-5 flex justify-center py-4">
+                  <div className="size-5 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+                </div>
+              ) : activeComanda.itens.length > 0 && (
                 <div className="mb-5 rounded-[14px] bg-[rgba(0,0,0,0.3)] p-3 border border-[rgba(255,255,255,0.04)]">
                   <ul className="space-y-2.5">
-                    {comanda.itens.map((item, idx) => (
+                    {activeComanda.itens.map((item, idx) => (
                       <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
                         <div className="flex gap-2.5 items-start">
                           <span className="font-bold text-[var(--accent,#9b8460)] w-4 text-center">

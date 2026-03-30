@@ -16,12 +16,11 @@ import {
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
 import { buildOperationsExecutiveKpis } from '@/lib/operations'
+import { formatBRL } from '@/lib/currency'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function fmtBRL(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+const fmtBRL = formatBRL
 
 function parseAmount(raw: string): number {
   // aceita "1.500,50" (pt-BR) ou "1500.50" (en)

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useMemo, useCallback, memo, useDeferredValue, startTransition } from 'react'
+import { useState, useMemo, useCallback, memo, useDeferredValue, startTransition, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
+import { formatBRL as formatCurrency } from '@/lib/currency'
 import {
   ShoppingCart,
   Plus,
@@ -27,11 +29,6 @@ interface MobileOrderBuilderProps {
 }
 
 type CartEntry = ComandaItem & { _key: string }
-
-function formatCurrency(value: number): string {
-  const safeValue = Number.isFinite(value) ? value : 0
-  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 // Componente memoizado para cada item de produto
 const ProductItem = memo(function ProductItem({
@@ -96,11 +93,28 @@ const ProductItem = memo(function ProductItem({
   )
 })
 
-export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
+// Heuristic icon mapper extracted for stable references
+function getCategoryIcon(cat: string) {
+  const low = cat.toLowerCase()
+  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
+    return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  if (low.includes('vinho'))
+    return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
+    return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  if (low.includes('combo') || low.includes('kit'))
+    return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
+    return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+}
+
+export const MobileOrderBuilder = memo(function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, onCancel }: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartEntry[]>([])
   const deferredSearch = useDeferredValue(search)
+  const parentRef = useRef<HTMLDivElement | null>(null)
 
   // Memoização para evitar recálculos desnecessários
   const activeProdutos = useMemo(() => produtos.filter((p) => p.active), [produtos])
@@ -121,22 +135,6 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
       return matchSearch && matchCat
     })
   }, [activeProdutos, deferredSearch, selectedCategory])
-
-  // Heuristic icon mapper
-  const getCategoryIcon = useCallback((cat: string) => {
-    const low = cat.toLowerCase()
-    if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-      return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('vinho'))
-      return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-      return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('combo') || low.includes('kit'))
-      return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-      return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-    return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  }, [])
 
   // Mapa de quantidades para lookup O(1)
   const qtyMap = useMemo(() => {
@@ -177,6 +175,14 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
 
   const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
   const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 92,
+    measureElement: (element) => element?.getBoundingClientRect().height ?? 92,
+    overscan: 6,
+  })
+  const virtualItems = rowVirtualizer.getVirtualItems()
 
   const handleSubmit = useCallback(async () => {
     if (cart.length === 0 || busy) return
@@ -274,19 +280,33 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
       </div>
 
       {/* Product list */}
-      <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
+      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
           </div>
         ) : (
-          <div>
-            {filtered.map((produto) => {
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+            }}
+          >
+            {virtualItems.map((virtualItem) => {
+              const produto = filtered[virtualItem.index]
               const qty = getQty(produto.id)
               return (
                 <div
                   key={produto.id}
                   className="border-b border-[rgba(255,255,255,0.04)]"
+                  ref={rowVirtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
                 >
                   <ProductItem
                     produto={produto}
@@ -330,4 +350,4 @@ export function MobileOrderBuilder({ mesaLabel, mode, busy, produtos, onSubmit, 
       </div>
     </div>
   )
-}
+})

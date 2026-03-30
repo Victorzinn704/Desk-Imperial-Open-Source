@@ -6,7 +6,9 @@ import type {
   FinanceSummaryResponse,
   MarketInsightResponse,
   MesaRecord,
+  OperationsKitchenResponse,
   OperationsLiveResponse,
+  OperationsSummaryResponse,
   OrderRecord,
   OrdersResponse,
   ProductImportResponse,
@@ -267,32 +269,45 @@ class ApiTimeoutError extends Error {
   }
 }
 
-export async function login(payload: LoginPayload) {
+export async function login(payload: LoginPayload, maxRetries = 2) {
   clearPersistedAdminPinHint()
   const normalizedPayload = normalizeLoginPayload(payload)
 
-  try {
-    return await apiFetch<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: normalizedPayload,
-      skipCsrf: true,
-      timeoutMs: AUTH_API_TIMEOUT_MS,
-    })
-  } catch (error) {
-    if (payload.loginMode === 'OWNER' && error instanceof ApiError && isLegacyOwnerLoginContractError(error)) {
-      return apiFetch<AuthResponse>('/auth/login', {
+  let attempt = 0
+  while (attempt <= maxRetries) {
+    try {
+      return await apiFetch<AuthResponse>('/auth/login', {
         method: 'POST',
-        body: {
-          email: normalizedPayload.email,
-          password: normalizedPayload.password,
-        },
+        body: normalizedPayload,
         skipCsrf: true,
         timeoutMs: AUTH_API_TIMEOUT_MS,
       })
-    }
+    } catch (error) {
+      if (payload.loginMode === 'OWNER' && error instanceof ApiError && isLegacyOwnerLoginContractError(error)) {
+        return apiFetch<AuthResponse>('/auth/login', {
+          method: 'POST',
+          body: {
+            email: normalizedPayload.email,
+            password: normalizedPayload.password,
+          },
+          skipCsrf: true,
+          timeoutMs: AUTH_API_TIMEOUT_MS,
+        })
+      }
 
-    throw error
+      const isNetworkError = error instanceof ApiError && error.status === 0
+      const isTimeoutError = error instanceof ApiError && error.status === 504
+      if ((isNetworkError || isTimeoutError) && attempt < maxRetries) {
+        attempt++
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        continue
+      }
+
+      throw error
+    }
   }
+
+  throw new ApiError('Nao foi possivel conectar com o servidor apos varias tentativas.', 0)
 }
 
 export type DemoLoginPayload = {
@@ -518,8 +533,29 @@ export async function fetchMarketInsight(focus?: string) {
   })
 }
 
-export async function fetchOrders() {
-  return apiFetch<OrdersResponse>('/orders?includeCancelled=true', {
+export type FetchOrdersOptions = {
+  includeCancelled?: boolean
+  includeItems?: boolean
+  limit?: number
+}
+
+export async function fetchOrders(options?: FetchOrdersOptions) {
+  const params = new URLSearchParams()
+
+  if (options?.includeCancelled !== undefined) {
+    params.set('includeCancelled', String(options.includeCancelled))
+  }
+
+  if (options?.includeItems !== undefined) {
+    params.set('includeItems', String(options.includeItems))
+  }
+
+  if (options?.limit !== undefined) {
+    params.set('limit', String(options.limit))
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<OrdersResponse>(`/orders${suffix}`, {
     method: 'GET',
   })
 }
@@ -533,9 +569,10 @@ export async function fetchEmployees() {
 export type OperationsLiveOptions = {
   businessDate?: string
   includeCashMovements?: boolean
+  compactMode?: boolean
 }
 
-export async function fetchOperationsLive(input?: string | OperationsLiveOptions) {
+function buildOperationsLiveParams(input?: string | OperationsLiveOptions) {
   const params = new URLSearchParams()
   const options =
     typeof input === 'string'
@@ -552,8 +589,39 @@ export async function fetchOperationsLive(input?: string | OperationsLiveOptions
     params.set('includeCashMovements', String(options.includeCashMovements))
   }
 
+  if (options?.compactMode !== undefined) {
+    params.set('compactMode', String(options.compactMode))
+  }
+
+  return params
+}
+
+export async function fetchOperationsLive(input?: string | OperationsLiveOptions) {
+  const params = buildOperationsLiveParams(input)
   const suffix = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<OperationsLiveResponse>(`/operations/live${suffix}`, {
+    method: 'GET',
+  })
+}
+
+export async function fetchOperationsKitchen(input?: string | OperationsLiveOptions) {
+  const params = buildOperationsLiveParams(input)
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<OperationsKitchenResponse>(`/operations/kitchen${suffix}`, {
+    method: 'GET',
+  })
+}
+
+export async function fetchOperationsSummary(input?: string | OperationsLiveOptions) {
+  const params = buildOperationsLiveParams(input)
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<OperationsSummaryResponse>(`/operations/summary${suffix}`, {
+    method: 'GET',
+  })
+}
+
+export async function fetchComandaDetails(comandaId: string) {
+  return apiFetch<{ comanda: ComandaRecord }>(`/operations/comandas/${comandaId}/details`, {
     method: 'GET',
   })
 }
@@ -935,7 +1003,7 @@ async function apiFetch<T>(
     // Try multiple CSRF token sources with priority:
     // 1. Token from cookie (always fresh across multiple tabs)
     // 2. Persisted token from sessionStorage (fallback)
-    const csrfToken = readCsrfToken() ?? readPersistedCsrfToken()
+    const csrfToken = readCsrfToken() || readPersistedCsrfToken()
 
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken)

@@ -180,8 +180,8 @@ export class CurrencyService {
   }
 
   private buildEmergencyFallbackSnapshot(): ExchangeRatesSnapshot {
-    const usdBrl = this.readFallbackRate('EXCHANGE_RATES_FALLBACK_USD_BRL', DEFAULT_FALLBACK_USD_BRL)
-    const eurBrl = this.readFallbackRate('EXCHANGE_RATES_FALLBACK_EUR_BRL', DEFAULT_FALLBACK_EUR_BRL)
+    const usdBrl = this.readFallbackRate('EXCHANGE_RATES_FALLBACK_USD_BRL', DEFAULT_FALLBACK_USD_BRL) || 1
+    const eurBrl = this.readFallbackRate('EXCHANGE_RATES_FALLBACK_EUR_BRL', DEFAULT_FALLBACK_EUR_BRL) || 1
     const usdEur = usdBrl / eurBrl
     const eurUsd = eurBrl / usdBrl
 
@@ -203,7 +203,8 @@ export class CurrencyService {
 
   private readFallbackRate(key: string, fallback: number) {
     const configured = Number(this.configService.get<string>(key) ?? '')
-    return Number.isFinite(configured) && configured > 0 ? configured : fallback
+    const resolved = Number.isFinite(configured) && configured > 0 ? configured : fallback
+    return resolved > 0 ? resolved : 1 // Prevents absolute 0 bypassing earlier bounds
   }
 }
 

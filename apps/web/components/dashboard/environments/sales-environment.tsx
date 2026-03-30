@@ -1,12 +1,19 @@
 'use client'
 
 import { LockKeyhole, ShoppingCart, Tags, UserRound } from 'lucide-react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useDashboardQueries } from '../hooks/useDashboardQueries'
 import { useDashboardMutations } from '../hooks/useDashboardMutations'
 import type { AuthUser } from '@/lib/api'
-import { ApiError } from '@/lib/api'
+import { ApiError, fetchOrders } from '@/lib/api'
 import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
-import { MetricCard } from '@/components/dashboard/metric-card'
+import dynamic from 'next/dynamic'
+import { MetricCardSkeleton } from '@/components/shared/skeleton'
+
+const MetricCard = dynamic(() => import('@/components/dashboard/metric-card').then((m) => m.MetricCard), {
+  ssr: false,
+  loading: () => <MetricCardSkeleton />,
+})
 import { OrderCard } from '@/components/dashboard/order-card'
 import { OrderForm } from '@/components/dashboard/order-form'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
@@ -16,7 +23,7 @@ type SalesEnvironmentProps = {
 }
 
 export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
-  const { productsQuery, ordersQuery, employeesQuery } = useDashboardQueries()
+  const { productsQuery, employeesQuery } = useDashboardQueries()
   const {
     createOrderMutation,
     cancelOrderMutation,
@@ -24,6 +31,13 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
     archiveEmployeeMutation,
     restoreEmployeeMutation,
   } = useDashboardMutations()
+  const ordersQuery = useQuery({
+    queryKey: ['orders', 'detail'],
+    queryFn: () => fetchOrders({ includeCancelled: true, includeItems: true }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
 
   const products = productsQuery.data?.items ?? []
   const orders = ordersQuery.data?.items ?? []

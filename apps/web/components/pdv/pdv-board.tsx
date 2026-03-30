@@ -111,7 +111,11 @@ export function PdvBoard({ currentUser: _currentUser, operations, products }: Re
       comandaId: string
       payload: { discountAmount: number; serviceFeeAmount: number }
     }) => closeComanda(comandaId, payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, ['operations', 'live']),
+    onSuccess: () =>
+      invalidateOperationsWorkspace(queryClient, ['operations', 'live'], {
+        includeOrders: true,
+        includeFinance: true,
+      }),
   })
   const createMesaMutation = useMutation({
     mutationFn: (body: CreateMesaInput) => createMesa(body),

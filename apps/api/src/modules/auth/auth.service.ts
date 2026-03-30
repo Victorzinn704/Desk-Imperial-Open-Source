@@ -14,6 +14,7 @@ import { AuditSeverity, CurrencyCode, OneTimeCodePurpose, UserRole, UserStatus }
 import * as argon2 from 'argon2'
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto'
 import type { Response } from 'express'
+import { CacheService } from '../../common/services/cache.service'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -42,6 +43,14 @@ import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
 import { DemoAccessService } from './demo-access.service'
+
+type CachedAuthSession = {
+  tokenHash: string
+  auth: AuthContext
+}
+
+const SESSION_CACHE_TTL_SECONDS = 300
+const SESSION_LAST_SEEN_UPDATE_MS = 15 * 60_000
 
 const authCookiePreferenceSelect = {
   analytics: true,
@@ -101,6 +110,7 @@ const authSessionEmployeeSelect = {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
+  private readonly cache: CacheService
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
@@ -111,7 +121,10 @@ export class AuthService {
     @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
     @Inject(AuthRateLimitService) private readonly authRateLimitService: AuthRateLimitService,
     @Inject(DemoAccessService) private readonly demoAccessService: DemoAccessService,
-  ) {}
+    @Inject(CacheService) cache?: CacheService,
+  ) {
+    this.cache = cache ?? new CacheService()
+  }
 
   getSessionCookieName() {
     return this.isProduction() ? PROD_SESSION_COOKIE_NAME : DEV_SESSION_COOKIE_NAME
@@ -316,6 +329,7 @@ export class AuthService {
         rateLimitKeys,
         context,
       })
+      throw new UnauthorizedException('Credenciais invalidas.')
     }
 
     const activeActor = actor!
@@ -373,6 +387,22 @@ export class AuthService {
 
     this.setSessionCookies(response, session.token, session.sessionId, session.expiresAt)
 
+    const authUser = toAuthUser(activeActor.authUser, {
+      sessionId: session.sessionId,
+      analytics: activeActor.cookiePreference?.analytics ?? false,
+      marketing: activeActor.cookiePreference?.marketing ?? false,
+      evaluationAccess: session.evaluationAccess,
+      employeeId: activeActor.employeeId,
+      employeeCode: activeActor.employeeCode,
+    })
+    await this.cacheAuthSession(
+      {
+        tokenHash: hashToken(session.token),
+        auth: authUser,
+      },
+      session.expiresAt,
+    )
+
     await this.auditLogService.record({
       actorUserId: activeActor.actorUserId,
       event: 'auth.login.succeeded',
@@ -386,14 +416,7 @@ export class AuthService {
     void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
 
     return {
-      user: toAuthUser(activeActor.authUser, {
-        sessionId: session.sessionId,
-        analytics: activeActor.cookiePreference?.analytics ?? false,
-        marketing: activeActor.cookiePreference?.marketing ?? false,
-        evaluationAccess: session.evaluationAccess,
-        employeeId: activeActor.employeeId,
-        employeeCode: activeActor.employeeCode,
-      }),
+      user: authUser,
       csrfToken: this.buildCsrfToken(session.sessionId),
       session: {
         expiresAt: session.expiresAt,
@@ -446,6 +469,7 @@ export class AuthService {
         rateLimitKeys,
         context,
       })
+      throw new UnauthorizedException('Credenciais invalidas.')
     }
 
     const activeActor = actor!
@@ -470,6 +494,22 @@ export class AuthService {
 
     this.setSessionCookies(response, session.token, session.sessionId, session.expiresAt)
 
+    const authUser = toAuthUser(activeActor.authUser, {
+      sessionId: session.sessionId,
+      analytics: activeActor.cookiePreference?.analytics ?? false,
+      marketing: activeActor.cookiePreference?.marketing ?? false,
+      evaluationAccess: session.evaluationAccess,
+      employeeId: activeActor.employeeId,
+      employeeCode: activeActor.employeeCode,
+    })
+    await this.cacheAuthSession(
+      {
+        tokenHash: hashToken(session.token),
+        auth: authUser,
+      },
+      session.expiresAt,
+    )
+
     await this.auditLogService.record({
       actorUserId: activeActor.actorUserId,
       event: 'auth.login.succeeded',
@@ -483,14 +523,7 @@ export class AuthService {
     void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
 
     return {
-      user: toAuthUser(activeActor.authUser, {
-        sessionId: session.sessionId,
-        analytics: activeActor.cookiePreference?.analytics ?? false,
-        marketing: activeActor.cookiePreference?.marketing ?? false,
-        evaluationAccess: session.evaluationAccess,
-        employeeId: activeActor.employeeId,
-        employeeCode: activeActor.employeeCode,
-      }),
+      user: authUser,
       csrfToken: this.buildCsrfToken(session.sessionId),
       session: {
         expiresAt: session.expiresAt,
@@ -908,6 +941,16 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(dto.password, { type: argon2.argon2id })
     const now = new Date()
+    const revokedSessions = await this.prisma.session.findMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        tokenHash: true,
+      },
+    })
 
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -950,6 +993,15 @@ export class AuthService {
         },
       }),
     ])
+
+    await Promise.all(
+      revokedSessions.map((session) =>
+        Promise.all([
+          this.cache.del(this.sessionTokenCacheKey(session.tokenHash)),
+          this.cache.del(this.sessionIdCacheKey(session.id)),
+        ]),
+      ),
+    )
 
     await this.clearRateLimitKeys(rateLimitKeys)
 
@@ -1172,6 +1224,8 @@ export class AuthService {
       userAgent: context.userAgent,
     })
 
+    await this.forgetSessionCache(auth.sessionId)
+
     return {
       success: true,
     }
@@ -1179,10 +1233,17 @@ export class AuthService {
 
   async validateSessionToken(rawToken: string): Promise<AuthContext | null> {
     const tokenHash = hashToken(rawToken)
+    const cached = await this.cache.get<CachedAuthSession>(this.sessionTokenCacheKey(tokenHash))
+
+    if (cached?.auth) {
+      return cached.auth
+    }
+
     const session = await this.prisma.session.findUnique({
       where: { tokenHash },
       select: {
         id: true,
+        tokenHash: true,
         expiresAt: true,
         revokedAt: true,
         lastSeenAt: true,
@@ -1212,16 +1273,15 @@ export class AuthService {
       return null
     }
 
-    const ONE_MINUTE = 60_000
-    if (Date.now() - session.lastSeenAt.getTime() > ONE_MINUTE) {
+    if (Date.now() - session.lastSeenAt.getTime() > SESSION_LAST_SEEN_UPDATE_MS) {
       void this.prisma.session.update({
         where: { id: session.id },
         data: { lastSeenAt: new Date() },
       })
     }
 
-    if (session.employee) {
-      return toAuthUser(
+    const auth = session.employee
+      ? toAuthUser(
         {
           ...session.workspaceOwner,
           fullName: session.employee.displayName,
@@ -1240,21 +1300,31 @@ export class AuthService {
           employeeId: session.employee.id,
           employeeCode: session.employee.employeeCode,
         },
-      )
-    }
+        )
+      : session.user
+        ? toAuthUser(session.user, {
+            sessionId: session.id,
+            analytics: session.user.cookiePreference?.analytics ?? false,
+            marketing: session.user.cookiePreference?.marketing ?? false,
+            evaluationAccess: this.demoAccessService.buildEvaluationAccess(session.user.email, session.expiresAt),
+            employeeId: session.user.employeeAccount?.id ?? null,
+            employeeCode: session.user.employeeAccount?.employeeCode ?? null,
+          })
+        : null
 
-    if (!session.user) {
+    if (!auth) {
       return null
     }
 
-    return toAuthUser(session.user, {
-      sessionId: session.id,
-      analytics: session.user.cookiePreference?.analytics ?? false,
-      marketing: session.user.cookiePreference?.marketing ?? false,
-      evaluationAccess: this.demoAccessService.buildEvaluationAccess(session.user.email, session.expiresAt),
-      employeeId: session.user.employeeAccount?.id ?? null,
-      employeeCode: session.user.employeeAccount?.employeeCode ?? null,
-    })
+    await this.cacheAuthSession(
+      {
+        tokenHash: session.tokenHash,
+        auth,
+      },
+      session.expiresAt,
+    )
+
+    return auth
   }
   async getCurrentUser(auth: AuthContext, response: Response) {
     this.setCsrfCookie(response, auth.sessionId)
@@ -1299,6 +1369,8 @@ export class AuthService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
+
+    await this.forgetSessionCache(auth.sessionId)
 
     return {
       user: toAuthUser(user, {
@@ -1357,6 +1429,52 @@ export class AuthService {
       sessionId: session.id,
       evaluationAccess: this.demoAccessService.buildEvaluationAccess(user.email, expiresAt),
     }
+  }
+
+  private sessionTokenCacheKey(tokenHash: string) {
+    return `auth:session:token:${tokenHash}`
+  }
+
+  private sessionIdCacheKey(sessionId: string) {
+    return `auth:session:id:${sessionId}`
+  }
+
+  private async cacheAuthSession(cacheEntry: CachedAuthSession, expiresAt: Date) {
+    const ttlSeconds = Math.max(
+      5,
+      Math.min(SESSION_CACHE_TTL_SECONDS, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)),
+    )
+
+    await Promise.all([
+      this.cache.set(this.sessionTokenCacheKey(cacheEntry.tokenHash), cacheEntry, ttlSeconds),
+      this.cache.set(this.sessionIdCacheKey(cacheEntry.auth.sessionId), cacheEntry, ttlSeconds),
+    ])
+  }
+
+  private async forgetSessionCache(sessionId: string) {
+    const cached = await this.cache.get<CachedAuthSession>(this.sessionIdCacheKey(sessionId))
+
+    if (cached?.tokenHash) {
+      await Promise.all([
+        this.cache.del(this.sessionTokenCacheKey(cached.tokenHash)),
+        this.cache.del(this.sessionIdCacheKey(sessionId)),
+      ])
+      return
+    }
+
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { tokenHash: true },
+    })
+
+    if (!session) {
+      return
+    }
+
+    await Promise.all([
+      this.cache.del(this.sessionTokenCacheKey(session.tokenHash)),
+      this.cache.del(this.sessionIdCacheKey(sessionId)),
+    ])
   }
 
   private setSessionCookies(response: Response, token: string, sessionId: string, expiresAt: Date) {

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-static'
-
 export function GET() {
-  return NextResponse.json({ status: 'ok' }, { status: 200 })
+  return NextResponse.json({
+    status: 'ok',
+    service: 'imperial-desk-web',
+    timestamp: new Date().toISOString(),
+  })
 }

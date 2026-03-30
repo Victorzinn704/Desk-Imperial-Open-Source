@@ -9,6 +9,12 @@ export class ListOrdersQueryDto {
   @IsBoolean()
   includeCancelled?: boolean
 
+  @ApiPropertyOptional({ example: false })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsOptional()
+  @IsBoolean()
+  includeItems?: boolean
+
   @ApiPropertyOptional({ example: 8 })
   @Transform(({ value }) => Number(value))
   @IsOptional()

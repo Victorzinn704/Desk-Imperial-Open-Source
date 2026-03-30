@@ -42,8 +42,8 @@ export function useDashboardQueries() {
   })
 
   const ordersQuery = useQuery({
-    queryKey: ['orders'],
-    queryFn: fetchOrders,
+    queryKey: ['orders', 'summary'],
+    queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
     enabled: Boolean(userId),
     placeholderData: keepPreviousData,
     staleTime: 30_000,

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { calcTotal, type Comanda } from './pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
+import { formatBRL as formatCurrency } from '@/lib/currency'
 
 type Filtro = 'tudo' | 'abertas' | 'fechadas'
 type Ordenacao = 'recentes' | 'maior_valor'
@@ -15,9 +16,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
-function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+
 
 function formatDateTime(date: Date) {
   return date.toLocaleString('pt-BR', {

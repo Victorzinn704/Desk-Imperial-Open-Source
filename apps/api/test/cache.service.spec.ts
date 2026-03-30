@@ -270,6 +270,26 @@ describe('CacheService', () => {
 
       expect(key).toBe('orders:summary:user-123')
     })
+
+    it('deve gerar prefixo e chave de kitchen por workspace e escopo', () => {
+      expect(CacheService.operationsKitchenPrefix('owner-1', '2026-03-30')).toBe('operations:kitchen:owner-1:2026-03-30:')
+      expect(CacheService.operationsKitchenKey('owner-1', '2026-03-30')).toBe(
+        'operations:kitchen:owner-1:2026-03-30:workspace',
+      )
+      expect(CacheService.operationsKitchenKey('owner-1', '2026-03-30', 'employee-9')).toBe(
+        'operations:kitchen:owner-1:2026-03-30:employee:employee-9',
+      )
+    })
+
+    it('deve gerar prefixo e chave de summary por workspace e escopo', () => {
+      expect(CacheService.operationsSummaryPrefix('owner-1', '2026-03-30')).toBe('operations:summary:owner-1:2026-03-30:')
+      expect(CacheService.operationsSummaryKey('owner-1', '2026-03-30')).toBe(
+        'operations:summary:owner-1:2026-03-30:workspace',
+      )
+      expect(CacheService.operationsSummaryKey('owner-1', '2026-03-30', 'employee-9')).toBe(
+        'operations:summary:owner-1:2026-03-30:employee:employee-9',
+      )
+    })
   })
 
   describe('graceful degradation', () => {

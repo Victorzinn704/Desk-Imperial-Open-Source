@@ -17,6 +17,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
+    "lint-staged": "lint-staged",
     "seed": "npm --workspace @partner/api run prisma:seed",
     "gulp:images": "gulp images",
     "gulp:clean": "gulp clean",
@@ -27,9 +28,13 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "apps/web/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
       "prettier --write",
-      "eslint --fix --max-warnings 0"
+      "eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix --max-warnings 0"
+    ],
+    "apps/api/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix --max-warnings 0"
     ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"

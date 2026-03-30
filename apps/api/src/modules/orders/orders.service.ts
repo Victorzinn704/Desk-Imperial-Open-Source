@@ -19,6 +19,53 @@ import { CacheService } from '../../common/services/cache.service'
 
 const MAX_STAFF_DISCOUNT_PERCENT = 15
 
+const orderItemSelect = {
+  id: true,
+  productId: true,
+  productName: true,
+  category: true,
+  quantity: true,
+  currency: true,
+  unitPrice: true,
+  unitCost: true,
+  lineRevenue: true,
+  lineCost: true,
+  lineProfit: true,
+} as const
+
+const orderListSelect = {
+  id: true,
+  comandaId: true,
+  customerName: true,
+  buyerType: true,
+  buyerDocument: true,
+  buyerDistrict: true,
+  buyerCity: true,
+  buyerState: true,
+  buyerCountry: true,
+  employeeId: true,
+  sellerCode: true,
+  sellerName: true,
+  channel: true,
+  notes: true,
+  currency: true,
+  status: true,
+  totalRevenue: true,
+  totalCost: true,
+  totalProfit: true,
+  totalItems: true,
+  createdAt: true,
+  updatedAt: true,
+  cancelledAt: true,
+} as const
+
+const orderListWithItemsSelect = {
+  ...orderListSelect,
+  items: {
+    select: orderItemSelect,
+  },
+} as const
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -33,34 +80,32 @@ export class OrdersService {
   async listForUser(auth: AuthContext, query: ListOrdersQueryDto) {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const limit = query.limit ?? 10
-    const hasFilters = !!(query.includeCancelled || (query.limit && query.limit !== 10))
+    const includeCancelled = query.includeCancelled ?? false
+    const includeItems = query.includeItems ?? false
+    const cacheKey = this.buildOrdersCacheKey(workspaceUserId, includeCancelled, limit, includeItems)
 
-    if (!hasFilters) {
-      const cached = await this.cache.get<{
-        items: ReturnType<typeof toOrderRecord>[]
-        totals: {
-          completedOrders: number
-          cancelledOrders: number
-          realizedRevenue: number
-          realizedProfit: number
-          soldUnits: number
-        }
-      }>(CacheService.ordersKey(workspaceUserId))
-      if (cached) return cached
-    }
+    const cached = await this.cache.get<{
+      items: ReturnType<typeof toOrderRecord>[]
+      totals: {
+        completedOrders: number
+        cancelledOrders: number
+        realizedRevenue: number
+        realizedProfit: number
+        soldUnits: number
+      }
+    }>(cacheKey)
+    if (cached) return cached
 
     const snapshot = await this.currencyService.getSnapshot()
     const where = {
       userId: workspaceUserId,
-      ...(query.includeCancelled ? {} : { status: OrderStatus.COMPLETED }),
+      ...(includeCancelled ? {} : { status: OrderStatus.COMPLETED }),
     }
 
     const [orders, completedAgg, cancelledCount, soldUnitsAgg] = await Promise.all([
       this.prisma.order.findMany({
         where,
-        include: {
-          items: true,
-        },
+        select: includeItems ? orderListWithItemsSelect : orderListSelect,
         orderBy: {
           createdAt: 'desc',
         },
@@ -98,7 +143,7 @@ export class OrdersService {
     ])
 
     const orderRecords = orders.map((order) =>
-      toOrderRecord(order, {
+      toOrderRecord(order as Parameters<typeof toOrderRecord>[0], {
         displayCurrency: auth.preferredCurrency,
         currencyService: this.currencyService,
         snapshot,
@@ -116,15 +161,25 @@ export class OrdersService {
       },
     }
 
-    if (!hasFilters) {
-      void this.cache.set(CacheService.ordersKey(workspaceUserId), result, 90)
-    }
+    void this.cache.set(cacheKey, result, 90)
 
     return result
   }
 
   async invalidateOrdersCache(userId: string) {
-    await this.cache.del(CacheService.ordersKey(userId))
+    await Promise.all([
+      this.cache.del(CacheService.ordersKey(userId)),
+      this.cache.delByPrefix(`${CacheService.ordersKey(userId)}:`),
+    ])
+  }
+
+  private buildOrdersCacheKey(
+    workspaceUserId: string,
+    includeCancelled: boolean,
+    limit: number,
+    includeItems: boolean,
+  ) {
+    return `${CacheService.ordersKey(workspaceUserId)}:${includeCancelled ? 'cancelled' : 'completed'}:${includeItems ? 'full' : 'summary'}:${limit}`
   }
 
   async createForUser(auth: AuthContext, dto: CreateOrderDto, context: RequestContext, request: Request) {

@@ -1,4 +1,4 @@
-$root = "C:\Users\Desktop\Documents\test1"
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 
 Set-Location $root
 npm run db:up

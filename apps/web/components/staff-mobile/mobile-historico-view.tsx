@@ -5,11 +5,7 @@ import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
-
-function formatCurrency(value: number): string {
-  const safeValue = Number.isFinite(value) ? value : 0
-  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+import { formatBRL as formatCurrency } from '@/lib/currency'
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   aberta: { label: 'Em aberto', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
@@ -28,8 +29,22 @@ import {
   type DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
-import { StaffMobileShell } from '@/components/staff-mobile'
-import { OwnerMobileShell } from '@/components/owner-mobile/owner-mobile-shell'
+
+const StaffMobileShell = dynamic(
+  () => import('@/components/staff-mobile').then((module) => module.StaffMobileShell),
+  {
+    ssr: false,
+    loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
+  },
+)
+
+const OwnerMobileShell = dynamic(
+  () => import('@/components/owner-mobile/owner-mobile-shell').then((module) => module.OwnerMobileShell),
+  {
+    ssr: false,
+    loading: () => <MobileShellLoadingState label="Carregando painel mobile..." />,
+  },
+)
 
 // ── Static hero copy per section ────────────────────────────────────────────────
 
@@ -353,6 +368,14 @@ export function DashboardShell({
       </div>
 
       {isTimelineOpen && <ActivityTimeline onClose={() => setIsTimelineOpen(false)} />}
+    </main>
+  )
+}
+
+function MobileShellLoadingState({ label }: { label: string }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-[var(--text-soft)]">
+      {label}
     </main>
   )
 }

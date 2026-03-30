@@ -1,4 +1,4 @@
-import type { CashSessionRecord, ComandaItemRecord, ComandaRecord, MesaRecord } from '../operations/operations.types'
+import type { CashSessionRecord, MesaRecord } from '../operations/operations.types'
 
 export const OPERATIONS_REALTIME_NAMESPACE = '/operations'
 
@@ -18,6 +18,40 @@ export type OperationsRealtimeEventName =
   | 'mesa.upserted'
 
 export type OperationsRealtimeActorRole = 'OWNER' | 'STAFF'
+
+export type OperationsRealtimeComandaStatus = 'ABERTA' | 'EM_PREPARO' | 'PRONTA' | 'FECHADA'
+
+export type OperationsRealtimeKitchenItemStatus = 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+
+export type OperationsRealtimeComandaDelta = {
+  comandaId: string
+  mesaLabel: string
+  openedAt?: string
+  closedAt?: string
+  employeeId: string | null
+  status: OperationsRealtimeComandaStatus
+  subtotal: number
+  discountAmount: number
+  serviceFeeAmount: number
+  totalAmount: number
+  totalItems: number
+  businessDate: string
+  paymentMethod?: string | null
+}
+
+export type OperationsRealtimeKitchenItemDelta = {
+  itemId: string
+  comandaId: string
+  mesaLabel: string
+  employeeId: string | null
+  productName: string
+  quantity: number
+  notes: string | null
+  kitchenStatus: OperationsRealtimeKitchenItemStatus
+  kitchenQueuedAt: string | null
+  kitchenReadyAt: string | null
+  businessDate: string
+}
 
 export interface OperationsRealtimeEventPayloadMap {
   'cash.opened': {
@@ -48,32 +82,41 @@ export interface OperationsRealtimeEventPayloadMap {
     openedAt: string
     employeeId: string | null
     subtotal: number
+    discountAmount: number
+    serviceFeeAmount: number
+    totalAmount: number
     totalItems: number
+    status: OperationsRealtimeComandaStatus
     businessDate: string
-    comanda: ComandaRecord
   }
   'comanda.updated': {
     comandaId: string
     mesaLabel: string
-    status: 'ABERTA' | 'EM_PREPARO' | 'PRONTA' | 'FECHADA'
+    status: OperationsRealtimeComandaStatus
     employeeId: string | null
     subtotal: number
     discountAmount: number
+    serviceFeeAmount: number
     totalAmount: number
     totalItems: number
     businessDate: string
-    comanda: ComandaRecord
+    requiresKitchenRefresh?: boolean
+    replaceKitchenItems?: boolean
+    kitchenItems?: OperationsRealtimeKitchenItemDelta[]
   }
   'comanda.closed': {
     comandaId: string
     mesaLabel: string
     closedAt: string
     employeeId: string | null
+    status: OperationsRealtimeComandaStatus
+    subtotal: number
+    discountAmount: number
+    serviceFeeAmount: number
     totalAmount: number
     totalItems: number
     paymentMethod: string | null
     businessDate: string
-    comanda: ComandaRecord
   }
   'cash.closure.updated': {
     closureId: string
@@ -92,28 +135,27 @@ export interface OperationsRealtimeEventPayloadMap {
     itemId: string
     comandaId: string
     mesaLabel: string
+    employeeId: string | null
     productName: string
     quantity: number
     notes: string | null
     kitchenStatus: 'QUEUED'
     kitchenQueuedAt: string
+    kitchenReadyAt: string | null
     businessDate: string
-    item: ComandaItemRecord
-    comanda: ComandaRecord
   }
   'kitchen.item.updated': {
     itemId: string
     comandaId: string
     mesaLabel: string
+    employeeId: string | null
     productName: string
     quantity: number
     notes: string | null
-    kitchenStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+    kitchenStatus: Exclude<OperationsRealtimeKitchenItemStatus, 'QUEUED'>
     kitchenQueuedAt: string | null
     kitchenReadyAt: string | null
     businessDate: string
-    item: ComandaItemRecord
-    comanda: ComandaRecord
   }
   'mesa.upserted': {
     mesaId: string

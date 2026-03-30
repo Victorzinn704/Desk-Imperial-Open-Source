@@ -35,6 +35,18 @@ export class OperationsController {
     return this.operationsService.getLiveSnapshot(auth, query)
   }
 
+  @UseGuards(SessionGuard)
+  @Get('kitchen')
+  getKitchenView(@CurrentAuth() auth: AuthContext, @Query() query: GetOperationsLiveQueryDto) {
+    return this.operationsService.getKitchenView(auth, query)
+  }
+
+  @UseGuards(SessionGuard)
+  @Get('summary')
+  getSummaryView(@CurrentAuth() auth: AuthContext, @Query() query: GetOperationsLiveQueryDto) {
+    return this.operationsService.getSummaryView(auth, query)
+  }
+
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('cash-sessions')
   openCashSession(
@@ -139,6 +151,12 @@ export class OperationsController {
     @Req() request: Request,
   ) {
     return this.operationsService.updateComandaStatus(auth, comandaId, body, extractRequestContext(request), options)
+  }
+
+  @UseGuards(SessionGuard)
+  @Get('comandas/:comandaId/details')
+  getComandaDetails(@CurrentAuth() auth: AuthContext, @Param('comandaId') comandaId: string) {
+    return this.operationsService.getComandaDetails(auth, comandaId)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

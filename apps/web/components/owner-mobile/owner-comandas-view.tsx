@@ -5,10 +5,7 @@ import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { calcTotal } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+import { formatBRL as formatCurrency } from '@/lib/currency'
 
 function formatDateTime(date: Date): string {
   return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })

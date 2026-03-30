@@ -209,58 +209,35 @@ export class FinanceService {
       this.prisma.order.findMany({
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, createdAt: { gte: sixMonthsAgo } },
         select: { createdAt: true, currency: true, totalRevenue: true, totalProfit: true },
+        take: 5000,
       }),
-      // Canal: cap de 5000 pedidos mais recentes
-      this.prisma.order.findMany({
+      // Canal: agrupa direto no DB em vez de processamento in-memory
+      this.prisma.order.groupBy({
+        by: ['channel', 'currency'],
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
-        select: { channel: true, currency: true, totalRevenue: true, totalProfit: true },
-        orderBy: { createdAt: 'desc' },
-        take: 5_000,
+        _count: { _all: true },
+        _sum: { totalRevenue: true, totalProfit: true },
       }),
-      // Clientes: cap de 5000
-      this.prisma.order.findMany({
+      // Clientes: Agrupamento DB reduz payload transferido de O(N) para O(U)
+      this.prisma.order.groupBy({
+        by: ['customerName', 'buyerType', 'buyerDocument', 'currency'],
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
-        select: {
-          customerName: true,
-          buyerType: true,
-          buyerDocument: true,
-          currency: true,
-          totalRevenue: true,
-          totalProfit: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 5_000,
+        _count: { _all: true },
+        _sum: { totalRevenue: true, totalProfit: true },
       }),
-      // Funcionários: cap de 2000
-      this.prisma.order.findMany({
+      // Funcionários: Agrupamento em BD
+      this.prisma.order.groupBy({
+        by: ['employeeId', 'sellerCode', 'sellerName', 'currency'],
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED },
-        select: {
-          employeeId: true,
-          sellerCode: true,
-          sellerName: true,
-          currency: true,
-          totalRevenue: true,
-          totalProfit: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 2_000,
+        _count: { _all: true },
+        _sum: { totalRevenue: true, totalProfit: true },
       }),
-      // Geografia: apenas pedidos geolocalizados, cap de 2000
-      this.prisma.order.findMany({
+      // Geografia: Aproveitamos o novo índice de query geolocalizada e agrupamos via BD
+      this.prisma.order.groupBy({
+        by: ['buyerDistrict', 'buyerCity', 'buyerState', 'buyerCountry', 'buyerLatitude', 'buyerLongitude', 'currency'],
         where: { userId: workspaceUserId, status: OrderStatus.COMPLETED, buyerLatitude: { not: null } },
-        select: {
-          buyerDistrict: true,
-          buyerCity: true,
-          buyerState: true,
-          buyerCountry: true,
-          buyerLatitude: true,
-          buyerLongitude: true,
-          currency: true,
-          totalRevenue: true,
-          totalProfit: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 2_000,
+        _count: { _all: true },
+        _sum: { totalRevenue: true, totalProfit: true },
       }),
     ])
 

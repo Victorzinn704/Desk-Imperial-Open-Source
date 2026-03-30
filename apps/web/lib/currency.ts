@@ -47,3 +47,12 @@ const localeByCurrency: Record<CurrencyCode, string> = {
   USD: 'en-US',
   EUR: 'de-DE',
 }
+
+/**
+ * Convenience shorthand for `formatCurrency(value, 'BRL')`.
+ * Centralizes 8+ scattered inline `fmtBRL` helpers across the codebase.
+ */
+export function formatBRL(value: number): string {
+  const safeValue = Number.isFinite(value) ? value : 0
+  return safeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}

@@ -17,20 +17,25 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BrandMark } from '@/components/shared/brand-mark'
-import { KitchenOrdersView } from '../staff-mobile/kitchen-orders-view'
-import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
-import { OwnerComandasView } from './owner-comandas-view'
+import dynamic from 'next/dynamic'
+
+const KitchenOrdersView = dynamic(() => import('../staff-mobile/kitchen-orders-view').then(mod => mod.KitchenOrdersView), { ssr: false })
+const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then(mod => mod.OwnerComandasView), { ssr: false })
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
 import { PullIndicator } from '@/components/shared/pull-indicator'
 import { haptic } from '@/components/shared/haptic'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
-import { MobileOrderBuilder } from '../staff-mobile/mobile-order-builder'
+const MobileOrderBuilder = dynamic(() => import('../staff-mobile/mobile-order-builder').then(mod => mod.MobileOrderBuilder), { ssr: false })
+import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
+import { formatBRL as formatCurrency } from '@/lib/currency'
 import {
   fetchOperationsLive,
+  fetchOperationsKitchen,
+  fetchOperationsSummary,
   fetchOrders,
   fetchProducts,
   closeComanda,
@@ -44,11 +49,10 @@ import {
 } from '@/lib/api'
 import {
   buildOperationsExecutiveKpis,
-  buildPerformerRanking,
-  buildTopProducts,
-  countKitchenPendingItems,
   invalidateOperationsWorkspace,
+  OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
 type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
@@ -56,10 +60,6 @@ type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
 type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
 interface OwnerMobileShellProps {
   currentUser: { name?: string; fullName?: string; companyName?: string | null } | null
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
@@ -75,7 +75,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
-    await queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY }),
+    ])
   }, [queryClient])
 
   const {
@@ -87,7 +91,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   const operationsQuery = useQuery({
     queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
     staleTime: 10_000,
@@ -105,12 +109,32 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   })
 
   const ordersQuery = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => fetchOrders(),
+    queryKey: ['orders', 'summary'],
+    queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+  })
+
+  const kitchenQuery = useQuery({
+    queryKey: OPERATIONS_KITCHEN_QUERY_KEY,
+    queryFn: () => fetchOperationsKitchen(),
+    enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+  })
+
+  const summaryQuery = useQuery({
+    queryKey: OPERATIONS_SUMMARY_QUERY_KEY,
+    queryFn: () => fetchOperationsSummary(),
+    enabled: Boolean(currentUser),
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 
   const logoutMutation = useMutation({
@@ -193,7 +217,10 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, {
+          includeOrders: true,
+          includeFinance: true,
+        })
       }
       toast.success('Comanda fechada')
       haptic.heavy()
@@ -207,11 +234,17 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const activeComandas = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
-  const kitchenBadge = useMemo(() => countKitchenPendingItems(operationsQuery.data), [operationsQuery.data])
+  const kitchenBadge = useMemo(
+    () => (kitchenQuery.data?.statusCounts.queued ?? 0) + (kitchenQuery.data?.statusCounts.inPreparation ?? 0),
+    [kitchenQuery.data],
+  )
 
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Proprietário'
   const companyName = currentUser?.companyName ?? 'Desk Imperial'
-  const executiveKpis = useMemo(() => buildOperationsExecutiveKpis(operationsQuery.data), [operationsQuery.data])
+  const executiveKpis = useMemo(
+    () => summaryQuery.data?.kpis ?? buildOperationsExecutiveKpis(operationsQuery.data),
+    [operationsQuery.data, summaryQuery.data],
+  )
 
   const today = new Date().toISOString().slice(0, 10)
   const todayOrders = useMemo(
@@ -225,13 +258,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   )
 
   // Ranking garçons — a partir do snapshot
-  const garconRanking = useMemo(
-    () => buildPerformerRanking(operationsQuery.data, displayName),
-    [displayName, operationsQuery.data],
-  )
-
-  // Top produtos — a partir do snapshot (todos os itens do dia)
-  const topProdutos = useMemo(() => buildTopProducts(operationsQuery.data), [operationsQuery.data])
+  const garconRanking = useMemo(() => summaryQuery.data?.performers ?? [], [summaryQuery.data])
+  const topProdutos = useMemo(() => summaryQuery.data?.topProducts ?? [], [summaryQuery.data])
 
   const isBusy =
     openComandaMutation.isPending ||
@@ -410,8 +438,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           />
         ) : null}
 
-        <div style={{ display: activeTab === 'pedido' ? undefined : 'none' }}>
-          {pendingAction ? (
+        {activeTab === 'pedido' ? (
+          pendingAction ? (
             <MobileOrderBuilder
               mesaLabel={mesaLabel}
               mode={orderMode}
@@ -423,11 +451,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 setActiveTab('mesas')
               }}
             />
-          ) : null}
-        </div>
+          ) : null
+        ) : null}
 
         {activeTab === 'cozinha' ? (
-          <KitchenOrdersView snapshot={operationsQuery.data} operationsQueryKey={OPERATIONS_LIVE_COMPACT_QUERY_KEY} />
+          <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
         ) : null}
 
         {activeTab === 'comandas' ? <OwnerComandasView comandas={comandas} /> : null}
@@ -443,7 +471,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             kitchenBadge={kitchenBadge}
             garconRanking={garconRanking}
             topProdutos={topProdutos}
-            isLoading={ordersQuery.isLoading || operationsQuery.isLoading}
+            isLoading={ordersQuery.isLoading || operationsQuery.isLoading || kitchenQuery.isLoading || summaryQuery.isLoading}
             onOpenFullDashboard={() => router.push('/dashboard')}
           />
         ) : null}

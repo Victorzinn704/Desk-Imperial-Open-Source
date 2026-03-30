@@ -52,7 +52,7 @@ export type OrderRecord = {
 }
 
 type OrderWithItems = Order & {
-  items: OrderItem[]
+  items?: OrderItem[]
 }
 
 function maskDocument(doc: string | null): string | null {
@@ -80,6 +80,7 @@ export function toOrderRecord(
   const originalTotalRevenue = toNumber(order.totalRevenue)
   const originalTotalCost = toNumber(order.totalCost)
   const originalTotalProfit = toNumber(order.totalProfit)
+  const items = order.items ?? []
 
   return {
     id: order.id,
@@ -126,7 +127,7 @@ export function toOrderRecord(
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     cancelledAt: order.cancelledAt?.toISOString() ?? null,
-    items: order.items.map((item) => {
+    items: items.map((item) => {
       const originalUnitPrice = toNumber(item.unitPrice)
       const originalUnitCost = toNumber(item.unitCost)
       const originalLineRevenue = toNumber(item.lineRevenue)

@@ -119,6 +119,22 @@ export const LazyMotionDiv = dynamic(() => import('framer-motion').then((mod) =>
   ssr: false,
 })
 
+export const LazyMotionSpan = dynamic(() => import('framer-motion').then((mod) => mod.motion.span), {
+  ssr: false,
+})
+
+export const LazyMotionP = dynamic(() => import('framer-motion').then((mod) => mod.motion.p), {
+  ssr: false,
+})
+
+export const LazyMotionH2 = dynamic(() => import('framer-motion').then((mod) => mod.motion.h2), {
+  ssr: false,
+})
+
+export const LazyMotionLi = dynamic(() => import('framer-motion').then((mod) => mod.motion.li), {
+  ssr: false,
+})
+
 export const LazyAnimatePresence = dynamic(() => import('framer-motion').then((mod) => mod.AnimatePresence), {
   ssr: false,
 })

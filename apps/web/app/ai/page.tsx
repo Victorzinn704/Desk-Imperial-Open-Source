@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotionDiv as MotionDiv, LazyAnimatePresence as AnimatePresence, LazyMotionLi as MotionLi } from '@/components/shared/lazy-components'
 import {
   BrainCircuit,
   ArrowLeft,
@@ -60,7 +60,7 @@ type AnalysisSectionProps = {
 
 function AnalysisSection({ title, color, icon: Icon, delay = 0, children }: AnalysisSectionProps) {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.38, delay, ease: [0.22, 1, 0.36, 1] }}
@@ -83,7 +83,7 @@ function AnalysisSection({ title, color, icon: Icon, delay = 0, children }: Anal
       </div>
       <div className="pl-[2.25rem]">{children}</div>
       <div className="ai-divider ml-[2.25rem]" />
-    </motion.div>
+    </MotionDiv>
   )
 }
 
@@ -330,7 +330,7 @@ export default function AIConsultantPage() {
 
               {/* Error state */}
               {insightQuery.error && !insightQuery.isLoading && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-start gap-3 rounded-2xl border border-[rgba(212,115,115,0.25)] bg-[rgba(212,115,115,0.08)] p-5"
@@ -340,7 +340,7 @@ export default function AIConsultantPage() {
                     <p className="text-sm font-semibold text-[var(--danger)]">Falha na análise</p>
                     <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">{errorMessage}</p>
                   </div>
-                </motion.div>
+                </MotionDiv>
               )}
 
               {/* Empty state */}
@@ -359,7 +359,7 @@ export default function AIConsultantPage() {
               {/* Analysis result */}
               <AnimatePresence mode="wait">
                 {insightQuery.data && !insightQuery.isLoading && (
-                  <motion.div
+                  <MotionDiv
                     key={activeFocus}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -382,7 +382,7 @@ export default function AIConsultantPage() {
                       <AnalysisSection title="Oportunidades" color="#639371" icon={Lightbulb} delay={0.12}>
                         <ul className="space-y-2.5">
                           {insightQuery.data.opportunities.map((item, i) => (
-                            <motion.li
+                            <MotionLi
                               key={i}
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -391,7 +391,7 @@ export default function AIConsultantPage() {
                             >
                               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#639371]" />
                               {item}
-                            </motion.li>
+                            </MotionLi>
                           ))}
                         </ul>
                       </AnalysisSection>
@@ -402,7 +402,7 @@ export default function AIConsultantPage() {
                       <AnalysisSection title="Riscos" color="#d47373" icon={AlertTriangle} delay={0.18}>
                         <ul className="space-y-2.5">
                           {insightQuery.data.risks.map((item, i) => (
-                            <motion.li
+                            <MotionLi
                               key={i}
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -411,7 +411,7 @@ export default function AIConsultantPage() {
                             >
                               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#d47373]" />
                               {item}
-                            </motion.li>
+                            </MotionLi>
                           ))}
                         </ul>
                       </AnalysisSection>
@@ -422,7 +422,7 @@ export default function AIConsultantPage() {
                       <AnalysisSection title="Próximos Passos" color="#8fb7ff" icon={Target} delay={0.24}>
                         <ol className="space-y-2.5">
                           {insightQuery.data.nextActions.map((item, i) => (
-                            <motion.li
+                            <MotionLi
                               key={i}
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -433,12 +433,12 @@ export default function AIConsultantPage() {
                                 {i + 1}
                               </span>
                               {item}
-                            </motion.li>
+                            </MotionLi>
                           ))}
                         </ol>
                       </AnalysisSection>
                     )}
-                  </motion.div>
+                  </MotionDiv>
                 )}
               </AnimatePresence>
             </div>

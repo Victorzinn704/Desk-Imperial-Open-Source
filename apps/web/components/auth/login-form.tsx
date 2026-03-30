@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
-import { ApiError, login, loginDemo } from '@/lib/api'
+import { ApiError, login, loginDemo, type AuthResponse, type LoginPayload } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 
 export function LoginForm() {
@@ -42,8 +42,8 @@ export function LoginForm() {
   })
   const isStaffMode = loginMode === 'STAFF'
 
-  const loginMutation = useMutation({
-    mutationFn: login,
+  const loginMutation = useMutation<AuthResponse, ApiError, LoginPayload>({
+    mutationFn: (payload) => login(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })

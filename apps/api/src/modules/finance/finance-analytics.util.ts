@@ -100,8 +100,8 @@ export function buildSalesByChannel(
   orders: Array<{
     channel: string | null
     currency: CurrencyCode
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
+    _count: { _all: number }
+    _sum: { totalRevenue: { toNumber(): number } | number | null; totalProfit: { toNumber(): number } | number | null }
   }>,
   options: FinanceAggregationOptions,
 ) {
@@ -115,8 +115,8 @@ export function buildSalesByChannel(
     }
   >()
 
-  for (const order of orders) {
-    const channelKey = order.channel?.trim() || 'Direto'
+  for (const group of orders) {
+    const channelKey = group.channel?.trim() || 'Direto'
     const current = channels.get(channelKey) ?? {
       channel: channelKey,
       orders: 0,
@@ -124,12 +124,12 @@ export function buildSalesByChannel(
       profit: 0,
     }
 
-    current.orders += 1
+    current.orders += group._count._all
     current.revenue = roundCurrency(
       current.revenue +
         options.currencyService.convert(
-          toNumber(order.totalRevenue),
-          order.currency,
+          toNumber(group._sum.totalRevenue),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -137,8 +137,8 @@ export function buildSalesByChannel(
     current.profit = roundCurrency(
       current.profit +
         options.currencyService.convert(
-          toNumber(order.totalProfit),
-          order.currency,
+          toNumber(group._sum.totalProfit),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -155,8 +155,8 @@ export function buildTopCustomers(
     buyerType: BuyerType | null
     buyerDocument: string | null
     currency: CurrencyCode
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
+    _count: { _all: number }
+    _sum: { totalRevenue: { toNumber(): number } | number | null; totalProfit: { toNumber(): number } | number | null }
   }>,
   options: FinanceAggregationOptions,
 ) {
@@ -172,24 +172,24 @@ export function buildTopCustomers(
     }
   >()
 
-  for (const order of orders) {
-    const customerName = order.customerName?.trim() || 'Cliente nao informado'
-    const key = `${customerName}:${order.buyerType ?? 'unknown'}:${order.buyerDocument ?? ''}`
+  for (const group of orders) {
+    const customerName = group.customerName?.trim() || 'Cliente nao informado'
+    const key = `${customerName}:${group.buyerType ?? 'unknown'}:${group.buyerDocument ?? ''}`
     const current = customers.get(key) ?? {
       customerName,
-      buyerType: order.buyerType,
-      buyerDocument: order.buyerDocument,
+      buyerType: group.buyerType,
+      buyerDocument: group.buyerDocument,
       orders: 0,
       revenue: 0,
       profit: 0,
     }
 
-    current.orders += 1
+    current.orders += group._count._all
     current.revenue = roundCurrency(
       current.revenue +
         options.currencyService.convert(
-          toNumber(order.totalRevenue),
-          order.currency,
+          toNumber(group._sum.totalRevenue),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -197,8 +197,8 @@ export function buildTopCustomers(
     current.profit = roundCurrency(
       current.profit +
         options.currencyService.convert(
-          toNumber(order.totalProfit),
-          order.currency,
+          toNumber(group._sum.totalProfit),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -218,8 +218,8 @@ export function buildSalesMap(
     buyerLatitude: number | null
     buyerLongitude: number | null
     currency: CurrencyCode
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
+    _count: { _all: number }
+    _sum: { totalRevenue: { toNumber(): number } | number | null; totalProfit: { toNumber(): number } | number | null }
   }>,
   options: FinanceAggregationOptions,
 ) {
@@ -239,32 +239,32 @@ export function buildSalesMap(
     }
   >()
 
-  for (const order of orders) {
-    if (order.buyerLatitude == null || order.buyerLongitude == null) {
+  for (const group of orders) {
+    if (group.buyerLatitude == null || group.buyerLongitude == null) {
       continue
     }
 
-    const label = buildRegionLabel(order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry)
-    const key = `${label}:${order.buyerLatitude.toFixed(4)}:${order.buyerLongitude.toFixed(4)}`
+    const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
+    const key = `${label}:${group.buyerLatitude.toFixed(4)}:${group.buyerLongitude.toFixed(4)}`
     const current = points.get(key) ?? {
       label,
-      district: order.buyerDistrict,
-      city: order.buyerCity,
-      state: order.buyerState,
-      country: order.buyerCountry,
-      latitude: order.buyerLatitude,
-      longitude: order.buyerLongitude,
+      district: group.buyerDistrict,
+      city: group.buyerCity,
+      state: group.buyerState,
+      country: group.buyerCountry,
+      latitude: group.buyerLatitude,
+      longitude: group.buyerLongitude,
       orders: 0,
       revenue: 0,
       profit: 0,
     }
 
-    current.orders += 1
+    current.orders += group._count._all
     current.revenue = roundCurrency(
       current.revenue +
         options.currencyService.convert(
-          toNumber(order.totalRevenue),
-          order.currency,
+          toNumber(group._sum.totalRevenue),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -272,8 +272,8 @@ export function buildSalesMap(
     current.profit = roundCurrency(
       current.profit +
         options.currencyService.convert(
-          toNumber(order.totalProfit),
-          order.currency,
+          toNumber(group._sum.totalProfit),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -292,8 +292,8 @@ export function buildTopRegions(
     buyerState: string | null
     buyerCountry: string | null
     currency: CurrencyCode
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
+    _count: { _all: number }
+    _sum: { totalRevenue: { toNumber(): number } | number | null; totalProfit: { toNumber(): number } | number | null }
   }>,
   options: FinanceAggregationOptions,
 ) {
@@ -310,28 +310,28 @@ export function buildTopRegions(
     }
   >()
 
-  for (const order of orders) {
-    if (!order.buyerCity && !order.buyerState && !order.buyerCountry) {
+  for (const group of orders) {
+    if (!group.buyerCity && !group.buyerState && !group.buyerCountry) {
       continue
     }
 
-    const label = buildRegionLabel(order.buyerDistrict, order.buyerCity, order.buyerState, order.buyerCountry)
+    const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
     const current = regions.get(label) ?? {
       label,
-      city: order.buyerCity,
-      state: order.buyerState,
-      country: order.buyerCountry,
+      city: group.buyerCity,
+      state: group.buyerState,
+      country: group.buyerCountry,
       orders: 0,
       revenue: 0,
       profit: 0,
     }
 
-    current.orders += 1
+    current.orders += group._count._all
     current.revenue = roundCurrency(
       current.revenue +
         options.currencyService.convert(
-          toNumber(order.totalRevenue),
-          order.currency,
+          toNumber(group._sum.totalRevenue),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -339,8 +339,8 @@ export function buildTopRegions(
     current.profit = roundCurrency(
       current.profit +
         options.currencyService.convert(
-          toNumber(order.totalProfit),
-          order.currency,
+          toNumber(group._sum.totalProfit),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -358,8 +358,8 @@ export function buildTopEmployees(
     sellerCode: string | null
     sellerName: string | null
     currency: CurrencyCode
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
+    _count: { _all: number }
+    _sum: { totalRevenue: { toNumber(): number } | number | null; totalProfit: { toNumber(): number } | number | null }
   }>,
   options: FinanceAggregationOptions,
 ) {
@@ -375,28 +375,28 @@ export function buildTopEmployees(
     }
   >()
 
-  for (const order of orders) {
-    if (!order.employeeId && !order.sellerCode && !order.sellerName) {
+  for (const group of orders) {
+    if (!group.employeeId && !group.sellerCode && !group.sellerName) {
       continue
     }
 
-    const employeeName = order.sellerName?.trim() || 'Funcionario nao identificado'
-    const employeeKey = order.employeeId ?? order.sellerCode ?? employeeName
+    const employeeName = group.sellerName?.trim() || 'Funcionario nao identificado'
+    const employeeKey = group.employeeId ?? group.sellerCode ?? employeeName
     const current = employees.get(employeeKey) ?? {
-      employeeId: order.employeeId,
-      employeeCode: order.sellerCode,
+      employeeId: group.employeeId,
+      employeeCode: group.sellerCode,
       employeeName,
       orders: 0,
       revenue: 0,
       profit: 0,
     }
 
-    current.orders += 1
+    current.orders += group._count._all
     current.revenue = roundCurrency(
       current.revenue +
         options.currencyService.convert(
-          toNumber(order.totalRevenue),
-          order.currency,
+          toNumber(group._sum.totalRevenue),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -404,8 +404,8 @@ export function buildTopEmployees(
     current.profit = roundCurrency(
       current.profit +
         options.currencyService.convert(
-          toNumber(order.totalProfit),
-          order.currency,
+          toNumber(group._sum.totalProfit),
+          group.currency,
           options.displayCurrency,
           options.snapshot,
         ),
@@ -534,7 +534,8 @@ function buildMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
-function toNumber(value: { toNumber(): number } | number) {
+function toNumber(value: { toNumber(): number } | number | null | undefined) {
+  if (value == null) return 0
   return typeof value === 'number' ? value : value.toNumber()
 }
 

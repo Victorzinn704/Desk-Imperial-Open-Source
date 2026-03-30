@@ -48,7 +48,6 @@ type EmployeeGroupInput = {
   active?: boolean
   cashSessionId?: string | null
   comandas?: ComandaInput[]
-  metrics?: Partial<EmployeeOperationsRecord['metrics']>
 }
 
 type SnapshotInput = {
@@ -119,11 +118,7 @@ export function buildComanda(overrides: ComandaInput = {}): ComandaRecord {
 
 export function buildEmployeeGroup(overrides: EmployeeGroupInput = {}): EmployeeOperationsRecord {
   const comandas = (overrides.comandas ?? []).map((comanda) => buildComanda(comanda))
-  const grossRevenueAmount =
-    overrides.metrics?.grossRevenueAmount ?? comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0)
-  const openTables = overrides.metrics?.openTables ?? comandas.filter((comanda) => comanda.status === 'OPEN').length
-  const closedTables =
-    overrides.metrics?.closedTables ?? comandas.filter((comanda) => comanda.status === 'CLOSED').length
+  const grossRevenueAmount = comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0)
 
   return {
     employeeId: overrides.employeeId ?? null,
@@ -142,7 +137,7 @@ export function buildEmployeeGroup(overrides: EmployeeGroupInput = {}): Employee
           expectedCashAmount: 0,
           differenceAmount: null,
           grossRevenueAmount,
-          realizedProfitAmount: overrides.metrics?.realizedProfitAmount ?? 0,
+          realizedProfitAmount: 0,
           notes: null,
           openedAt: DEFAULT_DATE,
           closedAt: null,
@@ -150,13 +145,6 @@ export function buildEmployeeGroup(overrides: EmployeeGroupInput = {}): Employee
         }
       : null,
     comandas,
-    metrics: {
-      openTables,
-      closedTables,
-      grossRevenueAmount,
-      realizedProfitAmount: overrides.metrics?.realizedProfitAmount ?? 0,
-      expectedCashAmount: overrides.metrics?.expectedCashAmount ?? 0,
-    },
   }
 }
 
@@ -184,7 +172,6 @@ export function buildOperationsSnapshot(input: SnapshotInput = {}): OperationsLi
     displayName: 'Operação do balcão/empresa',
     active: true,
     comandas: input.unassigned?.comandas ?? [],
-    metrics: input.unassigned?.metrics,
   })
 
   return {

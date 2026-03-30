@@ -372,6 +372,64 @@ export type ComandaRecord = {
   items: ComandaItemRecord[]
 }
 
+export type OperationsKitchenItemStatus = Exclude<KitchenItemStatus, 'DELIVERED'>
+
+export type OperationsKitchenItemRecord = {
+  itemId: string
+  comandaId: string
+  mesaLabel: string
+  employeeId: string | null
+  employeeName: string
+  productName: string
+  quantity: number
+  notes: string | null
+  kitchenStatus: OperationsKitchenItemStatus
+  kitchenQueuedAt: string | null
+  kitchenReadyAt: string | null
+}
+
+export type OperationsKitchenResponse = {
+  businessDate: string
+  companyOwnerId: string
+  items: OperationsKitchenItemRecord[]
+  statusCounts: {
+    queued: number
+    inPreparation: number
+    ready: number
+  }
+}
+
+export type OperationsExecutiveKpis = {
+  receitaRealizada: number
+  faturamentoAberto: number
+  projecaoTotal: number
+  lucroRealizado: number
+  lucroEsperado: number
+  caixaEsperado: number
+  openComandasCount: number
+  openSessionsCount: number
+}
+
+export type OperationsPerformerRankingEntry = {
+  nome: string
+  valor: number
+  comandas: number
+}
+
+export type OperationsTopProductEntry = {
+  nome: string
+  qtd: number
+  valor: number
+}
+
+export type OperationsSummaryResponse = {
+  businessDate: string
+  companyOwnerId: string
+  kpis: OperationsExecutiveKpis
+  performers: OperationsPerformerRankingEntry[]
+  topProducts: OperationsTopProductEntry[]
+}
+
 export type EmployeeOperationsRecord = {
   employeeId: string | null
   employeeCode: string | null
@@ -379,13 +437,6 @@ export type EmployeeOperationsRecord = {
   active: boolean
   cashSession: CashSessionRecord | null
   comandas: ComandaRecord[]
-  metrics: {
-    openTables: number
-    closedTables: number
-    grossRevenueAmount: number
-    realizedProfitAmount: number
-    expectedCashAmount: number
-  }
 }
 
 export type OperationsLiveResponse = {

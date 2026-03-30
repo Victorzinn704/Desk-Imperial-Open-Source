@@ -43,6 +43,7 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     desconto: toPercent(comanda.discountAmount, comanda.subtotalAmount),
     acrescimo: toPercent(comanda.serviceFeeAmount, comanda.subtotalAmount),
     abertaEm: new Date(comanda.openedAt),
+    totalBackend: typeof comanda.totalAmount === 'number' ? comanda.totalAmount : undefined,
   }
 }
 
