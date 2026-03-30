@@ -6,13 +6,14 @@ service_name="${RAILWAY_SERVICE_NAME:-}"
 case "$service_name" in
   imperial-desk-web)
     echo "Starting Railway service: $service_name"
-    npm --workspace @partner/web run start
+    cd apps/web
+    node ../../node_modules/next/dist/bin/next start --port "${PORT:-3000}"
     ;;
   imperial-desk-api)
     echo "Starting Railway service: $service_name"
     echo "Running Prisma migrations (deploy)"
-    npm --workspace @partner/api run prisma:migrate:deploy
     cd apps/api
+    node ../../node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
     api_entrypoint=""
     for candidate in "dist/main.js" "dist/src/main.js" "dist/apps/api/src/main.js"; do
       if [ -f "$candidate" ]; then
