@@ -27,13 +27,15 @@ export function LetterCard() {
           }`}
         >
           <p className="font-serif text-lg font-semibold tracking-[0.08em] text-[var(--accent)]">
-            Obrigado pela visita
+            Obrigado por chegar até aqui.
           </p>
           <p className="mt-4 max-w-lg text-center text-sm leading-7 text-[var(--text-soft)]">
-            É muito especial que você tenha dedicado seu tempo para conhecer a Desk Imperial.
+            A Desk Imperial foi feita para o comerciante brasileiro que trabalha muito e merece um sistema que facilite
+            a vida.
           </p>
           <p className="mt-2 max-w-lg text-center text-sm leading-7 text-[var(--text-soft)]">
-            Que sua operação cresça cada vez mais — com clareza, controle e identidade.
+            Que você nunca perca uma venda, nunca fique sem saber o que está acontecendo, e que seu negócio cresça com
+            tranquilidade.
           </p>
           <p className="mt-6 text-[11px] uppercase tracking-[0.28em] text-[var(--accent)] opacity-60">
             — Desk Imperial

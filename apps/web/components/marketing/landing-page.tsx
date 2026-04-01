@@ -29,21 +29,27 @@ import { CustomCursor } from '@/components/marketing/custom-cursor'
 import { BrandMark } from '@/components/shared/brand-mark'
 
 const metrics = [
-  { label: 'Comandas ao vivo', value: 'Abra, arraste e feche comandas em drag and drop sem travar o salão.' },
-  { label: 'Mapa de vendas', value: 'Monitore pedidos por bairro, cidade e região com pontos reais no mapa.' },
-  { label: 'Fechamento do dia', value: 'Financeiro, folha, ranking e exportação CSV no mesmo fluxo operacional.' },
+  {
+    label: 'Comandas ao vivo',
+    value: 'Abra o pedido, mova conforme avança no atendimento e feche quando pagar. Todo mundo vê o mesmo, na hora.',
+  },
+  { label: 'Mapa de vendas', value: 'Veja no mapa de onde vêm seus pedidos. Bairro por bairro, cidade por cidade.' },
+  {
+    label: 'Fechamento do dia',
+    value: 'No fim do dia, você vê quanto entrou, quanto saiu e quanto cada um da equipe vendeu. Tudo num lugar só.',
+  },
 ]
 
 const pillars = [
   {
     icon: ChartColumn,
-    title: 'Operação em tempo real',
-    description: 'Pedido entrou, a comanda muda na hora. Equipe e gestão enxergam o mesmo cenário.',
+    title: 'Tudo acontece ao vivo',
+    description: 'Chegou pedido novo? Aparece na tela de todo mundo na mesma hora, sem precisar atualizar nada.',
   },
   {
     icon: Radar,
-    title: 'Controle de ponta a ponta',
-    description: 'Do atendimento ao fechamento, com monitoramento financeiro e territorial da venda.',
+    title: 'Do pedido ao caixa',
+    description: 'Do vendedor que anota o pedido até o dono que fecha o caixa — tudo no mesmo painel, sem papel.',
   },
 ]
 
@@ -56,68 +62,65 @@ const capabilityCards: Array<{
 }> = [
   {
     icon: BadgeDollarSign,
-    title: 'Financeiro executivo',
-    description: 'Receita, custo, lucro e margem. Sparklines de tendência em cada KPI.',
-    tags: ['KPI', 'Margem'],
+    title: 'Dinheiro do negócio',
+    description: 'Veja quanto entrou, quanto saiu e o que mais vendeu. Sem precisar abrir planilha nenhuma.',
+    tags: ['Financeiro', 'Resumo'],
     stars: 5,
   },
   {
     icon: Tags,
-    title: 'PDV / Comandas',
-    description: 'Kanban drag-and-drop com CPF/CNPJ, desconto e acréscimo por comanda.',
-    tags: ['Kanban', 'Vendas'],
+    title: 'Pedidos e atendimento',
+    description: 'Anote pedidos com nome ou CPF do cliente, aplique desconto e acompanhe cada atendimento no painel.',
+    tags: ['Pedidos', 'Vendas'],
     stars: 5,
   },
   {
     icon: CalendarDays,
-    title: 'Calendário comercial',
-    description: 'Arraste eventos, planeje promoções e correlacione com as vendas do dia.',
+    title: 'Calendário do negócio',
+    description: 'Planeje promoções, jogos e datas importantes. Depois veja como as vendas foram naquele dia.',
     tags: ['Agenda', 'Eventos'],
     stars: 4,
   },
   {
     icon: Landmark,
     title: 'Folha de pagamento',
-    description: 'Salário base + comissão sobre vendas calculados por colaborador.',
-    tags: ['RH', 'Comissão'],
+    description:
+      'Calcula o salário fixo mais a comissão de cada funcionário com base nas vendas. Sem fazer conta na mão.',
+    tags: ['Equipe', 'Comissão'],
     stars: 5,
   },
   {
     icon: Users,
-    title: 'Gestão de equipe',
-    description: 'Ranking de vendedores, histórico e metas em um único painel.',
+    title: 'Sua equipe',
+    description: 'Veja quem mais vendeu, o histórico de cada um e as metas. Tudo num painel só.',
     tags: ['Equipe', 'Metas'],
     stars: 4,
   },
   {
     icon: KeyRound,
-    title: 'Admin PIN',
-    description: 'Proteja ações sensíveis com PIN de 4 dígitos e bloqueio anti brute-force.',
-    tags: ['Segurança', 'PIN'],
+    title: 'Acesso com senha',
+    description:
+      'Proteja ações importantes com uma senha de 4 números. Quem errar 3 vezes fica bloqueado por 5 minutos.',
+    tags: ['Segurança', 'Senha'],
     stars: 5,
   },
   {
     icon: FileDown,
-    title: 'Export CSV',
-    description: 'Exporte pedidos com encoding UTF-8 compatível com Excel e Planilhas.',
+    title: 'Exportar relatório',
+    description: 'Baixe seus pedidos em arquivo que abre direto no Excel ou no Google Planilhas.',
     tags: ['Relatório', 'Excel'],
     stars: 4,
   },
   {
     icon: Crown,
-    title: 'Conformidade',
-    description: 'LGPD, consentimento de cookies e governança de dados visível.',
-    tags: ['LGPD', 'Dados'],
+    title: 'Dados protegidos',
+    description: 'Seus dados ficam separados dos outros. A plataforma segue a lei de proteção de dados (LGPD).',
+    tags: ['LGPD', 'Segurança'],
     stars: 5,
   },
 ]
 
-const heroLines = [
-  'Projeto sem fins lucrativos,',
-  'feito para comerciantes brasileiros',
-  'organizarem suas vendas e produtos,',
-  'focado no seu crescimento',
-]
+const heroLines = ['Abra comanda,', 'acompanhe o dinheiro,', 'veja sua equipe —', 'tudo junto, todo dia.']
 
 const footerColumns = [
   {
@@ -261,9 +264,9 @@ export function LandingPage() {
             <BrandMark />
             <nav className="hidden items-center gap-1 md:flex">
               {[
-                { label: 'Fundação', href: '#fundacao' },
-                { label: 'Entregas', href: '#entregas' },
-                { label: 'Estrutura', href: '#rodape' },
+                { label: 'O que faz', href: '#fundacao' },
+                { label: 'Como usar', href: '#entregas' },
+                { label: 'Páginas', href: '#rodape' },
               ].map(({ label, href }) => (
                 <Link
                   key={label}
@@ -314,9 +317,9 @@ export function LandingPage() {
             >
               <nav className="mb-5 flex flex-col gap-1">
                 {[
-                  { label: 'Fundação', href: '#fundacao' },
-                  { label: 'Entregas', href: '#entregas' },
-                  { label: 'Estrutura', href: '#rodape' },
+                  { label: 'O que faz', href: '#fundacao' },
+                  { label: 'Como usar', href: '#entregas' },
+                  { label: 'Páginas', href: '#rodape' },
                 ].map(({ label, href }) => (
                   <Link
                     key={label}
@@ -400,7 +403,8 @@ export function LandingPage() {
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              Comandas ao vivo, drag and drop no PDV, mapa de vendas por região e fechamento com dados reais.
+              Anote o pedido, veja quanto entrou, pague sua equipe certo e descubra de onde vêm seus clientes. Tudo no
+              mesmo sistema, sem precisar de planilha.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -468,7 +472,7 @@ export function LandingPage() {
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
               transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
             >
-              Operação real
+              O que você vai usar
             </motion.p>
             <motion.h2
               className="mt-1 max-w-2xl text-center text-4xl font-semibold leading-tight text-white sm:text-5xl"
@@ -477,7 +481,7 @@ export function LandingPage() {
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
               transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             >
-              Funcionalidades que já estão rodando no dia a dia do negócio.
+              Tudo que está aqui existe de verdade e já funciona.
             </motion.h2>
           </div>
 
@@ -503,34 +507,34 @@ export function LandingPage() {
         {[
           {
             side: 'left' as const,
-            tag: 'PDV & Kanban',
-            title: 'Cada comanda no lugar certo, em tempo real.',
-            body: 'Abra comandas com CPF, CNPJ ou nome, arraste entre as colunas em drag and drop e aplique desconto ou acréscimo quando necessário. O kanban reflete a operação do salão sem delay e sem papel.',
-            stat: { label: 'Colunas kanban', value: '3' },
+            tag: 'Pedidos & Atendimento',
+            title: 'Anote o pedido, arraste e feche quando pagar.',
+            body: 'Você abre uma comanda com o nome ou CPF do cliente, arrasta ela pelas etapas do atendimento e fecha quando o pagamento acontecer. Todo mundo na equipe vê na hora, sem papel, sem precisar falar nada.',
+            stat: { label: 'Etapas no painel', value: '4' },
             icon: Tags,
           },
           {
             side: 'right' as const,
-            tag: 'Financeiro & Folha',
-            title: 'Receita, custo e salário calculados sozinhos.',
-            body: 'O financeiro consolida entradas e saídas por dia, semana ou mês com sparklines de tendência. A folha de pagamento aplica salário base mais comissão sobre vendas por colaborador — sem planilha, sem fórmula manual.',
+            tag: 'Financeiro & Equipe',
+            title: 'Saiba quanto entrou, quanto saiu e o que pagar para cada um.',
+            body: 'O sistema mostra o financeiro do dia, da semana e do mês. E calcula sozinho o salário fixo mais a comissão de cada funcionário, com base no que vendeu. Você não precisa fazer conta nenhuma.',
             stat: { label: 'Cálculo automático', value: '100%' },
             icon: Landmark,
           },
           {
             side: 'left' as const,
             tag: 'Calendário & Eventos',
-            title: 'Planeje, promova e correlacione com as vendas.',
-            body: 'Arraste eventos para qualquer dia do calendário comercial — promoções, jogos, datas especiais — e veja o impacto direto nas vendas daquele período. Decisão com contexto, não com achismo.',
-            stat: { label: 'Visão unificada', value: '360°' },
+            title: 'Planeje seus eventos e veja como afetaram as vendas.',
+            body: 'Anote no calendário as promoções, jogos e datas especiais. Depois o sistema mostra como as vendas foram naquele período. Você começa a entender o que funciona no seu negócio.',
+            stat: { label: 'Visão completa', value: '360°' },
             icon: CalendarDays,
           },
           {
             side: 'right' as const,
-            tag: 'Mapa de monitoramento',
-            title: 'Acompanhe onde as vendas estão acontecendo.',
-            body: 'O mapa cruza os pedidos com localização e mostra a concentração por bairro, cidade e região. Você identifica rápido onde a operação está forte e onde precisa agir.',
-            stat: { label: 'Leitura territorial', value: 'Ao vivo' },
+            tag: 'Mapa de vendas',
+            title: 'Veja no mapa de onde estão vindo seus pedidos.',
+            body: 'O sistema coloca seus pedidos no mapa e mostra onde estão concentrados — por bairro e por região. Você descobre rápido onde seu negócio está chegando e onde ainda pode crescer.',
+            stat: { label: 'Atualizado', value: 'Ao vivo' },
             icon: Globe2,
           },
         ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
@@ -574,20 +578,18 @@ export function LandingPage() {
             <div className="glass-card p-8 lg:p-10">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-2xl">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-                    Acesso principal
-                  </p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Como começar</p>
                   <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-                    Entrada rápida para começar a operar sem fricção.
+                    Você entra, cadastra e já começa a usar.
                   </h2>
                   <p className="mt-4 text-base leading-7 text-[var(--text-soft)]">
-                    Cadastro, login e painel ficam acessíveis logo de cara para você entrar e já acompanhar comandas,
-                    vendas e indicadores do dia.
+                    Crie sua conta, entre no painel e veja tudo funcionando de imediato. Não tem tutorial obrigatório
+                    nem configuração complicada.
                   </p>
                 </div>
 
                 <div className="glass-card px-5 py-4 text-sm leading-7 text-[var(--text-soft)] lg:max-w-md">
-                  Menos clique para entrar, mais tempo para operar: do acesso ao monitoramento em poucos segundos.
+                  O painel já mostra o que está acontecendo no seu negócio assim que você entra.
                 </div>
               </div>
 
@@ -598,7 +600,8 @@ export function LandingPage() {
                     <p className="text-sm font-semibold text-white">Comandas ao vivo</p>
                   </div>
                   <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                    Abra, mova e feche comandas no fluxo real do atendimento com drag and drop.
+                    Veja os pedidos abertos, em andamento e prontos para fechar. A equipe toda enxerga o mesmo, na mesma
+                    hora.
                   </p>
                 </div>
 
@@ -608,17 +611,18 @@ export function LandingPage() {
                     <p className="text-sm font-semibold text-white">Mapa de vendas</p>
                   </div>
                   <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                    Monitore concentração de pedidos por região e direcione melhor ações comerciais.
+                    Veja no mapa de onde vêm seus pedidos. Ajuda a entender onde seu negócio está chegando.
                   </p>
                 </div>
 
                 <div className="glass-card p-5">
                   <div className="flex items-center gap-3">
                     <Globe2 className="size-5 text-[var(--info)]" />
-                    <p className="text-sm font-semibold text-white">Fechamento com dados</p>
+                    <p className="text-sm font-semibold text-white">Fechamento do dia</p>
                   </div>
                   <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                    Exporte CSV, acompanhe ranking e feche o dia com leitura financeira consolidada.
+                    No fechamento, tudo já está calculado: quanto entrou, quem vendeu mais e o arquivo para baixar se
+                    precisar.
                   </p>
                 </div>
               </div>
@@ -671,10 +675,7 @@ export function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-            <p>
-              DESK IMPERIAL © 2026. Comandas ao vivo, monitoramento de vendas no mapa e operação comercial em tempo
-              real.
-            </p>
+            <p>DESK IMPERIAL © 2026. Feito para o pequeno comerciante brasileiro que quer mais controle do negócio.</p>
             <div className="flex flex-wrap gap-4">
               <Link className="transition hover:text-white" href="https://app.deskimperial.online">
                 app.deskimperial.online

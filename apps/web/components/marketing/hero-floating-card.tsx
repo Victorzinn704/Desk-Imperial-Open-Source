@@ -4,9 +4,9 @@ import { LazyMotionDiv as MotionDiv } from '@/components/shared/lazy-components'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
 
 const signals = [
-  { label: 'Receita prevista', value: '+18.4%', tone: 'text-[var(--success)]' },
-  { label: 'Margem media', value: '32.8%', tone: 'text-[var(--accent-strong)]' },
-  { label: 'Risco operacional', value: 'Controlado', tone: 'text-[var(--info)]' },
+  { label: 'Receita do mês', value: '+18.4%', tone: 'text-[var(--success)]' },
+  { label: 'Margem média', value: '32.8%', tone: 'text-[var(--accent-strong)]' },
+  { label: 'Situação geral', value: 'Controlado', tone: 'text-[var(--info)]' },
 ]
 
 export function HeroFloatingCard() {
@@ -26,8 +26,8 @@ function CardContent() {
     <>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Leitura ao vivo</p>
-          <p className="mt-2 text-lg font-semibold text-white">Pulso executivo</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Ao vivo agora</p>
+          <p className="mt-2 text-lg font-semibold text-white">Resumo do negócio</p>
         </div>
         <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[rgba(123,214,138,0.08)] text-[var(--success)]">
           <ShieldCheck className="size-4" />
