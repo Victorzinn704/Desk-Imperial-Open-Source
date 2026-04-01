@@ -1,486 +1,276 @@
-# DESK IMPERIAL
+# Desk Imperial
 
-Portal empresarial full-stack de nível profissional, construído em monorepo com Next.js 16, NestJS, PostgreSQL e infraestrutura em nuvem com Cloudflare CDN, Redis e Neon serverless. Foco em segurança real, UX premium e arquitetura escalável.
+[![CI](https://github.com/Victorzinn704/nextjs-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/Victorzinn704/nextjs-boilerplate/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Node.js](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
+[![Open Source](https://img.shields.io/badge/open%20source-yes-blue)](./LICENSE)
 
-**Acesso público:** [app.deskimperial.online](https://app.deskimperial.online)
+**Sistema gratuito de gestão para pequenos e médios comerciantes brasileiros.**
+
+PDV ao vivo, controle financeiro, folha de pagamento automática, mapa de vendas e muito mais — tudo no mesmo painel, sem pagar nada.
+
+> Feito para tirar o comerciante brasileiro da planilha.  
+> Código aberto. Licença MIT. Construído e mantido por uma pessoa só.
 
 ---
 
-## O que este projeto entrega
+## Demonstração rápida
 
-### Autenticação e Segurança
+Quer ver o sistema antes de instalar?
 
-- Cadastro com confirmação obrigatória de email via OTP de 8 dígitos
-- Login com sessão segura por cookie `HttpOnly` + `SameSite`
-- Proteção CSRF com duplo token (cookie + header)
-- Rate limiting de tentativas persistido em Redis com TTL — consistente entre instâncias
-- Admin PIN server-side com hash `argon2id`, token JWT de 10 minutos (HMAC-SHA256)
-- Audit log de todos os eventos sensíveis do sistema
-- Recuperação de senha por código temporário enviado por email
-- Bloqueio progressivo por IP em login, verificação e redefinição
+Acesse **[app.deskimperial.online](https://app.deskimperial.online)** com a conta demo — sem cadastro, sem cartão.
 
-### Dashboard Executivo
+Veja [docs/DEMO.md](./docs/DEMO.md) para instruções de acesso.
 
-- Visão financeira analítica com 10+ métricas em tempo real
-- Gráfico de receita histórica com seleção de período
-- Breakdown por categoria com navegação em abas — produtos, valores, venda em potencial e unidades
-- Top produtos por categoria (top-5 real via DB)
-- Tabela de pedidos recentes com status
-- Mapa de vendas geográfico com Leaflet + CARTO tiles — renderização por bairro, cidade e região
-- Ranking de funcionários por performance vinculada a pedidos reais
-- Consultor de mercado com Gemini Flash para leitura analítica e previsão operacional
-- **Premium UI with layout shift prevention** - hover states use CSS containment pattern (no scale/transform)
+---
 
-### Operação Comercial
+## O que é
 
-- PDV (Ponto de Venda) com sistema de comandas em Kanban
-- Gestão de portfólio com importação CSV validada e em lote
-- Folha de pagamento com vínculo de funcionário por ID em cada venda
-- Calendário comercial com Drag and Drop
-- Export CSV de dados financeiros
-- Conversão de moeda em tempo real (BRL, USD, EUR) via AwesomeAPI com cache e fallback
+O Desk Imperial resolve dois problemas que costumam ficar separados:
 
-### Conformidade e LGPD
+**Operação ao vivo** — abrir comanda, acompanhar pedidos, controlar caixa, ver o salão em tempo real, tudo atualizado para toda a equipe sem precisar recarregar nada.
 
-- Banner de consentimento de cookies
-- Registro de aceite de termos e política de privacidade
-- Gestão de preferências de consentimento por usuário
+**Gestão do negócio** — financeiro por período, folha de pagamento calculada automaticamente, ranking de vendedores, mapa de onde vêm os pedidos, calendário de eventos e promoções.
+
+Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
+
+**Para quem é:**
+
+- Dono de restaurante, lanchonete, bar ou comércio com atendimento
+- Funcionário que precisa de PDV e atendimento no celular
+- Desenvolvedor que quer contribuir, estudar ou usar como base
+
+---
+
+## Funcionalidades
+
+| Módulo                   | O que faz                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| **PDV / Comandas**       | Kanban 4 colunas, arrastar e soltar, CPF/CNPJ, desconto e acréscimo por comanda          |
+| **Tempo real**           | Toda equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                      |
+| **Financeiro**           | Receita, custo, margem, top produtos e top vendedores por período                        |
+| **Folha de pagamento**   | Salário fixo + comissão sobre vendas calculada por funcionário                           |
+| **Mapa de vendas**       | Pedidos plotados por bairro e região com geocodificação real                             |
+| **Calendário comercial** | Planeje eventos e correlacione com as vendas do período                                  |
+| **Mobile — dono**        | Painel executivo otimizado para celular                                                  |
+| **Mobile — funcionário** | PDV e atendimento completo pelo celular                                                  |
+| **Admin PIN**            | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                    |
+| **Export CSV**           | Baixe pedidos para Excel ou Google Planilhas                                             |
+| **Insight IA**           | Resumo executivo gerado pelo Gemini com cache e controle de uso                          |
+| **LGPD**                 | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio |
 
 ---
 
 ## Stack
 
-### Frontend
+| Camada             | Tecnologia                    |
+| ------------------ | ----------------------------- |
+| Backend            | NestJS 11 + TypeScript        |
+| Frontend           | Next.js 16 + React 19         |
+| Banco de dados     | PostgreSQL 16 + Prisma ORM    |
+| Cache / Rate limit | Redis                         |
+| Tempo real         | Socket.IO                     |
+| Autenticação       | Cookies HttpOnly + CSRF duplo |
+| Monorepo           | Turborepo + npm workspaces    |
+| Deploy             | Railway                       |
+| Testes backend     | Jest + 53+ arquivos de spec   |
+| Testes frontend    | Vitest + Playwright           |
+| Load tests         | K6                            |
 
-| Tecnologia                | Uso                                                         |
-| ------------------------- | ----------------------------------------------------------- |
-| `Next.js 16`              | Framework principal com App Router                          |
-| `React 19`                | UI com Server e Client Components                           |
-| `TanStack Query`          | Cache e sincronização de estado servidor                    |
-| `React Hook Form` + `Zod` | Formulários com validação tipada                            |
-| `Framer Motion`           | Animações e transições                                      |
-| `Recharts`                | Gráficos financeiros e sparklines                           |
-| `Leaflet` + CARTO         | Mapa de vendas geográfico                                   |
-| `CSS Containment`         | Performance optimization for hover states (no layout shift) |
+---
 
-### Backend
+## Quick start
 
-| Tecnologia          | Uso                                          |
-| ------------------- | -------------------------------------------- |
-| `NestJS 11`         | Framework modular com DI, Guards e Pipes     |
-| `Prisma 6`          | ORM com migrations e tipagem completa        |
-| `PostgreSQL` (Neon) | Banco serverless com connection pooling      |
-| `Redis`             | Cache de respostas pesadas (finance summary) |
-| `argon2id`          | Hash de senha e Admin PIN                    |
-| `Brevo`             | Email transacional (OTP, recovery, alertas)  |
-| `Pino`              | Logging estruturado com slow query detection |
-| `Gemini Flash`      | IA aplicada para inteligência de mercado     |
+### Pré-requisitos
 
-### Infraestrutura
+- Node.js 22+
+- Docker (para banco e Redis local)
 
-| Tecnologia        | Uso                                      |
-| ----------------- | ---------------------------------------- |
-| `Railway`         | Deploy de API e frontend em monorepo     |
-| `Neon`            | PostgreSQL serverless com pooler ativo   |
-| `Redis` (Railway) | Cache em rede privada (zero egress cost) |
-| `Cloudflare`      | CDN global, proxy, DDoS, SSL/TLS, DNSSEC |
-| `Turbo`           | Build system do monorepo                 |
+### 1. Clone e instale
+
+```bash
+git clone https://github.com/Victorzinn704/nextjs-boilerplate.git desk-imperial
+cd desk-imperial
+npm ci
+```
+
+### 2. Configure o ambiente
+
+```bash
+cp .env.example .env
+```
+
+Variáveis mínimas para rodar localmente:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000
+COOKIE_SECRET=troque-por-string-longa-aleatoria
+CSRF_SECRET=troque-por-outra-string-longa
+ENCRYPTION_KEY=troque-por-chave-de-32-caracteres
+```
+
+Integrações externas (Brevo, Gemini, AwesomeAPI) são **opcionais** em desenvolvimento.  
+Veja [docs/architecture/local-development.md](./docs/architecture/local-development.md) para o guia completo.
+
+### 3. Suba o banco e o Redis
+
+```bash
+npm run db:up
+```
+
+### 4. Configure o banco
+
+```bash
+npm --workspace @partner/api run prisma:generate
+npm --workspace @partner/api run prisma:migrate:dev
+npm run seed
+```
+
+### 5. Rode o projeto
+
+```bash
+# Terminal 1 — API
+npm --workspace @partner/api run dev
+
+# Terminal 2 — Frontend
+npm --workspace @partner/web run dev
+```
+
+| Serviço      | URL                              |
+| ------------ | -------------------------------- |
+| Frontend     | http://localhost:3000            |
+| API          | http://localhost:4000/api        |
+| Health check | http://localhost:4000/api/health |
+| Swagger      | http://localhost:4000/docs       |
+
+---
+
+## Testes
+
+```bash
+# Lint + typecheck
+npm run lint
+npm run typecheck
+
+# Todos os testes
+npm run test
+
+# Backend
+npm --workspace @partner/api run test
+npm --workspace @partner/api run test:e2e
+
+# Frontend
+npm --workspace @partner/web run test
+npm --workspace @partner/web run test:e2e
+```
+
+**O que está coberto:**
+
+- 53+ testes unitários e de integração no backend (todos os módulos críticos)
+- Testes E2E com Playwright no frontend
+- Load tests com K6 (login, health, página de entrada)
+- CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
 
 ---
 
 ## Arquitetura
 
 ```
-                        ┌─────────────────────────┐
-                        │      Cloudflare CDN      │
-                        │  DDoS · SSL · Cache      │
-                        │  DNSSEC · Firewall       │
-                        └────────────┬────────────┘
-                                     │
-               ┌─────────────────────┼─────────────────────┐
-               │                     │                     │
-        app.deskimperial      api.deskimperial        deskimperial
-            .online               .online               .online
-               │                     │                     │
-    ┌──────────▼──────────┐ ┌────────▼────────┐  ┌────────▼──────┐
-    │   Next.js 16        │ │   NestJS API    │  │  Landing Page │
-    │   Railway           │ │   Railway       │  │               │
-    └─────────────────────┘ └────────┬────────┘  └───────────────┘
-                                     │
-                    ┌────────────────┼────────────────┐
-                    │                │                │
-           ┌────────▼───────┐ ┌─────▼──────┐ ┌──────▼──────┐
-           │  Neon Postgres │ │   Redis    │ │   Brevo     │
-           │  + Pooler      │ │  (private) │ │   Email     │
-           └────────────────┘ └────────────┘ └─────────────┘
-```
-
----
-
-## Segurança — Implementação Real
-
-### Camada de Rede
-
-- Cloudflare proxy em todo tráfego — IPs do servidor nunca expostos
-- DDoS protection automático em toda requisição
-- DNSSEC ativo — assinatura criptográfica de registros DNS
-- HSTS com `max-age=63072000; includeSubDomains; preload`
-- CSP configurado sem `unsafe-eval`
-
-### Camada de Aplicação
-
-- CSRF: token duplo (cookie `csrf-token` + header `X-CSRF-Token`)
-- Cookies: `HttpOnly`, `SameSite=Lax`, `Secure` em produção
-- Helmet com headers de segurança completos
-- Rate limiting via Redis com TTL por domínio (`auth`, `admin-pin`, `admin-pin-proof`) — compartilhado entre instâncias
-- Global HTTP Exception Filter — erros 5xx logados com stack trace, 4xx silenciosos
-
-### Admin PIN
-
-- Hash `argon2id` armazenado no banco — PIN nunca trafega em plaintext após criação
-- Verificação server-side com rate limit dedicado por usuário
-- Emissão de JWT de curta duração (10 minutos) com HMAC-SHA256
-- Verificação de assinatura com `timingSafeEqual` — imune a timing attack
-- Token armazenado em `sessionStorage` — não persiste entre sessões do browser
-
-### Senhas e OTP
-
-- Hash com `argon2id` (vencedor PHC, recomendação OWASP)
-- OTP de 8 dígitos gerado com `crypto.randomInt` — criptograficamente seguro
-- **OTP validation with automatic whitespace trimming** (fix for copy-paste issues)
-- TTL configurável por tipo de código (verificação: 15min, redefinição: 30min)
-- Email templates in formal Portuguese via Brevo API
-
-### Auditoria
-
-- Modelo `AuditLog` com `resourceId`, `event`, `userId`, `ip`, `userAgent`
-- Indexado por `[resourceId, event]` para queries eficientes
-- Eventos rastreados: login, logout, alteração de senha, verificação de email, Admin PIN
-
----
-
-## Performance
-
-### Cache Redis
-
-- Endpoint `/finance/summary` cacheado por 60 segundos por usuário
-- Invalidação por evento: criação/edição de produto ou pedido limpa o cache
-- Redis em rede privada Railway — zero custo de egress, latência < 1ms
-
-### Banco de Dados
-
-- Neon connection pooler ativo — cold start eliminado
-- Indexes estratégicos: `[buyerCity, buyerState]`, `[buyerDocument]`, `[resourceId, event]`
-- N+1 eliminado no finance service — 3 queries paralelas com `Promise.all` e filtros no DB
-- Slow query logging no `PrismaService` — queries acima de 500ms logadas automaticamente
-
-### CDN
-
-- Cloudflare em frente ao frontend — assets servidos do edge global
-- `Cache-Control: s-maxage=31536000` — assets imutáveis em cache por 1 ano
-- Fontes, imagens e bundles JS não chegam ao Railway em visitas recorrentes
-
----
-
-## Modelos de Banco
-
-```
-User              — conta, hash de senha, adminPinHash, perfil
-Session           — sessão autenticada com TTL
-AuthRateLimit     — rate limiting persistente por chave (IP, userId)
-OneTimeCode       — OTP de verificação e redefinição com TTL
-PasswordResetToken — token de redefinição de senha
-Product           — portfólio com categoria, preço, custo, estoque
-Order             — pedido com comprador, itens, status, geocodificação
-OrderItem         — item de pedido com produto, quantidade e preço
-Employee          — funcionário com vínculo de vendas
-AuditLog          — trilha de auditoria de eventos sensíveis
-ConsentDocument   — versão de termos/política para aceite
-UserConsent       — registro de aceite por usuário e versão
-CookiePreference  — preferências de cookies por usuário
-DemoAccessGrant   — controle de acesso da conta demo por IP/dispositivo
-```
-
----
-
-## Estrutura do Repositório
-
-```
 desk-imperial/
-├─ apps/
-│  ├─ api/                          # NestJS — backend
-│  │  ├─ src/
-│  │  │  ├─ common/                 # filtros, guards, utils, pipes globais
-│  │  │  ├─ database/               # PrismaService com monitoring
-│  │  │  └─ modules/
-│  │  │     ├─ admin-pin/           # PIN server-side, Redis challenge, rate limit
-│  │  │     ├─ auth/                # login, OTP, sessão, CSRF
-│  │  │     ├─ finance/             # summary, breakdown, cache Redis
-│  │  │     ├─ products/            # portfólio, importação CSV
-│  │  │     ├─ orders/              # pedidos, PDV, comandas
-│  │  │     ├─ employees/           # funcionários, folha, ranking
-│  │  │     ├─ geocoding/           # geocodificação com cache
-│  │  │     ├─ market-intelligence/ # Gemini Flash
-│  │  │     ├─ currency/            # cotações com cache e fallback
-│  │  │     └─ monitoring/          # health check
-│  │  └─ prisma/
-│  │     ├─ schema.prisma
-│  │     └─ migrations/
-│  └─ web/                          # Next.js 15 — frontend
-│     ├─ app/
-│     │  ├─ (marketing)/            # landing page
-│     │  ├─ (auth)/                 # login, cadastro, recuperação
-│     │  └─ dashboard/              # área autenticada
-│     ├─ components/
-│     │  ├─ dashboard/              # 28 componentes de UI
-│     │  ├─ admin-pin/              # dialog e hook do PIN
-│     │  └─ ui/                     # componentes base
-│     └─ lib/                       # clients de API, utilitários
-├─ packages/
-│  └─ contracts/                    # tipos compartilhados API ↔ Web
-├─ .env.example
-├─ turbo.json
-└─ package.json
+├── apps/
+│   ├── api/          # NestJS — 16 módulos de domínio
+│   └── web/          # Next.js — 10 domínios de componentes
+├── packages/
+│   ├── types/        # Contratos compartilhados API ↔ frontend
+│   ├── config/       # ESLint e TypeScript compartilhados
+│   └── ui/           # Componentes reutilizáveis
+├── docs/             # 70+ arquivos de documentação técnica
+├── infra/            # Docker Compose + scripts de deploy
+└── tests/load/k6/    # Load tests
 ```
+
+**Módulos da API (16):**
+
+`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `users` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring` · `cache`
+
+Veja [docs/architecture/modules.md](./docs/architecture/modules.md) para a responsabilidade de cada um.
 
 ---
 
-## Como Rodar Localmente
+## Segurança
 
-### 1. Instale dependências
+- Cookies HttpOnly + CSRF token duplo (cookie + header) em todas as mutações
+- Rate limit por domínio em Redis (login, reset de senha, PIN, verificação de e-mail)
+- Isolamento por workspace — dados de cada negócio completamente separados
+- Audit log de eventos sensíveis de autenticação e operação
+- Admin PIN com challenge efêmero e bloqueio automático por tentativas
 
-```bash
-npm ci
-```
-
-### 2. Configure o ambiente
-
-Copie `.env.example` para `.env` e preencha as variáveis.
-
-Variáveis essenciais:
-
-```env
-# Banco
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/desk_imperial
-DIRECT_URL=postgresql://postgres:postgres@localhost:5432/desk_imperial
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:4000
-APP_URL=http://localhost:3000
-
-# Segurança
-COOKIE_SECRET=change-me-min-32-chars
-CSRF_SECRET=change-me-min-32-chars
-
-# Cache (opcional em desenvolvimento)
-# A API aceita REDIS_URL, REDIS_PRIVATE_URL ou REDIS_PUBLIC_URL
-REDIS_URL=redis://localhost:6379
-
-# Email
-EMAIL_PROVIDER=log
-BREVO_API_KEY=
-EMAIL_FROM_NAME=DESK IMPERIAL
-EMAIL_FROM_EMAIL=no-reply@seudominio.com
-
-# IA
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
-
-# Cotações
-EXCHANGE_RATES_URL=https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BRL-USD,BRL-EUR,USD-EUR,EUR-USD
-EXCHANGE_RATES_FALLBACK_USD_BRL=5.5
-EXCHANGE_RATES_FALLBACK_EUR_BRL=6.0
-```
-
-> Em desenvolvimento sem Redis configurado, o cache é ignorado graciosamente — a aplicação funciona normalmente.
-
-### 3. Suba o banco
-
-```bash
-npm run db:up
-```
-
-### 4. Aplique migrations e gere o client
-
-```bash
-npm --workspace @partner/api run prisma:migrate:dev
-npm --workspace @partner/api run prisma:generate
-```
-
-### 5. Rode o seed
-
-```bash
-npm run seed
-```
-
-### 6. Inicie
-
-```bash
-# Em terminais separados
-npm --workspace @partner/api run dev
-npm --workspace @partner/web run dev
-```
-
-- Frontend: `http://localhost:3000`
-- API: `http://localhost:4000`
-- Swagger: `http://localhost:4000/docs`
+Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ---
 
-## Scripts
+## Documentação
 
-| Comando                  | Descrição                                             |
-| ------------------------ | ----------------------------------------------------- |
-| `npm run dev`            | Inicia api e web em paralelo                          |
-| `npm run build`          | Build de produção do monorepo                         |
-| `npm run lint`           | ESLint em todos os workspaces                         |
-| `npm run typecheck`      | TypeScript sem emitir arquivos                        |
-| `npm test`               | Jest em todos os workspaces                           |
-| `npm test -- --coverage` | Run tests with coverage report (target: 80% for auth) |
-| `npm test -- --watch`    | Run tests in watch mode                               |
-| `npm run db:up`          | Sobe PostgreSQL local via Docker                      |
-| `npm run db:down`        | Para e remove o container                             |
-| `npm run db:studio`      | Abre Prisma Studio                                    |
-
----
-
-## Estado Atual de Testes (API)
-
-Execução validada em `26/03/2026`:
-
-- **Test Suites:** 13 passed, 13 total
-- **Tests:** 337 passed, 337 total
-
-Comando de validação:
-
-```bash
-npm --workspace @partner/api test
-```
+| Área                                   | Link                                                                               |
+| -------------------------------------- | ---------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                   |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                             |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                     |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                         |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)   |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                     |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                   |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                   |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md) |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)         |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                               |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                               |
 
 ---
 
-## Deploy em Produção
+## Limitações conhecidas
 
-### Variáveis adicionais para produção
+- Importação CSV de produtos está desativada (HTTP 410) — lógica existe, endpoint bloqueado
+- Cobertura de testes frontend ainda parcial em relação à superfície total
+- Sentry full-stack já integrado; faltam apenas calibração fina de amostragem/alertas por ambiente
+- Projeto em evolução — funcional e rodando em produção, mas não finalizado 100%
 
-```env
-NODE_ENV=production
-# Priorize REDIS_URL; fallback aceito: REDIS_PRIVATE_URL/REDIS_PUBLIC_URL
-REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}
-DATABASE_URL=<neon-pooler-url com -pooler no hostname>
-PORTFOLIO_EMAIL_FALLBACK=false
-```
-
-> Em produção, uma URL de Redis é obrigatória (`REDIS_URL`, `REDIS_PRIVATE_URL` ou `REDIS_PUBLIC_URL`). O sistema usa WebSocket/Socket.IO como transporte ao vivo e usa Redis para propagar os eventos entre instâncias da API. Sem Redis, o deploy pode subir, mas web/mobile ficam sujeitos a divergência de estado em escala horizontal.
-
-### Infraestrutura
-
-| Serviço     | Provider      | Detalhe                        |
-| ----------- | ------------- | ------------------------------ |
-| API         | Railway       | NestJS compilado               |
-| Frontend    | Railway       | Next.js standalone             |
-| Banco       | Neon          | PostgreSQL serverless + pooler |
-| Cache       | Railway Redis | Rede privada, zero egress      |
-| CDN / Proxy | Cloudflare    | SSL Completo, DNSSEC, DDoS     |
+Veja o detalhamento completo em [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md).
 
 ---
 
-### Checklist Railway
+## Contribuição
 
-1. Provisione um serviço Redis no mesmo projeto Railway da API.
-2. Configure `REDIS_URL=${{Redis.REDIS_PRIVATE_URL}}` na API (ou use `REDIS_PRIVATE_URL` diretamente).
-3. Garanta que `DATABASE_URL`, `COOKIE_SECRET` e `CSRF_SECRET` estejam preenchidos.
-4. Rode `npm --workspace @partner/api run prisma:migrate:deploy` antes de promover tráfego.
-5. Use build command da API: `npm --workspace @partner/api run build`.
-6. Use start command da API: `npm --workspace @partner/api run start`.
-7. Verifique `GET /health` após o rollout.
+Leia [CONTRIBUTING.md](./CONTRIBUTING.md) para o fluxo completo.
 
-Health esperado:
+Checklist mínimo antes de abrir PR:
 
-```json
-{
-  "status": "ok",
-  "dbHealthy": true,
-  "redisHealthy": true
-}
-```
-
-Se `redisHealthy` vier `false`, não considere o deploy pronto para produção multi-instância.
+- [ ] `npm run lint` passa sem erros
+- [ ] `npm run typecheck` passa
+- [ ] Testes da área alterada passam
+- [ ] `npm run build` passa
 
 ---
 
-## Conta Demo
+## Roadmap
 
-| Campo | Valor                      |
-| ----- | -------------------------- |
-| Email | `demo@deskimperial.online` |
-| Senha | `Demo@123`                 |
-
-> Cada IP/dispositivo tem 20 minutos de acesso demo por dia. Para avaliação completa, crie sua própria conta em `/cadastro`.
+Veja [ROADMAP.md](./ROADMAP.md) para o que está feito, o que está em andamento e o que vem a seguir.
 
 ---
 
-## Rotas
+## Quem fez
 
-### Frontend
+**João Victor de Moraes da Cruz** — estudante de Engenharia de Software.
 
-| Rota                       | Descrição                   |
-| -------------------------- | --------------------------- |
-| `/`                        | Landing page                |
-| `/login`                   | Autenticação                |
-| `/cadastro`                | Criação de conta            |
-| `/verificar-email`         | Confirmação por OTP         |
-| `/recuperar-senha`         | Início do fluxo de recovery |
-| `/redefinir-senha`         | Nova senha com token        |
-| `/dashboard`               | Área autenticada            |
-| `/dashboard/configuracoes` | Perfil e preferências       |
-
-### API
-
-| Prefixo                    | Módulo                    |
-| -------------------------- | ------------------------- |
-| `/api/auth`                | Autenticação, sessão, OTP |
-| `/api/admin`               | Admin PIN                 |
-| `/api/finance`             | Dashboard financeiro      |
-| `/api/products`            | Portfólio                 |
-| `/api/orders`              | Pedidos                   |
-| `/api/employees`           | Funcionários              |
-| `/api/market-intelligence` | Gemini Flash              |
-| `/api/currency`            | Cotações                  |
-| `/api/monitoring`          | Health check              |
-
-Swagger disponível em `/docs` em ambiente de desenvolvimento.
+Construído e mantido sozinho, com foco em segurança, lógica e produto real para quem precisa.  
+Leia a história completa em [docs/CREATOR.md](./docs/CREATOR.md).
 
 ---
 
-## Documentação Complementar
+## Licença
 
-### Architecture & Core
-
-- **[Authentication Flow](docs/architecture/authentication-flow.md)** - Complete auth system with OTP validation, rate limiting, session management, and CSRF protection
-- `docs/architecture/overview.md`
-- `docs/architecture/local-development.md`
-
-### Email & Communications
-
-- **[Brevo Integration](docs/email/brevo-integration.md)** - Email provider setup, DNS configuration, formal Portuguese templates, and delivery troubleshooting
-- `docs/security/brevo-domain-setup.md`
-
-### Frontend Development
-
-- **[UI Guidelines](docs/frontend/ui-guidelines.md)** - Design system, hover states, layout shift prevention, responsive patterns, and accessibility
-
-### Testing
-
-- **[Testing Guide](docs/testing/testing-guide.md)** - Jest configuration, writing tests, coverage targets (80% for auth), and CI/CD integration
-
-### Security
-
-- `docs/security/deploy-checklist.md`
-- `docs/security/security-baseline.md`
-- `docs/security/observability-and-logs.md`
-
-### Troubleshooting
-
-- **[Troubleshooting Guide](docs/troubleshooting.md)** - Solutions for OTP validation, email delivery, dashboard issues, and performance problems
+MIT — use, modifique e distribua livremente. Veja [LICENSE](./LICENSE).
