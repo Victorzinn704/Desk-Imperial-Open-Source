@@ -61,7 +61,14 @@ export function invalidateOperationsLiveCache(
   businessDate: Date,
 ) {
   const dateKey = formatBusinessDateKey(businessDate)
-  void cache.delByPrefix(CacheService.operationsLivePrefix(workspaceOwnerUserId, dateKey))
+  // O cache de `live` NÃO é invalidado aqui intencionalmente.
+  // O socket já empurra eventos para todos os clientes conectados e o frontend
+  // aplica setQueryData instantaneamente. Invalidar o Redis a cada mutação
+  // fazia o cache nunca ficar quente durante operação ativa (mutações a cada
+  // 30–60s, TTL de 20s), tornando cada background refetch um cold path de ~1500ms.
+  // Com o TTL natural o cache fica warm e serve reconexões em <50ms.
+  // Risco aceito: cliente que reconecta recebe snapshot com até 20s de defasagem
+  // antes do socket sincronizar — aceitável para operação de restaurante.
   void cache.delByPrefix(CacheService.operationsKitchenPrefix(workspaceOwnerUserId, dateKey))
   void cache.delByPrefix(CacheService.operationsSummaryPrefix(workspaceOwnerUserId, dateKey))
 }

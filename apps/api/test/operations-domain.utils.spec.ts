@@ -184,14 +184,18 @@ describe('formatBusinessDateKey()', () => {
 })
 
 describe('invalidateOperationsLiveCache()', () => {
-  it('invalida live, kitchen e summary da mesma data operacional', () => {
+  it('invalida kitchen e summary mas preserva o cache live para TTL natural', () => {
+    // O cache de `live` não é deletado nas mutações intencionalmente:
+    // o socket empurra patches via setQueryData para clientes conectados e
+    // o TTL (30s) garante freshness sem que cada mutação torne o cache frio.
     const cache = { delByPrefix: jest.fn() }
 
-    invalidateOperationsLiveCache(cache as any, 'owner-1', new Date(2026, 2, 30))
+    invalidateOperationsLiveCache(cache as Pick<typeof cache, 'delByPrefix'>, 'owner-1', new Date(2026, 2, 30))
 
-    expect(cache.delByPrefix).toHaveBeenNthCalledWith(1, 'operations:live:owner-1:2026-03-30:')
-    expect(cache.delByPrefix).toHaveBeenNthCalledWith(2, 'operations:kitchen:owner-1:2026-03-30:')
-    expect(cache.delByPrefix).toHaveBeenNthCalledWith(3, 'operations:summary:owner-1:2026-03-30:')
+    expect(cache.delByPrefix).toHaveBeenCalledTimes(2)
+    expect(cache.delByPrefix).toHaveBeenNthCalledWith(1, 'operations:kitchen:owner-1:2026-03-30:')
+    expect(cache.delByPrefix).toHaveBeenNthCalledWith(2, 'operations:summary:owner-1:2026-03-30:')
+    expect(cache.delByPrefix).not.toHaveBeenCalledWith('operations:live:owner-1:2026-03-30:')
   })
 })
 
@@ -410,6 +414,7 @@ describe('buildCashUpdatedPayload()', () => {
       expectedCashAmount: { toNumber: () => 700 },
       movements: [{ type: CashMovementType.SUPPLY, amount: { toNumber: () => 300 } }],
     })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- simula Decimal do Prisma em teste
     const payload = buildCashUpdatedPayload(session as any)
     expect(payload.openingAmount).toBe(200)
     expect(payload.inflowAmount).toBe(300)

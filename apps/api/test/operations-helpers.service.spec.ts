@@ -110,7 +110,7 @@ describe('OperationsHelpersService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         'operations:live:owner-1:2026-03-30:compact:workspace:compact',
         response,
-        20,
+        30,
       )
     })
 

@@ -42,10 +42,11 @@ type TransactionClient = Prisma.TransactionClient
 
 type EmployeeSessionSnapshot = Parameters<typeof buildEmployeeOperationsRecord>[0]['cashSession']
 
-// TTL maior que staleTime do frontend (20s > 15s) garante que refetches normais
-// sempre encontrem cache válido. O Socket.IO invalida via invalidateQueries quando
-// há mutação real — então aumentar o TTL não atrasa nenhuma atualização operacional.
-const OPERATIONS_LIVE_CACHE_TTL_SECONDS = 20
+// TTL do live elevado para 30s porque o cache não é mais deletado nas mutações.
+// O socket empurra patches via setQueryData — o Redis só serve reconexões e
+// background refetches (staleTime frontend = 15s). 30s > 15s garante que o
+// cache esteja quente em toda janela de operação normal.
+const OPERATIONS_LIVE_CACHE_TTL_SECONDS = 30
 const OPERATIONS_KITCHEN_CACHE_TTL_SECONDS = 20
 const OPERATIONS_SUMMARY_CACHE_TTL_SECONDS = 20
 const DEFAULT_OWNER_OPERATOR_LABEL = 'Operacao de balcao'
