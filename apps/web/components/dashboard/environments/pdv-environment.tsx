@@ -32,7 +32,7 @@ export function PdvEnvironment() {
   const user = sessionQuery.data?.user
   const operationsQuery = useQuery({
     queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     enabled: Boolean(user?.userId),
     placeholderData: keepPreviousData,
     staleTime: 10_000,

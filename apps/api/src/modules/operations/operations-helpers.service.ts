@@ -224,7 +224,7 @@ export class OperationsHelpersService {
     },
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
-    const includeCashMovements = options?.includeCashMovements !== false
+    const includeCashMovements = options?.includeCashMovements === true
     const compactMode = options?.compactMode === true
     const cacheKey =
       CacheService.operationsLiveKey(
