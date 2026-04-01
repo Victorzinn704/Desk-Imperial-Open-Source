@@ -113,6 +113,40 @@ describe('OperationsHelpersService', () => {
         20,
       )
     })
+
+    it('edge case: comanda aberta antes da meia-noite vinculada a sessão do dia seguinte NÃO aparece no snapshot do dia seguinte', async () => {
+      // Risco documentado da abordagem por openedAt window:
+      // Se uma comanda foi aberta às 23:58 de ontem (openedAt = ontem) mas pertence
+      // a uma sessão com businessDate = hoje, ela ficará fora do snapshot de hoje.
+      // Na prática isso exige que o operador abra uma sessão com businessDate adiantado,
+      // o que não é possível via UI atual. O risco é aceito e documentado aqui.
+      const today = new Date(2026, 2, 31) // businessDate consultado
+      const yesterday = new Date(2026, 2, 30)
+
+      mockPrisma.employee.findMany.mockResolvedValue([])
+      mockPrisma.cashSession.findMany.mockResolvedValue([{ id: 'session-today' }])
+      mockPrisma.cashClosure.findUnique.mockResolvedValue(null)
+      mockPrisma.mesa.findMany.mockResolvedValue([])
+      // Comanda com openedAt em ontem — fora da janela de hoje
+      mockPrisma.comanda.findMany.mockResolvedValue([])
+
+      await service.buildLiveSnapshot('owner-1', today, null, { compactMode: true })
+
+      // A query usa apenas a janela de openedAt de hoje — comanda de ontem não é capturada
+      expect(mockPrisma.comanda.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            openedAt: {
+              gte: new Date(2026, 2, 31, 0, 0, 0, 0),
+              lt: new Date(2026, 3, 1, 0, 0, 0, 0),
+            },
+          }),
+        }),
+      )
+      // Confirma que a data de ontem não está no filtro
+      const callArg = mockPrisma.comanda.findMany.mock.calls[0][0]
+      expect(callArg.where.openedAt.gte.getTime()).toBeGreaterThan(yesterday.getTime())
+    })
   })
 
   describe('buildKitchenView', () => {
