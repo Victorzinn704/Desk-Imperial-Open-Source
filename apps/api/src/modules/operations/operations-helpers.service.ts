@@ -42,9 +42,23 @@ type TransactionClient = Prisma.TransactionClient
 
 type EmployeeSessionSnapshot = Parameters<typeof buildEmployeeOperationsRecord>[0]['cashSession']
 
+// TTL maior que staleTime do frontend (20s > 15s) garante que refetches normais
+// sempre encontrem cache válido. O Socket.IO invalida via invalidateQueries quando
+// há mutação real — então aumentar o TTL não atrasa nenhuma atualização operacional.
+const OPERATIONS_LIVE_CACHE_TTL_SECONDS = 20
+const OPERATIONS_KITCHEN_CACHE_TTL_SECONDS = 20
+const OPERATIONS_SUMMARY_CACHE_TTL_SECONDS = 20
+const DEFAULT_OWNER_OPERATOR_LABEL = 'Operacao de balcao'
+
 const employeeSnapshotSelect = {
   id: true,
   employeeCode: true,
+  displayName: true,
+  active: true,
+} as const
+
+const employeeSnapshotCompactSelect = {
+  id: true,
   displayName: true,
   active: true,
 } as const
@@ -97,6 +111,10 @@ const cashSessionSnapshotWithoutMovementsSelect = {
   notes: true,
   openedAt: true,
   closedAt: true,
+} as const
+
+const cashSessionCompactRefSelect = {
+  id: true,
 } as const
 
 const comandaItemSnapshotSelect = {
@@ -180,6 +198,14 @@ const mesaSnapshotSelect = {
   reservedUntil: true,
 } as const
 
+const mesaSnapshotCompactSelect = {
+  id: true,
+  label: true,
+  capacity: true,
+  active: true,
+  reservedUntil: true,
+} as const
+
 @Injectable()
 export class OperationsHelpersService {
   constructor(
@@ -198,13 +224,14 @@ export class OperationsHelpersService {
   ): Promise<OperationsLiveResponse> {
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements !== false
+    const compactMode = options?.compactMode === true
     const cacheKey =
       CacheService.operationsLiveKey(
         workspaceOwnerUserId,
         formatBusinessDateKey(businessDate),
         includeCashMovements,
         scopedEmployeeId,
-      ) + (options?.compactMode ? ':compact' : '')
+      ) + (compactMode ? ':compact' : '')
 
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
@@ -213,20 +240,14 @@ export class OperationsHelpersService {
       }
     }
 
-    const [owner, employees, sessions, comandas, closure, mesas] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: workspaceOwnerUserId },
-        select: {
-          fullName: true,
-          companyName: true,
-        },
-      }),
+    const comandaSelect = compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect
+    const [employees, sessions, closure, mesas, comandas] = await Promise.all([
       this.prisma.employee.findMany({
         where: {
           userId: workspaceOwnerUserId,
           ...(scopedEmployeeId ? { id: scopedEmployeeId } : {}),
         },
-        select: employeeSnapshotSelect,
+        select: compactMode ? employeeSnapshotCompactSelect : employeeSnapshotSelect,
         orderBy: [{ active: 'desc' }, { employeeCode: 'asc' }],
       }),
       this.prisma.cashSession.findMany({
@@ -235,35 +256,13 @@ export class OperationsHelpersService {
           businessDate,
           ...(scopedEmployeeId ? { employeeId: scopedEmployeeId } : {}),
         },
-        select: includeCashMovements ? cashSessionSnapshotSelect : cashSessionSnapshotWithoutMovementsSelect,
+        select: compactMode
+          ? cashSessionCompactRefSelect
+          : includeCashMovements
+            ? cashSessionSnapshotSelect
+            : cashSessionSnapshotWithoutMovementsSelect,
         orderBy: {
           openedAt: 'desc',
-        },
-      }),
-      this.prisma.comanda.findMany({
-        where: {
-          companyOwnerId: workspaceOwnerUserId,
-          OR: [
-            {
-              cashSession: {
-                is: {
-                  businessDate,
-                },
-              },
-            },
-            {
-              cashSessionId: null,
-              openedAt: {
-                gte: window.start,
-                lt: window.end,
-              },
-            },
-          ],
-          ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
-        },
-        select: options?.compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect,
-        orderBy: {
-          openedAt: 'asc',
         },
       }),
       this.prisma.cashClosure.findUnique({
@@ -277,17 +276,39 @@ export class OperationsHelpersService {
       }),
       this.prisma.mesa.findMany({
         where: { companyOwnerId: workspaceOwnerUserId, active: true },
-        select: mesaSnapshotSelect,
+        select: compactMode ? mesaSnapshotCompactSelect : mesaSnapshotSelect,
         orderBy: [{ section: 'asc' }, { label: 'asc' }],
       }),
+      // Single query covering both session-linked and standalone comandas for the
+      // business date window — eliminates the sequential second wave that previously
+      // waited for sessionIds before querying.
+      this.prisma.comanda.findMany({
+        where: {
+          companyOwnerId: workspaceOwnerUserId,
+          openedAt: {
+            gte: window.start,
+            lt: window.end,
+          },
+          ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
+        },
+        select: comandaSelect,
+        orderBy: {
+          openedAt: 'asc',
+        },
+      }),
     ])
-
     const sessionSnapshotByEmployee = new Map<string | null, EmployeeSessionSnapshot>()
-    for (const session of sessions) {
-      sessionSnapshotByEmployee.set(session.employeeId ?? null, {
-        ...session,
-        movements: 'movements' in session ? session.movements : [],
-      } as EmployeeSessionSnapshot)
+    if (!compactMode) {
+      for (const session of sessions) {
+        if (!('employeeId' in session)) {
+          continue
+        }
+        const employeeId = typeof session.employeeId === 'string' ? session.employeeId : null
+        sessionSnapshotByEmployee.set(employeeId, {
+          ...session,
+          movements: 'movements' in session ? session.movements : [],
+        } as EmployeeSessionSnapshot)
+      }
     }
 
     const comandasByEmployee = new Map<string | null, typeof comandas>()
@@ -305,8 +326,6 @@ export class OperationsHelpersService {
       if (comanda.mesaId) openComandaByMesa.set(comanda.mesaId, comanda)
     }
 
-    const ownerOperatorLabel = owner?.fullName?.trim() || owner?.companyName?.trim() || 'Operacao de balcao'
-
     const snapshot = {
       businessDate: formatBusinessDateKey(businessDate),
       companyOwnerId: workspaceOwnerUserId,
@@ -314,15 +333,15 @@ export class OperationsHelpersService {
       employees: employees.map((employee) =>
         buildEmployeeOperationsRecord({
           employee,
-          cashSession: sessionSnapshotByEmployee.get(employee.id) ?? null,
+          cashSession: compactMode ? null : (sessionSnapshotByEmployee.get(employee.id) ?? null),
           comandas: comandasByEmployee.get(employee.id) ?? [],
         }),
       ),
       unassigned: buildEmployeeOperationsRecord({
         employee: null,
-        cashSession: sessionSnapshotByEmployee.get(null) ?? null,
+        cashSession: compactMode ? null : (sessionSnapshotByEmployee.get(null) ?? null),
         comandas: comandasByEmployee.get(null) ?? [],
-        fallbackDisplayName: ownerOperatorLabel,
+        fallbackDisplayName: DEFAULT_OWNER_OPERATOR_LABEL,
       }),
       mesas: mesas.map((mesa) => {
         const comanda = openComandaByMesa.get(mesa.id)
@@ -331,7 +350,7 @@ export class OperationsHelpersService {
     }
 
     if (cacheKey) {
-      void this.cache.set(cacheKey, snapshot, 2)
+      void this.cache.set(cacheKey, snapshot, OPERATIONS_LIVE_CACHE_TTL_SECONDS)
     }
 
     return snapshot
@@ -349,48 +368,38 @@ export class OperationsHelpersService {
       return cached
     }
 
-    const [owner, kitchenItems] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: workspaceOwnerUserId },
-        select: {
-          fullName: true,
-          companyName: true,
-        },
-      }),
-      this.prisma.comandaItem.findMany({
-        where: this.buildKitchenItemWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId),
-        select: {
-          id: true,
-          comandaId: true,
-          productName: true,
-          quantity: true,
-          notes: true,
-          kitchenStatus: true,
-          kitchenQueuedAt: true,
-          kitchenReadyAt: true,
-          comanda: {
-            select: {
-              tableLabel: true,
-              currentEmployeeId: true,
-              currentEmployee: {
-                select: {
-                  displayName: true,
-                },
+    const kitchenItems = await this.prisma.comandaItem.findMany({
+      where: this.buildKitchenItemWhere(workspaceOwnerUserId, businessDate, scopedEmployeeId),
+      select: {
+        id: true,
+        comandaId: true,
+        productName: true,
+        quantity: true,
+        notes: true,
+        kitchenStatus: true,
+        kitchenQueuedAt: true,
+        kitchenReadyAt: true,
+        comanda: {
+          select: {
+            tableLabel: true,
+            currentEmployeeId: true,
+            currentEmployee: {
+              select: {
+                displayName: true,
               },
             },
           },
         },
-        orderBy: [{ kitchenQueuedAt: 'asc' }, { createdAt: 'asc' }],
-      }),
-    ])
+      },
+      orderBy: [{ kitchenQueuedAt: 'asc' }, { createdAt: 'asc' }],
+    })
 
-    const ownerOperatorLabel = owner?.fullName?.trim() || owner?.companyName?.trim() || 'Operacao de balcao'
     const items: OperationsKitchenItemRecord[] = kitchenItems.map((item) => ({
       itemId: item.id,
       comandaId: item.comandaId,
       mesaLabel: item.comanda.tableLabel,
       employeeId: item.comanda.currentEmployeeId,
-      employeeName: item.comanda.currentEmployee?.displayName ?? ownerOperatorLabel,
+      employeeName: item.comanda.currentEmployee?.displayName ?? DEFAULT_OWNER_OPERATOR_LABEL,
       productName: item.productName,
       quantity: item.quantity,
       notes: item.notes,
@@ -424,7 +433,7 @@ export class OperationsHelpersService {
       statusCounts,
     }
 
-    void this.cache.set(cacheKey, response, 2)
+    void this.cache.set(cacheKey, response, OPERATIONS_KITCHEN_CACHE_TTL_SECONDS)
 
     return response
   }
@@ -446,15 +455,7 @@ export class OperationsHelpersService {
       statuses: OPEN_COMANDA_STATUSES,
     })
 
-    const [owner, closure, openComandasAggregate, openSessionsCount, performerGroups, topProductGroups] =
-      await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: workspaceOwnerUserId },
-        select: {
-          fullName: true,
-          companyName: true,
-        },
-      }),
+    const [closure, openComandasAggregate, openSessionsCount, performerGroups, topProductGroups] = await Promise.all([
       this.prisma.cashClosure.findUnique({
         where: {
           companyOwnerId_businessDate: {
@@ -521,7 +522,7 @@ export class OperationsHelpersService {
         })
       : []
     const employeeNameById = new Map(employees.map((employee) => [employee.id, employee.displayName]))
-    const ownerDisplayName = owner?.fullName?.trim() || owner?.companyName?.trim() || 'Operacao de balcao'
+    const ownerDisplayName = DEFAULT_OWNER_OPERATOR_LABEL
 
     const faturamentoAberto = toNumber(openComandasAggregate._sum.totalAmount)
     const receitaRealizada = toNumber(closure?.grossRevenueAmount)
@@ -575,7 +576,7 @@ export class OperationsHelpersService {
       topProducts,
     }
 
-    void this.cache.set(cacheKey, finalizedResponse, 2)
+    void this.cache.set(cacheKey, finalizedResponse, OPERATIONS_SUMMARY_CACHE_TTL_SECONDS)
 
     return finalizedResponse
   }

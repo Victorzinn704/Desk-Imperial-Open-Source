@@ -485,9 +485,11 @@ model Comanda {
   order             Order?
 
   @@index([companyOwnerId, status, openedAt])
+  @@index([companyOwnerId, cashSessionId, openedAt])
   @@index([currentEmployeeId, status, openedAt])
   @@index([cashSessionId, status, openedAt])
   @@index([companyOwnerId, tableLabel, openedAt])
+  @@index([companyOwnerId, openedAt])
 }
 
 model ComandaItem {
