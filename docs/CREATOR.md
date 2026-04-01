@@ -67,22 +67,6 @@ Não é o melhor projeto do mundo. Mas, na minha visão, já resolve e já ajuda
 
 ---
 
-## O que aprendi no caminho — dicas para novos desenvolvedores
-
-Se você está começando e quer montar algo parecido, aqui vai o que aprendi na prática:
-
-- **Brevo** é gratuito e tem um limite de 300 e-mails por mês — suficiente para começar.
-- **PostgreSQL com Prisma** é fácil de configurar. O **Neon** é intuitivo e serverless.
-- **Railway** suporta frontend e backend juntos e ainda acopla um segundo banco de dados sem complicação.
-- **Cloudflare** te ensina a configurar DNS e te dá uma camada real de proteção — aprendi a me defender com isso.
-- Comprar o primeiro domínio parece pouca coisa, mas marca algo na sua cabeça.
-
-Todo esse conjunto — cada ferramenta, cada erro, cada configuração — vira conhecimento que você carrega para a carreira toda.
-
-Às vezes você só precisa dar o primeiro passo para construir. É isso que vai te moldar como profissional. Porque o primeiro passo desperta uma vontade maior de aprender.
-
----
-
 ## Sobre a inteligência artificial no desenvolvimento
 
 A IA é como um carro de Fórmula 1.
