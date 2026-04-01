@@ -139,7 +139,9 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
-    staleTime: 10_000,
+    // staleTime alinhado ao TTL do cache do backend (20s).
+    // Socket.IO cuida de invalidar em qualquer mutação real.
+    staleTime: 20_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
@@ -149,7 +151,7 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
     queryFn: () => fetchOperationsKitchen(),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
-    staleTime: 10_000,
+    staleTime: 20_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
@@ -579,7 +581,10 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
         </div>
       ) : null}
 
-      <main ref={pullRef} className="flex-1 overflow-y-auto relative">
+      <main
+        ref={pullRef}
+        className={`relative ${activeTab === 'pedido' && pendingAction ? 'flex flex-col flex-1 overflow-hidden' : 'flex-1 overflow-y-auto'}`}
+      >
         <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
         {activeTab === 'mesas' ? (
           <MobileTableGrid

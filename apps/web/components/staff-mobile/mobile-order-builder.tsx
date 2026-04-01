@@ -207,7 +207,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
       <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
         <div className="flex items-center justify-between">
