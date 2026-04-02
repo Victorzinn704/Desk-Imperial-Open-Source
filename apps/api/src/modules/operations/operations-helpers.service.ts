@@ -60,6 +60,7 @@ const employeeSnapshotSelect = {
 
 const employeeSnapshotCompactSelect = {
   id: true,
+  employeeCode: true,
   displayName: true,
   active: true,
 } as const
@@ -203,6 +204,9 @@ const mesaSnapshotCompactSelect = {
   id: true,
   label: true,
   capacity: true,
+  section: true,
+  positionX: true,
+  positionY: true,
   active: true,
   reservedUntil: true,
 } as const
@@ -1189,6 +1193,33 @@ export class OperationsHelpersService {
     const totalRevenue = roundCurrency(toNumber(comanda.totalAmount))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
     const totalItems = comanda.items.reduce((sum, item) => sum + item.quantity, 0)
+
+    // Descontar estoque dos produtos vinculados à comanda
+    const stockByProduct = new Map<string, number>()
+    for (const item of comanda.items) {
+      if (!item.productId) continue
+      stockByProduct.set(item.productId, (stockByProduct.get(item.productId) ?? 0) + item.quantity)
+    }
+
+    for (const [productId, qty] of stockByProduct.entries()) {
+      await transaction.product.updateMany({
+        where: {
+          id: productId,
+          userId: workspaceOwnerUserId,
+          stock: { gte: qty },
+        },
+        data: { stock: { decrement: qty } },
+      })
+      // Se stock < qty o produto continua com estoque 0 (não bloqueia o fechamento da comanda)
+      await transaction.product.updateMany({
+        where: {
+          id: productId,
+          userId: workspaceOwnerUserId,
+          stock: { lt: qty },
+        },
+        data: { stock: 0 },
+      })
+    }
 
     return transaction.order.create({
       data: {

@@ -19,6 +19,7 @@ type ProductLike = Pick<
   | 'unitPrice'
   | 'currency'
   | 'stock'
+  | 'lowStockThreshold'
   | 'requiresKitchen'
   | 'active'
   | 'createdAt'
@@ -77,6 +78,8 @@ export type ProductRecord = {
   originalUnitCost: number
   originalUnitPrice: number
   stock: number
+  lowStockThreshold: number | null
+  isLowStock: boolean
   requiresKitchen: boolean
   active: boolean
   createdAt: string
@@ -130,6 +133,7 @@ export function toProductRecord(
   const stockBaseUnits = product.stock
   const stockPackages = product.unitsPerPackage > 1 ? Math.floor(product.stock / product.unitsPerPackage) : 0
   const stockLooseUnits = product.unitsPerPackage > 1 ? product.stock % product.unitsPerPackage : product.stock
+  const isLowStock = product.lowStockThreshold != null && product.stock <= product.lowStockThreshold
   const comboItems = (product.comboComponents ?? []).map((component) => ({
     componentProductId: component.componentProductId,
     componentProductName: component.componentProduct.name,
@@ -191,6 +195,8 @@ export function toProductRecord(
     originalUnitCost,
     originalUnitPrice,
     stock: product.stock,
+    lowStockThreshold: product.lowStockThreshold,
+    isLowStock,
     requiresKitchen: product.requiresKitchen,
     active: product.active,
     createdAt: product.createdAt.toISOString(),

@@ -1,7 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { CurrencyCode } from '@prisma/client'
 import { Transform, Type } from 'class-transformer'
-import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator'
 import { ProductComboItemDto } from './product-combo-item.dto'
 
 export class UpdateProductDto {
@@ -122,4 +134,14 @@ export class UpdateProductDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   requiresKitchen?: boolean
+
+  @ApiPropertyOptional({
+    example: 12,
+    description: 'Limite mínimo de unidades para alerta de estoque baixo. Null remove o alerta.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === null || value === '' ? null : Number(value)))
+  @IsInt()
+  @Min(0)
+  lowStockThreshold?: number | null
 }

@@ -170,6 +170,7 @@ export class ProductsService {
             unitPrice: dto.unitPrice,
             currency: dto.currency,
             stock: dto.stock,
+            lowStockThreshold: dto.lowStockThreshold ?? null,
             // requiresKitchen: explicit DTO value takes priority;
             // if not sent, infer from category name as safety net
             requiresKitchen: dto.requiresKitchen ?? isKitchenCategory(dto.category),

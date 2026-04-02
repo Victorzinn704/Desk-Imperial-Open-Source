@@ -6,6 +6,7 @@ import {
   Ban,
   ClipboardList,
   LogIn,
+  PackageOpen,
   ReceiptText,
   Shield,
   TrendingUp,
@@ -185,6 +186,18 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         description: `${actor} alterou um vínculo de funcionário.`,
         icon: UserRound,
         color: '#8fffb9',
+      }
+    }
+
+    if (activity.event === 'product.stock.low') {
+      const stock = activity.metadata?.stock as number | undefined
+      const threshold = activity.metadata?.lowStockThreshold as number | undefined
+      const name = activity.metadata?.name as string | undefined
+      return {
+        title: 'Estoque baixo',
+        description: `${name ?? 'Produto'} com ${stock ?? 0} und — limite configurado: ${threshold ?? 0} und.`,
+        icon: PackageOpen,
+        color: '#f59e0b',
       }
     }
 

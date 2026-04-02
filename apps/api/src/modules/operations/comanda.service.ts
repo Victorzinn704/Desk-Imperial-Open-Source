@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { CashSessionStatus, ComandaStatus, KitchenItemStatus } from '@prisma/client'
+import { AuditSeverity, CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -26,9 +26,7 @@ import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
-import {
-  toComandaRecord,
-} from './operations.types'
+import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import {
   buildOptionalOperationsSnapshot,
@@ -42,6 +40,8 @@ import {
   toNumber,
 } from './operations-domain.utils'
 
+const COMANDA_WRITE_ISOLATION_LEVEL = Prisma.TransactionIsolationLevel.Serializable
+
 @Injectable()
 export class ComandaService {
   constructor(
@@ -54,7 +54,7 @@ export class ComandaService {
 
   async getComandaDetails(auth: AuthContext, comandaId: string) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-    
+
     const comanda = await this.prisma.comanda.findUnique({
       where: { id: comandaId, companyOwnerId: workspaceOwnerUserId },
       include: {
@@ -372,30 +372,35 @@ export class ComandaService {
     const kitchenQueuedAt = requiresKitchen ? new Date() : null
 
     const helpers = this.helpers
-    const { item, refreshedComanda, businessDate } = await this.prisma.$transaction(async (transaction) => {
-      const createdItem = await transaction.comandaItem.create({
-        data: {
-          comandaId: comanda.id,
-          productId,
-          productName,
-          quantity: dto.quantity,
-          unitPrice,
-          totalAmount,
-          notes: note,
-          kitchenStatus: requiresKitchen ? KitchenItemStatus.QUEUED : null,
-          kitchenQueuedAt,
-        },
-      })
+    const { item, refreshedComanda, businessDate } = await this.prisma.$transaction(
+      async (transaction) => {
+        const createdItem = await transaction.comandaItem.create({
+          data: {
+            comandaId: comanda.id,
+            productId,
+            productName,
+            quantity: dto.quantity,
+            unitPrice,
+            totalAmount,
+            notes: note,
+            kitchenStatus: requiresKitchen ? KitchenItemStatus.QUEUED : null,
+            kitchenQueuedAt,
+          },
+        })
 
-      const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
-      const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
+        const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
+        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
 
-      return {
-        item: createdItem,
-        refreshedComanda: updatedComanda,
-        businessDate: resolvedBusinessDate,
-      }
-    })
+        return {
+          item: createdItem,
+          refreshedComanda: updatedComanda,
+          businessDate: resolvedBusinessDate,
+        }
+      },
+      {
+        isolationLevel: COMANDA_WRITE_ISOLATION_LEVEL,
+      },
+    )
 
     await this.auditLogService.record({
       actorUserId: auth.userId,
@@ -414,10 +419,10 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
 
     if (requiresKitchen && kitchenQueuedAt) {
-      this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
+      void this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
     }
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
@@ -500,34 +505,39 @@ export class ComandaService {
     })
 
     const helpers = this.helpers
-    const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(async (transaction) => {
-      const insertedItems = []
-      for (const item of preparedItems) {
-        const createdItem = await transaction.comandaItem.create({
-          data: {
-            comandaId: comanda.id,
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalAmount: item.totalAmount,
-            notes: item.notes,
-            kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
-            kitchenQueuedAt: item.kitchenQueuedAt,
-          },
-        })
-        insertedItems.push(createdItem)
-      }
+    const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(
+      async (transaction) => {
+        const insertedItems = []
+        for (const item of preparedItems) {
+          const createdItem = await transaction.comandaItem.create({
+            data: {
+              comandaId: comanda.id,
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalAmount: item.totalAmount,
+              notes: item.notes,
+              kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+              kitchenQueuedAt: item.kitchenQueuedAt,
+            },
+          })
+          insertedItems.push(createdItem)
+        }
 
-      const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
-      const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
+        const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
+        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
 
-      return {
-        createdItems: insertedItems,
-        refreshedComanda: updatedComanda,
-        businessDate: resolvedBusinessDate,
-      }
-    })
+        return {
+          createdItems: insertedItems,
+          refreshedComanda: updatedComanda,
+          businessDate: resolvedBusinessDate,
+        }
+      },
+      {
+        isolationLevel: COMANDA_WRITE_ISOLATION_LEVEL,
+      },
+    )
 
     await this.auditLogService.record({
       actorUserId: auth.userId,
@@ -543,14 +553,14 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+    void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
 
     for (const item of createdItems) {
       if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
-        this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
+        void this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
       }
     }
 
@@ -685,7 +695,7 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+    void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
@@ -783,7 +793,7 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
@@ -864,9 +874,9 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     if (closure) {
-      this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+      void this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     }
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
@@ -978,12 +988,12 @@ export class ComandaService {
 
     // Emit kitchen item event (for Cozinha tab)
     if (refreshedComanda) {
-      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
+      void this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
     }
 
     // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
     if (refreshedComanda) {
-      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+      void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     }
 
     return { itemId, status: dto.status }
@@ -1081,11 +1091,47 @@ export class ComandaService {
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
+    void this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
     void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
     void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
+    void this.checkLowStockAfterClose(auth.userId, workspaceOwnerUserId, refreshedComanda.items)
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+  }
+
+  private async checkLowStockAfterClose(
+    actorUserId: string,
+    workspaceOwnerUserId: string,
+    items: Array<{ productId: string | null; productName: string }>,
+  ) {
+    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[]
+    if (!productIds.length) return
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        userId: workspaceOwnerUserId,
+        lowStockThreshold: { not: null },
+      },
+      select: { id: true, name: true, stock: true, lowStockThreshold: true },
+    })
+
+    for (const product of products) {
+      if (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold) {
+        void this.auditLogService.record({
+          actorUserId,
+          event: 'product.stock.low',
+          resource: 'product',
+          resourceId: product.id,
+          severity: AuditSeverity.WARN,
+          metadata: {
+            name: product.name,
+            stock: product.stock,
+            lowStockThreshold: product.lowStockThreshold,
+          },
+        })
+      }
+    }
   }
 
   private async buildOptionalSnapshot(
@@ -1268,10 +1314,7 @@ export class ComandaService {
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
   }
 
-  private buildKitchenItemRealtimeDeltas(
-    comanda: Parameters<typeof toComandaRecord>[0],
-    businessDate: Date,
-  ) {
+  private buildKitchenItemRealtimeDeltas(comanda: Parameters<typeof toComandaRecord>[0], businessDate: Date) {
     return (comanda.items ?? [])
       .filter(
         (

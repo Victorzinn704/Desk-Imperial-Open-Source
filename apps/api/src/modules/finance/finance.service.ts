@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { OrderStatus } from '@prisma/client'
-import type { BuyerType } from '@prisma/client'
+import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -22,119 +22,6 @@ import {
 } from './finance-analytics.util'
 
 const FINANCE_SUMMARY_TTL = 120 // segundos
-
-export type FinanceSummaryResponse = {
-  displayCurrency: 'BRL' | 'USD' | 'EUR'
-  ratesUpdatedAt: string | null
-  ratesSource: 'live' | 'stale-cache' | 'fallback'
-  ratesNotice: string | null
-  totals: {
-    activeProducts: number
-    inventoryUnits: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-    realizedRevenue: number
-    realizedCost: number
-    realizedProfit: number
-    completedOrders: number
-    currentMonthRevenue: number
-    currentMonthProfit: number
-    previousMonthRevenue: number
-    previousMonthProfit: number
-    revenueGrowthPercent: number
-    profitGrowthPercent: number
-    averageMarginPercent: number
-    averageMarkupPercent: number
-    lowStockItems: number
-  }
-  categoryBreakdown: Array<{
-    category: string
-    products: number
-    units: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-  }>
-  topProducts: Array<{
-    id: string
-    name: string
-    category: string
-    stock: number
-    currency: 'BRL' | 'USD' | 'EUR'
-    displayCurrency: 'BRL' | 'USD' | 'EUR'
-    originalInventorySalesValue: number
-    originalPotentialProfit: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-    marginPercent: number
-  }>
-  recentOrders: Array<{
-    id: string
-    customerName: string | null
-    channel: string | null
-    currency: 'BRL' | 'USD' | 'EUR'
-    status: 'COMPLETED' | 'CANCELLED'
-    totalRevenue: number
-    totalProfit: number
-    originalTotalRevenue: number
-    originalTotalProfit: number
-    totalItems: number
-    createdAt: string
-  }>
-  revenueTimeline: Array<{
-    label: string
-    revenue: number
-    profit: number
-    orders: number
-  }>
-  salesByChannel: Array<{
-    channel: string
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topCustomers: Array<{
-    customerName: string
-    buyerType: BuyerType | null
-    buyerDocument: string | null
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topEmployees: Array<{
-    employeeId: string | null
-    employeeCode: string | null
-    employeeName: string
-    orders: number
-    revenue: number
-    profit: number
-    averageTicket: number
-  }>
-  salesMap: Array<{
-    label: string
-    district: string | null
-    city: string | null
-    state: string | null
-    country: string | null
-    latitude: number
-    longitude: number
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topRegions: Array<{
-    label: string
-    city: string | null
-    state: string | null
-    country: string | null
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  categoryTopProducts: Record<string, FinanceSummaryResponse['topProducts']>
-}
 
 @Injectable()
 export class FinanceService {
@@ -336,7 +223,7 @@ export class FinanceService {
       profitGrowthPercent: calculateGrowthPercent(currentMonthProfit, previousMonthProfit),
       averageMarginPercent: 0,
       averageMarkupPercent: 0,
-      lowStockItems: records.filter((item) => item.stock <= 10).length,
+      lowStockItems: records.filter((item) => item.isLowStock).length,
     }
 
     totals.averageMarginPercent =

@@ -297,6 +297,7 @@ model Product {
   unitPrice        Decimal            @db.Decimal(10, 2)
   currency         CurrencyCode       @default(BRL)
   stock            Int
+  lowStockThreshold Int?
   requiresKitchen  Boolean            @default(false)
   active           Boolean            @default(true)
   createdAt        DateTime           @default(now())
