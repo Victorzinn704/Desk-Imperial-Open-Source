@@ -15,6 +15,9 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  HUSKY: '0'
+  NPM_CONFIG_AUDIT: 'false'
+  NPM_CONFIG_FUND: 'false'
   NODE_ENV: test
   TZ: America/Sao_Paulo
   NEXT_PUBLIC_APP_URL: http://localhost:3000
@@ -38,20 +41,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Lint
         run: npm run lint
@@ -68,20 +63,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install CI native bindings
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Run API tests
         run: npm --workspace @partner/api run test -- --coverage --ci --forceExit
@@ -104,17 +91,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
+          node-version: '22'
+          install-native-bindings: 'true'
 
       - name: Run web unit tests
         run: npm --workspace @partner/web run test
@@ -128,20 +109,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
+          node-version: '22'
+          install-native-bindings: 'true'
 
       - name: Install Playwright Chromium
-        run: npm --workspace @partner/web exec playwright install --with-deps chromium
+        run: npm --workspace @partner/web exec -- playwright install --with-deps chromium
 
       - name: Run web e2e baseline
         run: npm --workspace @partner/web run test:e2e
@@ -169,14 +144,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
+          node-version: '22'
 
       - name: Public repo safety scan
         run: npm run repo:scan-public
@@ -237,17 +208,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
+          node-version: '22'
 
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Prepare API database schema
         run: |
@@ -306,20 +273,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install CI native bindings
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Build all workspaces
         run: npm run build

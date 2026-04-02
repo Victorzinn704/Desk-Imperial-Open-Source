@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common'
+import { trace } from '@opentelemetry/api'
 import { OrderStatus } from '@prisma/client'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
+import { recordFinanceSummaryTelemetry } from '../../common/observability/business-telemetry.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -68,10 +70,32 @@ export class FinanceService {
 
   async getSummaryForUser(auth: AuthContext): Promise<FinanceSummaryResponse> {
     assertOwnerRole(auth, 'Apenas o dono pode acessar o resumo financeiro executivo.')
+    const startedAt = performance.now()
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const cacheKey = CacheService.financeKey(workspaceUserId)
     const cached = await this.cache.get<FinanceSummaryResponse>(cacheKey)
-    if (cached) return cached
+    if (cached) {
+      const attributes = {
+        'desk.finance.cache_hit': true,
+        'desk.user.role': auth.role,
+      }
+      recordFinanceSummaryTelemetry(
+        performance.now() - startedAt,
+        {
+          activeProducts: cached.totals.activeProducts,
+          timelinePoints: cached.revenueTimeline.length,
+          salesMapRegions: cached.salesMap.length,
+        },
+        attributes,
+      )
+      trace.getActiveSpan()?.setAttributes({
+        ...attributes,
+        'desk.finance.active_products': cached.totals.activeProducts,
+        'desk.finance.timeline_points': cached.revenueTimeline.length,
+        'desk.finance.sales_map_regions': cached.salesMap.length,
+      })
+      return cached
+    }
     const snapshot = await this.currencyService.getSnapshot()
     const now = new Date()
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -322,6 +346,27 @@ export class FinanceService {
     }
 
     await this.cache.set(cacheKey, result, FINANCE_SUMMARY_TTL)
+
+    const attributes = {
+      'desk.finance.cache_hit': false,
+      'desk.user.role': auth.role,
+    }
+    recordFinanceSummaryTelemetry(
+      performance.now() - startedAt,
+      {
+        activeProducts: result.totals.activeProducts,
+        timelinePoints: result.revenueTimeline.length,
+        salesMapRegions: result.salesMap.length,
+      },
+      attributes,
+    )
+    trace.getActiveSpan()?.setAttributes({
+      ...attributes,
+      'desk.finance.active_products': result.totals.activeProducts,
+      'desk.finance.timeline_points': result.revenueTimeline.length,
+      'desk.finance.sales_map_regions': result.salesMap.length,
+    })
+
     return result
   }
 

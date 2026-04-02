@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { trace } from '@opentelemetry/api'
 import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
@@ -17,6 +18,10 @@ import {
   type Employee,
 } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
+import {
+  recordOperationsKitchenTelemetry,
+  recordOperationsLiveTelemetry,
+} from '../../common/observability/business-telemetry.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
 import { PrismaService } from '../../database/prisma.service'
@@ -233,6 +238,7 @@ export class OperationsHelpersService {
       compactMode?: boolean
     },
   ): Promise<OperationsLiveResponse> {
+    const startedAt = performance.now()
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements === true
     const compactMode = options?.compactMode === true
@@ -247,6 +253,30 @@ export class OperationsHelpersService {
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
       if (cached) {
+        const comandasCount =
+          cached.unassigned.comandas.length +
+          cached.employees.reduce((total, employee) => total + employee.comandas.length, 0)
+        const attributes = {
+          'desk.operations.cache_hit': true,
+          'desk.operations.compact_mode': compactMode,
+          'desk.operations.include_cash_movements': includeCashMovements,
+          'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+        }
+        recordOperationsLiveTelemetry(
+          performance.now() - startedAt,
+          {
+            employees: cached.employees.length,
+            comandas: comandasCount,
+            mesas: cached.mesas.length,
+          },
+          attributes,
+        )
+        trace.getActiveSpan()?.setAttributes({
+          ...attributes,
+          'desk.operations.live.employees': cached.employees.length,
+          'desk.operations.live.comandas': comandasCount,
+          'desk.operations.live.mesas': cached.mesas.length,
+        })
         return cached
       }
     }
@@ -364,6 +394,28 @@ export class OperationsHelpersService {
       void this.cache.set(cacheKey, snapshot, OPERATIONS_LIVE_CACHE_TTL_SECONDS)
     }
 
+    const attributes = {
+      'desk.operations.cache_hit': false,
+      'desk.operations.compact_mode': compactMode,
+      'desk.operations.include_cash_movements': includeCashMovements,
+      'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+    }
+    recordOperationsLiveTelemetry(
+      performance.now() - startedAt,
+      {
+        employees: snapshot.employees.length,
+        comandas: comandas.length,
+        mesas: snapshot.mesas.length,
+      },
+      attributes,
+    )
+    trace.getActiveSpan()?.setAttributes({
+      ...attributes,
+      'desk.operations.live.employees': snapshot.employees.length,
+      'desk.operations.live.comandas': comandas.length,
+      'desk.operations.live.mesas': snapshot.mesas.length,
+    })
+
     return snapshot
   }
 
@@ -372,10 +424,20 @@ export class OperationsHelpersService {
     businessDate: Date,
     scopedEmployeeId?: string | null,
   ): Promise<OperationsKitchenResponse> {
+    const startedAt = performance.now()
     const businessDateKey = formatBusinessDateKey(businessDate)
     const cacheKey = CacheService.operationsKitchenKey(workspaceOwnerUserId, businessDateKey, scopedEmployeeId)
     const cached = await this.cache.get<OperationsKitchenResponse>(cacheKey)
     if (cached) {
+      const attributes = {
+        'desk.operations.cache_hit': true,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      }
+      recordOperationsKitchenTelemetry(performance.now() - startedAt, { items: cached.items.length }, attributes)
+      trace.getActiveSpan()?.setAttributes({
+        ...attributes,
+        'desk.operations.kitchen.items': cached.items.length,
+      })
       return cached
     }
 
@@ -445,6 +507,16 @@ export class OperationsHelpersService {
     }
 
     void this.cache.set(cacheKey, response, OPERATIONS_KITCHEN_CACHE_TTL_SECONDS)
+
+    const attributes = {
+      'desk.operations.cache_hit': false,
+      'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+    }
+    recordOperationsKitchenTelemetry(performance.now() - startedAt, { items: response.items.length }, attributes)
+    trace.getActiveSpan()?.setAttributes({
+      ...attributes,
+      'desk.operations.kitchen.items': response.items.length,
+    })
 
     return response
   }

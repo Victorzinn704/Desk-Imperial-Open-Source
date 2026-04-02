@@ -1,0 +1,43 @@
+name: Setup Node workspace
+description: Padroniza setup do Node, install de dependências e passos opcionais de toolchain para o monorepo.
+
+inputs:
+  node-version:
+    description: Versão do Node.js usada no job
+    required: false
+    default: '22'
+  install-native-bindings:
+    description: Instala bindings nativos do toolchain web no Linux
+    required: false
+    default: 'false'
+  generate-prisma:
+    description: Gera o Prisma Client para jobs que tocam a API
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        HUSKY: 0
+        NPM_CONFIG_AUDIT: false
+        NPM_CONFIG_FUND: false
+      run: npm ci
+
+    - name: Install CI native bindings
+      if: ${{ inputs.install-native-bindings == 'true' }}
+      shell: bash
+      run: node ./scripts/install-ci-native-bindings.mjs
+
+    - name: Generate Prisma client
+      if: ${{ inputs.generate-prisma == 'true' }}
+      shell: bash
+      run: npm --workspace @partner/api run prisma:generate
