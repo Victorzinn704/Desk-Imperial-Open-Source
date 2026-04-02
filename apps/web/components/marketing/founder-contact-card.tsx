@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { Github, Linkedin } from 'lucide-react'
 
 const socialLinks = [
@@ -19,15 +20,34 @@ const socialLinks = [
   },
 ] as const
 
+const floatingMotion = [
+  {
+    animate: { y: [0, -12, 0], x: [0, 1, 0], rotate: [0, -1.5, 0] },
+    transition: { duration: 4.6, repeat: Infinity, ease: 'easeInOut' as const },
+  },
+  {
+    animate: { y: [-2, -16, -2], x: [0, -1, 0], rotate: [0, 1.5, 0] },
+    transition: { duration: 5.2, repeat: Infinity, ease: 'easeInOut' as const, delay: 0.35 },
+  },
+]
+
 export function FounderContactCard() {
   return (
-    <aside className="pointer-events-auto relative z-20 mx-auto mt-2 w-fit lg:absolute lg:right-[-8px] lg:top-[130px] lg:mt-0">
+    <aside className="pointer-events-auto relative z-20 mx-auto mt-3 w-fit lg:absolute lg:right-[22px] lg:top-[170px] lg:mt-0">
+      <div className="pointer-events-none absolute -inset-4 rounded-[26px] bg-[radial-gradient(circle,rgba(155,132,96,0.24),transparent_66%)] blur-xl" />
+
       <ul className="contact-bubbles" role="list">
         {socialLinks.map((social, index) => {
           const Icon = social.icon
+          const motionSpec = floatingMotion[index] ?? floatingMotion[0]
 
           return (
-            <li className={`bubble-item ${index === 0 ? 'bubble-float-a' : 'bubble-float-b'}`} key={social.label}>
+            <motion.li
+              animate={motionSpec.animate}
+              className="bubble-item"
+              key={social.label}
+              transition={motionSpec.transition}
+            >
               <a
                 aria-label={social.label}
                 data-social={social.social}
@@ -42,7 +62,7 @@ export function FounderContactCard() {
                 <span className="bubble-tooltip-title">{social.label}</span>
                 <span className="bubble-tooltip-handle">{social.handle}</span>
               </div>
-            </li>
+            </motion.li>
           )
         })}
       </ul>
@@ -67,14 +87,7 @@ export function FounderContactCard() {
 
         .bubble-item {
           position: relative;
-        }
-
-        .bubble-float-a {
-          animation: bubbleFloatA 4.2s ease-in-out infinite;
-        }
-
-        .bubble-float-b {
-          animation: bubbleFloatB 5s ease-in-out infinite 0.35s;
+          will-change: transform;
         }
 
         .bubble-item a {
@@ -86,10 +99,10 @@ export function FounderContactCard() {
           width: 54px;
           height: 54px;
           border-radius: 9999px;
-          border: 1px solid rgba(255, 255, 255, 0.22);
-          background: rgba(247, 247, 247, 0.98);
-          color: #444b52;
-          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+          border: 1px solid rgba(155, 132, 96, 0.36);
+          background: rgba(10, 10, 11, 0.92);
+          color: rgba(223, 204, 173, 0.95);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
           transition: transform 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
         }
 
@@ -164,28 +177,6 @@ export function FounderContactCard() {
           margin-top: 3px;
           font-size: 12px;
           color: var(--text-soft);
-        }
-
-        @keyframes bubbleFloatA {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0);
-          }
-
-          50% {
-            transform: translate3d(0, -10px, 0);
-          }
-        }
-
-        @keyframes bubbleFloatB {
-          0%,
-          100% {
-            transform: translate3d(0, -2px, 0);
-          }
-
-          50% {
-            transform: translate3d(0, -13px, 0);
-          }
         }
       `}</style>
     </aside>
