@@ -5,73 +5,189 @@ import { Github, Linkedin } from 'lucide-react'
 const socialLinks = [
   {
     label: 'LinkedIn',
-    handle: 'joao-victor-530060259',
+    handle: '@joao-victor-530060259',
     href: 'https://www.linkedin.com/in/jo%C3%A3o-victor-530060259/',
     icon: Linkedin,
-    glow: 'from-[#0A66C2]/35 to-[#0A66C2]/5',
+    social: 'linkedin',
   },
   {
     label: 'GitHub',
-    handle: 'Victorzinn704',
+    handle: '@Victorzinn704',
     href: 'https://github.com/Victorzinn704',
     icon: Github,
-    glow: 'from-white/20 to-white/5',
+    social: 'github',
   },
 ] as const
 
 export function FounderContactCard() {
   return (
-    <aside className="relative z-20 mx-4 mt-[-1.4rem] rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(7,7,8,0.72)] p-4 backdrop-blur-xl lg:mx-0 lg:ml-auto lg:mr-8 lg:mt-[-4.8rem] lg:w-[340px]">
-      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top,rgba(155,132,96,0.22),transparent_62%)]" />
+    <aside className="pointer-events-auto relative z-20 mx-auto mt-2 w-fit lg:absolute lg:right-[-8px] lg:top-[130px] lg:mt-0">
+      <ul className="contact-bubbles" role="list">
+        {socialLinks.map((social, index) => {
+          const Icon = social.icon
 
-      <div className="relative">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Contato do fundador</p>
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-white">Joao Victor de Moraes da Cruz</p>
-            <p className="text-xs text-[var(--text-soft)]">Saquarema, RJ | Open Source Builder</p>
-          </div>
-          <span className="rounded-full border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.14)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-            Connect
-          </span>
-        </div>
+          return (
+            <li className={`bubble-item ${index === 0 ? 'bubble-float-a' : 'bubble-float-b'}`} key={social.label}>
+              <a
+                aria-label={social.label}
+                data-social={social.social}
+                href={social.href}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="bubble-fill" />
+                <Icon className="bubble-icon" />
+              </a>
+              <div className="bubble-tooltip">
+                <span className="bubble-tooltip-title">{social.label}</span>
+                <span className="bubble-tooltip-handle">{social.handle}</span>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
 
-        <ul className="mt-4 grid grid-cols-2 gap-3">
-          {socialLinks.map((social) => {
-            const Icon = social.icon
+      <style jsx>{`
+        .contact-bubbles {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+        }
 
-            return (
-              <li className="group relative" key={social.label}>
-                <a
-                  aria-label={social.label}
-                  className="block"
-                  href={social.href}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <span
-                    className={`absolute inset-0 rounded-xl bg-gradient-to-br ${social.glow} opacity-50 blur-md transition duration-300 group-hover:opacity-90 group-hover:blur-lg`}
-                  />
-                  <span className="relative flex h-[66px] items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(14,14,15,0.9)] px-3 transition duration-300 group-hover:-translate-y-1 group-hover:border-[rgba(255,255,255,0.2)] group-hover:bg-[rgba(20,20,22,0.95)]">
-                    <span className="inline-flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-black/30 text-[var(--accent)]">
-                      <Icon className="size-4" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-white">{social.label}</span>
-                      <span className="block text-xs text-[var(--text-soft)]">@{social.handle}</span>
-                    </span>
-                  </span>
-                </a>
+        @media (min-width: 1024px) {
+          .contact-bubbles {
+            flex-direction: column;
+            gap: 16px;
+          }
+        }
 
-                <div className="pointer-events-none absolute left-1/2 top-0 z-30 w-[200px] -translate-x-1/2 -translate-y-[95%] rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(10,10,11,0.95)] p-3 opacity-0 shadow-[0_18px_38px_rgba(0,0,0,0.42)] blur-sm transition duration-300 group-hover:-translate-y-[112%] group-hover:opacity-100 group-hover:blur-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">{social.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--text-soft)]">Clique para abrir o perfil oficial.</p>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+        .bubble-item {
+          position: relative;
+        }
+
+        .bubble-float-a {
+          animation: bubbleFloatA 4.2s ease-in-out infinite;
+        }
+
+        .bubble-float-b {
+          animation: bubbleFloatB 5s ease-in-out infinite 0.35s;
+        }
+
+        .bubble-item a {
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          border-radius: 9999px;
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          background: rgba(247, 247, 247, 0.98);
+          color: #444b52;
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+          transition: transform 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .bubble-item a:hover {
+          color: #ffffff;
+          transform: translateY(-3px) scale(1.06);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .bubble-fill {
+          position: absolute;
+          inset: auto 0 0;
+          width: 100%;
+          height: 0;
+          transition: height 0.32s ease;
+        }
+
+        .bubble-item a:hover .bubble-fill {
+          height: 100%;
+        }
+
+        .bubble-item a[data-social='linkedin'] .bubble-fill {
+          background: #0274b3;
+        }
+
+        .bubble-item a[data-social='github'] .bubble-fill {
+          background: #24262a;
+        }
+
+        .bubble-icon {
+          position: relative;
+          z-index: 1;
+          width: 23px;
+          height: 23px;
+        }
+
+        .bubble-tooltip {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% + 11px);
+          transform: translate(-50%, 8px);
+          min-width: 156px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(10, 10, 11, 0.95);
+          padding: 8px 10px;
+          text-align: center;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.24s ease, transform 0.24s ease;
+          pointer-events: none;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
+        }
+
+        .bubble-item:hover .bubble-tooltip {
+          opacity: 1;
+          visibility: visible;
+          transform: translate(-50%, 0);
+        }
+
+        .bubble-tooltip-title {
+          display: block;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--accent);
+        }
+
+        .bubble-tooltip-handle {
+          display: block;
+          margin-top: 3px;
+          font-size: 12px;
+          color: var(--text-soft);
+        }
+
+        @keyframes bubbleFloatA {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+          }
+
+          50% {
+            transform: translate3d(0, -10px, 0);
+          }
+        }
+
+        @keyframes bubbleFloatB {
+          0%,
+          100% {
+            transform: translate3d(0, -2px, 0);
+          }
+
+          50% {
+            transform: translate3d(0, -13px, 0);
+          }
+        }
+      `}</style>
     </aside>
   )
 }
