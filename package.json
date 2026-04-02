@@ -1,8 +1,8 @@
 {
-  "name": "partner-portal-monorepo",
+  "name": "desk-imperial",
   "private": true,
   "version": "0.1.0",
-  "description": "Base arquitetural do portal empresarial com foco em UX/UI, seguranca e observabilidade.",
+  "description": "Sistema gratuito de gestão comercial para pequenos e médios comerciantes brasileiros.",
   "packageManager": "npm@11.8.0",
   "workspaces": [
     "apps/*",
@@ -16,6 +16,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:e2e:critical": "npm --workspace @partner/web run test:e2e:critical",
+    "test:load:critical": "k6 run tests/load/k6/critical-flows.js",
     "typecheck": "turbo run typecheck",
     "lint-staged": "lint-staged",
     "seed": "npm --workspace @partner/api run prisma:seed",
