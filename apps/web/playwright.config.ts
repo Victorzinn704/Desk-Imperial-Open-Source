@@ -32,13 +32,14 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'npm run dev',
-        url: BASE_URL,
-        reuseExistingServer: true,
-        timeout: 120_000,
-      },
+  webServer:
+    process.env.PLAYWRIGHT_SKIP_WEBSERVER === 'true'
+      ? undefined
+      : {
+          command: 'npm run dev',
+          url: BASE_URL,
+          reuseExistingServer: !process.env.CI,
+          timeout: process.env.CI ? 180_000 : 120_000,
+        },
   outputDir: 'test-results',
 })

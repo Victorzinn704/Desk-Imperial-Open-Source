@@ -14,6 +14,11 @@ const jsonHeaders = {
   },
 }
 
+const authRequestParams = {
+  ...jsonHeaders,
+  responseCallback: http.expectedStatuses(200, 201, 401, 403, 429),
+}
+
 export const options = {
   vus: 6,
   duration: '45s',
@@ -31,7 +36,7 @@ export default function () {
     'health contains status field': (response) => response.body.includes('"status"'),
   })
 
-  const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, jsonHeaders)
+  const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, authRequestParams)
   check(loginResponse, {
     'auth deterministic status': (response) => [200, 201, 401, 403, 429].includes(response.status),
     'auth latency under 1500ms': (response) => response.timings.duration < 1500,

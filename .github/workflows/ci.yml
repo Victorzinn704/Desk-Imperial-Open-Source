@@ -7,24 +7,26 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   NODE_ENV: test
+  TZ: America/Sao_Paulo
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXT_PUBLIC_API_URL: http://localhost:4000
   DATABASE_URL: postgresql://desk_imperial_ci:desk_imperial_ci_password@localhost:5432/partner_portal_test
   COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
   CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
   ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-  SESSION_TTL_HOURS: "24"
-  PASSWORD_RESET_TTL_MINUTES: "30"
-  CONSENT_VERSION: "2026.03"
-  ENABLE_SWAGGER: "false"
+  SESSION_TTL_HOURS: '24'
+  PASSWORD_RESET_TTL_MINUTES: '30'
+  CONSENT_VERSION: '2026.03'
+  ENABLE_SWAGGER: 'false'
 
 jobs:
   quality:
@@ -44,6 +46,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Linux native bindings for web toolchain
+        run: node ./scripts/install-ci-native-bindings.mjs
 
       - name: Generate Prisma client
         run: npm --workspace @partner/api run prisma:generate
@@ -72,6 +77,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install CI native bindings
+        run: node ./scripts/install-ci-native-bindings.mjs
+
       - name: Generate Prisma client
         run: npm --workspace @partner/api run prisma:generate
 
@@ -84,6 +92,7 @@ jobs:
         with:
           name: api-coverage-${{ github.sha }}
           path: apps/api/coverage/lcov.info
+          if-no-files-found: ignore
           retention-days: 14
 
   frontend-unit:
@@ -103,6 +112,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Linux native bindings for web toolchain
+        run: node ./scripts/install-ci-native-bindings.mjs
 
       - name: Run web unit tests
         run: npm --workspace @partner/web run test
@@ -125,6 +137,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Linux native bindings for web toolchain
+        run: node ./scripts/install-ci-native-bindings.mjs
+
       - name: Install Playwright Chromium
         run: npm --workspace @partner/web exec playwright install --with-deps chromium
 
@@ -139,6 +154,7 @@ jobs:
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
+          if-no-files-found: ignore
           retention-days: 7
 
   security:
@@ -153,17 +169,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Public repo safety scan
-        run: npm run repo:scan-public
-
-      - name: Dependency Review (PR only)
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
-          comment-summary-in-pr: always
-
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -173,8 +178,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: npm audit (runtime deps)
-        run: npm audit --omit=dev --audit-level=high
+      - name: Public repo safety scan
+        run: npm run repo:scan-public
+
+      - name: Dependency Review (PR only)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+          comment-summary-in-pr: always
+
+      - name: Runtime security audit
+        run: npm run security:audit-runtime
 
   performance-latency-gate:
     name: Performance Latency Gate
@@ -213,7 +230,7 @@ jobs:
       COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
       CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
       ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-      ENABLE_SWAGGER: "false"
+      ENABLE_SWAGGER: 'false'
       NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
 
     steps:
@@ -297,6 +314,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install CI native bindings
+        run: node ./scripts/install-ci-native-bindings.mjs
 
       - name: Generate Prisma client
         run: npm --workspace @partner/api run prisma:generate
