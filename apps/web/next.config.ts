@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next'
 
 const localApiOrigin = 'http://localhost:4000'
+const faroCollectorOrigin = resolveCollectorOrigin(process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL)
+const observabilityConnectOrigins = [faroCollectorOrigin].filter(Boolean).join(' ')
 
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
@@ -20,7 +22,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://*.basemaps.cartocdn.com",
-      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com`,
+      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -44,6 +46,7 @@ const nextConfig: NextConfig = {
   },
   // Otimização de bundle para mobile
   experimental: {
+    useLightningcss: false,
     optimizePackageImports: [
       'lucide-react',
       'recharts',
@@ -65,3 +68,28 @@ const nextConfig: NextConfig = {
 }
 
 export default nextConfig
+
+function resolveCollectorOrigin(value: string | undefined) {
+  if (!value?.trim()) {
+    return ''
+  }
+
+  try {
+    const parsed = new URL(value)
+    const productionMode = process.env.NODE_ENV === 'production'
+    const allowInsecureCollector = process.env.NEXT_PUBLIC_FARO_ALLOW_INSECURE_COLLECTOR === 'true'
+    const localCollector = ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname)
+
+    if (productionMode && parsed.protocol !== 'https:') {
+      return ''
+    }
+
+    if (!productionMode && parsed.protocol !== 'https:' && !localCollector && !allowInsecureCollector) {
+      return ''
+    }
+
+    return parsed.origin
+  } catch {
+    return ''
+  }
+}

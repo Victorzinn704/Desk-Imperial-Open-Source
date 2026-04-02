@@ -10,7 +10,7 @@ Escopo da rodada:
 - atualizacoes de tooling sem quebra (`@nestjs/cli`, `@swc/cli`)
 - hardening de scripts de teste para ambiente estavel
 - provisionamento local de Redis no compose para reduzir falhas operacionais de cache/realtime
-- remocao de overrides de runtime (`lodash`/`path-to-regexp`) que nao refletiam na arvore efetiva e geravam falsa percepcao de mitigacao
+- remocao completa de overrides customizados de transitive deps (nao mitigavam runtime de forma efetiva e um deles quebrava lint local por incompatibilidade `minimatch` x `brace-expansion`)
 
 ## Resultado objetivo
 
