@@ -48,7 +48,7 @@ CLI é a camada de controle do sistema. Comandos errados podem destruir dados, d
 ### Scripts de deploy e infra
 - Build de imagem Docker
 - Push para registry
-- Deploy via CLI da plataforma (Railway, Vercel, etc.)
+- Deploy via CLI da plataforma (Railway, etc.)
 - Verificação de health após deploy
 
 ### Scripts de diagnóstico
