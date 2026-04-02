@@ -52,10 +52,7 @@ function registerProcessFailureHandlers(logger: Logger) {
   }
 
   process.on('unhandledRejection', (reason) => {
-    logger.error(
-      '[process] unhandledRejection capturada.',
-      reason instanceof Error ? reason.stack : String(reason),
-    )
+    logger.error('[process] unhandledRejection capturada.', reason instanceof Error ? reason.stack : String(reason))
   })
 
   process.on('uncaughtExceptionMonitor', (error, origin) => {
@@ -111,19 +108,23 @@ async function bootstrap() {
   const swaggerAllowedInProduction = configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
   const otelEnabled = await initializeApiOpenTelemetry({
-    endpoint:
-      configService.get<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT') ??
-      configService.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT'),
+    endpoint: configService.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT'),
+    tracesEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
+    metricsEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
+    logsEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'),
     headers: configService.get<string>('OTEL_EXPORTER_OTLP_HEADERS'),
     serviceName: configService.get<string>('OTEL_SERVICE_NAME') ?? 'desk-imperial-api',
     serviceVersion: process.env.npm_package_version,
     environment: configService.get<string>('OTEL_SERVICE_ENVIRONMENT') ?? configService.get<string>('NODE_ENV'),
     tracesSampleRate: configService.get<string>('OTEL_TRACES_SAMPLE_RATE') ?? (isProduction ? '0.03' : '1'),
+    metricsExportIntervalMs: configService.get<string>('OTEL_METRICS_EXPORT_INTERVAL_MS') ?? '15000',
     diagnosticsEnabled: configService.get<string>('OTEL_DIAGNOSTICS') === 'true',
   })
 
   if (otelEnabled) {
-    logger.log('OpenTelemetry da API habilitado para tracing (OTLP).')
+    logger.log(
+      'OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).',
+    )
   }
 
   registerProcessFailureHandlers(logger)
@@ -205,14 +206,12 @@ async function bootstrap() {
   const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
   if (isProduction && portfolioFallback === 'true') {
     throw new Error(
-      'PORTFOLIO_EMAIL_FALLBACK=true em produção expõe códigos de verificação via HTTP. Desative esta variável antes de iniciar a API.',
+      'PORTFOLIO_EMAIL_FALLBACK=true em produção altera fluxos de recuperação/verificação de email. Desative esta variável antes de iniciar a API.',
     )
   }
 
   if (!isProduction && portfolioFallback === 'true') {
-    logger.warn(
-      'PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1. Origens públicas não recebem preview de código.',
-    )
+    logger.warn('PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.')
   }
 
   if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {

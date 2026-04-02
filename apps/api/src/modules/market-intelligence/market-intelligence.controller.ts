@@ -1,11 +1,12 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { GetMarketInsightQueryDto } from './dto/get-market-insight.query.dto'
+import { GetMarketInsightBodyDto } from './dto/get-market-insight.body.dto'
 import { MarketIntelligenceService } from './market-intelligence.service'
 
 @ApiTags('market-intelligence')
@@ -13,9 +14,9 @@ import { MarketIntelligenceService } from './market-intelligence.service'
 export class MarketIntelligenceController {
   constructor(private readonly marketIntelligenceService: MarketIntelligenceService) {}
 
-  @UseGuards(SessionGuard)
-  @Get('insights')
-  getInsights(@CurrentAuth() auth: AuthContext, @Query() query: GetMarketInsightQueryDto, @Req() request: Request) {
-    return this.marketIntelligenceService.getInsightForUser(auth, query.focus, extractRequestContext(request))
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Post('insights')
+  getInsights(@CurrentAuth() auth: AuthContext, @Body() body: GetMarketInsightBodyDto, @Req() request: Request) {
+    return this.marketIntelligenceService.getInsightForUser(auth, body.focus, extractRequestContext(request))
   }
 }

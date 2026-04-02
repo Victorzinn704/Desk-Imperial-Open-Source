@@ -7,7 +7,6 @@ API backend em NestJS.
 Concentrar:
 
 - autenticacao e sessao
-- usuarios
 - produtos
 - financeiro
 - consentimento LGPD
@@ -19,7 +18,7 @@ Concentrar:
 - `src/database`: Prisma, seeds e acesso ao banco
 - `src/observability`: logs estruturados, tracing, health checks e monitoramento
 - `src/modules/auth`: login, logout, sessoes e cookies
-- `src/modules/users`: cadastro e conta do usuario
+- `src/modules/employees`: equipe, cargos e indicadores internos
 - `src/modules/products`: CRUD de produtos
 - `src/modules/finance`: calculos, indicadores e relatorios
 - `src/modules/consent`: termos, cookies e consentimentos

@@ -2,9 +2,14 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { reportFrontendExceptionToFaro } from '../lib/observability/faro'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    reportFrontendExceptionToFaro(error, {
+      component: 'app/error',
+      digest: error.digest,
+    })
     console.error('[GlobalError]', error)
   }, [error])
 

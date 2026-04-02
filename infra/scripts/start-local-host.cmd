@@ -1,7 +1,13 @@
 @echo off
 setlocal
 
-set ROOT=C:\Users\Desktop\Documents\test1
+set SCRIPT_DIR=%~dp0
+for %%I in ("%SCRIPT_DIR%..\..") do set ROOT=%%~fI
+
+if not exist "%ROOT%\package.json" (
+	echo [start-local-host] Nao foi possivel localizar package.json na raiz: %ROOT%
+	exit /b 1
+)
 
 start "partner-api" /min cmd /c "cd /d %ROOT% && npm --workspace @partner/api run dev > api-dev.log 2> api-dev.err.log"
 start "partner-web" /min cmd /c "cd /d %ROOT% && npm --workspace @partner/web run dev > web-dev.log 2> web-dev.err.log"

@@ -92,11 +92,11 @@ Sem prazo definido. Ordem não é prioridade — depende de demanda real dos usu
 
 ### Alta prioridade
 
-| Item                       | Descrição                                                     |
-| -------------------------- | ------------------------------------------------------------- |
-| **Monitoramento de erros** | Integração com Sentry — erros em produção hoje são invisíveis |
-| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta    |
-| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.   |
+| Item                       | Descrição                                                            |
+| -------------------------- | -------------------------------------------------------------------- |
+| **Monitoramento de erros** | Consolidação da stack OSS (OTel + Alloy + Tempo + Loki + Prometheus) |
+| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta           |
+| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.          |
 
 ### Média prioridade
 
@@ -133,7 +133,7 @@ Sem prazo definido. Ordem não é prioridade — depende de demanda real dos usu
 
 Tem uma ideia ou viu algo que faz falta?
 
-1. Abra uma [issue](https://github.com/Victorzinn704/nextjs-boilerplate/issues) descrevendo o problema que você quer resolver
+1. Abra uma [issue](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/issues) descrevendo o problema que você quer resolver
 2. Descreva para qual tipo de usuário isso seria útil (dono, funcionário, desenvolvedor)
 3. Discutimos antes de qualquer implementação
 

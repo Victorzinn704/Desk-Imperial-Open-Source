@@ -8,10 +8,21 @@ const BOOLEAN_KEYS = [
   'PORTFOLIO_EMAIL_FALLBACK',
   'COOKIE_SECURE',
   'REGISTRATION_GEOCODING_STRICT',
+  'OTEL_DIAGNOSTICS',
 ] as const
 const URL_KEYS = ['DATABASE_URL', 'DIRECT_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL'] as const
 const OPTIONAL_URL_KEYS = ['RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'] as const
-const POSITIVE_NUMBER_KEYS = ['REGISTRATION_GEOCODING_TIMEOUT_MS', 'REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS']
+const OPTIONAL_OBSERVABILITY_URL_KEYS = [
+  'OTEL_EXPORTER_OTLP_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT',
+] as const
+const POSITIVE_NUMBER_KEYS = [
+  'REGISTRATION_GEOCODING_TIMEOUT_MS',
+  'REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS',
+  'OTEL_METRICS_EXPORT_INTERVAL_MS',
+]
 const REDIS_URL_CANDIDATE_KEYS = getRedisUrlKeys()
 
 export function validateEnvironment(config: EnvShape) {
@@ -56,6 +67,17 @@ export function validateEnvironment(config: EnvShape) {
     }
 
     if (!isValidOriginLikeValue(value)) {
+      issues.push(`${key} deve ser uma URL válida.`)
+    }
+  }
+
+  for (const key of OPTIONAL_OBSERVABILITY_URL_KEYS) {
+    const value = env[key]
+    if (!value) {
+      continue
+    }
+
+    if (!isValidUrl(value)) {
       issues.push(`${key} deve ser uma URL válida.`)
     }
   }

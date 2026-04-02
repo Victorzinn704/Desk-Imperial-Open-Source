@@ -242,8 +242,18 @@ if (Get-Command aider -ErrorAction SilentlyContinue) {
   exit $LASTEXITCODE
 }
 
-$venvPython = 'C:\Users\Desktop\Documents\Playground\.venv\Scripts\python.exe'
-if (Test-Path $venvPython) {
+$venvCandidates = @()
+if ($env:AIDER_PYTHON) {
+  $venvCandidates += $env:AIDER_PYTHON
+}
+$venvCandidates += @(
+  "$repoRoot\.venv-aider\Scripts\python.exe",
+  "$repoRoot\.venv\Scripts\python.exe",
+  "$repoRoot\..\Playground\.venv\Scripts\python.exe"
+)
+
+$venvPython = $venvCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+if ($venvPython -and (Test-Path $venvPython)) {
   & $venvPython -m aider @AiderArgs
   exit $LASTEXITCODE
 }

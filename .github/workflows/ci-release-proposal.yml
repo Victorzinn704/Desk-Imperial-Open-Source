@@ -1,0 +1,208 @@
+name: CI Release Proposal
+
+# Proposta de pipeline de release.
+# Mantido em workflow_dispatch para validacao incremental sem impactar o gate atual.
+# Quando aprovado, habilitar pull_request/push para main.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-release-proposal-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_ENV: test
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_API_URL: http://localhost:4000
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partner_portal_test
+  COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
+  CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
+  ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
+  SESSION_TTL_HOURS: '24'
+  PASSWORD_RESET_TTL_MINUTES: '30'
+  CONSENT_VERSION: '2026.03'
+  ENABLE_SWAGGER: 'false'
+
+jobs:
+  quality:
+    name: Quality (Lint + Typecheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Run API tests
+        run: npm --workspace @partner/api run test -- --coverage --ci --forceExit
+
+      - name: Upload API coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage-${{ github.sha }}
+          path: apps/api/coverage/lcov.info
+          retention-days: 14
+
+  frontend-unit:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run web unit tests
+        run: npm --workspace @partner/web run test
+
+  frontend-e2e:
+    name: Frontend E2E (Chromium Baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npm --workspace @partner/web exec playwright install --with-deps chromium
+
+      - name: Run web e2e baseline
+        run: npm --workspace @partner/web run test:e2e
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-artifacts-${{ github.sha }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+          comment-summary-in-pr: always
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (runtime deps)
+        run: npm audit --omit=dev --audit-level=high
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, backend-tests, frontend-unit, frontend-e2e, security]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Build all workspaces
+        run: npm run build
+
+      - name: Upload build artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-${{ github.sha }}
+          path: |
+            apps/api/dist/
+            apps/web/.next/server/
+          retention-days: 3

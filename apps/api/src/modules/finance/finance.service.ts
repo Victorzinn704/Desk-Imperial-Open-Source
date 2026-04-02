@@ -23,6 +23,41 @@ import {
 
 const FINANCE_SUMMARY_TTL = 120 // segundos
 
+const financeProductSelect = {
+  id: true,
+  name: true,
+  brand: true,
+  category: true,
+  packagingClass: true,
+  measurementUnit: true,
+  measurementValue: true,
+  unitsPerPackage: true,
+  isCombo: true,
+  comboDescription: true,
+  description: true,
+  unitCost: true,
+  unitPrice: true,
+  currency: true,
+  stock: true,
+  lowStockThreshold: true,
+  requiresKitchen: true,
+  active: true,
+  createdAt: true,
+  updatedAt: true,
+} as const
+
+const financeRecentOrderSelect = {
+  id: true,
+  customerName: true,
+  channel: true,
+  currency: true,
+  status: true,
+  totalRevenue: true,
+  totalProfit: true,
+  totalItems: true,
+  createdAt: true,
+} as const
+
 @Injectable()
 export class FinanceService {
   constructor(
@@ -62,10 +97,11 @@ export class FinanceService {
     ] = await Promise.all([
       this.prisma.product.findMany({
         where: { userId: workspaceUserId, active: true },
-        orderBy: { createdAt: 'desc' },
+        select: financeProductSelect,
       }),
       this.prisma.order.findMany({
         where: { userId: workspaceUserId },
+        select: financeRecentOrderSelect,
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
@@ -205,6 +241,12 @@ export class FinanceService {
     previousMonthRevenue = roundCurrency(previousMonthRevenue)
     previousMonthProfit = roundCurrency(previousMonthProfit)
 
+    const lowStockItems = products.reduce(
+      (total, product) =>
+        total + (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold ? 1 : 0),
+      0,
+    )
+
     const totals = {
       activeProducts: records.length,
       inventoryUnits: records.reduce((total, item) => total + item.stock, 0),
@@ -223,7 +265,7 @@ export class FinanceService {
       profitGrowthPercent: calculateGrowthPercent(currentMonthProfit, previousMonthProfit),
       averageMarginPercent: 0,
       averageMarkupPercent: 0,
-      lowStockItems: records.filter((item) => item.isLowStock).length,
+      lowStockItems,
     }
 
     totals.averageMarginPercent =

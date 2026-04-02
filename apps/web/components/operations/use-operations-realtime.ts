@@ -25,6 +25,7 @@ const OPERATIONS_EVENTS = [
   'cash.updated',
   'comanda.opened',
   'comanda.updated',
+  'comanda.closed',
   'cash.closure.updated',
   'kitchen.item.queued',
   'kitchen.item.updated',
@@ -201,7 +202,7 @@ function isKitchenEvent(event: OperationsRealtimeEnvelope['event']) {
 }
 
 type OperationsRealtimeEnvelope = {
-  event: (typeof OPERATIONS_EVENTS)[number] | 'comanda.closed'
+  event: (typeof OPERATIONS_EVENTS)[number]
   payload: Record<string, unknown>
 }
 
@@ -393,14 +394,19 @@ function patchSummaryKpis(snapshot: OperationsSummaryResponse['kpis'], payload: 
     return null
   }
 
+  const receitaRealizada = grossRevenueAmount ?? snapshot.receitaRealizada
+  const lucroRealizado = realizedProfitAmount ?? snapshot.lucroRealizado
+  const estimatedOpenMargin =
+    receitaRealizada > 0 ? (lucroRealizado / receitaRealizada) * snapshot.faturamentoAberto : 0
+
   return {
     ...snapshot,
     caixaEsperado: expectedAmount ?? snapshot.caixaEsperado,
-    receitaRealizada: grossRevenueAmount ?? snapshot.receitaRealizada,
-    lucroRealizado: realizedProfitAmount ?? snapshot.lucroRealizado,
+    receitaRealizada,
+    lucroRealizado,
     faturamentoAberto: snapshot.faturamentoAberto,
-    projecaoTotal: (grossRevenueAmount ?? snapshot.receitaRealizada) + snapshot.faturamentoAberto,
-    lucroEsperado: (realizedProfitAmount ?? snapshot.lucroRealizado) + snapshot.faturamentoAberto,
+    projecaoTotal: receitaRealizada + snapshot.faturamentoAberto,
+    lucroEsperado: lucroRealizado + estimatedOpenMargin,
     openComandasCount: openComandasCount ?? snapshot.openComandasCount,
     openSessionsCount: pendingCashSessions ?? snapshot.openSessionsCount,
   }

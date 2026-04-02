@@ -145,6 +145,7 @@ export function PortfolioEnvironment() {
       currency: values.currency,
       stock: values.stock,
       requiresKitchen: values.requiresKitchen ?? false,
+      lowStockThreshold: values.lowStockThreshold ?? null,
     }
 
     if (editingProduct) {

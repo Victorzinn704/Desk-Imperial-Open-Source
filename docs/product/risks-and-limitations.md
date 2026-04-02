@@ -122,7 +122,7 @@ O registro de Service Worker está limitado ao escopo `/app`. Rotas fora desse e
 
 ## Riscos operacionais
 
-### O-01 — Sem monitoramento de erros em produção (Sentry)
+### O-01 — Observabilidade OSS ainda em rollout parcial
 
 | Campo      | Valor             |
 | ---------- | ----------------- |
@@ -130,13 +130,13 @@ O registro de Service Worker está limitado ao escopo `/app`. Rotas fora desse e
 | Tipo       | Risco operacional |
 | Status     | Planejado         |
 
-O sistema não tem Sentry ou equivalente integrado. Erros em produção são descobertos apenas quando o usuário reporta ou quando o mantenedor checa os logs manualmente.
+O sistema está migrando para stack OSS (OpenTelemetry, Alloy, Tempo, Loki e Prometheus), mas a cobertura entre ambientes ainda não está homogênea.
 
 **Impacto:** erros silenciosos podem passar despercebidos por horas.
 
 **Mitigação atual:** health check em `/api/health`, logging estruturado com request-id, audit log de eventos críticos.
 
-**Plano:** integração com Sentry está no roadmap.
+**Plano:** consolidar rollout da stack OSS em todos os ambientes com alertas operacionais padronizados.
 
 ---
 

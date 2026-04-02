@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Clock3, LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
-import type { AuthUser, CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
+import type { CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
 import {
   assignComanda,
   closeComanda,
@@ -38,6 +38,8 @@ type SimpleProduct = {
   category: string
   unitPrice: number
   currency: string
+  stock: number
+  isLowStock: boolean
   isCombo?: boolean
   comboDescription?: string | null
   comboItems?: Array<{
@@ -47,7 +49,6 @@ type SimpleProduct = {
 }
 
 type PdvBoardProps = {
-  currentUser: AuthUser
   operations?: OperationsLiveResponse
   products: SimpleProduct[]
 }
@@ -57,7 +58,7 @@ type ActiveTab = 'comandas' | 'salao' | 'historico'
 type AddMesaForm = { label: string; capacity: string }
 const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 
-export function PdvBoard({ currentUser: _currentUser, operations, products }: Readonly<PdvBoardProps>) {
+export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ActiveTab>('comandas')
   const [showNewModal, setShowNewModal] = useState(false)

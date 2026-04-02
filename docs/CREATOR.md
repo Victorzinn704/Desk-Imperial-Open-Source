@@ -77,7 +77,7 @@ Hoje temos uma ferramenta mais valiosa do que um compilador de código. A IA é,
 
 Estamos em uma era onde ela será nossa aliada. Mas quem se recusar a aprender a usá-la será deixado para trás.
 
-Eu escolhi aprender. E foi isso que tornei o Desk Imperial possível.
+Eu escolhi aprender. E foi isso que tornou o Desk Imperial possível.
 
 ---
 

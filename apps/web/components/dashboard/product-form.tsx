@@ -38,6 +38,7 @@ const emptyValues: ProductFormInputValues = {
   stockPackages: 0,
   stockLooseUnits: 0,
   requiresKitchen: false,
+  lowStockThreshold: null,
 }
 
 export function ProductForm({
@@ -67,7 +68,11 @@ export function ProductForm({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
-  const { fields: comboFields, append: appendComboItem, remove: removeComboItem } = useFieldArray({
+  const {
+    fields: comboFields,
+    append: appendComboItem,
+    remove: removeComboItem,
+  } = useFieldArray({
     control,
     name: 'comboItems',
   })
@@ -150,6 +155,7 @@ export function ProductForm({
       stockPackages: product.stockPackages,
       stockLooseUnits: product.stockLooseUnits,
       requiresKitchen: product.requiresKitchen ?? false,
+      lowStockThreshold: product.lowStockThreshold ?? null,
     })
     setSelectedPreset(matchedPreset?.key ?? manualPackagingOption)
     setMeasurementMode(nextMeasurementMode)
@@ -504,6 +510,16 @@ export function ProductForm({
             {...register('stockLooseUnits')}
           />
         </div>
+
+        <InputField
+          error={errors.lowStockThreshold?.message}
+          hint="Quando o estoque chegar nesse número (ou abaixo), o produto aparece como alerta no dashboard. Deixe em branco para desativar."
+          label="Limite de estoque baixo (opcional)"
+          placeholder="Ex.: 20"
+          step="1"
+          type="number"
+          {...register('lowStockThreshold')}
+        />
 
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
           <div>

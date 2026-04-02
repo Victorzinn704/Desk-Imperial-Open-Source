@@ -6,6 +6,8 @@ export type SimpleProduct = {
   category: string
   unitPrice: number
   currency: string
+  stock: number
+  isLowStock: boolean
   isCombo?: boolean
   comboDescription?: string | null
   comboItems?: Array<{

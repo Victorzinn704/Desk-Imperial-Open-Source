@@ -63,7 +63,7 @@ fork → branch → commit → PR → revisão → merge
 ### 1. Fork e branch
 
 ```bash
-git fork https://github.com/Victorzinn704/nextjs-boilerplate
+git fork https://github.com/Victorzinn704/Desk-Imperial-Open-Source
 git checkout -b tipo/descricao-curta
 ```
 
@@ -115,6 +115,23 @@ Inclua no PR:
 - O que foi mudado
 - Como testar
 - Checklist preenchido
+
+---
+
+## Como funciona a revisão
+
+- Toda mudança entra por **pull request**
+- O merge depende de revisão e aceite do mantenedor
+- O projeto aceita colaboração aberta, mas a direção funcional do produto continua centralizada
+- PRs grandes, mistos ou sem escopo claro podem ser devolvidos para divisão
+- Funcionalidade nova sem issue aprovada pode ser recusada mesmo com implementação pronta
+
+Se você quiser ajudar sem risco de retrabalho, priorize:
+
+- bugs com reprodução clara
+- documentação que ficou para trás
+- testes para comportamento já existente
+- melhorias pequenas de UX sem mudar regra de negócio
 
 ---
 

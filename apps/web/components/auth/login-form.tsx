@@ -58,9 +58,8 @@ export function LoginForm() {
         variables.loginMode === 'OWNER' &&
         typeof variables.email === 'string'
       ) {
-        const email = variables.email
         startTransition(() => {
-          router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
+          router.push('/verificar-email')
         })
       }
     },

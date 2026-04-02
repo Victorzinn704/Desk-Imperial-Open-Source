@@ -139,5 +139,52 @@ describe('HTTP smoke (e2e)', () => {
       expect(cookies).toBeDefined()
       expect(cookies.some((value) => value.startsWith('session='))).toBe(true)
     })
+
+    it('accepts staff login payload with 6-digit PIN', async () => {
+      mockAuthService.login.mockImplementation(
+        async (
+          _dto: unknown,
+          response: {
+            cookie: (name: string, value: string, options?: Record<string, unknown>) => void
+          },
+        ) => {
+          response.cookie('session', 'session-token', {
+            httpOnly: true,
+            sameSite: 'strict',
+          })
+
+          return {
+            user: {
+              id: 'staff-1',
+            },
+          }
+        },
+      )
+
+      await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          loginMode: 'STAFF',
+          companyEmail: 'ceo@empresa.com',
+          employeeCode: 'VD-001',
+          password: '123456',
+        })
+        .expect(201)
+
+      expect(mockAuthService.login).toHaveBeenCalledTimes(1)
+    })
+
+    it('rejects owner login payload shorter than 8 characters', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'ceo@empresa.com',
+          loginMode: 'OWNER',
+          password: '1234567',
+        })
+        .expect(400)
+
+      expect(response.body.message).toContain('Senha da empresa deve ter no mínimo 8 caracteres')
+    })
   })
 })

@@ -117,7 +117,7 @@ export class AdminPinService {
   }
 
   async issueVerificationChallenge(
-    auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId'>,
+    auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId' | 'workspaceOwnerUserId'>,
     pin: string,
   ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
@@ -176,7 +176,7 @@ export class AdminPinService {
   }
 
   async validateVerificationProof(
-    auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId'>,
+    auth: Pick<AuthContext, 'userId' | 'sessionId' | 'role' | 'companyOwnerUserId' | 'workspaceOwnerUserId'>,
     proof?: string | null,
   ): Promise<boolean> {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)

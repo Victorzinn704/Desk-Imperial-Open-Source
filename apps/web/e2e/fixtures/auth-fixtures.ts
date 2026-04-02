@@ -19,7 +19,10 @@ export const test = base.extend({
         window.localStorage.setItem(
           consentStorageKey,
           JSON.stringify({
-            choice: 'accepted',
+            preferences: {
+              analytics: true,
+              marketing: true,
+            },
             updatedAt: new Date().toISOString(),
             version: consentVersion,
           }),
@@ -45,9 +48,15 @@ export async function gotoWithConsent(page: Page, path: string) {
 }
 
 export async function dismissCookieDialogIfPresent(page: Page) {
-  const acceptButton = page.getByRole('button', { name: 'Aceitar e continuar' })
+  const acceptButton = page.getByRole('button', { name: 'Aceitar tudo' })
+  const legacyAcceptButton = page.getByRole('button', { name: 'Aceitar e continuar' })
   if (await acceptButton.isVisible().catch(() => false)) {
     await acceptButton.click()
+    return
+  }
+
+  if (await legacyAcceptButton.isVisible().catch(() => false)) {
+    await legacyAcceptButton.click()
   }
 }
 

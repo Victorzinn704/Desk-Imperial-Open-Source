@@ -319,47 +319,45 @@ export class CashSessionService {
     const forceClose = dto.forceClose ?? false
 
     const helpers = this.helpers
-    const { closure } = await this.prisma.$transaction(async (transaction) => {
-      const syncedClosure = await helpers.syncCashClosure(transaction, workspaceOwnerUserId, businessDate)
+    const syncedClosure = await this.prisma.$transaction(async (transaction) =>
+      helpers.syncCashClosure(transaction, workspaceOwnerUserId, businessDate),
+    )
 
-      if (!forceClose && (syncedClosure.openSessionsCount > 0 || syncedClosure.openComandasCount > 0)) {
-        await transaction.cashClosure.update({
-          where: {
-            companyOwnerId_businessDate: {
-              companyOwnerId: workspaceOwnerUserId,
-              businessDate,
-            },
+    if (!forceClose && (syncedClosure.openSessionsCount > 0 || syncedClosure.openComandasCount > 0)) {
+      await this.prisma.cashClosure.update({
+        where: {
+          companyOwnerId_businessDate: {
+            companyOwnerId: workspaceOwnerUserId,
+            businessDate,
           },
-          data: {
-            status: CashClosureStatus.PENDING_EMPLOYEE_CLOSE,
-          },
-        })
+        },
+        data: {
+          status: CashClosureStatus.PENDING_EMPLOYEE_CLOSE,
+        },
+      })
 
-        throw new ConflictException(
-          'Ainda existem caixas ou comandas em aberto. Feche as operacoes dos funcionarios antes de consolidar o dia.',
-        )
-      }
+      throw new ConflictException(
+        'Ainda existem caixas ou comandas em aberto. Feche as operacoes dos funcionarios antes de consolidar o dia.',
+      )
+    }
 
-      const differenceAmount = roundCurrency(countedCashAmount - toNumber(syncedClosure.expectedCashAmount))
+    const differenceAmount = roundCurrency(countedCashAmount - toNumber(syncedClosure.expectedCashAmount))
 
-      return {
-        closure: await transaction.cashClosure.update({
-          where: {
-            companyOwnerId_businessDate: {
-              companyOwnerId: workspaceOwnerUserId,
-              businessDate,
-            },
-          },
-          data: {
-            countedCashAmount,
-            differenceAmount,
-            notes,
-            status: forceClose ? CashClosureStatus.FORCE_CLOSED : CashClosureStatus.CLOSED,
-            closedByUserId: auth.userId,
-            closedAt: new Date(),
-          },
-        }),
-      }
+    const closure = await this.prisma.cashClosure.update({
+      where: {
+        companyOwnerId_businessDate: {
+          companyOwnerId: workspaceOwnerUserId,
+          businessDate,
+        },
+      },
+      data: {
+        countedCashAmount,
+        differenceAmount,
+        notes,
+        status: forceClose ? CashClosureStatus.FORCE_CLOSED : CashClosureStatus.CLOSED,
+        closedByUserId: auth.userId,
+        closedAt: new Date(),
+      },
     })
 
     await this.auditLogService.record({

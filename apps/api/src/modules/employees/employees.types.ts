@@ -1,16 +1,5 @@
 import type { Employee } from '@prisma/client'
-
-export type EmployeeRecord = {
-  id: string
-  employeeCode: string
-  displayName: string
-  active: boolean
-  hasLogin: boolean
-  salarioBase: number
-  percentualVendas: number
-  createdAt: string
-  updatedAt: string
-}
+import type { EmployeeRecord } from '@contracts/contracts'
 
 export function toEmployeeRecord(
   employee: Employee & { loginUserId?: string | null; passwordHash?: string | null },

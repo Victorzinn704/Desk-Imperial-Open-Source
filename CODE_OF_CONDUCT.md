@@ -25,7 +25,7 @@ Este código se aplica a todos os espaços do projeto: issues, pull requests, di
 
 ## Relatar um problema
 
-Se você presenciar ou sofrer comportamento que viola este código, entre em contato com o mantenedor diretamente: **jvictodacruz7@gmail.com**
+Se você presenciar ou sofrer comportamento que viola este código, entre em contato com o mantenedor diretamente: **suporte@deskimperial.online**
 
 Todos os relatos serão tratados com confidencialidade.
 

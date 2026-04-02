@@ -25,13 +25,14 @@ Estratégia de ambiente:
 Exemplo:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
-DIRECT_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+DATABASE_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
+DIRECT_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
 APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
-COOKIE_SECRET=change-me
-CSRF_SECRET=change-me
+COOKIE_SECRET=replace-with-a-long-random-cookie-secret
+CSRF_SECRET=replace-with-a-long-random-csrf-secret
+ENCRYPTION_KEY=replace-with-a-32-char-encryption-key
 PASSWORD_RESET_TTL_MINUTES=30
 EMAIL_VERIFICATION_TTL_MINUTES=15
 GEMINI_API_KEY=
@@ -43,7 +44,7 @@ Exemplo com Brevo:
 ```env
 EMAIL_PROVIDER=brevo
 BREVO_API_URL=https://api.brevo.com/v3/smtp/email
-BREVO_API_KEY=sua-api-key-da-brevo
+BREVO_API_KEY=<sua-api-key-da-brevo>
 EMAIL_FROM_NAME=DESK IMPERIAL
 EMAIL_FROM_EMAIL=no-reply@send.seudominio.com.br
 EMAIL_REPLY_TO=suporte@suaempresa.com

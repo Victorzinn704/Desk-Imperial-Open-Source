@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { STRONG_PASSWORD_REGEX } from '@contracts/contracts'
+import {
+  PASSWORD_MIN_LENGTH,
+  STRONG_PASSWORD_REGEX,
+  sanitizeDocument,
+  validateCpf,
+  validateCnpj,
+} from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
 
@@ -9,9 +15,23 @@ export const loginSchema = z
     email: z.string().trim().optional().or(z.literal('')),
     companyEmail: z.string().trim().optional().or(z.literal('')),
     employeeCode: z.string().trim().optional().or(z.literal('')),
-    password: z.string().min(6, 'A senha ou PIN precisa ter pelo menos 6 caracteres.'),
+    password: z.string(),
   })
   .superRefine((values, context) => {
+    const minimumLength = values.loginMode === 'STAFF' ? 6 : 8
+    const passwordMessage =
+      values.loginMode === 'STAFF'
+        ? 'O PIN do funcionário precisa ter pelo menos 6 caracteres.'
+        : 'A senha da empresa precisa ter pelo menos 8 caracteres.'
+
+    if (values.password.length < minimumLength) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['password'],
+        message: passwordMessage,
+      })
+    }
+
     if (values.loginMode === 'OWNER') {
       if (!values.email || !z.string().email().safeParse(values.email).success) {
         context.addIssue({
@@ -92,7 +112,7 @@ export const registerSchema = z
     employeeCount: z.coerce.number().int('Use um número inteiro.').min(0, 'Informe zero ou mais funcionários.'),
     password: z
       .string()
-      .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
+      .min(PASSWORD_MIN_LENGTH, `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`)
       .max(128, 'A senha está longa demais.')
       .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
     acceptTerms: z.boolean().refine((value) => value, {
@@ -126,10 +146,10 @@ export const resetPasswordSchema = z
       .regex(/^\d{6}$/, 'Digite o código de 6 dígitos enviado por e-mail.'),
     password: z
       .string()
-      .min(12, 'A senha precisa ter pelo menos 12 caracteres.')
+      .min(PASSWORD_MIN_LENGTH, `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`)
       .max(128, 'A senha está longa demais.')
       .regex(STRONG_PASSWORD_REGEX, 'Use letra maiúscula, minúscula, número e caractere especial.'),
-    confirmPassword: z.string().min(12, 'Confirme a nova senha.'),
+    confirmPassword: z.string().min(PASSWORD_MIN_LENGTH, 'Confirme a nova senha.'),
   })
   .superRefine((values, context) => {
     if (values.password !== values.confirmPassword) {
@@ -162,7 +182,12 @@ export const productSchema = z
       .int('Use um número inteiro para a quantidade por caixa/fardo.')
       .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
     isCombo: z.boolean().optional().default(false),
-    comboDescription: z.string().trim().max(420, 'A descrição do combo ficou longa demais.').optional().or(z.literal('')),
+    comboDescription: z
+      .string()
+      .trim()
+      .max(420, 'A descrição do combo ficou longa demais.')
+      .optional()
+      .or(z.literal('')),
     comboItems: z
       .array(
         z.object({
@@ -192,6 +217,12 @@ export const productSchema = z
       .int('Use um número inteiro para unidades avulsas.')
       .min(0, 'A quantidade de unidades avulsas não pode ser negativa.'),
     requiresKitchen: z.boolean().optional().default(false),
+    lowStockThreshold: z.coerce
+      .number()
+      .int('Use um número inteiro para o limite de estoque baixo.')
+      .min(0, 'O limite não pode ser negativo.')
+      .nullable()
+      .optional(),
   })
   .superRefine((values, context) => {
     if (values.unitsPerPackage > 1 && values.stockLooseUnits >= values.unitsPerPackage) {
@@ -370,72 +401,10 @@ export const fallbackConsentDocuments = [
   },
 ] as const
 
-function sanitizeDocument(value: string) {
-  return value.replace(/\D/g, '')
-}
-
 function isValidCpf(value: string) {
-  const digits = sanitizeDocument(value)
-
-  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) {
-    return false
-  }
-
-  let sum = 0
-  for (let index = 0; index < 9; index += 1) {
-    sum += Number(digits[index]) * (10 - index)
-  }
-
-  let remainder = (sum * 10) % 11
-  if (remainder === 10) {
-    remainder = 0
-  }
-
-  if (remainder !== Number(digits[9])) {
-    return false
-  }
-
-  sum = 0
-  for (let index = 0; index < 10; index += 1) {
-    sum += Number(digits[index]) * (11 - index)
-  }
-
-  remainder = (sum * 10) % 11
-  if (remainder === 10) {
-    remainder = 0
-  }
-
-  return remainder === Number(digits[10])
+  return validateCpf(value)
 }
 
 function isValidCnpj(value: string) {
-  const digits = sanitizeDocument(value)
-
-  if (digits.length !== 14 || /^(\d)\1+$/.test(digits)) {
-    return false
-  }
-
-  const weightsFirst = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-  const weightsSecond = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-
-  let sum = 0
-  for (let index = 0; index < 12; index += 1) {
-    sum += Number(digits[index]) * weightsFirst[index]
-  }
-
-  let remainder = sum % 11
-  const firstDigit = remainder < 2 ? 0 : 11 - remainder
-  if (firstDigit !== Number(digits[12])) {
-    return false
-  }
-
-  sum = 0
-  for (let index = 0; index < 13; index += 1) {
-    sum += Number(digits[index]) * weightsSecond[index]
-  }
-
-  remainder = sum % 11
-  const secondDigit = remainder < 2 ? 0 : 11 - remainder
-
-  return secondDigit === Number(digits[13])
+  return validateCnpj(value)
 }

@@ -4,6 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
 const DEFAULT_ADMIN_PIN_HINT_TTL_MS = 10 * 60 * 1000
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
+const ADMIN_PIN_REQUEST_TIMEOUT_MS = 10_000
 
 export type AdminPinVerificationResponse = {
   valid?: boolean
@@ -67,12 +68,27 @@ async function adminApiFetch<T>(
     }
   }
 
-  const response = await fetch(buildUrl(path), {
-    method,
-    credentials: 'include',
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), ADMIN_PIN_REQUEST_TIMEOUT_MS)
+
+  let response: Response
+  try {
+    response = await fetch(buildUrl(path), {
+      method,
+      credentials: 'include',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiError('A verificacao de PIN demorou demais. Tente novamente.', 504)
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
 
   if (!response.ok) {
     const contentType = response.headers.get('content-type') ?? ''
@@ -166,7 +182,7 @@ export function rememberAdminPinVerification(verifiedUntil?: string | Date | nul
 export function clearAdminPinVerification(): void {
   if (typeof window === 'undefined') return
   if (__storageLock) return
-  
+
   try {
     __storageLock = true
     window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)

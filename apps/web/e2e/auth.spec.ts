@@ -42,7 +42,7 @@ test.describe('Auth E2E - Chromium Smoke', () => {
 
     await expect(page).toHaveURL(/\/login$/)
     await expect(page.getByText('Digite um e-mail válido.')).toBeVisible()
-    await expect(page.getByText('A senha ou PIN precisa ter pelo menos 6 caracteres.')).toBeVisible()
+    await expect(page.getByText('A senha da empresa precisa ter pelo menos 8 caracteres.')).toBeVisible()
   })
 
   test('TC-E2E-AUTH-004: expõe o CTA de demo da empresa', async ({ page }) => {

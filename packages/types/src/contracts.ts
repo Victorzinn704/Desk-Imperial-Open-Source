@@ -11,6 +11,9 @@ export type EmployeeRecord = {
   employeeCode: string
   displayName: string
   active: boolean
+  hasLogin: boolean
+  salarioBase: number
+  percentualVendas: number
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +58,8 @@ export type ProductRecord = {
   originalUnitCost: number
   originalUnitPrice: number
   stock: number
+  lowStockThreshold: number | null
+  isLowStock: boolean
   requiresKitchen: boolean
   active: boolean
   createdAt: string
@@ -337,6 +342,8 @@ export type ComandaItemRecord = {
   kitchenReadyAt: string | null
 }
 
+export type MesaStatus = 'livre' | 'ocupada' | 'reservada'
+
 export type MesaRecord = {
   id: string
   label: string
@@ -346,7 +353,7 @@ export type MesaRecord = {
   positionY: number | null
   active: boolean
   reservedUntil: string | null
-  status: 'livre' | 'ocupada' | 'reservada'
+  status: MesaStatus
   comandaId: string | null
   currentEmployeeId: string | null
 }

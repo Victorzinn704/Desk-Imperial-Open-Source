@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
+import { normalizeIpAddress } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 
 type DemoReservation = {
@@ -179,23 +180,6 @@ export class DemoAccessService {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
-}
-
-function normalizeIpAddress(ipAddress: string | null) {
-  if (!ipAddress) {
-    return null
-  }
-
-  const normalized = ipAddress.trim()
-  if (!normalized) {
-    return null
-  }
-
-  if (normalized === '::1') {
-    return '127.0.0.1'
-  }
-
-  return normalized.startsWith('::ffff:') ? normalized.slice(7) : normalized
 }
 
 function diffSeconds(start: Date, end: Date) {

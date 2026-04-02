@@ -125,6 +125,7 @@ Observacao:
 
 - a API envia traces OTLP para Alloy/Tempo
 - o Web envia erros/eventos para Faro conforme amostragem de sessao
+- o compose local atual nao sobe um collector Faro dedicado por padrao; sem `NEXT_PUBLIC_FARO_COLLECTOR_URL`, o frontend simplesmente nao envia eventos
 
 ## 10. OpenTelemetry (OTLP) sem traces
 
@@ -149,13 +150,14 @@ Checklist:
 3. validar se a CSP permite o dominio do collector Faro em `connect-src`
 4. conferir se a aplicacao esta em sessao amostrada (sessionTracking)
 5. validar erro real no browser e checar ingestao no Grafana
+6. confirmar se existe collector browser configurado de verdade no ambiente alvo
 
 Checks adicionais de hardening:
 
-6. em producao, garantir collector com `https://` (HTTP e bloqueado automaticamente)
-7. revisar `NEXT_PUBLIC_FARO_MAX_SIGNALS_PER_MINUTE` se houver throttle excessivo
-8. revisar `NEXT_PUBLIC_FARO_ERROR_DEDUPE_WINDOW_MS` se eventos iguais estiverem sendo agrupados demais
-9. ajustar `NEXT_PUBLIC_FARO_SLOW_API_THRESHOLD_MS` para o budget de latencia do ambiente
+7. em producao, garantir collector com `https://` (HTTP e bloqueado automaticamente)
+8. revisar `NEXT_PUBLIC_FARO_MAX_SIGNALS_PER_MINUTE` se houver throttle excessivo
+9. revisar `NEXT_PUBLIC_FARO_ERROR_DEDUPE_WINDOW_MS` se eventos iguais estiverem sendo agrupados demais
+10. ajustar `NEXT_PUBLIC_FARO_SLOW_API_THRESHOLD_MS` para o budget de latencia do ambiente
 
 ## 12. Falhas silenciosas detectadas no E2E crítico
 
@@ -232,7 +234,24 @@ Checklist:
 3. reiniciar apenas o Grafana: `docker compose -f infra/docker/docker-compose.observability.yml restart grafana`
 4. confirmar logs do Grafana para erro de parse de JSON/YAML
 
-## 18. Logs de Redis em fail-open no backend
+## 18. Alertas em firing sem notificacao externa
+
+Sintomas comuns:
+
+- alerta aparece no Prometheus/Grafana, mas ninguem recebe aviso
+
+Checklist:
+
+1. validar `infra/docker/observability/alertmanager/alertmanager.yml`
+2. confirmar se existe receiver real configurado (Slack, email ou webhook)
+3. testar envio manual do receiver antes de confiar no alerta
+4. revisar severidades para evitar ruido
+
+Observacao:
+
+- o repositorio sobe o Alertmanager, mas o receiver padrao local ainda e neutro por design
+
+## 19. Logs de Redis em fail-open no backend
 
 Sintomas comuns:
 

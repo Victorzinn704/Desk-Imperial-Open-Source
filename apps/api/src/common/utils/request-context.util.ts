@@ -22,7 +22,7 @@ export function extractRequestContext(request: Request): RequestContext {
   }
 }
 
-function normalizeIpAddress(ipAddress: string | null) {
+export function normalizeIpAddress(ipAddress: string | null) {
   if (!ipAddress) {
     return null
   }

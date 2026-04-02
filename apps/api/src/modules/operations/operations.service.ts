@@ -25,7 +25,7 @@ import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-statu
 import { toMesaRecord, type MesaRecord } from './operations.types'
 import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
@@ -259,6 +259,20 @@ export class OperationsService {
       })
       if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${dto.label}".`)
     }
+
+    let reservedUntil: Date | null | undefined
+    if (dto.reservedUntil !== undefined) {
+      if (!dto.reservedUntil) {
+        reservedUntil = null
+      } else {
+        const parsedReservedUntil = new Date(dto.reservedUntil)
+        if (Number.isNaN(parsedReservedUntil.getTime())) {
+          throw new BadRequestException('Data de reserva inválida.')
+        }
+        reservedUntil = parsedReservedUntil
+      }
+    }
+
     const updated = await this.prisma.mesa.update({
       where: { id: mesaId },
       data: {
@@ -272,9 +286,7 @@ export class OperationsService {
         ...(dto.positionX !== undefined && { positionX: dto.positionX }),
         ...(dto.positionY !== undefined && { positionY: dto.positionY }),
         ...(dto.active !== undefined && { active: dto.active }),
-        ...(dto.reservedUntil !== undefined && {
-          reservedUntil: dto.reservedUntil ? new Date(dto.reservedUntil) : null,
-        }),
+        ...(reservedUntil !== undefined && { reservedUntil }),
       },
     })
     await this.auditLogService.record({

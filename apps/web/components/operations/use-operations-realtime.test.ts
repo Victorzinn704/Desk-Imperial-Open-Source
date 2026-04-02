@@ -1,3 +1,11 @@
+/**
+ * @file use-operations-realtime.test.ts
+ * @module Web/OperationsRealtime
+ *
+ * Documenta como envelopes realtime sao aplicados em snapshots de live, kitchen e summary,
+ * incluindo regras de patch e sincronizacao de cache no cliente.
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 import type { OperationsLiveResponse, OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
 import { applyRealtimeEnvelope } from './use-operations-realtime'
@@ -91,6 +99,7 @@ function createQueryClientMock(
   return {
     getQueriesData: vi.fn(() => [[OPERATIONS_LIVE_COMPACT_QUERY_KEY, currentLiveSnapshot]]),
     getLiveSnapshot: () => currentLiveSnapshot,
+    getSummarySnapshot: () => currentSummarySnapshot,
     getQueryData: vi.fn((queryKey: readonly unknown[]) => {
       if (currentKitchenSnapshot && queryKey.length === OPERATIONS_KITCHEN_QUERY_KEY.length) {
         const matchesKitchen = queryKey.every((value, index) => value === OPERATIONS_KITCHEN_QUERY_KEY[index])
@@ -345,6 +354,12 @@ describe('applyRealtimeEnvelope', () => {
 
     expect(result.summaryPatched).toBe(true)
     expect(result.summaryNeedsRefresh).toBe(false)
+
+    const patchedSummary = queryClient.getSummarySnapshot()
+    expect(patchedSummary?.kpis.projecaoTotal).toBe(230)
+    expect(patchedSummary?.kpis.lucroRealizado).toBe(55)
+    expect(patchedSummary?.kpis.lucroEsperado).toBeCloseTo(70.2777, 3)
+    expect(patchedSummary?.kpis.lucroEsperado).not.toBe(105)
   })
 
   it('remove itens da cozinha ao fechar a comanda sem depender de refresh', () => {

@@ -24,6 +24,25 @@ import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
 import { validateEnvironment } from './config/env.validation'
 
+const DEFAULT_THROTTLER_TTL_MS = 60_000
+const DEFAULT_THROTTLER_LIMIT = 120
+
+function parsePositiveIntegerEnv(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback
+  }
+
+  const numericValue = Number(value)
+  if (!Number.isInteger(numericValue) || numericValue <= 0) {
+    return fallback
+  }
+
+  return numericValue
+}
+
+const throttlerTtlMs = parsePositiveIntegerEnv(process.env.THROTTLER_TTL_MS, DEFAULT_THROTTLER_TTL_MS)
+const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFAULT_THROTTLER_LIMIT)
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,8 +59,8 @@ import { validateEnvironment } from './config/env.validation'
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60_000,
-        limit: 120,
+        ttl: throttlerTtlMs,
+        limit: throttlerLimit,
       },
     ]),
     LoggerModule.forRoot({

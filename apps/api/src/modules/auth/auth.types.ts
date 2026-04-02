@@ -4,10 +4,10 @@ export type AuthContext = {
   userId: string
   sessionId: string
   role: 'OWNER' | 'STAFF'
-  workspaceOwnerUserId?: string
+  workspaceOwnerUserId: string
   companyOwnerUserId: string | null
-  employeeId?: string | null
-  employeeCode?: string | null
+  employeeId: string | null
+  employeeCode: string | null
   email: string
   fullName: string
   companyName: string | null

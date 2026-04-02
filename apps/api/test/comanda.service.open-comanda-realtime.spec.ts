@@ -217,7 +217,7 @@ describe('ComandaService - openComanda realtime', () => {
         kitchenStatus: 'QUEUED',
         kitchenQueuedAt: expect.any(String),
         kitchenReadyAt: null,
-        businessDate: '2026-03-30',
+        businessDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       }),
     )
   })

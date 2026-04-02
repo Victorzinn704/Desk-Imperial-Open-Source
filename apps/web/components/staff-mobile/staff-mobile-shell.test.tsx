@@ -1,10 +1,22 @@
+/**
+ * @file staff-mobile-shell.test.tsx
+ * @module Web/StaffMobile
+ *
+ * Documenta fluxo operacional do staff em mobile,
+ * com foco em mesas, comandas, cozinha e sincronizacao de dados em tempo real.
+ */
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast } from 'sonner'
 import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import { StaffMobileShell } from './staff-mobile-shell'
+
+const enqueueMock = vi.fn()
+const drainQueueMock = vi.fn()
 
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
@@ -32,6 +44,13 @@ vi.mock('../operations/use-operations-realtime', () => ({
   useOperationsRealtime: vi.fn(() => ({ status: 'connected' })),
 }))
 
+vi.mock('@/components/shared/use-offline-queue', () => ({
+  useOfflineQueue: vi.fn(() => ({
+    enqueue: enqueueMock,
+    drainQueue: drainQueueMock,
+  })),
+}))
+
 const createTestQueryClient = () =>
   new QueryClient({
     defaultOptions: {
@@ -52,6 +71,12 @@ describe('StaffMobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    enqueueMock.mockResolvedValue('offline-1')
+    drainQueueMock.mockResolvedValue({
+      expiredCount: 0,
+      processedCount: 0,
+      failedCount: 0,
+    })
     testQueryClient = createTestQueryClient()
     const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
     const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
@@ -185,10 +210,30 @@ describe('StaffMobileShell', () => {
   const renderWithClient = (ui: React.ReactElement) =>
     render(<QueryClientProvider client={testQueryClient}>{ui}</QueryClientProvider>)
 
+  it('avisa quando ações offline expiram antes do reconnect', async () => {
+    drainQueueMock.mockResolvedValueOnce({
+      expiredCount: 2,
+      processedCount: 0,
+      failedCount: 0,
+    })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await waitFor(() => {
+      expect(drainQueueMock).toHaveBeenCalled()
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        '2 ações offline expiraram após 10 minutos sem conexão e foram descartadas.',
+      )
+    })
+  })
+
   it('mostra o resumo individual do funcionário na aba de histórico', async () => {
     const user = userEvent.setup()
 
-    renderWithClient(<StaffMobileShell currentUser={mockUser} produtos={[]} />)
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
     await user.click(screen.getByTestId('nav-historico'))
 
@@ -266,6 +311,8 @@ describe('StaffMobileShell', () => {
           originalUnitCost: 4,
           originalUnitPrice: 12,
           stock: 20,
+          lowStockThreshold: null,
+          isLowStock: false,
           requiresKitchen: false,
           active: true,
           createdAt: '2026-03-28T10:00:00.000Z',
@@ -336,7 +383,7 @@ describe('StaffMobileShell', () => {
       },
     })
 
-    renderWithClient(<StaffMobileShell currentUser={mockUser} produtos={[]} />)
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
     await user.click(screen.getByRole('button', { name: /mesa 3.*novo pdv/i }))
     expect(await screen.findByText(/Escolha uma categoria/i)).toBeInTheDocument()

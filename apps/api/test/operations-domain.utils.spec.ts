@@ -414,7 +414,6 @@ describe('buildCashUpdatedPayload()', () => {
       expectedCashAmount: { toNumber: () => 700 },
       movements: [{ type: CashMovementType.SUPPLY, amount: { toNumber: () => 300 } }],
     })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- simula Decimal do Prisma em teste
     const payload = buildCashUpdatedPayload(session as any)
     expect(payload.openingAmount).toBe(200)
     expect(payload.inflowAmount).toBe(300)

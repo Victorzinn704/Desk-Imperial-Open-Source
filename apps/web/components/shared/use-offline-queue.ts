@@ -29,6 +29,18 @@ export type OfflineAction = {
 
 type Executor = (action: OfflineAction) => Promise<void>
 
+export type OfflineDrainResult = {
+  expiredCount: number
+  processedCount: number
+  failedCount: number
+}
+
+const EMPTY_DRAIN_RESULT: OfflineDrainResult = {
+  expiredCount: 0,
+  processedCount: 0,
+  failedCount: 0,
+}
+
 // ─── IndexedDB helpers (sem deps externas) ──────────────────────────────────
 
 // Connection pool: IDB connections são caras de abrir.
@@ -123,7 +135,7 @@ export function useOfflineQueue() {
     try {
       all = await idbGetAll()
     } catch {
-      return // IDB indisponível (SSR / ambiente de teste)
+      return EMPTY_DRAIN_RESULT // IDB indisponível (SSR / ambiente de teste)
     }
 
     const now = Date.now()
@@ -132,15 +144,25 @@ export function useOfflineQueue() {
     const valid = all.filter((a) => now - a.enqueuedAt < TTL_MS)
 
     await Promise.all(expired.map((a) => idbDelete(a.id)))
+    let processedCount = 0
+    let failedCount = 0
 
     for (const action of valid) {
       try {
         await executor(action)
         await idbDelete(action.id) // Remove somente após sucesso
+        processedCount += 1
       } catch {
         // Mantém na fila para próxima tentativa — não re-throw
+        failedCount += 1
       }
     }
+
+    return {
+      expiredCount: expired.length,
+      processedCount,
+      failedCount,
+    } satisfies OfflineDrainResult
   }, [])
 
   return { enqueue, drainQueue }

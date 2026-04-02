@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  GoneException,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,9 +10,12 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request } from 'express'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
@@ -44,9 +46,14 @@ export class ProductsController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('import')
-  @HttpCode(HttpStatus.GONE)
-  importProducts() {
-    throw new GoneException('A importação via CSV foi desativada. Em breve disponível via integração direta.')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('file'))
+  importProducts(
+    @CurrentAuth() auth: AuthContext,
+    @UploadedFile() file: { buffer: Buffer; originalname: string } | undefined,
+    @Req() request: Request,
+  ) {
+    return this.productsService.importForUser(auth, file, extractRequestContext(request))
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

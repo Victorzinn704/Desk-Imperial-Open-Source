@@ -1,9 +1,39 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEnum, IsString, MinLength, ValidateIf, IsNotEmpty, IsEmail } from 'class-validator'
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  Validate,
+  ValidateIf,
+  type ValidationArguments,
+  ValidatorConstraint,
+  type ValidatorConstraintInterface,
+} from 'class-validator'
 
 export enum LoginModeDto {
   OWNER = 'OWNER',
   STAFF = 'STAFF',
+}
+
+@ValidatorConstraint({ name: 'loginPasswordLength', async: false })
+class LoginPasswordLengthConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments) {
+    if (typeof value !== 'string') {
+      return false
+    }
+
+    const loginMode = (args.object as LoginDto).loginMode
+    const minimumLength = loginMode === LoginModeDto.STAFF ? 6 : 8
+    return value.length >= minimumLength
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    const loginMode = (args.object as LoginDto).loginMode
+    return loginMode === LoginModeDto.STAFF
+      ? 'PIN do funcionário deve ter no mínimo 6 caracteres'
+      : 'Senha da empresa deve ter no mínimo 8 caracteres'
+  }
 }
 
 export class LoginDto {
@@ -30,6 +60,6 @@ export class LoginDto {
   @ApiProperty({ example: 'Strong@123' })
   @IsNotEmpty({ message: 'Senha é obrigatória' })
   @IsString({ message: 'Senha deve ser texto' })
-  @MinLength(8, { message: 'Senha deve ter no mínimo 8 caracteres' })
+  @Validate(LoginPasswordLengthConstraint)
   password!: string
 }

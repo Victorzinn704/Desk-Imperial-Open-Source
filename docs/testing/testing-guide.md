@@ -53,6 +53,14 @@ npm --workspace @partner/api run test:e2e
 ```bash
 npm --workspace @partner/web run test
 npm --workspace @partner/web run test:e2e
+npm run test:e2e:critical
+```
+
+### Carga
+
+```bash
+npm run test:load:critical
+npm run test:load:ci
 ```
 
 ## 4. Cobertura por objetivo
@@ -60,6 +68,9 @@ npm --workspace @partner/web run test:e2e
 - Backend: regras de negocio, guards, servicos criticos e smoke HTTP.
 - Frontend unit: hooks/componentes de operacao e shells principais.
 - Frontend E2E baseline: autenticacao e navegacao critica.
+- Frontend E2E critico: guardas contra falhas silenciosas (pageerror, console.error e unhandledrejection).
+- Load critico: metas de latencia p95/p99 para health e login.
+- Gate de performance no CI: k6 de curta duracao para bloquear regressao de latencia.
 
 ## 5. CI (gate obrigatorio)
 

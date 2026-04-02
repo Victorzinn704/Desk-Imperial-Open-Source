@@ -1,4 +1,10 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
@@ -1092,7 +1098,7 @@ export class OperationsHelpersService {
         })!
 
         if (item.unitPrice === undefined) {
-          throw new NotFoundException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
+          throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
         }
 
         unitPrice = roundCurrency(item.unitPrice)

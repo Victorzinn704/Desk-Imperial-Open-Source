@@ -264,13 +264,13 @@
 | ID       | Requisito                                         | Status       |
 | -------- | ------------------------------------------------- | ------------ |
 | RNF-06.1 | Logging estruturado com request-id por requisição | Implementado |
-| RNF-06.2 | Monitoramento de erros em produção (Sentry)       | Planejado    |
+| RNF-06.2 | Monitoramento de erros/traces com stack OSS       | Implementado |
 
 ---
 
 ## Restrições conhecidas
 
 1. **Importação CSV de produtos** está desativada (HTTP 410). A lógica existe no service mas o endpoint foi bloqueado.
-2. **Sentry** não está integrado — erros em produção não são capturados automaticamente.
+2. **Observabilidade OSS** ainda está em rollout progressivo entre ambientes.
 3. **Service Worker** está limitado ao módulo `/app` — não cobre todas as rotas.
 4. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.

@@ -130,6 +130,104 @@ function makeOrderAggregate({
   }
 }
 
+function mockSummaryGroupBy(params?: {
+  channels?: Array<{
+    channel: string | null
+    currency: string
+    orders: number
+    revenue: number
+    profit: number
+  }>
+  customers?: Array<{
+    customerName: string | null
+    buyerType: 'PERSON' | 'COMPANY' | null
+    buyerDocument: string | null
+    currency: string
+    orders: number
+    revenue: number
+    profit: number
+  }>
+  employees?: Array<{
+    employeeId: string | null
+    sellerCode: string | null
+    sellerName: string | null
+    currency: string
+    orders: number
+    revenue: number
+    profit: number
+  }>
+  geography?: Array<{
+    buyerDistrict: string | null
+    buyerCity: string | null
+    buyerState: string | null
+    buyerCountry: string | null
+    buyerLatitude: number
+    buyerLongitude: number
+    currency: string
+    orders: number
+    revenue: number
+    profit: number
+  }>
+}) {
+  mockPrisma.order.groupBy
+    .mockResolvedValueOnce([makeOrderAggregate({ currency: 'BRL', count: 2, revenue: 300, cost: 180, profit: 120 })])
+    .mockResolvedValueOnce([makeOrderAggregate({ currency: 'BRL', revenue: 200, profit: 80 })])
+    .mockResolvedValueOnce([makeOrderAggregate({ currency: 'BRL', revenue: 100, profit: 40 })])
+    .mockResolvedValueOnce(
+      (params?.channels ?? []).map((entry) => ({
+        channel: entry.channel,
+        currency: entry.currency,
+        _count: { _all: entry.orders },
+        _sum: {
+          totalRevenue: { toNumber: () => entry.revenue },
+          totalProfit: { toNumber: () => entry.profit },
+        },
+      })),
+    )
+    .mockResolvedValueOnce(
+      (params?.customers ?? []).map((entry) => ({
+        customerName: entry.customerName,
+        buyerType: entry.buyerType,
+        buyerDocument: entry.buyerDocument,
+        currency: entry.currency,
+        _count: { _all: entry.orders },
+        _sum: {
+          totalRevenue: { toNumber: () => entry.revenue },
+          totalProfit: { toNumber: () => entry.profit },
+        },
+      })),
+    )
+    .mockResolvedValueOnce(
+      (params?.employees ?? []).map((entry) => ({
+        employeeId: entry.employeeId,
+        sellerCode: entry.sellerCode,
+        sellerName: entry.sellerName,
+        currency: entry.currency,
+        _count: { _all: entry.orders },
+        _sum: {
+          totalRevenue: { toNumber: () => entry.revenue },
+          totalProfit: { toNumber: () => entry.profit },
+        },
+      })),
+    )
+    .mockResolvedValueOnce(
+      (params?.geography ?? []).map((entry) => ({
+        buyerDistrict: entry.buyerDistrict,
+        buyerCity: entry.buyerCity,
+        buyerState: entry.buyerState,
+        buyerCountry: entry.buyerCountry,
+        buyerLatitude: entry.buyerLatitude,
+        buyerLongitude: entry.buyerLongitude,
+        currency: entry.currency,
+        _count: { _all: entry.orders },
+        _sum: {
+          totalRevenue: { toNumber: () => entry.revenue },
+          totalProfit: { toNumber: () => entry.profit },
+        },
+      })),
+    )
+}
+
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 let financeService: FinanceService
@@ -329,8 +427,8 @@ describe('FinanceService', () => {
       // Arrange
       const products = [
         makeProduct({ name: 'Produto 1', stock: 100 }),
-        makeProduct({ name: 'Produto 2', stock: 5 }), // Low stock
-        makeProduct({ name: 'Produto 3', stock: 3 }), // Low stock
+        makeProduct({ name: 'Produto 2', stock: 5, lowStockThreshold: 10 }), // Low stock
+        makeProduct({ name: 'Produto 3', stock: 3, lowStockThreshold: 10 }), // Low stock
         makeProduct({ name: 'Produto 4', stock: 50 }),
       ]
       mockPrisma.product.findMany.mockResolvedValue(products)
@@ -422,7 +520,24 @@ describe('FinanceService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue([])
       mockPrisma.order.findMany.mockResolvedValue(orders)
-      mockPrisma.order.groupBy.mockResolvedValue([])
+      mockSummaryGroupBy({
+        channels: [
+          {
+            channel: 'PDV',
+            currency: 'BRL',
+            orders: 2,
+            revenue: 250,
+            profit: 100,
+          },
+          {
+            channel: 'DELIVERY',
+            currency: 'BRL',
+            orders: 1,
+            revenue: 200,
+            profit: 80,
+          },
+        ],
+      })
 
       // Act
       const result = await financeService.getSummaryForUser(mockContext)
@@ -441,7 +556,28 @@ describe('FinanceService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue([])
       mockPrisma.order.findMany.mockResolvedValue(orders)
-      mockPrisma.order.groupBy.mockResolvedValue([])
+      mockSummaryGroupBy({
+        customers: [
+          {
+            customerName: 'Cliente 1',
+            buyerType: 'PERSON',
+            buyerDocument: '52998224725',
+            currency: 'BRL',
+            orders: 2,
+            revenue: 250,
+            profit: 100,
+          },
+          {
+            customerName: 'Cliente 2',
+            buyerType: 'PERSON',
+            buyerDocument: '11111111111',
+            currency: 'BRL',
+            orders: 1,
+            revenue: 200,
+            profit: 80,
+          },
+        ],
+      })
 
       // Act
       const result = await financeService.getSummaryForUser(mockContext)
@@ -459,7 +595,28 @@ describe('FinanceService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue([])
       mockPrisma.order.findMany.mockResolvedValue(orders)
-      mockPrisma.order.groupBy.mockResolvedValue([])
+      mockSummaryGroupBy({
+        employees: [
+          {
+            employeeId: 'emp-1',
+            sellerCode: 'E001',
+            sellerName: 'Vendedor 1',
+            currency: 'BRL',
+            orders: 1,
+            revenue: 100,
+            profit: 40,
+          },
+          {
+            employeeId: 'emp-2',
+            sellerCode: 'E002',
+            sellerName: 'Vendedor 2',
+            currency: 'BRL',
+            orders: 1,
+            revenue: 200,
+            profit: 80,
+          },
+        ],
+      })
 
       // Act
       const result = await financeService.getSummaryForUser(mockContext)
@@ -489,7 +646,34 @@ describe('FinanceService', () => {
       ]
       mockPrisma.product.findMany.mockResolvedValue([])
       mockPrisma.order.findMany.mockResolvedValue(orders)
-      mockPrisma.order.groupBy.mockResolvedValue([])
+      mockSummaryGroupBy({
+        geography: [
+          {
+            buyerDistrict: 'Centro',
+            buyerCity: 'São Paulo',
+            buyerState: 'SP',
+            buyerCountry: 'Brasil',
+            buyerLatitude: -23.5505,
+            buyerLongitude: -46.6333,
+            currency: 'BRL',
+            orders: 1,
+            revenue: 100,
+            profit: 40,
+          },
+          {
+            buyerDistrict: 'Copacabana',
+            buyerCity: 'Rio de Janeiro',
+            buyerState: 'RJ',
+            buyerCountry: 'Brasil',
+            buyerLatitude: -22.9068,
+            buyerLongitude: -43.1729,
+            currency: 'BRL',
+            orders: 1,
+            revenue: 200,
+            profit: 80,
+          },
+        ],
+      })
 
       // Act
       const result = await financeService.getSummaryForUser(mockContext)

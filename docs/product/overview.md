@@ -112,7 +112,7 @@ Código aberto porque a transparência gera confiança. Gratuito porque é para 
 | Módulo                             | Status                                            |
 | ---------------------------------- | ------------------------------------------------- |
 | Import CSV de produtos             | ⚠️ Desativado (lógica existe, endpoint bloqueado) |
-| Monitoramento de erros em produção | ⚠️ Sem Sentry integrado                           |
+| Monitoramento de erros em produção | ⚠️ Stack OSS em implantação progressiva           |
 | Cobertura de testes frontend       | ⚠️ Parcial                                        |
 
 ---

@@ -3,6 +3,8 @@ import type {
   ComandaRecord,
   ComandaStatus,
   CurrencyCode,
+  EmployeeRecord,
+  EmployeesResponse,
   FinanceSummaryResponse,
   MarketInsightResponse,
   MesaRecord,
@@ -16,6 +18,10 @@ import type {
   ProductsResponse,
 } from '@contracts/contracts'
 
+export type { EmployeeRecord, EmployeesResponse } from '@contracts/contracts'
+
+import { reportApiErrorToFaro, reportApiRequestMeasurementToFaro } from './observability/faro'
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
@@ -23,6 +29,8 @@ const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
 const DEFAULT_API_TIMEOUT_MS = 20_000
 const AUTH_API_TIMEOUT_MS = 10_000
 const POSTAL_LOOKUP_TIMEOUT_MS = 6_000
+const REQUEST_ID_HEADER = 'x-request-id'
+const REQUEST_ID_FORWARD_HEADER = 'X-Request-Id'
 
 type JsonBody = Record<string, unknown>
 type ApiBody = JsonBody | FormData
@@ -99,8 +107,6 @@ export type SimpleMessageResponse = {
   message: string
   email?: string
   deliveryMode?: 'email' | 'preview'
-  previewCode?: string
-  previewExpiresAt?: string
 }
 
 export type VerificationChallengeResponse = {
@@ -109,8 +115,6 @@ export type VerificationChallengeResponse = {
   email: string
   message: string
   deliveryMode?: 'email' | 'preview'
-  previewCode?: string
-  previewExpiresAt?: string
 }
 
 export type ConsentDocument = {
@@ -152,6 +156,7 @@ export type ProductPayload = {
   unitPrice: number
   currency: CurrencyCode
   stock: number
+  lowStockThreshold?: number | null
 }
 
 export type OrderPayload = {
@@ -171,26 +176,6 @@ export type OrderPayload = {
   currency?: CurrencyCode
   channel?: string
   notes?: string
-}
-
-export type EmployeeRecord = {
-  id: string
-  employeeCode: string
-  displayName: string
-  active: boolean
-  hasLogin: boolean
-  salarioBase?: number
-  percentualVendas?: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type EmployeesResponse = {
-  items: EmployeeRecord[]
-  totals: {
-    totalEmployees: number
-    activeEmployees: number
-  }
 }
 
 export type EmployeePayload = {
@@ -253,6 +238,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly requestId: string | null = null,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -358,7 +344,7 @@ export async function lookupPostalCode(postalCode: string) {
   }
 
   if (!response.ok) {
-    throw await toApiError(response)
+    throw await toApiError(response, readResponseRequestId(response))
   }
 
   return (await response.json()) as PostalCodeLookupResponse
@@ -522,14 +508,11 @@ export async function fetchPillars() {
 }
 
 export async function fetchMarketInsight(focus?: string) {
-  const params = new URLSearchParams()
-  if (focus?.trim()) {
-    params.set('focus', focus.trim())
-  }
+  const normalizedFocus = focus?.trim()
 
-  const suffix = params.toString() ? `?${params.toString()}` : ''
-  return apiFetch<MarketInsightResponse>(`/market-intelligence/insights${suffix}`, {
-    method: 'GET',
+  return apiFetch<MarketInsightResponse>('/market-intelligence/insights', {
+    method: 'POST',
+    body: normalizedFocus ? { focus: normalizedFocus } : {},
   })
 }
 
@@ -990,6 +973,7 @@ async function apiFetch<T>(
     timeoutMs?: number
   },
 ) {
+  const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
   const body = options.body
 
@@ -1013,6 +997,9 @@ async function apiFetch<T>(
     }
   }
 
+  const clientRequestId = ensureRequestId(headers)
+  const requestStartedAt = getCurrentTimeMs()
+
   let response: Response
 
   try {
@@ -1028,18 +1015,70 @@ async function apiFetch<T>(
       path,
     )
   } catch (error) {
+    const elapsedMs = Math.max(0, getCurrentTimeMs() - requestStartedAt)
+
     if (error instanceof ApiTimeoutError) {
-      throw new ApiError(`A requisicao demorou demais (${Math.ceil(error.timeoutMs / 1000)}s). Tente novamente.`, 504)
+      const timeoutApiError = new ApiError(
+        `A requisicao demorou demais (${Math.ceil(error.timeoutMs / 1000)}s). Tente novamente.`,
+        504,
+        clientRequestId,
+      )
+      reportApiErrorTelemetry(timeoutApiError, {
+        path,
+        method,
+        requestId: clientRequestId,
+      })
+      reportApiRequestMeasurementToFaro({
+        path,
+        method,
+        status: 504,
+        durationMs: Math.max(elapsedMs, error.timeoutMs),
+        requestId: clientRequestId,
+      })
+      throw timeoutApiError
     }
 
-    throw new ApiError(
+    const connectionApiError = new ApiError(
       `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
       0,
+      clientRequestId,
     )
+    reportApiErrorTelemetry(connectionApiError, {
+      path,
+      method,
+      requestId: clientRequestId,
+    })
+    reportApiRequestMeasurementToFaro({
+      path,
+      method,
+      status: 0,
+      durationMs: elapsedMs,
+      requestId: clientRequestId,
+    })
+    throw connectionApiError
   }
 
+  const requestDurationMs = Math.max(0, getCurrentTimeMs() - requestStartedAt)
+  const responseRequestId = readResponseRequestId(response) ?? clientRequestId
+
+  reportApiRequestMeasurementToFaro({
+    path,
+    method,
+    status: response.status,
+    durationMs: requestDurationMs,
+    requestId: responseRequestId,
+  })
+
   if (!response.ok) {
-    throw await toApiError(response)
+    const apiError = await toApiError(response, responseRequestId)
+    if (apiError.status >= 500) {
+      reportApiErrorTelemetry(apiError, {
+        path,
+        method,
+        requestId: responseRequestId,
+      })
+    }
+    throw apiError
   }
 
   const contentType = response.headers.get('content-type') ?? ''
@@ -1074,13 +1113,13 @@ function withOperationsOptions(path: string, options?: OperationsRequestOptions)
   return query ? `${basePath}?${query}` : basePath
 }
 
-async function toApiError(response: Response) {
+async function toApiError(response: Response, requestId: string | null) {
   const fallbackMessage =
     response.status >= 500 ? 'O servidor encontrou um erro inesperado.' : 'Nao foi possivel concluir a requisicao.'
   const contentType = response.headers.get('content-type') ?? ''
 
   if (!contentType.includes('application/json')) {
-    return new ApiError(fallbackMessage, response.status)
+    return new ApiError(fallbackMessage, response.status, requestId)
   }
 
   const payload = (await response.json()) as {
@@ -1088,7 +1127,7 @@ async function toApiError(response: Response) {
   }
 
   const message = Array.isArray(payload.message) ? payload.message.join(' ') : payload.message
-  return new ApiError(message || fallbackMessage, response.status)
+  return new ApiError(message || fallbackMessage, response.status, requestId)
 }
 
 function shouldAttachCsrfToken(method: string | undefined) {
@@ -1190,12 +1229,60 @@ function resolveApiTimeoutMs(path: string) {
   return DEFAULT_API_TIMEOUT_MS
 }
 
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  timeoutMs: number,
-  requestPath: string,
+function readResponseRequestId(response: Response) {
+  const requestId = response.headers.get(REQUEST_ID_HEADER)
+  if (!requestId?.trim()) {
+    return null
+  }
+
+  return requestId.trim()
+}
+
+function ensureRequestId(headers: Headers) {
+  const existingRequestId = headers.get(REQUEST_ID_HEADER)?.trim()
+  if (existingRequestId) {
+    headers.set(REQUEST_ID_FORWARD_HEADER, existingRequestId)
+    return existingRequestId
+  }
+
+  const generatedRequestId = generateRequestId()
+  headers.set(REQUEST_ID_FORWARD_HEADER, generatedRequestId)
+  return generatedRequestId
+}
+
+function generateRequestId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function getCurrentTimeMs() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now()
+  }
+
+  return Date.now()
+}
+
+function reportApiErrorTelemetry(
+  error: ApiError,
+  context: {
+    path: string
+    method: string
+    requestId?: string | null
+  },
 ) {
+  reportApiErrorToFaro(error, {
+    path: context.path,
+    method: context.method,
+    status: error.status,
+    requestId: context.requestId ?? error.requestId,
+  })
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, requestPath: string) {
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
     controller.abort()

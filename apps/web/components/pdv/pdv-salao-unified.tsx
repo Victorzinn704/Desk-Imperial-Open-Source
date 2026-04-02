@@ -124,16 +124,41 @@ function SalaoView({
     onStatusChange(draggableId, newStatus)
   }
 
-  const filtered = mesas.filter((m) => {
-    if (filter === 'todos') return true
-    if (filter === 'sem_garcom') return !m.garcomId && m.status !== 'livre'
-    if (filter === 'atencao') return urgencyLevel(m, resolveMesaComanda(m, comandaById), now) >= 2
-    return m.status === filter
-  })
+  const { livreMesas, ocupMesas, resMesas } = useMemo(() => {
+    const livre: Mesa[] = []
+    const ocupada: Mesa[] = []
+    const reservada: Mesa[] = []
 
-  const livreMesas = filtered.filter((m) => m.status === 'livre')
-  const ocupMesas = filtered.filter((m) => m.status === 'ocupada')
-  const resMesas = filtered.filter((m) => m.status === 'reservada')
+    for (const mesa of mesas) {
+      const comanda = resolveMesaComanda(mesa, comandaById)
+      const matchesFilter =
+        filter === 'todos'
+          ? true
+          : filter === 'sem_garcom'
+            ? !mesa.garcomId && mesa.status !== 'livre'
+            : filter === 'atencao'
+              ? urgencyLevel(mesa, comanda, now) >= 2
+              : mesa.status === filter
+
+      if (!matchesFilter) {
+        continue
+      }
+
+      if (mesa.status === 'livre') {
+        livre.push(mesa)
+      } else if (mesa.status === 'ocupada') {
+        ocupada.push(mesa)
+      } else if (mesa.status === 'reservada') {
+        reservada.push(mesa)
+      }
+    }
+
+    return {
+      livreMesas: livre,
+      ocupMesas: ocupada,
+      resMesas: reservada,
+    }
+  }, [comandaById, filter, mesas, now])
 
   const zones = [
     {
@@ -583,16 +608,44 @@ export function SalaoUnificado({
   )
 
   // Stats
-  const livres = mesas.filter((m) => m.status === 'livre').length
-  const ocupadas = mesas.filter((m) => m.status === 'ocupada').length
-  const semGarcom = mesas.filter((m) => m.status !== 'livre' && !m.garcomId).length
-  const comAtencao = mesas.filter((m) => urgencyLevel(m, resolveMesaComanda(m, comandaById), now) >= 2).length
-  const totalAberto = mesas
-    .filter((m) => m.status === 'ocupada' && m.comandaId)
-    .reduce((sum, m) => {
-      const c = resolveMesaComanda(m, comandaById)
-      return sum + (c ? calcTotal(c) : 0)
-    }, 0)
+  const { livres, ocupadas, semGarcom, comAtencao, totalAberto } = useMemo(() => {
+    let livresCount = 0
+    let ocupadasCount = 0
+    let semGarcomCount = 0
+    let comAtencaoCount = 0
+    let totalAbertoValue = 0
+
+    for (const mesa of mesas) {
+      const comanda = resolveMesaComanda(mesa, comandaById)
+
+      if (mesa.status === 'livre') {
+        livresCount += 1
+      }
+
+      if (mesa.status === 'ocupada') {
+        ocupadasCount += 1
+        if (comanda) {
+          totalAbertoValue += calcTotal(comanda)
+        }
+      }
+
+      if (mesa.status !== 'livre' && !mesa.garcomId) {
+        semGarcomCount += 1
+      }
+
+      if (urgencyLevel(mesa, comanda, now) >= 2) {
+        comAtencaoCount += 1
+      }
+    }
+
+    return {
+      livres: livresCount,
+      ocupadas: ocupadasCount,
+      semGarcom: semGarcomCount,
+      comAtencao: comAtencaoCount,
+      totalAberto: totalAbertoValue,
+    }
+  }, [comandaById, mesas, now])
 
   return (
     <div className="space-y-4">

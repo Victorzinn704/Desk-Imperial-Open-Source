@@ -30,7 +30,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ['test/**/*.spec.ts'],
+    // Pattern covers both: running from apps/api/ and from repo root via lint-staged
+    files: ['test/**/*.spec.ts', '**/test/**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
     },

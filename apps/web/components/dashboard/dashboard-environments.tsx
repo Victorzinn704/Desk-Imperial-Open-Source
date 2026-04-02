@@ -7,7 +7,7 @@ import { SalesEnvironment } from './environments/sales-environment'
 import { PortfolioEnvironment } from './environments/portfolio-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
 import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
-import type { AuthUser } from '@/lib/api'
+import type { AuthUser, EmployeeRecord } from '@/lib/api'
 
 // ── Medium-heavy environments — lazy loaded ────────────────────────────────────
 // PdvEnvironment: AG Grid (~500 KB) + react-big-calendar (~100 KB)
@@ -56,15 +56,7 @@ const SalaoEnvironment = dynamic(() => import('./salao-environment').then((m) =>
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId
   activeSettingsSection: DashboardSettingsSectionId
-  employees: Array<{
-    id: string
-    employeeCode: string
-    displayName: string
-    active: boolean
-    hasLogin: boolean
-    createdAt: string
-    updatedAt: string
-  }>
+  employees: EmployeeRecord[]
   finance?: FinanceSummaryResponse
   onNavigateSection: (sectionId: DashboardSectionId) => void
   onSettingsSectionChange: (sectionId: DashboardSettingsSectionId) => void

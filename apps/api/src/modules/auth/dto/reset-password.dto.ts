@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
 import { IsEmail, IsString, Length, Matches, MinLength } from 'class-validator'
+import { PASSWORD_MIN_LENGTH, STRONG_PASSWORD_REGEX } from '../../../common/constants/password'
 
 export class ResetPasswordDto {
   @ApiProperty({ example: 'ceo@empresa.com' })
@@ -19,8 +20,8 @@ export class ResetPasswordDto {
 
   @ApiProperty({ example: 'Strong@123' })
   @IsString()
-  @MinLength(8)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/, {
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @Matches(STRONG_PASSWORD_REGEX, {
     message: 'A senha precisa ter letra maiuscula, minuscula, numero e caractere especial.',
   })
   password!: string

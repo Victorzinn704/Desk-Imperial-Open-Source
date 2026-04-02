@@ -1,46 +1,35 @@
 name: CI
 
-# Dispara em push para main e em qualquer Pull Request.
-# Em PRs, o check bloqueia o merge se falhar (configure branch protection rules).
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-# Cancela runs em progresso quando um novo commit chega para o mesmo branch/PR.
-# Economiza minutos de Actions e evita feedback de código desatualizado.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Permissão mínima por princípio de menor privilégio (OWASP).
-# Jobs individuais declaram permissões adicionais somente quando necessário.
 permissions:
   contents: read
 
-# Variáveis de ambiente compartilhadas entre todos os jobs.
-# Secrets de CI usam valores longos para atender políticas de comprimento mínimo dos serviços.
-# NUNCA usar esses valores fora do ambiente de CI.
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   NODE_ENV: test
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXT_PUBLIC_API_URL: http://localhost:4000
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partner_portal_test
+  DATABASE_URL: postgresql://desk_imperial_ci:desk_imperial_ci_password@localhost:5432/partner_portal_test
   COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
   CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
   ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-  SESSION_TTL_HOURS: "24"
-  PASSWORD_RESET_TTL_MINUTES: "30"
-  CONSENT_VERSION: "2026.03"
-  ENABLE_SWAGGER: "false"
+  SESSION_TTL_HOURS: '24'
+  PASSWORD_RESET_TTL_MINUTES: '30'
+  CONSENT_VERSION: '2026.03'
+  ENABLE_SWAGGER: 'false'
 
 jobs:
-  # ── quality ────────────────────────────────────────────────────────────────
-  # Lint e typecheck são rápidos (~30s) e dão feedback imediato.
-  # Rodam em paralelo com os testes para reduzir o tempo total do pipeline.
   quality:
-    name: Lint & Typecheck
+    name: Quality (Lint + Typecheck)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -54,15 +43,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Restore Turbo cache
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: turbo-quality-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            turbo-quality-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
-            turbo-quality-${{ runner.os }}-
-
       - name: Install dependencies
         run: npm ci
 
@@ -75,11 +55,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-  # ── test ───────────────────────────────────────────────────────────────────
-  # Suite de testes unitários com relatório de cobertura.
-  # Roda em paralelo com quality — sem dependência entre os dois.
-  test:
-    name: Test Suite
+  backend-tests:
+    name: Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -99,31 +76,22 @@ jobs:
       - name: Generate Prisma client
         run: npm --workspace @partner/api run prisma:generate
 
-      - name: Run tests with coverage
-        run: |
-          npm --workspace @partner/api run test -- \
-            --coverage \
-            --ci \
-            --forceExit \
-            --coverageReporters=text-summary \
-            --coverageReporters=lcov
+      - name: Run API tests
+        run: npm --workspace @partner/api run test -- --coverage --ci --forceExit
 
-      - name: Upload coverage report
+      - name: Upload API coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ github.sha }}
+          name: api-coverage-${{ github.sha }}
           path: apps/api/coverage/lcov.info
+          if-no-files-found: ignore
           retention-days: 14
 
-  # ── build ──────────────────────────────────────────────────────────────────
-  # Build final só roda após quality + test passarem.
-  # Garante que nada quebrado chega à branch main.
-  build:
-    name: Build
+  frontend-unit:
+    name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [quality, test]
+    timeout-minutes: 12
 
     steps:
       - name: Checkout
@@ -135,14 +103,200 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Restore Turbo cache
-        uses: actions/cache@v4
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run web unit tests
+        run: npm --workspace @partner/web run test
+
+  frontend-e2e:
+    name: Frontend E2E (Chromium Baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
         with:
-          path: .turbo
-          key: turbo-build-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            turbo-build-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
-            turbo-build-${{ runner.os }}-
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npm --workspace @partner/web exec playwright install --with-deps chromium
+
+      - name: Run web e2e baseline
+        run: npm --workspace @partner/web run test:e2e
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-artifacts-${{ github.sha }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Public repo safety scan
+        run: npm run repo:scan-public
+
+      - name: Dependency Review (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+          comment-summary-in-pr: always
+
+      - name: Runtime security audit
+        run: npm run security:audit-runtime
+
+  performance-latency-gate:
+    name: Performance Latency Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, backend-tests]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: partner_portal_test
+          POSTGRES_USER: desk_imperial_ci
+          POSTGRES_PASSWORD: desk_imperial_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U desk_imperial_ci -d partner_portal_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      NODE_ENV: test
+      PORT: 4000
+      DATABASE_URL: postgresql://desk_imperial_ci:desk_imperial_ci_password@localhost:5432/partner_portal_test
+      DIRECT_URL: postgresql://desk_imperial_ci:desk_imperial_ci_password@localhost:5432/partner_portal_test
+      REDIS_URL: redis://localhost:6379
+      COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
+      CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
+      ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
+      ENABLE_SWAGGER: 'false'
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare API database schema
+        run: |
+          npm --workspace @partner/api run prisma:generate
+          npm --workspace @partner/api run prisma:migrate:deploy
+
+      - name: Build API
+        run: npm --workspace @partner/api run build
+
+      - name: Start API in background
+        run: |
+          nohup npm --workspace @partner/api run start > api-latency-gate.log 2>&1 &
+          echo $! > api-latency-gate.pid
+
+      - name: Wait for API health
+        run: |
+          for i in {1..45}; do
+            if curl -fsS http://127.0.0.1:4000/api/health > /tmp/api-health.json; then
+              cat /tmp/api-health.json
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "API nao respondeu a tempo no health endpoint."
+          cat api-latency-gate.log || true
+          exit 1
+
+      - name: Run latency gate (k6)
+        run: npm run test:load:ci
+        env:
+          BASE_URL: http://127.0.0.1:4000
+
+      - name: Upload latency gate artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-gate-debug-${{ github.sha }}
+          path: api-latency-gate.log
+          retention-days: 3
+
+      - name: Stop API background process
+        if: always()
+        run: |
+          if [ -f api-latency-gate.pid ]; then
+            kill "$(cat api-latency-gate.pid)" || true
+          fi
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, backend-tests, frontend-unit, frontend-e2e, security, performance-latency-gate]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci

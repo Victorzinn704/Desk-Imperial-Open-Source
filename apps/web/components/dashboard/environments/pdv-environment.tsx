@@ -51,6 +51,8 @@ export function PdvEnvironment() {
       category: p.category,
       unitPrice: p.unitPrice,
       currency: String(p.currency),
+      stock: p.stock,
+      isLowStock: p.isLowStock,
       isCombo: p.isCombo ?? false,
       comboDescription: p.comboDescription ?? null,
       comboItems: p.comboItems ?? [],
@@ -68,7 +70,7 @@ export function PdvEnvironment() {
         icon={Tags}
         title="PDV — Ponto de Venda"
       />
-      <PdvBoard currentUser={user} operations={operations} products={boardProducts} />
+      <PdvBoard operations={operations} products={boardProducts} />
       {showExecutiveOperations ? (
         <div className="space-y-6">
           <CaixaPanel operations={operations} />

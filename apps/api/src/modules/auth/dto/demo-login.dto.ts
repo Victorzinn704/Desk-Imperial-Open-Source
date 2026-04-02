@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEnum, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator'
+import { IsEnum, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator'
 import { LoginModeDto } from './login.dto'
 
 export class DemoLoginDto {
@@ -13,9 +13,4 @@ export class DemoLoginDto {
   @MinLength(2)
   @MaxLength(32)
   employeeCode?: string
-
-  @ApiPropertyOptional({ example: true, description: 'Quando true, ignora rate-limit (uso interno).' })
-  @IsOptional()
-  bypassRateLimit?: boolean
 }
-

@@ -160,7 +160,7 @@ export interface OperationsRealtimeEventPayloadMap {
   'mesa.upserted': {
     mesaId: string
     label: string
-    status: 'livre' | 'ocupada' | 'reservada'
+    status: MesaRecord['status']
     mesa?: MesaRecord
   }
 }

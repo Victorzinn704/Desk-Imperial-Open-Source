@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeft, Building2, Eye, EyeOff, Globe2, Hash, LockKeyhole, Mail, MapPin, User, Users } from 'lucide-react'
 import { ApiError, fetchConsentDocuments, lookupPostalCode, register } from '@/lib/api'
-import { saveEmailVerificationChallenge } from '@/lib/auth-challenge-storage'
 import { readCookieConsentChoice } from '@/lib/cookie-consent'
 import {
   fallbackConsentDocuments,
@@ -70,18 +69,9 @@ export function RegisterForm() {
 
   const registerMutation = useMutation({
     mutationFn: register,
-    onSuccess: (data) => {
-      if (data.deliveryMode === 'preview' && data.previewCode && data.previewExpiresAt) {
-        saveEmailVerificationChallenge({
-          email: data.email,
-          previewCode: data.previewCode,
-          previewExpiresAt: data.previewExpiresAt,
-          savedAt: new Date().toISOString(),
-        })
-      }
-
+    onSuccess: () => {
       startTransition(() => {
-        router.push(`/verificar-email?email=${encodeURIComponent(data.email)}&new=1`)
+        router.push('/verificar-email?new=1')
       })
     },
   })
@@ -199,7 +189,7 @@ export function RegisterForm() {
 
     clearErrors('password')
 
-    const cookieConsentChoice = readCookieConsentChoice()
+    const cookieConsent = readCookieConsentChoice()
 
     registerMutation.mutate(
       {
@@ -219,8 +209,8 @@ export function RegisterForm() {
         password: values.password,
         acceptTerms: values.acceptTerms,
         acceptPrivacy: values.acceptPrivacy,
-        analyticsCookies: cookieConsentChoice === 'accepted',
-        marketingCookies: cookieConsentChoice === 'accepted',
+        analyticsCookies: cookieConsent?.analytics ?? false,
+        marketingCookies: cookieConsent?.marketing ?? false,
       },
       {
         onError: (error) => {

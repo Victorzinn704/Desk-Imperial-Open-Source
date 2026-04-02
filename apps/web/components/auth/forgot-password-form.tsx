@@ -12,7 +12,6 @@ import { InputField } from '@/components/shared/input-field'
 
 export function ForgotPasswordForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [submittedEmail, setSubmittedEmail] = useState<string>('')
   const {
     register,
     handleSubmit,
@@ -29,7 +28,6 @@ export function ForgotPasswordForm() {
     mutationFn: forgotPassword,
     onSuccess: (payload) => {
       setSuccessMessage(payload.message)
-      setSubmittedEmail(payload.email ?? '')
       reset()
     },
   })
@@ -78,12 +76,12 @@ export function ForgotPasswordForm() {
         </Button>
       </form>
 
-      {successMessage && submittedEmail ? (
+      {successMessage ? (
         <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[rgba(143,183,255,0.08)] px-4 py-3 text-sm text-[var(--text-soft)]">
           Ja recebeu o codigo?{' '}
           <Link
             className="font-semibold text-[var(--accent)] transition hover:text-[var(--accent-strong)]"
-            href={`/redefinir-senha?email=${encodeURIComponent(submittedEmail)}`}
+            href="/redefinir-senha"
           >
             Continuar para redefinir a senha
           </Link>

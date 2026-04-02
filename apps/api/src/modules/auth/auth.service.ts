@@ -285,11 +285,9 @@ export class AuthService {
       requiresEmailVerification: true,
       email: user.email,
       deliveryMode: verificationDelivery?.deliveryMode,
-      previewCode: verificationDelivery?.previewCode,
-      previewExpiresAt: verificationDelivery?.previewExpiresAt?.toISOString(),
       message:
         verificationDelivery?.deliveryMode === 'preview'
-          ? 'Cadastro concluido. Como o email esta indisponivel agora, liberamos um codigo de apoio para voce concluir a verificacao neste navegador.'
+          ? 'Cadastro concluido. O envio de email esta instavel no momento. Tente reenviar o codigo em instantes para concluir a verificacao.'
           : verificationDelivery
             ? 'Cadastro concluido. Enviamos um codigo para confirmar seu email antes do primeiro acesso.'
             : 'Cadastro concluido. O codigo de confirmacao esta sendo processado. Se nao chegar em instantes, use a opcao de reenviar codigo.',
@@ -441,21 +439,19 @@ export class AuthService {
       this.authRateLimitService.buildLoginEmailKey(normalizedEmail),
     ]
 
-    if (!dto.bypassRateLimit) {
-      try {
-        await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
-      } catch (error) {
-        await this.auditLogService.record({
-          event: 'auth.login.blocked',
-          resource: 'session',
-          severity: AuditSeverity.WARN,
-          metadata: { email: normalizedEmail, reason: 'rate_limit', demo: true },
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-        })
+    try {
+      await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
+    } catch (error) {
+      await this.auditLogService.record({
+        event: 'auth.login.blocked',
+        resource: 'session',
+        severity: AuditSeverity.WARN,
+        metadata: { email: normalizedEmail, reason: 'rate_limit', demo: true },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
 
-        throw error
-      }
+      throw error
     }
 
     const actor =
@@ -735,6 +731,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(dto: ForgotPasswordDto, context: RequestContext) {
+    const genericMessage = 'Se o email estiver cadastrado e ativo, enviaremos um codigo de redefinicao em instantes.'
     const normalizedEmail = normalizeEmail(dto.email)
     const rateLimitKeys = [
       this.authRateLimitService.buildPasswordResetKey(normalizedEmail, context.ipAddress),
@@ -766,11 +763,33 @@ export class AuthService {
         userAgent: context.userAgent,
       })
 
-      throw new BadRequestException('Email invalido ou nao cadastrado.')
+      return {
+        success: true,
+        message: genericMessage,
+      }
     }
 
     if (!user.emailVerifiedAt) {
-      throw new BadRequestException('Confirme seu email antes de redefinir a senha.')
+      await this.auditLogService.record({
+        actorUserId: user.id,
+        event: 'auth.password-reset.requested',
+        resource: 'password_reset',
+        severity: AuditSeverity.WARN,
+        metadata: {
+          email: user.email,
+          userFound: true,
+          emailVerified: false,
+          attempts: rateLimitState.count,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+
+      return {
+        success: true,
+        message: genericMessage,
+      }
     }
 
     const resetCode = await this.issueOneTimeCode({
@@ -822,17 +841,12 @@ export class AuthService {
         })
 
         this.logger.warn(
-          `Entrega de redefinicao indisponivel para ${user.email}. Codigo de apoio liberado no modo local.`,
+          `Entrega de redefinicao indisponivel para ${user.email}. O envio sera reprocessado no modo local.`,
         )
 
         return {
           success: true,
-          email: user.email,
-          deliveryMode: 'preview',
-          previewCode: resetCode.code,
-          previewExpiresAt: resetCode.expiresAt.toISOString(),
-          message:
-            'O email de redefinicao esta indisponivel neste ambiente. Liberamos um codigo de apoio para concluir a troca de senha neste navegador.',
+          message: genericMessage,
         }
       }
 
@@ -861,8 +875,7 @@ export class AuthService {
 
     return {
       success: true,
-      email: user.email,
-      message: 'Enviamos um codigo de verificacao para redefinir sua senha.',
+      message: genericMessage,
     }
   }
 
@@ -1028,40 +1041,83 @@ export class AuthService {
   }
 
   async requestEmailVerification(dto: ForgotPasswordDto, context: RequestContext) {
+    const genericMessage =
+      'Se o email estiver cadastrado e pendente de confirmacao, enviaremos um novo codigo em instantes.'
     const normalizedEmail = normalizeEmail(dto.email)
+    const rateLimitKeys = [
+      this.authRateLimitService.buildEmailVerificationKey(normalizedEmail, context.ipAddress),
+      this.authRateLimitService.buildEmailVerificationEmailKey(normalizedEmail),
+    ]
+
+    await this.assertAllowedForKeys(rateLimitKeys, (key) =>
+      this.authRateLimitService.assertEmailVerificationAllowed(key),
+    )
+
+    const rateLimitState = this.pickMostRestrictiveRateLimitState(
+      await this.recordAttemptsForKeys(rateLimitKeys, (key) =>
+        this.authRateLimitService.recordEmailVerificationAttempt(key),
+      ),
+    )
+
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
 
     if (!user || user.status !== UserStatus.ACTIVE) {
-      throw new BadRequestException('Email invalido ou nao cadastrado.')
-    }
+      await this.auditLogService.record({
+        event: 'auth.email-verification.requested',
+        resource: 'user',
+        severity: AuditSeverity.WARN,
+        metadata: {
+          email: normalizedEmail,
+          userFound: false,
+          attempts: rateLimitState.count,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
 
-    if (user.emailVerifiedAt) {
       return {
         success: true,
-        message: 'Este email ja foi confirmado. Agora voce pode entrar normalmente.',
+        message: genericMessage,
       }
     }
 
-    const verificationDelivery = await this.sendEmailVerificationCode({
+    if (user.emailVerifiedAt) {
+      await this.auditLogService.record({
+        actorUserId: user.id,
+        event: 'auth.email-verification.requested',
+        resource: 'user',
+        resourceId: user.id,
+        metadata: {
+          email: user.email,
+          alreadyVerified: true,
+          attempts: rateLimitState.count,
+          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+
+      return {
+        success: true,
+        message: genericMessage,
+      }
+    }
+
+    await this.sendEmailVerificationCode({
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
       context,
       trigger: 'manual',
+      bypassRateLimit: true,
     })
 
     return {
       success: true,
-      email: user.email,
-      deliveryMode: verificationDelivery.deliveryMode,
-      previewCode: verificationDelivery.previewCode,
-      previewExpiresAt: verificationDelivery.previewExpiresAt?.toISOString(),
-      message:
-        verificationDelivery.deliveryMode === 'preview'
-          ? 'O email ainda esta indisponivel, entao exibimos um novo codigo de apoio para voce concluir a verificacao.'
-          : 'Enviamos um novo codigo de confirmacao para o email cadastrado.',
+      message: genericMessage,
     }
   }
 
@@ -1283,24 +1339,24 @@ export class AuthService {
 
     const auth = session.employee
       ? toAuthUser(
-        {
-          ...session.workspaceOwner,
-          fullName: session.employee.displayName,
-          role: UserRole.STAFF,
-          companyOwnerId: session.workspaceOwner.id,
-          email: session.workspaceOwner.email,
-        },
-        {
-          sessionId: session.id,
-          analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
-          marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
-          evaluationAccess: this.demoAccessService.buildEvaluationAccess(
-            session.workspaceOwner.email,
-            session.expiresAt,
-          ),
-          employeeId: session.employee.id,
-          employeeCode: session.employee.employeeCode,
-        },
+          {
+            ...session.workspaceOwner,
+            fullName: session.employee.displayName,
+            role: UserRole.STAFF,
+            companyOwnerId: session.workspaceOwner.id,
+            email: session.workspaceOwner.email,
+          },
+          {
+            sessionId: session.id,
+            analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
+            marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
+            evaluationAccess: this.demoAccessService.buildEvaluationAccess(
+              session.workspaceOwner.email,
+              session.expiresAt,
+            ),
+            employeeId: session.employee.id,
+            employeeCode: session.employee.employeeCode,
+          },
         )
       : session.user
         ? toAuthUser(session.user, {
@@ -1756,7 +1812,7 @@ export class AuthService {
       })
 
       if (verificationDelivery.deliveryMode === 'preview') {
-        return 'Seu email ainda nao foi confirmado. Abra a tela de verificacao para usar o codigo de apoio liberado neste navegador.'
+        return 'Seu email ainda nao foi confirmado. O envio de email esta instavel no momento. Tente reenviar o codigo em instantes.'
       }
 
       return 'Seu email ainda nao foi confirmado. Enviamos um codigo para liberar o primeiro acesso.'

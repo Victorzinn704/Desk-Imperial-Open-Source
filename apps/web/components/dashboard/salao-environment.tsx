@@ -51,17 +51,29 @@ export function SalaoEnvironment() {
     refetchOnWindowFocus: false,
   })
 
-  // CORREÇÃO: staleTime adicionado para live data também
-  // Entre intervalos de 15s, não precisa considerar stale imediatamente
-  const { data: liveData, isLoading: liveLoading } = useQuery({
+  // Hot path operacional usa snapshot compacto; a visão de comandas carrega o
+  // payload completo só quando realmente precisamos dos itens.
+  const { data: compactLiveData, isLoading: compactLiveLoading } = useQuery({
     queryKey: LIVE_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     refetchInterval: 15_000,
     staleTime: 10_000,
     enabled: view === 'operacional',
     refetchOnWindowFocus: false,
   })
 
+  const FULL_LIVE_QUERY_KEY = ['operations', 'live', 'full'] as const
+  const { data: detailedLiveData, isLoading: detailedLiveLoading } = useQuery({
+    queryKey: FULL_LIVE_QUERY_KEY,
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
+    refetchInterval: 15_000,
+    staleTime: 10_000,
+    enabled: view === 'comandas',
+    refetchOnWindowFocus: false,
+  })
+
+  const liveData = view === 'comandas' ? detailedLiveData : compactLiveData
+  const liveLoading = view === 'comandas' ? detailedLiveLoading : compactLiveLoading
   const liveMesas = useMemo(() => buildPdvMesas(liveData), [liveData])
   const liveComandas = useMemo(() => buildPdvComandas(liveData), [liveData])
 
@@ -74,6 +86,7 @@ export function SalaoEnvironment() {
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
     void queryClient.invalidateQueries({ queryKey: LIVE_QUERY_KEY })
+    void queryClient.invalidateQueries({ queryKey: FULL_LIVE_QUERY_KEY })
   }
 
   // ── mutations ─────────────────────────────────────────────────────────────────

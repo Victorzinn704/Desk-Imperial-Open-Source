@@ -102,7 +102,7 @@ Veja o checklist completo em [docs/security/deploy-checklist.md](./docs/security
 
 ## Limitações de segurança conhecidas
 
-- Sem integração com Sentry ou sistema de alertas em produção (monitoramento de erros é manual)
+- Stack OSS de observabilidade em rollout progressivo (OpenTelemetry + Alloy + Tempo + Loki + Prometheus)
 - Cobertura de testes de segurança ainda parcial no frontend
 - Service Worker limitado ao módulo `/app` — não cobre todas as rotas
 
@@ -116,3 +116,4 @@ Essas limitações estão documentadas em [docs/product/risks-and-limitations.md
 - [docs/security/admin-pin-hardening.md](./docs/security/admin-pin-hardening.md) — hardening do Admin PIN
 - [docs/security/deploy-checklist.md](./docs/security/deploy-checklist.md) — checklist de deploy seguro
 - [docs/security/observability-and-logs.md](./docs/security/observability-and-logs.md) — logs e observabilidade
+- [docs/security/dependency-risk-acceptance-2026-04-01.md](./docs/security/dependency-risk-acceptance-2026-04-01.md) — aceite temporário de risco de dependências

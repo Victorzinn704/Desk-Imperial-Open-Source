@@ -14,7 +14,7 @@ Definir um conjunto pequeno e claro de boas praticas para manter o projeto consi
 
 ## Frontend
 
-- componentes de UI em `packages/ui`
+- componentes de UI em `apps/web/components`
 - componentes de pagina em `apps/web/components`
 - schemas de formulario separados da interface
 - hooks para comportamento, nao para guardar regra de negocio critica

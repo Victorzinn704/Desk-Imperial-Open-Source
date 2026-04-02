@@ -103,6 +103,11 @@ export class ComandaService {
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
     const discountAmount = roundCurrency(dto.discountAmount ?? 0)
     const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? 0)
+    this.assertMonetaryAdjustmentsWithinSubtotal(
+      this.calculateDraftItemsSubtotal(draftItems),
+      discountAmount,
+      serviceFeeAmount,
+    )
 
     if (participantCount < 1) {
       throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
@@ -608,6 +613,11 @@ export class ComandaService {
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
     const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
     const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+    this.assertMonetaryAdjustmentsWithinSubtotal(
+      this.calculateDraftItemsSubtotal(draftItems),
+      discountAmount,
+      serviceFeeAmount,
+    )
 
     if (participantCount < 1) {
       throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
@@ -1034,6 +1044,11 @@ export class ComandaService {
     })
     const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
     const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+    this.assertMonetaryAdjustmentsWithinSubtotal(
+      this.calculateDraftItemsSubtotal(comanda.items),
+      discountAmount,
+      serviceFeeAmount,
+    )
 
     const helpers = this.helpers
     const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
@@ -1107,14 +1122,15 @@ export class ComandaService {
     const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[]
     if (!productIds.length) return
 
-    const products = await this.prisma.product.findMany({
-      where: {
-        id: { in: productIds },
-        userId: workspaceOwnerUserId,
-        lowStockThreshold: { not: null },
-      },
-      select: { id: true, name: true, stock: true, lowStockThreshold: true },
-    })
+    const products =
+      (await this.prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          userId: workspaceOwnerUserId,
+          lowStockThreshold: { not: null },
+        },
+        select: { id: true, name: true, stock: true, lowStockThreshold: true },
+      })) ?? []
 
     for (const product of products) {
       if (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold) {
@@ -1312,6 +1328,28 @@ export class ComandaService {
     }
 
     this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+  }
+
+  private calculateDraftItemsSubtotal(
+    items: Array<{
+      totalAmount: { toNumber(): number } | number
+    }>,
+  ) {
+    return roundCurrency(items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
+  }
+
+  private assertMonetaryAdjustmentsWithinSubtotal(
+    subtotalAmount: number,
+    discountAmount: number,
+    serviceFeeAmount: number,
+  ) {
+    if (discountAmount > subtotalAmount) {
+      throw new BadRequestException('O desconto não pode ser maior que o subtotal da comanda.')
+    }
+
+    if (serviceFeeAmount > subtotalAmount) {
+      throw new BadRequestException('A taxa de serviço não pode ser maior que o subtotal da comanda.')
+    }
   }
 
   private buildKitchenItemRealtimeDeltas(comanda: Parameters<typeof toComandaRecord>[0], businessDate: Date) {

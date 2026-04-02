@@ -1,3 +1,11 @@
+/**
+ * @file operations-kpis.test.ts
+ * @module Web/OperationsKpis
+ *
+ * Documenta as regras de calculo de KPIs operacionais no frontend,
+ * incluindo ranking, top produtos e contagem de pendencias de cozinha.
+ */
+
 import { describe, expect, it } from 'vitest'
 import {
   buildOperationsExecutiveKpis,

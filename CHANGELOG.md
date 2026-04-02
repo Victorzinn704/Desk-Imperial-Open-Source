@@ -11,6 +11,10 @@ Versioning segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Gestão de estoque inteligente** — controle de baixa automática ao fechar comanda, campo `lowStockThreshold` por produto, alerta âmbar no dashboard e evento `product.stock.low` no feed de atividade
+- **Estoque visível no PDV** — cards de produto exibem quantidade disponível em tempo real (descontando o que já está na comanda aberta), com indicador visual: cinza (normal), âmbar (baixo / ≤5 restantes), vermelho (esgotado)
+- Campo `lowStockThreshold` no formulário de cadastro/edição de produto
+- `docs/product/stock-management.md` — documentação completa da funcionalidade de estoque
 - Documentação nível enterprise: requisitos, fluxos, riscos, arquitetura, segurança, testes
 - `docs/DEMO.md` — guia de acesso ao ambiente de demonstração
 - `docs/architecture/security.md` — arquitetura de segurança detalhada

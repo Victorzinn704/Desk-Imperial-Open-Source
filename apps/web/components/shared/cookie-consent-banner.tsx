@@ -6,13 +6,26 @@ import { updateCookiePreferences } from '@/lib/api'
 import { persistCookieConsent, readCookieConsentChoice, type CookieConsentChoice } from '@/lib/cookie-consent'
 import { Button } from '@/components/shared/button'
 
+const DEFAULT_COOKIE_PREFERENCES: CookieConsentChoice = {
+  analytics: false,
+  marketing: false,
+}
+
 export function CookieConsentBanner() {
   const [isReady, setIsReady] = useState(false)
   const [hasDecision, setHasDecision] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [preferences, setPreferences] = useState<CookieConsentChoice>(DEFAULT_COOKIE_PREFERENCES)
 
   useEffect(() => {
-    setHasDecision(Boolean(readCookieConsentChoice()))
+    const storedDecision = readCookieConsentChoice()
+    if (storedDecision) {
+      setPreferences(storedDecision)
+      setHasDecision(true)
+    } else {
+      setHasDecision(false)
+    }
+
     setIsReady(true)
   }, [])
 
@@ -20,7 +33,7 @@ export function CookieConsentBanner() {
     () => ({
       title: 'Este site usa cookies',
       description:
-        'Usamos cookies necessários para segurança e sessão. Os opcionais ajudam com análise e comunicação. Você pode aceitar ou rejeitar todos.',
+        'Usamos cookies necessários para segurança e sessão. Você pode escolher separadamente os opcionais de análise e comunicação.',
     }),
     [],
   )
@@ -37,8 +50,8 @@ export function CookieConsentBanner() {
 
       try {
         await updateCookiePreferences({
-          analytics: choice === 'accepted',
-          marketing: choice === 'accepted',
+          analytics: choice.analytics,
+          marketing: choice.marketing,
         })
       } catch {
         // A preferencia local continua valendo mesmo sem sincronismo remoto.
@@ -50,6 +63,13 @@ export function CookieConsentBanner() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const togglePreference = (key: keyof CookieConsentChoice) => {
+    setPreferences((current) => ({
+      ...current,
+      [key]: !current[key],
+    }))
   }
 
   return (
@@ -88,23 +108,57 @@ export function CookieConsentBanner() {
                 {content.title}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">{content.description}</p>
+              <div className="mt-3 grid gap-2 text-sm text-[var(--text-soft)] sm:grid-cols-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    checked={preferences.analytics}
+                    className="size-4 accent-[var(--accent)]"
+                    disabled={isSubmitting}
+                    type="checkbox"
+                    onChange={() => togglePreference('analytics')}
+                  />
+                  Cookies de analise (metricas de uso)
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    checked={preferences.marketing}
+                    className="size-4 accent-[var(--accent)]"
+                    disabled={isSubmitting}
+                    type="checkbox"
+                    onChange={() => togglePreference('marketing')}
+                  />
+                  Cookies de marketing (comunicacao)
+                </label>
+              </div>
               <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Você pode continuar navegando enquanto decide.
+                Cookies necessarios permanecem ativos para autenticacao e seguranca.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Button
               loading={isSubmitting}
-              onClick={() => void handleDecision('rejected')}
+              onClick={() => void handleDecision({ analytics: false, marketing: false })}
               size="md"
               variant="secondary"
             >
               Usar apenas essenciais
             </Button>
-            <Button loading={isSubmitting} onClick={() => void handleDecision('accepted')} size="md">
-              Aceitar e continuar
+            <Button
+              loading={isSubmitting}
+              onClick={() => void handleDecision(preferences)}
+              size="md"
+              variant="secondary"
+            >
+              Salvar escolhas
+            </Button>
+            <Button
+              loading={isSubmitting}
+              onClick={() => void handleDecision({ analytics: true, marketing: true })}
+              size="md"
+            >
+              Aceitar tudo
             </Button>
           </div>
         </div>

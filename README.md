@@ -1,6 +1,6 @@
 # Desk Imperial
 
-[![CI](https://github.com/Victorzinn704/nextjs-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/Victorzinn704/nextjs-boilerplate/actions/workflows/ci.yml)
+[![CI](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml/badge.svg)](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
 [![Open Source](https://img.shields.io/badge/open%20source-yes-blue)](./LICENSE)
@@ -89,7 +89,7 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 ### 1. Clone e instale
 
 ```bash
-git clone https://github.com/Victorzinn704/nextjs-boilerplate.git desk-imperial
+git clone https://github.com/Victorzinn704/Desk-Imperial-Open-Source.git desk-imperial
 cd desk-imperial
 npm ci
 ```
@@ -103,14 +103,14 @@ cp .env.example .env
 Variáveis mínimas para rodar localmente:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
-DIRECT_URL=postgresql://postgres:postgres@localhost:5432/partner_portal
+DATABASE_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
+DIRECT_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
 APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
-COOKIE_SECRET=troque-por-string-longa-aleatoria
-CSRF_SECRET=troque-por-outra-string-longa
-ENCRYPTION_KEY=troque-por-chave-de-32-caracteres
+COOKIE_SECRET=troque-por-um-cookie-secret-longo-e-aleatorio
+CSRF_SECRET=troque-por-um-csrf-secret-longo-e-aleatorio
+ENCRYPTION_KEY=troque-por-uma-chave-de-32-caracteres-ou-mais
 ```
 
 Integrações externas (Brevo, Gemini, AwesomeAPI) são **opcionais** em desenvolvimento.  
@@ -120,6 +120,12 @@ Veja [docs/architecture/local-development.md](./docs/architecture/local-developm
 
 ```bash
 npm run db:up
+```
+
+Opcional (observabilidade OSS local):
+
+```bash
+npm run obs:up
 ```
 
 ### 4. Configure o banco
@@ -166,13 +172,24 @@ npm --workspace @partner/api run test:e2e
 # Frontend
 npm --workspace @partner/web run test
 npm --workspace @partner/web run test:e2e
+
+# Fluxos críticos (E2E)
+npm run test:e2e:critical
+
+# Carga crítica com metas de latência (K6)
+npm run test:load:critical
+
+# Gate de latência para CI (K6)
+npm run test:load:ci
 ```
+
+> Para `test:load:critical`, instale o CLI do k6 no ambiente (local/runner) antes da execução.
 
 **O que está coberto:**
 
 - 53+ testes unitários e de integração no backend (todos os módulos críticos)
 - Testes E2E com Playwright no frontend
-- Load tests com K6 (login, health, página de entrada)
+- Load tests com K6 (health, login web/API e cenário crítico com metas p95/p99)
 - CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
 
 ---
@@ -215,20 +232,21 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ## Documentação
 
-| Área                                   | Link                                                                               |
-| -------------------------------------- | ---------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                   |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                             |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                     |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                         |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)   |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                     |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                   |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                   |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md) |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)         |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                               |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                               |
+| Área                                   | Link                                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
+| Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
 
 ---
 
@@ -236,7 +254,7 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 - Importação CSV de produtos está desativada (HTTP 410) — lógica existe, endpoint bloqueado
 - Cobertura de testes frontend ainda parcial em relação à superfície total
-- Sentry full-stack já integrado; faltam apenas calibração fina de amostragem/alertas por ambiente
+- Observabilidade OSS em transição: OpenTelemetry (fase 1 no backend) e Faro (fase 2 no frontend) habilitáveis por env; stack completa de produção em implantação progressiva
 - Projeto em evolução — funcional e rodando em produção, mas não finalizado 100%
 
 Veja o detalhamento completo em [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md).
@@ -247,12 +265,33 @@ Veja o detalhamento completo em [docs/product/risks-and-limitations.md](./docs/p
 
 Leia [CONTRIBUTING.md](./CONTRIBUTING.md) para o fluxo completo.
 
+Neste projeto, mudanças entram por **pull request revisado**.  
+O repositório é aberto para colaboração, mas a direção do produto continua centralizada para preservar a identidade e a qualidade do Desk Imperial.
+
 Checklist mínimo antes de abrir PR:
 
 - [ ] `npm run lint` passa sem erros
 - [ ] `npm run typecheck` passa
 - [ ] Testes da área alterada passam
 - [ ] `npm run build` passa
+
+---
+
+## Primeira contribuição
+
+Se você quer contribuir pela primeira vez, este é o melhor caminho:
+
+1. Leia [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)
+2. Escolha uma issue pequena de documentação, teste ou bug isolado
+3. Confirme o escopo em uma issue antes de começar algo maior
+4. Abra PR pequeno, focado e fácil de revisar
+
+Boas primeiras contribuições para este repositório:
+
+- correções de documentação desatualizada
+- testes faltantes em fluxos já existentes
+- melhorias de acessibilidade e feedback de UI
+- correções pontuais de bugs com reprodução clara
 
 ---
 

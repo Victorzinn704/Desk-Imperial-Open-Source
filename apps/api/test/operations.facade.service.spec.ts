@@ -1,7 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import type { AuthContext } from '../src/modules/auth/auth.types'
 import type { CashSessionService } from '../src/modules/operations/cash-session.service'
 import type { ComandaService } from '../src/modules/operations/comanda.service'
 import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
@@ -118,7 +117,9 @@ describe('OperationsService (facade)', () => {
     comanda.closeComanda.mockResolvedValue({ ok: 'close' })
     comanda.updateKitchenItemStatus.mockResolvedValue({ ok: 'kitchen' })
 
-    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({ ok: 'open-cash' })
+    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({
+      ok: 'open-cash',
+    })
     await expect(service.createCashMovement(auth, 'cash-1', {} as any, context, options as any)).resolves.toEqual({
       ok: 'movement',
     })
@@ -234,9 +235,9 @@ describe('OperationsService (facade)', () => {
   it('falha ao criar mesa com label duplicado', async () => {
     prisma.mesa.findUnique.mockResolvedValueOnce({ id: 'mesa-duplicada' })
 
-    await expect(
-      service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext()),
-    ).rejects.toThrow(ConflictException)
+    await expect(service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext())).rejects.toThrow(
+      ConflictException,
+    )
   })
 
   it('falha ao atualizar mesa inexistente ou de outro workspace', async () => {
@@ -292,6 +293,23 @@ describe('OperationsService (facade)', () => {
     expect(realtime.publishMesaUpserted).toHaveBeenCalled()
   })
 
+  it('rejeita reservedUntil inválido no updateMesa', async () => {
+    prisma.mesa.findUnique.mockResolvedValueOnce({ id: 'mesa-1', companyOwnerId: 'owner-1', label: 'Mesa 1' })
+
+    await expect(
+      service.updateMesa(
+        makeOwnerAuthContext(),
+        'mesa-1',
+        {
+          reservedUntil: 'not-a-date',
+        },
+        makeRequestContext(),
+      ),
+    ).rejects.toThrow(BadRequestException)
+
+    expect(prisma.mesa.update).not.toHaveBeenCalled()
+  })
+
   it('sanitiza section no updateMesa e bloqueia formula injection', async () => {
     prisma.mesa.findUnique.mockResolvedValueOnce({ id: 'mesa-1', companyOwnerId: 'owner-1', label: 'Mesa 1' })
     prisma.mesa.update.mockResolvedValue({
@@ -327,7 +345,7 @@ describe('OperationsService (facade)', () => {
         makeOwnerAuthContext(),
         'mesa-1',
         {
-          section: '=1+cmd(\'calc\')',
+          section: "=1+cmd('calc')",
         },
         makeRequestContext(),
       ),

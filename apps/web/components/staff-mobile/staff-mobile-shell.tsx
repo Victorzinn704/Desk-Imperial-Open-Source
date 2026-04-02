@@ -5,7 +5,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
 import { calcSubtotal, type Mesa, type Comanda, type ComandaItem, type ComandaStatus } from '@/components/pdv/pdv-types'
-import type { OperationsLiveResponse, ProductRecord } from '@contracts/contracts'
+import type { OperationsLiveResponse } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
@@ -71,10 +71,9 @@ type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: str
 
 interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string; employeeId?: string | null } | null
-  produtos: ProductRecord[]
 }
 
-export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobileShellProps) {
+export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
@@ -98,6 +97,16 @@ export function StaffMobileShell({ currentUser, produtos: _produtos }: StaffMobi
       } else if (action.type === 'open-comanda') {
         await openComandaMutation.mutateAsync(action.payload as Parameters<typeof openComanda>[0])
       }
+    }).then((result) => {
+      if (result.expiredCount > 0) {
+        const message =
+          result.expiredCount === 1
+            ? '1 ação offline expirou após 10 minutos sem conexão e foi descartada.'
+            : `${result.expiredCount} ações offline expiraram após 10 minutos sem conexão e foram descartadas.`
+        toast.error(message)
+      }
+
+      return result
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drainQueue])

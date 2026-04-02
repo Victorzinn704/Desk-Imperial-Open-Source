@@ -60,10 +60,6 @@ const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada'>, StatusConfig> = {
 interface ComandaCardProps {
   comanda: Comanda
   isFocused: boolean
-  discountPercent: number
-  surchargePercent: number
-  onDiscountChange: (value: number) => void
-  onSurchargeChange: (value: number) => void
   onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
   onAddItems?: (comanda: Comanda) => void
   onCancelComanda?: (id: string) => Promise<void> | void
@@ -83,8 +79,6 @@ export function MobileComandaList({
 }: MobileComandaListProps) {
   const active = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
   const focusedRef = useRef<HTMLLIElement | null>(null)
-  const [discountMap, setDiscountMap] = useState<Record<string, number>>({})
-  const [surchargeMap, setSurchargeMap] = useState<Record<string, number>>({})
 
   // scroll focused comanda into view when it changes
   useEffect(() => {
@@ -159,20 +153,6 @@ export function MobileComandaList({
               comanda={comanda}
               isFocused={isFocused}
               ref={isFocused ? focusedRef : undefined}
-              discountPercent={discountMap[comanda.id] ?? 0}
-              surchargePercent={surchargeMap[comanda.id] ?? 0}
-              onDiscountChange={(value) =>
-                setDiscountMap((prev) => ({
-                  ...prev,
-                  [comanda.id]: value,
-                }))
-              }
-              onSurchargeChange={(value) =>
-                setSurchargeMap((prev) => ({
-                  ...prev,
-                  [comanda.id]: value,
-                }))
-              }
               onFocus={onFocus}
               onAddItems={onAddItems}
               onUpdateStatus={onUpdateStatus}
@@ -202,21 +182,11 @@ export function MobileComandaList({
 
 const ComandaCard = memo(
   forwardRef<HTMLLIElement, ComandaCardProps>(function ComandaCard(
-    {
-      comanda,
-      isFocused,
-      discountPercent,
-      surchargePercent,
-      onDiscountChange,
-      onSurchargeChange,
-      onUpdateStatus,
-      onAddItems,
-      onCancelComanda,
-      onCloseComanda,
-      onFocus,
-    },
+    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus },
     ref,
   ) {
+    const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)
+    const [surchargePercent, setSurchargePercent] = useState(() => comanda.acrescimo ?? 0)
     const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
       queryKey: ['comanda-details', comanda.id],
       queryFn: async () => {
@@ -385,7 +355,7 @@ const ComandaCard = memo(
                     min={0}
                     max={100}
                     value={discountPercent}
-                    onChange={(e) => onDiscountChange(Math.min(100, Math.max(0, Number(e.target.value))))}
+                    onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
                     className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
                   />
                 </div>
@@ -398,7 +368,7 @@ const ComandaCard = memo(
                     min={0}
                     max={100}
                     value={surchargePercent}
-                    onChange={(e) => onSurchargeChange(Math.min(100, Math.max(0, Number(e.target.value))))}
+                    onChange={(e) => setSurchargePercent(Math.min(100, Math.max(0, Number(e.target.value))))}
                     className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
                   />
                 </div>
