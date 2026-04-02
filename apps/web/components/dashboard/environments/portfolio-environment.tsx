@@ -97,7 +97,14 @@ export function PortfolioEnvironment() {
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { financeQuery, productsQuery } = useDashboardQueries()
+  const { financeQuery, productsQuery } = useDashboardQueries({
+    enableConsent: false,
+    enableProducts: true,
+    enableOrders: false,
+    enableEmployees: false,
+    enableFinance: true,
+    includeInactiveProducts: true,
+  })
   const {
     createProductMutation: _createProductMutation,
     updateProductMutation: _updateProductMutation,

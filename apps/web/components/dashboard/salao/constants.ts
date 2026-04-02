@@ -1,10 +1,11 @@
 import type { MesaRecord } from '@contracts/contracts'
 import { formatBRL } from '@/lib/currency'
+import { OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY } from '@/lib/operations'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
 
 export const QUERY_KEY = ['mesas'] as const
-export const LIVE_QUERY_KEY = ['operations', 'live', 'compact'] as const
+export const LIVE_QUERY_KEY = OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY
 
 // ── Canvas / Grid Layout ──────────────────────────────────────────────────────
 

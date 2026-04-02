@@ -23,7 +23,13 @@ type SalesEnvironmentProps = {
 }
 
 export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
-  const { productsQuery, employeesQuery } = useDashboardQueries()
+  const { productsQuery, employeesQuery } = useDashboardQueries({
+    enableConsent: false,
+    enableProducts: true,
+    enableOrders: false,
+    enableEmployees: user.role === 'OWNER',
+    enableFinance: false,
+  })
   const {
     createOrderMutation,
     cancelOrderMutation,

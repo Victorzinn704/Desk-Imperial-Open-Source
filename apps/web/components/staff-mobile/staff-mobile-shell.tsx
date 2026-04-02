@@ -55,9 +55,10 @@ import {
   appendOptimisticComandaMutation,
   buildOptimisticComandaRecord,
   buildPerformerKpis,
+  buildOperationsLiveQueryKey,
   invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
-  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_LIVE_QUERY_PREFIX,
   rollbackOperationsSnapshot,
   appendOptimisticComandaItem,
   setOptimisticComandaStatus,
@@ -80,6 +81,19 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
   const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
+  const includeClosedInLiveSnapshot = activeTab === 'historico'
+  const operationsLiveQueryKey = useMemo(
+    () => buildOperationsLiveQueryKey({ compactMode: true, includeClosed: includeClosedInLiveSnapshot }),
+    [includeClosedInLiveSnapshot],
+  )
+  const operationsLiveOptions = useMemo(
+    () => ({
+      includeCashMovements: false,
+      compactMode: true,
+      includeClosed: includeClosedInLiveSnapshot,
+    }),
+    [includeClosedInLiveSnapshot],
+  )
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const { enqueue, drainQueue } = useOfflineQueue()
@@ -131,7 +145,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX }),
       queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }),
     ])
   }, [queryClient])
@@ -144,8 +158,8 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   } = usePullToRefresh({ onRefresh: handlePullRefresh })
 
   const operationsQuery = useQuery({
-    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
+    queryKey: operationsLiveQueryKey,
+    queryFn: () => fetchOperationsLive(operationsLiveOptions),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
     // staleTime alinhado ao TTL do cache do backend (20s).
@@ -166,9 +180,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   })
 
   const productsQuery = useQuery({
-    queryKey: ['products'],
-    queryFn: () => fetchProducts(),
-    enabled: Boolean(currentUser),
+    queryKey: ['products', 'active'],
+    queryFn: () => fetchProducts({ includeInactive: false }),
+    enabled: Boolean(currentUser) && activeTab === 'pedido',
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
@@ -187,7 +201,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     onMutate: async (vars) => {
       const snapshot = await appendOptimisticComandaMutation(
         queryClient,
-        OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+        operationsLiveQueryKey,
         buildOptimisticComandaRecord({
           tableLabel: vars.tableLabel,
           customerName: vars.customerName ?? null,
@@ -201,11 +215,11 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       haptic.error()
     },
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -214,12 +228,12 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
       addComandaItem(comandaId, payload, { includeSnapshot: false }),
     onMutate: async ({ comandaId, payload }) => {
-      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
-      const snapshot = appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, payload)
+      await queryClient.cancelQueries({ queryKey: operationsLiveQueryKey })
+      const snapshot = appendOptimisticComandaItem(queryClient, operationsLiveQueryKey, comandaId, payload)
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       toast.error('Erro ao adicionar item')
       haptic.error()
     },
@@ -232,15 +246,15 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     mutationFn: ({ comandaId, items }: { comandaId: string; items: Parameters<typeof addComandaItems>[1] }) =>
       addComandaItems(comandaId, items, { includeSnapshot: false }),
     onMutate: async ({ comandaId, items }) => {
-      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
-      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      await queryClient.cancelQueries({ queryKey: operationsLiveQueryKey })
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(operationsLiveQueryKey)
       for (const item of items) {
-        appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, item)
+        appendOptimisticComandaItem(queryClient, operationsLiveQueryKey, comandaId, item)
       }
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       toast.error('Erro ao adicionar itens')
       haptic.error()
     },
@@ -253,18 +267,18 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onMutate: async ({ comandaId, status }) => {
-      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
-      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, status)
+      await queryClient.cancelQueries({ queryKey: operationsLiveQueryKey })
+      const snapshot = setOptimisticComandaStatus(queryClient, operationsLiveQueryKey, comandaId, status)
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       toast.error('Erro ao atualizar status')
       haptic.error()
     },
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       }
       toast.success('Status atualizado')
       haptic.medium()
@@ -281,18 +295,18 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onMutate: async ({ comandaId }) => {
-      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
-      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, 'CLOSED')
+      await queryClient.cancelQueries({ queryKey: operationsLiveQueryKey })
+      const snapshot = setOptimisticComandaStatus(queryClient, operationsLiveQueryKey, comandaId, 'CLOSED')
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       toast.error('Erro ao fechar comanda')
       haptic.error()
     },
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       }
       toast.success('Comanda fechada — pagamento efetuado')
       haptic.heavy()
@@ -301,23 +315,23 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const cancelComandaMutation = useMutation({
     mutationFn: (comandaId: string) => cancelComanda(comandaId, { includeSnapshot: false }),
     onMutate: async (comandaId) => {
-      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      await queryClient.cancelQueries({ queryKey: operationsLiveQueryKey })
       const snapshot = setOptimisticComandaStatus(
         queryClient,
-        OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+        operationsLiveQueryKey,
         comandaId,
         'CANCELLED',
       )
       return { snapshot }
     },
     onError: (_err, _vars, ctx) => {
-      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      rollbackOperationsSnapshot(queryClient, operationsLiveQueryKey, ctx?.snapshot)
       toast.error('Erro ao cancelar comanda')
       haptic.error()
     },
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       }
       toast.success('Comanda cancelada')
       haptic.heavy()
@@ -387,7 +401,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           })),
         })
         if (shouldFallbackRefetch) {
-          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
         }
         setPendingAction(null)
         setFocusedComandaId(response.comanda.id)
@@ -420,7 +434,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
           if (shouldFallbackRefetch) {
-            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
           }
           await openComandaMutation.mutateAsync(comParams)
         } else {

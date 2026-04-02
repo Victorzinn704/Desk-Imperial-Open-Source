@@ -1,15 +1,20 @@
 import { Injectable } from '@nestjs/common'
+import { CacheService } from '../../common/services/cache.service'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { COOKIE_DOCUMENT_KEYS, DEFAULT_CONSENT_DOCUMENTS } from './consent.constants'
 import { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
 
+const CONSENT_DOCUMENTS_TTL_SECONDS = 60 * 60
+const CONSENT_OVERVIEW_TTL_SECONDS = 10 * 60
+
 @Injectable()
 export class ConsentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly cache: CacheService,
   ) {}
 
   async ensureDefaultDocuments(version: string) {
@@ -44,15 +49,25 @@ export class ConsentService {
   }
 
   async listActiveDocuments(version: string) {
+    const cacheKey = CacheService.consentDocumentsKey(version)
+    const cached = await this.cache.get<Awaited<ReturnType<ConsentService['listActiveDocuments']>>>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     await this.ensureDefaultDocuments(version)
 
-    return this.prisma.consentDocument.findMany({
+    const documents = await this.prisma.consentDocument.findMany({
       where: {
         version,
         active: true,
       },
       orderBy: [{ kind: 'asc' }, { required: 'desc' }, { title: 'asc' }],
     })
+
+    await this.cache.set(cacheKey, documents, CONSENT_DOCUMENTS_TTL_SECONDS)
+
+    return documents
   }
 
   async recordLegalAcceptances(params: { userId: string; version: string; context: RequestContext }) {
@@ -83,6 +98,8 @@ export class ConsentService {
         }),
       ),
     )
+
+    await this.cache.del(CacheService.consentOverviewKey(params.userId, params.version))
   }
 
   async updateCookiePreferences(params: {
@@ -141,10 +158,18 @@ export class ConsentService {
       userAgent: params.context.userAgent,
     })
 
+    await this.cache.del(CacheService.consentOverviewKey(params.userId, params.version))
+
     return preference
   }
 
   async getUserConsentOverview(params: { userId: string; version: string }) {
+    const cacheKey = CacheService.consentOverviewKey(params.userId, params.version)
+    const cached = await this.cache.get<Awaited<ReturnType<ConsentService['getUserConsentOverview']>>>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     const [documents, preference, consents] = await Promise.all([
       this.listActiveDocuments(params.version),
       this.prisma.cookiePreference.findUnique({
@@ -157,13 +182,20 @@ export class ConsentService {
             version: params.version,
           },
         },
-        include: {
-          document: true,
+        select: {
+          acceptedAt: true,
+          revokedAt: true,
+          document: {
+            select: {
+              key: true,
+              required: true,
+            },
+          },
         },
       }),
     ])
 
-    return {
+    const overview = {
       documents: documents.map((document) => ({
         id: document.id,
         key: document.key,
@@ -184,6 +216,10 @@ export class ConsentService {
         marketing: preference?.marketing ?? false,
       },
     }
+
+    await this.cache.set(cacheKey, overview, CONSENT_OVERVIEW_TTL_SECONDS)
+
+    return overview
   }
 
   private async syncOptionalConsent(params: {

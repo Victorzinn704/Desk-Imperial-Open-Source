@@ -51,6 +51,7 @@ export class OperationsService {
     return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
       includeCashMovements: query.includeCashMovements,
       compactMode: query.compactMode,
+      includeClosed: query.includeClosed,
     })
   }
 

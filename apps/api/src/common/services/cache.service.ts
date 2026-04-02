@@ -141,6 +141,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   static productsKey(userId: string, scope: 'active' | 'all' = 'active') {
     return `products:list:${userId}:${scope}`
   }
+  static consentDocumentsKey(version: string) {
+    return `consent:documents:${version}`
+  }
+  static consentOverviewKey(userId: string, version: string) {
+    return `consent:overview:${userId}:${version}`
+  }
   static employeesKey(userId: string) {
     return `employees:list:${userId}`
   }
@@ -156,10 +162,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     workspaceOwnerUserId: string,
     businessDate: string,
     includeCashMovements: boolean,
+    includeClosed: boolean,
     scopedEmployeeId?: string | null,
   ) {
     const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
-    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${scopeSegment}`
+    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${includeClosed ? 'with-closed' : 'open-only'}:${scopeSegment}`
   }
 
   static operationsKitchenPrefix(workspaceOwnerUserId: string, businessDate: string) {

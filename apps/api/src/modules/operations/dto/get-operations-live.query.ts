@@ -55,4 +55,21 @@ export class GetOperationsLiveQueryDto {
   })
   @IsBoolean()
   compactMode?: boolean
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Quando false, o snapshot carrega apenas comandas abertas/em preparo/prontas, sem arrastar comandas fechadas para telas operacionais quentes.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined
+    if (typeof value === 'boolean') return value
+    const normalized = String(value).trim().toLowerCase()
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+    return value
+  })
+  @IsBoolean()
+  includeClosed?: boolean
 }

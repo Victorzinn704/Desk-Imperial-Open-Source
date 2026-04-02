@@ -9,8 +9,8 @@ import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
 import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
-import { toProductRecord } from '../products/products.types'
 import {
+  type FinanceProductAnalyticsRecord,
   buildCategoryCollections,
   buildRecentOrders,
   buildRevenueTimeline,
@@ -28,24 +28,12 @@ const FINANCE_SUMMARY_TTL = 120 // segundos
 const financeProductSelect = {
   id: true,
   name: true,
-  brand: true,
   category: true,
-  packagingClass: true,
-  measurementUnit: true,
-  measurementValue: true,
-  unitsPerPackage: true,
-  isCombo: true,
-  comboDescription: true,
-  description: true,
   unitCost: true,
   unitPrice: true,
   currency: true,
   stock: true,
   lowStockThreshold: true,
-  requiresKitchen: true,
-  active: true,
-  createdAt: true,
-  updatedAt: true,
 } as const
 
 const financeRecentOrderSelect = {
@@ -190,7 +178,7 @@ export class FinanceService {
 
     const displayCurrency = auth.preferredCurrency
     const records = products.map((product) =>
-      toProductRecord(product, {
+      toFinanceProductAnalyticsRecord(product, {
         displayCurrency,
         currencyService: this.currencyService,
         snapshot,
@@ -373,4 +361,58 @@ export class FinanceService {
   async invalidateSummaryCache(userId: string): Promise<void> {
     await this.cache.del(CacheService.financeKey(userId))
   }
+}
+
+function toFinanceProductAnalyticsRecord(
+  product: {
+    id: string
+    name: string
+    category: string
+    unitCost: { toNumber(): number } | number
+    unitPrice: { toNumber(): number } | number
+    currency: FinanceProductAnalyticsRecord['currency']
+    stock: number
+  },
+  options: {
+    displayCurrency: FinanceProductAnalyticsRecord['displayCurrency']
+    currencyService: CurrencyService
+    snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>
+  },
+): FinanceProductAnalyticsRecord {
+  const originalUnitCost = toNumber(product.unitCost)
+  const originalUnitPrice = toNumber(product.unitPrice)
+  const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
+  const originalInventorySalesValue = roundCurrency(originalUnitPrice * product.stock)
+  const inventoryCostValue = options.currencyService.convert(
+    originalInventoryCostValue,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
+  const inventorySalesValue = options.currencyService.convert(
+    originalInventorySalesValue,
+    product.currency,
+    options.displayCurrency,
+    options.snapshot,
+  )
+  const potentialProfit = roundCurrency(inventorySalesValue - inventoryCostValue)
+
+  return {
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    stock: product.stock,
+    currency: product.currency,
+    displayCurrency: options.displayCurrency,
+    originalInventorySalesValue,
+    originalPotentialProfit: roundCurrency(originalInventorySalesValue - originalInventoryCostValue),
+    inventoryCostValue,
+    inventorySalesValue,
+    potentialProfit,
+    marginPercent: inventorySalesValue > 0 ? roundPercent((potentialProfit / inventorySalesValue) * 100) : 0,
+  }
+}
+
+function toNumber(value: { toNumber(): number } | number) {
+  return typeof value === 'number' ? value : value.toNumber()
 }

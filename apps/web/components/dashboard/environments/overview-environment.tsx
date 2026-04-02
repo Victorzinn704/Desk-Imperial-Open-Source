@@ -16,14 +16,19 @@ import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 
 export function OverviewEnvironment() {
-  const { sessionQuery, financeQuery, ordersQuery, employeesQuery, productsQuery } = useDashboardQueries()
+  const { sessionQuery, financeQuery, ordersQuery, employeesQuery } = useDashboardQueries({
+    enableConsent: false,
+    enableProducts: false,
+    enableOrders: true,
+    enableEmployees: true,
+    enableFinance: true,
+  })
 
   const user = sessionQuery.data?.user
   const finance = financeQuery.data
   const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
   const ordersTotals = ordersQuery.data?.totals
   const employeesTotals = employeesQuery.data?.totals
-  const productsTotals = productsQuery.data?.totals
 
   const revenueTrend = finance?.revenueTimeline.map((t) => t.revenue) ?? []
   const profitTrend = finance?.revenueTimeline.map((t) => t.profit) ?? []
@@ -62,7 +67,7 @@ export function OverviewEnvironment() {
           label="Portfólio"
           loading={financeQuery.isLoading}
           trend={revenueTrend}
-          value={String(productsTotals?.activeProducts ?? 0)}
+          value={String(finance?.totals.activeProducts ?? 0)}
         />
         <MetricCard
           color="#fb923c"

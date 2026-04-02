@@ -108,8 +108,50 @@ describe('OperationsHelpersService', () => {
       })
       expect(response.unassigned.cashSession).toBeNull()
       expect(mockCache.set).toHaveBeenCalledWith(
-        'operations:live:owner-1:2026-03-30:compact:workspace:compact',
+        'operations:live:owner-1:2026-03-30:compact:with-closed:workspace:compact',
         response,
+        30,
+      )
+    })
+
+    it('remove comandas fechadas do snapshot quente quando includeClosed=false', async () => {
+      const businessDate = new Date(2026, 2, 30)
+
+      mockPrisma.employee.findMany.mockResolvedValue([])
+      mockPrisma.cashSession.findMany.mockResolvedValue([])
+      mockPrisma.cashClosure.findUnique.mockResolvedValue(null)
+      mockPrisma.mesa.findMany.mockResolvedValue([])
+      mockPrisma.comanda.findMany.mockResolvedValue([])
+
+      await service.buildLiveSnapshot('owner-1', businessDate, null, {
+        includeCashMovements: false,
+        compactMode: true,
+        includeClosed: false,
+      })
+
+      expect(mockPrisma.comanda.findMany).toHaveBeenCalledWith({
+        where: {
+          companyOwnerId: 'owner-1',
+          openedAt: {
+            gte: new Date(2026, 2, 30, 0, 0, 0, 0),
+            lt: new Date(2026, 2, 31, 0, 0, 0, 0),
+          },
+          status: {
+            in: ['OPEN', 'IN_PREPARATION', 'READY'],
+          },
+        },
+        select: expect.objectContaining({
+          id: true,
+          status: true,
+          totalAmount: true,
+        }),
+        orderBy: {
+          openedAt: 'asc',
+        },
+      })
+      expect(mockCache.set).toHaveBeenCalledWith(
+        'operations:live:owner-1:2026-03-30:compact:open-only:workspace:compact',
+        expect.any(Object),
         30,
       )
     })

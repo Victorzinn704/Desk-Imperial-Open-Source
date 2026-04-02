@@ -15,7 +15,7 @@ import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import {
   OPERATIONS_KITCHEN_QUERY_KEY,
-  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
@@ -271,7 +271,7 @@ describe('OwnerMobileShell', () => {
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
 
     // Pré-popula o cache para evitar estados de "loading" nos testes
-    testQueryClient.setQueryData(OPERATIONS_LIVE_COMPACT_QUERY_KEY, mockSnapshot)
+    testQueryClient.setQueryData(OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY, mockSnapshot)
     testQueryClient.setQueryData(OPERATIONS_KITCHEN_QUERY_KEY, {
       businessDate: mockSnapshot.businessDate,
       companyOwnerId: mockSnapshot.companyOwnerId,

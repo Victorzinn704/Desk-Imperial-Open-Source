@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
 import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
+import { OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY } from '@/lib/operations'
 import { StaffMobileShell } from './staff-mobile-shell'
 
 const enqueueMock = vi.fn()
@@ -179,7 +180,7 @@ describe('StaffMobileShell', () => {
     }
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
 
-    testQueryClient.setQueryData(['operations', 'live', 'compact'], snapshot)
+    testQueryClient.setQueryData(OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY, snapshot)
     testQueryClient.setQueryData(['operations', 'kitchen'], {
       businessDate: snapshot.businessDate,
       companyOwnerId: snapshot.companyOwnerId,
@@ -344,7 +345,7 @@ describe('StaffMobileShell', () => {
     }
 
     vi.mocked(api.fetchOperationsLive).mockResolvedValue(flowSnapshot)
-    testQueryClient.setQueryData(['operations', 'live', 'compact'], flowSnapshot)
+    testQueryClient.setQueryData(OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY, flowSnapshot)
     vi.mocked(api.fetchProducts).mockResolvedValue(mockProductsResponse)
     testQueryClient.setQueryData(['products'], mockProductsResponse)
     vi.mocked(api.openComanda).mockResolvedValue({

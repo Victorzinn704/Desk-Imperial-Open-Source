@@ -53,6 +53,87 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 ---
 
+### Fase 0.5 — Corte de peso no caminho quente de operação
+
+**Implementado**
+
+- `GET /operations/live` agora aceita `includeClosed=false` no backend em:
+  - `apps/api/src/modules/operations/dto/get-operations-live.query.ts`
+  - `apps/api/src/modules/operations/operations.service.ts`
+  - `apps/api/src/modules/operations/operations-helpers.service.ts`
+  - `apps/api/src/common/services/cache.service.ts`
+- o snapshot quente para operação deixou de arrastar comandas fechadas em telas que não precisam de histórico:
+  - staff mobile só inclui fechadas na aba `Histórico`
+  - owner mobile só inclui fechadas na aba `Comandas`
+  - salão desktop operacional usa `compactMode=true + includeClosed=false`
+- o shell desktop parou de abrir socket globalmente em qualquer seção; realtime agora fica restrito aos ambientes realmente vivos (`pdv` e `salao`) em `apps/web/components/dashboard/dashboard-shell.tsx`
+- o mobile parou de sofrer com socket duplicado herdado do shell pai; o ganho aqui é menos ruído, menos invalidação cruzada e menos reconexão desnecessária
+- o `PdvBoard` desktop foi alinhado ao cache real que ele consome, evitando otimistas “mudos” por chave errada em `apps/web/components/pdv/pdv-board.tsx`
+- o salão operacional trocou busca `find` por mapa local de comandas em `apps/web/components/dashboard/salao-environment.tsx`
+
+**Impacto esperado**
+
+- menos payload no hot path de operação
+- menos trabalho do cliente para montar mesas/comandas ao vivo
+- menos refetch/reconnect desnecessário
+- menor chance de estado stale entre variantes de snapshot
+
+**Validação**
+
+- API: `688/688` testes verdes
+- Web: `34/34` testes verdes
+- build web ok
+
+---
+
+### Fase 0.6 — Pente fino pré-deploy do PDV e do shell
+
+**O que verificamos de forma honesta**
+
+- a passada anterior **não foi maquiagem**:
+  - o shell desktop realmente parou de manter socket fora de `pdv` e `salao`
+  - o mobile realmente parou de carregar comandas fechadas nas abas quentes
+- mas ainda existiam dois desperdícios concretos:
+  - `PdvEnvironment` mantinha um snapshot operacional amplo para alimentar o board, mesmo depois de o board ganhar query própria por aba
+  - vários ambientes do dashboard chamavam `useDashboardQueries()` sem recorte, puxando `finance`, `employees`, `orders` e `consent` sem necessidade em telas quentes
+
+**Implementado**
+
+- o `PdvEnvironment` parou de disputar a mesma query quente do board:
+  - o board agora fica dono do snapshot operacional quente por aba
+  - a leitura executiva (`CaixaPanel` + grid + timeline) fica em uma query separada, só para `OWNER`
+- `useDashboardQueries()` agora aceita escopo por ambiente em `apps/web/components/dashboard/hooks/useDashboardQueries.ts`
+- os ambientes passaram a pedir só o que realmente usam:
+  - `settings` → sessão + consentimento
+  - `pdv` → sessão + produtos
+  - `portfolio` → financeiro + produtos
+  - `map` → financeiro + pedidos
+  - `sales` → produtos e equipe quando necessário
+- o `DashboardShell` deixou de puxar o bloco financeiro pesado em seções quentes do owner (`pdv`, `salao`, `settings`)
+- o header do shell agora usa sinais operacionais leves nessas áreas quentes, preservando contexto sem forçar `finance/summary`
+
+**Refino do PDV mobile**
+
+- o builder mobile deixou de mostrar categorias e lista de produtos brigando pelo mesmo espaço
+- agora o fluxo ficou em duas etapas:
+  - primeiro escolhe a categoria
+  - depois a tela vira uma lista focada só nos itens daquela classe
+- isso reduz ruído visual, melhora toque/escaneabilidade e aproxima o comportamento da sensação de “app nativo”
+
+**Validação**
+
+- lint web ok
+- typecheck web ok
+- build web ok
+- testes web: `35/35` verdes
+
+**Leitura sênior**
+
+- esse pente fino confirmou que parte do ganho anterior era real
+- também mostrou que o maior risco de “maquiagem” estava no excesso de queries implícitas do dashboard, e esse ponto agora ficou bem mais controlado
+
+---
+
 ## 3. Próximos ataques em ordem madura
 
 ### Fase 1 — Medição real no stack OSS
@@ -79,6 +160,11 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
   - o que pesa mais, `finance/summary` ou `operations/live`
   - quanto do custo vem de cache miss
   - qual shape de payload piora mais o tempo
+
+**Pré-condição prática**
+
+- o gargalo já precisa chegar instrumentado e com recortes de payload reais, senão o dashboard só “desenha o problema” sem ajudar a resolver
+- com o `includeClosed=false` e o scoping de realtime já no código, a leitura em Grafana passa a refletir um caminho quente mais honesto
 
 ### Fase 2 — Separação cirúrgica do domínio de vendas
 
