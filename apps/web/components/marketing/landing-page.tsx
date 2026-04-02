@@ -120,7 +120,7 @@ const capabilityCards: Array<{
   },
 ]
 
-const heroLines = ['Abra comanda,', 'acompanhe o dinheiro,', 'veja sua equipe —', 'tudo junto, todo dia.']
+const heroLines = ['Sistema de Gestão', 'para Comerciantes', 'Brasileiros —', 'Sem fins lucrativos.']
 
 const footerColumns = [
   {
