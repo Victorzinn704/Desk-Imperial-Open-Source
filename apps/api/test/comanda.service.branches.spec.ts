@@ -293,7 +293,7 @@ describe('ComandaService branch happy paths', () => {
         replaceKitchenItems: true,
       }),
     )
-    expect(realtime.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
+    expect(realtime.publishKitchenItemQueued).toHaveBeenCalledTimes(0)
   })
 
   it('substitui comanda preservando estado de cozinha de item equivalente', async () => {
@@ -495,6 +495,57 @@ describe('ComandaService branch happy paths', () => {
     expect(result).toEqual({ itemId: 'item-1', status: 'READY' })
     expect(realtime.publishKitchenItemUpdated).toHaveBeenCalledTimes(1)
     expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(1)
+  })
+
+  it('nao publica comanda.updated quando item de cozinha muda sem transicao de status', async () => {
+    const { service, prisma, helpers, realtime } = createSetup()
+    prisma.comandaItem.findUnique.mockResolvedValue({
+      id: 'item-1',
+      kitchenStatus: KitchenItemStatus.QUEUED,
+      kitchenQueuedAt: new Date('2026-04-01T10:00:00.000Z'),
+      kitchenReadyAt: null,
+      comanda: {
+        id: 'comanda-1',
+        companyOwnerId: 'owner-1',
+        tableLabel: 'Mesa 1',
+        status: ComandaStatus.IN_PREPARATION,
+        cashSessionId: 'cash-1',
+        openedAt: new Date('2026-04-01T10:00:00.000Z'),
+      },
+    })
+    prisma.comandaItem.update.mockResolvedValue({
+      id: 'item-1',
+      productName: 'Pizza',
+      quantity: 1,
+      notes: null,
+      kitchenStatus: KitchenItemStatus.IN_PREPARATION,
+      kitchenQueuedAt: new Date('2026-04-01T10:00:00.000Z'),
+      kitchenReadyAt: null,
+    })
+    prisma.comandaItem.findMany.mockResolvedValue([
+      { kitchenStatus: KitchenItemStatus.IN_PREPARATION },
+      { kitchenStatus: KitchenItemStatus.READY },
+    ])
+    prisma.comanda.findUnique.mockResolvedValue(
+      makeComanda({
+        status: ComandaStatus.IN_PREPARATION,
+      }),
+    )
+    helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
+
+    const result = await service.updateKitchenItemStatus(
+      makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
+      'item-1',
+      {
+        status: 'IN_PREPARATION',
+      } as any,
+      makeRequestContext(),
+    )
+
+    expect(result).toEqual({ itemId: 'item-1', status: 'IN_PREPARATION' })
+    expect(prisma.comanda.update).toHaveBeenCalledTimes(0)
+    expect(realtime.publishKitchenItemUpdated).toHaveBeenCalledTimes(1)
+    expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(0)
   })
 
   it('fecha comanda, sincroniza caixa e publica eventos financeiros', async () => {

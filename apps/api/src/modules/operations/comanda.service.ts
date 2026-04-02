@@ -563,12 +563,6 @@ export class ComandaService {
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
 
-    for (const item of createdItems) {
-      if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
-        void this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
-      }
-    }
-
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
@@ -943,6 +937,7 @@ export class ComandaService {
 
     const kitchenItems = allItems.filter((i) => i.kitchenStatus !== null)
     let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
+    let shouldPublishComandaUpdated = false
 
     if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
       const allReady = kitchenItems.every(
@@ -963,6 +958,7 @@ export class ComandaService {
           data: { status: newComandaStatus },
           include: { items: { orderBy: { createdAt: 'asc' } } },
         })
+        shouldPublishComandaUpdated = true
       }
     }
 
@@ -1001,8 +997,8 @@ export class ComandaService {
       void this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
     }
 
-    // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
-    if (refreshedComanda) {
+    // Evita ruido de realtime quando apenas o item de cozinha mudou sem transicao de status da comanda.
+    if (refreshedComanda && shouldPublishComandaUpdated) {
       void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     }
 
