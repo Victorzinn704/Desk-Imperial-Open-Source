@@ -11,13 +11,16 @@
   "scripts": {
     "db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
     "db:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "obs:up": "docker compose -f infra/docker/docker-compose.observability.yml up -d",
+    "obs:down": "docker compose -f infra/docker/docker-compose.observability.yml down",
     "db:studio": "npm --workspace @partner/api exec prisma studio --schema prisma/schema.prisma",
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test",
+    "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ./scripts/run-with-sanitized-node-options.mjs turbo run test",
     "test:e2e:critical": "npm --workspace @partner/web run test:e2e:critical",
     "test:load:critical": "k6 run tests/load/k6/critical-flows.js",
+    "test:load:ci": "k6 run tests/load/k6/ci-latency-gate.js",
     "typecheck": "turbo run typecheck",
     "lint-staged": "lint-staged",
     "seed": "npm --workspace @partner/api run prisma:seed",
@@ -45,6 +48,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.1",
+    "cross-env": "^10.1.0",
     "del": "^8.0.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -56,5 +60,19 @@
     "turbo": "^2.5.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1"
+  },
+  "overrides": {
+    "picomatch": "4.0.4",
+    "brace-expansion": "5.0.5",
+    "@angular-devkit/core@19.2.22": {
+      "picomatch": "4.0.4"
+    },
+    "brace-expansion@2.0.2": "5.0.5",
+    "@angular-devkit/core": {
+      "picomatch": "4.0.4"
+    },
+    "minimatch": {
+      "brace-expansion": "5.0.5"
+    }
   }
 }

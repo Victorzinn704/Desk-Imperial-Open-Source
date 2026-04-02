@@ -1,5 +1,8 @@
 # Security Baseline
 
+> Aviso de status: baseline util, mas parcial. Consulte as fontes canonicas para estado atual completo.
+> Fonte canonica atual: README.md, DOCS_DESK_IMPERIAL.md e docs/release/.
+
 ## Objetivo
 
 Definir uma linha minima de seguranca desde o inicio do projeto.
@@ -19,6 +22,8 @@ Definir uma linha minima de seguranca desde o inicio do projeto.
 11. confirmar email antes de liberar o primeiro login
 12. manter chaves de IA e Brevo somente no backend
 13. manter o Admin PIN fora de tokens reutilizaveis no browser, usando apenas prova curta no servidor e hint nao sensivel no frontend
+14. falhar bootstrap quando `COOKIE_SECRET` ou `CSRF_SECRET` estiver ausente, curto ou com placeholder inseguro
+15. sanitizar campos textuais mutaveis de operacao (incluindo `section` de mesa em create/update) com bloqueio de HTML e formula injection
 
 ## Eventos para audit log
 

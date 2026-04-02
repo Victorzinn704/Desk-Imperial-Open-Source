@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  InternalServerErrorException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -1655,9 +1656,32 @@ export class AuthService {
   }
 
   private getCsrfSecret() {
-    return (
-      this.configService.get<string>('CSRF_SECRET') ?? this.configService.get<string>('COOKIE_SECRET') ?? 'change-me'
+    const csrfSecret = this.readConfiguredSecret('CSRF_SECRET')
+    if (csrfSecret) {
+      return csrfSecret
+    }
+
+    const cookieSecret = this.readConfiguredSecret('COOKIE_SECRET')
+    if (cookieSecret) {
+      return cookieSecret
+    }
+
+    throw new InternalServerErrorException(
+      'Configuracao insegura: defina CSRF_SECRET (ou COOKIE_SECRET valido) para emissao de token CSRF.',
     )
+  }
+
+  private readConfiguredSecret(key: 'CSRF_SECRET' | 'COOKIE_SECRET') {
+    const value = this.configService.get<string>(key)?.trim()
+    if (!value) {
+      return null
+    }
+
+    if (value.toLowerCase() === 'change-me') {
+      return null
+    }
+
+    return value
   }
 
   private isProduction() {

@@ -266,7 +266,9 @@ export class OperationsService {
           label: sanitizePlainText(dto.label, 'Label da mesa', { allowEmpty: false, rejectFormula: true })!,
         }),
         ...(dto.capacity !== undefined && { capacity: dto.capacity }),
-        ...(dto.section !== undefined && { section: dto.section }),
+        ...(dto.section !== undefined && {
+          section: sanitizePlainText(dto.section, 'Secao da mesa', { allowEmpty: true, rejectFormula: true }),
+        }),
         ...(dto.positionX !== undefined && { positionX: dto.positionX }),
         ...(dto.positionY !== undefined && { positionY: dto.positionY }),
         ...(dto.active !== undefined && { active: dto.active }),
