@@ -227,8 +227,8 @@ Checklist:
 
 1. confirmar volume de provisionamento no compose (`docker-compose.observability.yml`)
 2. validar existencia dos arquivos:
-	- `infra/docker/observability/grafana/provisioning/dashboards/dashboards.yml`
-	- `infra/docker/observability/grafana/dashboards/observability-overview.json`
+   - `infra/docker/observability/grafana/provisioning/dashboards/dashboards.yml`
+   - `infra/docker/observability/grafana/dashboards/observability-overview.json`
 3. reiniciar apenas o Grafana: `docker compose -f infra/docker/docker-compose.observability.yml restart grafana`
 4. confirmar logs do Grafana para erro de parse de JSON/YAML
 
@@ -253,3 +253,24 @@ Checklist:
 Observacao:
 
 - em testes unitarios, parte desses logs pode aparecer como cenario esperado de resiliencia (fail-open)
+
+## 19. Deploy Web no Railway falha com @tailwindcss/oxide
+
+Sintomas comuns:
+
+- build do web quebra com `Cannot find native binding`
+- erro em cascata para `Cannot find module '@tailwindcss/oxide-linux-x64-gnu'`
+
+Causa mais comum:
+
+- bug conhecido do npm com dependencias opcionais em alguns cenarios de `npm ci` no build remoto
+
+Mitigacao aplicada no projeto:
+
+- o script `infra/scripts/railway-build.sh` garante a instalacao de `@tailwindcss/oxide-linux-x64-gnu` no Linux antes do `next build`
+
+Checklist:
+
+1. confirmar que o deploy esta usando o script `infra/scripts/railway-build.sh`
+2. validar nos logs a linha `Ensuring @tailwindcss/oxide-linux-x64-gnu@... is installed`
+3. se ainda falhar, forcar novo deploy sem cache
