@@ -29,7 +29,7 @@ export function FounderContactCard() {
         <div className="mt-2 flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-white">Joao Victor de Moraes da Cruz</p>
-            <p className="text-xs text-[var(--text-soft)]">Saquarema, RJ • Open Source Builder</p>
+            <p className="text-xs text-[var(--text-soft)]">Saquarema, RJ | Open Source Builder</p>
           </div>
           <span className="rounded-full border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.14)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
             Connect
@@ -54,7 +54,7 @@ export function FounderContactCard() {
                   />
                   <span className="relative flex h-[66px] items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(14,14,15,0.9)] px-3 transition duration-300 group-hover:-translate-y-1 group-hover:border-[rgba(255,255,255,0.2)] group-hover:bg-[rgba(20,20,22,0.95)]">
                     <span className="inline-flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-black/30 text-[var(--accent)]">
-                      <Icon className="size-4.5" />
+                      <Icon className="size-4" />
                     </span>
                     <span>
                       <span className="block text-sm font-semibold text-white">{social.label}</span>
