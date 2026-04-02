@@ -13,7 +13,7 @@ case "$service_name" in
     echo "Building Railway service: $service_name"
     cd apps/api
     node ../../node_modules/prisma/build/index.js generate --schema prisma/schema.prisma
-    ../../node_modules/.bin/nest build --builder tsc
+    npm exec --yes --package @nestjs/cli nest build --builder tsc
     node -e "const fs=require('fs');const candidates=['dist/main.js','dist/src/main.js','dist/apps/api/src/main.js'];const source=candidates.find((file)=>file!=='dist/main.js'&&fs.existsSync(file));if(source){fs.copyFileSync(source,'dist/main.js')}else if(!fs.existsSync('dist/main.js')){console.error('Nenhum entrypoint do Nest encontrado em dist.');process.exit(1)}"
     ;;
   *)
