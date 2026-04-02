@@ -1,0 +1,239 @@
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { CacheService } from '../../common/services/cache.service'
+
+type AttemptEntry = {
+  count: number
+  firstAttemptAt: number
+  lockedUntil: number | null
+}
+
+type AttemptPolicy = {
+  maxAttempts: number
+  windowMs: number
+  lockMs: number
+  message: string
+}
+
+@Injectable()
+export class AuthRateLimitService {
+  private readonly logger = new Logger(AuthRateLimitService.name)
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly cache: CacheService,
+  ) {}
+
+  async assertLoginAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getLoginPolicy())
+  }
+
+  async assertPasswordResetAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getPasswordResetPolicy())
+  }
+
+  async assertPasswordResetCodeAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getPasswordResetCodePolicy())
+  }
+
+  async assertEmailVerificationAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getEmailVerificationPolicy())
+  }
+
+  async assertEmailVerificationCodeAllowed(key: string): Promise<void> {
+    await this.assertAllowed(key, this.getEmailVerificationCodePolicy())
+  }
+
+  async recordFailure(key: string): Promise<AttemptEntry> {
+    return this.recordAttempt(key, this.getLoginPolicy())
+  }
+
+  async recordPasswordResetAttempt(key: string): Promise<AttemptEntry> {
+    return this.recordAttempt(key, this.getPasswordResetPolicy())
+  }
+
+  async recordPasswordResetCodeAttempt(key: string): Promise<AttemptEntry> {
+    return this.recordAttempt(key, this.getPasswordResetCodePolicy())
+  }
+
+  async recordEmailVerificationAttempt(key: string): Promise<AttemptEntry> {
+    return this.recordAttempt(key, this.getEmailVerificationPolicy())
+  }
+
+  async recordEmailVerificationCodeAttempt(key: string): Promise<AttemptEntry> {
+    return this.recordAttempt(key, this.getEmailVerificationCodePolicy())
+  }
+
+  async clear(key: string): Promise<void> {
+    await this.cache.del(CacheService.ratelimitKey('auth', key))
+  }
+
+  buildLoginKey(email: string, ipAddress: string | null) {
+    return this.buildScopedKey('login', email, ipAddress)
+  }
+
+  buildLoginEmailKey(email: string) {
+    return this.buildEmailScopedKey('login', email)
+  }
+
+  buildPasswordResetKey(email: string, ipAddress: string | null) {
+    return this.buildScopedKey('password-reset', email, ipAddress)
+  }
+
+  buildPasswordResetEmailKey(email: string) {
+    return this.buildEmailScopedKey('password-reset', email)
+  }
+
+  buildPasswordResetCodeKey(email: string, ipAddress: string | null) {
+    return this.buildScopedKey('password-reset-code', email, ipAddress)
+  }
+
+  buildPasswordResetCodeEmailKey(email: string) {
+    return this.buildEmailScopedKey('password-reset-code', email)
+  }
+
+  buildEmailVerificationKey(email: string, ipAddress: string | null) {
+    return this.buildScopedKey('email-verification', email, ipAddress)
+  }
+
+  buildEmailVerificationEmailKey(email: string) {
+    return this.buildEmailScopedKey('email-verification', email)
+  }
+
+  buildEmailVerificationCodeKey(email: string, ipAddress: string | null) {
+    return this.buildScopedKey('email-verification-code', email, ipAddress)
+  }
+
+  buildEmailVerificationCodeEmailKey(email: string) {
+    return this.buildEmailScopedKey('email-verification-code', email)
+  }
+
+  private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
+    const redisKey = CacheService.ratelimitKey('auth', key)
+    const entry = await this.cache.get<AttemptEntry>(redisKey)
+
+    if (!entry) return
+
+    const now = Date.now()
+
+    if (entry.lockedUntil && entry.lockedUntil > now) {
+      const retryAfterSeconds = Math.ceil((entry.lockedUntil - now) / 1000)
+      throw new HttpException(
+        `${policy.message} Tente novamente em ${retryAfterSeconds} segundo(s).`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      )
+    }
+
+    if (entry.firstAttemptAt + policy.windowMs <= now) {
+      await this.cache.del(redisKey)
+    }
+  }
+
+  private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
+    const redisKey = CacheService.ratelimitKey('auth', key)
+    const now = Date.now()
+
+    const existing = await this.cache.get<AttemptEntry>(redisKey)
+
+    if (!existing || existing.firstAttemptAt + policy.windowMs <= now) {
+      const fresh: AttemptEntry = { count: 1, firstAttemptAt: now, lockedUntil: null }
+      await this.cache.set(redisKey, fresh, Math.ceil(policy.windowMs / 1000))
+      return fresh
+    }
+
+    const newCount = existing.count + 1
+    const shouldLock = newCount >= policy.maxAttempts
+    const lockedUntil = shouldLock ? now + policy.lockMs : null
+    const updated: AttemptEntry = { count: newCount, firstAttemptAt: existing.firstAttemptAt, lockedUntil }
+
+    const ttlSeconds = shouldLock
+      ? Math.ceil(policy.lockMs / 1000)
+      : Math.ceil((existing.firstAttemptAt + policy.windowMs - now) / 1000)
+
+    await this.cache.set(redisKey, updated, Math.max(ttlSeconds, 1))
+    return updated
+  }
+
+  private getLoginPolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy('LOGIN', 5, 15, 15, 'Muitas tentativas de acesso. Tente novamente mais tarde.')
+  }
+
+  private getPasswordResetPolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'PASSWORD_RESET',
+      3,
+      15,
+      30,
+      'Muitas solicitações de redefinição. Tente novamente mais tarde.',
+    )
+  }
+
+  private getPasswordResetCodePolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'PASSWORD_RESET_CODE',
+      5,
+      15,
+      30,
+      'Muitas tentativas de validar o código de redefinição. Tente novamente mais tarde.',
+    )
+  }
+
+  private getEmailVerificationPolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'EMAIL_VERIFICATION',
+      3,
+      15,
+      30,
+      'Muitas solicitações de verificação de e-mail. Tente novamente mais tarde.',
+    )
+  }
+
+  private getEmailVerificationCodePolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'EMAIL_VERIFICATION_CODE',
+      5,
+      15,
+      30,
+      'Muitas tentativas de validar o código de confirmação. Tente novamente mais tarde.',
+    )
+  }
+
+  private normalizeKeyValue(value: string) {
+    return value.trim().toLowerCase()
+  }
+
+  private buildScopedKey(prefix: string, email: string, ipAddress: string | null) {
+    return `${prefix}:${ipAddress ?? 'unknown'}:${this.normalizeKeyValue(email)}`
+  }
+
+  private buildEmailScopedKey(prefix: string, email: string) {
+    return `${prefix}:email:${this.normalizeKeyValue(email)}`
+  }
+
+  private buildAttemptPolicy(
+    configPrefix: string,
+    defaultMaxAttempts: number,
+    defaultWindowMinutes: number,
+    defaultLockMinutes: number,
+    message: string,
+  ): AttemptPolicy {
+    return {
+      maxAttempts: this.getPositiveConfigNumber(`${configPrefix}_MAX_ATTEMPTS`, defaultMaxAttempts),
+      windowMs: this.getPositiveConfigNumber(`${configPrefix}_WINDOW_MINUTES`, defaultWindowMinutes) * 60 * 1000,
+      lockMs: this.getPositiveConfigNumber(`${configPrefix}_LOCK_MINUTES`, defaultLockMinutes) * 60 * 1000,
+      message,
+    }
+  }
+
+  private getPositiveConfigNumber(configKey: string, fallback: number) {
+    const rawValue = this.configService.get<string>(configKey)
+    const parsed = Number(rawValue ?? fallback)
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      this.logger.warn(`${configKey} inválido: "${rawValue}", usando default ${fallback}`)
+      return fallback
+    }
+
+    return parsed
+  }
+}

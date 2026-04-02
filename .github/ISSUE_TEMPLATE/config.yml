@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reporte privado de segurança
+    url: https://github.com/Victorzinn704/Desk-Imperial-Open-Source/security/advisories/new
+    about: Use este canal para vulnerabilidades e problemas sensíveis.
+  - name: Guia para novos contribuidores
+    url: https://github.com/Victorzinn704/Desk-Imperial-Open-Source/blob/main/docs/GETTING-STARTED.md
+    about: Leia este guia antes da primeira contribuição.
+  - name: Documentação do produto
+    url: https://github.com/Victorzinn704/Desk-Imperial-Open-Source/blob/main/docs/product/overview.md
+    about: Entenda o produto e o público antes de sugerir mudanças grandes.

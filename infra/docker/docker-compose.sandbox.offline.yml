@@ -1,0 +1,4 @@
+services:
+  sandbox:
+    network_mode: none
+    networks: !reset []

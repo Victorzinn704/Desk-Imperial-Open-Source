@@ -1,0 +1,42 @@
+services:
+  sandbox:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.sandbox
+    container_name: test1-sandbox
+    init: true
+    working_dir: /workspace
+    environment:
+      SANDBOX_PROJECT_ROOT: /workspace
+      SANDBOX_HOME: /sandbox-home
+      XDG_CACHE_HOME: /sandbox-cache
+      TMPDIR: /sandbox-tmp
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ../..:/workspace
+      - sandbox-home:/sandbox-home
+      - sandbox-cache:/sandbox-cache
+      - sandbox-node-modules:/workspace/node_modules
+    tmpfs:
+      - /sandbox-tmp:rw,noexec,nosuid,size=512m
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    pids_limit: 512
+    stdin_open: true
+    tty: true
+    networks:
+      - sandbox-net
+    restart: unless-stopped
+
+volumes:
+  sandbox-home:
+  sandbox-cache:
+  sandbox-node-modules:
+
+networks:
+  sandbox-net:
+    driver: bridge

@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: partner-portal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-partner_portal}
+      POSTGRES_USER: ${POSTGRES_USER:-desk_imperial}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-desk_imperial_change_me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - partner_portal_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: partner-portal-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - partner_portal_redis_data:/data
+
+volumes:
+  partner_portal_pgdata:
+  partner_portal_redis_data:

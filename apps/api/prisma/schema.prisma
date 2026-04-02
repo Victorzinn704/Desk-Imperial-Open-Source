@@ -1,0 +1,597 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum UserRole {
+  OWNER
+  STAFF
+}
+
+enum ConsentKind {
+  LEGAL
+  COOKIE
+}
+
+enum AuditSeverity {
+  INFO
+  WARN
+  ERROR
+}
+
+enum OrderStatus {
+  COMPLETED
+  CANCELLED
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+  FORCE_CLOSED
+}
+
+enum CashMovementType {
+  OPENING_FLOAT
+  SUPPLY
+  WITHDRAWAL
+  ADJUSTMENT
+}
+
+enum CashClosureStatus {
+  OPEN
+  PENDING_EMPLOYEE_CLOSE
+  CLOSED
+  FORCE_CLOSED
+}
+
+enum ComandaStatus {
+  OPEN
+  IN_PREPARATION
+  READY
+  CLOSED
+  CANCELLED
+}
+
+enum BuyerType {
+  PERSON
+  COMPANY
+}
+
+enum CurrencyCode {
+  BRL
+  USD
+  EUR
+}
+
+enum KitchenItemStatus {
+  QUEUED
+  IN_PREPARATION
+  READY
+  DELIVERED
+}
+
+enum OneTimeCodePurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model User {
+  id                        String               @id @default(cuid())
+  companyOwnerId            String?
+  fullName                  String
+  companyName               String?
+  companyStreetLine1        String?
+  companyStreetNumber       String?
+  companyAddressComplement  String?
+  companyDistrict           String?
+  companyCity               String?
+  companyState              String?
+  companyPostalCode         String?
+  companyCountry            String?
+  companyLatitude           Float?
+  companyLongitude          Float?
+  hasEmployees              Boolean              @default(false)
+  employeeCount             Int                  @default(0)
+  role                      UserRole             @default(OWNER)
+  email                     String               @unique
+  passwordHash              String
+  adminPinHash              String? // argon2id hash do PIN de 4 dígitos
+  status                    UserStatus           @default(ACTIVE)
+  preferredCurrency         CurrencyCode         @default(BRL)
+  emailVerifiedAt           DateTime?
+  passwordChangedAt         DateTime?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  sessions                  Session[]
+  passwordResetTokens       PasswordResetToken[]
+  oneTimeCodes              OneTimeCode[]
+  consents                  UserConsent[]
+  cookiePreference          CookiePreference?
+  auditLogs                 AuditLog[]
+  demoAccessGrants          DemoAccessGrant[]
+  companyOwner              User?                @relation("CompanyWorkspaceMembers", fields: [companyOwnerId], references: [id], onDelete: SetNull)
+  workspaceMembers          User[]               @relation("CompanyWorkspaceMembers")
+  products                  Product[]
+  employees                 Employee[]
+  employeeAccount           Employee?            @relation("EmployeeLogin")
+  orders                    Order[]
+  companyCashSessions       CashSession[]        @relation("CompanyCashSessions")
+  cashSessionsOpened        CashSession[]        @relation("CashSessionOpenedBy")
+  cashSessionsClosed        CashSession[]        @relation("CashSessionClosedBy")
+  companyCashMovements      CashMovement[]       @relation("CompanyCashMovements")
+  cashMovementsCreated      CashMovement[]       @relation("CashMovementCreatedBy")
+  companyCashClosures       CashClosure[]        @relation("CompanyCashClosures")
+  cashClosuresClosed        CashClosure[]        @relation("CashClosureClosedBy")
+  companyComandas           Comanda[]            @relation("CompanyComandas")
+  companyMesas              Mesa[]               @relation("CompanyMesas")
+  comandasOpened            Comanda[]            @relation("ComandaOpenedBy")
+  comandasClosed            Comanda[]            @relation("ComandaClosedBy")
+  companyComandaAssignments ComandaAssignment[]  @relation("CompanyComandaAssignments")
+  comandaAssignmentsGranted ComandaAssignment[]  @relation("ComandaAssignmentGrantedBy")
+  workspaceSessions         Session[]            @relation("WorkspaceSessions")
+
+  @@index([companyOwnerId, role])
+  @@index([companyCity, companyState])
+  @@index([companyLatitude, companyLongitude])
+}
+
+model Session {
+  id                   String           @id @default(cuid())
+  userId               String?
+  employeeId           String?
+  workspaceOwnerUserId String
+  tokenHash            String           @unique
+  expiresAt            DateTime
+  createdAt            DateTime         @default(now())
+  lastSeenAt           DateTime         @default(now())
+  revokedAt            DateTime?
+  ipAddress            String?
+  userAgent            String?
+  user                 User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee             Employee?        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  workspaceOwner       User             @relation("WorkspaceSessions", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+  demoAccessGrant      DemoAccessGrant?
+
+  @@index([userId, expiresAt])
+  @@index([userId, createdAt])
+  @@index([employeeId, expiresAt])
+  @@index([workspaceOwnerUserId, expiresAt])
+}
+
+model DemoAccessGrant {
+  id        String    @id @default(cuid())
+  userId    String
+  sessionId String    @unique
+  dayKey    String
+  ipHash    String
+  startedAt DateTime  @default(now())
+  expiresAt DateTime
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([ipHash, dayKey])
+  @@index([userId, dayKey])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  ipAddress String?
+  userAgent String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model OneTimeCode {
+  id        String             @id @default(cuid())
+  userId    String
+  email     String
+  purpose   OneTimeCodePurpose
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime           @default(now())
+  ipAddress String?
+  userAgent String?
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, expiresAt])
+  @@index([email, purpose, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model ConsentDocument {
+  id          String        @id @default(cuid())
+  key         String
+  version     String
+  title       String
+  description String?
+  contentUrl  String?
+  kind        ConsentKind
+  required    Boolean       @default(true)
+  active      Boolean       @default(true)
+  publishedAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  consents    UserConsent[]
+
+  @@unique([key, version])
+  @@index([key, active])
+}
+
+model UserConsent {
+  id         String          @id @default(cuid())
+  userId     String
+  documentId String
+  acceptedAt DateTime        @default(now())
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   ConsentDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+}
+
+model CookiePreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  necessary Boolean  @default(true)
+  analytics Boolean  @default(false)
+  marketing Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String        @id @default(cuid())
+  actorUserId String?
+  event       String
+  resource    String
+  resourceId  String?
+  severity    AuditSeverity @default(INFO)
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime      @default(now())
+  actor       User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([event, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([resourceId, event])
+}
+
+model Product {
+  id               String             @id @default(cuid())
+  userId           String
+  name             String
+  brand            String?
+  category         String
+  packagingClass   String             @default("Cadastro rapido")
+  measurementUnit  String             @default("UN")
+  measurementValue Decimal            @default(1) @db.Decimal(10, 2)
+  unitsPerPackage  Int                @default(1)
+  isCombo          Boolean            @default(false)
+  comboDescription String?
+  description      String?
+  unitCost         Decimal            @db.Decimal(10, 2)
+  unitPrice        Decimal            @db.Decimal(10, 2)
+  currency         CurrencyCode       @default(BRL)
+  stock            Int
+  lowStockThreshold Int?
+  requiresKitchen  Boolean            @default(false)
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems       OrderItem[]
+  comandaItems     ComandaItem[]
+  comboComponents  ProductComboItem[] @relation("ComboComponents")
+  usedInCombos     ProductComboItem[] @relation("ComboComponentProducts")
+
+  @@unique([userId, name])
+  @@index([userId, active])
+  @@index([userId, active, createdAt])
+  @@index([userId, category])
+  @@index([userId, currency, createdAt])
+}
+
+model ProductComboItem {
+  id                 String   @id @default(cuid())
+  comboProductId     String
+  componentProductId String
+  quantityPackages   Int      @default(0)
+  quantityUnits      Int      @default(0)
+  totalUnits         Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  comboProduct       Product  @relation("ComboComponents", fields: [comboProductId], references: [id], onDelete: Cascade)
+  componentProduct   Product  @relation("ComboComponentProducts", fields: [componentProductId], references: [id], onDelete: Restrict)
+
+  @@unique([comboProductId, componentProductId])
+  @@index([componentProductId])
+}
+
+model Employee {
+  id                 String              @id @default(cuid())
+  userId             String
+  loginUserId        String?             @unique
+  passwordHash       String?
+  employeeCode       String
+  displayName        String
+  active             Boolean             @default(true)
+  salarioBase        Decimal             @default(0) @db.Decimal(10, 2)
+  percentualVendas   Decimal             @default(0) @db.Decimal(5, 2)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loginUser          User?               @relation("EmployeeLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
+  sessions           Session[]
+  sales              Order[]
+  cashSessions       CashSession[]
+  cashMovements      CashMovement[]
+  currentComandas    Comanda[]           @relation("ComandaCurrentEmployee")
+  comandaAssignments ComandaAssignment[]
+
+  @@unique([userId, employeeCode])
+  @@index([userId, active])
+}
+
+model CashSession {
+  id                   String            @id @default(cuid())
+  companyOwnerId       String
+  employeeId           String?
+  openedByUserId       String
+  closedByUserId       String?
+  businessDate         DateTime
+  status               CashSessionStatus @default(OPEN)
+  openingCashAmount    Decimal           @db.Decimal(12, 2)
+  countedCashAmount    Decimal?          @db.Decimal(12, 2)
+  expectedCashAmount   Decimal           @default(0) @db.Decimal(12, 2)
+  differenceAmount     Decimal?          @db.Decimal(12, 2)
+  grossRevenueAmount   Decimal           @default(0) @db.Decimal(12, 2)
+  realizedProfitAmount Decimal           @default(0) @db.Decimal(12, 2)
+  notes                String?
+  openedAt             DateTime          @default(now())
+  closedAt             DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  companyOwner         User              @relation("CompanyCashSessions", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  employee             Employee?         @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  openedByUser         User              @relation("CashSessionOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  closedByUser         User?             @relation("CashSessionClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  movements            CashMovement[]
+  comandas             Comanda[]
+
+  @@index([companyOwnerId, businessDate, status])
+  @@index([companyOwnerId, businessDate, openedAt])
+  @@index([employeeId, businessDate])
+  @@index([openedByUserId, businessDate])
+}
+
+model CashMovement {
+  id              String           @id @default(cuid())
+  cashSessionId   String
+  companyOwnerId  String
+  employeeId      String?
+  createdByUserId String
+  type            CashMovementType
+  amount          Decimal          @db.Decimal(12, 2)
+  note            String?
+  createdAt       DateTime         @default(now())
+  cashSession     CashSession      @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  companyOwner    User             @relation("CompanyCashMovements", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  employee        Employee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  createdByUser   User             @relation("CashMovementCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([cashSessionId, createdAt])
+  @@index([companyOwnerId, createdAt])
+  @@index([employeeId, createdAt])
+  @@index([cashSessionId, type, createdAt])
+  @@index([companyOwnerId, type, createdAt])
+}
+
+model CashClosure {
+  id                   String            @id @default(cuid())
+  companyOwnerId       String
+  closedByUserId       String?
+  businessDate         DateTime
+  status               CashClosureStatus @default(OPEN)
+  expectedCashAmount   Decimal           @default(0) @db.Decimal(12, 2)
+  countedCashAmount    Decimal?          @db.Decimal(12, 2)
+  differenceAmount     Decimal?          @db.Decimal(12, 2)
+  grossRevenueAmount   Decimal           @default(0) @db.Decimal(12, 2)
+  realizedProfitAmount Decimal           @default(0) @db.Decimal(12, 2)
+  openSessionsCount    Int               @default(0)
+  openComandasCount    Int               @default(0)
+  notes                String?
+  closedAt             DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  companyOwner         User              @relation("CompanyCashClosures", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  closedByUser         User?             @relation("CashClosureClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([companyOwnerId, businessDate])
+  @@index([companyOwnerId, status, businessDate])
+}
+
+model Mesa {
+  id             String    @id @default(cuid())
+  companyOwnerId String
+  label          String
+  capacity       Int       @default(4)
+  section        String?
+  positionX      Float?
+  positionY      Float?
+  active         Boolean   @default(true)
+  reservedUntil  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  companyOwner   User      @relation("CompanyMesas", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  comandas       Comanda[]
+
+  @@unique([companyOwnerId, label])
+  @@index([companyOwnerId, active])
+}
+
+model Comanda {
+  id                String              @id @default(cuid())
+  companyOwnerId    String
+  cashSessionId     String?
+  mesaId            String?
+  openedByUserId    String
+  closedByUserId    String?
+  currentEmployeeId String?
+  tableLabel        String
+  customerName      String?
+  customerDocument  String?
+  participantCount  Int                 @default(1)
+  status            ComandaStatus       @default(OPEN)
+  subtotalAmount    Decimal             @default(0) @db.Decimal(12, 2)
+  discountAmount    Decimal             @default(0) @db.Decimal(12, 2)
+  serviceFeeAmount  Decimal             @default(0) @db.Decimal(12, 2)
+  totalAmount       Decimal             @default(0) @db.Decimal(12, 2)
+  notes             String?
+  openedAt          DateTime            @default(now())
+  closedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  companyOwner      User                @relation("CompanyComandas", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  cashSession       CashSession?        @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  mesa              Mesa?               @relation(fields: [mesaId], references: [id], onDelete: SetNull)
+  openedByUser      User                @relation("ComandaOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  closedByUser      User?               @relation("ComandaClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  currentEmployee   Employee?           @relation("ComandaCurrentEmployee", fields: [currentEmployeeId], references: [id], onDelete: SetNull)
+  items             ComandaItem[]
+  assignments       ComandaAssignment[]
+  order             Order?
+
+  @@index([companyOwnerId, status, openedAt])
+  @@index([companyOwnerId, cashSessionId, openedAt])
+  @@index([currentEmployeeId, status, openedAt])
+  @@index([cashSessionId, status, openedAt])
+  @@index([companyOwnerId, tableLabel, openedAt])
+  @@index([companyOwnerId, openedAt])
+}
+
+model ComandaItem {
+  id              String             @id @default(cuid())
+  comandaId       String
+  productId       String?
+  productName     String
+  quantity        Int
+  unitPrice       Decimal            @db.Decimal(12, 2)
+  totalAmount     Decimal            @db.Decimal(12, 2)
+  notes           String?
+  kitchenStatus   KitchenItemStatus?
+  kitchenQueuedAt DateTime?
+  kitchenReadyAt  DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  comanda         Comanda            @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+  product         Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([comandaId, createdAt])
+  @@index([productId, createdAt])
+}
+
+model ComandaAssignment {
+  id               String    @id @default(cuid())
+  companyOwnerId   String
+  comandaId        String
+  employeeId       String
+  assignedByUserId String
+  startedAt        DateTime  @default(now())
+  endedAt          DateTime?
+  createdAt        DateTime  @default(now())
+  companyOwner     User      @relation("CompanyComandaAssignments", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  comanda          Comanda   @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+  employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedByUser   User      @relation("ComandaAssignmentGrantedBy", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([companyOwnerId, startedAt])
+  @@index([comandaId, startedAt])
+  @@index([employeeId, startedAt])
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  userId         String
+  comandaId      String?      @unique
+  customerName   String?
+  buyerType      BuyerType?
+  buyerDocument  String?
+  buyerDistrict  String?
+  buyerCity      String?
+  buyerState     String?
+  buyerCountry   String?
+  buyerLatitude  Float?
+  buyerLongitude Float?
+  employeeId     String?
+  sellerCode     String?
+  sellerName     String?
+  channel        String?
+  notes          String?
+  currency       CurrencyCode @default(BRL)
+  status         OrderStatus  @default(COMPLETED)
+  totalRevenue   Decimal      @db.Decimal(10, 2)
+  totalCost      Decimal      @db.Decimal(10, 2)
+  totalProfit    Decimal      @db.Decimal(10, 2)
+  totalItems     Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  cancelledAt    DateTime?
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comanda        Comanda?     @relation(fields: [comandaId], references: [id], onDelete: SetNull)
+  employee       Employee?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  items          OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([userId, status, createdAt])
+  @@index([userId, status, buyerLatitude])
+  @@index([userId, status, channel, createdAt])
+  @@index([userId, currency, createdAt])
+  @@index([employeeId, createdAt])
+  @@index([buyerCity, buyerState])
+  @@index([buyerDocument])
+}
+
+model OrderItem {
+  id          String       @id @default(cuid())
+  orderId     String
+  productId   String?
+  productName String
+  category    String
+  quantity    Int
+  currency    CurrencyCode @default(BRL)
+  unitCost    Decimal      @db.Decimal(10, 2)
+  unitPrice   Decimal      @db.Decimal(10, 2)
+  lineRevenue Decimal      @db.Decimal(10, 2)
+  lineCost    Decimal      @db.Decimal(10, 2)
+  lineProfit  Decimal      @db.Decimal(10, 2)
+  createdAt   DateTime     @default(now())
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId, createdAt])
+}

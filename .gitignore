@@ -1,0 +1,94 @@
+# ─── Dependências ────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ─── Build / Output ──────────────────────────────────────────────────────────
+.next/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# ─── Variáveis de ambiente (NUNCA commitar) ───────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.test
+apps/api/.env
+apps/web/.env
+apps/web/.env.local
+
+# ─── Segredos e credenciais ──────────────────────────────────────────────────
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+*.crt
+*.csr
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+secrets.json
+credentials.json
+service-account*.json
+*-service-account.json
+keystore.json
+.secrets/
+
+# ─── Banco de dados local ────────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+prisma/*.db
+
+# ─── Claude Code / AI tools ──────────────────────────────────────────────────
+.claude/
+CLAUDE.md
+
+# ─── Docker local (pode conter credenciais) ──────────────────────────────────
+docker-compose.override.yml
+docker-compose.local.yml
+infra/docker/.env
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── SO / Editores ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── Testes ──────────────────────────────────────────────────────────────────
+/test-results/
+/playwright-report/
+/blob-report/
+/apps/web/test-results/
+/apps/web/playwright-report/
+/apps/web/blob-report/
+/playwright/.cache/
+
+# ─── Misc ────────────────────────────────────────────────────────────────────
+*.tgz
+*.zip
+.vercel
+.netlify
+.aider*

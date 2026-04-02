@@ -1,0 +1,549 @@
+'use client'
+
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  AlertTriangle,
+  Banknote,
+  CheckCircle2,
+  ChevronDown,
+  CircleDollarSign,
+  Lock,
+  TrendingUp,
+  Unlock,
+  X,
+} from 'lucide-react'
+import type { OperationsLiveResponse } from '@contracts/contracts'
+import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
+import { buildOperationsExecutiveKpis } from '@/lib/operations'
+import { formatBRL } from '@/lib/currency'
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+const fmtBRL = formatBRL
+
+function parseAmount(raw: string): number {
+  // aceita "1.500,50" (pt-BR) ou "1500.50" (en)
+  const normalized = raw.replace(/\./g, '').replace(',', '.')
+  const n = parseFloat(normalized)
+  return isNaN(n) ? 0 : n
+}
+
+// ── sub-components ────────────────────────────────────────────────────────────
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  highlight = 'neutral',
+}: {
+  icon: React.ElementType
+  label: string
+  value: string
+  hint?: string
+  highlight?: 'neutral' | 'positive' | 'negative' | 'accent'
+}) {
+  const borderClass =
+    highlight === 'positive'
+      ? 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)]'
+      : highlight === 'negative'
+        ? 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.05)]'
+        : highlight === 'accent'
+          ? 'border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.07)]'
+          : 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+
+  const iconClass =
+    highlight === 'positive'
+      ? 'text-[#34f27f]'
+      : highlight === 'negative'
+        ? 'text-[#f87171]'
+        : highlight === 'accent'
+          ? 'text-[#c9a96e]'
+          : 'text-[var(--text-soft)]'
+
+  return (
+    <div className={`rounded-[22px] border px-4 py-4 ${borderClass}`}>
+      <Icon className={`size-4 ${iconClass}`} />
+      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-1.5 text-lg font-semibold text-white">{value}</p>
+      {hint ? <p className="mt-1.5 text-[11px] leading-5 text-[var(--text-soft)]">{hint}</p> : null}
+    </div>
+  )
+}
+
+function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ── modal: abrir caixa ────────────────────────────────────────────────────────
+
+function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [amount, setAmount] = useState('')
+  const [notes, setNotes] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      openCashSession({
+        openingCashAmount: parseAmount(amount),
+        notes: notes.trim() || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+      onSuccess()
+      onClose()
+    },
+    onError: (err) => {
+      setError(err instanceof ApiError ? err.message : 'Erro ao abrir o caixa. Tente novamente.')
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const parsed = parseAmount(amount)
+    if (parsed < 0) {
+      setError('O valor inicial não pode ser negativo.')
+      return
+    }
+    setError(null)
+    mutation.mutate()
+  }
+
+  return (
+    <ModalOverlay onClose={onClose}>
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Operação financeira
+            </p>
+            <h2 className="mt-1.5 text-xl font-semibold text-white">Abrir caixa</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-white transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
+              Valor inicial no caixa (R$)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-white placeholder:text-white/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+              autoFocus
+            />
+            <p className="mt-1.5 text-[11px] text-[var(--text-soft)]">
+              Dinheiro físico presente no caixa ao iniciar o turno. Pode ser R$ 0,00.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
+              Observações (opcional)
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Troco separado, conferência inicial…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          {error ? (
+            <div className="rounded-[12px] border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#f87171]">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-white hover:border-white/20 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="flex-1 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {mutation.isPending ? 'Abrindo…' : 'Abrir caixa'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </ModalOverlay>
+  )
+}
+
+// ── modal: fechar caixa ───────────────────────────────────────────────────────
+
+function FecharCaixaModal({
+  openComandasCount,
+  expectedCashAmount,
+  onClose,
+  onSuccess,
+}: {
+  openComandasCount: number
+  expectedCashAmount: number
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [amount, setAmount] = useState('')
+  const [notes, setNotes] = useState('')
+  const [forceClose, setForceClose] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      closeCashClosure({
+        countedCashAmount: parseAmount(amount),
+        forceClose,
+        notes: notes.trim() || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+      onSuccess()
+      onClose()
+    },
+    onError: (err) => {
+      setError(err instanceof ApiError ? err.message : 'Erro ao fechar o caixa. Tente novamente.')
+    },
+  })
+
+  const hasOpenComandas = openComandasCount > 0
+  const canSubmit = !hasOpenComandas || forceClose
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const parsed = parseAmount(amount)
+    if (parsed < 0) {
+      setError('O valor contado não pode ser negativo.')
+      return
+    }
+    setError(null)
+    mutation.mutate()
+  }
+
+  const delta = parseAmount(amount) - expectedCashAmount
+  const showDelta = amount.trim() !== '' && parseAmount(amount) > 0
+
+  return (
+    <ModalOverlay onClose={onClose}>
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Encerramento do dia
+            </p>
+            <h2 className="mt-1.5 text-xl font-semibold text-white">Fechar caixa</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-white transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {hasOpenComandas ? (
+          <div className="mt-5 rounded-[16px] border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.07)] px-4 py-4">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="size-4 shrink-0 text-[#fbbf24]" />
+              <p className="text-sm font-semibold text-[#fbbf24]">
+                {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta
+                {openComandasCount > 1 ? 's' : ''}
+              </p>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">
+              O caixa só pode ser fechado após todas as comandas serem pagas. Ative o fechamento forçado apenas em caso
+              de emergência.
+            </p>
+            <label className="mt-3 flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={forceClose}
+                onChange={(e) => setForceClose(e.target.checked)}
+                className="size-4 accent-[var(--accent)]"
+              />
+              <span className="text-xs font-semibold text-[#fbbf24]">Fechar mesmo com comandas abertas</span>
+            </label>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-[16px] border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)] px-4 py-3 flex items-center gap-2.5">
+            <CheckCircle2 className="size-4 shrink-0 text-[#34f27f]" />
+            <p className="text-sm text-[#34f27f] font-medium">Todas as comandas estão fechadas.</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
+              Valor contado no caixa (R$)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-white placeholder:text-white/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+              autoFocus
+            />
+            <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--text-soft)]">
+              <span>Esperado: {fmtBRL(expectedCashAmount)}</span>
+              {showDelta ? (
+                <span className={delta >= 0 ? 'text-[#34f27f] font-semibold' : 'text-[#f87171] font-semibold'}>
+                  {delta >= 0 ? '+' : ''}
+                  {fmtBRL(delta)}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
+              Observações (opcional)
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Quebra de caixa, sangria, ajuste…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          {error ? (
+            <div className="rounded-[12px] border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#f87171]">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-white hover:border-white/20 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={mutation.isPending || !canSubmit}
+              className="flex-1 rounded-[14px] bg-[#f87171]/90 px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+            >
+              {mutation.isPending ? 'Fechando…' : 'Fechar caixa'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </ModalOverlay>
+  )
+}
+
+// ── main component ────────────────────────────────────────────────────────────
+
+export function CaixaPanel({ operations }: { operations: OperationsLiveResponse | undefined }) {
+  const [showAbrirModal, setShowAbrirModal] = useState(false)
+  const [showFecharModal, setShowFecharModal] = useState(false)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  const {
+    receitaRealizada,
+    faturamentoAberto,
+    projecaoTotal,
+    lucroRealizado,
+    lucroEsperado,
+    caixaEsperado,
+    openComandasCount,
+    openSessionsCount,
+  } = buildOperationsExecutiveKpis(operations)
+  const caixaAberto = openSessionsCount > 0
+
+  return (
+    <>
+      <section className="imperial-card p-6 md:p-7">
+        {/* header */}
+        <header className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Financeiro operacional
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Caixa do dia</h2>
+            <p className="mt-1.5 text-sm leading-6 text-[var(--text-soft)]">
+              {caixaAberto
+                ? `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} em aberto`
+                : 'Nenhuma sessão de caixa ativa no momento.'}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2.5">
+            {caixaAberto ? (
+              <>
+                <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold text-[#34f27f]">
+                  <span className="size-1.5 rounded-full bg-[#34f27f] animate-pulse" />
+                  Aberto
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowFecharModal(true)}
+                  className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
+                >
+                  <Lock className="size-3.5" />
+                  Fechar caixa
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAbrirModal(true)}
+                className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                <Unlock className="size-3.5" />
+                Abrir caixa
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* success toast */}
+        {successMsg ? (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
+            <div className="flex items-center gap-2.5 text-sm text-[#34f27f] font-medium">
+              <CheckCircle2 className="size-4 shrink-0" />
+              {successMsg}
+            </div>
+            <button type="button" onClick={() => setSuccessMsg(null)}>
+              <X className="size-3.5 text-[var(--text-soft)]" />
+            </button>
+          </div>
+        ) : null}
+
+        {/* KPIs */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiCard
+            icon={CircleDollarSign}
+            label="Receita realizada"
+            value={fmtBRL(receitaRealizada)}
+            hint="Comandas fechadas hoje"
+            highlight={receitaRealizada > 0 ? 'positive' : 'neutral'}
+          />
+          <KpiCard
+            icon={TrendingUp}
+            label="Lucro realizado"
+            value={fmtBRL(lucroRealizado)}
+            hint="Resultado líquido estimado"
+            highlight={lucroRealizado > 0 ? 'positive' : 'neutral'}
+          />
+          <KpiCard
+            icon={ChevronDown}
+            label="Em aberto"
+            value={fmtBRL(faturamentoAberto)}
+            hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
+            highlight={faturamentoAberto > 0 ? 'accent' : 'neutral'}
+          />
+          <KpiCard
+            icon={Banknote}
+            label="Projeção total"
+            value={fmtBRL(projecaoTotal)}
+            hint="Realizado + em aberto"
+            highlight={projecaoTotal > 0 ? 'accent' : 'neutral'}
+          />
+        </div>
+
+        <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Lucro esperado
+          </p>
+          <p className="mt-1.5 text-2xl font-semibold text-white">{fmtBRL(lucroEsperado)}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">
+            Leitura provisória: lucro realizado + faturamento em aberto
+          </p>
+        </div>
+
+        {/* caixa esperado — linha separada */}
+        {caixaAberto ? (
+          <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                Caixa esperado
+              </p>
+              <p className="mt-1.5 text-2xl font-semibold text-white">{fmtBRL(caixaEsperado)}</p>
+              <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
+            </div>
+            {openComandasCount > 0 ? (
+              <div className="flex items-center gap-2 rounded-[12px] border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3.5 py-2.5 text-xs text-[#fbbf24]">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span className="font-semibold">
+                  {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
+                  {openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* estado fechado sem dados */}
+        {!caixaAberto && receitaRealizada === 0 ? (
+          <div className="mt-5 rounded-[22px] border border-dashed border-white/8 px-6 py-10 text-center">
+            <Banknote className="mx-auto size-9 text-[var(--text-soft)]/50" />
+            <p className="mt-3 text-sm font-medium text-white">Caixa ainda não foi aberto hoje</p>
+            <p className="mt-1.5 text-xs text-[var(--text-soft)]">
+              Clique em &ldquo;Abrir caixa&rdquo; para iniciar o turno e liberar o PDV para os funcionários.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAbrirModal(true)}
+              className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              <Unlock className="size-3.5" />
+              Abrir caixa agora
+            </button>
+          </div>
+        ) : null}
+      </section>
+
+      {showAbrirModal ? (
+        <AbrirCaixaModal
+          onClose={() => setShowAbrirModal(false)}
+          onSuccess={() => setSuccessMsg('Caixa aberto com sucesso. O PDV já está disponível para os funcionários.')}
+        />
+      ) : null}
+
+      {showFecharModal ? (
+        <FecharCaixaModal
+          openComandasCount={openComandasCount}
+          expectedCashAmount={caixaEsperado}
+          onClose={() => setShowFecharModal(false)}
+          onSuccess={() => setSuccessMsg('Caixa fechado. Bom trabalho hoje!')}
+        />
+      ) : null}
+    </>
+  )
+}

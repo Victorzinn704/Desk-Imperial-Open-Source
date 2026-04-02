@@ -1,0 +1,58 @@
+# Security Baseline
+
+> Aviso de status: baseline util, mas parcial. Consulte as fontes canonicas para estado atual completo.
+> Fonte canonica atual: README.md, DOCS_DESK_IMPERIAL.md e docs/release/.
+
+## Objetivo
+
+Definir uma linha minima de seguranca desde o inicio do projeto.
+
+## Regras base
+
+1. usar HTTPS em producao
+2. usar cookies `HttpOnly`, `Secure` e `SameSite`
+3. nao salvar token sensivel em `localStorage`
+4. usar hash de senha forte
+5. mascarar dados pessoais em logs
+6. ter trilha de auditoria para eventos sensiveis
+7. versionar aceite de termos e consentimentos
+8. separar cookies necessarios de cookies opcionais
+9. recuperar senha com codigo temporario e uso unico
+10. invalidar sessoes ativas apos redefinicao de senha
+11. confirmar email antes de liberar o primeiro login
+12. manter chaves de IA e Brevo somente no backend
+13. manter o Admin PIN fora de tokens reutilizaveis no browser, usando apenas prova curta no servidor e hint nao sensivel no frontend
+14. falhar bootstrap quando `COOKIE_SECRET` ou `CSRF_SECRET` estiver ausente, curto ou com placeholder inseguro
+15. sanitizar campos textuais mutaveis de operacao (incluindo `section` de mesa em create/update) com bloqueio de HTML e formula injection
+
+## Eventos para audit log
+
+- login com sucesso
+- login com falha
+- logout
+- troca de senha
+- solicitacao de redefinicao de senha
+- conclusao de redefinicao de senha
+- verificacao do Admin PIN
+- aceite de termos
+- alteracao de preferencia de cookies
+- exportacao de dados
+- solicitacao de exclusao de conta
+- alteracao de cadastro sensivel
+
+## Eventos para logs estruturados
+
+- request recebida
+- request concluida
+- erro inesperado
+- tempo de resposta
+- health check
+- degradacao de dependencia externa
+
+## Cuidados com LGPD
+
+- coletar apenas o necessario
+- registrar base e contexto do consentimento
+- facilitar revogacao
+- permitir exportacao e exclusao
+- definir retencao de logs e dados

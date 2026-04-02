@@ -1,0 +1,49 @@
+FROM ubuntu:24.04
+
+ARG USERNAME=workspace
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        openssh-client \
+        procps \
+        python3 \
+        python3-pip \
+        ripgrep \
+        sudo \
+        tini \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/bash ${USERNAME} \
+    && mkdir -p /workspace /sandbox-home /sandbox-cache /sandbox-tmp \
+    && chown -R ${USERNAME}:${USERNAME} /workspace /sandbox-home /sandbox-cache /sandbox-tmp \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME}
+
+ENV HOME=/sandbox-home \
+    XDG_CACHE_HOME=/sandbox-cache \
+    TMPDIR=/sandbox-tmp \
+    PIP_CACHE_DIR=/sandbox-cache/pip \
+    npm_config_cache=/sandbox-cache/npm \
+    YARN_CACHE_FOLDER=/sandbox-cache/yarn \
+    PNPM_HOME=/sandbox-home/.local/share/pnpm \
+    PATH=/sandbox-home/.local/bin:${PATH}
+
+WORKDIR /workspace
+
+COPY .devcontainer/entrypoint.sh /usr/local/bin/project-entrypoint
+
+RUN chmod +x /usr/local/bin/project-entrypoint
+
+USER ${USERNAME}
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/project-entrypoint"]
+CMD ["sleep", "infinity"]

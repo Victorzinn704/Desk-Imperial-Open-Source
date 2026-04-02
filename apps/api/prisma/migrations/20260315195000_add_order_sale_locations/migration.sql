@@ -1,0 +1,6 @@
+ALTER TABLE "Order"
+ADD COLUMN "buyerCity" TEXT,
+ADD COLUMN "buyerState" TEXT,
+ADD COLUMN "buyerCountry" TEXT,
+ADD COLUMN "buyerLatitude" DOUBLE PRECISION,
+ADD COLUMN "buyerLongitude" DOUBLE PRECISION;

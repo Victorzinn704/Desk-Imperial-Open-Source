@@ -1,0 +1,65 @@
+{
+  "name": "desk-imperial",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Sistema gratuito de gestão comercial para pequenos e médios comerciantes brasileiros.",
+  "packageManager": "npm@11.8.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "obs:up": "docker compose -f infra/docker/docker-compose.observability.yml up -d",
+    "obs:down": "docker compose -f infra/docker/docker-compose.observability.yml down",
+    "db:studio": "npm --workspace @partner/api exec prisma studio --schema prisma/schema.prisma",
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ./scripts/run-with-sanitized-node-options.mjs turbo run test",
+    "test:e2e:critical": "npm --workspace @partner/web run test:e2e:critical",
+    "test:load:critical": "k6 run tests/load/k6/critical-flows.js",
+    "test:load:ci": "k6 run tests/load/k6/ci-latency-gate.js",
+    "repo:scan-public": "node ./scripts/scan-public-repo-risks.mjs",
+    "typecheck": "turbo run typecheck",
+    "lint-staged": "lint-staged",
+    "seed": "npm --workspace @partner/api run prisma:seed",
+    "gulp:images": "gulp images",
+    "gulp:clean": "gulp clean",
+    "gulp:watch": "gulp watch",
+    "refactor:desk-styles": "node scripts/refactor-desk-tailwind.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix --max-warnings 0"
+    ],
+    "apps/api/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix --max-warnings 0"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.39.1",
+    "cross-env": "^10.1.0",
+    "del": "^8.0.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^16.4.0",
+    "gulp": "^5.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
+  }
+}

@@ -1,0 +1,20 @@
+# CODEOWNERS — define quem deve revisar mudanças em cada área do projeto.
+# Sintaxe: <padrão> <@usuario ou @org/time>
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Dono padrão de todo o repositório
+*                                     @Victorzinn704
+
+# Módulos de autenticação e segurança — revisão obrigatória em qualquer mudança
+apps/api/src/modules/auth/            @Victorzinn704
+apps/api/src/modules/admin-pin/       @Victorzinn704
+
+# Schema do banco — migrations são irreversíveis, requerem atenção extra
+apps/api/prisma/                      @Victorzinn704
+
+# Workflows de CI/CD — mudanças aqui afetam o pipeline inteiro
+.github/                              @Victorzinn704
+
+# Configurações de build e monorepo
+turbo.json                            @Victorzinn704
+package.json                          @Victorzinn704
