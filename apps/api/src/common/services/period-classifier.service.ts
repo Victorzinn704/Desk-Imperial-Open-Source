@@ -46,6 +46,8 @@ interface EstablishmentSettings {
  */
 @Injectable()
 export class PeriodClassifierService {
+  private static readonly DEFAULT_TIME_ZONE = 'America/Sao_Paulo'
+
   private defaultSettings: EstablishmentSettings = {
     businessHours: [
       // Domingo
@@ -113,8 +115,7 @@ export class PeriodClassifierService {
   isEventHour(timestamp: Date | string | number, settings?: EstablishmentSettings): boolean {
     const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
-    const dayOfWeek = date.getDay()
-    const hour = date.getHours()
+    const { dayOfWeek, hour } = this.getLocalDateParts(date)
 
     const daySettings = businessSettings.businessHours.find((bh) => bh.dayOfWeek === dayOfWeek)
 
@@ -137,7 +138,7 @@ export class PeriodClassifierService {
   isPeakHour(timestamp: Date | string | number, settings?: EstablishmentSettings): boolean {
     const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
-    const hour = date.getHours()
+    const { hour } = this.getLocalDateParts(date)
 
     if (!businessSettings.peakHourStart || !businessSettings.peakHourEnd) {
       return false
@@ -160,8 +161,7 @@ export class PeriodClassifierService {
     timestamp: Date,
     specialEvents: Array<{ date: string; name: string; type: string; startHour: number; endHour: number }>,
   ) {
-    const dateStr = timestamp.toISOString().split('T')[0] // YYYY-MM-DD
-    const hour = timestamp.getHours()
+    const { dateStr, hour } = this.getLocalDateParts(timestamp)
 
     return specialEvents.find((event) => {
       const isSameDay = event.date === dateStr
@@ -191,5 +191,52 @@ export class PeriodClassifierService {
     }
 
     return { ...defaults, ...overrides }
+  }
+
+  private getLocalDateParts(timestamp: Date) {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: PeriodClassifierService.DEFAULT_TIME_ZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'short',
+      hour: '2-digit',
+      hour12: false,
+    })
+    const parts = formatter.formatToParts(timestamp)
+    const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value
+    const year = getPart('year')
+    const month = getPart('month')
+    const day = getPart('day')
+    const hour = Number(getPart('hour') ?? '0')
+    const weekday = getPart('weekday')
+    const dayOfWeek = this.mapWeekdayToIndex(weekday)
+
+    return {
+      dateStr: `${year}-${month}-${day}`,
+      dayOfWeek,
+      hour,
+    }
+  }
+
+  private mapWeekdayToIndex(weekday?: string) {
+    switch (weekday) {
+      case 'Sun':
+        return 0
+      case 'Mon':
+        return 1
+      case 'Tue':
+        return 2
+      case 'Wed':
+        return 3
+      case 'Thu':
+        return 4
+      case 'Fri':
+        return 5
+      case 'Sat':
+        return 6
+      default:
+        return 0
+    }
   }
 }
