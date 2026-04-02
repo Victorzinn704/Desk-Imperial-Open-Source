@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Github, Linkedin } from 'lucide-react'
 
 const socialLinks = [
@@ -32,8 +32,10 @@ const floatingMotion = [
 ]
 
 export function FounderContactCard() {
+  const prefersReducedMotion = useReducedMotion()
+
   return (
-    <aside className="pointer-events-auto relative z-20 mx-auto mt-3 w-fit lg:absolute lg:right-[22px] lg:top-[170px] lg:mt-0">
+    <aside className="pointer-events-auto relative z-20 mx-auto mt-3 w-fit lg:absolute lg:right-[clamp(0.5rem,2.2vw,1.75rem)] lg:top-[clamp(9.5rem,13.5vw,12rem)] lg:mt-0">
       <div className="pointer-events-none absolute -inset-4 rounded-[26px] bg-[radial-gradient(circle,rgba(155,132,96,0.24),transparent_66%)] blur-xl" />
 
       <ul className="contact-bubbles" role="list">
@@ -43,10 +45,18 @@ export function FounderContactCard() {
 
           return (
             <motion.li
-              animate={motionSpec.animate}
+              animate={
+                prefersReducedMotion
+                  ? {
+                      x: 0,
+                      y: 0,
+                      rotate: 0,
+                    }
+                  : motionSpec.animate
+              }
               className="bubble-item"
               key={social.label}
-              transition={motionSpec.transition}
+              transition={prefersReducedMotion ? { duration: 0 } : motionSpec.transition}
             >
               <a
                 aria-label={social.label}
@@ -75,13 +85,13 @@ export function FounderContactCard() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 14px;
+          gap: clamp(10px, 2.4vw, 14px);
         }
 
         @media (min-width: 1024px) {
           .contact-bubbles {
             flex-direction: column;
-            gap: 16px;
+            gap: 18px;
           }
         }
 
@@ -96,8 +106,8 @@ export function FounderContactCard() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 54px;
-          height: 54px;
+          width: clamp(46px, 12vw, 56px);
+          height: clamp(46px, 12vw, 56px);
           border-radius: 9999px;
           border: 1px solid rgba(155, 132, 96, 0.36);
           background: rgba(10, 10, 11, 0.92);
@@ -135,8 +145,8 @@ export function FounderContactCard() {
         .bubble-icon {
           position: relative;
           z-index: 1;
-          width: 23px;
-          height: 23px;
+          width: clamp(18px, 4.8vw, 23px);
+          height: clamp(18px, 4.8vw, 23px);
         }
 
         .bubble-tooltip {
@@ -177,6 +187,44 @@ export function FounderContactCard() {
           margin-top: 3px;
           font-size: 12px;
           color: var(--text-soft);
+        }
+
+        .bubble-item a:focus-visible {
+          outline: 2px solid rgba(155, 132, 96, 0.8);
+          outline-offset: 2px;
+        }
+
+        .bubble-item a:focus-visible + .bubble-tooltip {
+          opacity: 1;
+          visibility: visible;
+          transform: translate(-50%, 0);
+        }
+
+        @media (max-width: 479px) {
+          .bubble-tooltip {
+            display: none;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .contact-bubbles {
+            gap: 16px;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .bubble-tooltip {
+            left: auto;
+            right: calc(100% + 10px);
+            bottom: 50%;
+            transform: translate(8px, 50%);
+            min-width: 170px;
+          }
+
+          .bubble-item:hover .bubble-tooltip,
+          .bubble-item a:focus-visible + .bubble-tooltip {
+            transform: translate(0, 50%);
+          }
         }
       `}</style>
     </aside>
