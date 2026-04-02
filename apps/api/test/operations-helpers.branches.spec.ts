@@ -180,9 +180,16 @@ describe('OperationsHelpersService - branches', () => {
   it('syncCashClosure preserva status CLOSED existente', async () => {
     const transaction = {
       cashSession: {
-        findMany: jest.fn().mockResolvedValue([
-          { status: CashSessionStatus.OPEN, expectedCashAmount: 100, grossRevenueAmount: 30, realizedProfitAmount: 10 },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            {
+              status: CashSessionStatus.OPEN,
+              expectedCashAmount: 100,
+              grossRevenueAmount: 30,
+              realizedProfitAmount: 10,
+            },
+          ]),
       },
       comanda: {
         count: jest.fn().mockResolvedValue(2),
@@ -205,9 +212,16 @@ describe('OperationsHelpersService - branches', () => {
   it('syncCashClosure seta PENDING quando ha sessoes ou comandas abertas', async () => {
     const transaction = {
       cashSession: {
-        findMany: jest.fn().mockResolvedValue([
-          { status: CashSessionStatus.OPEN, expectedCashAmount: 120, grossRevenueAmount: 40, realizedProfitAmount: 15 },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            {
+              status: CashSessionStatus.OPEN,
+              expectedCashAmount: 120,
+              grossRevenueAmount: 40,
+              realizedProfitAmount: 15,
+            },
+          ]),
       },
       comanda: {
         count: jest.fn().mockResolvedValue(0),
@@ -305,7 +319,9 @@ describe('OperationsHelpersService - branches', () => {
       },
     }
 
-    await expect(service.requireOwnedCashSession(transaction as any, 'owner-1', 'cash-1')).rejects.toThrow(NotFoundException)
+    await expect(service.requireOwnedCashSession(transaction as any, 'owner-1', 'cash-1')).rejects.toThrow(
+      NotFoundException,
+    )
   })
 
   it('requireOwnedCashSession inclui movimentos quando solicitado', async () => {
@@ -364,8 +380,12 @@ describe('OperationsHelpersService - branches', () => {
       },
     }
 
-    await expect(service.requireOwnedComanda(transaction as any, 'owner-1', 'comanda-1')).rejects.toThrow(NotFoundException)
-    await expect(service.requireOwnedEmployee(transaction as any, 'owner-1', 'emp-1')).rejects.toThrow(NotFoundException)
+    await expect(service.requireOwnedComanda(transaction as any, 'owner-1', 'comanda-1')).rejects.toThrow(
+      NotFoundException,
+    )
+    await expect(service.requireOwnedEmployee(transaction as any, 'owner-1', 'emp-1')).rejects.toThrow(
+      NotFoundException,
+    )
   })
 
   it('resolveEmployeeForStaff retorna null para OWNER e para STAFF sem employeeId', async () => {
@@ -413,13 +433,10 @@ describe('OperationsHelpersService - branches', () => {
       },
     }
 
-    const result = await service.resolveComandaBusinessDate(
-      transaction as any,
-      {
-        cashSessionId: 'cash-1',
-        openedAt: new Date(2026, 3, 2, 10, 0, 0),
-      },
-    )
+    const result = await service.resolveComandaBusinessDate(transaction as any, {
+      cashSessionId: 'cash-1',
+      openedAt: new Date(2026, 3, 2, 10, 0, 0),
+    })
 
     expect(result).toEqual(new Date(2026, 3, 1))
   })
@@ -431,13 +448,10 @@ describe('OperationsHelpersService - branches', () => {
       },
     }
 
-    const result = await service.resolveComandaBusinessDate(
-      transaction as any,
-      {
-        cashSessionId: 'cash-x',
-        openedAt: new Date(2026, 3, 2, 21, 45, 0),
-      },
-    )
+    const result = await service.resolveComandaBusinessDate(transaction as any, {
+      cashSessionId: 'cash-x',
+      openedAt: new Date(2026, 3, 2, 21, 45, 0),
+    })
 
     expect(result).toEqual(new Date(2026, 3, 2, 0, 0, 0, 0))
   })
@@ -513,11 +527,9 @@ describe('OperationsHelpersService - branches', () => {
     }
 
     await expect(
-      service.resolveComandaDraftItems(
-        transaction as any,
-        'owner-1',
-        [{ productId: 'prod-x', quantity: 1 } as ComandaDraftItemDto],
-      ),
+      service.resolveComandaDraftItems(transaction as any, 'owner-1', [
+        { productId: 'prod-x', quantity: 1 } as ComandaDraftItemDto,
+      ]),
     ).rejects.toThrow(NotFoundException)
   })
 
@@ -529,19 +541,15 @@ describe('OperationsHelpersService - branches', () => {
     }
 
     await expect(
-      service.resolveComandaDraftItems(
-        transaction as any,
-        'owner-1',
-        [{ productName: 'Manual', quantity: 1 } as ComandaDraftItemDto],
-      ),
+      service.resolveComandaDraftItems(transaction as any, 'owner-1', [
+        { productName: 'Manual', quantity: 1 } as ComandaDraftItemDto,
+      ]),
     ).rejects.toThrow(BadRequestException)
 
     await expect(
-      service.resolveComandaDraftItems(
-        transaction as any,
-        'owner-1',
-        [{ productName: '=CSV formula', quantity: 1, unitPrice: 10 } as ComandaDraftItemDto],
-      ),
+      service.resolveComandaDraftItems(transaction as any, 'owner-1', [
+        { productName: '=CSV formula', quantity: 1, unitPrice: 10 } as ComandaDraftItemDto,
+      ]),
     ).rejects.toThrow(BadRequestException)
   })
 

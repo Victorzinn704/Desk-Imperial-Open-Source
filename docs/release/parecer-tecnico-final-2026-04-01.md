@@ -15,6 +15,7 @@ O sistema possui maturidade tecnica real para operacao e nao demanda reescrita. 
 ## 2. Fundamentacao
 
 Fortalezas estruturais observadas:
+
 - arquitetura backend modular e consistente
 - regras operacionais centrais implementadas (caixa/comanda/cozinha/pedido)
 - isolamento por workspace robusto
@@ -23,6 +24,7 @@ Fortalezas estruturais observadas:
 - modelo de dados aderente ao dominio real
 
 Riscos residuais que pedem fechamento:
+
 - gate de release sem cobertura frontend equivalente no fluxo principal
 - endpoint de insight IA com semantica que pode gerar custo indevido
 - cobertura PWA/offline parcial
@@ -56,6 +58,7 @@ Sem esses tres pontos, a recomendacao muda para NO-GO.
 - Onda 3: liberar escala completa com monitoramento de KPI operacional
 
 KPIs de observacao por onda:
+
 - falhas de login/sessao
 - divergencia comanda x cozinha x resumo
 - taxa de erro em mutacoes de operacao
@@ -68,6 +71,7 @@ KPIs de observacao por onda:
 O Desk Imperial esta tecnicamente apto para liberacao real, desde que a liberacao seja disciplinada e condicionada ao fechamento dos itens P0.
 
 Mensagem final para direcao:
+
 - nao e hora de reconstruir produto
 - e hora de consolidar qualidade de release
 - com lapidacao focada, o projeto entra em operacao ampliada com risco baixo e boa previsibilidade

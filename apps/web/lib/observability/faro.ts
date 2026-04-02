@@ -89,10 +89,7 @@ export function initializeFrontendFaro() {
     process.env.NEXT_PUBLIC_FARO_BATCH_SEND_TIMEOUT_MS,
     DEFAULT_BATCH_SEND_TIMEOUT_MS,
   )
-  const batchItemLimit = parsePositiveInteger(
-    process.env.NEXT_PUBLIC_FARO_BATCH_ITEM_LIMIT,
-    DEFAULT_BATCH_ITEM_LIMIT,
-  )
+  const batchItemLimit = parsePositiveInteger(process.env.NEXT_PUBLIC_FARO_BATCH_ITEM_LIMIT, DEFAULT_BATCH_ITEM_LIMIT)
   const transportConcurrency = parsePositiveInteger(
     process.env.NEXT_PUBLIC_FARO_TRANSPORT_CONCURRENCY,
     DEFAULT_TRANSPORT_CONCURRENCY,
@@ -107,10 +104,7 @@ export function initializeFrontendFaro() {
     app: {
       name: process.env.NEXT_PUBLIC_FARO_APP_NAME?.trim() || 'desk-imperial-web',
       version: process.env.NEXT_PUBLIC_FARO_APP_VERSION?.trim() || '0.1.0',
-      environment:
-        process.env.NEXT_PUBLIC_FARO_ENVIRONMENT?.trim() ||
-        process.env.NODE_ENV ||
-        'development',
+      environment: process.env.NEXT_PUBLIC_FARO_ENVIRONMENT?.trim() || process.env.NODE_ENV || 'development',
     },
     eventDomain: process.env.NEXT_PUBLIC_FARO_EVENT_DOMAIN?.trim() || DEFAULT_EVENT_DOMAIN,
     transports: [

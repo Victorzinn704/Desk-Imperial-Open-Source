@@ -18,6 +18,7 @@ Este PRD substitui a logica de backlog especulativo por escopo de release orient
 Liberar o Desk Imperial para uso real ampliado com confiabilidade operacional, seguranca aplicada e governanca minima de qualidade.
 
 Resultado esperado:
+
 - reducao de incidentes em fluxo critico de salao
 - aumento de previsibilidade em deploy
 - confianca de time e stakeholders para escala gradual
@@ -47,6 +48,7 @@ Resultado esperado:
 - depende de baixa latencia e confiabilidade de sincronizacao
 
 Fluxo critico transversal:
+
 - abrir comanda -> adicionar itens -> cozinha -> fechar comanda -> refletir em resumo executivo
 
 ---
@@ -76,9 +78,11 @@ Fluxo critico transversal:
 ## 6.1 Requisito R1 - Gate de qualidade full-stack
 
 Descricao:
+
 - pipeline principal deve validar backend e frontend antes de merge
 
 Aceite:
+
 - lint + typecheck backend/web
 - testes backend
 - testes frontend (unit + e2e baseline)
@@ -87,27 +91,33 @@ Aceite:
 ## 6.2 Requisito R2 - Hardening de seguranca residual
 
 Descricao:
+
 - eliminar exposicoes de alto impacto que ainda nao estao no nivel ideal de release
 
 Aceite:
+
 - endpoint de insight IA protegido por semantica de mutacao (POST + CSRF)
 - criterio de seguranca documentado e rastreavel
 
 ## 6.3 Requisito R3 - Robustez de operacao realtime
 
 Descricao:
+
 - manter confiabilidade operacional em variacao de rede
 
 Aceite:
+
 - reconnect e fallback de invalidacao funcionando nos shells owner/staff
 - sem perda silenciosa de atualizacao em fluxo critico validado por smoke
 
 ## 6.4 Requisito R4 - PWA operacional consistente
 
 Descricao:
+
 - elevar confiabilidade do modo instalavel mobile
 
 Aceite:
+
 - service worker versionado por release
 - comportamento offline minimamente previsivel para modulo /app
 - limites documentados para areas fora da cobertura offline
@@ -115,18 +125,22 @@ Aceite:
 ## 6.5 Requisito R5 - Cobertura de testes frontend ampliada
 
 Descricao:
+
 - reduzir risco de regressao em componentes de alto impacto
 
 Aceite:
+
 - casos owner/staff autenticados para fluxo operacional minimo
 - validacao de regressao em shell mobile e navegacao executiva
 
 ## 6.6 Requisito R6 - Documentacao de operacao de release
 
 Descricao:
+
 - tornar release repetivel por qualquer engenheiro do time
 
 Aceite:
+
 - README alinhado ao estado real
 - DOCS consolidado por codigo atual
 - mapa real e plano de lapidacao publicados
@@ -155,21 +169,25 @@ Aceite:
 ## Risco A - Regressao em fluxo operacional
 
 Mitigacao:
+
 - smoke manual obrigatorio + testes automatizados focados
 
 ## Risco B - Divergencia entre realtime e leitura executiva
 
 Mitigacao:
+
 - validar evento de fechamento e atualizacao de resumo no mesmo ciclo de smoke
 
 ## Risco C - Pipeline nao barrar problema de frontend
 
 Mitigacao:
+
 - incluir frontend no gate principal de CI
 
 ## Risco D - comportamento PWA inconsistente entre navegadores
 
 Mitigacao:
+
 - explicitar limite funcional por navegador e usar fallback de reconexao
 
 ---
@@ -199,11 +217,13 @@ Mitigacao:
 ## 11. Criterio de Go/No-Go
 
 Go:
+
 - todos os gates obrigatorios verdes
 - smoke operacional completo sem falha bloqueante
 - riscos residuais classificados como aceitaveis e documentados
 
 No-Go:
+
 - falha em auth/sessao/CSRF
 - falha em fluxo comanda/cozinha/fechamento
 - divergencia de resumo executivo apos fechamento

@@ -143,7 +143,12 @@ describe('ComandaService (public branches)', () => {
     helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda(ComandaStatus.CANCELLED))
 
     await expect(
-      service.addComandaItems(staffAuth, 'comanda-1', { items: [{ quantity: 1, productId: 'prod-1' }] }, makeRequestContext()),
+      service.addComandaItems(
+        staffAuth,
+        'comanda-1',
+        { items: [{ quantity: 1, productId: 'prod-1' }] },
+        makeRequestContext(),
+      ),
     ).rejects.toThrow(ConflictException)
   })
 

@@ -145,10 +145,19 @@ export function CookieConsentBanner() {
             >
               Usar apenas essenciais
             </Button>
-            <Button loading={isSubmitting} onClick={() => void handleDecision(preferences)} size="md" variant="secondary">
+            <Button
+              loading={isSubmitting}
+              onClick={() => void handleDecision(preferences)}
+              size="md"
+              variant="secondary"
+            >
               Salvar escolhas
             </Button>
-            <Button loading={isSubmitting} onClick={() => void handleDecision({ analytics: true, marketing: true })} size="md">
+            <Button
+              loading={isSubmitting}
+              onClick={() => void handleDecision({ analytics: true, marketing: true })}
+              size="md"
+            >
               Aceitar tudo
             </Button>
           </div>

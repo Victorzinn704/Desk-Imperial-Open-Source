@@ -23,12 +23,7 @@ describe('PillarsService', () => {
 
   const service = new PillarsService(prisma as unknown as PrismaService, currencyService as unknown as CurrencyService)
 
-  function makeOrder(params: {
-    createdAt: Date
-    revenue: number
-    profit: number
-    currency?: CurrencyCode
-  }) {
+  function makeOrder(params: { createdAt: Date; revenue: number; profit: number; currency?: CurrencyCode }) {
     return {
       createdAt: params.createdAt,
       totalRevenue: params.revenue,

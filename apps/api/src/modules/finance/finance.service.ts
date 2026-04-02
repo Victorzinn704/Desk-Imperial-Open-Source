@@ -242,7 +242,8 @@ export class FinanceService {
     previousMonthProfit = roundCurrency(previousMonthProfit)
 
     const lowStockItems = products.reduce(
-      (total, product) => total + (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold ? 1 : 0),
+      (total, product) =>
+        total + (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold ? 1 : 0),
       0,
     )
 

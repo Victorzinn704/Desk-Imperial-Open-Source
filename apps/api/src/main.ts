@@ -52,10 +52,7 @@ function registerProcessFailureHandlers(logger: Logger) {
   }
 
   process.on('unhandledRejection', (reason) => {
-    logger.error(
-      '[process] unhandledRejection capturada.',
-      reason instanceof Error ? reason.stack : String(reason),
-    )
+    logger.error('[process] unhandledRejection capturada.', reason instanceof Error ? reason.stack : String(reason))
   })
 
   process.on('uncaughtExceptionMonitor', (error, origin) => {
@@ -125,7 +122,9 @@ async function bootstrap() {
   })
 
   if (otelEnabled) {
-    logger.log('OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).')
+    logger.log(
+      'OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).',
+    )
   }
 
   registerProcessFailureHandlers(logger)
@@ -212,9 +211,7 @@ async function bootstrap() {
   }
 
   if (!isProduction && portfolioFallback === 'true') {
-    logger.warn(
-      'PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.',
-    )
+    logger.warn('PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.')
   }
 
   if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {

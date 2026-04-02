@@ -68,7 +68,11 @@ export function ProductForm({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
-  const { fields: comboFields, append: appendComboItem, remove: removeComboItem } = useFieldArray({
+  const {
+    fields: comboFields,
+    append: appendComboItem,
+    remove: removeComboItem,
+  } = useFieldArray({
     control,
     name: 'comboItems',
   })

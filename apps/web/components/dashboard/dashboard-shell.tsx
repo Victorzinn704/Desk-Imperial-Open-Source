@@ -30,13 +30,10 @@ import {
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 
-const StaffMobileShell = dynamic(
-  () => import('@/components/staff-mobile').then((module) => module.StaffMobileShell),
-  {
-    ssr: false,
-    loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
-  },
-)
+const StaffMobileShell = dynamic(() => import('@/components/staff-mobile').then((module) => module.StaffMobileShell), {
+  ssr: false,
+  loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
+})
 
 const OwnerMobileShell = dynamic(
   () => import('@/components/owner-mobile/owner-mobile-shell').then((module) => module.OwnerMobileShell),

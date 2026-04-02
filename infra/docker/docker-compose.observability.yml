@@ -2,13 +2,13 @@ services:
   alloy:
     image: grafana/alloy:v1.8.3
     container_name: desk-observability-alloy
-    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "/etc/alloy/config.alloy"]
+    command: ['run', '--server.http.listen-addr=0.0.0.0:12345', '/etc/alloy/config.alloy']
     volumes:
       - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "12345:12345"
+      - '4317:4317'
+      - '4318:4318'
+      - '12345:12345'
     depends_on:
       - loki
       - prometheus
@@ -19,49 +19,49 @@ services:
     image: prom/blackbox-exporter:v0.26.0
     container_name: desk-observability-blackbox
     command:
-      - "--config.file=/etc/blackbox/blackbox.yml"
+      - '--config.file=/etc/blackbox/blackbox.yml'
     volumes:
       - ./observability/blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
     ports:
-      - "9115:9115"
+      - '9115:9115'
     restart: unless-stopped
 
   tempo:
     image: grafana/tempo:2.8.2
     container_name: desk-observability-tempo
-    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    command: ['-config.file=/etc/tempo/tempo.yaml']
     volumes:
       - ./observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo-data:/var/tempo
     ports:
-      - "3200:3200"
-      - "4319:4318"
+      - '3200:3200'
+      - '4319:4318'
     restart: unless-stopped
 
   loki:
     image: grafana/loki:3.2.1
     container_name: desk-observability-loki
-    command: ["-config.file=/etc/loki/config.yaml"]
+    command: ['-config.file=/etc/loki/config.yaml']
     volumes:
       - ./observability/loki/config.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
     ports:
-      - "3100:3100"
+      - '3100:3100'
     restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.55.1
     container_name: desk-observability-prometheus
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.enable-remote-write-receiver"
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      - '9090:9090'
     depends_on:
       - alertmanager
       - blackbox
@@ -71,13 +71,13 @@ services:
     image: prom/alertmanager:v0.28.1
     container_name: desk-observability-alertmanager
     command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
-      - "--storage.path=/alertmanager"
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     volumes:
       - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
     ports:
-      - "9093:9093"
+      - '9093:9093'
     restart: unless-stopped
 
   grafana:
@@ -86,15 +86,15 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-desk_observability_admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-desk_observability_change_me}
-      GF_AUTH_ANONYMOUS_ENABLED: "false"
-      GF_METRICS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_METRICS_ENABLED: 'true'
     volumes:
       - ./observability/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
       - ./observability/grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "3001:3000"
+      - '3001:3000'
     depends_on:
       - prometheus
       - loki

@@ -98,11 +98,7 @@ describe('AuthRateLimitService', () => {
 
     expect(result.count).toBe(2)
     expect(result.lockedUntil).toBeNull()
-    expect(cache.set).toHaveBeenCalledWith(
-      'ratelimit:auth:k-5',
-      expect.objectContaining({ count: 2 }),
-      890,
-    )
+    expect(cache.set).toHaveBeenCalledWith('ratelimit:auth:k-5', expect.objectContaining({ count: 2 }), 890)
   })
 
   it('aplica lock quando ultrapassa limite de tentativas', async () => {
@@ -150,11 +146,7 @@ describe('AuthRateLimitService', () => {
     await service.recordFailure('k-8')
 
     expect(warnSpy).toHaveBeenCalledTimes(3)
-    expect(cache.set).toHaveBeenCalledWith(
-      'ratelimit:auth:k-8',
-      expect.objectContaining({ count: 1 }),
-      900,
-    )
+    expect(cache.set).toHaveBeenCalledWith('ratelimit:auth:k-8', expect.objectContaining({ count: 1 }), 900)
   })
 
   it('executa wrappers de assert e record para outros fluxos', async () => {
@@ -165,9 +157,7 @@ describe('AuthRateLimitService', () => {
     await expect(service.assertEmailVerificationAllowed('ev-1')).resolves.toBeUndefined()
     await expect(service.assertEmailVerificationCodeAllowed('evc-1')).resolves.toBeUndefined()
 
-    await expect(service.recordPasswordResetAttempt('rpw-1')).resolves.toEqual(
-      expect.objectContaining({ count: 1 }),
-    )
+    await expect(service.recordPasswordResetAttempt('rpw-1')).resolves.toEqual(expect.objectContaining({ count: 1 }))
     await expect(service.recordPasswordResetCodeAttempt('rpwc-1')).resolves.toEqual(
       expect.objectContaining({ count: 1 }),
     )

@@ -16,7 +16,10 @@ describe('ConsentBootstrap', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    bootstrap = new ConsentBootstrap(consentService as unknown as ConsentService, configService as unknown as ConfigService)
+    bootstrap = new ConsentBootstrap(
+      consentService as unknown as ConsentService,
+      configService as unknown as ConfigService,
+    )
   })
 
   it('usa versao configurada no bootstrap', async () => {

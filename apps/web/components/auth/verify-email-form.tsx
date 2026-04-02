@@ -96,8 +96,8 @@ export function VerifyEmailForm({
           <h2 className="text-2xl font-semibold text-white">Enviamos um código para você</h2>
           <p className="text-sm leading-7 text-[var(--text-soft)]">
             Procure na caixa de entrada
-            {email ? <span className="font-semibold text-white"> de {email}</span> : ' do email usado no cadastro'}.
-            Se não encontrar, verifique spam e promoções.
+            {email ? <span className="font-semibold text-white"> de {email}</span> : ' do email usado no cadastro'}. Se
+            não encontrar, verifique spam e promoções.
           </p>
         </div>
         <div className="imperial-card-soft space-y-3 px-4 py-4 text-sm text-[var(--text-soft)]">

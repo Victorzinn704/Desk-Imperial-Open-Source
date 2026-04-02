@@ -5,27 +5,27 @@ describe('PrismaService', () => {
   const originalDirectUrl = process.env.DIRECT_URL
 
   function makeService() {
-      const service = Object.create(PrismaService.prototype) as any
+    const service = Object.create(PrismaService.prototype) as any
     const handlers: Record<string, (event: any) => void> = {}
-      const logger = {
-        log: jest.fn(),
-        warn: jest.fn(),
-        error: jest.fn(),
-      }
+    const logger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    }
 
     service.$connect = jest.fn()
     service.$disconnect = jest.fn()
     service.$queryRaw = jest.fn()
     service.$on = jest.fn((event: string, handler: (payload: any) => void) => {
       handlers[event] = handler
-        return service
+      return service
     })
-      service.logger = logger
+    service.logger = logger
 
     return {
       service,
       handlers,
-        logger,
+      logger,
     }
   }
 

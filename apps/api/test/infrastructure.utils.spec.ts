@@ -1,8 +1,4 @@
-import {
-  getRedisUrlKeys,
-  hasRedisUrl,
-  resolveRedisUrl,
-} from '../src/common/utils/redis-url.util'
+import { getRedisUrlKeys, hasRedisUrl, resolveRedisUrl } from '../src/common/utils/redis-url.util'
 import { extractRequestContext } from '../src/common/utils/request-context.util'
 import {
   PASSWORD_MAX_LENGTH,

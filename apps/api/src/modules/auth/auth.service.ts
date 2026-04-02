@@ -731,8 +731,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(dto: ForgotPasswordDto, context: RequestContext) {
-    const genericMessage =
-      'Se o email estiver cadastrado e ativo, enviaremos um codigo de redefinicao em instantes.'
+    const genericMessage = 'Se o email estiver cadastrado e ativo, enviaremos um codigo de redefinicao em instantes.'
     const normalizedEmail = normalizeEmail(dto.email)
     const rateLimitKeys = [
       this.authRateLimitService.buildPasswordResetKey(normalizedEmail, context.ipAddress),
@@ -1055,7 +1054,9 @@ export class AuthService {
     )
 
     const rateLimitState = this.pickMostRestrictiveRateLimitState(
-      await this.recordAttemptsForKeys(rateLimitKeys, (key) => this.authRateLimitService.recordEmailVerificationAttempt(key)),
+      await this.recordAttemptsForKeys(rateLimitKeys, (key) =>
+        this.authRateLimitService.recordEmailVerificationAttempt(key),
+      ),
     )
 
     const user = await this.prisma.user.findUnique({
@@ -1338,24 +1339,24 @@ export class AuthService {
 
     const auth = session.employee
       ? toAuthUser(
-        {
-          ...session.workspaceOwner,
-          fullName: session.employee.displayName,
-          role: UserRole.STAFF,
-          companyOwnerId: session.workspaceOwner.id,
-          email: session.workspaceOwner.email,
-        },
-        {
-          sessionId: session.id,
-          analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
-          marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
-          evaluationAccess: this.demoAccessService.buildEvaluationAccess(
-            session.workspaceOwner.email,
-            session.expiresAt,
-          ),
-          employeeId: session.employee.id,
-          employeeCode: session.employee.employeeCode,
-        },
+          {
+            ...session.workspaceOwner,
+            fullName: session.employee.displayName,
+            role: UserRole.STAFF,
+            companyOwnerId: session.workspaceOwner.id,
+            email: session.workspaceOwner.email,
+          },
+          {
+            sessionId: session.id,
+            analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
+            marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
+            evaluationAccess: this.demoAccessService.buildEvaluationAccess(
+              session.workspaceOwner.email,
+              session.expiresAt,
+            ),
+            employeeId: session.employee.id,
+            employeeCode: session.employee.employeeCode,
+          },
         )
       : session.user
         ? toAuthUser(session.user, {

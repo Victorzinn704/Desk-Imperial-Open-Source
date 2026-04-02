@@ -8,33 +8,33 @@ rule_files:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ["alertmanager:9093"]
+        - targets: ['alertmanager:9093']
 
 scrape_configs:
   - job_name: alloy
     static_configs:
-      - targets: ["alloy:12345"]
+      - targets: ['alloy:12345']
 
   - job_name: prometheus
     static_configs:
-      - targets: ["prometheus:9090"]
+      - targets: ['prometheus:9090']
 
   - job_name: tempo
     static_configs:
-      - targets: ["tempo:3200"]
+      - targets: ['tempo:3200']
 
   - job_name: loki
     static_configs:
-      - targets: ["loki:3100"]
+      - targets: ['loki:3100']
 
   - job_name: alertmanager
     static_configs:
-      - targets: ["alertmanager:9093"]
+      - targets: ['alertmanager:9093']
 
   - job_name: grafana
     metrics_path: /metrics
     static_configs:
-      - targets: ["grafana:3000"]
+      - targets: ['grafana:3000']
 
   # Probe HTTP real da API sem exigir endpoint em formato Prometheus.
   - job_name: desk-api-health
@@ -43,7 +43,7 @@ scrape_configs:
       module: [http_2xx]
       target: [http://host.docker.internal:4000/api/health]
     static_configs:
-      - targets: ["blackbox:9115"]
+      - targets: ['blackbox:9115']
     relabel_configs:
       - source_labels: [__param_target]
         target_label: instance
@@ -56,4 +56,4 @@ scrape_configs:
   # Auto-monitoramento do blackbox exporter.
   - job_name: blackbox
     static_configs:
-      - targets: ["blackbox:9115"]
+      - targets: ['blackbox:9115']

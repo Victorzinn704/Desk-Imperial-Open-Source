@@ -21,10 +21,10 @@ env:
   COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
   CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
   ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-  SESSION_TTL_HOURS: "24"
-  PASSWORD_RESET_TTL_MINUTES: "30"
-  CONSENT_VERSION: "2026.03"
-  ENABLE_SWAGGER: "false"
+  SESSION_TTL_HOURS: '24'
+  PASSWORD_RESET_TTL_MINUTES: '30'
+  CONSENT_VERSION: '2026.03'
+  ENABLE_SWAGGER: 'false'
 
 jobs:
   quality:

@@ -26,8 +26,7 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
       : product.isLowStock || available <= 5
         ? '#f59e0b' // âmbar — baixo
         : 'var(--text-soft)' // cinza normal
-  const stockLabel =
-    available <= 0 ? 'Esgotado' : `${available} und`
+  const stockLabel = available <= 0 ? 'Esgotado' : `${available} und`
 
   return (
     <button

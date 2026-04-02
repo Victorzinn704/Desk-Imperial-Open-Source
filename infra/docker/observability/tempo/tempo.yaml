@@ -28,4 +28,4 @@ storage:
 metrics_generator:
   processor:
     service_graphs:
-      dimensions: ["service.name", "http.method", "http.route", "http.status_code"]
+      dimensions: ['service.name', 'http.method', 'http.route', 'http.status_code']

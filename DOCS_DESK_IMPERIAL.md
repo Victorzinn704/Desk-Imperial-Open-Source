@@ -17,7 +17,7 @@ O projeto possui uma base documental ampla. Nesta rodada, os documentos de arqui
 - Alta confiabilidade (alinhada ao codigo atual):
   - README.md (recriado nesta rodada)
   - DOCS_DESK_IMPERIAL.md (este documento)
-  - docs/release/* (diagnosticos, plano de lapidacao, parecer final)
+  - docs/release/\* (diagnosticos, plano de lapidacao, parecer final)
   - docs/architecture/overview.md
   - docs/architecture/authentication-flow.md
   - docs/testing/testing-guide.md
@@ -32,7 +32,7 @@ Para decisoes de produto, arquitetura, release e contribuicao, considerar como f
 
 1. README.md
 2. DOCS_DESK_IMPERIAL.md
-3. docs/release/*
+3. docs/release/\*
 
 Demais arquivos devem ser interpretados como historico tecnico ate passarem por revisao formal.
 

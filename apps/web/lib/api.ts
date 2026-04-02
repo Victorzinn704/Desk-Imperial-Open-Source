@@ -1282,12 +1282,7 @@ function reportApiErrorTelemetry(
   })
 }
 
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  timeoutMs: number,
-  requestPath: string,
-) {
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, requestPath: string) {
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
     controller.abort()
@@ -1308,4 +1303,3 @@ async function fetchWithTimeout(
     clearTimeout(timeoutHandle)
   }
 }
- 

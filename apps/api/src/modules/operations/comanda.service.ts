@@ -1338,7 +1338,11 @@ export class ComandaService {
     return roundCurrency(items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
   }
 
-  private assertMonetaryAdjustmentsWithinSubtotal(subtotalAmount: number, discountAmount: number, serviceFeeAmount: number) {
+  private assertMonetaryAdjustmentsWithinSubtotal(
+    subtotalAmount: number,
+    discountAmount: number,
+    serviceFeeAmount: number,
+  ) {
     if (discountAmount > subtotalAmount) {
       throw new BadRequestException('O desconto não pode ser maior que o subtotal da comanda.')
     }

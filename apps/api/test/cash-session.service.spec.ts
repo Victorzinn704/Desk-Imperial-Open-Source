@@ -244,12 +244,7 @@ describe('CashSessionService', () => {
     helpers.requireAuthorizedCashSession.mockResolvedValue(makeSession({ status: CashSessionStatus.CLOSED }))
 
     await expect(
-      service.closeCashSession(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { countedCashAmount: 300 },
-        makeRequestContext(),
-      ),
+      service.closeCashSession(makeOwnerAuthContext(), 'cash-1', { countedCashAmount: 300 }, makeRequestContext()),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -258,12 +253,7 @@ describe('CashSessionService', () => {
     prisma.comanda.count.mockResolvedValue(2)
 
     await expect(
-      service.closeCashSession(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { countedCashAmount: 300 },
-        makeRequestContext(),
-      ),
+      service.closeCashSession(makeOwnerAuthContext(), 'cash-1', { countedCashAmount: 300 }, makeRequestContext()),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -378,9 +368,7 @@ describe('CashSessionService', () => {
 
     expect(result.closure?.status).toBe(CashClosureStatus.FORCE_CLOSED)
     expect(result.closure?.differenceAmount).toBe(-20)
-    expect(auditLogService.record).toHaveBeenCalledWith(
-      expect.objectContaining({ severity: AuditSeverity.WARN }),
-    )
+    expect(auditLogService.record).toHaveBeenCalledWith(expect.objectContaining({ severity: AuditSeverity.WARN }))
     expect(operationsRealtimeService.publishCashClosureUpdated).toHaveBeenCalled()
   })
 })

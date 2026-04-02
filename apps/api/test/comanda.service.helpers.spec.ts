@@ -213,7 +213,12 @@ describe('ComandaService helpers', () => {
     const selection = await (service as any).resolveMesaSelection('owner-1', 'Mesa 7', 'mesa-7', 'comanda-1')
 
     expect(selection).toEqual({ mesaId: 'mesa-7', tableLabel: 'Mesa 7' })
-    expect(helpers.assertOpenTableAvailability).toHaveBeenCalledWith(expect.anything(), 'owner-1', 'Mesa 7', 'comanda-1')
+    expect(helpers.assertOpenTableAvailability).toHaveBeenCalledWith(
+      expect.anything(),
+      'owner-1',
+      'Mesa 7',
+      'comanda-1',
+    )
     expect(mesaAvailabilitySpy).toHaveBeenCalledWith('mesa-7', 'comanda-1')
   })
 
@@ -225,7 +230,9 @@ describe('ComandaService helpers', () => {
       companyOwnerId: 'owner-1',
     })
 
-    await expect((service as any).resolveMesaSelection('owner-1', 'Mesa 9', 'mesa-9')).rejects.toThrow(NotFoundException)
+    await expect((service as any).resolveMesaSelection('owner-1', 'Mesa 9', 'mesa-9')).rejects.toThrow(
+      NotFoundException,
+    )
   })
 
   it('publica evento de comanda atualizada com mapeamento de status e kitchenItems', () => {

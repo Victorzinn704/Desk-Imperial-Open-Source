@@ -96,7 +96,9 @@ describe('MarketIntelligenceService', () => {
 
     expect(result.cached).toBe(true)
     expect((global as any).fetch).not.toHaveBeenCalled()
-    expect(auditLogService.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'market-intelligence.cached' }))
+    expect(auditLogService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'market-intelligence.cached' }),
+    )
   })
 
   it('falha quando GEMINI_API_KEY nao esta configurada', async () => {
@@ -113,7 +115,9 @@ describe('MarketIntelligenceService', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ count: 7, firstAttemptAt: Date.now() - 1000, lockedUntil: Date.now() + 60_000 })
 
-    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(HttpException)
+    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(
+      HttpException,
+    )
     expect(financeService.getSummaryForUser).not.toHaveBeenCalled()
   })
 

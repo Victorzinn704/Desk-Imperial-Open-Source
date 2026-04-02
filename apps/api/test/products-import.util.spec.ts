@@ -26,8 +26,7 @@ describe('parseProductImportCsv', () => {
   })
 
   it('deve rejeitar CSV com mais de 14 colunas', () => {
-    const header =
-      'name,category,description,unitCost,unitPrice,stock,c1,c2,c3,c4,c5,c6,c7,c8,c9'
+    const header = 'name,category,description,unitCost,unitPrice,stock,c1,c2,c3,c4,c5,c6,c7,c8,c9'
     const row = 'Produto,Categoria,Desc,1,2,3,1,2,3,4,5,6,7,8,9'
 
     expect(() => parseProductImportCsv(makeCsv(header, [row]))).toThrow('maximo 14 colunas')
@@ -86,10 +85,9 @@ describe('parseProductImportCsv', () => {
   })
 
   it('deve tratar stockPackages/stockLooseUnits invalidos como zero', () => {
-    const csv = makeCsv(
-      'name,category,description,unitCost,unitPrice,unitsPerPackage,stockPackages,stockLooseUnits',
-      ['Produto,Categoria,Desc,1,2,0,abc,xyz'],
-    )
+    const csv = makeCsv('name,category,description,unitCost,unitPrice,unitsPerPackage,stockPackages,stockLooseUnits', [
+      'Produto,Categoria,Desc,1,2,0,abc,xyz',
+    ])
 
     const [row] = parseProductImportCsv(csv)
 
@@ -113,10 +111,9 @@ describe('parseProductImportCsv', () => {
 
   it('deve rejeitar celula acima do limite maximo de tamanho', () => {
     const giantDescription = 'B'.repeat(281)
-    const csv = makeCsv(
-      'name,category,description,unitCost,unitPrice,stock',
-      [`Produto,Categoria,${giantDescription},1,2,3`],
-    )
+    const csv = makeCsv('name,category,description,unitCost,unitPrice,stock', [
+      `Produto,Categoria,${giantDescription},1,2,3`,
+    ])
 
     expect(() => parseProductImportCsv(csv)).toThrow('colunas excede o tamanho maximo permitido')
   })

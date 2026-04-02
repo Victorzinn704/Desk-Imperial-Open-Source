@@ -51,7 +51,9 @@ describe('validateEnvironment', () => {
         COOKIE_SAME_SITE: 'none',
         COOKIE_SECURE: 'false',
       }),
-    ).toThrow(expect.objectContaining({ message: expect.stringContaining('COOKIE_SAME_SITE=none exige cookie secure') }))
+    ).toThrow(
+      expect.objectContaining({ message: expect.stringContaining('COOKIE_SAME_SITE=none exige cookie secure') }),
+    )
   })
 
   it('em producao exige segredos e redis valido', () => {

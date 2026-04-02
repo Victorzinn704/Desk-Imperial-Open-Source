@@ -182,15 +182,7 @@ export function MobileComandaList({
 
 const ComandaCard = memo(
   forwardRef<HTMLLIElement, ComandaCardProps>(function ComandaCard(
-    {
-      comanda,
-      isFocused,
-      onUpdateStatus,
-      onAddItems,
-      onCancelComanda,
-      onCloseComanda,
-      onFocus,
-    },
+    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus },
     ref,
   ) {
     const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)

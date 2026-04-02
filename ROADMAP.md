@@ -92,11 +92,11 @@ Sem prazo definido. Ordem não é prioridade — depende de demanda real dos usu
 
 ### Alta prioridade
 
-| Item                       | Descrição                                                     |
-| -------------------------- | ------------------------------------------------------------- |
+| Item                       | Descrição                                                            |
+| -------------------------- | -------------------------------------------------------------------- |
 | **Monitoramento de erros** | Consolidação da stack OSS (OTel + Alloy + Tempo + Loki + Prometheus) |
-| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta    |
-| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.   |
+| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta           |
+| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.          |
 
 ### Média prioridade
 

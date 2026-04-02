@@ -117,7 +117,9 @@ describe('OperationsService (facade)', () => {
     comanda.closeComanda.mockResolvedValue({ ok: 'close' })
     comanda.updateKitchenItemStatus.mockResolvedValue({ ok: 'kitchen' })
 
-    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({ ok: 'open-cash' })
+    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({
+      ok: 'open-cash',
+    })
     await expect(service.createCashMovement(auth, 'cash-1', {} as any, context, options as any)).resolves.toEqual({
       ok: 'movement',
     })
@@ -233,9 +235,9 @@ describe('OperationsService (facade)', () => {
   it('falha ao criar mesa com label duplicado', async () => {
     prisma.mesa.findUnique.mockResolvedValueOnce({ id: 'mesa-duplicada' })
 
-    await expect(
-      service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext()),
-    ).rejects.toThrow(ConflictException)
+    await expect(service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext())).rejects.toThrow(
+      ConflictException,
+    )
   })
 
   it('falha ao atualizar mesa inexistente ou de outro workspace', async () => {
@@ -343,7 +345,7 @@ describe('OperationsService (facade)', () => {
         makeOwnerAuthContext(),
         'mesa-1',
         {
-          section: '=1+cmd(\'calc\')',
+          section: "=1+cmd('calc')",
         },
         makeRequestContext(),
       ),

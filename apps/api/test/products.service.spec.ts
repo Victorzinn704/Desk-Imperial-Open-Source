@@ -1003,7 +1003,8 @@ describe('ProductsService', () => {
     })
 
     it('deve ajustar requiresKitchen no update do upsert conforme categoria', async () => {
-      const csv = makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
+      const csv =
+        makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
     Cerveja Pilsen,Cerveja,Classe A,UN,1,1,Desc,10,20,BRL,10
     Prato Feito,Prato,Classe B,UN,1,1,Desc,12,30,BRL,5`)
       mockPrisma.product.findUnique.mockResolvedValue(makeProduct())

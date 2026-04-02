@@ -40,17 +40,21 @@ O problema nao e falta de stack. O problema e maturidade desigual entre as camad
 ## A1 - Fechar o caminho real de ingestao do frontend
 
 Diagnostico:
+
 - o frontend ja envia sinais via Faro, mas o repositorio ainda nao provisiona um collector browser-to-backend completo no stack OSS local.
 
 Evidencia tecnica:
+
 - `apps/web/lib/observability/faro.ts` depende de `NEXT_PUBLIC_FARO_COLLECTOR_URL`
 - `.env.example` deixa `NEXT_PUBLIC_FARO_COLLECTOR_URL` vazio
 - `infra/docker/docker-compose.observability.yml` nao sobe nenhum servico dedicado a ingestao Faro
 
 Impacto no produto:
+
 - erros de browser podem parecer instrumentados, mas nao chegam de forma consistente a uma trilha operacional confiavel.
 
 Recomendacao pratica:
+
 - definir um caminho oficial unico:
   - opcao preferencial: receiver self-hosted compativel com Faro dentro da stack OSS
   - fallback aceitavel: collector externo dedicado, com CSP e variaveis padronizadas
@@ -58,9 +62,11 @@ Recomendacao pratica:
 - se nao suportar com o desenho atual, subir um receiver/proxy dedicado e documentado
 
 Prioridade:
+
 - P0
 
 Risco de nao agir:
+
 - falsa sensacao de cobertura no frontend e perda de erro real em producao
 
 ---
@@ -68,15 +74,19 @@ Risco de nao agir:
 ## A2 - Ligar alertas a um destino real
 
 Diagnostico:
+
 - Alertmanager esta provisionado, mas sem canal de notificacao operacional.
 
 Evidencia tecnica:
+
 - `infra/docker/observability/alertmanager/alertmanager.yml` usa apenas receiver `default` sem integracao externa
 
 Impacto no produto:
+
 - alerta dispara no Prometheus/Grafana, mas nao acorda ninguem.
 
 Recomendacao pratica:
+
 - configurar ao menos um destino de release:
   - webhook corporativo
   - Slack
@@ -86,9 +96,11 @@ Recomendacao pratica:
   - `warning`: degradacao de scrape, latencia ou collector
 
 Prioridade:
+
 - P0
 
 Risco de nao agir:
+
 - stack “verde no dashboard” mas sem resposta operacional quando quebrar
 
 ---
@@ -96,15 +108,19 @@ Risco de nao agir:
 ## A3 - Padronizar os checks de ambiente
 
 Diagnostico:
+
 - a stack sobe, mas o probe HTTP da API depende do backend local em `:4000`; se a API nao estiver de pe, os alertas ficam em firing e o sinal vira ruido.
 
 Evidencia tecnica:
+
 - `infra/docker/observability/prometheus/prometheus.yml` aponta `desk-api-health` para `http://host.docker.internal:4000/api/health`
 
 Impacto no produto:
+
 - fica dificil diferenciar “stack quebrada” de “app local nao iniciado”.
 
 Recomendacao pratica:
+
 - documentar dois modos:
   - modo stack-only
   - modo stack + app local
@@ -114,9 +130,11 @@ Recomendacao pratica:
   - blackbox `probe_success = 1`
 
 Prioridade:
+
 - P0
 
 Risco de nao agir:
+
 - alerta em falso e perda de confianca nos paineis
 
 ---
@@ -126,15 +144,19 @@ Risco de nao agir:
 ## B1 - Subir dashboards de produto e nao so de infraestrutura
 
 Diagnostico:
+
 - os dashboards provisionados hoje estao centrados em saude do stack e do probe HTTP.
 
 Evidencia tecnica:
+
 - dashboard base atual cobre health, firing alerts e disponibilidade dos componentes
 
 Impacto no produto:
+
 - a lideranca tecnica nao enxerga rapidamente degradacao de login, operacao, realtime ou fluxo PDV.
 
 Recomendacao pratica:
+
 - criar dashboards versionados para:
   - auth: falha/sucesso, latencia, throttling
   - operations: `live`, `kitchen`, handshake realtime
@@ -142,9 +164,11 @@ Recomendacao pratica:
   - browser: excecoes, erros de API cliente, requests lentas
 
 Prioridade:
+
 - P1
 
 Risco de nao agir:
+
 - operacao quebra em fluxo de negocio sem aparecer claramente no painel principal
 
 ---
@@ -152,15 +176,19 @@ Risco de nao agir:
 ## B2 - Criar metricas de negocio no backend
 
 Diagnostico:
+
 - hoje a API exporta telemetria automatica, mas ainda nao tem conjunto claro de metricas de produto/RED por fluxo critico.
 
 Evidencia tecnica:
+
 - a documentacao atual ja aponta “adicionar metricas de negocio (RED) no backend” como proxima fase
 
 Impacto no produto:
+
 - fica dificil medir saude real de auth, operacao e PDV alem do healthcheck.
 
 Recomendacao pratica:
+
 - instrumentar metricas explicitas para:
   - login success/failure
   - request duration por endpoint critico
@@ -169,9 +197,11 @@ Recomendacao pratica:
   - cache hit/miss em fluxos sensiveis
 
 Prioridade:
+
 - P1
 
 Risco de nao agir:
+
 - gargalos de produto viram investigacao manual em incidente
 
 ---
@@ -179,17 +209,21 @@ Risco de nao agir:
 ## B3 - Fechar correlacao ponta a ponta
 
 Diagnostico:
+
 - `requestId`, Pino, OTel e Faro existem, mas a correlacao entre browser, API, logs e auditoria ainda nao esta tratada como fluxo oficial de suporte.
 
 Evidencia tecnica:
+
 - backend ja devolve `x-request-id`
 - frontend ja captura `requestId` nos eventos API
 - audit logs vivem em trilha separada no banco
 
 Impacto no produto:
+
 - o time consegue rastrear incidentes, mas com mais atrito do que o necessario.
 
 Recomendacao pratica:
+
 - padronizar consulta operacional:
   - browser error -> `requestId`
   - trace -> span HTTP
@@ -198,9 +232,11 @@ Recomendacao pratica:
 - documentar um playbook de investigacao
 
 Prioridade:
+
 - P1
 
 Risco de nao agir:
+
 - troubleshooting mais lento em horario de pico
 
 ---
@@ -210,12 +246,15 @@ Risco de nao agir:
 ## C1 - Telemetria de UX e performance percebida
 
 Diagnostico:
+
 - o projeto ja mede parte da latencia, mas ainda pode amadurecer observabilidade de experiencia percebida.
 
 Impacto no produto:
+
 - melhora a capacidade de ver degradacao antes de virar reclamacao do usuario.
 
 Recomendacao pratica:
+
 - acompanhar:
   - erro de hidratacao
   - requests lentas no browser
@@ -223,9 +262,11 @@ Recomendacao pratica:
   - shell readiness por perfil (`OWNER`, `STAFF`)
 
 Prioridade:
+
 - P2
 
 Risco de nao agir:
+
 - manutencao mais reativa do que preventiva
 
 ---
@@ -233,12 +274,15 @@ Risco de nao agir:
 ## C2 - Retencao, custo e politicas de dados
 
 Diagnostico:
+
 - a stack ja coleta, mas ainda precisa de politica clara de retencao e custo por sinal.
 
 Impacto no produto:
+
 - risco de crescimento de ruido, custo operacional e storage sem criterio.
 
 Recomendacao pratica:
+
 - definir:
   - retencao de logs
   - retencao de traces
@@ -247,9 +291,11 @@ Recomendacao pratica:
   - politicas de sampling por ambiente
 
 Prioridade:
+
 - P2
 
 Risco de nao agir:
+
 - stack cresce sem governanca e passa a doer mais do que ajudar
 
 ---
@@ -282,19 +328,23 @@ Faro aqui deve ser tratado como sensor de browser, nao como sistema completo de 
 ## 8. Ordem de execucao sugerida
 
 Semana 1:
+
 - A1
 - A2
 - A3
 
 Semana 2:
+
 - B1
 - B2
 
 Semana 3:
+
 - B3
 - C1 baseline
 
 Semana 4:
+
 - C2
 - hardening de retencao e custo
 

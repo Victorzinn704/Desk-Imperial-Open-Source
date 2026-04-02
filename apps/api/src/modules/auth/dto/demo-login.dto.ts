@@ -14,4 +14,3 @@ export class DemoLoginDto {
   @MaxLength(32)
   employeeCode?: string
 }
-

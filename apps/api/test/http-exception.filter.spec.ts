@@ -56,7 +56,10 @@ describe('HttpExceptionFilter', () => {
     request.headers['x-request-id'] = 'header-req'
     const host = makeHost(response, request)
 
-    const exception = new HttpException({ message: ['campo obrigatorio', 'formato invalido'] }, HttpStatus.UNPROCESSABLE_ENTITY)
+    const exception = new HttpException(
+      { message: ['campo obrigatorio', 'formato invalido'] },
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    )
 
     filter.catch(exception, host)
 

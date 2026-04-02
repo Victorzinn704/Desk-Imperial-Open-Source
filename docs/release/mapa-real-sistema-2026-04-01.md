@@ -10,12 +10,13 @@ Base: leitura direta do codigo-fonte (API, Web, contratos, workflows e schema Pr
 Este mapa foi montado com leitura tecnica completa do monorepo, priorizando comportamento implementado no codigo em vez de documentos antigos.
 
 Fontes principais usadas:
-- apps/api/src/**
+
+- apps/api/src/\*\*
 - apps/api/prisma/schema.prisma
-- apps/web/app/**
-- apps/web/components/**
-- apps/web/lib/**
-- .github/workflows/**
+- apps/web/app/\*\*
+- apps/web/components/\*\*
+- apps/web/lib/\*\*
+- .github/workflows/\*\*
 
 ---
 
@@ -56,6 +57,7 @@ Fontes principais usadas:
 A API resolve escopo de dados por workspace do dono, inclusive para usuarios STAFF.
 
 Impacto pratico:
+
 - dado comercial e operacional sempre isolado por workspace
 - owner enxerga visao consolidada da empresa
 - staff opera no mesmo workspace com restricao de permissao por regra de negocio
@@ -69,6 +71,7 @@ Impacto pratico:
 Maturidade: alta
 
 Capacidades reais:
+
 - sessao por cookie HttpOnly
 - CSRF de duplo token (cookie + header)
 - rate-limit por dominio em Redis
@@ -82,6 +85,7 @@ Capacidades reais:
 Maturidade: alta
 
 Capacidades reais:
+
 - setup/remocao de PIN com hash argon2id
 - challenge efemero em Redis
 - prova de verificacao via cookie HttpOnly
@@ -93,6 +97,7 @@ Capacidades reais:
 Maturidade: alta
 
 Capacidades reais:
+
 - caixa: abertura, movimentos, fechamento de sessao e fechamento consolidado
 - comandas: abertura, adicao de item, lote de itens, status, atribuicao, fechamento, cancelamento
 - cozinha: fila por item com status QUEUED/IN_PREPARATION/READY/DELIVERED
@@ -100,6 +105,7 @@ Capacidades reais:
 - snapshots live/kitchen/summary para consumo de painel
 
 Invariantes importantes:
+
 - regras por role (owner/staff)
 - validacao de dia comercial
 - emissao de eventos realtime por mutacao
@@ -110,6 +116,7 @@ Invariantes importantes:
 Maturidade: alta
 
 Capacidades reais:
+
 - criacao de pedido com itens e vendedor
 - calculo de receita/custo/lucro
 - transacao serializable para consistencia de estoque
@@ -122,6 +129,7 @@ Capacidades reais:
 Maturidade: alta
 
 Capacidades reais:
+
 - resumo executivo com agregacoes por moeda
 - timeline e recortes por canal, cliente, funcionario, regiao
 - conversao BRL/USD/EUR com snapshot de cotacao
@@ -129,6 +137,7 @@ Capacidades reais:
 - pilares semanais/mensais e recorte de eventos
 
 Ponto de atencao:
+
 - servico de pilares ainda carrega datasets em memoria para alguns calculos diarios; ha espaco para ampliar agregacao no banco em cenarios de alto volume.
 
 ## 4.6 Products
@@ -136,12 +145,14 @@ Ponto de atencao:
 Maturidade: media-alta
 
 Capacidades reais:
+
 - CRUD owner-only
 - logica de combo e componentes
 - inferencia de necessidade de cozinha por categoria
 - arquivamento/reativacao
 
 Gap concreto:
+
 - endpoint de importacao CSV esta desativado no controller (HTTP 410), mas parte da logica permanece no service.
 
 ## 4.7 Employees
@@ -149,6 +160,7 @@ Gap concreto:
 Maturidade: alta
 
 Capacidades reais:
+
 - cadastro/edicao/arquivamento/restauro
 - login tecnico de staff associado
 - hash de senha temporaria
@@ -159,6 +171,7 @@ Capacidades reais:
 Maturidade: media-alta
 
 Capacidades reais:
+
 - documentos de consentimento versionados
 - aceite legal obrigatorio
 - preferencias de cookie analytics/marketing
@@ -169,6 +182,7 @@ Capacidades reais:
 Maturidade: alta
 
 Capacidades reais:
+
 - cotacao live (AwesomeAPI)
 - modo stale-cache em falha de API
 - fallback de emergencia por taxa configuravel
@@ -179,6 +193,7 @@ Capacidades reais:
 Maturidade: media-alta
 
 Capacidades reais:
+
 - lookup CEP via ViaCEP
 - geocoding de cidade/endereco via Nominatim
 - cache in-memory com throttling
@@ -189,12 +204,14 @@ Capacidades reais:
 Maturidade: media
 
 Capacidades reais:
+
 - insight executivo via Gemini
 - prompt com contexto financeiro real do workspace
 - schema JSON para resposta estruturada
 - cache de resposta e rate-limit por usuario/IP
 
 Ponto de atencao:
+
 - endpoint de insight usa GET e gera custo externo. Funciona, mas postura de hardening recomenda migrar para POST com CSRF para blindar acionamento involuntario por navegacao cruzada.
 
 ---
@@ -236,6 +253,7 @@ Ponto de atencao:
 - fallback para refetch quando envelope nao for patchavel
 
 Risco tecnico:
+
 - arquivo de hook realtime concentrou muita responsabilidade (patch de live + kitchen + summary), elevando custo de manutencao e risco de regressao em mudancas futuras.
 
 ---
@@ -287,6 +305,7 @@ PWA atual e funcional para base operacional mobile, mas ainda nao atinge nivel d
 ## 8. Estado real de seguranca
 
 Fortalezas:
+
 - sessao HttpOnly + CSRF robusto em rotas mutaveis autenticadas
 - CORS e checagem de origem/referer
 - rate limiting por dominio em Redis
@@ -295,6 +314,7 @@ Fortalezas:
 - auditoria de eventos sensiveis
 
 Gaps residuais de hardening:
+
 - endpoint de insight IA por GET (custo sensivel) ainda sem CSRF
 - CSP do frontend ainda inclui unsafe-inline por restricao pratica de framework
 - ausencia de check automatico de seguranca de dependencias dentro do pipeline principal (hoje separado)
@@ -314,6 +334,7 @@ Gaps residuais de hardening:
 - E2E Playwright focado em auth, navegacao e UX basica
 
 Gap objetivo:
+
 - testes frontend ainda abaixo da superficie total do produto (ambientes executivos, fluxos de configuracao e cenarios owner/staff autenticados de ponta a ponta)
 
 ---
@@ -337,6 +358,7 @@ Gap objetivo:
 O Desk Imperial nao e um prototipo. O sistema ja opera com arquitetura madura em auth, operacao, financeiro e realtime.
 
 O principal trabalho antes de uma liberacao ampla nao e reescrever produto; e reduzir riscos residuais de release em quatro frentes:
+
 - robustez de PWA/offline
 - ampliacao de cobertura de testes frontend
 - hardening de endpoints com custo externo

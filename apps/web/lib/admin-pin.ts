@@ -182,7 +182,7 @@ export function rememberAdminPinVerification(verifiedUntil?: string | Date | nul
 export function clearAdminPinVerification(): void {
   if (typeof window === 'undefined') return
   if (__storageLock) return
-  
+
   try {
     __storageLock = true
     window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)

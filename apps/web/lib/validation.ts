@@ -182,7 +182,12 @@ export const productSchema = z
       .int('Use um número inteiro para a quantidade por caixa/fardo.')
       .min(1, 'A quantidade por caixa/fardo precisa ser maior que zero.'),
     isCombo: z.boolean().optional().default(false),
-    comboDescription: z.string().trim().max(420, 'A descrição do combo ficou longa demais.').optional().or(z.literal('')),
+    comboDescription: z
+      .string()
+      .trim()
+      .max(420, 'A descrição do combo ficou longa demais.')
+      .optional()
+      .or(z.literal('')),
     comboItems: z
       .array(
         z.object({

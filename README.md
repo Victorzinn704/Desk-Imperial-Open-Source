@@ -232,21 +232,21 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ## Documentação
 
-| Área                                   | Link                                                                               |
-| -------------------------------------- | ---------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                   |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                             |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                     |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                         |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)   |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                     |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                   |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                   |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md) |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)         |
+| Área                                   | Link                                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
 | Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                               |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                               |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
 
 ---
 
