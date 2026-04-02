@@ -13,6 +13,7 @@ import type { AuditLogService } from '../src/modules/monitoring/audit-log.servic
 import type { OperationsRealtimeService } from '../src/modules/operations-realtime/operations-realtime.service'
 import { ComandaService } from '../src/modules/operations/comanda.service'
 import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import type { FinanceService } from '../src/modules/finance/finance.service'
 import { makeOwnerAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
 
@@ -130,12 +131,17 @@ describe('ComandaService branch happy paths', () => {
       buildLiveSnapshot: jest.fn(async () => ({ marker: 'live' })),
     }
 
+    const finance = {
+      invalidateAndWarmSummary: jest.fn(async () => {}),
+    }
+
     const service = new ComandaService(
       prisma as unknown as PrismaService,
       cache as unknown as CacheService,
       audit as unknown as AuditLogService,
       realtime as unknown as OperationsRealtimeService,
       helpers as unknown as OperationsHelpersService,
+      finance as unknown as FinanceService,
     )
 
     return {
@@ -145,6 +151,7 @@ describe('ComandaService branch happy paths', () => {
       audit,
       realtime,
       helpers,
+      finance,
     }
   }
 
@@ -549,7 +556,7 @@ describe('ComandaService branch happy paths', () => {
   })
 
   it('fecha comanda, sincroniza caixa e publica eventos financeiros', async () => {
-    const { service, prisma, helpers, realtime, cache } = createSetup()
+    const { service, prisma, helpers, realtime, cache, finance } = createSetup()
     helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda())
     helpers.recalculateComanda.mockResolvedValue(makeComanda({ totalAmount: 120 }))
     prisma.comanda.update.mockResolvedValue(
@@ -598,6 +605,7 @@ describe('ComandaService branch happy paths', () => {
     expect(realtime.publishComandaClosed).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashUpdated).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashClosureUpdated).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    expect(cache.del).toHaveBeenCalledTimes(1)
+    expect(finance.invalidateAndWarmSummary).toHaveBeenCalledWith('owner-1')
   })
 })

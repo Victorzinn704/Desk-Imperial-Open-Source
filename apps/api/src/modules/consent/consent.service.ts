@@ -9,6 +9,36 @@ import { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
 const CONSENT_DOCUMENTS_TTL_SECONDS = 60 * 60
 const CONSENT_OVERVIEW_TTL_SECONDS = 10 * 60
 
+type ActiveConsentDocument = {
+  id: string
+  key: string
+  title: string
+  description: string | null
+  kind: string
+  required: boolean
+  active: boolean
+}
+
+type ConsentOverviewResponse = {
+  documents: Array<{
+    id: string
+    key: string
+    title: string
+    kind: string
+    required: boolean
+    active: boolean
+  }>
+  legalAcceptances: Array<{
+    key: string
+    acceptedAt: Date
+  }>
+  cookiePreferences: {
+    necessary: boolean
+    analytics: boolean
+    marketing: boolean
+  }
+}
+
 @Injectable()
 export class ConsentService {
   constructor(
@@ -48,9 +78,9 @@ export class ConsentService {
     return this.prisma.$transaction(operations)
   }
 
-  async listActiveDocuments(version: string) {
+  async listActiveDocuments(version: string): Promise<ActiveConsentDocument[]> {
     const cacheKey = CacheService.consentDocumentsKey(version)
-    const cached = await this.cache.get<Awaited<ReturnType<ConsentService['listActiveDocuments']>>>(cacheKey)
+    const cached = await this.cache.get<ActiveConsentDocument[]>(cacheKey)
     if (cached) {
       return cached
     }
@@ -163,9 +193,9 @@ export class ConsentService {
     return preference
   }
 
-  async getUserConsentOverview(params: { userId: string; version: string }) {
+  async getUserConsentOverview(params: { userId: string; version: string }): Promise<ConsentOverviewResponse> {
     const cacheKey = CacheService.consentOverviewKey(params.userId, params.version)
-    const cached = await this.cache.get<Awaited<ReturnType<ConsentService['getUserConsentOverview']>>>(cacheKey)
+    const cached = await this.cache.get<ConsentOverviewResponse>(cacheKey)
     if (cached) {
       return cached
     }
@@ -196,7 +226,7 @@ export class ConsentService {
     ])
 
     const overview = {
-      documents: documents.map((document) => ({
+      documents: documents.map((document: ActiveConsentDocument) => ({
         id: document.id,
         key: document.key,
         title: document.title,

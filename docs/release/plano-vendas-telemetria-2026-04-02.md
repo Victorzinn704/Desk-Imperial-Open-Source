@@ -134,6 +134,141 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 ---
 
+### Fase 0.7 — Corte cirúrgico em `products`, `consent` e `finance/summary`
+
+**O que o runtime mostrou**
+
+- o hot path do owner ainda carregava `consent/me` fora do ambiente de conta
+- o shell mobile ainda puxava `products` antes mesmo de abrir a aba de pedido
+- o `overview` continuava buscando `products` só para contar itens ativos
+- `finance/summary` ainda carregava e metabolizava produto demais para gerar métricas de inventário
+
+**Implementado**
+
+- `consent/me` agora ficou restrito ao ambiente de configurações:
+  - o shell parou de prefetchar consentimento em `pdv`, `salao`, `overview` e afins
+  - os sinais de governança fora de `settings` passaram a ser sob demanda
+- a trilha de consentimento ganhou cache Redis por:
+  - documentos ativos por versão
+  - overview por usuário + versão
+- a atualização de preferências/aceites invalida o cache do overview imediatamente
+- `products` deixou de nascer como `includeInactive=true` por padrão no web:
+  - `portfolio` continua pedindo o catálogo completo
+  - fluxos quentes e operacionais passam a pedir só ativos
+- `staff mobile` e `owner mobile` só buscam produtos quando a aba `pedido` realmente abre
+- `owner mobile` só busca `orders` e `operations/summary` quando a aba `resumo` realmente abre
+- `overview` parou de buscar `products` só para exibir a métrica de portfólio; agora usa `finance.totals.activeProducts`
+- `finance/summary` trocou o caminho de produto full por uma trilha mínima focada em analytics:
+  - select menor no Prisma
+  - transformação local mais leve
+  - menos payload e menos trabalho de CPU para categorias/top products/totais
+
+**Impacto esperado**
+
+- remoção do custo de `consent/me` do hot path do owner
+- cold start mais limpo no mobile, especialmente em `mesas`
+- menos payload e menos cache churn na rota de produtos
+- redução do custo frio de `finance/summary` sem quebrar o contrato da resposta
+
+**Validação**
+
+- API: `690/690` testes verdes
+- Web: `35/35` testes verdes
+- lint, typecheck e build de API e web verdes
+- deploy em produção:
+  - API `f01a4825-14c7-4640-a81b-dfd85cfd1b5d`
+  - Web `5d63b7bd-2369-4b3c-862a-fcebbe69ebd9`
+- evidência pós-deploy via logs HTTP do Railway:
+  - `GET /api/consent/me` caiu para ~`296–302ms` em chamadas quentes autenticadas
+  - `GET /api/products` estabilizou em ~`445–451ms` nas chamadas quentes
+  - `GET /api/finance/summary` ficou em ~`444ms` quente e ~`2315ms` frio
+- evidência via navegador:
+  - `dashboard?view=pdv` não puxou `consent/me` nem `finance/summary`
+  - `app/owner` no estado inicial não puxou `products`, `orders` nem `operations/summary`
+  - `dashboard?view=settings` continuou puxando `consent/me`, como esperado
+
+**Leitura sênior**
+
+- esse ataque foi de substância, não cosmético
+- ele removeu chamadas que não agregavam valor nas rotas quentes e diminuiu o custo estrutural de duas rotas que ainda apareciam como vilãs na produção
+- o próximo deploy vai nos mostrar o ganho real em `consent`, `products` e no cold path do `finance`
+
+---
+
+### Fase 0.8 — `finance/summary` com refresh-ahead seguro
+
+**Problema real**
+
+- o `finance/summary` já estava rápido quando quente, mas a cada expiração do Redis o próximo request voltava a pagar o custo frio inteiro
+- isso gerava uma sensação de “engasgo periódico” no dashboard executivo, mesmo depois da redução de payload
+
+**Implementado**
+
+- o cache do `finance/summary` agora usa janela dupla:
+  - **janela fresca** de `120s`
+  - **janela stale servível** de `300s`
+- em cache hit antigo o serviço:
+  - devolve a resposta imediatamente
+  - dispara um refresh assíncrono com proteção `warmInFlight`
+- a telemetria agora diferencia cache `fresh` vs `stale` por atributo, sem quebrar o contrato da rota
+
+**Por que isso é seguro**
+
+- o shape da resposta não muda
+- a invalidação explícita continua funcionando nos pontos que já limpam `finance:summary`
+- evitamos “thundering herd” porque só um warm por chave roda ao mesmo tempo
+- o dashboard continua consistente, só que com muito menos chance de cair em request frio depois de períodos curtos de ociosidade
+
+**Validação local**
+
+- `npm --workspace @partner/api run typecheck` ✅
+- `npm --workspace @partner/api run test -- finance.service.spec.ts` ✅ `28/28`
+- `npm --workspace @partner/api run test` ✅ `690/690`
+
+**Leitura sênior**
+
+- isso não é “mágica de framework”; é uma política de cache madura para endpoint caro
+- o próximo passo é medir em produção quantos hits passam a sair como `stale -> warm` e quanto isso derruba o frio percebido do owner
+
+---
+
+### Fase 0.9 — prewarm em background após mutações críticas
+
+**Problema real**
+
+- mesmo com `stale-while-revalidate`, qualquer mutação forte de catálogo ou venda invalidava o cache e deixava o próximo acesso do owner pagar reconstrução completa
+- isso afetava justamente os momentos mais sensíveis: criação/edição de produto, criação/cancelamento de pedido e fechamento de comanda
+
+**Implementado**
+
+- o `FinanceService` agora expõe:
+  - `warmSummaryForWorkspace(workspaceUserId)`
+  - `invalidateAndWarmSummary(workspaceUserId)`
+- `products`, `orders` e `comandas` passaram a usar esse fluxo em background após invalidar o resumo financeiro
+- o prewarm resolve a moeda preferida do owner antes de aquecer, evitando poluir o cache com preferência de `STAFF`
+
+**Por que isso é seguro**
+
+- o request que muta catálogo/venda não passa a depender do custo do `finance/summary`
+- o aquecimento continua `fire-and-forget`, protegido por `warmInFlight`
+- se o workspace não existir ou o prewarm falhar, a mutação principal continua íntegra e o sistema só volta ao comportamento anterior
+
+**Validação local**
+
+- `npm --workspace @partner/api run typecheck` ✅
+- `npm --workspace @partner/api run lint` ✅
+- `npm --workspace @partner/api run test -- products.service.spec.ts orders.service.spec.ts comanda.service.branches.spec.ts finance.service.spec.ts` ✅ `123/123`
+- `npm --workspace @partner/api run test` ✅ `690/690`
+
+**Leitura sênior**
+
+- agora o `finance` tem duas proteções complementares:
+  - **refresh-ahead em leitura**
+  - **prewarm em escrita**
+- esse é o melhor custo-benefício neste estágio, antes de partir para agregados materializados ou jobs dedicados
+
+---
+
 ## 3. Próximos ataques em ordem madura
 
 ### Fase 1 — Medição real no stack OSS
