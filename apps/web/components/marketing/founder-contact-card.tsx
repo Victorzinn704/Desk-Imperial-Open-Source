@@ -96,14 +96,17 @@ export function FounderContactCard() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 54px;
-          height: 54px;
+          width: 62px;
+          height: 62px;
           border-radius: 9999px;
           border: 1px solid rgba(155, 132, 96, 0.36);
           background: rgba(10, 10, 11, 0.92);
           color: rgba(223, 204, 173, 0.95);
           box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
-          transition: transform 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+          transition:
+            transform 0.25s ease,
+            color 0.25s ease,
+            box-shadow 0.25s ease;
         }
 
         .bubble-item a:hover {
@@ -135,8 +138,8 @@ export function FounderContactCard() {
         .bubble-icon {
           position: relative;
           z-index: 1;
-          width: 23px;
-          height: 23px;
+          width: 28px;
+          height: 28px;
         }
 
         .bubble-tooltip {
@@ -152,7 +155,9 @@ export function FounderContactCard() {
           text-align: center;
           opacity: 0;
           visibility: hidden;
-          transition: opacity 0.24s ease, transform 0.24s ease;
+          transition:
+            opacity 0.24s ease,
+            transform 0.24s ease;
           pointer-events: none;
           box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
         }
