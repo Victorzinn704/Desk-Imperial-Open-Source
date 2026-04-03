@@ -23,6 +23,7 @@
     "test:load:ci": "k6 run tests/load/k6/ci-latency-gate.js",
     "repo:scan-public": "node ./scripts/scan-public-repo-risks.mjs",
     "security:audit-runtime": "node ./scripts/check-runtime-audit-allowlist.mjs",
+    "perf:probe:finance-cache": "node ./scripts/probe-finance-cache.mjs",
     "typecheck": "turbo run typecheck",
     "lint-staged": "lint-staged",
     "seed": "npm --workspace @partner/api run prisma:seed",

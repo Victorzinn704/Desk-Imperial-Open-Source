@@ -1,0 +1,134 @@
+{
+  "generatedAt": "2026-04-03T00:49:39.900Z",
+  "runStartedAt": "2026-04-03T00:42:11.101Z",
+  "baseUrl": "https://api.deskimperial.online/api",
+  "authMode": "demo",
+  "loginMode": "OWNER",
+  "userAgent": "desk-imperial-finance-probe/ua-prod-2026-04-03",
+  "waitsMs": {
+    "freshWindow": 125000,
+    "postRefresh": 5000,
+    "staleExpiry": 305000
+  },
+  "caveats": [
+    "Probe usa o workspace demo compartilhado; tráfego externo pode aquecer ou invalidar o cache entre as medições.",
+    "O estado fresh/stale não é exposto na resposta HTTP hoje; a inferência aqui usa janela temporal + padrão de latência."
+  ],
+  "login": {
+    "status": 201,
+    "durationMs": 3118,
+    "requestId": "b9abddcb-a138-410b-a67c-ee65ecdaa5a9",
+    "user": {
+      "role": "OWNER",
+      "workspaceOwnerUserId": "cmmv1mcbm0005w050cm8h5m1h",
+      "preferredCurrency": "BRL",
+      "evaluationAccess": {
+        "dailyLimitMinutes": 20,
+        "remainingSeconds": 1199,
+        "sessionExpiresAt": "2026-04-03T01:02:12.151Z"
+      }
+    }
+  },
+  "measurements": [
+    {
+      "step": "baseline",
+      "requestedAt": "2026-04-03T00:42:14.905Z",
+      "status": 200,
+      "durationMs": 686,
+      "requestId": "eac201f3-4486-463b-9608-3ac8c3d710c3",
+      "bodySizeBytes": 16768,
+      "summaryShape": {
+        "activeProducts": 40,
+        "revenueTimelinePoints": 6,
+        "salesMapRegions": 1,
+        "topProducts": 5,
+        "topCustomers": 5,
+        "topEmployees": 4,
+        "recentOrders": 5,
+        "displayCurrency": "BRL",
+        "ratesSource": "fallback"
+      },
+      "notes": "Primeira leitura já chegou aquecida."
+    },
+    {
+      "step": "warm-repeat",
+      "requestedAt": "2026-04-03T00:42:17.565Z",
+      "status": 200,
+      "durationMs": 659,
+      "requestId": "6764a3c6-05fa-43e2-880e-69dd8bdec8e9",
+      "bodySizeBytes": 16768,
+      "summaryShape": {
+        "activeProducts": 40,
+        "revenueTimelinePoints": 6,
+        "salesMapRegions": 1,
+        "topProducts": 5,
+        "topCustomers": 5,
+        "topEmployees": 4,
+        "recentOrders": 5,
+        "displayCurrency": "BRL",
+        "ratesSource": "fallback"
+      },
+      "notes": "Repetição curta confirmou comportamento quente."
+    },
+    {
+      "step": "after-fresh-window",
+      "requestedAt": "2026-04-03T00:44:23.469Z",
+      "status": 200,
+      "durationMs": 904,
+      "requestId": "dbf2bd17-195e-4213-a4b0-302ec2c01e31",
+      "bodySizeBytes": 16768,
+      "summaryShape": {
+        "activeProducts": 40,
+        "revenueTimelinePoints": 6,
+        "salesMapRegions": 1,
+        "topProducts": 5,
+        "topCustomers": 5,
+        "topEmployees": 4,
+        "recentOrders": 5,
+        "displayCurrency": "BRL",
+        "ratesSource": "fallback"
+      },
+      "notes": "Passou da janela fresh sem voltar ao custo frio — bom sinal para stale-while-revalidate."
+    },
+    {
+      "step": "post-background-refresh",
+      "requestedAt": "2026-04-03T00:44:29.341Z",
+      "status": 200,
+      "durationMs": 871,
+      "requestId": "31431fcb-7013-4c59-83a9-47bcb7a663a5",
+      "bodySizeBytes": 16768,
+      "summaryShape": {
+        "activeProducts": 40,
+        "revenueTimelinePoints": 6,
+        "salesMapRegions": 1,
+        "topProducts": 5,
+        "topCustomers": 5,
+        "topEmployees": 4,
+        "recentOrders": 5,
+        "displayCurrency": "BRL",
+        "ratesSource": "fallback"
+      },
+      "notes": "Leitura após o refresh em background permaneceu quente."
+    },
+    {
+      "step": "after-stale-expiry",
+      "requestedAt": "2026-04-03T00:49:39.900Z",
+      "status": 200,
+      "durationMs": 5559,
+      "requestId": "c85a3a36-5c86-4b72-b615-62be8e985352",
+      "bodySizeBytes": 16768,
+      "summaryShape": {
+        "activeProducts": 40,
+        "revenueTimelinePoints": 6,
+        "salesMapRegions": 1,
+        "topProducts": 5,
+        "topCustomers": 5,
+        "topEmployees": 4,
+        "recentOrders": 5,
+        "displayCurrency": "BRL",
+        "ratesSource": "fallback"
+      },
+      "notes": "Após expirar a janela stale houve custo perceptível de rebuild."
+    }
+  ]
+}

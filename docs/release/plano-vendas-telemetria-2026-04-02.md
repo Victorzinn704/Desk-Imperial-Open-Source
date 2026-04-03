@@ -269,6 +269,71 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 ---
 
+### Fase 0.10 — prova de produção para `fresh → stale → cold`
+
+**Objetivo**
+
+- confirmar em produção se o comportamento novo do `finance/summary` é real ou só “parece rápido” por cache oportunista
+
+**Implementado**
+
+- criamos um probe reutilizável em `scripts/probe-finance-cache.mjs`
+- o comando oficial ficou em `package.json`:
+  - `npm run perf:probe:finance-cache`
+- o probe:
+  - autentica
+  - mede `baseline`
+  - mede repetição quente
+  - espera a janela pós-`fresh`
+  - mede leitura após refresh em background
+  - espera expirar a janela `stale`
+  - mede o comportamento pós-expiração
+- o relatório bruto da rodada atual ficou em `docs/release/finance-cache-probe-2026-04-03.json`
+
+**Como rodamos**
+
+- produção real em `https://api.deskimperial.online/api`
+- login demo com `OWNER`
+- `User-Agent` técnico dedicado para não reutilizar o fingerprint já esgotado do navegador local
+- esperas reais:
+  - `125s` para passar a janela `fresh`
+  - `5s` para observar o refresh em background
+  - `305s` para atravessar a janela `stale`
+
+**Resultados**
+
+- `baseline`: `686ms`
+- `warm-repeat`: `659ms`
+- `after-fresh-window`: `904ms`
+- `post-background-refresh`: `871ms`
+- `after-stale-expiry`: `5559ms`
+
+**Leitura do resultado**
+
+- o request continuou rápido depois de `125s`, então o caminho `fresh/stale-while-revalidate` está funcionando de verdade
+- a leitura `5s` depois permaneceu quente, reforçando que o refresh em background não está travando o caller
+- quando deixamos passar `305s`, a rota voltou para `~5.6s`, o que mostra que o custo frio **ainda existe** quando a janela stale acaba
+
+**Conclusão sênior**
+
+- a melhoria é **real**, não cosmética
+- o refresh-ahead derruba o engasgo periódico de curta duração
+- o problema remanescente agora ficou bem delimitado:
+  - quando o cache expira de verdade, o rebuild ainda é caro
+- então a próxima decisão madura não é “mais cache genérico”, e sim:
+  1. levar essa métrica para Alloy/Prometheus/Grafana
+  2. decidir com número na mão se vale:
+     - quebrar `finance/summary` em slices
+     - pré-computar partes do resumo
+     - ou manter a rota única e só endurecer a política de aquecimento
+
+**Caveat**
+
+- essa rodada usa o workspace demo compartilhado, então tráfego externo ainda pode influenciar baseline/temperatura do cache
+- apesar disso, o salto de `~0.9s` para `~5.6s` após a janela stale é forte o bastante para servir como evidência operacional
+
+---
+
 ## 3. Próximos ataques em ordem madura
 
 ### Fase 1 — Medição real no stack OSS
