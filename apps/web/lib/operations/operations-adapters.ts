@@ -55,33 +55,33 @@ export function buildOperationsViewModel(snapshot: OperationsLiveResponse | null
       notes: comanda.notes,
     }))
 
-      const activeTables = group.comandas
-        .filter((comanda) => comanda.status !== 'CLOSED' && comanda.status !== 'CANCELLED')
-        .map((comanda) => comanda.tableLabel)
+    const activeTables = group.comandas
+      .filter((comanda) => comanda.status !== 'CLOSED' && comanda.status !== 'CANCELLED')
+      .map((comanda) => comanda.tableLabel)
 
-      const closedTablesToday = group.comandas
-        .filter((comanda) => comanda.status === 'CLOSED')
-        .map((comanda) => comanda.tableLabel)
+    const closedTablesToday = group.comandas
+      .filter((comanda) => comanda.status === 'CLOSED')
+      .map((comanda) => comanda.tableLabel)
 
-      return {
-        employee: {
-          employeeId: group.employeeId ?? 'unassigned',
-          employeeCode: group.employeeCode ?? 'OWNER',
-          employeeName: group.displayName,
-          role: group.employeeId ? 'STAFF' : 'OWNER',
-          activeTables,
-          closedTablesToday,
-          openOrdersCount: activeTables.length,
-          closedOrdersCount: closedTablesToday.length,
-          cashSessionStatus,
-          cashOpeningAmount: group.cashSession?.openingCashAmount ?? 0,
-          cashCurrentAmount: group.cashSession?.expectedCashAmount ?? 0,
-          cashExpectedAmount: group.cashSession?.expectedCashAmount ?? 0,
-          cashCountedAmount: group.cashSession?.countedCashAmount ?? undefined,
-          cashDifferenceAmount: group.cashSession?.differenceAmount ?? undefined,
-          salesRevenue: group.cashSession?.grossRevenueAmount ?? 0,
-          salesProfit: group.cashSession?.realizedProfitAmount ?? 0,
-        },
+    return {
+      employee: {
+        employeeId: group.employeeId ?? 'unassigned',
+        employeeCode: group.employeeCode ?? 'OWNER',
+        employeeName: group.displayName,
+        role: group.employeeId ? 'STAFF' : 'OWNER',
+        activeTables,
+        closedTablesToday,
+        openOrdersCount: activeTables.length,
+        closedOrdersCount: closedTablesToday.length,
+        cashSessionStatus,
+        cashOpeningAmount: group.cashSession?.openingCashAmount ?? 0,
+        cashCurrentAmount: group.cashSession?.countedCashAmount ?? group.cashSession?.expectedCashAmount ?? 0,
+        cashExpectedAmount: group.cashSession?.expectedCashAmount ?? 0,
+        cashCountedAmount: group.cashSession?.countedCashAmount ?? undefined,
+        cashDifferenceAmount: group.cashSession?.differenceAmount ?? undefined,
+        salesRevenue: group.cashSession?.grossRevenueAmount ?? 0,
+        salesProfit: group.cashSession?.realizedProfitAmount ?? 0,
+      },
       tables,
       movements,
     } satisfies OperationGridRow

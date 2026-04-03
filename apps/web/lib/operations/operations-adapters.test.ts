@@ -261,12 +261,58 @@ describe('buildOperationsViewModel', () => {
     expect(ownerRow.employee.employeeId).toBe('unassigned')
     expect(ownerRow.employee.cashSessionStatus).toBe('closed')
 
-    expect(staffRow.tables.map((table) => table.status)).toEqual(['open', 'in_preparation', 'ready', 'closed', 'closed'])
+    expect(staffRow.tables.map((table) => table.status)).toEqual([
+      'open',
+      'in_preparation',
+      'ready',
+      'closed',
+      'closed',
+    ])
     expect(staffRow.movements.map((movement) => movement.type)).toEqual(['opening', 'supply', 'withdrawal'])
     expect(ownerRow.movements.map((movement) => movement.type)).toEqual(['adjustment'])
 
     const closedTimelineItem = view.timelineItems.find((item) => item.id === 'c-closed')
     expect(closedTimelineItem?.status).toBe('closed')
     expect(closedTimelineItem?.end).toBe('2026-04-03T10:10:00.000Z')
+  })
+
+  it('prefers counted cash as current cash when the session already has a counted amount', () => {
+    const snapshot: OperationsLiveResponse = {
+      companyOwnerId: 'owner-1',
+      businessDate: '2026-04-03',
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          active: true,
+          cashSession: createCashSession({
+            id: 'cash-1',
+            employeeId: 'emp-1',
+            status: 'OPEN',
+            openingCashAmount: 150,
+            expectedCashAmount: 220,
+            countedCashAmount: 214,
+            differenceAmount: -6,
+          }),
+          comandas: [],
+        },
+      ],
+      unassigned: {
+        employeeId: null,
+        employeeCode: null,
+        displayName: 'Owner',
+        active: true,
+        cashSession: null,
+        comandas: [],
+      },
+      closure: null,
+      mesas: [],
+    }
+
+    const view = buildOperationsViewModel(snapshot)
+
+    expect(view.rows[0]?.employee.cashCurrentAmount).toBe(214)
+    expect(view.rows[0]?.employee.cashExpectedAmount).toBe(220)
   })
 })

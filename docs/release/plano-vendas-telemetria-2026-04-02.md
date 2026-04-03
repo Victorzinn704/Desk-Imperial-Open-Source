@@ -803,3 +803,45 @@ Consideramos essa frente madura quando:
 
 - aqui a decisão madura foi voltar um passo, não insistir numa mudança errada
 - o calendário comercial recupera o comportamento que já funcionava bem, enquanto o atendimento mantém a melhora que realmente fez sentido
+
+## 13. Bloco executivo do PDV com leitura menos genérica — 2026-04-03
+
+**Problemas reais atacados**
+
+- o bloco `AG Grid` do PDV estava funcional, mas ainda passava sensação de painel-placeholder: grid genérico, detalhe pobre e pouca leitura operacional no colaborador selecionado
+- `Mesas do atendimento`, `Movimentos` e `Últimos registros` não estavam ajudando o dono a bater o olho e entender o turno
+- a descrição da timeline ainda citava `FullCalendar`, mesmo depois da troca para a linha do tempo manual
+- o adapter do operacional tratava `cashCurrentAmount` como espelho do `expectedCashAmount`, mesmo quando já existia leitura contada
+
+**Correções aplicadas**
+
+- `apps/web/components/operations/operations-executive-grid.tsx`
+  - o topo do grid virou `Radar da equipe`, mantendo AG Grid como superfície principal de seleção
+  - o colaborador selecionado ganhou um painel próprio com código, perfil, status do caixa e KPIs do turno
+  - `Mesas do atendimento` saiu da tabela seca e virou lista manual com status, abertura, atualização, subtotal, desconto, total e notas
+  - `Movimentos` virou resumo executivo com entradas, saídas e últimos lançamentos
+  - `Últimos registros` agora mistura caixas e mesas em uma trilha manual, em vez de um bloco frio e pouco expressivo
+- `apps/web/lib/operations/operations-adapters.ts`
+  - `cashCurrentAmount` agora prefere `countedCashAmount` quando já existe leitura contada; se não existir, continua usando o esperado
+- `apps/web/components/dashboard/environments/pdv-environment.tsx`
+  - a descrição da timeline foi atualizada para refletir a camada manual real, sem mencionar `FullCalendar`
+
+**Validação**
+
+- `npm --workspace @partner/web run lint` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run test -- components/operations/operations-executive-grid.test.tsx lib/operations/operations-adapters.test.ts` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Cobertura nova**
+
+- `apps/web/components/operations/operations-executive-grid.test.tsx`
+  - garante render do colaborador em foco
+  - garante troca de seleção no grid
+- `apps/web/lib/operations/operations-adapters.test.ts`
+  - garante que `cashCurrentAmount` usa o valor contado quando disponível
+
+**Leitura**
+
+- aqui o objetivo não foi “embelezar o AG Grid”, e sim dar função real para ele dentro do fluxo executivo
+- o grid continua sendo a superfície de seleção, mas a leitura importante agora acontece em painéis humanos, mais próximos do que um gestor realmente precisa enxergar durante o turno

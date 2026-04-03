@@ -7,9 +7,15 @@ import type { AgGridReactProps } from 'ag-grid-react'
 import { LazyAgGrid as AgGridReact } from '@/components/shared/lazy-components'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
-import { Banknote, Layers3, ShieldCheck, Table2, UserRound, type LucideIcon } from 'lucide-react'
-import type { OperationGridRow } from '@/lib/operations/operations-types'
-import { formatMoney, formatShortTime, getCashSessionTone, getComandaTone } from '@/lib/operations/operations-visuals'
+import { ArrowUpRight, Banknote, Layers3, Receipt, ShieldCheck, Table2, UserRound, type LucideIcon } from 'lucide-react'
+import type { OperationGridRow, OperationRole } from '@/lib/operations/operations-types'
+import {
+  formatLongDateTime,
+  formatMoney,
+  formatShortTime,
+  getCashSessionTone,
+  getComandaTone,
+} from '@/lib/operations/operations-visuals'
 
 const gridThemeStyle = {
   '--ag-background-color': 'rgba(7, 10, 16, 0.92)',
@@ -117,61 +123,23 @@ export function OperationsExecutiveGrid({
     },
   ]
 
-  type SelectedTableRow = NonNullable<typeof selectedRow>['tables'][number]
-  const tableColumns: ColDef<SelectedTableRow>[] = [
-    { field: 'tableLabel', headerName: 'Mesa', minWidth: 110 },
-    {
-      field: 'status',
-      headerName: 'Status',
-      minWidth: 140,
-      valueFormatter: ({ value }) => getComandaTone(value).label,
-    },
-    { field: 'itemsCount', headerName: 'Itens', minWidth: 100 },
-    {
-      field: 'subtotal',
-      headerName: 'Subtotal',
-      minWidth: 130,
-      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
-    },
-    {
-      field: 'discountAmount',
-      headerName: 'Desconto',
-      minWidth: 130,
-      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
-    },
-    {
-      field: 'totalAmount',
-      headerName: 'Total',
-      minWidth: 130,
-      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
-    },
-    {
-      field: 'openedAt',
-      headerName: 'Abertura',
-      minWidth: 120,
-      valueFormatter: ({ value }) => formatShortTime(String(value ?? '')),
-    },
-  ]
-
-  type SelectedMovementRow = NonNullable<typeof selectedRow>['movements'][number]
-  const movementColumns: ColDef<SelectedMovementRow>[] = [
-    { field: 'type', headerName: 'Tipo', minWidth: 140 },
-    { field: 'reason', headerName: 'Motivo', flex: 1, minWidth: 180 },
-    {
-      field: 'amount',
-      headerName: 'Valor',
-      minWidth: 130,
-      valueFormatter: ({ value }) => formatMoney(Number(value ?? 0)),
-    },
-    {
-      field: 'createdAt',
-      headerName: 'Hora',
-      minWidth: 120,
-      valueFormatter: ({ value }) => formatShortTime(String(value ?? '')),
-    },
-  ]
-
   const cashDelta = totals.cashCurrent - totals.cashExpected
+  const selectedOpenRevenue =
+    selectedRow?.tables
+      .filter((table) => table.status !== 'closed')
+      .reduce((sum, table) => sum + table.totalAmount, 0) ?? 0
+  const selectedTicket =
+    selectedRow && selectedRow.tables.length > 0
+      ? selectedRow.tables.reduce((sum, table) => sum + table.totalAmount, 0) / selectedRow.tables.length
+      : 0
+  const selectedMovements = selectedRow?.movements ?? []
+  const selectedSupply = selectedMovements
+    .filter((movement) => movement.type === 'supply')
+    .reduce((sum, movement) => sum + movement.amount, 0)
+  const selectedWithdrawal = selectedMovements
+    .filter((movement) => movement.type === 'withdrawal')
+    .reduce((sum, movement) => sum + movement.amount, 0)
+  const selectedRegisters = selectedRow ? buildSelectedRegisters(selectedRow) : []
 
   return (
     <section className="imperial-card p-6 md:p-7">
@@ -214,46 +182,51 @@ export function OperationsExecutiveGrid({
 
       {rows.length ? (
         <div className="mt-6 space-y-4">
-          <section className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">AG Grid</p>
-                <h3 className="mt-1 text-lg font-semibold text-white">Visão executiva por colaborador</h3>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+            <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    Radar da equipe
+                  </p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">Visão executiva por colaborador</h3>
+                </div>
+                <p className="text-xs text-[var(--text-soft)]">
+                  Clique em um colaborador para abrir o detalhe vivo de mesas, caixa e registros do turno.
+                </p>
               </div>
-              <p className="text-xs text-[var(--text-soft)]">
-                Clique em um funcionário para abrir mesas e movimentos da sessão.
-              </p>
+
+              <div
+                className="ag-theme-quartz rounded-[22px] border border-white/6"
+                style={{ ...gridThemeStyle, height: 360 }}
+              >
+                <TypedAgGrid<SummaryRow>
+                  columnDefs={summaryColumns}
+                  domLayout="normal"
+                  onRowClicked={(event: RowClickedEvent<SummaryRow>) => {
+                    if (event.data) {
+                      setSelectedEmployeeId(event.data.employeeId)
+                    }
+                  }}
+                  rowData={summaryRows}
+                  rowSelection="single"
+                  suppressCellFocus
+                  theme="legacy"
+                />
+              </div>
             </div>
 
-            <div
-              className="ag-theme-quartz rounded-[22px] border border-white/6"
-              style={{ ...gridThemeStyle, height: 360 }}
-            >
-              <TypedAgGrid<SummaryRow>
-                columnDefs={summaryColumns}
-                domLayout="normal"
-                onRowClicked={(event: RowClickedEvent<SummaryRow>) => {
-                  if (event.data) {
-                    setSelectedEmployeeId(event.data.employeeId)
-                  }
-                }}
-                rowData={summaryRows}
-                rowSelection="single"
-                suppressCellFocus
-                theme="legacy"
-              />
-            </div>
-          </section>
-
-          {selectedRow ? (
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.9fr)]">
-              <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            {selectedRow ? (
+              <aside className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                  Colaborador em foco
+                </p>
+                <div className="mt-3 flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                      Mesas do atendimento
+                    <h3 className="text-xl font-semibold text-white">{selectedRow.employee.employeeName}</h3>
+                    <p className="mt-1 text-sm text-[var(--text-soft)]">
+                      {formatRole(selectedRow.employee.role)} · código {selectedRow.employee.employeeCode}
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold text-white">{selectedRow.employee.employeeName}</h3>
                   </div>
                   <span
                     className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getCashSessionTone(selectedRow.employee.cashSessionStatus).className}`}
@@ -262,57 +235,201 @@ export function OperationsExecutiveGrid({
                   </span>
                 </div>
 
-                <div
-                  className="ag-theme-quartz rounded-[22px] border border-white/6"
-                  style={{ ...gridThemeStyle, height: 320 }}
-                >
-                  <TypedAgGrid<SelectedTableRow>
-                    columnDefs={tableColumns}
-                    domLayout="normal"
-                    rowData={selectedRow.tables}
-                    suppressCellFocus
-                    theme="legacy"
-                  />
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <SummaryBadge label="Mesas em giro" value={String(selectedRow.employee.activeTables.length)} />
+                  <SummaryBadge label="Fechadas hoje" value={String(selectedRow.employee.closedTablesToday.length)} />
+                  <SummaryBadge label="Receita em aberto" value={formatMoney(selectedOpenRevenue)} />
+                  <SummaryBadge label="Ticket do turno" value={formatMoney(selectedTicket)} />
+                </div>
+
+                <div className="mt-4 rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.18)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                    Leitura de caixa
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    <SessionReadoutRow label="Abertura" value={formatMoney(selectedRow.employee.cashOpeningAmount)} />
+                    <SessionReadoutRow label="Esperado" value={formatMoney(selectedRow.employee.cashExpectedAmount)} />
+                    <SessionReadoutRow
+                      label="Lido / atual"
+                      value={formatMoney(selectedRow.employee.cashCurrentAmount)}
+                    />
+                    <SessionReadoutRow
+                      emphasis={(selectedRow.employee.cashDifferenceAmount ?? 0) >= 0 ? 'positive' : 'negative'}
+                      label="Diferença"
+                      value={formatMoney(selectedRow.employee.cashDifferenceAmount ?? 0)}
+                    />
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+          </section>
+
+          {selectedRow ? (
+            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.95fr)]">
+              <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                      Mesas do atendimento
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-white">{selectedRow.employee.employeeName}</h3>
+                    <p className="mt-2 text-sm text-[var(--text-soft)]">
+                      Cada linha mostra o estado da mesa, o peso do atendimento e a última leitura útil do turno.
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getCashSessionTone(selectedRow.employee.cashSessionStatus).className}`}
+                  >
+                    {getCashSessionTone(selectedRow.employee.cashSessionStatus).label}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedRow.tables.length ? (
+                    selectedRow.tables
+                      .slice()
+                      .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+                      .map((table) => (
+                        <article
+                          className="rounded-[22px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-4 py-4"
+                          key={table.comandaId}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-base font-semibold text-white">Mesa {table.tableLabel}</p>
+                                <span
+                                  className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${getComandaTone(table.status).className}`}
+                                >
+                                  {getComandaTone(table.status).label}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-xs text-[var(--text-soft)]">
+                                Aberta às {formatShortTime(table.openedAt)} · última mudança às{' '}
+                                {formatShortTime(table.updatedAt)}
+                              </p>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+                                Total
+                              </p>
+                              <p className="mt-1 text-lg font-semibold text-white">{formatMoney(table.totalAmount)}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                            <SummaryBadge label="Itens" value={String(table.itemsCount)} />
+                            <SummaryBadge label="Subtotal" value={formatMoney(table.subtotal)} />
+                            <SummaryBadge label="Desconto" value={formatMoney(table.discountAmount)} />
+                          </div>
+
+                          {table.notes ? (
+                            <div className="mt-4 rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3 text-sm text-[var(--text-soft)]">
+                              {table.notes}
+                            </div>
+                          ) : null}
+                        </article>
+                      ))
+                  ) : (
+                    <EmptyPanelState
+                      body="Quando o colaborador assumir mesas, elas aparecem aqui com status, abertura, valor e leitura rápida."
+                      title="Nenhuma mesa ativa neste turno"
+                    />
+                  )}
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                    Resumo da sessão
+                    Movimentos do caixa
                   </p>
-                  <div className="mt-4 grid gap-3">
-                    <SummaryBadge label="Abertura" value={formatMoney(selectedRow.employee.cashOpeningAmount)} />
-                    <SummaryBadge label="Caixa atual" value={formatMoney(selectedRow.employee.cashCurrentAmount)} />
-                    <SummaryBadge label="Caixa esperado" value={formatMoney(selectedRow.employee.cashExpectedAmount)} />
-                    <SummaryBadge
-                      label="Diferença"
-                      value={formatMoney(selectedRow.employee.cashDifferenceAmount ?? 0)}
-                    />
+                  <h3 className="mt-1 text-lg font-semibold text-white">Movimentos</h3>
+                  <p className="mt-2 text-sm text-[var(--text-soft)]">
+                    Sangrias, suprimentos e ajustes do turno atual concentrados em uma leitura executiva.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-3 gap-3">
+                    <SummaryBadge label="Entradas" value={formatMoney(selectedSupply)} />
+                    <SummaryBadge label="Saídas" value={formatMoney(selectedWithdrawal)} />
+                    <SummaryBadge label="Lançamentos" value={String(selectedMovements.length)} />
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {selectedMovements.length ? (
+                      selectedMovements
+                        .slice()
+                        .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+                        .slice(0, 4)
+                        .map((movement) => (
+                          <div
+                            className="flex items-center justify-between gap-3 rounded-[16px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-3 py-3"
+                            key={movement.id}
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-white">
+                                {formatMovementTypeLabel(movement.type)}
+                              </p>
+                              <p className="mt-1 text-xs text-[var(--text-soft)]">
+                                {movement.reason} · {formatLongDateTime(movement.createdAt)}
+                              </p>
+                            </div>
+                            <span className="text-sm font-semibold text-white">{formatMoney(movement.amount)}</span>
+                          </div>
+                        ))
+                    ) : (
+                      <EmptyPanelState
+                        body="Quando houver abertura, suprimento, sangria ou ajuste, os lançamentos aparecem aqui."
+                        title="Sem movimentos lançados"
+                      />
+                    )}
                   </div>
                 </div>
 
                 <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                        Movimentos
-                      </p>
-                      <h3 className="mt-1 text-lg font-semibold text-white">Últimos registros</h3>
-                    </div>
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                      Pulso recente
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-white">Últimos registros</h3>
+                    <p className="mt-2 text-sm text-[var(--text-soft)]">
+                      Trilha manual do que aconteceu por último com mesas e caixa do colaborador selecionado.
+                    </p>
                   </div>
 
-                  <div
-                    className="ag-theme-quartz rounded-[22px] border border-white/6"
-                    style={{ ...gridThemeStyle, height: 260 }}
-                  >
-                    <TypedAgGrid<SelectedMovementRow>
-                      columnDefs={movementColumns}
-                      domLayout="normal"
-                      rowData={selectedRow.movements}
-                      suppressCellFocus
-                      theme="legacy"
-                    />
+                  <div className="space-y-3">
+                    {selectedRegisters.length ? (
+                      selectedRegisters.slice(0, 6).map((register) => (
+                        <div
+                          className="flex items-start gap-3 rounded-[18px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-3 py-3"
+                          key={register.id}
+                        >
+                          <div
+                            className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border ${register.badgeClassName}`}
+                          >
+                            <register.icon className="size-3.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-sm font-semibold text-white">{register.title}</p>
+                              <span className="text-[11px] text-[var(--text-soft)]">
+                                {formatLongDateTime(register.happenedAt)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{register.subtitle}</p>
+                          </div>
+                          {register.amount ? (
+                            <span className="text-xs font-semibold text-white">{formatMoney(register.amount)}</span>
+                          ) : null}
+                        </div>
+                      ))
+                    ) : (
+                      <EmptyPanelState
+                        body="Assim que mesas mudarem de estado ou o caixa registrar movimentos, este pulso ganha vida."
+                        title="Nada novo para mostrar"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -384,5 +501,81 @@ function SummaryBadge({ label, value }: Readonly<{ label: string; value: string 
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
+  )
+}
+
+function SessionReadoutRow({
+  label,
+  value,
+  emphasis = 'neutral',
+}: Readonly<{
+  label: string
+  value: string
+  emphasis?: 'neutral' | 'positive' | 'negative'
+}>) {
+  const valueClassName =
+    emphasis === 'positive' ? 'text-[#8fffb9]' : emphasis === 'negative' ? 'text-[#fca5a5]' : 'text-white'
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-3 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+      <p className={`text-sm font-semibold ${valueClassName}`}>{value}</p>
+    </div>
+  )
+}
+
+function EmptyPanelState({ title, body }: Readonly<{ title: string; body: string }>) {
+  return (
+    <div className="rounded-[20px] border border-dashed border-white/8 px-4 py-8 text-center">
+      <p className="text-sm font-medium text-white">{title}</p>
+      <p className="mt-2 text-sm text-[var(--text-soft)]">{body}</p>
+    </div>
+  )
+}
+
+function formatRole(role: OperationRole) {
+  if (role === 'OWNER') return 'Dono'
+  if (role === 'MANAGER') return 'Gerência'
+  if (role === 'CASHIER') return 'Caixa'
+  return 'Atendimento'
+}
+
+function formatMovementTypeLabel(type: OperationGridRow['movements'][number]['type']) {
+  if (type === 'opening') return 'Abertura de caixa'
+  if (type === 'supply') return 'Suprimento de caixa'
+  if (type === 'withdrawal') return 'Sangria / retirada'
+  if (type === 'sale') return 'Venda registrada'
+  if (type === 'refund') return 'Estorno operacional'
+  return 'Ajuste manual'
+}
+
+function buildSelectedRegisters(row: OperationGridRow) {
+  const tableRegisters = row.tables.map((table) => ({
+    id: `table-${table.comandaId}`,
+    happenedAt: table.updatedAt,
+    title: `Mesa ${table.tableLabel} · ${getComandaTone(table.status).label}`,
+    subtitle: `${table.itemsCount} item(ns) · total ${formatMoney(table.totalAmount)}`,
+    badgeClassName: getComandaTone(table.status).className,
+    icon: Receipt,
+    amount: table.totalAmount,
+  }))
+
+  const movementRegisters = row.movements.map((movement) => ({
+    id: `movement-${movement.id}`,
+    happenedAt: movement.createdAt,
+    title: formatMovementTypeLabel(movement.type),
+    subtitle: movement.reason,
+    badgeClassName:
+      movement.type === 'withdrawal'
+        ? 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[#fca5a5]'
+        : movement.type === 'supply'
+          ? 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
+          : 'border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]',
+    icon: movement.type === 'withdrawal' ? ArrowUpRight : Banknote,
+    amount: movement.amount,
+  }))
+
+  return [...tableRegisters, ...movementRegisters].sort(
+    (left, right) => new Date(right.happenedAt).getTime() - new Date(left.happenedAt).getTime(),
   )
 }
