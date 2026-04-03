@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#9b8460' }],
   },
   // PWA e mobile optimization
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest?v=20260403',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

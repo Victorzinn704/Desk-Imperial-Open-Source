@@ -1,30 +1,20 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'desk-imperial-v1'
-const STATIC_ASSETS = [
-  '/app/staff',
-  '/app/owner',
-  '/manifest.json',
-]
+const CACHE_NAME = 'desk-imperial-v2-20260403'
+const STATIC_ASSETS = ['/app/staff', '/app/owner']
 
 // Install — precache static assets
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  )
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)))
   self.skipWaiting()
 })
 
 // Activate — clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))),
   )
   self.clients.claim()
 })
@@ -46,6 +36,11 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // O manifest precisa refletir a versao mais nova do build; nunca servir do SW.
+  if (url.pathname === '/manifest.json' || url.pathname === '/manifest.webmanifest') {
+    return
+  }
+
   // Static assets: cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => {
@@ -57,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         return response
       })
       return cached || fetchPromise
-    })
+    }),
   )
 })
 
@@ -73,6 +68,6 @@ self.addEventListener('sync', (event) => {
       if (focusedClient) {
         focusedClient.postMessage({ type: 'DRAIN_QUEUE' })
       }
-    })
+    }),
   )
 })

@@ -673,3 +673,48 @@ Consideramos essa frente madura quando:
 - não foi só maquiagem visual: o shell realmente deixou de pedir dados fora do contexto da seção ativa
 - a seção `Operação` agora fica mais próxima do uso humano diário, com menos cara de componente genérico
 - o próximo passo natural depois do deploy é medir no Railway se o ganho percebido da entrada confirma o prewarm e, se confirmar, atacar os pontos restantes de fricção no calendário e no bloco visual do salão
+
+## 10. PWA sem manifest fantasma + calendários manuais — 2026-04-03
+
+**Problemas reais atacados**
+
+- o PWA continuava emitindo ruído silencioso por causa de manifest antigo e ícones inexistentes em clientes com cache anterior
+- o service worker ainda podia segurar referência velha de manifest entre builds
+- `react-big-calendar` continuava pesando e trazendo uma estética genérica demais para agenda comercial e timeline operacional
+- o calendário comercial e a linha do tempo da operação estavam brigando com a identidade do produto em vez de reforçá-la
+
+**Correções aplicadas**
+
+- `apps/web/app/layout.tsx`
+- `apps/web/app/app/layout.tsx`
+- `apps/web/app/manifest.ts`
+- `apps/web/public/manifest.json`
+  - o app passou a anunciar `manifest.webmanifest` versionado (`?v=20260403`)
+  - o manifest novo agora aponta apenas para ícones que existem no repositório
+  - o fallback legado em `manifest.json` foi alinhado com a mesma verdade, para clientes antigos não continuarem pedindo assets fantasmas
+- `apps/web/components/shared/sw-registrar.tsx`
+- `apps/web/public/sw.js`
+  - o registro do service worker agora força `registration.update()` após subir
+  - o cache do SW foi rotacionado para `desk-imperial-v2-20260403`
+  - `manifest.json` e `manifest.webmanifest` saíram do escopo de cache do SW para refletirem sempre o build atual
+- `apps/web/components/calendar/commercial-calendar.tsx`
+  - o calendário comercial deixou de depender de `react-big-calendar`
+  - entrou uma agenda manual com visões `semana`, `mês` e `agenda`, cards editáveis e leitura mais humana do comercial
+- `apps/web/components/operations/operations-timeline.tsx`
+  - a timeline operacional também saiu da camada visual externa pesada
+  - agora renderiza faixas manuais por recurso/mesa, com blocos absolutos leves e leitura de caixa/equipe mais próxima da operação real
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- esse lote ataca dois problemas diferentes, mas conectados: ruído silencioso de PWA e peso visual/mental de calendários genéricos
+- a mudança de calendário é madura o bastante para teste em produção, mas ainda merece uma passada futura de refinamento fino de densidade e interação caso a equipe aprove a direção manual
+- o ganho mais importante aqui não é só visual: é recuperar previsibilidade do PWA e tirar um ponto recorrente de estranheza da experiência operacional

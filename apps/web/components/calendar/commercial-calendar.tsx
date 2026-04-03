@@ -1,15 +1,22 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Calendar, dateFnsLocalizer, type View } from 'react-big-calendar'
-import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  addMonths,
+  addWeeks,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+  subWeeks,
+} from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarDays, Plus, X } from 'lucide-react'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { ArrowLeft, ArrowRight, CalendarDays, Plus, X } from 'lucide-react'
 
 export type ActivityType = 'evento' | 'jogo' | 'promocao' | 'reuniao' | 'outro'
 
@@ -23,21 +30,7 @@ export type CommercialActivity = {
   impactoEsperado?: number
 }
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
-
-const locales = { 'pt-BR': ptBR }
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { locale: ptBR }),
-  getDay,
-  locales,
-})
-
-const DnDCalendar = withDragAndDrop<CommercialActivity>(Calendar)
-
-// ─── Colors ───────────────────────────────────────────────────────────────────
+type ManualCalendarView = 'week' | 'month' | 'agenda'
 
 const ACTIVITY_COLORS: Record<ActivityType, { bg: string; border: string; text: string; dot: string }> = {
   evento: { bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.4)', text: '#fca5a5', dot: '#ef4444' },
@@ -84,26 +77,6 @@ const INITIAL_ACTIVITIES: CommercialActivity[] = [
     impactoEsperado: 45,
   },
 ]
-
-// ─── Event styling ────────────────────────────────────────────────────────────
-
-function eventStyleGetter(event: CommercialActivity) {
-  const colors = ACTIVITY_COLORS[event.type]
-  return {
-    style: {
-      background: colors.bg,
-      border: `1px solid ${colors.border}`,
-      color: colors.text,
-      borderRadius: '8px',
-      fontSize: '12px',
-      fontWeight: 600,
-      padding: '2px 6px',
-      cursor: 'grab',
-    },
-  }
-}
-
-// ─── New/Edit Activity Modal ──────────────────────────────────────────────────
 
 type ActivityModalProps = {
   activity?: CommercialActivity | null
@@ -178,23 +151,23 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
               Tipo
             </label>
             <div className="flex flex-wrap gap-2">
-              {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-                const isActive = type === t
-                const c = ACTIVITY_COLORS[t]
+              {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((entry) => {
+                const isActive = type === entry
+                const tone = ACTIVITY_COLORS[entry]
                 return (
                   <button
-                    key={t}
+                    key={entry}
                     className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all"
                     style={{
-                      background: isActive ? c.bg : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.08)'}`,
-                      color: isActive ? c.text : 'var(--text-soft)',
+                      background: isActive ? tone.bg : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${isActive ? tone.border : 'rgba(255,255,255,0.08)'}`,
+                      color: isActive ? tone.text : 'var(--text-soft)',
                     }}
                     type="button"
-                    onClick={() => setType(t)}
+                    onClick={() => setType(entry)}
                   >
-                    <span className="size-2 rounded-full" style={{ background: isActive ? c.dot : '#7a8896' }} />
-                    {ACTIVITY_LABELS[t]}
+                    <span className="size-2 rounded-full" style={{ background: isActive ? tone.dot : '#7a8896' }} />
+                    {ACTIVITY_LABELS[entry]}
                   </button>
                 )
               })}
@@ -256,7 +229,7 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
         </div>
 
         <div className="flex gap-3 border-t border-[rgba(255,255,255,0.06)] p-6">
-          {isEditing && onDelete && activity && (
+          {isEditing && onDelete && activity ? (
             <button
               className="rounded-[14px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm font-semibold text-[#fca5a5] hover:bg-[rgba(239,68,68,0.14)]"
               type="button"
@@ -267,7 +240,7 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
             >
               Excluir
             </button>
-          )}
+          ) : null}
           <button
             className="flex-1 rounded-[14px] py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!title.trim()}
@@ -287,11 +260,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
   )
 }
 
-// ─── Próximos eventos widget ──────────────────────────────────────────────────
-
 function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
   const upcoming = activities
-    .filter((a) => a.start >= new Date())
+    .filter((activity) => activity.start >= new Date())
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 4)
 
@@ -301,20 +272,22 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
     <div className="imperial-card-soft rounded-[20px] p-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Próximas atividades</p>
       <div className="space-y-2">
-        {upcoming.map((a) => {
-          const c = ACTIVITY_COLORS[a.type]
+        {upcoming.map((activity) => {
+          const tone = ACTIVITY_COLORS[activity.type]
           return (
-            <div key={a.id} className="flex items-center gap-3">
-              <span className="size-2 shrink-0 rounded-full" style={{ background: c.dot }} />
+            <div key={activity.id} className="flex items-center gap-3">
+              <span className="size-2 shrink-0 rounded-full" style={{ background: tone.dot }} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{a.title}</p>
+                <p className="truncate text-sm font-medium text-white">{activity.title}</p>
               </div>
-              <p className="shrink-0 text-xs text-[var(--text-soft)]">{format(a.start, 'dd/MM', { locale: ptBR })}</p>
-              {a.impactoEsperado && (
+              <p className="shrink-0 text-xs text-[var(--text-soft)]">
+                {format(activity.start, 'dd/MM', { locale: ptBR })}
+              </p>
+              {activity.impactoEsperado ? (
                 <span className="shrink-0 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-bold text-[#36f57c]">
-                  +{a.impactoEsperado}%
+                  +{activity.impactoEsperado}%
                 </span>
-              )}
+              ) : null}
             </div>
           )
         })}
@@ -323,250 +296,280 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
   )
 }
 
-// ─── Main Calendar ─────────────────────────────────────────────────────────────
-
 export function CommercialCalendar() {
   const [activities, setActivities] = useState<CommercialActivity[]>(INITIAL_ACTIVITIES)
-  const [view, setView] = useState<View>('month')
+  const [view, setView] = useState<ManualCalendarView>('week')
   const [date, setDate] = useState(new Date())
   const [showModal, setShowModal] = useState(false)
   const [selectedSlotStart, setSelectedSlotStart] = useState<Date | undefined>()
   const [editingActivity, setEditingActivity] = useState<CommercialActivity | null>(null)
 
-  // ── Drag: move event ──────────────────────────────────────────────────────
-  const onEventDrop = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventDrop']>>(
-    ({ event, start, end }) => {
-      setActivities((prev) =>
-        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
-      )
-    },
-    [],
+  const visibleRange = useMemo(() => {
+    if (view === 'week') {
+      return {
+        start: startOfWeek(date, { locale: ptBR }),
+        end: endOfWeek(date, { locale: ptBR }),
+      }
+    }
+
+    if (view === 'month') {
+      return {
+        start: startOfWeek(startOfMonth(date), { locale: ptBR }),
+        end: endOfWeek(endOfMonth(date), { locale: ptBR }),
+      }
+    }
+
+    return {
+      start: startOfWeek(date, { locale: ptBR }),
+      end: addWeeks(endOfWeek(date, { locale: ptBR }), 3),
+    }
+  }, [date, view])
+
+  const visibleDays = useMemo(
+    () => eachDayOfInterval({ start: visibleRange.start, end: visibleRange.end }),
+    [visibleRange],
   )
 
-  // ── Drag: resize event ────────────────────────────────────────────────────
-  const onEventResize = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventResize']>>(
-    ({ event, start, end }) => {
-      setActivities((prev) =>
-        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
-      )
-    },
-    [],
+  const visibleActivities = useMemo(
+    () =>
+      [...activities]
+        .filter((activity) => activity.end >= visibleRange.start && activity.start <= visibleRange.end)
+        .sort((a, b) => a.start.getTime() - b.start.getTime()),
+    [activities, visibleRange],
   )
 
-  const handleSelectSlot = useCallback(({ start }: { start: Date }) => {
+  const totalImpacto = visibleActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
+  const promoCount = visibleActivities.filter((activity) => activity.type === 'promocao').length
+  const eventCount = visibleActivities.length
+
+  const groupedByDay = useMemo(() => {
+    const map = new Map<string, CommercialActivity[]>()
+
+    for (const day of visibleDays) {
+      map.set(day.toDateString(), [])
+    }
+
+    for (const activity of visibleActivities) {
+      const key = new Date(activity.start).toDateString()
+      const bucket = map.get(key)
+      if (bucket) bucket.push(activity)
+    }
+
+    return map
+  }, [visibleActivities, visibleDays])
+
+  const navigate = useCallback(
+    (direction: 'prev' | 'next') => {
+      setDate((current) => {
+        if (view === 'week') {
+          return direction === 'prev' ? subWeeks(current, 1) : addWeeks(current, 1)
+        }
+        if (view === 'month') {
+          return direction === 'prev' ? subMonths(current, 1) : addMonths(current, 1)
+        }
+        return direction === 'prev' ? subWeeks(current, 4) : addWeeks(current, 4)
+      })
+    },
+    [view],
+  )
+
+  const openNewActivity = useCallback((start: Date) => {
     setSelectedSlotStart(start)
     setShowModal(true)
   }, [])
 
   function handleSave(data: Omit<CommercialActivity, 'id'>) {
     if (editingActivity) {
-      setActivities((prev) => prev.map((a) => (a.id === editingActivity.id ? { ...a, ...data } : a)))
+      setActivities((prev) =>
+        prev.map((activity) => (activity.id === editingActivity.id ? { ...activity, ...data } : activity)),
+      )
       setEditingActivity(null)
-    } else {
-      setActivities((prev) => [...prev, { ...data, id: String(Date.now()) }])
-      setShowModal(false)
-      setSelectedSlotStart(undefined)
+      return
     }
+
+    setActivities((prev) => [...prev, { ...data, id: String(Date.now()) }])
+    setShowModal(false)
+    setSelectedSlotStart(undefined)
   }
 
   function handleDelete(id: string) {
-    setActivities((prev) => prev.filter((a) => a.id !== id))
+    setActivities((prev) => prev.filter((activity) => activity.id !== id))
   }
-
-  const messages = {
-    month: 'Mês',
-    week: 'Semana',
-    day: 'Dia',
-    agenda: 'Agenda',
-    today: 'Hoje',
-    previous: '‹',
-    next: '›',
-    noEventsInRange: 'Nenhuma atividade neste período.',
-    showMore: (total: number) => `+ ${total} mais`,
-  }
-
-  const totalImpacto = activities
-    .filter((a) => a.impactoEsperado !== undefined)
-    .reduce((sum, a) => sum + (a.impactoEsperado ?? 0), 0)
 
   return (
     <div className="space-y-4">
-      {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
-          {/* Legenda */}
           <div className="flex flex-wrap gap-3">
-            {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-              const c = ACTIVITY_COLORS[t]
-              const count = activities.filter((a) => a.type === t).length
+            {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((entry) => {
+              const tone = ACTIVITY_COLORS[entry]
+              const count = activities.filter((activity) => activity.type === entry).length
               return (
-                <span key={t} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: c.text }}>
-                  <span className="size-2.5 rounded-full" style={{ background: c.dot }} />
-                  {ACTIVITY_LABELS[t]}
-                  {count > 0 && (
-                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: c.bg }}>
+                <span
+                  key={entry}
+                  className="flex items-center gap-1.5 text-xs font-medium"
+                  style={{ color: tone.text }}
+                >
+                  <span className="size-2.5 rounded-full" style={{ background: tone.dot }} />
+                  {ACTIVITY_LABELS[entry]}
+                  {count > 0 ? (
+                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: tone.bg }}>
                       {count}
                     </span>
-                  )}
+                  ) : null}
                 </span>
               )
             })}
           </div>
 
-          {/* Impact total badge */}
-          {totalImpacto > 0 && (
+          {totalImpacto > 0 ? (
             <span className="rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.07)] px-2.5 py-1 text-xs font-semibold text-[#8fffb9]">
               +{totalImpacto}% impacto planejado
             </span>
-          )}
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-soft)]">Arraste para mover eventos</span>
-          <button
-            className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
-            type="button"
-            onClick={() => {
-              setSelectedSlotStart(new Date())
-              setShowModal(true)
-            }}
-          >
-            <Plus className="size-4" />
-            Nova Atividade
-          </button>
-        </div>
+        <button
+          className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
+          type="button"
+          onClick={() => openNewActivity(new Date())}
+        >
+          <Plus className="size-4" />
+          Nova Atividade
+        </button>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
-        {/* Calendar */}
-        <div className="imperial-cal imperial-card-soft overflow-hidden rounded-[24px]">
-          <style>{`
-            .imperial-cal .rbc-calendar { background: transparent !important; color: #e2ddd6; font-family: inherit; }
-            .imperial-cal .rbc-toolbar { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); background: transparent !important; }
-            .imperial-cal .rbc-toolbar button { color: #7a8896; background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-            .imperial-cal .rbc-toolbar button:hover { color: #fff; border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); }
-            .imperial-cal .rbc-toolbar button.rbc-active { color: #36f57c; border-color: rgba(52,242,127,0.4); background: rgba(52,242,127,0.1); }
-            .imperial-cal .rbc-toolbar button.rbc-active:hover { background: rgba(52,242,127,0.16); }
-            .imperial-cal .rbc-toolbar-label { font-size: 15px; font-weight: 600; color: #fff; }
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="imperial-card-soft rounded-[24px] p-4">
+          <div className="flex flex-col gap-4 border-b border-[rgba(255,255,255,0.06)] pb-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+                type="button"
+                onClick={() => navigate('prev')}
+              >
+                <ArrowLeft className="size-4" />
+              </button>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                  Agenda comercial
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-white">
+                  {formatRangeLabel(view, visibleRange.start, visibleRange.end)}
+                </h3>
+              </div>
+              <button
+                className="flex size-9 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+                type="button"
+                onClick={() => navigate('next')}
+              >
+                <ArrowRight className="size-4" />
+              </button>
+            </div>
 
-            .imperial-cal .rbc-header { padding: 10px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #7a8896; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: transparent !important; }
-            .imperial-cal .rbc-header + .rbc-header { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-header a, .imperial-cal .rbc-header a:visited { color: #7a8896; text-decoration: none; }
-
-            .imperial-cal .rbc-month-view { border: none !important; background: transparent !important; }
-            .imperial-cal .rbc-month-row + .rbc-month-row { border-top: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-day-bg + .rbc-day-bg { border-left: 1px solid rgba(255,255,255,0.04) !important; }
-            .imperial-cal .rbc-off-range-bg { background: rgba(0,0,0,0.25) !important; }
-            .imperial-cal .rbc-today { background: rgba(52,242,127,0.04) !important; }
-            .imperial-cal .rbc-date-cell { padding: 6px 8px; font-size: 12px; font-weight: 600; color: #7a8896; }
-            .imperial-cal .rbc-date-cell.rbc-now a { color: #36f57c; }
-
-            .imperial-cal .rbc-time-view { border: none !important; background: transparent !important; }
-            .imperial-cal .rbc-time-view .rbc-row { background: transparent !important; }
-            .imperial-cal .rbc-time-header { border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-header-content { border-left: 1px solid rgba(255,255,255,0.05) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-header-gutter { background: transparent !important; }
-            .imperial-cal .rbc-allday-cell { background: transparent !important; }
-            .imperial-cal .rbc-time-content { background: transparent !important; border-top: 1px solid rgba(255,255,255,0.06) !important; }
-            .imperial-cal .rbc-time-content > * + * > * { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-time-gutter { background: transparent !important; }
-            .imperial-cal .rbc-time-column { background: transparent !important; }
-            .imperial-cal .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.04) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-slot { color: #4a5568; font-size: 11px; background: transparent !important; }
-            .imperial-cal .rbc-label { color: #4a5568; font-size: 11px; padding: 0 8px; background: transparent !important; }
-            .imperial-cal .rbc-day-slot { background: transparent !important; }
-            .imperial-cal .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.025) !important; background: transparent !important; }
-            .imperial-cal .rbc-day-slot .rbc-events-container { margin-right: 8px; }
-            .imperial-cal .rbc-current-time-indicator { background: #36f57c !important; height: 2px; box-shadow: 0 0 6px rgba(52,242,127,0.5); }
-            .imperial-cal .rbc-slot-selection { background: rgba(52,242,127,0.1) !important; border: 1px solid rgba(52,242,127,0.3) !important; }
-
-            .imperial-cal .rbc-event { outline: none !important; }
-            .imperial-cal .rbc-event:focus { outline: 2px solid rgba(52,242,127,0.4) !important; }
-            .imperial-cal .rbc-event-label { font-size: 11px; }
-            .imperial-cal .rbc-show-more { color: #36f57c; font-size: 11px; font-weight: 600; background: transparent; }
-
-            .imperial-cal .rbc-agenda-view { background: transparent !important; }
-            .imperial-cal .rbc-agenda-view table { color: #e2ddd6; border-color: rgba(255,255,255,0.06) !important; width: 100%; background: transparent !important; }
-            .imperial-cal .rbc-agenda-view table thead { background: rgba(255,255,255,0.03) !important; }
-            .imperial-cal .rbc-agenda-view table thead th { color: #7a8896; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.06) !important; padding: 8px 12px; }
-            .imperial-cal .rbc-agenda-view tbody > tr > td { border-bottom: 1px solid rgba(255,255,255,0.04) !important; padding: 8px 12px; background: transparent !important; }
-            .imperial-cal .rbc-agenda-view tbody > tr > td + td { border-left: 1px solid rgba(255,255,255,0.04) !important; }
-            .imperial-cal .rbc-agenda-date-cell, .imperial-cal .rbc-agenda-time-cell { color: #7a8896; font-size: 12px; }
-            .imperial-cal .rbc-agenda-event-cell { color: #e2ddd6; }
-
-            .imperial-cal .rbc-addons-dnd .rbc-addons-dnd-drag-preview { opacity: 0.75; }
-            .imperial-cal .rbc-addons-dnd-resizable { cursor: grab; }
-            .imperial-cal .rbc-addons-dnd-resize-ns-anchor { height: 6px; background: rgba(52,242,127,0.4); cursor: ns-resize; border-radius: 0 0 6px 6px; }
-            .imperial-cal .rbc-addons-dnd-resize-ew-anchor { width: 6px; background: rgba(52,242,127,0.4); cursor: ew-resize; }
-          `}</style>
-
-          <DnDCalendar
-            culture="pt-BR"
-            date={date}
-            defaultView="month"
-            eventPropGetter={eventStyleGetter}
-            events={activities}
-            localizer={localizer}
-            messages={messages}
-            resizable
-            selectable
-            style={{ height: 620 }}
-            view={view}
-            onEventDrop={onEventDrop}
-            onEventResize={onEventResize}
-            onNavigate={setDate}
-            onSelectEvent={(event) => setEditingActivity(event as CommercialActivity)}
-            onSelectSlot={handleSelectSlot}
-            onView={setView}
-          />
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <UpcomingEvents activities={activities} />
-
-          {/* Stats */}
-          <div className="imperial-card-soft rounded-[20px] p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Resumo do mês</p>
-            {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-              const c = ACTIVITY_COLORS[t]
-              const count = activities.filter((a) => a.type === t).length
-              const impact = activities
-                .filter((a) => a.type === t && a.impactoEsperado)
-                .reduce((sum, a) => sum + (a.impactoEsperado ?? 0), 0)
-              if (count === 0) return null
-              return (
-                <div key={t} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full" style={{ background: c.dot }} />
-                    <span className="text-sm text-white">{ACTIVITY_LABELS[t]}</span>
-                    <span className="text-xs text-[var(--text-soft)]">({count})</span>
-                  </div>
-                  {impact > 0 && <span className="text-xs font-semibold text-[#36f57c]">+{impact}%</span>}
-                </div>
-              )
-            })}
-            <div className="flex items-center gap-2 border-t border-[rgba(255,255,255,0.06)] pt-3">
-              <CalendarDays className="size-3.5 text-[var(--text-soft)]" />
-              <span className="text-xs text-[var(--text-soft)]">{activities.length} atividades no total</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  ['week', 'Semana'],
+                  ['month', 'Mês'],
+                  ['agenda', 'Agenda'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    view === id
+                      ? 'bg-[rgba(52,242,127,0.12)] text-[#8fffb9]'
+                      : 'bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] hover:text-white'
+                  }`}
+                  type="button"
+                  onClick={() => setView(id)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Tip */}
+          <div className="mt-4">
+            {view === 'week' ? (
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+                {visibleDays.slice(0, 7).map((day) => (
+                  <DayColumn
+                    key={day.toISOString()}
+                    activities={groupedByDay.get(day.toDateString()) ?? []}
+                    day={day}
+                    onCreate={openNewActivity}
+                    onEdit={setEditingActivity}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {view === 'month' ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+                {visibleDays.map((day) => (
+                  <MonthCell
+                    key={day.toISOString()}
+                    activities={groupedByDay.get(day.toDateString()) ?? []}
+                    day={day}
+                    inMonth={isSameMonth(day, date)}
+                    onCreate={openNewActivity}
+                    onEdit={setEditingActivity}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {view === 'agenda' ? (
+              <div className="space-y-4">
+                {visibleDays
+                  .filter((day) => (groupedByDay.get(day.toDateString()) ?? []).length > 0)
+                  .map((day) => (
+                    <AgendaDaySection
+                      key={day.toISOString()}
+                      activities={groupedByDay.get(day.toDateString()) ?? []}
+                      day={day}
+                      onCreate={openNewActivity}
+                      onEdit={setEditingActivity}
+                    />
+                  ))}
+                {visibleActivities.length === 0 ? <EmptyAgenda onCreate={openNewActivity} /> : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <UpcomingEvents activities={activities} />
+
+          <div className="imperial-card-soft rounded-[20px] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Resumo do recorte</p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <MetricPill label="Atividades" value={String(eventCount)} />
+              <MetricPill label="Promoções" value={String(promoCount)} tone="success" />
+              <MetricPill label="Impacto" value={`+${totalImpacto}%`} tone="accent" />
+              <MetricPill
+                label="Janela"
+                value={view === 'week' ? '7 dias' : view === 'month' ? 'Mês' : '30 dias'}
+                tone="info"
+              />
+            </div>
+          </div>
+
           <div className="rounded-[16px] border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.04)] p-4">
-            <p className="text-xs font-semibold text-[#8fffb9]">Como usar</p>
+            <p className="text-xs font-semibold text-[#8fffb9]">Leitura manual</p>
             <ul className="mt-2 space-y-1.5 text-xs text-[var(--text-soft)]">
               <li>• Clique em um dia para criar</li>
-              <li>• Arraste para mover de data</li>
-              <li>• Arraste a borda para redimensionar</li>
-              <li>• Clique no evento para editar</li>
+              <li>• Clique em um card para editar</li>
+              <li>• Use a visão semanal para ritmo operacional</li>
+              <li>• Use agenda para enxergar o calendário como lista real</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Modals */}
-      {showModal && (
+      {showModal ? (
         <ActivityModal
           initialStart={selectedSlotStart}
           onClose={() => {
@@ -575,16 +578,266 @@ export function CommercialCalendar() {
           }}
           onSave={handleSave}
         />
-      )}
+      ) : null}
 
-      {editingActivity && (
+      {editingActivity ? (
         <ActivityModal
           activity={editingActivity}
           onClose={() => setEditingActivity(null)}
           onDelete={handleDelete}
           onSave={handleSave}
         />
-      )}
+      ) : null}
     </div>
   )
+}
+
+function DayColumn({
+  day,
+  activities,
+  onCreate,
+  onEdit,
+}: Readonly<{
+  day: Date
+  activities: CommercialActivity[]
+  onCreate: (day: Date) => void
+  onEdit: (activity: CommercialActivity) => void
+}>) {
+  return (
+    <div className="rounded-[18px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+            {format(day, 'EEEE', { locale: ptBR })}
+          </p>
+          <p className={`mt-1 text-sm font-semibold ${isToday(day) ? 'text-[#8fffb9]' : 'text-white'}`}>
+            {format(day, "dd 'de' MMM", { locale: ptBR })}
+          </p>
+        </div>
+        <button
+          className="rounded-full border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+          type="button"
+          onClick={() => onCreate(day)}
+        >
+          Novo
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {activities.length ? (
+          activities.map((activity) => <ActivityCard activity={activity} compact key={activity.id} onEdit={onEdit} />)
+        ) : (
+          <button
+            className="flex min-h-[132px] w-full flex-col items-center justify-center rounded-[16px] border border-dashed border-[rgba(255,255,255,0.08)] text-center text-sm text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+            type="button"
+            onClick={() => onCreate(day)}
+          >
+            <Plus className="mb-2 size-4" />
+            Sem atividade
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MonthCell({
+  day,
+  activities,
+  inMonth,
+  onCreate,
+  onEdit,
+}: Readonly<{
+  day: Date
+  activities: CommercialActivity[]
+  inMonth: boolean
+  onCreate: (day: Date) => void
+  onEdit: (activity: CommercialActivity) => void
+}>) {
+  return (
+    <div
+      className={`rounded-[18px] border p-3 ${
+        inMonth
+          ? 'border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]'
+          : 'border-[rgba(255,255,255,0.04)] bg-[rgba(0,0,0,0.16)]'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p
+          className={`text-sm font-semibold ${isToday(day) ? 'text-[#8fffb9]' : inMonth ? 'text-white' : 'text-[var(--text-soft)]'}`}
+        >
+          {format(day, 'dd/MM', { locale: ptBR })}
+        </p>
+        <button
+          className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] transition hover:text-white"
+          type="button"
+          onClick={() => onCreate(day)}
+        >
+          +
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {activities.slice(0, 2).map((activity) => (
+          <ActivityCard activity={activity} compact key={activity.id} onEdit={onEdit} />
+        ))}
+        {activities.length > 2 ? (
+          <button
+            className="rounded-full bg-[rgba(255,255,255,0.04)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]"
+            type="button"
+            onClick={() => onEdit(activities[0])}
+          >
+            +{activities.length - 2} mais
+          </button>
+        ) : null}
+        {!activities.length ? <div className="min-h-10 rounded-[12px] bg-[rgba(255,255,255,0.02)]" /> : null}
+      </div>
+    </div>
+  )
+}
+
+function AgendaDaySection({
+  day,
+  activities,
+  onCreate,
+  onEdit,
+}: Readonly<{
+  day: Date
+  activities: CommercialActivity[]
+  onCreate: (day: Date) => void
+  onEdit: (activity: CommercialActivity) => void
+}>) {
+  return (
+    <div className="rounded-[18px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+            {format(day, 'EEEE', { locale: ptBR })}
+          </p>
+          <h3 className={`mt-1 text-lg font-semibold ${isToday(day) ? 'text-[#8fffb9]' : 'text-white'}`}>
+            {format(day, "dd 'de' MMMM", { locale: ptBR })}
+          </h3>
+        </div>
+        <button
+          className="rounded-full border border-[rgba(255,255,255,0.08)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+          type="button"
+          onClick={() => onCreate(day)}
+        >
+          Nova atividade
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {activities.map((activity) => (
+          <ActivityCard activity={activity} key={activity.id} onEdit={onEdit} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ActivityCard({
+  activity,
+  compact = false,
+  onEdit,
+}: Readonly<{
+  activity: CommercialActivity
+  compact?: boolean
+  onEdit: (activity: CommercialActivity) => void
+}>) {
+  const tone = ACTIVITY_COLORS[activity.type]
+
+  return (
+    <button
+      className={`w-full rounded-[16px] border px-3 py-3 text-left transition hover:translate-y-[-1px] ${
+        compact ? 'min-h-[86px]' : 'min-h-[116px]'
+      }`}
+      style={{
+        background: tone.bg,
+        borderColor: tone.border,
+      }}
+      type="button"
+      onClick={() => onEdit(activity)}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]"
+          style={{ color: tone.text }}
+        >
+          <span className="size-2 rounded-full" style={{ background: tone.dot }} />
+          {ACTIVITY_LABELS[activity.type]}
+        </span>
+        <span className="text-[11px] text-[var(--text-soft)]">
+          {format(activity.start, 'HH:mm', { locale: ptBR })} — {format(activity.end, 'HH:mm', { locale: ptBR })}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-white">{activity.title}</p>
+      {!compact && activity.descricao ? (
+        <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">{activity.descricao}</p>
+      ) : null}
+      {activity.impactoEsperado ? (
+        <span className="mt-3 inline-flex rounded-full bg-[rgba(52,242,127,0.12)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8fffb9]">
+          +{activity.impactoEsperado}% impacto esperado
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
+function MetricPill({
+  label,
+  value,
+  tone = 'default',
+}: Readonly<{
+  label: string
+  value: string
+  tone?: 'default' | 'success' | 'accent' | 'info'
+}>) {
+  const toneClass =
+    tone === 'success'
+      ? 'border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
+      : tone === 'accent'
+        ? 'border-[rgba(201,168,76,0.14)] bg-[rgba(201,168,76,0.08)] text-[#f4d78b]'
+        : tone === 'info'
+          ? 'border-[rgba(96,165,250,0.14)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]'
+          : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-white'
+
+  return (
+    <div className={`rounded-[16px] border px-3 py-3 ${toneClass}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+    </div>
+  )
+}
+
+function EmptyAgenda({ onCreate }: { onCreate: (day: Date) => void }) {
+  return (
+    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[rgba(255,255,255,0.08)] text-center">
+      <CalendarDays className="size-8 text-[var(--text-soft)]" />
+      <p className="mt-4 text-sm font-medium text-white">Nenhuma atividade neste recorte.</p>
+      <p className="mt-2 text-sm text-[var(--text-soft)]">
+        Crie uma nova ação comercial para alimentar o calendário manual.
+      </p>
+      <button
+        className="mt-4 rounded-full border border-[rgba(255,255,255,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.14)] hover:text-white"
+        type="button"
+        onClick={() => onCreate(new Date())}
+      >
+        Criar atividade
+      </button>
+    </div>
+  )
+}
+
+function formatRangeLabel(view: ManualCalendarView, start: Date, end: Date) {
+  if (view === 'week') {
+    return `${format(start, "dd 'de' MMM", { locale: ptBR })} — ${format(end, "dd 'de' MMM", { locale: ptBR })}`
+  }
+
+  if (view === 'month') {
+    return format(startOfMonth(start), "MMMM 'de' yyyy", { locale: ptBR })
+  }
+
+  return `${format(start, "dd 'de' MMM", { locale: ptBR })} — ${format(end, "dd 'de' MMM", { locale: ptBR })}`
 }

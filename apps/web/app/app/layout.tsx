@@ -4,7 +4,7 @@ import { ServiceWorkerRegistrar } from '@/components/shared/sw-registrar'
 export const metadata: Metadata = {
   title: 'Desk Imperial — Operacional',
   description: 'Sistema operacional móvel para garçons e proprietários.',
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest?v=20260403',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
