@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LetterCard } from '@/components/marketing/letter-card'
+import { FounderContactCard } from '@/components/marketing/founder-contact-card'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
@@ -459,6 +460,7 @@ export function LandingPage() {
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
+            <FounderContactCard />
 
             <div className="glass-card relative z-10 p-6">
               <div className="flex items-center justify-between">
