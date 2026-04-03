@@ -765,3 +765,41 @@ Consideramos essa frente madura quando:
 - aqui não teve maquiagem: o warning dos charts foi tratado na origem da renderização, e não escondido por CSS ou delay artificial
 - o salão ficou mais responsivo no gesto e mais claro para operação, mas sem recomeçar a tela do zero nem quebrar o fluxo atual
 - o próximo passo depois do deploy é validar em produção se o warning do Recharts sumiu de vez e se o salão responde melhor no toque real
+
+## 12. Rollback cirúrgico do calendário comercial — 2026-04-03
+
+**Problema real reconhecido**
+
+- o calendário da seção `Calendário` não era o alvo da correção anterior
+- a troca para a agenda manual fez o produto perder uma interação que já estava boa: drag-and-drop e resize dos eventos comerciais
+- o calendário de atendimento, por outro lado, era o ponto que realmente precisava sair da camada pesada/genérica
+
+**Correção aplicada**
+
+- `apps/web/components/calendar/commercial-calendar.tsx`
+  - restaurado para a versão anterior com `react-big-calendar` + addon de drag-and-drop
+  - mantidos os estilos visuais do Desk Imperial e o modal de criação/edição
+  - retornaram os gestos de mover evento, redimensionar e navegar pelas views nativas do calendário comercial
+
+**O que foi preservado**
+
+- `apps/web/components/operations/operations-timeline.tsx`
+  - continua manual e mais leve, porque esse sim era o calendário de atendimento que precisava mudar
+- nenhuma mudança foi feita nesta passada em:
+  - AG Grid
+  - visão executiva por colaborador
+  - mesas do atendimento
+  - bloco `Pedro Alves`
+  - movimentos
+  - últimos registros
+
+**Validação**
+
+- `npm --workspace @partner/web run lint -- components/calendar/commercial-calendar.tsx` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- aqui a decisão madura foi voltar um passo, não insistir numa mudança errada
+- o calendário comercial recupera o comportamento que já funcionava bem, enquanto o atendimento mantém a melhora que realmente fez sentido
