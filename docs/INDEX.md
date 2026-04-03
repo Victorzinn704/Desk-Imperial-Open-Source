@@ -43,34 +43,35 @@ Navegação central de toda a documentação do projeto.
 
 ## Segurança
 
-| Documento                                                                  | O que cobre                                            |
-| -------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [SECURITY.md](../SECURITY.md)                                              | Política de segurança e como reportar vulnerabilidades |
-| [security/security-baseline.md](./security/security-baseline.md)           | Baseline de segurança do projeto                       |
-| [security/admin-pin-hardening.md](./security/admin-pin-hardening.md)       | Hardening do Admin PIN                                 |
-| [security/deploy-checklist.md](./security/deploy-checklist.md)             | Checklist de deploy seguro                             |
-| [security/observability-and-logs.md](./security/observability-and-logs.md) | Observabilidade, logs e rastreamento                   |
+| Documento                                                                                                | O que cobre                                                      |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [SECURITY.md](../SECURITY.md)                                                                            | Política de segurança e como reportar vulnerabilidades           |
+| [security/security-baseline.md](./security/security-baseline.md)                                         | Baseline de segurança do projeto                                 |
+| [security/admin-pin-hardening.md](./security/admin-pin-hardening.md)                                     | Hardening do Admin PIN                                           |
+| [security/deploy-checklist.md](./security/deploy-checklist.md)                                           | Checklist de deploy seguro                                       |
+| [security/observability-and-logs.md](./security/observability-and-logs.md)                               | Observabilidade, logs e rastreamento                             |
 | [security/dependency-risk-acceptance-2026-04-01.md](./security/dependency-risk-acceptance-2026-04-01.md) | Aceite temporário de risco de dependências e plano de remediação |
 
 ---
 
 ## Operações
 
-| Documento                                                                  | O que cobre                      |
-| -------------------------------------------------------------------------- | -------------------------------- |
-| [operations/flows.md](./operations/flows.md)                               | Fluxos operacionais do sistema   |
-| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md) | Mapeamento de KPIs em tempo real |
+| Documento                                                                          | O que cobre                          |
+| ---------------------------------------------------------------------------------- | ------------------------------------ |
+| [operations/flows.md](./operations/flows.md)                                       | Fluxos operacionais do sistema       |
+| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)         | Mapeamento de KPIs em tempo real     |
 | [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
 
 ---
 
 ## Testes
 
-| Documento                                                                      | O que cobre                               |
-| ------------------------------------------------------------------------------ | ----------------------------------------- |
-| [testing/testing-guide.md](./testing/testing-guide.md)                         | Guia completo de testes do projeto        |
-| [testing/load-testing.md](./testing/load-testing.md)                           | Estratégia e comandos de testes de carga  |
-| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md) | Auditoria completa da cobertura de testes |
+| Documento                                                                            | O que cobre                                   |
+| ------------------------------------------------------------------------------------ | --------------------------------------------- |
+| [testing/testing-guide.md](./testing/testing-guide.md)                               | Guia completo de testes do projeto            |
+| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md) | Snapshot de cobertura atual por area e global |
+| [testing/load-testing.md](./testing/load-testing.md)                                 | Estratégia e comandos de testes de carga      |
+| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)       | Auditoria completa da cobertura de testes     |
 
 ---
 
