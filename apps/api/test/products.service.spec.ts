@@ -24,6 +24,7 @@ import type { PrismaService } from '../src/database/prisma.service'
 import type { CurrencyService } from '../src/modules/currency/currency.service'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import type { CacheService } from '../src/common/services/cache.service'
+import type { FinanceService } from '../src/modules/finance/finance.service'
 import type { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
 import type { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
 import type { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
@@ -66,6 +67,10 @@ const mockCache = {
   isReady: jest.fn(),
   financeKey: jest.fn(),
   productsKey: jest.fn(),
+}
+
+const mockFinanceService = {
+  invalidateAndWarmSummary: jest.fn(),
 }
 
 // ── Factories ─────────────────────────────────────────────────────────────────
@@ -130,9 +135,9 @@ function makeCurrencySnapshot() {
 }
 
 function makePrismaUniqueError() {
-  const error = new Error('Unique constraint failed')
+  const error = new Error('Unique constraint failed') as Error & { code: string }
   Object.setPrototypeOf(error, Prisma.PrismaClientKnownRequestError.prototype)
-  ;(error as any).code = 'P2002'
+  error.code = 'P2002'
   return error
 }
 
@@ -150,6 +155,7 @@ beforeEach(() => {
     mockCurrencyService as unknown as CurrencyService,
     mockAuditLogService as unknown as AuditLogService,
     mockCache as unknown as CacheService,
+    mockFinanceService as unknown as FinanceService,
   )
 
   mockContext = makeAuthContext({
@@ -455,7 +461,7 @@ describe('ProductsService', () => {
 
       await productsService.createForUser(mockContext, dto, requestContext)
 
-      expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
+      expect(mockFinanceService.invalidateAndWarmSummary).toHaveBeenCalledWith('user-1')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:active')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:all')
     })
@@ -969,7 +975,7 @@ describe('ProductsService', () => {
 
       await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
-      expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
+      expect(mockFinanceService.invalidateAndWarmSummary).toHaveBeenCalledWith('user-1')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:active')
       expect(mockCache.del).toHaveBeenCalledWith('products:list:user-1:all')
     })
@@ -1003,7 +1009,8 @@ describe('ProductsService', () => {
     })
 
     it('deve ajustar requiresKitchen no update do upsert conforme categoria', async () => {
-      const csv = makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
+      const csv =
+        makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
     Cerveja Pilsen,Cerveja,Classe A,UN,1,1,Desc,10,20,BRL,10
     Prato Feito,Prato,Classe B,UN,1,1,Desc,12,30,BRL,5`)
       mockPrisma.product.findUnique.mockResolvedValue(makeProduct())

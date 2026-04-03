@@ -1,7 +1,6 @@
 import type { BuyerType, OrderStatus } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import type { CurrencyService } from '../currency/currency.service'
-import type { ProductRecord } from '../products/products.types'
 
 type CurrencyCode = 'BRL' | 'USD' | 'EUR'
 type CurrencySnapshot = Awaited<ReturnType<CurrencyService['getSnapshot']>>
@@ -10,6 +9,21 @@ type FinanceAggregationOptions = {
   currencyService: CurrencyService
   displayCurrency: CurrencyCode
   snapshot: CurrencySnapshot
+}
+
+export type FinanceProductAnalyticsRecord = {
+  id: string
+  name: string
+  category: string
+  stock: number
+  currency: CurrencyCode
+  displayCurrency: CurrencyCode
+  originalInventorySalesValue: number
+  originalPotentialProfit: number
+  inventoryCostValue: number
+  inventorySalesValue: number
+  potentialProfit: number
+  marginPercent: number
 }
 
 type FinanceTopProduct = {
@@ -422,7 +436,7 @@ export function buildTopEmployees(
     .slice(0, 6)
 }
 
-export function buildCategoryCollections(records: ProductRecord[]) {
+export function buildCategoryCollections(records: FinanceProductAnalyticsRecord[]) {
   const categoryMap = new Map<
     string,
     {
@@ -434,7 +448,7 @@ export function buildCategoryCollections(records: ProductRecord[]) {
       potentialProfit: number
     }
   >()
-  const categoryProductsMap = new Map<string, ProductRecord[]>()
+  const categoryProductsMap = new Map<string, FinanceProductAnalyticsRecord[]>()
 
   for (const record of records) {
     const current = categoryMap.get(record.category) ?? {
@@ -470,7 +484,7 @@ export function buildCategoryCollections(records: ProductRecord[]) {
   }
 }
 
-export function buildTopProducts(records: ProductRecord[], limit = 5): FinanceTopProduct[] {
+export function buildTopProducts(records: FinanceProductAnalyticsRecord[], limit = 5): FinanceTopProduct[] {
   return records
     .slice()
     .sort((left, right) => right.potentialProfit - left.potentialProfit)

@@ -1,6 +1,6 @@
 # Desk Imperial
 
-[![CI](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml/badge.svg)](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml)
+[![CI main](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml?query=branch%3Amain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
 [![Open Source](https://img.shields.io/badge/open%20source-yes-blue)](./LICENSE)
@@ -232,21 +232,21 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ## Documentação
 
-| Área                                   | Link                                                                               |
-| -------------------------------------- | ---------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                   |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                             |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                     |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                         |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)   |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                     |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                   |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                   |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md) |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)         |
+| Área                                   | Link                                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
 | Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                               |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                               |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
 
 ---
 
@@ -258,6 +258,28 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 - Projeto em evolução — funcional e rodando em produção, mas não finalizado 100%
 
 Veja o detalhamento completo em [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md).
+
+---
+
+## Higiene do repositório
+
+Scripts úteis para manter o projeto publicável, rastreável e sem surpresa entre o estado local e o remoto:
+
+```bash
+# procura riscos públicos óbvios antes de publicar no GitHub
+npm run repo:scan-public
+
+# mostra a diferença entre sua branch local, a working tree e a base remota
+npm run repo:drift
+
+# roda o gate de segurança usado no CI público
+npm run security:audit-runtime
+```
+
+`npm run repo:drift` separa duas coisas que costumam confundir:
+
+- **arquivos não commitados**: o que ainda está só no seu disco local
+- **diferença da branch para `origin/main`**: tudo que mudou na sua branch em relação ao remoto, mesmo que já esteja commitado
 
 ---
 

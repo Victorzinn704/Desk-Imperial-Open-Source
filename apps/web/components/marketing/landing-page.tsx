@@ -120,7 +120,17 @@ const capabilityCards: Array<{
   },
 ]
 
-const heroLines = ['Sistema de Gestão', 'para Comerciantes', 'Brasileiros —', 'Sem fins lucrativos.']
+const heroLines = [
+  'Projeto Voltado a',
+  'Comerciantes',
+  'Brasileiros',
+  'Que Buscam',
+  'Crescer Com',
+  'Controle, Gestão',
+  'e Sabedoria.',
+]
+
+const heroKicker = 'PDV sem fins lucrativos!'
 
 const footerColumns = [
   {
@@ -353,16 +363,16 @@ export function LandingPage() {
       </header>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 pt-24 lg:px-12">
-        <div className="grid flex-1 items-center gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
+        <div className="grid flex-1 items-center gap-12 py-8 lg:grid-cols-[1.02fr_0.98fr] lg:py-16">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
+            className="max-w-[38rem]"
             initial={{ opacity: 0, y: 30 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
             <motion.div
               animate="visible"
-              className="mt-8 space-y-1 sm:space-y-2"
+              className="mt-8 space-y-0.5 sm:space-y-1.5"
               initial="hidden"
               style={{ rotateX, rotateY, transformPerspective: 1200 }}
               onMouseLeave={handleHeroPointerLeave}
@@ -379,7 +389,7 @@ export function LandingPage() {
             >
               {heroLines.map((line, index) => (
                 <motion.span
-                  className="block origin-left text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                  className="block origin-left whitespace-nowrap text-[clamp(1.95rem,5.2vw,5.1rem)] font-semibold leading-[0.95] tracking-tight"
                   key={line}
                   style={{ x: lineShifts[index] ?? lineShifts[lineShifts.length - 1] }}
                   whileHover={{
@@ -400,6 +410,20 @@ export function LandingPage() {
                   <span className="text-flag-brazil">{line}</span>
                 </motion.span>
               ))}
+            </motion.div>
+
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-5 inline-flex max-w-fit items-center gap-3 rounded-full border border-[rgba(255,223,0,0.28)] bg-[linear-gradient(135deg,rgba(0,151,57,0.22),rgba(255,223,0,0.16),rgba(0,39,118,0.2))] px-4 py-2 shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-md"
+              initial={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.45, ease: 'easeOut', delay: 0.45 }}
+            >
+              <span className="text-lg" aria-hidden="true">
+                🇧🇷
+              </span>
+              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-primary)] sm:text-[0.8rem]">
+                {heroKicker}
+              </span>
             </motion.div>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
