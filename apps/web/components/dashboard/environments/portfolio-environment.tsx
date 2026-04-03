@@ -18,7 +18,7 @@ import { ProductSearchField } from '@/components/dashboard/product-search-field'
 function CategoryCard({
   category,
   products,
-  units,
+  inventoryCostValue,
   potentialProfit,
   inventorySalesValue,
   displayCurrency,
@@ -26,13 +26,15 @@ function CategoryCard({
 }: {
   category: string
   products: number
-  units: number
+  inventoryCostValue: number
   potentialProfit: number
   inventorySalesValue: number
   displayCurrency: string
   maxProfit: number
 }) {
   const barPct = maxProfit > 0 ? Math.max(4, (potentialProfit / maxProfit) * 100) : 4
+  const categoryMargin =
+    inventorySalesValue > 0 ? `${Math.round((potentialProfit / inventorySalesValue) * 100)}% margem estimada` : 'sem venda projetada'
 
   return (
     <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4 hover:border-white/10 transition-colors">
@@ -40,7 +42,7 @@ function CategoryCard({
         <div>
           <p className="text-sm font-semibold text-white leading-snug">{category}</p>
           <p className="mt-1 text-[11px] text-[var(--text-soft)]">
-            {products} produto{products !== 1 ? 's' : ''} · {units} unidade{units !== 1 ? 's' : ''}
+            {products} SKU{products !== 1 ? 's' : ''} · {formatCurrency(inventoryCostValue, displayCurrency as never)} de capital
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -60,7 +62,7 @@ function CategoryCard({
       </div>
 
       <p className="mt-2 text-[10px] text-[var(--text-soft)]">
-        {formatCurrency(inventorySalesValue, displayCurrency as never)} em valor de venda potencial
+        {formatCurrency(inventorySalesValue, displayCurrency as never)} em venda potencial · {categoryMargin}
       </p>
     </div>
   )
@@ -68,7 +70,17 @@ function CategoryCard({
 
 // ── summary pill ──────────────────────────────────────────────────────────────
 
-function SummaryPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+function SummaryPill({
+  icon: Icon,
+  label,
+  value,
+  helper,
+}: {
+  icon: React.ElementType
+  label: string
+  value: string
+  helper?: string
+}) {
   return (
     <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3.5 flex items-center gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
@@ -77,6 +89,7 @@ function SummaryPill({ icon: Icon, label, value }: { icon: React.ElementType; la
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
         <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
+        {helper ? <p className="mt-0.5 text-[10px] text-[var(--text-soft)]">{helper}</p> : null}
       </div>
     </div>
   )
@@ -103,6 +116,7 @@ export function PortfolioEnvironment() {
     updateProductMutation: _updateProductMutation,
     archiveProductMutation: _archiveProductMutation,
     restoreProductMutation,
+    deleteProductMutation: _deleteProductMutation,
   } = useDashboardMutations()
 
   const finance = financeQuery.data
@@ -114,6 +128,7 @@ export function PortfolioEnvironment() {
     _updateProductMutation.error,
     _archiveProductMutation.error,
     restoreProductMutation.error,
+    _deleteProductMutation.error,
   ].find((error) => error instanceof ApiError)
 
   const archiveProductMutation = {
@@ -125,6 +140,18 @@ export function PortfolioEnvironment() {
     isPending: _updateProductMutation.isPending,
     mutate: (payload: Parameters<typeof _updateProductMutation.mutate>[0]) =>
       _updateProductMutation.mutate(payload, { onSuccess: () => setEditingProduct(null) }),
+  }
+
+  const deleteProductMutation = {
+    isPending: _deleteProductMutation.isPending,
+    mutate: (id: string) =>
+      _deleteProductMutation.mutate(id, {
+        onSuccess: () => {
+          if (editingProduct?.id === id) {
+            setEditingProduct(null)
+          }
+        },
+      }),
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
@@ -160,7 +187,8 @@ export function PortfolioEnvironment() {
     _createProductMutation.isPending ||
     updateProductMutation.isPending ||
     archiveProductMutation.isPending ||
-    restoreProductMutation.isPending
+    restoreProductMutation.isPending ||
+    deleteProductMutation.isPending
 
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
   const filteredProducts = normalizedSearch
@@ -174,6 +202,19 @@ export function PortfolioEnvironment() {
 
   const avgMargin = calcAvgMargin(products)
   const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((c) => c.potentialProfit) ?? [0]), 0)
+  const handleDeleteProduct = (productId: string) => {
+    const target = products.find((product) => product.id === productId)
+    const confirmed =
+      typeof window === 'undefined'
+        ? true
+        : window.confirm(
+            `Excluir "${target?.name ?? 'este produto'}" em definitivo?\n\nEssa ação remove o item do portfólio ativo e preserva apenas o histórico de vendas já consolidado.`,
+          )
+
+    if (confirmed) {
+      deleteProductMutation.mutate(productId)
+    }
+  }
 
   return (
     <section className="space-y-6">
@@ -188,19 +229,27 @@ export function PortfolioEnvironment() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <SummaryPill
           icon={Package}
-          label="Produtos ativos"
+          helper={productsTotals ? `${productsTotals.inactiveProducts} arquivado(s)` : undefined}
+          label="SKUs ativos"
           value={productsTotals ? String(productsTotals.activeProducts) : '—'}
         />
         <SummaryPill
           icon={Boxes}
-          label="Total em estoque"
-          value={productsTotals ? `${productsTotals.stockUnits} und` : '—'}
+          helper={productsTotals ? `${productsTotals.stockBaseUnits} unidades base` : undefined}
+          label="Capital em estoque"
+          value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, String(finance?.displayCurrency ?? 'BRL') as never) : '—'}
         />
-        <SummaryPill icon={TrendingUp} label="Margem média" value={avgMargin} />
         <SummaryPill
+          helper={productsTotals ? formatCurrency(productsTotals.potentialProfit, String(finance?.displayCurrency ?? 'BRL') as never) + ' em lucro potencial' : undefined}
+          icon={TrendingUp}
+          label="Venda potencial"
+          value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, String(finance?.displayCurrency ?? 'BRL') as never) : '—'}
+        />
+        <SummaryPill
+          helper={`Margem média ${avgMargin}`}
           icon={Tags}
-          label="SKUs cadastrados"
-          value={productsTotals ? String(productsTotals.totalProducts) : '—'}
+          label="Itens em alerta"
+          value={finance ? String(finance.totals.lowStockItems) : '—'}
         />
       </div>
 
@@ -237,7 +286,7 @@ export function PortfolioEnvironment() {
                   key={item.category}
                   category={item.category}
                   products={item.products}
-                  units={item.units}
+                  inventoryCostValue={item.inventoryCostValue}
                   potentialProfit={item.potentialProfit}
                   inventorySalesValue={item.inventorySalesValue}
                   displayCurrency={String(finance.displayCurrency)}
@@ -294,6 +343,7 @@ export function PortfolioEnvironment() {
                 busy={productBusy}
                 key={product.id}
                 onArchive={archiveProductMutation.mutate}
+                onDelete={handleDeleteProduct}
                 onEdit={setEditingProduct}
                 onRestore={restoreProductMutation.mutate}
                 product={product}

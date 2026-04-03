@@ -18,13 +18,35 @@ export function appendOptimisticComanda(
     return undefined
   }
 
-  queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
-    ...snapshot,
-    unassigned: {
-      ...snapshot.unassigned,
-      comandas: [...snapshot.unassigned.comandas, comanda],
-    },
-  })
+  const targetEmployeeIndex =
+    comanda.currentEmployeeId != null
+      ? snapshot.employees.findIndex((employee) => employee.employeeId === comanda.currentEmployeeId)
+      : -1
+
+  const nextSnapshot: OperationsLiveResponse =
+    targetEmployeeIndex === -1
+      ? {
+          ...snapshot,
+          unassigned: {
+            ...snapshot.unassigned,
+            comandas: [...snapshot.unassigned.comandas, comanda],
+          },
+          mesas: patchMesaCollection(snapshot.mesas, comanda, 'OPEN'),
+        }
+      : {
+          ...snapshot,
+          employees: snapshot.employees.map((employee, index) =>
+            index === targetEmployeeIndex
+              ? {
+                  ...employee,
+                  comandas: [...employee.comandas, comanda],
+                }
+              : employee,
+          ),
+          mesas: patchMesaCollection(snapshot.mesas, comanda, 'OPEN'),
+        }
+
+  queryClient.setQueryData<OperationsLiveResponse>(queryKey, nextSnapshot)
 
   return snapshot
 }
@@ -57,18 +79,24 @@ export function patchOptimisticComanda(
     }
 
     const updatedComandas = [...group.comandas]
-    updatedComandas[comandaIdx] = patcher(group.comandas[comandaIdx])
+    const updatedComanda = patcher(group.comandas[comandaIdx])
+    updatedComandas[comandaIdx] = updatedComanda
 
     if (group === snapshot.unassigned) {
       queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
         ...snapshot,
         unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+        mesas: patchMesaCollection(snapshot.mesas, updatedComanda, updatedComanda.status),
       })
     } else {
       const employeeIndex = snapshot.employees.findIndex((employee) => employee === group)
       const updatedEmployees = [...snapshot.employees]
       updatedEmployees[employeeIndex] = { ...group, comandas: updatedComandas }
-      queryClient.setQueryData<OperationsLiveResponse>(queryKey, { ...snapshot, employees: updatedEmployees })
+      queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
+        ...snapshot,
+        employees: updatedEmployees,
+        mesas: patchMesaCollection(snapshot.mesas, updatedComanda, updatedComanda.status),
+      })
     }
 
     break
@@ -109,6 +137,7 @@ export function setOptimisticComandaStatus(
   return patchOptimisticComanda(queryClient, queryKey, comandaId, (comanda) => ({
     ...comanda,
     status,
+    closedAt: status === 'CLOSED' || status === 'CANCELLED' ? new Date().toISOString() : comanda.closedAt,
   }))
 }
 
@@ -143,7 +172,10 @@ function generateOptimisticId(prefix: string) {
 
 export function buildOptimisticComandaRecord(input: {
   tableLabel: string
+  mesaId?: string | null
   cashSessionId?: string | null
+  currentEmployeeId?: string | null
+  companyOwnerId?: string
   customerName?: string | null
   customerDocument?: string | null
   participantCount?: number
@@ -175,8 +207,8 @@ export function buildOptimisticComandaRecord(input: {
 
   return {
     id: generateOptimisticId('optimistic'),
-    companyOwnerId: '',
-    mesaId: null,
+    companyOwnerId: input.companyOwnerId ?? '',
+    mesaId: input.mesaId ?? null,
     status: 'OPEN',
     tableLabel: input.tableLabel,
     customerName: input.customerName ?? null,
@@ -184,7 +216,7 @@ export function buildOptimisticComandaRecord(input: {
     participantCount: input.participantCount ?? 1,
     notes: input.notes ?? null,
     cashSessionId: input.cashSessionId ?? null,
-    currentEmployeeId: null,
+    currentEmployeeId: input.currentEmployeeId ?? null,
     discountAmount: 0,
     serviceFeeAmount: 0,
     subtotalAmount,
@@ -227,4 +259,56 @@ function resolveOptimisticUnitPrice(unitPrice: number | undefined, quantity: num
   }
 
   return 0
+}
+
+function patchMesaCollection(
+  mesas: OperationsLiveResponse['mesas'],
+  comanda: Pick<ComandaRecord, 'id' | 'mesaId' | 'tableLabel' | 'currentEmployeeId'>,
+  status: ComandaRecord['status'],
+): OperationsLiveResponse['mesas'] {
+  return mesas.map((mesa) => {
+    const matchesMesaId = Boolean(comanda.mesaId) && mesa.id === comanda.mesaId
+    const matchesLabel = normalizeMesaKey(mesa.label) === normalizeMesaKey(comanda.tableLabel)
+
+    if (!matchesMesaId && !matchesLabel && mesa.comandaId !== comanda.id) {
+      return mesa
+    }
+
+    if (status === 'CLOSED' || status === 'CANCELLED') {
+      const nextStatus: OperationsLiveResponse['mesas'][number]['status'] =
+        mesa.reservedUntil && new Date(mesa.reservedUntil) > new Date() ? 'reservada' : 'livre'
+
+      return {
+        ...mesa,
+        status: nextStatus,
+        comandaId: null,
+        currentEmployeeId: null,
+      }
+    }
+
+    return {
+      ...mesa,
+      status: 'ocupada',
+      comandaId: comanda.id,
+      currentEmployeeId: comanda.currentEmployeeId ?? null,
+    }
+  })
+}
+
+function normalizeMesaKey(raw: string | null | undefined) {
+  if (!raw) {
+    return ''
+  }
+
+  const trimmed = raw.trim()
+  const cleaned = trimmed
+    .replace(/^(mesa|ms|m)\s*[-–—#nº.:]*\s*/i, '')
+    .replace(/^[-–—#nº.:]+\s*/, '')
+    .trim()
+
+  if (/^\d+$/.test(cleaned)) {
+    return String(Number(cleaned))
+  }
+
+  return cleaned.toUpperCase()
 }

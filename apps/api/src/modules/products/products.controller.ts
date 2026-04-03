@@ -74,6 +74,12 @@ export class ProductsController {
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
+  @Delete(':productId/permanent')
+  deleteProduct(@CurrentAuth() auth: AuthContext, @Param('productId') productId: string, @Req() request: Request) {
+    return this.productsService.deleteForUser(auth, productId, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
   @Post(':productId/restore')
   restoreProduct(@CurrentAuth() auth: AuthContext, @Param('productId') productId: string, @Req() request: Request) {
     return this.productsService.restoreForUser(auth, productId, extractRequestContext(request))

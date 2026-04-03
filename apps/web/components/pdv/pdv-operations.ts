@@ -103,7 +103,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
       const gId = currentComanda?.currentEmployeeId ?? undefined
       return {
         id: label,
-        numero: label,
+        numero: normalizeTableLabel(label),
         capacidade: label === 'VIP' ? 10 : 4,
         status: currentComanda ? 'ocupada' : 'livre',
         comandaId: currentComanda?.id,
@@ -129,7 +129,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
       const gId = mesa.currentEmployeeId ?? matchedComanda?.currentEmployeeId ?? undefined
       return {
         id: mesa.id,
-        numero: mesa.label,
+        numero: normalizeTableLabel(mesa.label),
         capacidade: mesa.capacity,
         status: (isOccupied ? 'ocupada' : mesa.status) as Mesa['status'],
         comandaId: mesa.comandaId ?? matchedComanda?.id ?? undefined,

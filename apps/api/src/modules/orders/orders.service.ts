@@ -17,6 +17,27 @@ import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.
 import { toOrderRecord } from './orders.types'
 import { CacheService } from '../../common/services/cache.service'
 import { FinanceService } from '../finance/finance.service'
+import {
+  buildInventoryProductsById,
+  buildProductConsumptionMap,
+  calculateEffectiveUnitCost,
+} from '../products/product-combo-consumption.util'
+
+const orderProductInventoryInclude = {
+  comboComponents: {
+    include: {
+      componentProduct: {
+        select: {
+          id: true,
+          name: true,
+          stock: true,
+          unitCost: true,
+          currency: true,
+        },
+      },
+    },
+  },
+} as const
 
 const MAX_STAFF_DISCOUNT_PERCENT = 15
 
@@ -213,6 +234,7 @@ export class OrdersService {
         userId: workspaceUserId,
         active: true,
       },
+      include: orderProductInventoryInclude,
     })
     const productsById = new Map(products.map((product) => [product.id, product]))
 
@@ -224,12 +246,8 @@ export class OrdersService {
       }
     }
 
-    const requestedStockByProduct = new Map<string, number>()
-    for (const item of requestedItems) {
-      requestedStockByProduct.set(item.productId, (requestedStockByProduct.get(item.productId) ?? 0) + item.quantity)
-    }
-
-    this.assertRequestedStockAvailability(productsById, requestedStockByProduct)
+    const requestedStockByProduct = buildProductConsumptionMap(requestedItems, productsById)
+    this.assertRequestedStockAvailability(buildInventoryProductsById(products), requestedStockByProduct)
 
     const customerName = sanitizePlainText(dto.customerName, 'Comprador', {
       allowEmpty: false,
@@ -317,7 +335,11 @@ export class OrdersService {
         throw new NotFoundException(`Produto nao encontrado para o item ${item.index + 1}.`)
       }
 
-      const unitCost = this.currencyService.convert(Number(product.unitCost), product.currency, orderCurrency, snapshot)
+      const unitCost = calculateEffectiveUnitCost(product, {
+        currencyService: this.currencyService,
+        displayCurrency: orderCurrency,
+        snapshot,
+      })
       const defaultUnitPrice = this.currencyService.convert(
         Number(product.unitPrice),
         product.currency,
@@ -358,11 +380,13 @@ export class OrdersService {
 
     const order = await this.prisma.$transaction(
       async (transaction) => {
-        for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
-          const product = productsById.get(productId)
-          const stockUpdate = await transaction.product.updateMany({
-            where: {
-              id: productId,
+      const inventoryProductsById = buildInventoryProductsById(products)
+
+      for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
+        const product = inventoryProductsById.get(productId)
+        const stockUpdate = await transaction.product.updateMany({
+          where: {
+            id: productId,
               userId: workspaceUserId,
               active: true,
               stock: {
@@ -381,9 +405,9 @@ export class OrdersService {
               `Estoque insuficiente para ${product?.name ?? 'o produto selecionado'}. Revise a quantidade e tente novamente.`,
             )
           }
-        }
+      }
 
-        return transaction.order.create({
+      return transaction.order.create({
           data: {
             userId: workspaceUserId,
             customerName,
@@ -497,22 +521,41 @@ export class OrdersService {
     }
 
     const cancelledOrder = await this.prisma.$transaction(async (transaction) => {
-      for (const item of order.items) {
-        if (!item.productId || order.comandaId) {
-          continue
-        }
+      if (!order.comandaId) {
+        const productIds = [...new Set(order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId)))]
+        const products = productIds.length
+          ? await transaction.product.findMany({
+              where: {
+                id: { in: productIds },
+                userId: workspaceUserId,
+              },
+              include: orderProductInventoryInclude,
+            })
+          : []
+        const productsById = new Map(products.map((product) => [product.id, product]))
+        const stockToRestore = buildProductConsumptionMap(
+          order.items
+            .filter((item) => Boolean(item.productId))
+            .map((item) => ({
+              productId: item.productId!,
+              quantity: item.quantity,
+            })),
+          productsById,
+        )
 
-        await transaction.product.updateMany({
-          where: {
-            id: item.productId,
-            userId: workspaceUserId,
-          },
-          data: {
-            stock: {
-              increment: item.quantity,
+        for (const [productId, quantity] of stockToRestore.entries()) {
+          await transaction.product.updateMany({
+            where: {
+              id: productId,
+              userId: workspaceUserId,
             },
-          },
-        })
+            data: {
+              stock: {
+                increment: quantity,
+              },
+            },
+          })
+        }
       }
 
       return transaction.order.update({

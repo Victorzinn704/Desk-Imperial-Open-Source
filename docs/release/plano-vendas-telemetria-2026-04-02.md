@@ -525,3 +525,96 @@ Consideramos essa frente madura quando:
 - `finance/summary` e `operations/live` ficam instrumentados com métricas úteis
 - o stack OSS recebe essas métricas e mostra o gargalo real
 - a próxima otimização acontece por evidência, não por sensação
+
+---
+
+## 7. Hardening operacional mobile/web — 2026-04-03
+
+**Problemas reais atacados**
+
+- mesas aparecendo livres para o staff enquanto já estavam ocupadas por outra equipe
+- autoabertura de caixa disparando em qualquer `409`, inclusive em conflito de mesa
+- abertura/fechamento de comanda demorando a refletir no estado da mesa
+- fluxo mobile do PDV com categorias e lista de itens brigando pela mesma tela
+
+**Correções aplicadas**
+
+- `apps/api/src/modules/operations/operations-helpers.service.ts`
+  - ocupação de mesa passou a vir de uma query mínima global de comandas abertas com `mesaId`, sem depender do recorte por funcionário
+- `apps/web/lib/operations/operations-optimistic.ts`
+  - otimista de comanda agora atualiza também `mesas.status`, `comandaId` e `currentEmployeeId`
+- `apps/web/components/staff-mobile/staff-mobile-shell.tsx`
+- `apps/web/components/owner-mobile/owner-mobile-shell.tsx`
+  - retry automático de caixa ficou restrito a erros realmente relacionados a caixa
+  - invalidação pós-mutation passou a usar o prefixo `['operations', 'live']` para autocura mais rápida do snapshot
+- `apps/web/components/staff-mobile/mobile-order-builder.tsx`
+  - o builder mobile virou fluxo em duas etapas: categoria primeiro, itens depois
+
+**Validação**
+
+- API: `689/689` testes verdes
+- Web: `39/39` testes verdes
+- `npm --workspace @partner/api run lint` ✅
+- `npm --workspace @partner/api run typecheck` ✅
+- `npm --workspace @partner/api run build` ✅
+- `npm --workspace @partner/web run lint` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- esse pacote reduz bug operacional real, não só latência percebida
+- o próximo passo natural é medir em staging/produção o efeito no `operations/live` e no tempo de abertura de mesa/comanda antes de seguir para dashboards mais profundos no Grafana
+
+---
+
+## 8. Portfólio + combos + KPIs — 2026-04-03
+
+**Problemas reais atacados**
+
+- o portfólio ainda só permitia `editar + arquivar/restaurar`, sem saída definitiva para item aposentado
+- o motor de venda não consumia componentes de combo; o cadastro existia, mas não impactava estoque/custo
+- a leitura executiva do portfólio ainda estava muito presa em `und/caixa`, sem KPIs mais fortes de capital e retorno
+
+**Correções aplicadas**
+
+- `apps/api/src/modules/products/products.service.ts`
+- `apps/api/src/modules/products/products.controller.ts`
+  - exclusão definitiva entrou como fluxo explícito e seguro
+  - regra de segurança: só exclui produto já arquivado
+  - proteção extra: bloqueia exclusão se o item ainda compõe outro combo
+- `apps/web/lib/api.ts`
+- `apps/web/components/dashboard/hooks/useDashboardMutations.ts`
+- `apps/web/components/dashboard/product-card.tsx`
+- `apps/web/components/dashboard/environments/portfolio-environment.tsx`
+  - card do portfólio passou a oferecer `Excluir` só no estado arquivado
+  - confirmação local evita exclusão acidental
+  - os KPIs do topo migraram de volume físico genérico para leitura de capital, venda potencial, lucro potencial e itens em alerta
+  - a quebra por categoria agora fala mais de capital e margem do que só de unidades
+- `apps/api/src/modules/products/product-combo-consumption.util.ts`
+- `apps/api/src/modules/orders/orders.service.ts`
+- `apps/api/src/modules/operations/operations-helpers.service.ts`
+  - combos agora consomem componentes no pedido direto e no fechamento de comanda
+  - custo de linha e custo total passaram a refletir a composição real do combo
+  - cancelamento de venda direta repõe os componentes consumidos pelo combo
+
+**Validação**
+
+- testes cirúrgicos:
+  - `npm --workspace @partner/api run test -- products.service.spec.ts orders.service.spec.ts operations-helpers.branches.spec.ts` ✅
+  - `npm --workspace @partner/web run test -- components/dashboard/product-card.test.tsx` ✅
+- suíte ampla:
+  - API: `695/695` testes verdes
+  - Web: `41/41` testes verdes
+  - `npm --workspace @partner/api run lint` ✅
+  - `npm --workspace @partner/api run typecheck` ✅
+  - `npm --workspace @partner/api run build` ✅
+  - `npm --workspace @partner/web run lint` ✅
+  - `npm --workspace @partner/web run typecheck` ✅
+  - `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- agora o bloco de portfólio deixa de ser só cadastro e passa a governar venda real
+- a exclusão definitiva ficou madura o bastante para limpar lixo do catálogo sem desmontar histórico consolidado
+- o próximo refinamento natural aqui é revisar a experiência de edição/arquivamento ao vivo no dashboard para garantir que a sensação de resposta ficou tão boa quanto a lógica

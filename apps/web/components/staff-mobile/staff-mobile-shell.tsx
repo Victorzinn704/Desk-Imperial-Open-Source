@@ -58,10 +58,12 @@ import {
   invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_LIVE_QUERY_PREFIX,
   rollbackOperationsSnapshot,
   appendOptimisticComandaItem,
   setOptimisticComandaStatus,
 } from '@/lib/operations'
+import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
 
 type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
@@ -83,7 +85,6 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const { enqueue, drainQueue } = useOfflineQueue()
-  const shouldFallbackRefetch = realtimeStatus !== 'connected'
 
   // Executor reutilizado pelos dois canais de drain (SW + fallback)
   const runDrain = useCallback(() => {
@@ -190,11 +191,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
         OPERATIONS_LIVE_COMPACT_QUERY_KEY,
         buildOptimisticComandaRecord({
           tableLabel: vars.tableLabel,
+          mesaId: vars.mesaId ?? null,
           customerName: vars.customerName ?? null,
           customerDocument: vars.customerDocument ?? null,
           participantCount: vars.participantCount ?? 1,
           notes: vars.notes ?? null,
           cashSessionId: vars.cashSessionId ?? null,
+          currentEmployeeId: currentUser?.employeeId ?? null,
           items: vars.items,
         }),
       )
@@ -205,7 +208,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -224,6 +227,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: false,
+      })
       toast.success('Item adicionado')
       haptic.light()
     },
@@ -245,6 +252,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: false,
+      })
       toast.success('Itens adicionados')
       haptic.light()
     },
@@ -263,9 +274,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-      }
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+      })
       toast.success('Status atualizado')
       haptic.medium()
     },
@@ -291,9 +302,12 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-      }
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: true,
+        includeOrders: true,
+        includeFinance: true,
+      })
       toast.success('Comanda fechada — pagamento efetuado')
       haptic.heavy()
     },
@@ -316,9 +330,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-      }
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: true,
+      })
       toast.success('Comanda cancelada')
       haptic.heavy()
     },
@@ -386,9 +401,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             notes: item.observacao,
           })),
         })
-        if (shouldFallbackRefetch) {
-          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-        }
+        void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+          includeKitchen: true,
+          includeSummary: false,
+        })
         setPendingAction(null)
         setFocusedComandaId(response.comanda.id)
         setActiveTab('pedidos')
@@ -411,17 +427,15 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       try {
         await openComandaMutation.mutateAsync(comParams)
       } catch (err: unknown) {
-        // Se o erro for 409 (caixa fechado), abre o caixa automaticamente e retenta
-        const isCaixaError =
-          (err instanceof ApiError && err.status === 409) ||
-          (err instanceof Error && err.message.toLowerCase().includes('caixa'))
+        // Só autoabre caixa quando a API sinaliza de fato falta de caixa.
+        const isCaixaError = isCashSessionRequiredError(err)
         if (isCaixaError) {
           toast.dismiss() // Limpa o toast de erro do mutation
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
-          if (shouldFallbackRefetch) {
-            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-          }
+          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+            includeSummary: true,
+          })
           await openComandaMutation.mutateAsync(comParams)
         } else {
           throw err

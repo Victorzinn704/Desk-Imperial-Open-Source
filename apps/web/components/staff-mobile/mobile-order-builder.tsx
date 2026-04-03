@@ -124,6 +124,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 }: MobileOrderBuilderProps) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [screen, setScreen] = useState<'categories' | 'items'>('categories')
   const [cart, setCart] = useState<CartEntry[]>([])
   const deferredSearch = useDeferredValue(search)
   const parentRef = useRef<HTMLDivElement | null>(null)
@@ -187,7 +188,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
   const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
   const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
-  const showProducts = selectedCategory !== null || deferredSearch.trim().length > 0 || categories.length === 0
+  const showItemsScreen = screen === 'items' || categories.length === 0
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
@@ -229,74 +230,67 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
-          <input
-            type="text"
-            placeholder="Buscar produto..."
-            value={search}
-            onChange={(e) => {
-              const nextValue = e.target.value
-              startTransition(() => setSearch(nextValue))
-            }}
-            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
-          />
-        </div>
-
-        {/* Categories — responsivo para mobile (grid + scroll) */}
-        {categories.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {showProducts ? (
-              <button
-                onClick={() => {
-                  startTransition(() => {
-                    setSelectedCategory(null)
-                    setSearch('')
-                  })
-                }}
-                className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
-              >
-                <Search className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-                <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
-              </button>
-            ) : null}
-
-            {categories.map((cat) => {
-              const isActive = selectedCategory === cat
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    startTransition(() => setSelectedCategory(cat))
-                  }}
-                  className={`group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all active:scale-95 ${
-                    isActive
-                      ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
-                  }`}
-                >
-                  {getCategoryIcon(cat)}
-                  <span
-                    className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-black' : ''}`}
-                  >
-                    {cat}
-                  </span>
-                </button>
-              )
-            })}
+        {showItemsScreen ? (
+          <div className="relative mt-3">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
+            <input
+              type="text"
+              placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
+              value={search}
+              onChange={(e) => {
+                const nextValue = e.target.value
+                startTransition(() => setSearch(nextValue))
+              }}
+              className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
+            />
           </div>
-        )}
+        ) : categories.length > 0 ? (
+          <p className="mt-3 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+            Escolha a categoria primeiro. Depois abrimos só a lista daquela classe, sem dividir a tela.
+          </p>
+        ) : null}
       </div>
 
       {/* Product list */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
-        {!showProducts ? (
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <p className="text-base font-semibold text-white">Escolha uma categoria</p>
-            <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--text-soft,#7a8896)]">
-              Primeiro selecione a classe dos produtos. A lista abre logo abaixo, sem trocar de fluxo.
+        {!showItemsScreen && categories.length > 0 ? (
+          <div className="p-4">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+              Escolha uma categoria
             </p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <button
+                type="button"
+                onClick={() => {
+                  startTransition(() => {
+                    setSelectedCategory(null)
+                    setSearch('')
+                    setScreen('items')
+                  })
+                }}
+                className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
+              >
+                <Search className="mb-1 size-5 opacity-80 transition-opacity group-hover:opacity-100" />
+                <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    startTransition(() => {
+                      setSelectedCategory(cat)
+                      setSearch('')
+                      setScreen('items')
+                    })
+                  }}
+                  className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
+                >
+                  {getCategoryIcon(cat)}
+                  <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">{cat}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -316,7 +310,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                   type="button"
                   onClick={() => {
                     startTransition(() => {
-                      setSelectedCategory(null)
+                      setScreen('categories')
                       setSearch('')
                     })
                   }}

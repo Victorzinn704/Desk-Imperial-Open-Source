@@ -444,6 +444,12 @@ export async function restoreProduct(productId: string) {
   })
 }
 
+export async function deleteProductPermanently(productId: string) {
+  return apiFetch<{ success: boolean; deletedProductId: string }>(`/products/${productId}/permanent`, {
+    method: 'DELETE',
+  })
+}
+
 export async function importProducts(file: File) {
   const formData = new FormData()
   formData.set('file', file)

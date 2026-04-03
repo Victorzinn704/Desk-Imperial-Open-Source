@@ -19,6 +19,7 @@ describe('OperationsService (facade)', () => {
     },
     comanda: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
   }
 
@@ -66,6 +67,7 @@ describe('OperationsService (facade)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    prisma.comanda.findFirst.mockResolvedValue(null)
   })
 
   it('delega consultas de snapshot para helpers com escopo correto', async () => {

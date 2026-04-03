@@ -16,7 +16,7 @@ import type {
 } from '@contracts/contracts'
 import {
   OPERATIONS_KITCHEN_QUERY_KEY,
-  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations/operations-query'
 
@@ -240,7 +240,7 @@ export function applyRealtimeEnvelope(
   }
 
   const liveQueries = queryClient.getQueriesData<OperationsLiveResponse>({
-    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+    queryKey: OPERATIONS_LIVE_QUERY_PREFIX,
   })
 
   for (const [queryKey, current] of liveQueries) {
