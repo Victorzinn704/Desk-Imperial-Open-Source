@@ -7,7 +7,7 @@ const socialLinks = [
   {
     label: 'LinkedIn',
     handle: '@joao-victor-530060259',
-    href: 'https://www.linkedin.com/in/jo%C3%A3o-victor-530060259/',
+    href: 'https://www.linkedin.com/in/joao-victor-530060259/',
     icon: Linkedin,
     social: 'linkedin',
   },
