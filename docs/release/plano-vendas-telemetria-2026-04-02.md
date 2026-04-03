@@ -718,3 +718,50 @@ Consideramos essa frente madura quando:
 - esse lote ataca dois problemas diferentes, mas conectados: ruído silencioso de PWA e peso visual/mental de calendários genéricos
 - a mudança de calendário é madura o bastante para teste em produção, mas ainda merece uma passada futura de refinamento fino de densidade e interação caso a equipe aprove a direção manual
 - o ganho mais importante aqui não é só visual: é recuperar previsibilidade do PWA e tirar um ponto recorrente de estranheza da experiência operacional
+
+## 11. Charts estáveis + salão mais fluido no toque — 2026-04-03
+
+**Problemas reais atacados**
+
+- o dashboard ainda emitia warning de `width(-1)/height(-1)` quando os gráficos renderizavam antes de o container ter tamanho válido
+- o salão desktop continuava com sensação de atraso no arraste das mesas, especialmente em toque/pointer, e a leitura operacional seguia seca demais
+- a camada `Operacional` do salão não ajudava o usuário a focar por setor; mostrava tudo de uma vez, mas com pouca prioridade visual
+- o snapshot já trazia `section` da mesa, mas a modelagem do PDV não carregava esse campo até a superfície do salão
+
+**Correções aplicadas**
+
+- `apps/web/components/dashboard/chart-responsive-container.tsx`
+- `apps/web/components/dashboard/finance-chart.tsx`
+- `apps/web/components/dashboard/finance-doughnut-chart.tsx`
+- `apps/web/components/dashboard/metric-card.tsx`
+- `apps/web/components/dashboard/sales-performance-card.tsx`
+  - os gráficos passaram a usar um container próprio que espera largura/altura reais antes de montar o `ResponsiveContainer`
+  - isso reduz o warning silencioso dos gráficos sem trocar a biblioteca nem mascarar problema de layout
+- `apps/web/eslint.config.mjs`
+  - o allowlist de imports de `recharts` foi alinhado ao novo wrapper canônico do dashboard
+- `apps/web/components/dashboard/salao/hooks/use-mesa-drag.ts`
+- `apps/web/components/dashboard/salao/constants.ts`
+  - o arraste de mesas migrou de mouse events soltos para pointer events com `pointerId`, `pointercapture` e flush por `requestAnimationFrame`
+  - isso deixa o gesto mais previsível em toque e mouse, com menos jitter e menos risco de “perder” a mesa no meio do movimento
+- `apps/web/components/dashboard/salao-environment.tsx`
+  - a faixa de KPIs do operacional ficou mais útil (`Receita Circulante`, `Ticket Aberto`, `Equipe em giro`, `Ocupação`, `Livres`)
+  - entrou um filtro visual por seção para o salão, permitindo focar em uma área específica sem poluir a leitura do restante
+  - o empty state agora explica quando a seção escolhida não tem mesas visíveis
+- `apps/web/components/pdv/pdv-types.ts`
+- `apps/web/components/pdv/pdv-operations.ts`
+  - `Mesa.section` entrou de verdade no shape derivado do snapshot, permitindo que o filtro por área não dependa de dados fantasma
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- aqui não teve maquiagem: o warning dos charts foi tratado na origem da renderização, e não escondido por CSS ou delay artificial
+- o salão ficou mais responsivo no gesto e mais claro para operação, mas sem recomeçar a tela do zero nem quebrar o fluxo atual
+- o próximo passo depois do deploy é validar em produção se o warning do Recharts sumiu de vez e se o salão responde melhor no toque real

@@ -131,6 +131,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
         id: mesa.id,
         numero: normalizeTableLabel(mesa.label),
         capacidade: mesa.capacity,
+        section: mesa.section ?? undefined,
         status: (isOccupied ? 'ocupada' : mesa.status) as Mesa['status'],
         comandaId: mesa.comandaId ?? matchedComanda?.id ?? undefined,
         garcomId: gId,
