@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Github, Linkedin } from 'lucide-react'
 
 const socialLinks = [
@@ -22,16 +22,39 @@ const socialLinks = [
 
 const floatingMotion = [
   {
-    animate: { y: [0, -12, 0], x: [0, 1, 0], rotate: [0, -1.5, 0] },
-    transition: { duration: 4.6, repeat: Infinity, ease: 'easeInOut' as const },
+    animate: {
+      y: [0, -4, -8, -5, -7, -3, 0],
+      x: [0, 0.5, 1.4, 0.8, 1.1, 0.4, 0],
+      rotate: [0, -0.4, -1.1, -0.6, -1, -0.3, 0],
+      scale: [1, 1.004, 1.012, 1.008, 1.011, 1.005, 1],
+    },
+    transition: {
+      duration: 7.2,
+      repeat: Infinity,
+      ease: 'easeInOut' as const,
+      times: [0, 0.18, 0.34, 0.5, 0.67, 0.84, 1],
+    },
   },
   {
-    animate: { y: [-2, -16, -2], x: [0, -1, 0], rotate: [0, 1.5, 0] },
-    transition: { duration: 5.2, repeat: Infinity, ease: 'easeInOut' as const, delay: 0.35 },
+    animate: {
+      y: [-1, -5, -9, -6, -8, -4, -1],
+      x: [0, -0.5, -1.5, -0.9, -1.2, -0.5, 0],
+      rotate: [0, 0.4, 1.1, 0.6, 1, 0.3, 0],
+      scale: [1.002, 1.006, 1.014, 1.009, 1.013, 1.006, 1.002],
+    },
+    transition: {
+      duration: 7.8,
+      repeat: Infinity,
+      ease: 'easeInOut' as const,
+      delay: 0.45,
+      times: [0, 0.16, 0.33, 0.52, 0.7, 0.86, 1],
+    },
   },
 ]
 
 export function FounderContactCard() {
+  const prefersReducedMotion = useReducedMotion()
+
   return (
     <aside className="pointer-events-auto relative z-20 mx-auto mt-3 w-fit lg:absolute lg:right-[22px] lg:top-[170px] lg:mt-0">
       <div className="pointer-events-none absolute -inset-4 rounded-[26px] bg-[radial-gradient(circle,rgba(155,132,96,0.24),transparent_66%)] blur-xl" />
@@ -43,10 +66,10 @@ export function FounderContactCard() {
 
           return (
             <motion.li
-              animate={motionSpec.animate}
+              animate={prefersReducedMotion ? { x: 0, y: 0, rotate: 0, scale: 1 } : motionSpec.animate}
               className="bubble-item"
               key={social.label}
-              transition={motionSpec.transition}
+              transition={prefersReducedMotion ? { duration: 0 } : motionSpec.transition}
             >
               <a
                 aria-label={social.label}
@@ -106,10 +129,30 @@ export function FounderContactCard() {
           transition: transform 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
         }
 
+        .bubble-item a::after {
+          content: '';
+          position: absolute;
+          inset: -5px;
+          border-radius: 9999px;
+          border: 1px solid rgba(155, 132, 96, 0.24);
+          opacity: 0.18;
+          transform: scale(0.92);
+          animation: bubbleAura 3.4s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        .bubble-item:nth-child(2) a::after {
+          animation-delay: 0.85s;
+        }
+
         .bubble-item a:hover {
           color: #ffffff;
           transform: translateY(-3px) scale(1.06);
           box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .bubble-item a:hover::after {
+          opacity: 0.3;
         }
 
         .bubble-fill {
@@ -177,6 +220,25 @@ export function FounderContactCard() {
           margin-top: 3px;
           font-size: 12px;
           color: var(--text-soft);
+        }
+
+        @keyframes bubbleAura {
+          0%,
+          100% {
+            opacity: 0.14;
+            transform: scale(0.92);
+          }
+
+          50% {
+            opacity: 0.36;
+            transform: scale(1.08);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .bubble-item a::after {
+            animation: none;
+          }
         }
       `}</style>
     </aside>
