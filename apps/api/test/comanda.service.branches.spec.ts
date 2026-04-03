@@ -13,6 +13,7 @@ import type { AuditLogService } from '../src/modules/monitoring/audit-log.servic
 import type { OperationsRealtimeService } from '../src/modules/operations-realtime/operations-realtime.service'
 import { ComandaService } from '../src/modules/operations/comanda.service'
 import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import type { FinanceService } from '../src/modules/finance/finance.service'
 import { makeOwnerAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
 
@@ -130,12 +131,17 @@ describe('ComandaService branch happy paths', () => {
       buildLiveSnapshot: jest.fn(async () => ({ marker: 'live' })),
     }
 
+    const finance = {
+      invalidateAndWarmSummary: jest.fn(async () => {}),
+    }
+
     const service = new ComandaService(
       prisma as unknown as PrismaService,
       cache as unknown as CacheService,
       audit as unknown as AuditLogService,
       realtime as unknown as OperationsRealtimeService,
       helpers as unknown as OperationsHelpersService,
+      finance as unknown as FinanceService,
     )
 
     return {
@@ -145,6 +151,7 @@ describe('ComandaService branch happy paths', () => {
       audit,
       realtime,
       helpers,
+      finance,
     }
   }
 
@@ -293,7 +300,7 @@ describe('ComandaService branch happy paths', () => {
         replaceKitchenItems: true,
       }),
     )
-    expect(realtime.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
+    expect(realtime.publishKitchenItemQueued).toHaveBeenCalledTimes(0)
   })
 
   it('substitui comanda preservando estado de cozinha de item equivalente', async () => {
@@ -497,8 +504,59 @@ describe('ComandaService branch happy paths', () => {
     expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(1)
   })
 
+  it('nao publica comanda.updated quando item de cozinha muda sem transicao de status', async () => {
+    const { service, prisma, helpers, realtime } = createSetup()
+    prisma.comandaItem.findUnique.mockResolvedValue({
+      id: 'item-1',
+      kitchenStatus: KitchenItemStatus.QUEUED,
+      kitchenQueuedAt: new Date('2026-04-01T10:00:00.000Z'),
+      kitchenReadyAt: null,
+      comanda: {
+        id: 'comanda-1',
+        companyOwnerId: 'owner-1',
+        tableLabel: 'Mesa 1',
+        status: ComandaStatus.IN_PREPARATION,
+        cashSessionId: 'cash-1',
+        openedAt: new Date('2026-04-01T10:00:00.000Z'),
+      },
+    })
+    prisma.comandaItem.update.mockResolvedValue({
+      id: 'item-1',
+      productName: 'Pizza',
+      quantity: 1,
+      notes: null,
+      kitchenStatus: KitchenItemStatus.IN_PREPARATION,
+      kitchenQueuedAt: new Date('2026-04-01T10:00:00.000Z'),
+      kitchenReadyAt: null,
+    })
+    prisma.comandaItem.findMany.mockResolvedValue([
+      { kitchenStatus: KitchenItemStatus.IN_PREPARATION },
+      { kitchenStatus: KitchenItemStatus.READY },
+    ])
+    prisma.comanda.findUnique.mockResolvedValue(
+      makeComanda({
+        status: ComandaStatus.IN_PREPARATION,
+      }),
+    )
+    helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
+
+    const result = await service.updateKitchenItemStatus(
+      makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
+      'item-1',
+      {
+        status: 'IN_PREPARATION',
+      } as any,
+      makeRequestContext(),
+    )
+
+    expect(result).toEqual({ itemId: 'item-1', status: 'IN_PREPARATION' })
+    expect(prisma.comanda.update).toHaveBeenCalledTimes(0)
+    expect(realtime.publishKitchenItemUpdated).toHaveBeenCalledTimes(1)
+    expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(0)
+  })
+
   it('fecha comanda, sincroniza caixa e publica eventos financeiros', async () => {
-    const { service, prisma, helpers, realtime, cache } = createSetup()
+    const { service, prisma, helpers, realtime, cache, finance } = createSetup()
     helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda())
     helpers.recalculateComanda.mockResolvedValue(makeComanda({ totalAmount: 120 }))
     prisma.comanda.update.mockResolvedValue(
@@ -547,6 +605,7 @@ describe('ComandaService branch happy paths', () => {
     expect(realtime.publishComandaClosed).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashUpdated).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashClosureUpdated).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    expect(cache.del).toHaveBeenCalledTimes(1)
+    expect(finance.invalidateAndWarmSummary).toHaveBeenCalledWith('owner-1')
   })
 })

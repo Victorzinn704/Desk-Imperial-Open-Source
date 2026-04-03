@@ -1,9 +1,29 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
 
-export const OPERATIONS_LIVE_COMPACT_QUERY_KEY = ['operations', 'live', 'compact'] as const
+export const OPERATIONS_LIVE_QUERY_PREFIX = ['operations', 'live'] as const
+export const OPERATIONS_LIVE_COMPACT_QUERY_KEY = [...OPERATIONS_LIVE_QUERY_PREFIX, 'compact'] as const
+export const OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY = [...OPERATIONS_LIVE_COMPACT_QUERY_KEY, 'open-only'] as const
+export const OPERATIONS_LIVE_FULL_QUERY_KEY = [...OPERATIONS_LIVE_QUERY_PREFIX, 'full'] as const
+export const OPERATIONS_LIVE_FULL_OPEN_ONLY_QUERY_KEY = [...OPERATIONS_LIVE_FULL_QUERY_KEY, 'open-only'] as const
 export const OPERATIONS_KITCHEN_QUERY_KEY = ['operations', 'kitchen'] as const
 export const OPERATIONS_SUMMARY_QUERY_KEY = ['operations', 'summary'] as const
+
+type OperationsLiveQueryKeyOptions = {
+  compactMode?: boolean
+  includeClosed?: boolean
+}
+
+export function buildOperationsLiveQueryKey(options?: OperationsLiveQueryKeyOptions) {
+  const compactMode = options?.compactMode === true
+  const includeClosed = options?.includeClosed !== false
+
+  if (compactMode) {
+    return includeClosed ? OPERATIONS_LIVE_COMPACT_QUERY_KEY : OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY
+  }
+
+  return includeClosed ? OPERATIONS_LIVE_FULL_QUERY_KEY : OPERATIONS_LIVE_FULL_OPEN_ONLY_QUERY_KEY
+}
 
 type InvalidateOperationsWorkspaceOptions = {
   includeOrders?: boolean
@@ -14,7 +34,7 @@ type InvalidateOperationsWorkspaceOptions = {
 
 export async function invalidateOperationsWorkspace(
   queryClient: QueryClient,
-  operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_QUERY_PREFIX,
   options?: InvalidateOperationsWorkspaceOptions,
 ) {
   const tasks = [

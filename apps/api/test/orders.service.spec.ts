@@ -27,6 +27,7 @@ import type { GeocodingService } from '../src/modules/geocoding/geocoding.servic
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import type { AdminPinService } from '../src/modules/admin-pin/admin-pin.service'
 import type { CacheService } from '../src/common/services/cache.service'
+import type { FinanceService } from '../src/modules/finance/finance.service'
 import type { CreateOrderDto } from '../src/modules/orders/dto/create-order.dto'
 import { makeAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
@@ -83,6 +84,10 @@ const mockCache = {
   isReady: jest.fn(),
   financeKey: jest.fn(),
   ordersKey: jest.fn(),
+}
+
+const mockFinanceService = {
+  invalidateAndWarmSummary: jest.fn(),
 }
 
 // ── Factories ─────────────────────────────────────────────────────────────────
@@ -185,6 +190,7 @@ beforeEach(() => {
     mockAuditLogService as unknown as AuditLogService,
     mockAdminPinService as unknown as AdminPinService,
     mockCache as unknown as CacheService,
+    mockFinanceService as unknown as FinanceService,
   )
 
   mockContext = makeAuthContext({
@@ -504,7 +510,7 @@ describe('OrdersService', () => {
 
       await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
 
-      expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
+      expect(mockFinanceService.invalidateAndWarmSummary).toHaveBeenCalledWith('user-1')
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-1')
       expect(mockCache.delByPrefix).toHaveBeenCalledWith('orders:summary:user-1:')
     })
@@ -611,7 +617,7 @@ describe('OrdersService', () => {
 
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 
-      expect(mockCache.del).toHaveBeenCalledWith('finance:summary:user-1')
+      expect(mockFinanceService.invalidateAndWarmSummary).toHaveBeenCalledWith('user-1')
       expect(mockCache.del).toHaveBeenCalledWith('orders:summary:user-1')
       expect(mockCache.delByPrefix).toHaveBeenCalledWith('orders:summary:user-1:')
     })

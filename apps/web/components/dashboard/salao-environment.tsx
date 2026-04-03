@@ -5,6 +5,7 @@ import { Armchair, ClipboardList, Grid3X3, List, Plus, Zap } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
+import { OPERATIONS_LIVE_FULL_QUERY_KEY } from '@/lib/operations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import { calcTotal, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
@@ -55,16 +56,15 @@ export function SalaoEnvironment() {
   // payload completo só quando realmente precisamos dos itens.
   const { data: compactLiveData, isLoading: compactLiveLoading } = useQuery({
     queryKey: LIVE_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true, includeClosed: false }),
     refetchInterval: 15_000,
     staleTime: 10_000,
     enabled: view === 'operacional',
     refetchOnWindowFocus: false,
   })
 
-  const FULL_LIVE_QUERY_KEY = ['operations', 'live', 'full'] as const
   const { data: detailedLiveData, isLoading: detailedLiveLoading } = useQuery({
-    queryKey: FULL_LIVE_QUERY_KEY,
+    queryKey: OPERATIONS_LIVE_FULL_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
     staleTime: 10_000,
@@ -86,7 +86,7 @@ export function SalaoEnvironment() {
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
     void queryClient.invalidateQueries({ queryKey: LIVE_QUERY_KEY })
-    void queryClient.invalidateQueries({ queryKey: FULL_LIVE_QUERY_KEY })
+    void queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_FULL_QUERY_KEY })
   }
 
   // ── mutations ─────────────────────────────────────────────────────────────────
@@ -451,6 +451,7 @@ function OperacionalView({
 }) {
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
+  const comandaById = useMemo(() => new Map(liveComandas.map((comanda) => [comanda.id, comanda])), [liveComandas])
 
   if (isLoading) {
     return (
@@ -487,7 +488,7 @@ function OperacionalView({
   const reservadas = liveMesas.filter((m) => m.status === 'reservada')
 
   const receitaAberta = ocupadas.reduce((sum, m) => {
-    const comanda = liveComandas.find((c) => c.id === m.comandaId)
+    const comanda = m.comandaId ? comandaById.get(m.comandaId) : undefined
     return sum + (comanda ? calcTotal(comanda) : 0)
   }, 0)
 
@@ -505,7 +506,7 @@ function OperacionalView({
       {/* Mesas Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {liveMesas.map((mesa) => {
-          const comanda = mesa.comandaId ? liveComandas.find((c) => c.id === mesa.comandaId) : undefined
+          const comanda = mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
           const garcomName = mesa.garcomId ? garcomNames[mesa.garcomId] : undefined
 
           let urgency: 0 | 1 | 2 | 3 = 0

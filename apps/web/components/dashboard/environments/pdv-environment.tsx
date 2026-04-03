@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApiError, fetchOperationsLive } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import { buildOperationsViewModel, OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
+import { buildOperationsLiveQueryKey, buildOperationsViewModel } from '@/lib/operations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { CaixaPanel } from '@/components/dashboard/caixa-panel'
 import { PdvBoard } from '@/components/pdv/pdv-board'
@@ -27,21 +27,28 @@ const OperationsTimeline = dynamic(
 )
 
 export function PdvEnvironment() {
-  const { productsQuery, sessionQuery } = useDashboardQueries()
+  const { productsQuery, sessionQuery } = useDashboardQueries({
+    enableConsent: false,
+    enableOrders: false,
+    enableEmployees: false,
+    enableFinance: false,
+    enableProducts: true,
+  })
 
   const user = sessionQuery.data?.user
-  const operationsQuery = useQuery({
-    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  const showExecutiveOperations = user?.role === 'OWNER'
+  const executiveOperationsQuery = useQuery({
+    queryKey: buildOperationsLiveQueryKey({ compactMode: true, includeClosed: true }),
     queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
-    enabled: Boolean(user?.userId),
+    enabled: Boolean(user?.userId) && showExecutiveOperations,
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
   })
 
   const products = productsQuery.data?.items ?? []
-  const operations = operationsQuery.data
-  const operationsError = operationsQuery.error instanceof ApiError ? operationsQuery.error.message : null
+  const executiveOperations = executiveOperationsQuery.data
+  const operationsError = executiveOperationsQuery.error instanceof ApiError ? executiveOperationsQuery.error.message : null
 
   const boardProducts = products
     .filter((product) => product.active)
@@ -57,8 +64,7 @@ export function PdvEnvironment() {
       comboDescription: p.comboDescription ?? null,
       comboItems: p.comboItems ?? [],
     }))
-  const operationsView = buildOperationsViewModel(operations)
-  const showExecutiveOperations = user?.role === 'OWNER'
+  const operationsView = buildOperationsViewModel(executiveOperations)
 
   if (!user) return null
 
@@ -70,10 +76,10 @@ export function PdvEnvironment() {
         icon={Tags}
         title="PDV — Ponto de Venda"
       />
-      <PdvBoard operations={operations} products={boardProducts} />
+      <PdvBoard products={boardProducts} />
       {showExecutiveOperations ? (
         <div className="space-y-6">
-          <CaixaPanel operations={operations} />
+          <CaixaPanel operations={executiveOperations} />
           {operationsError ? (
             <div className="imperial-card px-5 py-4 text-sm text-[var(--text-soft)]">
               Nao foi possivel carregar a operacao viva agora. {operationsError}
@@ -81,7 +87,7 @@ export function PdvEnvironment() {
           ) : null}
           <OperationsExecutiveGrid
             description={
-              operationsQuery.isLoading
+              executiveOperationsQuery.isLoading
                 ? 'Carregando a camada operacional para conectar funcionario, mesa e caixa em uma unica leitura.'
                 : 'Leitura consolidada do caixa e das mesas por funcionario, pronta para crescer com o realtime.'
             }

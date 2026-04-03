@@ -31,7 +31,7 @@ This document covers the complete Brevo (formerly Sendinblue) email integration 
 
 ### 2. Environment Configuration
 
-**Location:** `.env` (local) or Railway/Vercel environment variables (production)
+**Location:** `.env` (local) or Railway environment variables (production)
 
 ```env
 # Email Provider

@@ -1,6 +1,6 @@
 # Desk Imperial
 
-[![CI main](https://img.shields.io/github/actions/workflow/status/Victorzinn704/Desk-Imperial-Open-Source/ci.yml?branch=main&label=CI%20main)](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI main](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Victorzinn704/Desk-Imperial-Open-Source/actions/workflows/ci.yml?query=branch%3Amain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
 [![Open Source](https://img.shields.io/badge/open%20source-yes-blue)](./LICENSE)

@@ -89,7 +89,6 @@ Desktop.ini
 # ─── Misc ────────────────────────────────────────────────────────────────────
 *.tgz
 *.zip
-.vercel
 .netlify
 .aider*
 eslint_report.txt

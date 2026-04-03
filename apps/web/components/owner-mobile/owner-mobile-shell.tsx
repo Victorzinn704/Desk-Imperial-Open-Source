@@ -57,9 +57,10 @@ import {
 } from '@/lib/api'
 import {
   buildOperationsExecutiveKpis,
+  buildOperationsLiveQueryKey,
   invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
-  OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
@@ -77,6 +78,19 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
   const [, setFocusedComandaId] = useState<string | null>(null)
+  const includeClosedInLiveSnapshot = activeTab === 'comandas'
+  const operationsLiveQueryKey = useMemo(
+    () => buildOperationsLiveQueryKey({ compactMode: true, includeClosed: includeClosedInLiveSnapshot }),
+    [includeClosedInLiveSnapshot],
+  )
+  const operationsLiveOptions = useMemo(
+    () => ({
+      includeCashMovements: false,
+      compactMode: true,
+      includeClosed: includeClosedInLiveSnapshot,
+    }),
+    [includeClosedInLiveSnapshot],
+  )
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const shouldFallbackRefetch = realtimeStatus !== 'connected'
@@ -84,7 +98,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX }),
       queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY }),
     ])
@@ -98,8 +112,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   } = usePullToRefresh({ onRefresh: handlePullRefresh })
 
   const operationsQuery = useQuery({
-    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
+    queryKey: operationsLiveQueryKey,
+    queryFn: () => fetchOperationsLive(operationsLiveOptions),
     enabled: Boolean(currentUser),
     placeholderData: keepPreviousData,
     staleTime: 10_000,
@@ -108,9 +122,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   })
 
   const productsQuery = useQuery({
-    queryKey: ['products'],
-    queryFn: () => fetchProducts(),
-    enabled: Boolean(currentUser),
+    queryKey: ['products', 'active'],
+    queryFn: () => fetchProducts({ includeInactive: false }),
+    enabled: Boolean(currentUser) && activeTab === 'pedido',
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
@@ -119,7 +133,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const ordersQuery = useQuery({
     queryKey: ['orders', 'summary'],
     queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
-    enabled: Boolean(currentUser),
+    enabled: Boolean(currentUser) && activeTab === 'resumo',
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
@@ -138,7 +152,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const summaryQuery = useQuery({
     queryKey: OPERATIONS_SUMMARY_QUERY_KEY,
     queryFn: () => fetchOperationsSummary(),
-    enabled: Boolean(currentUser),
+    enabled: Boolean(currentUser) && activeTab === 'resumo',
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
@@ -161,7 +175,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       }
       toast.success('Comanda aberta com sucesso')
       haptic.success()
@@ -202,7 +216,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       }
       toast.success('Status atualizado')
       haptic.medium()
@@ -225,7 +239,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
     onSuccess: () => {
       if (shouldFallbackRefetch) {
-        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, {
+        invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
           includeOrders: true,
           includeFinance: true,
         })
@@ -293,7 +307,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           })),
         })
         if (shouldFallbackRefetch) {
-          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
         }
         setPendingAction(null)
         setActiveTab('comandas')
@@ -323,7 +337,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           toast.info('Abrindo caixa automaticamente...')
           await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
           if (shouldFallbackRefetch) {
-            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+            void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
           }
           await openComandaMutation.mutateAsync(comParams)
         } else {

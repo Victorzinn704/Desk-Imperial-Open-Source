@@ -122,9 +122,16 @@ export function DashboardShell({
 
   const { isMobile } = useMobileDetection()
 
-  const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
+  const bootstrapQueries = useDashboardQueries({
+    enableConsent: false,
+    enableProducts: false,
+    enableOrders: false,
+    enableEmployees: false,
+    enableFinance: false,
+  })
   const { logoutMutation: rawLogoutMutation } = useDashboardMutations()
 
+  const sessionQuery = bootstrapQueries.sessionQuery
   const currentUser = sessionQuery.data?.user ?? null
   const isStaffUser = currentUser?.role === 'STAFF'
 
@@ -141,13 +148,35 @@ export function DashboardShell({
 
   const { logout, isPending: isLoggingOut, startTransition } = useDashboardLogout(rawLogoutMutation)
 
+  const shouldPrefetchStaffSignals = isStaffUser && activeSection !== 'pdv' && activeSection !== 'salao'
+  const shouldPrefetchOwnerFinance = !isStaffUser && ['overview', 'portfolio', 'map', 'payroll'].includes(activeSection)
+  const shouldPrefetchOwnerPayroll = !isStaffUser && activeSection === 'payroll'
+  const shouldPrefetchOwnerConsent = !isStaffUser && activeSection === 'settings'
+
+  const {
+    consentQuery,
+    productsQuery,
+    ordersQuery,
+    employeesQuery,
+    financeQuery,
+  } = useDashboardQueries({
+    enableConsent: shouldPrefetchOwnerConsent,
+    enableProducts: shouldPrefetchStaffSignals,
+    enableOrders: shouldPrefetchStaffSignals,
+    enableEmployees: shouldPrefetchOwnerPayroll,
+    enableFinance: shouldPrefetchOwnerFinance,
+  })
+
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
   const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, () => {
     queryClient.clear()
     startTransition(() => router.replace('/login'))
   })
 
-  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
+  const realtimeEnabled =
+    Boolean(sessionQuery.data?.user.userId) && !isMobile && (activeSection === 'pdv' || activeSection === 'salao')
+
+  useOperationsRealtime(realtimeEnabled, queryClient)
 
   // ── Quick action handler (orchestrates navigation + scroll) ───────────────────
 
@@ -197,36 +226,72 @@ export function DashboardShell({
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
 
   const signals = isStaffUser
-    ? [
-        {
-          label: 'Pedidos',
-          value: String(ordersQuery.data?.totals.completedOrders ?? 0),
-          helper: 'operações concluídas no workspace',
-        },
-        {
-          label: 'Portfólio',
-          value: String(productsQuery.data?.totals.activeProducts ?? 0),
-          helper: 'produtos ativos para venda',
-        },
-        { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
-      ]
-    : [
-        {
-          label: 'Receita do mes',
-          value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
-          helper: 'resultado bruto do período',
-        },
-        {
-          label: 'Estoque baixo',
-          value: String(finance?.totals.lowStockItems ?? 0),
-          helper: 'itens para reposição rápida',
-        },
-        {
-          label: 'Documentos',
-          value: requiredDocumentCount ? `${legalAcceptances.length}/${requiredDocumentCount}` : '0/0',
-          helper: 'aceites exigidos no sistema',
-        },
-      ]
+    ? activeSection === 'pdv' || activeSection === 'salao'
+      ? [
+          {
+            label: 'Operação',
+            value: 'Ao vivo',
+            helper: 'fluxo quente priorizado para atendimento',
+          },
+          {
+            label: 'Sincronia',
+            value: 'Socket',
+            helper: 'eventos operacionais e cozinha em tempo real',
+          },
+          { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
+        ]
+      : [
+          {
+            label: 'Pedidos',
+            value: String(ordersQuery.data?.totals.completedOrders ?? 0),
+            helper: 'operações concluídas no workspace',
+          },
+          {
+            label: 'Portfólio',
+            value: String(productsQuery.data?.totals.activeProducts ?? 0),
+            helper: 'produtos ativos para venda',
+          },
+          { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
+        ]
+    : shouldPrefetchOwnerFinance
+      ? [
+          {
+            label: 'Receita do mes',
+            value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
+            helper: 'resultado bruto do período',
+          },
+          {
+            label: 'Estoque baixo',
+            value: String(finance?.totals.lowStockItems ?? 0),
+            helper: 'itens para reposição rápida',
+          },
+          {
+            label: 'Governança',
+            value: 'Configurações',
+            helper: 'aceites e preferências carregados sob demanda',
+          },
+        ]
+      : [
+          {
+            label: 'Operação',
+            value: activeSection === 'pdv' ? 'Quente' : 'Ativa',
+            helper: 'caminho operacional otimizado para resposta mais rápida',
+          },
+          {
+            label: 'Tempo real',
+            value: activeSection === 'pdv' || activeSection === 'salao' ? 'Ligado' : 'Sob demanda',
+            helper: 'socket e invalidação só entram onde agregam valor',
+          },
+          {
+            label: 'Governança',
+            value:
+              shouldPrefetchOwnerConsent && requiredDocumentCount
+                ? `${legalAcceptances.length}/${requiredDocumentCount}`
+                : 'Sob demanda',
+            helper:
+              shouldPrefetchOwnerConsent ? 'aceites exigidos no sistema' : 'aceites só entram no ambiente de conta',
+          },
+        ]
 
   const activeNavigation =
     navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??

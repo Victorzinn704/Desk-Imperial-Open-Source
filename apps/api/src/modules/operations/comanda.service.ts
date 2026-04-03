@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common'
 import { AuditSeverity, CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
@@ -28,6 +29,7 @@ import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-statu
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
+import { FinanceService } from '../finance/finance.service'
 import {
   buildOptionalOperationsSnapshot,
   buildCashClosurePayload,
@@ -50,7 +52,17 @@ export class ComandaService {
     @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
     @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
     @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
+    @Optional() private readonly financeService?: FinanceService,
   ) {}
+
+  private refreshFinanceSummary(workspaceOwnerUserId: string) {
+    if (this.financeService) {
+      void this.financeService.invalidateAndWarmSummary(workspaceOwnerUserId)
+      return
+    }
+
+    void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
+  }
 
   async getComandaDetails(auth: AuthContext, comandaId: string) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
@@ -563,12 +575,6 @@ export class ComandaService {
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
 
-    for (const item of createdItems) {
-      if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
-        void this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
-      }
-    }
-
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
@@ -943,6 +949,7 @@ export class ComandaService {
 
     const kitchenItems = allItems.filter((i) => i.kitchenStatus !== null)
     let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
+    let shouldPublishComandaUpdated = false
 
     if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
       const allReady = kitchenItems.every(
@@ -963,6 +970,7 @@ export class ComandaService {
           data: { status: newComandaStatus },
           include: { items: { orderBy: { createdAt: 'asc' } } },
         })
+        shouldPublishComandaUpdated = true
       }
     }
 
@@ -1001,8 +1009,8 @@ export class ComandaService {
       void this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
     }
 
-    // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
-    if (refreshedComanda) {
+    // Evita ruido de realtime quando apenas o item de cozinha mudou sem transicao de status da comanda.
+    if (refreshedComanda && shouldPublishComandaUpdated) {
       void this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     }
 
@@ -1108,7 +1116,7 @@ export class ComandaService {
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
     void this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
     void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
-    void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
+    this.refreshFinanceSummary(workspaceOwnerUserId)
     void this.checkLowStockAfterClose(auth.userId, workspaceOwnerUserId, refreshedComanda.items)
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)

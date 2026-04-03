@@ -236,17 +236,20 @@ export class OperationsHelpersService {
     options?: {
       includeCashMovements?: boolean
       compactMode?: boolean
+      includeClosed?: boolean
     },
   ): Promise<OperationsLiveResponse> {
     const startedAt = performance.now()
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements === true
     const compactMode = options?.compactMode === true
+    const includeClosed = options?.includeClosed !== false
     const cacheKey =
       CacheService.operationsLiveKey(
         workspaceOwnerUserId,
         formatBusinessDateKey(businessDate),
         includeCashMovements,
+        includeClosed,
         scopedEmployeeId,
       ) + (compactMode ? ':compact' : '')
 
@@ -260,6 +263,7 @@ export class OperationsHelpersService {
           'desk.operations.cache_hit': true,
           'desk.operations.compact_mode': compactMode,
           'desk.operations.include_cash_movements': includeCashMovements,
+          'desk.operations.include_closed': includeClosed,
           'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
         }
         recordOperationsLiveTelemetry(
@@ -330,6 +334,13 @@ export class OperationsHelpersService {
             gte: window.start,
             lt: window.end,
           },
+          ...(!includeClosed
+            ? {
+                status: {
+                  in: OPEN_COMANDA_STATUSES,
+                },
+              }
+            : {}),
           ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
         },
         select: comandaSelect,
@@ -398,6 +409,7 @@ export class OperationsHelpersService {
       'desk.operations.cache_hit': false,
       'desk.operations.compact_mode': compactMode,
       'desk.operations.include_cash_movements': includeCashMovements,
+      'desk.operations.include_closed': includeClosed,
       'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
     }
     recordOperationsLiveTelemetry(

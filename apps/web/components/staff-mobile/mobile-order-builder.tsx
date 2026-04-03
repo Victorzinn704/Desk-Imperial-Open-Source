@@ -205,6 +205,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
   const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
   const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
+  const currentSectionLabel = selectedCategory ?? (deferredSearch.trim().length > 0 ? 'Busca rápida' : 'Categorias')
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -243,60 +244,38 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
             className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
           />
         </div>
+      </div>
 
-        {/* Categories — responsivo para mobile (grid + scroll) */}
-        {categories.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {showProducts ? (
-              <button
-                onClick={() => {
-                  startTransition(() => {
-                    setSelectedCategory(null)
-                    setSearch('')
-                  })
-                }}
-                className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
-              >
-                <Search className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-                <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
-              </button>
-            ) : null}
+      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
+        {!showProducts ? (
+          <div className="flex h-full flex-col px-4 py-5">
+            <div className="mb-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+                Escolha uma categoria
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+                Toque no ícone da classe que você quer vender. Depois abrimos só a lista daquela categoria, sem
+                esmagar categorias e itens na mesma tela.
+              </p>
+            </div>
 
-            {categories.map((cat) => {
-              const isActive = selectedCategory === cat
-              return (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {categories.map((cat) => (
                 <button
                   key={cat}
+                  type="button"
                   onClick={() => {
                     startTransition(() => setSelectedCategory(cat))
                   }}
-                  className={`group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all active:scale-95 ${
-                    isActive
-                      ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
-                  }`}
+                  className="group flex min-h-[104px] flex-col items-center justify-center rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-4 text-[var(--text-soft,#7a8896)] shadow-[0_14px_32px_rgba(0,0,0,0.18)] transition-all active:scale-[0.98] active:border-[rgba(155,132,96,0.45)]"
                 >
                   {getCategoryIcon(cat)}
-                  <span
-                    className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-black' : ''}`}
-                  >
+                  <span className="mt-1 line-clamp-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-white">
                     {cat}
                   </span>
                 </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Product list */}
-      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
-        {!showProducts ? (
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <p className="text-base font-semibold text-white">Escolha uma categoria</p>
-            <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--text-soft,#7a8896)]">
-              Primeiro selecione a classe dos produtos. A lista abre logo abaixo, sem trocar de fluxo.
-            </p>
+              ))}
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -308,9 +287,12 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
-                    {selectedCategory ?? (deferredSearch.trim().length > 0 ? 'Busca rápida' : 'Todos os produtos')}
+                    {currentSectionLabel}
                   </p>
-                  <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">{filtered.length} produtos disponíveis</p>
+                  <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">
+                    {filtered.length} produtos disponíveis
+                    {selectedCategory ? ` em ${selectedCategory}` : ''}
+                  </p>
                 </div>
                 <button
                   type="button"

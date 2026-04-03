@@ -1,4 +1,5 @@
 import type { PrismaService } from '../src/database/prisma.service'
+import type { CacheService } from '../src/common/services/cache.service'
 import { ConsentService } from '../src/modules/consent/consent.service'
 import { COOKIE_DOCUMENT_KEYS, DEFAULT_CONSENT_DOCUMENTS } from '../src/modules/consent/consent.constants'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
@@ -25,6 +26,11 @@ describe('ConsentService', () => {
   const auditLogService = {
     record: jest.fn(async () => {}),
   }
+  const cache = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  }
 
   let service: ConsentService
 
@@ -50,7 +56,11 @@ describe('ConsentService', () => {
       active: params.create.active,
     }))
 
-    service = new ConsentService(prisma as unknown as PrismaService, auditLogService as unknown as AuditLogService)
+    service = new ConsentService(
+      prisma as unknown as PrismaService,
+      auditLogService as unknown as AuditLogService,
+      cache as unknown as CacheService,
+    )
   })
 
   it('garante documentos padrao via upsert em transacao', async () => {
@@ -95,6 +105,27 @@ describe('ConsentService', () => {
       }),
     )
     expect(result).toEqual(documents)
+    expect(cache.set).toHaveBeenCalledWith('consent:documents:2026.03', documents, 3600)
+  })
+
+  it('reutiliza cache de documentos ativos quando disponível', async () => {
+    const documents = [
+      {
+        id: 'doc-1',
+        key: DEFAULT_CONSENT_DOCUMENTS[0].key,
+        title: DEFAULT_CONSENT_DOCUMENTS[0].title,
+        kind: DEFAULT_CONSENT_DOCUMENTS[0].kind,
+        required: true,
+        active: true,
+      },
+    ]
+    cache.get.mockResolvedValueOnce(documents)
+
+    const result = await service.listActiveDocuments('2026.03')
+
+    expect(result).toEqual(documents)
+    expect(prisma.consentDocument.findMany).not.toHaveBeenCalled()
+    expect(prisma.consentDocument.upsert).not.toHaveBeenCalled()
   })
 
   it('registra aceite legal apenas para documentos obrigatorios', async () => {
@@ -183,6 +214,7 @@ describe('ConsentService', () => {
         actorUserId: 'user-1',
       }),
     )
+    expect(cache.del).toHaveBeenCalledWith('consent:overview:user-1:2026.03')
   })
 
   it('ativa consentimento opcional quando preferencia habilitada', async () => {
@@ -271,5 +303,25 @@ describe('ConsentService', () => {
       marketing: false,
     })
     expect(result.documents).toHaveLength(2)
+    expect(cache.set).toHaveBeenCalledWith('consent:overview:user-1:2026.03', result, 600)
+  })
+
+  it('reutiliza cache do overview quando disponível', async () => {
+    const cachedOverview = {
+      documents: [],
+      legalAcceptances: [],
+      cookiePreferences: {
+        necessary: true,
+        analytics: false,
+        marketing: false,
+      },
+    }
+    cache.get.mockResolvedValueOnce(cachedOverview)
+
+    const result = await service.getUserConsentOverview({ userId: 'user-1', version: '2026.03' })
+
+    expect(result).toEqual(cachedOverview)
+    expect(prisma.cookiePreference.findUnique).not.toHaveBeenCalled()
+    expect(prisma.userConsent.findMany).not.toHaveBeenCalled()
   })
 })
