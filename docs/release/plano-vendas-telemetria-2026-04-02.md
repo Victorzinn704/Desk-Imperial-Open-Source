@@ -338,6 +338,47 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 ### Fase 1 — Medição real no stack OSS
 
+### Fase 1.1 — trilha local validada de ponta a ponta
+
+**O que estava quebrando de verdade**
+
+- a API local nao estava “morrendo sem motivo”; ela estava subindo com `.env` apontando para a Neon, o que mascarava o bootstrap local e deixava a experiencia parecendo aleatoria
+- mesmo quando a API subia, as metricas de negocio nao apareciam no Prometheus porque o OpenTelemetry era inicializado tarde demais, depois do carregamento do app
+
+**O que corrigimos**
+
+- criamos um banco dedicado de observabilidade local: `partner_portal_observability`
+- adicionamos `scripts/prepare-local-observability-db.mjs` para provisionar banco/role de forma idempotente
+- centralizamos as variaveis em `scripts/with-local-observability-env.mjs`
+- a API passou a carregar env antes e inicializar OTel antes de importar o `AppModule`
+- o smoke local ficou alinhado ao contrato real do snapshot operacional
+
+**Comandos oficiais**
+
+- `npm run obs:up`
+- `npm run obs:api:prepare`
+- `npm run obs:api:build`
+- `npm run obs:api:start`
+- `npm run obs:smoke:local`
+
+**Evidencia validada**
+
+- a API local sobe em `http://localhost:4000/api/health`
+- o Prometheus passa a listar:
+  - `desk_finance_summary_duration_milliseconds_*`
+  - `desk_operations_live_duration_milliseconds_*`
+  - `desk_operations_kitchen_duration_milliseconds_*`
+- os labels uteis ja aparecem nas series:
+  - `desk_finance_cache_hit`
+  - `desk_finance_cache_state`
+  - `desk_operations_cache_hit`
+  - `desk_operations_compact_mode`
+
+**Leitura sênior**
+
+- agora a trilha `API -> Alloy -> Prometheus -> Grafana` saiu do estado “infra de laboratorio” e virou validacao reproduzivel
+- isso nos da base segura para o proximo passo: dashboards e alertas mais precisos sem adivinhar comportamento
+
 **Objetivo**
 
 - levar essas métricas para Alloy → Prometheus → Grafana
@@ -383,6 +424,10 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
   - Grafana provisionou o dashboard `Business Performance`
   - Prometheus carregou as regras com `health=ok`
   - stack local subiu com `alloy`, `prometheus`, `tempo`, `loki`, `alertmanager`, `grafana` e `blackbox`
+  - fluxo local repetível documentado com:
+    - `npm run obs:api:build`
+    - `npm run obs:api:start`
+    - `npm run obs:smoke:local`
 
 **Leitura sênior**
 

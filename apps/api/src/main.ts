@@ -1,19 +1,39 @@
 import 'reflect-metadata'
 import { context, trace } from '@opentelemetry/api'
 import { Logger, ValidationPipe } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import process from 'node:process'
 import type { NextFunction, Request, Response } from 'express'
 import helmet from 'helmet'
-import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { initializeApiOpenTelemetry, shutdownApiOpenTelemetry } from './common/utils/otel.util'
 import { getAllowedOrigins, isAllowedOrigin } from './common/utils/origin.util'
 
 let processFailureHandlersRegistered = false
 let processShutdownHandlersRegistered = false
+
+function loadApiEnvFiles() {
+  if (typeof process.loadEnvFile !== 'function') {
+    return
+  }
+
+  const candidatePaths = [
+    resolve(process.cwd(), 'apps/api/.env'),
+    resolve(process.cwd(), '.env'),
+    resolve(process.cwd(), '../../.env'),
+    resolve(__dirname, '..', '.env'),
+    resolve(__dirname, '..', '..', '..', '..', '.env'),
+  ]
+
+  for (const envPath of new Set(candidatePaths)) {
+    if (existsSync(envPath)) {
+      process.loadEnvFile(envPath)
+    }
+  }
+}
 
 function normalizeRequestId(value: number | string | string[] | undefined | null) {
   if (value === undefined || value === null) {
@@ -52,10 +72,7 @@ function registerProcessFailureHandlers(logger: Logger) {
   }
 
   process.on('unhandledRejection', (reason) => {
-    logger.error(
-      '[process] unhandledRejection capturada.',
-      reason instanceof Error ? reason.stack : String(reason),
-    )
+    logger.error('[process] unhandledRejection capturada.', reason instanceof Error ? reason.stack : String(reason))
   })
 
   process.on('uncaughtExceptionMonitor', (error, origin) => {
@@ -94,6 +111,29 @@ function registerProcessShutdownHandlers(logger: Logger) {
 }
 
 async function bootstrap() {
+  loadApiEnvFiles()
+
+  const isProductionRuntime = (process.env.NODE_ENV ?? 'development') === 'production'
+  const otelEnabled = await initializeApiOpenTelemetry({
+    endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    tracesEndpoint: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+    metricsEndpoint: process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
+    logsEndpoint: process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT,
+    headers: process.env.OTEL_EXPORTER_OTLP_HEADERS,
+    serviceName: process.env.OTEL_SERVICE_NAME ?? 'desk-imperial-api',
+    serviceVersion: process.env.npm_package_version,
+    environment: process.env.OTEL_SERVICE_ENVIRONMENT ?? process.env.NODE_ENV,
+    tracesSampleRate: process.env.OTEL_TRACES_SAMPLE_RATE ?? (isProductionRuntime ? '0.03' : '1'),
+    metricsExportIntervalMs: process.env.OTEL_METRICS_EXPORT_INTERVAL_MS ?? '15000',
+    diagnosticsEnabled: process.env.OTEL_DIAGNOSTICS === 'true',
+  })
+
+  const [{ ConfigService }, { NestFactory }, { AppModule }] = await Promise.all([
+    import('@nestjs/config'),
+    import('@nestjs/core'),
+    import('./app.module'),
+  ])
+
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   })
@@ -110,22 +150,10 @@ async function bootstrap() {
   const swaggerEnabled = !isProduction || configService.get<string>('ENABLE_SWAGGER') === 'true'
   const swaggerAllowedInProduction = configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
-  const otelEnabled = await initializeApiOpenTelemetry({
-    endpoint: configService.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT'),
-    tracesEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
-    metricsEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
-    logsEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'),
-    headers: configService.get<string>('OTEL_EXPORTER_OTLP_HEADERS'),
-    serviceName: configService.get<string>('OTEL_SERVICE_NAME') ?? 'desk-imperial-api',
-    serviceVersion: process.env.npm_package_version,
-    environment: configService.get<string>('OTEL_SERVICE_ENVIRONMENT') ?? configService.get<string>('NODE_ENV'),
-    tracesSampleRate: configService.get<string>('OTEL_TRACES_SAMPLE_RATE') ?? (isProduction ? '0.03' : '1'),
-    metricsExportIntervalMs: configService.get<string>('OTEL_METRICS_EXPORT_INTERVAL_MS') ?? '15000',
-    diagnosticsEnabled: configService.get<string>('OTEL_DIAGNOSTICS') === 'true',
-  })
-
   if (otelEnabled) {
-    logger.log('OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).')
+    logger.log(
+      'OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).',
+    )
   }
 
   registerProcessFailureHandlers(logger)
@@ -212,9 +240,7 @@ async function bootstrap() {
   }
 
   if (!isProduction && portfolioFallback === 'true') {
-    logger.warn(
-      'PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.',
-    )
+    logger.warn('PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.')
   }
 
   if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {

@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
+import { trace } from '@opentelemetry/api'
 import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
@@ -37,6 +44,10 @@ import {
   resolveBuyerTypeFromDocument,
   toNumber,
 } from './operations-domain.utils'
+import {
+  recordOperationsKitchenTelemetry,
+  recordOperationsLiveTelemetry,
+} from '../../common/observability/business-telemetry.util'
 
 type TransactionClient = Prisma.TransactionClient
 
@@ -227,6 +238,7 @@ export class OperationsHelpersService {
       compactMode?: boolean
     },
   ): Promise<OperationsLiveResponse> {
+    const startedAt = performance.now()
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements === true
     const compactMode = options?.compactMode === true
@@ -241,6 +253,25 @@ export class OperationsHelpersService {
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
       if (cached) {
+        const totalComandas =
+          cached.unassigned.comandas.length +
+          cached.employees.reduce((total, employee) => total + employee.comandas.length, 0)
+
+        recordOperationsLiveTelemetry(
+          performance.now() - startedAt,
+          {
+            employees: cached.employees.length,
+            comandas: totalComandas,
+            mesas: cached.mesas.length,
+          },
+          {
+            'desk.operations.cache_hit': true,
+            'desk.operations.compact_mode': compactMode,
+            'desk.operations.include_cash_movements': includeCashMovements,
+            'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+          },
+        )
+
         return cached
       }
     }
@@ -354,6 +385,34 @@ export class OperationsHelpersService {
       }),
     }
 
+    const totalComandas =
+      snapshot.unassigned.comandas.length +
+      snapshot.employees.reduce((total, employee) => total + employee.comandas.length, 0)
+
+    recordOperationsLiveTelemetry(
+      performance.now() - startedAt,
+      {
+        employees: snapshot.employees.length,
+        comandas: totalComandas,
+        mesas: snapshot.mesas.length,
+      },
+      {
+        'desk.operations.cache_hit': false,
+        'desk.operations.compact_mode': compactMode,
+        'desk.operations.include_cash_movements': includeCashMovements,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      },
+    )
+
+    trace.getActiveSpan()?.setAttributes({
+      'desk.operations.cache_hit': false,
+      'desk.operations.compact_mode': compactMode,
+      'desk.operations.include_cash_movements': includeCashMovements,
+      'desk.operations.employee_count': snapshot.employees.length,
+      'desk.operations.comanda_count': totalComandas,
+      'desk.operations.mesa_count': snapshot.mesas.length,
+    })
+
     if (cacheKey) {
       void this.cache.set(cacheKey, snapshot, OPERATIONS_LIVE_CACHE_TTL_SECONDS)
     }
@@ -366,10 +425,22 @@ export class OperationsHelpersService {
     businessDate: Date,
     scopedEmployeeId?: string | null,
   ): Promise<OperationsKitchenResponse> {
+    const startedAt = performance.now()
     const businessDateKey = formatBusinessDateKey(businessDate)
     const cacheKey = CacheService.operationsKitchenKey(workspaceOwnerUserId, businessDateKey, scopedEmployeeId)
     const cached = await this.cache.get<OperationsKitchenResponse>(cacheKey)
     if (cached) {
+      recordOperationsKitchenTelemetry(
+        performance.now() - startedAt,
+        {
+          items: cached.items.length,
+        },
+        {
+          'desk.operations.cache_hit': true,
+          'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+        },
+      )
+
       return cached
     }
 
@@ -437,6 +508,17 @@ export class OperationsHelpersService {
       items,
       statusCounts,
     }
+
+    recordOperationsKitchenTelemetry(
+      performance.now() - startedAt,
+      {
+        items: response.items.length,
+      },
+      {
+        'desk.operations.cache_hit': false,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      },
+    )
 
     void this.cache.set(cacheKey, response, OPERATIONS_KITCHEN_CACHE_TTL_SECONDS)
 

@@ -78,6 +78,86 @@ Observacao importante sobre login do Grafana local:
 - no estado local atual, o login ativo continua `admin/admin`
 - para alinhar com os novos defaults do compose, sera preciso resetar o volume ou trocar a senha explicitamente
 
+## Fluxo local recomendado (API -> Alloy -> Prometheus -> Grafana)
+
+Subir a stack OSS:
+
+```bash
+npm run obs:up
+```
+
+Preparar a API local para observabilidade:
+
+```bash
+npm run obs:api:prepare
+```
+
+Esse passo agora faz o trabalho chato por nós:
+
+- sobe `postgres` e `redis` locais sem ruído de orphans
+- provisiona/garante o banco dedicado `partner_portal_observability`
+- aplica migrations
+- roda o seed demo
+
+Depois, compilar a API local ja apontando para o Alloy e para o Redis local:
+
+```bash
+npm run obs:api:build
+```
+
+Depois iniciar a API local com a mesma configuracao:
+
+```bash
+npm run obs:api:start
+```
+
+Esse comando injeta automaticamente:
+
+- `DATABASE_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal_observability`
+- `DIRECT_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal_observability`
+- `REDIS_URL=redis://localhost:6379`
+- `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`
+- `OTEL_SERVICE_ENVIRONMENT=local-observability`
+- `OTEL_METRICS_EXPORT_INTERVAL_MS=5000`
+
+Depois, gerar trafego de exemplo e confirmar que as metricas `desk_*` chegaram no Prometheus:
+
+```bash
+npm run obs:smoke:local
+```
+
+O smoke:
+
+- autentica no modo demo como `OWNER`
+- chama `finance/summary`
+- chama `operations/live?compactMode=true`
+- chama `operations/kitchen`
+- aguarda o export OTLP
+- consulta o Prometheus local e lista as metricas `desk_finance_*` e `desk_operations_*`
+
+Se tudo estiver certo:
+
+- Grafana mostra o dashboard `Business Performance`
+- Prometheus passa a listar metricas `desk_finance_summary_*`
+- Prometheus passa a listar metricas `desk_operations_live_*`
+- Alloy continua `up` em `http://localhost:12345`
+
+### Ajustes reais validados nesta fase
+
+- a API local parecia “travada”, mas a causa real era dupla:
+  - os `.env` locais apontavam para a Neon, nao para o Postgres docker local
+  - o OpenTelemetry era inicializado tarde demais, depois do carregamento do app, o que impedia a exportacao das metricas de negocio
+- o bootstrap agora carrega as variaveis de ambiente antes e inicializa o OTel antes de importar o `AppModule`
+- com isso, o stack local passou a exportar de verdade:
+  - `desk_finance_summary_duration_milliseconds_*`
+  - `desk_operations_live_duration_milliseconds_*`
+  - `desk_operations_kitchen_duration_milliseconds_*`
+
+Observacoes honestas:
+
+- o Grafana local continua com `admin/admin` por causa do volume persistido ja existente
+- o login demo local ainda tenta enviar alerta de email e a Brevo responde `401` se a chave for placeholder; isso nao bloqueia o smoke de telemetria
+
 ## Fase 2 (Frontend Faro) - hardening
 
 Estado real desta fase hoje:
