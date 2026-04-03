@@ -4,12 +4,13 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
-import { ApiError } from '@/lib/api'
-import { useDashboardQueries, useDashboardMutations } from '@/components/dashboard/hooks'
+import { ApiError, fetchCurrentUser } from '@/lib/api'
+import { useDashboardMutations } from '@/components/dashboard/hooks'
 import { useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
 import { useDashboardNavigation } from '@/components/dashboard/hooks/useDashboardNavigation'
+import { useDashboardScopedQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useScrollMemory } from '@/components/dashboard/hooks/useScrollMemory'
 import { useEvaluationCountdown } from '@/components/dashboard/hooks/useEvaluationCountdown'
 import { useDashboardLogout } from '@/components/dashboard/hooks/useDashboardLogout'
@@ -125,7 +126,13 @@ export function DashboardShell({
 
   const { isMobile } = useMobileDetection()
 
-  const { sessionQuery, consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardQueries()
+  const sessionQuery = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: fetchCurrentUser,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
   const { logoutMutation: rawLogoutMutation } = useDashboardMutations()
 
   const currentUser = sessionQuery.data?.user ?? null
@@ -139,6 +146,12 @@ export function DashboardShell({
     navigateToSection,
     navigateToSettings,
   } = useDashboardNavigation({ initialSection, initialSettingsSection, isStaffUser })
+
+  const { consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
+    userId: currentUser?.userId,
+    isOwner: currentUser?.role === 'OWNER',
+    section: activeSection,
+  })
 
   const { scrollRef, onScroll, scrollIntoView } = useScrollMemory(activeSection, isMobile)
 
@@ -198,44 +211,57 @@ export function DashboardShell({
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
-
-  const signals = isStaffUser
-    ? [
-        {
-          label: 'Pedidos',
-          value: String(ordersQuery.data?.totals.completedOrders ?? 0),
-          helper: 'operações concluídas no workspace',
-        },
-        {
-          label: 'Portfólio',
-          value: String(productsQuery.data?.totals.activeProducts ?? 0),
-          helper: 'produtos ativos para venda',
-        },
-        { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
-      ]
-    : [
-        {
-          label: 'Receita do mes',
-          value: formatCurrency(finance?.totals.currentMonthRevenue ?? 0, displayCurrency),
-          helper: 'resultado bruto do período',
-        },
-        {
-          label: 'Estoque baixo',
-          value: String(finance?.totals.lowStockItems ?? 0),
-          helper: 'itens para reposição rápida',
-        },
-        {
-          label: 'Documentos',
-          value: requiredDocumentCount ? `${legalAcceptances.length}/${requiredDocumentCount}` : '0/0',
-          helper: 'aceites exigidos no sistema',
-        },
-      ]
-
   const activeNavigation =
     navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
     (activeSection === 'settings'
       ? { id: 'settings', label: 'Conta e preferências', description: 'Conta, segurança e conformidade', icon: Clock }
       : navigationGroups[0]?.items[0])
+
+  const signals = isStaffUser
+    ? [
+        {
+          label: activeSection === 'sales' ? 'Pedidos' : 'Operação',
+          value: String(ordersQuery.data?.totals.completedOrders ?? 0),
+          helper:
+            activeSection === 'sales'
+              ? 'operações concluídas no workspace'
+              : 'painel sincronizado com trilha operacional',
+        },
+        {
+          label: activeSection === 'pdv' ? 'PDV vivo' : 'Portfólio',
+          value: activeSection === 'pdv' ? 'Ao vivo' : String(productsQuery.data?.totals.activeProducts ?? 0),
+          helper:
+            activeSection === 'pdv'
+              ? 'comandas e mesas em atualização contínua'
+              : 'produtos ativos para venda',
+        },
+        { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
+      ]
+    : [
+        {
+          label: finance ? 'Receita do mes' : 'Workspace',
+          value: finance ? formatCurrency(finance.totals.currentMonthRevenue ?? 0, displayCurrency) : activeNavigation.label,
+          helper: finance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
+        },
+        {
+          label: finance ? 'Estoque baixo' : 'Status',
+          value: finance ? String(finance.totals.lowStockItems ?? 0) : 'Ativo',
+          helper: finance ? 'itens para reposição rápida' : 'sessão segura e pronta para operar',
+        },
+        {
+          label: activeSection === 'settings' ? 'Documentos' : 'Conta',
+          value:
+            activeSection === 'settings'
+              ? requiredDocumentCount
+                ? `${legalAcceptances.length}/${requiredDocumentCount}`
+                : '0/0'
+              : user.companyName || 'Workspace',
+          helper:
+            activeSection === 'settings'
+              ? 'aceites exigidos no sistema'
+              : 'identidade principal do portal',
+        },
+      ]
   const activeHero = sectionHeroCopy[activeSection]
 
   // ── Mobile shells ─────────────────────────────────────────────────────────────

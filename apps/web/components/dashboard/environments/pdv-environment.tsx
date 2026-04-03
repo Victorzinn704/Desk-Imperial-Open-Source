@@ -27,7 +27,7 @@ const OperationsTimeline = dynamic(
 )
 
 export function PdvEnvironment() {
-  const { productsQuery, sessionQuery } = useDashboardQueries()
+  const { productsQuery, sessionQuery } = useDashboardQueries({ section: 'pdv' })
 
   const user = sessionQuery.data?.user
   const operationsQuery = useQuery({

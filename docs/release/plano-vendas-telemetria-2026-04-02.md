@@ -618,3 +618,58 @@ Consideramos essa frente madura quando:
 - agora o bloco de portfólio deixa de ser só cadastro e passa a governar venda real
 - a exclusão definitiva ficou madura o bastante para limpar lixo do catálogo sem desmontar histórico consolidado
 - o próximo refinamento natural aqui é revisar a experiência de edição/arquivamento ao vivo no dashboard para garantir que a sensação de resposta ficou tão boa quanto a lógica
+
+---
+
+## 9. Entrada + operação comercial + pulso manual — 2026-04-03
+
+**Problemas reais atacados**
+
+- a entrada no app ainda sofria com transição seca e lenta entre login e dashboard
+- o shell do dashboard carregava blocos demais por padrão, mesmo quando a seção ativa não precisava deles
+- a seção `Operação` do sidebar ainda parecia um SaaS genérico e não o centro comercial do Desk Imperial
+- o painel lateral de atividades estava monótono, com sensação de congelamento e pouca leitura humana
+- o manifest seguia apontando para ícones inexistentes, gerando ruído silencioso no navegador
+
+**Correções aplicadas**
+
+- `apps/web/components/auth/login-form.tsx`
+  - entrada agora faz prewarm assíncrono do caminho mais provável após autenticação
+  - owner pré-aquece `auth/me + finance/summary`
+  - staff pré-aquece `auth/me + products + orders/summary`
+  - navegação pós-login passou para `router.replace('/dashboard')`, reduzindo sensação de salto e histórico desnecessário
+- `apps/web/components/dashboard/hooks/useDashboardQueries.ts`
+- `apps/web/components/dashboard/dashboard-shell.tsx`
+- `apps/web/components/dashboard/environments/*.tsx`
+  - queries do dashboard foram escopadas por seção ativa
+  - `settings` não carrega mais blocos comerciais que não vai usar
+  - `pdv` deixa de herdar peso executivo por padrão
+  - `sales` recebe somente o que importa para vender e ler a operação
+- `apps/web/components/dashboard/environments/sales-environment.tsx`
+  - a seção `Operação` foi redesenhada como central comercial real
+  - KPIs do topo passaram a falar de receita, lucro, ticket e ritmo da equipe
+  - o painel de categorias/cores do dashboard inicial foi reaproveitado no eixo lateral para leitura de mix
+  - a lista de pedidos recentes saiu do padrão “card repetido” e virou trilho manual mais denso e mais próximo do caixa
+- `apps/web/components/dashboard/activity-timeline.tsx`
+  - o painel virou um `Pulso do workspace`
+  - atualização automática a cada `15s`
+  - leitura mais manual e menos “timeline de template”
+- `apps/web/public/manifest.json`
+  - removidos ícones inexistentes para parar o ruído de `404` e avisos de PWA
+- `apps/web/eslint.config.mjs`
+  - ignorado `coverage/**` para evitar lint em artefato gerado, não em código do produto
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- não foi só maquiagem visual: o shell realmente deixou de pedir dados fora do contexto da seção ativa
+- a seção `Operação` agora fica mais próxima do uso humano diário, com menos cara de componente genérico
+- o próximo passo natural depois do deploy é medir no Railway se o ganho percebido da entrada confirma o prewarm e, se confirmar, atacar os pontos restantes de fricção no calendário e no bloco visual do salão

@@ -7,8 +7,53 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
-import { ApiError, login, loginDemo, type AuthResponse, type LoginPayload } from '@/lib/api'
+import {
+  ApiError,
+  fetchCurrentUser,
+  fetchFinanceSummary,
+  fetchOrders,
+  fetchProducts,
+  login,
+  loginDemo,
+  type AuthResponse,
+  type LoginPayload,
+} from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
+
+function prewarmDashboardEntry(queryClient: ReturnType<typeof useQueryClient>, role: AuthResponse['user']['role']) {
+  const tasks = [
+    queryClient.prefetchQuery({
+      queryKey: ['auth', 'me'],
+      queryFn: fetchCurrentUser,
+      staleTime: 30_000,
+    }),
+  ]
+
+  if (role === 'OWNER') {
+    tasks.push(
+      queryClient.prefetchQuery({
+        queryKey: ['finance', 'summary'],
+        queryFn: fetchFinanceSummary,
+        staleTime: 60_000,
+      }),
+    )
+  } else {
+    tasks.push(
+      queryClient.prefetchQuery({
+        queryKey: ['products'],
+        queryFn: fetchProducts,
+        staleTime: 5 * 60_000,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['orders', 'summary'],
+        queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
+        staleTime: 30_000,
+      }),
+    )
+  }
+
+  void Promise.allSettled(tasks)
+}
 
 export function LoginForm() {
   const router = useRouter()
@@ -18,6 +63,7 @@ export function LoginForm() {
 
   useEffect(() => {
     router.prefetch('/dashboard')
+    router.prefetch('/app')
   }, [router])
 
   const {
@@ -46,9 +92,9 @@ export function LoginForm() {
     mutationFn: (payload) => login(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
+      prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.push('/dashboard')
+        router.replace('/dashboard')
       })
     },
     onError: (error, variables) => {
@@ -69,9 +115,9 @@ export function LoginForm() {
     mutationFn: loginDemo,
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
+      prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.push('/dashboard')
+        router.replace('/dashboard')
       })
     },
   })

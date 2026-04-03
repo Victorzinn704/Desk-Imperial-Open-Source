@@ -7,7 +7,7 @@ import { DashboardSectionHeading } from '@/components/dashboard/dashboard-sectio
 import { MapSection } from '@/components/dashboard/map-section'
 
 export function MapEnvironment() {
-  const { financeQuery, ordersQuery, sessionQuery } = useDashboardQueries()
+  const { financeQuery, ordersQuery, sessionQuery } = useDashboardQueries({ section: 'map' })
 
   const user = sessionQuery.data?.user
   const finance = financeQuery.data
