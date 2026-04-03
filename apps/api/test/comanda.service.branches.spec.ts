@@ -13,6 +13,7 @@ import type { AuditLogService } from '../src/modules/monitoring/audit-log.servic
 import type { OperationsRealtimeService } from '../src/modules/operations-realtime/operations-realtime.service'
 import { ComandaService } from '../src/modules/operations/comanda.service'
 import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import type { FinanceService } from '../src/modules/finance/finance.service'
 import { makeOwnerAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
 
@@ -86,7 +87,14 @@ describe('ComandaService branch happy paths', () => {
       $transaction: jest.fn(),
     }
 
-    prisma.$transaction.mockImplementation(async (callback: any) =>
+    type TransactionClient = {
+      product: typeof prisma.product
+      comanda: typeof prisma.comanda
+      comandaItem: typeof prisma.comandaItem
+      comandaAssignment: typeof prisma.comandaAssignment
+    }
+
+    prisma.$transaction.mockImplementation(async (callback: (tx: TransactionClient) => Promise<unknown>) =>
       callback({
         product: prisma.product,
         comanda: prisma.comanda,
@@ -130,12 +138,17 @@ describe('ComandaService branch happy paths', () => {
       buildLiveSnapshot: jest.fn(async () => ({ marker: 'live' })),
     }
 
+    const finance = {
+      invalidateAndWarmSummary: jest.fn(async () => {}),
+    }
+
     const service = new ComandaService(
       prisma as unknown as PrismaService,
       cache as unknown as CacheService,
       audit as unknown as AuditLogService,
       realtime as unknown as OperationsRealtimeService,
       helpers as unknown as OperationsHelpersService,
+      finance as unknown as FinanceService,
     )
 
     return {
@@ -145,6 +158,7 @@ describe('ComandaService branch happy paths', () => {
       audit,
       realtime,
       helpers,
+      finance,
     }
   }
 
@@ -190,14 +204,16 @@ describe('ComandaService branch happy paths', () => {
     )
     helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
 
+    const payload: Parameters<ComandaService['addComandaItem']>[2] = {
+      productId: 'product-1',
+      quantity: 2,
+      notes: 'sem cebola',
+    }
+
     const result = await service.addComandaItem(
       makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
       'comanda-1',
-      {
-        productId: 'product-1',
-        quantity: 2,
-        notes: 'sem cebola',
-      } as any,
+      payload,
       makeRequestContext(),
       { includeSnapshot: false },
     )
@@ -225,7 +241,7 @@ describe('ComandaService branch happy paths', () => {
     ])
 
     let counter = 0
-    prisma.comandaItem.create.mockImplementation(async ({ data }: any) => {
+    prisma.comandaItem.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
       counter += 1
       return {
         id: `item-${counter}`,
@@ -267,22 +283,24 @@ describe('ComandaService branch happy paths', () => {
     )
     helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
 
+    const payload: Parameters<ComandaService['addComandaItems']>[2] = {
+      items: [
+        {
+          productId: 'product-1',
+          quantity: 2,
+        },
+        {
+          productName: 'Suco',
+          unitPrice: 20,
+          quantity: 2,
+        },
+      ],
+    }
+
     await service.addComandaItems(
       makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
       'comanda-1',
-      {
-        items: [
-          {
-            productId: 'product-1',
-            quantity: 2,
-          },
-          {
-            productName: 'Suco',
-            unitPrice: 20,
-            quantity: 2,
-          },
-        ],
-      } as any,
+      payload,
       makeRequestContext(),
       { includeSnapshot: false },
     )
@@ -345,14 +363,16 @@ describe('ComandaService branch happy paths', () => {
     helpers.recalculateComanda.mockResolvedValue(makeComanda())
     helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
 
+    const payload: Parameters<ComandaService['replaceComanda']>[2] = {
+      mesaId: 'mesa-1',
+      tableLabel: 'Mesa 1',
+      items: [{ productId: 'product-1', quantity: 1 }],
+    }
+
     await service.replaceComanda(
       makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
       'comanda-1',
-      {
-        mesaId: 'mesa-1',
-        tableLabel: 'Mesa 1',
-        items: [{ productId: 'product-1', quantity: 1 }],
-      } as any,
+      payload,
       makeRequestContext(),
       { includeSnapshot: false },
     )
@@ -483,12 +503,14 @@ describe('ComandaService branch happy paths', () => {
     )
     helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
 
+    const payload: Parameters<ComandaService['updateKitchenItemStatus']>[2] = {
+      status: 'READY',
+    }
+
     const result = await service.updateKitchenItemStatus(
       makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
       'item-1',
-      {
-        status: 'READY',
-      } as any,
+      payload,
       makeRequestContext(),
     )
 
@@ -498,7 +520,7 @@ describe('ComandaService branch happy paths', () => {
   })
 
   it('fecha comanda, sincroniza caixa e publica eventos financeiros', async () => {
-    const { service, prisma, helpers, realtime, cache } = createSetup()
+    const { service, prisma, helpers, realtime, cache, finance } = createSetup()
     helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda())
     helpers.recalculateComanda.mockResolvedValue(makeComanda({ totalAmount: 120 }))
     prisma.comanda.update.mockResolvedValue(
@@ -547,6 +569,7 @@ describe('ComandaService branch happy paths', () => {
     expect(realtime.publishComandaClosed).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashUpdated).toHaveBeenCalledTimes(1)
     expect(realtime.publishCashClosureUpdated).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    expect(cache.del).toHaveBeenCalledTimes(1)
+    expect(finance.invalidateAndWarmSummary).toHaveBeenCalledWith('owner-1')
   })
 })

@@ -141,6 +141,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   static productsKey(userId: string, scope: 'active' | 'all' = 'active') {
     return `products:list:${userId}:${scope}`
   }
+  static consentDocumentsKey(version: string) {
+    return `consent:documents:${version}`
+  }
+  static consentOverviewKey(userId: string, version: string) {
+    return `consent:overview:${userId}:${version}`
+  }
   static employeesKey(userId: string) {
     return `employees:list:${userId}`
   }

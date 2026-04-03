@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import type { Request } from 'express'
 import { isValidCnpj, isValidCpf, sanitizeDocument } from '../../common/utils/document-validation.util'
@@ -16,6 +16,7 @@ import type { ListOrdersQueryDto } from './dto/list-orders.query'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toOrderRecord } from './orders.types'
 import { CacheService } from '../../common/services/cache.service'
+import { FinanceService } from '../finance/finance.service'
 
 const MAX_STAFF_DISCOUNT_PERCENT = 15
 
@@ -75,6 +76,7 @@ export class OrdersService {
     private readonly auditLogService: AuditLogService,
     private readonly adminPinService: AdminPinService,
     private readonly cache: CacheService,
+    @Optional() private readonly financeService?: FinanceService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListOrdersQueryDto) {
@@ -171,6 +173,15 @@ export class OrdersService {
       this.cache.del(CacheService.ordersKey(userId)),
       this.cache.delByPrefix(`${CacheService.ordersKey(userId)}:`),
     ])
+  }
+
+  private refreshFinanceSummary(workspaceUserId: string) {
+    if (this.financeService) {
+      void this.financeService.invalidateAndWarmSummary(workspaceUserId)
+      return
+    }
+
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
   }
 
   private buildOrdersCacheKey(
@@ -452,7 +463,7 @@ export class OrdersService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(CacheService.financeKey(workspaceUserId))
+    this.refreshFinanceSummary(workspaceUserId)
     void this.invalidateOrdersCache(workspaceUserId)
 
     return {
@@ -534,7 +545,7 @@ export class OrdersService {
 
     const snapshot = await this.currencyService.getSnapshot()
 
-    void this.cache.del(CacheService.financeKey(workspaceUserId))
+    this.refreshFinanceSummary(workspaceUserId)
     void this.invalidateOrdersCache(workspaceUserId)
 
     return {

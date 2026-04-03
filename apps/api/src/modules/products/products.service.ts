@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import type { CurrencyCode } from '@prisma/client'
 import { Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
@@ -17,6 +17,7 @@ import type { ProductComboItemDto } from './dto/product-combo-item.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
+import { FinanceService } from '../finance/finance.service'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -51,6 +52,7 @@ export class ProductsService {
     @Inject(CurrencyService) private readonly currencyService: CurrencyService,
     @Inject(AuditLogService) private readonly auditLogService: AuditLogService,
     private readonly cache: CacheService,
+    @Optional() private readonly financeService?: FinanceService,
   ) {}
 
   async listForUser(auth: AuthContext, query: ListProductsQueryDto) {
@@ -116,6 +118,15 @@ export class ProductsService {
       this.cache.del(CacheService.productsKey(userId, 'active')),
       this.cache.del(CacheService.productsKey(userId, 'all')),
     ])
+  }
+
+  private refreshFinanceSummary(workspaceUserId: string) {
+    if (this.financeService) {
+      void this.financeService.invalidateAndWarmSummary(workspaceUserId)
+      return
+    }
+
+    void this.cache.del(CacheService.financeKey(workspaceUserId))
   }
 
   async createForUser(auth: AuthContext, dto: CreateProductDto, context: RequestContext) {
@@ -220,7 +231,7 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(CacheService.financeKey(workspaceUserId))
+      this.refreshFinanceSummary(workspaceUserId)
       void this.invalidateProductsCache(workspaceUserId)
 
       return {
@@ -376,7 +387,7 @@ export class ProductsService {
         userAgent: context.userAgent,
       })
 
-      void this.cache.del(CacheService.financeKey(workspaceUserId))
+      this.refreshFinanceSummary(workspaceUserId)
       void this.invalidateProductsCache(workspaceUserId)
 
       return {
@@ -568,7 +579,7 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(CacheService.financeKey(workspaceUserId))
+    this.refreshFinanceSummary(workspaceUserId)
     void this.invalidateProductsCache(workspaceUserId)
 
     return {
@@ -610,7 +621,7 @@ export class ProductsService {
       userAgent: context.userAgent,
     })
 
-    void this.cache.del(CacheService.financeKey(workspaceUserId))
+    this.refreshFinanceSummary(workspaceUserId)
     void this.invalidateProductsCache(workspaceUserId)
 
     const snapshot = await this.currencyService.getSnapshot()
