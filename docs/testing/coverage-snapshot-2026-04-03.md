@@ -83,12 +83,12 @@ Data de referencia: 2026-04-03.
 
 Sim, o fluxo pode ser executado integralmente por CLI, incluindo commit, push e sincronizacao sem confirmacoes manuais no editor, desde que a autenticacao ja esteja valida.
 
+No ambiente atual, o push foi realizado via git CLI sem prompts interativos.
+Quando o gh estiver instalado e autenticado, ele pode ser usado para validar sessao e automatizar fluxos GitHub adicionais.
+
 Exemplo de fluxo:
 
 ```bash
-# confirmar autenticacao GitHub CLI
-gh auth status
-
 # commit local
 git add <arquivos>
 git commit -m "docs(testing): atualiza snapshot de cobertura"
@@ -98,6 +98,9 @@ git push origin HEAD
 
 # push no repositorio open source (remote public)
 git push public HEAD
+
+# opcional: validar autenticacao quando gh estiver disponivel
+gh auth status
 ```
 
 Observacao:
