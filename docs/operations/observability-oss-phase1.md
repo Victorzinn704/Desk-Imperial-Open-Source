@@ -72,6 +72,12 @@ Endpoints locais:
 - Alloy metrics/UI: `http://localhost:12345`
 - Blackbox exporter: `http://localhost:9115`
 
+Observacao importante sobre login do Grafana local:
+
+- se o volume `grafana-data` ja existia antes, o usuario/senha persistidos podem continuar valendo mesmo que o compose tenha novos defaults
+- no estado local atual, o login ativo continua `admin/admin`
+- para alinhar com os novos defaults do compose, sera preciso resetar o volume ou trocar a senha explicitamente
+
 ## Fase 2 (Frontend Faro) - hardening
 
 Estado real desta fase hoje:

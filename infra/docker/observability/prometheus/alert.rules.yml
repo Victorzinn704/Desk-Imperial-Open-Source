@@ -81,3 +81,21 @@ groups:
         annotations:
           summary: Possível estagnação de scrape no Prometheus
           description: Não houve coleta de samples nos últimos 10 minutos; revisar collectors/targets.
+
+      - alert: FinanceSummaryCacheMissSlowP95
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_finance_summary_duration.*_bucket", desk_finance_cache_hit="false"}[10m]))) > 3000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: finance/summary frio acima do budget
+          description: O p95 do finance/summary em cache miss passou de 3000ms por mais de 10 minutos.
+
+      - alert: OperationsLiveSlowP95
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_live_duration.*_bucket"}[10m]))) > 1500
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: operations/live acima do budget
+          description: O p95 do snapshot operacional ao vivo passou de 1500ms por mais de 10 minutos.

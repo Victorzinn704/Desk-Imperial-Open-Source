@@ -366,6 +366,29 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 - o gargalo já precisa chegar instrumentado e com recortes de payload reais, senão o dashboard só “desenha o problema” sem ajudar a resolver
 - com o `includeClosed=false` e o scoping de realtime já no código, a leitura em Grafana passa a refletir um caminho quente mais honesto
 
+**Ataque inicial já entregue**
+
+- dashboard novo provisionado em `infra/docker/observability/grafana/dashboards/business-performance.json`
+- foco do dashboard:
+  - `finance p95 (fresh)`
+  - `finance p95 (cache miss)`
+  - `operations/live p95`
+  - `kitchen p95`
+  - shape médio de `finance/summary`
+  - shape médio de `operations/live`
+- alertas reais adicionados em `infra/docker/observability/prometheus/alert.rules.yml`:
+  - `FinanceSummaryCacheMissSlowP95`
+  - `OperationsLiveSlowP95`
+- validação prática local:
+  - Grafana provisionou o dashboard `Business Performance`
+  - Prometheus carregou as regras com `health=ok`
+  - stack local subiu com `alloy`, `prometheus`, `tempo`, `loki`, `alertmanager`, `grafana` e `blackbox`
+
+**Leitura sênior**
+
+- essa fase saiu do papel: agora o stack já responde perguntas de produto, não só de infra
+- o próximo ganho vem de ligar a API local/staging ao OTLP e verificar o nome/volume real das séries em produção controlada
+
 ### Fase 2 — Separação cirúrgica do domínio de vendas
 
 **Objetivo**
