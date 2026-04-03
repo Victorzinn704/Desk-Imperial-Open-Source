@@ -20,6 +20,7 @@
 
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { BuyerType, CurrencyCode, OrderStatus } from '@prisma/client'
+import type { Request } from 'express'
 import { OrdersService } from '../src/modules/orders/orders.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { CurrencyService } from '../src/modules/currency/currency.service'
@@ -178,7 +179,7 @@ function makeCurrencySnapshot() {
 let ordersService: OrdersService
 let mockContext: ReturnType<typeof makeAuthContext>
 let mockRequest: ReturnType<typeof makeRequestContext>
-let mockHttpRequest: { headers: Record<string, string>; cookies: Record<string, string> }
+let mockHttpRequest: Request
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -200,7 +201,7 @@ beforeEach(() => {
     fullName: 'João Silva',
   })
   mockRequest = makeRequestContext()
-  mockHttpRequest = { headers: {}, cookies: {} }
+  mockHttpRequest = { headers: {}, cookies: {} } as unknown as Request
 
   // Defaults
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
