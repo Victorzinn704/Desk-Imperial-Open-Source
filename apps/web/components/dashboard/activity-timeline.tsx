@@ -52,7 +52,12 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <button
+        aria-label="Fechar atividades"
+        className="fixed inset-0 z-30 border-0 bg-black/40 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onClose}
+      />
 
       <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
         <div className="mb-6 flex items-center gap-3">

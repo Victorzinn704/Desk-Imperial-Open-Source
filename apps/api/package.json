@@ -13,6 +13,7 @@
     "prisma:seed": "ts-node --project tsconfig.json --transpile-only prisma/seed.ts",
     "prisma:repair-demo": "ts-node --project tsconfig.json --transpile-only prisma/repair-demo.ts",
     "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --runInBand",
+    "test:critical": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --runInBand test/csrf.guard.spec.ts test/session.guard.spec.ts test/auth-rate-limit.service.spec.ts test/admin-pin.guard.spec.ts test/cache.service.spec.ts test/operations-realtime.socket-auth.spec.ts",
     "test:e2e": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --config ./test/jest-e2e.json --runInBand",
     "typecheck": "tsc --noEmit"
   },

@@ -72,7 +72,7 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 | Tempo real         | Socket.IO                     |
 | Autenticação       | Cookies HttpOnly + CSRF duplo |
 | Monorepo           | Turborepo + npm workspaces    |
-| Deploy             | Railway                       |
+| Deploy             | Railway (atual) · Oracle Cloud + Neon (alvo) |
 | Testes backend     | Jest + 53+ arquivos de spec   |
 | Testes frontend    | Vitest + Playwright           |
 | Load tests         | K6                            |
@@ -173,6 +173,13 @@ npm --workspace @partner/api run test:e2e
 npm --workspace @partner/web run test
 npm --workspace @partner/web run test:e2e
 
+# Cobertura local padrão do frontend
+npm --workspace @partner/web run test:coverage
+
+# Cobertura local usada pelo SonarQube
+npm --workspace @partner/api run test -- --coverage --ci --forceExit --coverageReporters=json-summary --coverageReporters=lcov --coverageReporters=text-summary
+npm --workspace @partner/web run test:coverage:sonar
+
 # Fluxos críticos (E2E)
 npm run test:e2e:critical
 
@@ -191,6 +198,9 @@ npm run test:load:ci
 - Testes E2E com Playwright no frontend
 - Load tests com K6 (health, login web/API e cenário crítico com metas p95/p99)
 - CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
+- Workflow opcional de SonarQube pronto para auditoria estática contínua quando `SONAR_HOST_URL` e `SONAR_TOKEN` forem configurados
+- Scan local oficial já validado com Quality Gate verde e backlog por sprint em `docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md`
+- Plano de runtime alvo documentado para Oracle Cloud + Neon em `docs/release/oracle-cloud-runtime-plan-2026-04-04.md`
 
 ---
 
@@ -235,6 +245,8 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 | Área                                   | Link                                                                                         |
 | -------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
+| Auditoria SonarQube e sprints          | [docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md](./docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md) |
+| Runtime alvo Oracle Cloud + Neon       | [docs/release/oracle-cloud-runtime-plan-2026-04-04.md](./docs/release/oracle-cloud-runtime-plan-2026-04-04.md) |
 | O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
 | Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
 | Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
@@ -246,6 +258,7 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 | Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
 | Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
 | Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
+| Template de perfil técnico             | [README_PROFILE.md](./README_PROFILE.md)                                                     |
 | Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
 
 ---

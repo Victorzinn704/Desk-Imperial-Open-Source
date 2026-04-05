@@ -113,7 +113,12 @@ type ActivityModalProps = {
   onClose: () => void
 }
 
-function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Readonly<ActivityModalProps>) {
+export function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Readonly<ActivityModalProps>) {
+  const titleInputId = 'commercial-activity-title'
+  const startInputId = 'commercial-activity-start'
+  const endInputId = 'commercial-activity-end'
+  const descriptionInputId = 'commercial-activity-description'
+  const impactInputId = 'commercial-activity-impact'
   const isEditing = Boolean(activity)
   const [title, setTitle] = useState(activity?.title ?? '')
   const [type, setType] = useState<ActivityType>(activity?.type ?? 'evento')
@@ -143,9 +148,14 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
   const colors = ACTIVITY_COLORS[type]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div className="imperial-card relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        aria-label="Fechar atividade comercial"
+        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onClose}
+      />
+      <div className="imperial-card relative z-10 w-full max-w-md">
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-6">
           <h2 className="text-lg font-semibold text-white">
             {isEditing ? 'Editar Atividade' : 'Nova Atividade Comercial'}
@@ -161,11 +171,15 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
 
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+            <label
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+              htmlFor={titleInputId}
+            >
               Nome
             </label>
             <input
               autoFocus
+              id={titleInputId}
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
               placeholder="Ex: Happy Hour, Jogo do Flamengo..."
               value={title}
@@ -174,9 +188,9 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+            <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
               Tipo
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
                 const isActive = type === t
@@ -203,10 +217,14 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+              <label
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+                htmlFor={startInputId}
+              >
                 Início
               </label>
               <input
+                id={startInputId}
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
                 type="datetime-local"
                 value={startStr}
@@ -214,10 +232,14 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+              <label
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+                htmlFor={endInputId}
+              >
                 Fim
               </label>
               <input
+                id={endInputId}
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
                 type="datetime-local"
                 value={endStr}
@@ -227,10 +249,14 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+            <label
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+              htmlFor={descriptionInputId}
+            >
               Descrição (opcional)
             </label>
             <textarea
+              id={descriptionInputId}
               className="w-full resize-none rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
               placeholder="Detalhes da atividade..."
               rows={2}
@@ -240,10 +266,14 @@ function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Re
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+            <label
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+              htmlFor={impactInputId}
+            >
               Impacto esperado em vendas %
             </label>
             <input
+              id={impactInputId}
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
               max="200"
               min="0"

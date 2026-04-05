@@ -18,6 +18,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ./scripts/run-with-sanitized-node-options.mjs turbo run test",
+    "test:critical": "npm --workspace @partner/api run test:critical && npm --workspace @partner/web run test:critical",
+    "test:coverage": "npm --workspace @partner/api run test -- --coverage && npm --workspace @partner/web run test:coverage",
     "test:e2e:critical": "npm --workspace @partner/web run test:e2e:critical",
     "test:load:critical": "k6 run tests/load/k6/critical-flows.js",
     "test:load:ci": "k6 run tests/load/k6/ci-latency-gate.js",
@@ -31,6 +33,7 @@
     "gulp:clean": "gulp clean",
     "gulp:watch": "gulp watch",
     "refactor:desk-styles": "node scripts/refactor-desk-tailwind.mjs",
+    "sonar:regression:check": "node ./scripts/check-sonar-regression.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

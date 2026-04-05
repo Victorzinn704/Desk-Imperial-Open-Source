@@ -26,11 +26,14 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="relative w-full max-w-sm rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#111318] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        aria-label="Fechar criação de mesa"
+        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#111318] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
         <button
           className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full text-[var(--text-soft)] transition hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
           type="button"

@@ -134,7 +134,10 @@ export function initializeFrontendFaro() {
     dedupe: true,
     trackResources: false,
     ignoreUrls: [/\/api\/health$/i, /\/_next\//i, /\/favicon\.ico$/i],
-    beforeSend: (item) => sanitizeTransportItem(item),
+    beforeSend: (item) => {
+      sanitizeTransportItemInPlace(item)
+      return item
+    },
     sessionTracking: {
       enabled: true,
       samplingRate: parseSampleRate(process.env.NEXT_PUBLIC_FARO_SAMPLE_RATE, 0.03),
@@ -378,22 +381,20 @@ function sanitizePath(path: string) {
     .replace(LONG_TOKEN_SEGMENT_PATTERN, '/:token')
 }
 
-function sanitizeTransportItem<T>(item: T): T | null {
+function sanitizeTransportItemInPlace(item: unknown) {
   if (!item || typeof item !== 'object') {
-    return item
+    return
   }
 
   const transportItem = item as {
     payload?: Record<string, unknown>
   }
   if (!transportItem.payload || typeof transportItem.payload !== 'object') {
-    return item
+    return
   }
 
   sanitizeRecordObject(transportItem.payload['context'])
   sanitizeRecordObject(transportItem.payload['attributes'])
-
-  return item
 }
 
 function sanitizeRecordObject(value: unknown) {
@@ -442,6 +443,7 @@ export const __faroInternals = {
   resolveCollectorUrl,
   parseSampleRate,
   parsePositiveInteger,
+  sanitizeTransportItemInPlace,
 }
 
 function normalizeRequestId(value: string | null | undefined) {

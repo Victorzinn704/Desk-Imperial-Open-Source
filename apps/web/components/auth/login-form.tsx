@@ -153,12 +153,15 @@ export function LoginForm() {
         {isStaffMode ? (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">Email da Empresa</label>
+              <label className="text-xs font-medium text-white/50" htmlFor="login-company-email">
+                Email da Empresa
+              </label>
               <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
                 <Mail className="size-4 shrink-0 text-white/30" />
                 <input
                   autoComplete="email"
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                  id="login-company-email"
                   placeholder="ceo@empresa.com"
                   type="email"
                   {...registerField('companyEmail')}
@@ -170,13 +173,16 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">ID do Funcionário</label>
+              <label className="text-xs font-medium text-white/50" htmlFor="login-employee-code">
+                ID do Funcionário
+              </label>
               <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
                 <UserRound className="size-4 shrink-0 text-white/30" />
                 <input
                   autoCapitalize="characters"
                   autoComplete="username"
                   className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-white outline-none placeholder:text-white/20"
+                  id="login-employee-code"
                   placeholder="VD-001"
                   type="text"
                   {...registerField('employeeCode')}
@@ -189,12 +195,15 @@ export function LoginForm() {
           </>
         ) : (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-white/50">Email Corporativo</label>
+            <label className="text-xs font-medium text-white/50" htmlFor="login-email">
+              Email Corporativo
+            </label>
             <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
               <Mail className="size-4 shrink-0 text-white/30" />
               <input
                 autoComplete="email"
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                id="login-email"
                 placeholder="ceo@empresa.com"
                 type="email"
                 {...registerField('email')}
@@ -206,7 +215,7 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50">
+            <label className="text-xs font-medium text-white/50" htmlFor="login-password">
               {isStaffMode ? 'PIN de acesso' : 'Senha de Acesso'}
             </label>
             {!isStaffMode && (
@@ -221,6 +230,7 @@ export function LoginForm() {
               <input
                 autoComplete="current-password"
                 className="w-full bg-transparent text-sm tracking-[0.3em] text-white outline-none placeholder:text-white/20"
+                id="login-password"
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="••••••"
@@ -231,6 +241,7 @@ export function LoginForm() {
               <input
                 autoComplete="current-password"
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                id="login-password"
                 placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
                 {...registerField('password')}

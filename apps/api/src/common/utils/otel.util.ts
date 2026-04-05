@@ -109,7 +109,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   apiOtelSdk = new NodeSDK(sdkConfiguration)
 
-  await apiOtelSdk.start()
+  apiOtelSdk.start()
   apiOtelStarted = true
   return true
 }

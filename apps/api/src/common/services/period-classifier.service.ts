@@ -77,7 +77,7 @@ export class PeriodClassifierService {
    * @returns Resultado da classificação
    */
   classify(timestamp: Date | string | number, settings?: EstablishmentSettings): PeriodClassificationResult {
-    const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
+    const date = new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
 
     // 1. Verificar se é evento especial
@@ -113,13 +113,13 @@ export class PeriodClassifierService {
    * Verifica se a hora é de evento (ex: sexta/sábado/domingo a partir das 16h)
    */
   isEventHour(timestamp: Date | string | number, settings?: EstablishmentSettings): boolean {
-    const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
+    const date = new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
     const { dayOfWeek, hour } = this.getLocalDateParts(date)
 
     const daySettings = businessSettings.businessHours.find((bh) => bh.dayOfWeek === dayOfWeek)
 
-    if (!daySettings || daySettings.eventStart === undefined || daySettings.eventEnd === undefined) {
+    if (daySettings?.eventStart === undefined || daySettings?.eventEnd === undefined) {
       return false
     }
 
@@ -136,7 +136,7 @@ export class PeriodClassifierService {
    * Verifica se a hora está em horário de pico (normalmente 19h-23h)
    */
   isPeakHour(timestamp: Date | string | number, settings?: EstablishmentSettings): boolean {
-    const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp)
+    const date = new Date(timestamp)
     const businessSettings = settings || this.defaultSettings
     const { hour } = this.getLocalDateParts(date)
 
@@ -165,7 +165,7 @@ export class PeriodClassifierService {
 
     return specialEvents.find((event) => {
       const isSameDay = event.date === dateStr
-      const isInTimeRange = hour >= event.startHour && (event.endHour === 0 ? true : hour < event.endHour)
+      const isInTimeRange = hour >= event.startHour && (event.endHour === 0 || hour < event.endHour)
       return isSameDay && isInTimeRange
     })
   }
