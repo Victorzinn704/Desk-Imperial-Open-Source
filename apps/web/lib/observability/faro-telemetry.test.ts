@@ -6,7 +6,7 @@ const faroApiMock = vi.hoisted(() => ({
   pushMeasurement: vi.fn(),
 }))
 
-const initializeFaroMock = vi.hoisted(() => vi.fn(() => ({ api: faroApiMock })))
+const initializeFaroMock = vi.hoisted(() => vi.fn((_options?: unknown) => ({ api: faroApiMock })))
 const getWebInstrumentationsMock = vi.hoisted(() => vi.fn(() => []))
 const fetchTransportConstructorMock = vi.hoisted(() => vi.fn())
 
@@ -48,6 +48,45 @@ describe('faro telemetry behavior', () => {
     expect(second).toBe(first)
     expect(initializeFaroMock).toHaveBeenCalledTimes(1)
     expect(getWebInstrumentationsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('sanitizes transport items in beforeSend and returns the same item', async () => {
+    const faro = await loadFaroModule()
+
+    faro.initializeFrontendFaro()
+
+    const config = initializeFaroMock.mock.calls.at(0)?.[0] as unknown as {
+      beforeSend: (item: unknown) => unknown
+    }
+
+    const item = {
+      payload: {
+        context: {
+          email: 'owner@example.com',
+          path: '/orders/123456?secret=1',
+        },
+        attributes: {
+          token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        },
+      },
+    }
+
+    expect(config).toBeTruthy()
+
+    const returned = config.beforeSend(item)
+
+    expect(returned).toBe(item)
+    expect(item).toEqual({
+      payload: {
+        context: {
+          email: '[redacted]',
+          path: '/orders/:id',
+        },
+        attributes: {
+          token: '[redacted]',
+        },
+      },
+    })
   })
 
   it('sanitizes and deduplicates repeated api errors', async () => {
@@ -149,6 +188,29 @@ describe('faro telemetry behavior', () => {
     })
 
     expect(faroApiMock.pushMeasurement).toHaveBeenCalledTimes(1)
+  })
+
+  it('samples healthy fast requests when random is within the configured rate', async () => {
+    process.env.NEXT_PUBLIC_FARO_SLOW_API_SAMPLE_RATE = '1'
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const faro = await loadFaroModule()
+
+    faro.reportApiRequestMeasurementToFaro({
+      path: '/orders/123',
+      method: 'get',
+      status: 200,
+      durationMs: 100,
+      requestId: null,
+    })
+
+    expect(faroApiMock.pushMeasurement).toHaveBeenCalledTimes(1)
+    expect(faroApiMock.pushEvent).not.toHaveBeenCalledWith(
+      'api_slow_request',
+      expect.anything(),
+      'desk-imperial-web',
+    )
+
+    randomSpy.mockRestore()
   })
 
   it('does not initialize when collector url is missing', async () => {

@@ -70,8 +70,11 @@ Navegação central de toda a documentação do projeto.
 | ------------------------------------------------------------------------------------ | --------------------------------------------- |
 | [testing/testing-guide.md](./testing/testing-guide.md)                               | Guia completo de testes do projeto            |
 | [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md) | Snapshot de cobertura atual por area e global |
+| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md) | Relatorio detalhado da sessao de upgrade para metas 90/85 |
 | [testing/load-testing.md](./testing/load-testing.md)                                 | Estratégia e comandos de testes de carga      |
 | [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)       | Auditoria completa da cobertura de testes     |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint |
+| [release/oracle-cloud-runtime-plan-2026-04-04.md](./release/oracle-cloud-runtime-plan-2026-04-04.md) | Plano de runtime alvo em Oracle Cloud mantendo Neon |
 
 ---
 
@@ -83,6 +86,11 @@ Navegação central de toda a documentação do projeto.
 | [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)               | Critérios de release                    |
 | [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)     | Parecer técnico final                   |
 | [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md) | Plano de lapidação para release         |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints        |
+| [../README_PROFILE.md](../README_PROFILE.md) | Template de perfil técnico com cards de stack e ferramentas |
+| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json) | Resumo bruto do primeiro scan local     |
+| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json) | Export completo das issues do scan      |
+| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json) | Export completo dos security hotspots   |
 
 ---
 

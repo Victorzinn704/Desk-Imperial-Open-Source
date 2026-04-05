@@ -13,12 +13,13 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
   return (
     <div
       className="absolute z-30 left-0 top-full mt-1 min-w-[160px] rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[#0e1018] p-1 shadow-2xl"
-      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
     >
       {mesa.garcomId && (
         <button
           type="button"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation()
             onAssign(undefined)
             onClose()
           }}
@@ -31,7 +32,8 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
         <button
           key={g.id}
           type="button"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation()
             onAssign(g.id)
             onClose()
           }}

@@ -1169,7 +1169,7 @@ function asString(value: unknown) {
 }
 
 function asNullableString(value: unknown) {
-  return typeof value === 'string' ? value : value == null ? null : null
+  return typeof value === 'string' ? value : null
 }
 
 function asNumber(value: unknown) {
@@ -1177,7 +1177,7 @@ function asNumber(value: unknown) {
 }
 
 function asNullableNumber(value: unknown) {
-  return typeof value === 'number' ? value : value == null ? null : null
+  return typeof value === 'number' ? value : null
 }
 
 function asArray(value: unknown) {

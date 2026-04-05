@@ -61,6 +61,63 @@ describe('AuditLogService', () => {
     )
   })
 
+  it('classifica navegadores e sistemas adicionais no parser de user-agent', async () => {
+    prisma.auditLog.findMany.mockResolvedValue([
+      {
+        id: 'edge',
+        createdAt: new Date('2026-04-01T10:00:00.000Z'),
+        ipAddress: null,
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/122.0.0.0 Safari/537.36',
+      },
+      {
+        id: 'opera-android',
+        createdAt: new Date('2026-04-01T09:00:00.000Z'),
+        ipAddress: null,
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36 OPR/108.0.0.0',
+      },
+      {
+        id: 'chromium-linux',
+        createdAt: new Date('2026-04-01T08:00:00.000Z'),
+        ipAddress: null,
+        userAgent:
+          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/122.0.0.0 Safari/537.36',
+      },
+      {
+        id: 'firefox-macos',
+        createdAt: new Date('2026-04-01T07:00:00.000Z'),
+        ipAddress: null,
+        userAgent: 'Mozilla/5.0 (Mac OS X 10_15_7; rv:124.0) Gecko/20100101 Firefox/124.0',
+      },
+      {
+        id: 'safari-iphone',
+        createdAt: new Date('2026-04-01T06:00:00.000Z'),
+        ipAddress: null,
+        userAgent:
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      },
+      {
+        id: 'safari-ipad',
+        createdAt: new Date('2026-04-01T05:00:00.000Z'),
+        ipAddress: null,
+        userAgent:
+          'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      },
+    ])
+
+    const result = await service.getLastLoginsForUser('owner-1', 6)
+
+    expect(result.map((entry) => ({ id: entry.id, browser: entry.browser, os: entry.os }))).toEqual([
+      { id: 'edge', browser: 'Edge', os: 'Windows' },
+      { id: 'opera-android', browser: 'Opera', os: 'Android' },
+      { id: 'chromium-linux', browser: 'Chromium', os: 'Linux' },
+      { id: 'firefox-macos', browser: 'Firefox', os: 'macOS' },
+      { id: 'safari-iphone', browser: 'Safari', os: 'iPhone' },
+      { id: 'safari-ipad', browser: 'Safari', os: 'iPad' },
+    ])
+  })
+
   it('traz feed do OWNER com filtro de workspace (owner + staff)', async () => {
     prisma.auditLog.findMany.mockResolvedValue([
       {
@@ -150,6 +207,25 @@ describe('AuditLogService', () => {
           event: 'auth.login.succeeded',
           resource: 'auth',
           severity: AuditSeverity.INFO,
+        }),
+      }),
+    )
+  })
+
+  it('record respeita severity explicita quando informada', async () => {
+    prisma.auditLog.create.mockResolvedValue({ id: 'created-2' })
+
+    await service.record({
+      actorUserId: 'owner-1',
+      event: 'operations.cash_session.closed',
+      resource: 'cash_session',
+      severity: AuditSeverity.ERROR,
+    })
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          severity: AuditSeverity.ERROR,
         }),
       }),
     )

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
+import { ApiError } from '@/lib/api'
 import { PortfolioEnvironment } from './portfolio-environment'
 
 const mockUseDashboardQueries = vi.fn()
@@ -238,5 +239,168 @@ describe('PortfolioEnvironment', () => {
         }),
       )
     })
+  })
+
+  it('filtra produtos, exibe métricas, e mostra estados de erro úteis', async () => {
+    const user = userEvent.setup()
+
+    mockUseDashboardQueries.mockReturnValue({
+      financeQuery: {
+        data: {
+          displayCurrency: 'BRL',
+          totals: {
+            lowStockItems: 2,
+          },
+          categoryBreakdown: [
+            {
+              category: 'Combos',
+              products: 1,
+              units: 10,
+              inventoryCostValue: 200,
+              inventorySalesValue: 450,
+              potentialProfit: 250,
+            },
+          ],
+        },
+      },
+      productsQuery: {
+        data: {
+          items: [
+            makeProduct({ id: 'product-1', name: 'Pizza Imperial', brand: 'Casa', category: 'Pizzas' }),
+            makeProduct({ id: 'product-2', name: 'Combo Executivo', brand: 'Desk', category: 'Combos', packagingClass: 'Combo promocional' }),
+          ],
+          totals: {
+            totalProducts: 2,
+            activeProducts: 2,
+            inactiveProducts: 1,
+            stockUnits: 25,
+            stockPackages: 0,
+            stockLooseUnits: 25,
+            stockBaseUnits: 25,
+            inventoryCostValue: 500,
+            inventorySalesValue: 1050,
+            potentialProfit: 550,
+            averageMarginPercent: 52,
+            categories: ['Pizzas', 'Combos'],
+          },
+        },
+        error: new ApiError('Falha ao sincronizar produtos', 500),
+      },
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      createProductMutation: { isPending: false, error: new ApiError('Produto inválido', 400), mutate: vi.fn() },
+      updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+
+    render(<PortfolioEnvironment />)
+
+    expect(screen.getByText(/SKUs ativos/i)).toBeInTheDocument()
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0)
+    expect(screen.getByText((content) => content.includes('500,00'))).toBeInTheDocument()
+    expect(screen.getByText(/Falha ao sincronizar produtos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Produto inválido/i)).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/buscar produto/i), 'combo')
+
+    expect(screen.getByText(/1 de 2 encontrado/i)).toBeInTheDocument()
+    expect(screen.getByText(/Combo Executivo/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Pizza Imperial/i)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /limpar busca/i }))
+    expect(screen.getAllByRole('button', { name: /editar/i })).toHaveLength(2)
+  })
+
+  it('arquiva, reativa e exclui produtos com os fluxos de mutação corretos', async () => {
+    const user = userEvent.setup()
+    const archiveMutate = vi.fn((_id, options?: { onSuccess?: () => void }) => {
+      options?.onSuccess?.()
+    })
+    const restoreMutate = vi.fn()
+    const deleteMutate = vi.fn((_id, options?: { onSuccess?: () => void }) => {
+      options?.onSuccess?.()
+    })
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    mockUseDashboardQueries.mockReturnValue({
+      financeQuery: {
+        data: {
+          displayCurrency: 'BRL',
+          totals: {
+            lowStockItems: 1,
+          },
+          categoryBreakdown: [],
+        },
+      },
+      productsQuery: {
+        data: {
+          items: [
+            makeProduct({ id: 'active-1', name: 'Lasanha', active: true }),
+            makeProduct({ id: 'archived-1', name: 'Combo Arquivado', active: false, isCombo: true, comboDescription: 'combo antigo' }),
+          ],
+          totals: {
+            totalProducts: 2,
+            activeProducts: 1,
+            inactiveProducts: 1,
+            stockUnits: 20,
+            stockPackages: 0,
+            stockLooseUnits: 20,
+            stockBaseUnits: 20,
+            inventoryCostValue: 400,
+            inventorySalesValue: 800,
+            potentialProfit: 400,
+            averageMarginPercent: 50,
+            categories: ['Pizzas'],
+          },
+        },
+        error: null,
+      },
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      archiveProductMutation: { isPending: false, error: null, mutate: archiveMutate },
+      restoreProductMutation: { isPending: false, error: null, mutate: restoreMutate },
+      deleteProductMutation: { isPending: false, error: null, mutate: deleteMutate },
+    })
+
+    render(<PortfolioEnvironment />)
+
+    const editButtons = screen.getAllByRole('button', { name: /editar/i })
+    await user.click(editButtons[0])
+    expect(screen.getByText(/editar produto/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
+    expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('button', { name: /editar/i })[0])
+    expect(screen.getByText(/editar produto/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /arquivar/i }))
+
+    expect(archiveMutate).toHaveBeenCalledWith('active-1', expect.any(Object))
+    await waitFor(() => {
+      expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /reativar/i }))
+    expect(restoreMutate).toHaveBeenCalledWith('archived-1')
+
+    await user.click(screen.getAllByRole('button', { name: /editar/i })[1])
+    expect(screen.getByDisplayValue('Combo Arquivado')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /excluir/i }))
+
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('Combo Arquivado'))
+    expect(deleteMutate).toHaveBeenCalledWith('archived-1', expect.any(Object))
+    await waitFor(() => {
+      expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+    })
+
+    confirmSpy.mockRestore()
   })
 })

@@ -106,6 +106,245 @@ const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string
   },
 }
 
+type DashboardSignal = {
+  label: string
+  value: string
+  helper: string
+}
+
+type DashboardCurrency = Parameters<typeof formatCurrency>[1]
+
+type ActiveNavigationSummary = {
+  id: string
+  label: string
+  description: string
+  icon: typeof Clock
+}
+
+const settingsNavigationFallback: ActiveNavigationSummary = {
+  id: 'settings',
+  label: 'Conta e preferências',
+  description: 'Conta, segurança e conformidade',
+  icon: Clock,
+}
+
+export function getSessionErrorMessage(error: unknown) {
+  return error instanceof ApiError ? error.message : 'Conecte a API e autentique a sessão para ver o painel.'
+}
+
+export function resolveActiveNavigation(
+  activeSection: DashboardSectionId,
+  navigationGroups: Array<{ items: ActiveNavigationSummary[] }>,
+) {
+  const fallbackNavigation = activeSection === 'settings' ? settingsNavigationFallback : navigationGroups[0]?.items[0]
+  return (
+    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
+    fallbackNavigation
+  )
+}
+
+function buildStaffDashboardSignals(activeSection: DashboardSectionId, ordersCompleted: number, productsActive: number): DashboardSignal[] {
+  const isSalesSection = activeSection === 'sales'
+  const isPdvSection = activeSection === 'pdv'
+
+  return [
+    {
+      label: isSalesSection ? 'Pedidos' : 'Operação',
+      value: String(ordersCompleted),
+      helper: isSalesSection ? 'operações concluídas no workspace' : 'painel sincronizado com trilha operacional',
+    },
+    {
+      label: isPdvSection ? 'PDV vivo' : 'Portfólio',
+      value: isPdvSection ? 'Ao vivo' : String(productsActive),
+      helper: isPdvSection ? 'comandas e mesas em atualização contínua' : 'produtos ativos para venda',
+    },
+    { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
+  ]
+}
+
+function getAccountSignalValue(
+  activeSection: DashboardSectionId,
+  companyName: string,
+  legalAcceptancesCount: number,
+  requiredDocumentCount: number,
+) {
+  if (activeSection !== 'settings') {
+    return companyName
+  }
+
+  return requiredDocumentCount ? `${legalAcceptancesCount}/${requiredDocumentCount}` : '0/0'
+}
+
+function getAccountSignalHelper(activeSection: DashboardSectionId) {
+  return activeSection === 'settings' ? 'aceites exigidos no sistema' : 'identidade principal do portal'
+}
+
+function buildOwnerDashboardSignals({
+  activeNavigationLabel,
+  activeSection,
+  companyName,
+  displayCurrency,
+  finance,
+  legalAcceptancesCount,
+  requiredDocumentCount,
+}: Readonly<{
+  activeNavigationLabel: string
+  activeSection: DashboardSectionId
+  companyName: string
+  displayCurrency: DashboardCurrency
+  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
+  legalAcceptancesCount: number
+  requiredDocumentCount: number
+}>): DashboardSignal[] {
+  const hasFinance = Boolean(finance)
+  const financeTotals = finance?.totals
+
+  return [
+    {
+      label: hasFinance ? 'Receita do mes' : 'Workspace',
+      value: hasFinance ? formatCurrency(financeTotals?.currentMonthRevenue ?? 0, displayCurrency) : activeNavigationLabel,
+      helper: hasFinance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
+    },
+    {
+      label: hasFinance ? 'Estoque baixo' : 'Status',
+      value: hasFinance ? String(financeTotals?.lowStockItems ?? 0) : 'Ativo',
+      helper: hasFinance ? 'itens para reposição rápida' : 'sessão segura e pronta para operar',
+    },
+    {
+      label: activeSection === 'settings' ? 'Documentos' : 'Conta',
+      value: getAccountSignalValue(activeSection, companyName, legalAcceptancesCount, requiredDocumentCount),
+      helper: getAccountSignalHelper(activeSection),
+    },
+  ]
+}
+
+export function buildDashboardSignals({
+  activeNavigationLabel,
+  activeSection,
+  companyName,
+  displayCurrency,
+  finance,
+  isStaffUser,
+  legalAcceptancesCount,
+  ordersCompleted,
+  productsActive,
+  requiredDocumentCount,
+}: Readonly<{
+  activeNavigationLabel: string
+  activeSection: DashboardSectionId
+  companyName: string
+  displayCurrency: DashboardCurrency
+  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
+  isStaffUser: boolean
+  legalAcceptancesCount: number
+  ordersCompleted: number
+  productsActive: number
+  requiredDocumentCount: number
+}>): DashboardSignal[] {
+  if (isStaffUser) {
+    return buildStaffDashboardSignals(activeSection, ordersCompleted, productsActive)
+  }
+
+  return buildOwnerDashboardSignals({
+    activeNavigationLabel,
+    activeSection,
+    companyName,
+    displayCurrency,
+    finance,
+    legalAcceptancesCount,
+    requiredDocumentCount,
+  })
+}
+
+export function DashboardWorkspaceHeader({
+  activeHero,
+  activeNavigationLabel,
+  handleQuickAction,
+  isLoggingOut,
+  isTimelineOpen,
+  logout,
+  quickActions,
+  setIsTimelineOpen,
+  signals,
+}: Readonly<{
+  activeHero: (typeof sectionHeroCopy)[DashboardSectionId]
+  activeNavigationLabel: string
+  handleQuickAction: (action: DashboardQuickAction) => void
+  isLoggingOut: boolean
+  isTimelineOpen: boolean
+  logout: () => void
+  quickActions: DashboardQuickAction[]
+  setIsTimelineOpen: (value: boolean) => void
+  signals: DashboardSignal[]
+}>) {
+  return (
+    <header className="imperial-card p-6 md:p-8" id="workspace-header">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+            <span className="size-2 rounded-full bg-[var(--accent)]" />
+            {activeHero.badge}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">Início / Painel operacional / {activeNavigationLabel}</p>
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">{activeHero.title}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
+        </div>
+
+        <div className="flex flex-col gap-4 xl:max-w-[520px]">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {signals.map((signal) => (
+              <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{signal.label}</p>
+                <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
+                <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {quickActions.map((action) => {
+              const Icon = action.icon
+              return (
+                <button
+                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
+                  key={action.id}
+                  onClick={() => handleQuickAction(action)}
+                  type="button"
+                >
+                  <span className="workspace-quick-action__icon">
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link href="/">
+              <Button size="lg" variant="ghost">
+                Ver site
+                <ArrowUpRight className="size-4" />
+              </Button>
+            </Link>
+            <Button size="lg" variant={isTimelineOpen ? 'primary' : 'ghost'} onClick={() => setIsTimelineOpen(!isTimelineOpen)}>
+              <Clock className="size-4" />
+              Atividades
+            </Button>
+            <SpotlightButton loading={isLoggingOut} onClick={logout}>
+              <LogOut className="size-4" />
+              Encerrar sessão
+            </SpotlightButton>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
+
 // ── Main component ──────────────────────────────────────────────────────────────
 
 type DashboardShellProps = {
@@ -189,10 +428,7 @@ export function DashboardShell({
   }
 
   const isUnauthorized = sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401
-  const sessionError =
-    sessionQuery.error instanceof ApiError
-      ? sessionQuery.error.message
-      : 'Conecte a API e autentique a sessão para ver o painel.'
+  const sessionError = getSessionErrorMessage(sessionQuery.error)
 
   if (!sessionQuery.data?.user || isUnauthorized) {
     return <UnauthorizedState message={sessionError} />
@@ -211,57 +447,19 @@ export function DashboardShell({
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
-  const activeNavigation =
-    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
-    (activeSection === 'settings'
-      ? { id: 'settings', label: 'Conta e preferências', description: 'Conta, segurança e conformidade', icon: Clock }
-      : navigationGroups[0]?.items[0])
-
-  const signals = isStaffUser
-    ? [
-        {
-          label: activeSection === 'sales' ? 'Pedidos' : 'Operação',
-          value: String(ordersQuery.data?.totals.completedOrders ?? 0),
-          helper:
-            activeSection === 'sales'
-              ? 'operações concluídas no workspace'
-              : 'painel sincronizado com trilha operacional',
-        },
-        {
-          label: activeSection === 'pdv' ? 'PDV vivo' : 'Portfólio',
-          value: activeSection === 'pdv' ? 'Ao vivo' : String(productsQuery.data?.totals.activeProducts ?? 0),
-          helper:
-            activeSection === 'pdv'
-              ? 'comandas e mesas em atualização contínua'
-              : 'produtos ativos para venda',
-        },
-        { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
-      ]
-    : [
-        {
-          label: finance ? 'Receita do mes' : 'Workspace',
-          value: finance ? formatCurrency(finance.totals.currentMonthRevenue ?? 0, displayCurrency) : activeNavigation.label,
-          helper: finance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
-        },
-        {
-          label: finance ? 'Estoque baixo' : 'Status',
-          value: finance ? String(finance.totals.lowStockItems ?? 0) : 'Ativo',
-          helper: finance ? 'itens para reposição rápida' : 'sessão segura e pronta para operar',
-        },
-        {
-          label: activeSection === 'settings' ? 'Documentos' : 'Conta',
-          value:
-            activeSection === 'settings'
-              ? requiredDocumentCount
-                ? `${legalAcceptances.length}/${requiredDocumentCount}`
-                : '0/0'
-              : user.companyName || 'Workspace',
-          helper:
-            activeSection === 'settings'
-              ? 'aceites exigidos no sistema'
-              : 'identidade principal do portal',
-        },
-      ]
+  const activeNavigation = resolveActiveNavigation(activeSection, navigationGroups)
+  const signals = buildDashboardSignals({
+    activeNavigationLabel: activeNavigation.label,
+    activeSection,
+    companyName: user.companyName || 'Workspace',
+    displayCurrency,
+    finance,
+    isStaffUser,
+    legalAcceptancesCount: legalAcceptances.length,
+    ordersCompleted: ordersQuery.data?.totals.completedOrders ?? 0,
+    productsActive: productsQuery.data?.totals.activeProducts ?? 0,
+    requiredDocumentCount,
+  })
   const activeHero = sectionHeroCopy[activeSection]
 
   // ── Mobile shells ─────────────────────────────────────────────────────────────
@@ -300,78 +498,17 @@ export function DashboardShell({
 
         <div ref={scrollRef} className="workspace-shell__main h-screen overflow-y-auto" onScroll={onScroll}>
           <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
-            <header className="imperial-card p-6 md:p-8" id="workspace-header">
-              <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                    <span className="size-2 rounded-full bg-[var(--accent)]" />
-                    {activeHero.badge}
-                  </div>
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Início / Painel operacional / {activeNavigation.label}
-                  </p>
-                  <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">{activeHero.title}</h1>
-                  <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
-                </div>
-
-                <div className="flex flex-col gap-4 xl:max-w-[520px]">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {signals.map((signal) => (
-                      <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          {signal.label}
-                        </p>
-                        <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
-                        <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                    {quickActions.map((action) => {
-                      const Icon = action.icon
-                      return (
-                        <button
-                          className="workspace-quick-action flex-1 sm:min-w-[150px]"
-                          key={action.id}
-                          onClick={() => handleQuickAction(action)}
-                          type="button"
-                        >
-                          <span className="workspace-quick-action__icon">
-                            <Icon className="size-4" />
-                          </span>
-                          <span className="min-w-0 flex-1 text-left">
-                            <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Link href="/">
-                      <Button size="lg" variant="ghost">
-                        Ver site
-                        <ArrowUpRight className="size-4" />
-                      </Button>
-                    </Link>
-                    <Button
-                      size="lg"
-                      variant={isTimelineOpen ? 'primary' : 'ghost'}
-                      onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-                    >
-                      <Clock className="size-4" />
-                      Atividades
-                    </Button>
-                    <SpotlightButton loading={isLoggingOut} onClick={logout}>
-                      <LogOut className="size-4" />
-                      Encerrar sessão
-                    </SpotlightButton>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <DashboardWorkspaceHeader
+              activeHero={activeHero}
+              activeNavigationLabel={activeNavigation.label}
+              handleQuickAction={handleQuickAction}
+              isLoggingOut={isLoggingOut}
+              isTimelineOpen={isTimelineOpen}
+              logout={logout}
+              quickActions={quickActions}
+              setIsTimelineOpen={setIsTimelineOpen}
+              signals={signals}
+            />
 
             {isEvaluation ? (
               <EvaluationModeBanner
@@ -398,7 +535,7 @@ export function DashboardShell({
   )
 }
 
-function MobileShellLoadingState({ label }: { label: string }) {
+function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-[var(--text-soft)]">
       {label}

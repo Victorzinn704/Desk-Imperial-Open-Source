@@ -1,5 +1,7 @@
 # Snapshot de Cobertura de Testes - 2026-04-03
 
+> Nota: para o detalhamento completo da rodada que levou backend para 90% e frontend para 85%+, consulte `docs/testing/coverage-upgrade-session-2026-04-03.md`.
+
 ## Escopo
 
 Este snapshot consolida a cobertura atual do projeto Desk Imperial com base nos relatórios gerados em:

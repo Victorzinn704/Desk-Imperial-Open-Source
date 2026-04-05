@@ -65,6 +65,19 @@ Juntei meu conhecimento de produto, de mercado, de gerência de projetos, minha 
 
 Não é o melhor projeto do mundo. Mas, na minha visão, já resolve e já ajuda muitas pessoas.
 
+### Ferramentas e infraestrutura que já entraram na prática
+
+O Desk Imperial deixou de ser só um exercício de CRUD. Para manter o sistema respirando, fui aprendendo e usando ferramentas de operação e plataforma na prática:
+
+| Frente | Ferramentas |
+| --- | --- |
+| **Cloud e runtime** | Oracle Cloud, Google Cloud, Azure, Linux, Docker |
+| **Observabilidade e qualidade** | Grafana, Prometheus, SonarQube, OpenTelemetry, stack OSS |
+| **Dados e backend** | Redis, Neon, Prisma |
+| **Experiência do produto** | PWA, tempo real com Socket.IO, CI/CD com GitHub Actions |
+
+Essa parte importa porque ela mostra uma coisa simples: o projeto não foi construído só para “parecer software”. Ele exigiu contato com infraestrutura, auditoria, deploy, telemetria, runtime e problemas reais de estabilidade.
+
 ---
 
 ## Sobre a inteligência artificial no desenvolvimento

@@ -1,0 +1,732 @@
+{
+  "fetchedAt": "2026-04-03T18:07:38.6254673-03:00",
+  "projectKey": "desk-imperial",
+  "qualityGate": "OK",
+  "measures": [
+    {
+      "metric": "coverage",
+      "value": "58.3",
+      "bestValue": false
+    },
+    {
+      "metric": "minor_violations",
+      "value": "352",
+      "bestValue": false
+    },
+    {
+      "metric": "code_smells",
+      "value": "573",
+      "bestValue": false
+    },
+    {
+      "metric": "new_coverage",
+      "period": {
+        "index": 1,
+        "value": "90.9",
+        "bestValue": false
+      }
+    },
+    {
+      "metric": "security_hotspots",
+      "value": "46",
+      "bestValue": false
+    },
+    {
+      "metric": "critical_violations",
+      "value": "29",
+      "bestValue": false
+    },
+    {
+      "metric": "blocker_violations",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "bugs",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "major_violations",
+      "value": "192",
+      "bestValue": false
+    },
+    {
+      "metric": "new_critical_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "new_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "new_blocker_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "vulnerabilities",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "period": {
+        "index": 1,
+        "value": "0.0",
+        "bestValue": true
+      }
+    }
+  ],
+  "issues": {
+    "total": 573,
+    "facets": [
+      {
+        "property": "files",
+        "values": [
+          {
+            "val": "apps/web/components/dashboard/caixa-panel.tsx",
+            "count": 26
+          },
+          {
+            "val": "apps/api/src/modules/products/products.service.ts",
+            "count": 21
+          },
+          {
+            "val": "apps/web/components/dashboard/salao-environment.tsx",
+            "count": 21
+          },
+          {
+            "val": "apps/web/components/staff-mobile/mobile-comanda-list.tsx",
+            "count": 17
+          },
+          {
+            "val": "apps/web/lib/validation.ts",
+            "count": 17
+          },
+          {
+            "val": "apps/api/src/modules/auth/auth.service.ts",
+            "count": 15
+          },
+          {
+            "val": "apps/web/components/pdv/pdv-comanda-modal.tsx",
+            "count": 14
+          },
+          {
+            "val": "apps/web/components/dashboard/settings/components/pin-setup-card.tsx",
+            "count": 13
+          },
+          {
+            "val": "apps/web/components/pdv/pdv-salao-unified.tsx",
+            "count": 13
+          },
+          {
+            "val": "apps/web/lib/admin-pin.ts",
+            "count": 13
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-chart.tsx",
+            "count": 12
+          },
+          {
+            "val": "apps/api/src/modules/employees/employees.service.ts",
+            "count": 11
+          },
+          {
+            "val": "apps/api/src/modules/operations/operations-helpers.service.ts",
+            "count": 10
+          },
+          {
+            "val": "apps/web/lib/api.ts",
+            "count": 10
+          },
+          {
+            "val": "apps/api/src/modules/operations/comanda.service.ts",
+            "count": 9
+          },
+          {
+            "val": "apps/api/src/modules/operations/operations.types.ts",
+            "count": 9
+          },
+          {
+            "val": "apps/web/components/dashboard/hooks/useDashboardNavigation.ts",
+            "count": 9
+          },
+          {
+            "val": "apps/web/app/globals.css",
+            "count": 7
+          },
+          {
+            "val": "apps/web/components/dashboard/salao/hooks/use-mesa-drag.ts",
+            "count": 7
+          },
+          {
+            "val": "apps/web/components/owner-mobile/owner-comandas-view.tsx",
+            "count": 7
+          },
+          {
+            "val": "apps/web/components/owner-mobile/owner-mobile-shell.tsx",
+            "count": 7
+          },
+          {
+            "val": "apps/api/src/common/utils/otel.util.ts",
+            "count": 6
+          },
+          {
+            "val": "apps/web/components/pdv/pdv-garcom-board.tsx",
+            "count": 6
+          },
+          {
+            "val": "apps/web/components/staff-mobile/kitchen-orders-view.tsx",
+            "count": 6
+          },
+          {
+            "val": "apps/web/components/staff-mobile/mobile-historico-view.tsx",
+            "count": 6
+          },
+          {
+            "val": "apps/web/components/staff-mobile/staff-mobile-shell.tsx",
+            "count": 6
+          },
+          {
+            "val": "apps/web/hooks/use-performance.ts",
+            "count": 6
+          },
+          {
+            "val": "apps/web/lib/printing/thermal-print.client.ts",
+            "count": 6
+          },
+          {
+            "val": "apps/api/src/modules/admin-pin/admin-pin.service.ts",
+            "count": 5
+          },
+          {
+            "val": "apps/api/src/modules/operations/operations.service.ts",
+            "count": 5
+          },
+          {
+            "val": "apps/web/app/ai/page.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/auth/register-form.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/dashboard/environments/portfolio-environment.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/dashboard/sales-performance-card.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/dashboard/settings/hooks/use-workspace-preferences.ts",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/marketing/custom-cursor.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/marketing/founder-contact-card.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/pdv/pdv-board.tsx",
+            "count": 5
+          },
+          {
+            "val": "apps/web/components/shared/use-offline-queue.ts",
+            "count": 5
+          },
+          {
+            "val": "apps/web/lib/cookie-consent.ts",
+            "count": 5
+          },
+          {
+            "val": "apps/api/src/modules/operations/operations-domain.utils.ts",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/admin-pin/admin-pin-dialog.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/dashboard-shell.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-doughnut-chart.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-overview-total.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/hooks/useEvaluationCountdown.ts",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/product-card.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/product-form.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/dashboard/salao/components/mesa-form-modal.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/marketing/landing-page.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/operations/use-operations-realtime.ts",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/pdv/salao/components/mesa-card.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/shared/cookie-consent-banner.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/shared/lazy-components.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/components/shared/skeleton.tsx",
+            "count": 4
+          },
+          {
+            "val": "apps/web/lib/observability/faro.ts",
+            "count": 4
+          },
+          {
+            "val": "apps/api/src/common/utils/input-hardening.util.ts",
+            "count": 3
+          },
+          {
+            "val": "apps/api/src/modules/finance/finance.service.ts",
+            "count": 3
+          },
+          {
+            "val": "apps/api/src/modules/orders/orders.service.ts",
+            "count": 3
+          },
+          {
+            "val": "apps/api/src/modules/products/products-import.util.ts",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/calendar/commercial-calendar.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-categories-sidebar.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/dashboard/metric-card.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/dashboard/salao/components/mesa-list-card.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/dashboard/salao/components/modern-operacional-card.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/marketing/space-background.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/operations/operations-executive-grid.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/pdv/pdv-mesa-modal.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/shared/list-primitives.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/components/staff-mobile/mobile-order-builder.tsx",
+            "count": 3
+          },
+          {
+            "val": "apps/web/lib/portfolio-csv.ts",
+            "count": 3
+          },
+          {
+            "val": "apps/api/src/common/services/period-classifier.service.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/api/src/main.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/api/src/modules/market-intelligence/market-intelligence.service.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/api/src/modules/operations/cash-session.service.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/api/src/modules/operations/dto/update-mesa.dto.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/auth/login-form.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/chart-responsive-container.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/dashboard-environments.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/dashboard-navigation.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/dashboard-sidebar.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/employee-ranking-card.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/environments/overview-environment.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/environments/pdv-environment.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-channels-panel.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/finance-orders-table.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/map-canvas.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/map-section.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/market-intelligence-card.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/order-card.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/order-form.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/dashboard/sales-map-card.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/pdv/comanda-modal/components/product-card.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/pdv/salao/components/filter-chip.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/components/pdv/salao/components/items-tooltip.tsx",
+            "count": 2
+          },
+          {
+            "val": "apps/web/lib/operations/operations-optimistic.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/web/lib/pin-rate-limiter.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/web/lib/printing/qz-tray.client.ts",
+            "count": 2
+          },
+          {
+            "val": "apps/api/src/common/utils/document-validation.util.ts",
+            "count": 1
+          },
+          {
+            "val": "apps/api/src/common/utils/is-kitchen-category.util.ts",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "property": "severities",
+        "values": [
+          {
+            "val": "MINOR",
+            "count": 352
+          },
+          {
+            "val": "MAJOR",
+            "count": 192
+          },
+          {
+            "val": "CRITICAL",
+            "count": 29
+          },
+          {
+            "val": "INFO",
+            "count": 0
+          },
+          {
+            "val": "BLOCKER",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "property": "types",
+        "values": [
+          {
+            "val": "CODE_SMELL",
+            "count": 573
+          },
+          {
+            "val": "BUG",
+            "count": 0
+          },
+          {
+            "val": "VULNERABILITY",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "property": "rules",
+        "values": [
+          {
+            "val": "typescript:S3358",
+            "count": 99
+          },
+          {
+            "val": "typescript:S7764",
+            "count": 81
+          },
+          {
+            "val": "typescript:S6759",
+            "count": 58
+          },
+          {
+            "val": "typescript:S7735",
+            "count": 58
+          },
+          {
+            "val": "typescript:S1874",
+            "count": 40
+          },
+          {
+            "val": "typescript:S7781",
+            "count": 27
+          },
+          {
+            "val": "typescript:S3776",
+            "count": 26
+          },
+          {
+            "val": "typescript:S6479",
+            "count": 26
+          },
+          {
+            "val": "typescript:S6853",
+            "count": 17
+          },
+          {
+            "val": "typescript:S3863",
+            "count": 15
+          },
+          {
+            "val": "typescript:S7773",
+            "count": 15
+          },
+          {
+            "val": "typescript:S6582",
+            "count": 14
+          },
+          {
+            "val": "typescript:S7763",
+            "count": 10
+          },
+          {
+            "val": "typescript:S6772",
+            "count": 8
+          },
+          {
+            "val": "typescript:S6767",
+            "count": 7
+          },
+          {
+            "val": "typescript:S4325",
+            "count": 7
+          },
+          {
+            "val": "typescript:S7748",
+            "count": 6
+          },
+          {
+            "val": "typescript:S4624",
+            "count": 5
+          },
+          {
+            "val": "typescript:S4323",
+            "count": 5
+          },
+          {
+            "val": "css:S7924",
+            "count": 5
+          },
+          {
+            "val": "typescript:S6671",
+            "count": 4
+          },
+          {
+            "val": "typescript:S7755",
+            "count": 4
+          },
+          {
+            "val": "typescript:S7758",
+            "count": 3
+          },
+          {
+            "val": "typescript:S3735",
+            "count": 3
+          },
+          {
+            "val": "typescript:S6606",
+            "count": 3
+          },
+          {
+            "val": "typescript:S7723",
+            "count": 2
+          },
+          {
+            "val": "typescript:S7776",
+            "count": 2
+          },
+          {
+            "val": "css:S4658",
+            "count": 2
+          },
+          {
+            "val": "typescript:S6819",
+            "count": 2
+          },
+          {
+            "val": "typescript:S6594",
+            "count": 2
+          },
+          {
+            "val": "typescript:S6848",
+            "count": 2
+          },
+          {
+            "val": "typescript:S6754",
+            "count": 2
+          },
+          {
+            "val": "typescript:S6749",
+            "count": 1
+          },
+          {
+            "val": "typescript:S2234",
+            "count": 1
+          },
+          {
+            "val": "typescript:S2310",
+            "count": 1
+          },
+          {
+            "val": "typescript:S7721",
+            "count": 1
+          },
+          {
+            "val": "typescript:S4043",
+            "count": 1
+          },
+          {
+            "val": "typescript:S7766",
+            "count": 1
+          },
+          {
+            "val": "typescript:S6822",
+            "count": 1
+          },
+          {
+            "val": "typescript:S6644",
+            "count": 1
+          },
+          {
+            "val": "typescript:S7753",
+            "count": 1
+          },
+          {
+            "val": "typescript:S4623",
+            "count": 1
+          },
+          {
+            "val": "typescript:S7785",
+            "count": 1
+          },
+          {
+            "val": "typescript:S7745",
+            "count": 1
+          },
+          {
+            "val": "typescript:S2933",
+            "count": 1
+          }
+        ]
+      }
+    ]
+  },
+  "hotspots": {
+    "total": 46
+  }
+}

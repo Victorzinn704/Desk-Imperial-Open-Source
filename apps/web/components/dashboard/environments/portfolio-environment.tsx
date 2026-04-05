@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Boxes, Package, Search, Tags, TrendingUp } from 'lucide-react'
-import type { ProductRecord } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
+import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import type { ProductFormValues } from '@/lib/validation'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
@@ -23,7 +24,7 @@ function CategoryCard({
   inventorySalesValue,
   displayCurrency,
   maxProfit,
-}: {
+}: Readonly<{
   category: string
   products: number
   inventoryCostValue: number
@@ -31,7 +32,7 @@ function CategoryCard({
   inventorySalesValue: number
   displayCurrency: string
   maxProfit: number
-}) {
+}>) {
   const barPct = maxProfit > 0 ? Math.max(4, (potentialProfit / maxProfit) * 100) : 4
   const categoryMargin =
     inventorySalesValue > 0 ? `${Math.round((potentialProfit / inventorySalesValue) * 100)}% margem estimada` : 'sem venda projetada'
@@ -75,12 +76,12 @@ function SummaryPill({
   label,
   value,
   helper,
-}: {
+}: Readonly<{
   icon: React.ElementType
   label: string
   value: string
   helper?: string
-}) {
+}>) {
   return (
     <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3.5 flex items-center gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
@@ -104,6 +105,224 @@ function calcAvgMargin(products: ProductRecord[]): string {
   return `${avg.toFixed(0)}%`
 }
 
+type ProductMutationError = ApiError | null
+
+function buildProductPayload(values: ProductFormValues) {
+  return {
+    name: values.name,
+    brand: values.brand,
+    category: values.category,
+    packagingClass: values.packagingClass,
+    measurementUnit: values.measurementUnit,
+    measurementValue: values.measurementValue,
+    unitsPerPackage: values.unitsPerPackage,
+    isCombo: values.isCombo,
+    comboDescription: values.comboDescription,
+    comboItems: values.comboItems,
+    description: values.description,
+    unitCost: values.unitCost,
+    unitPrice: values.unitPrice,
+    currency: values.currency,
+    stock: values.stock,
+    requiresKitchen: values.requiresKitchen ?? false,
+    lowStockThreshold: values.lowStockThreshold ?? null,
+  }
+}
+
+function resolveProductMutationError(errors: unknown[]): ProductMutationError {
+  return errors.find((error): error is ApiError => error instanceof ApiError) ?? null
+}
+
+function filterProducts(products: ProductRecord[], searchQuery: string) {
+  const normalizedSearch = normalizeTextForSearch(searchQuery.trim())
+  if (!normalizedSearch) {
+    return products
+  }
+
+  return products.filter((product) =>
+    [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
+      const normalizedValue = normalizeTextForSearch(value)
+      return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
+    }),
+  )
+}
+
+function confirmProductDeletion(productName: string | undefined) {
+  if (globalThis.window == null) {
+    return true
+  }
+
+  return globalThis.window.confirm(
+    `Excluir "${productName ?? 'este produto'}" em definitivo?\n\nEssa ação remove o item do portfólio ativo e preserva apenas o histórico de vendas já consolidado.`,
+  )
+}
+
+function PortfolioSummaryStrip({
+  avgMargin,
+  displayCurrency,
+  lowStockItems,
+  productsTotals,
+}: Readonly<{
+  avgMargin: string
+  displayCurrency: string
+  lowStockItems: number | null
+  productsTotals: ProductsResponse['totals'] | undefined
+}>) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <SummaryPill
+        icon={Package}
+        helper={productsTotals ? `${productsTotals.inactiveProducts} arquivado(s)` : undefined}
+        label="SKUs ativos"
+        value={productsTotals ? String(productsTotals.activeProducts) : '—'}
+      />
+      <SummaryPill
+        icon={Boxes}
+        helper={productsTotals ? `${productsTotals.stockBaseUnits} unidades base` : undefined}
+        label="Capital em estoque"
+        value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, displayCurrency as never) : '—'}
+      />
+      <SummaryPill
+        helper={productsTotals ? `${formatCurrency(productsTotals.potentialProfit, displayCurrency as never)} em lucro potencial` : undefined}
+        icon={TrendingUp}
+        label="Venda potencial"
+        value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, displayCurrency as never) : '—'}
+      />
+      <SummaryPill helper={`Margem média ${avgMargin}`} icon={Tags} label="Itens em alerta" value={String(lowStockItems ?? '—')} />
+    </div>
+  )
+}
+
+function PortfolioCategoryPanel({
+  categoryBreakdown,
+  displayCurrency,
+  maxCategoryProfit,
+}: Readonly<{
+  categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
+  displayCurrency: string
+  maxCategoryProfit: number
+}>) {
+  return (
+    <div className="imperial-card p-6">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
+          <Tags className="size-4 text-[var(--accent)]" />
+        </span>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Categorias</p>
+          <h2 className="text-base font-semibold leading-snug text-white">Fluxo por categoria</h2>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        {categoryBreakdown.length ? (
+          categoryBreakdown.map((item) => (
+            <CategoryCard
+              key={item.category}
+              category={item.category}
+              products={item.products}
+              inventoryCostValue={item.inventoryCostValue}
+              potentialProfit={item.potentialProfit}
+              inventorySalesValue={item.inventorySalesValue}
+              displayCurrency={displayCurrency}
+              maxProfit={maxCategoryProfit}
+            />
+          ))
+        ) : (
+          <div className="rounded-[16px] border border-dashed border-white/8 px-5 py-8 text-center">
+            <Tags className="mx-auto mb-3 size-7 text-[var(--text-soft)]/50" />
+            <p className="text-sm text-[var(--text-soft)]">Cadastre produtos para destravar a leitura por categoria.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PortfolioProductList({
+  busy,
+  filteredProducts,
+  mutationError,
+  onArchive,
+  onDelete,
+  onEdit,
+  onRestore,
+  products,
+  productsError,
+  searchQuery,
+  setSearchQuery,
+}: Readonly<{
+  busy: boolean
+  filteredProducts: ProductRecord[]
+  mutationError: ProductMutationError
+  onArchive: (id: string) => void
+  onDelete: (id: string) => void
+  onEdit: (product: ProductRecord | null) => void
+  onRestore: (id: string) => void
+  products: ProductRecord[]
+  productsError: string | null
+  searchQuery: string
+  setSearchQuery: (value: string) => void
+}>) {
+  return (
+    <section className="imperial-card p-6 md:p-8">
+      <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Produtos cadastrados</h2>
+          <p className="mt-1.5 text-sm text-[var(--text-soft)]">
+            {filteredProducts.length === products.length
+              ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
+              : `${filteredProducts.length} de ${products.length} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`}
+          </p>
+        </div>
+        <div className="sm:w-72">
+          <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
+        </div>
+      </div>
+
+      {productsError ? (
+        <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
+          {productsError}
+        </p>
+      ) : null}
+      {mutationError ? (
+        <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
+          {mutationError.message}
+        </p>
+      ) : null}
+
+      <div className="mt-6 grid gap-3 xl:grid-cols-2">
+        {filteredProducts.length ? (
+          filteredProducts.map((product) => (
+            <ProductCard
+              busy={busy}
+              key={product.id}
+              onArchive={onArchive}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onRestore={onRestore}
+              product={product}
+            />
+          ))
+        ) : (
+          <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
+            <Search className="mx-auto mb-3 size-9 text-[var(--text-soft)]/50" />
+            <p className="text-base font-semibold text-white">
+              {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
+              {products.length
+                ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
+                : 'Use o formulário ao lado para criar os primeiros itens do portfólio.'}
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 export function PortfolioEnvironment() {
@@ -120,16 +339,16 @@ export function PortfolioEnvironment() {
   } = useDashboardMutations()
 
   const finance = financeQuery.data
-  const products = productsQuery.data?.items ?? []
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items])
   const productsTotals = productsQuery.data?.totals
   const productsError = productsQuery.error instanceof ApiError ? productsQuery.error.message : null
-  const productMutationError = [
+  const productMutationError = resolveProductMutationError([
     _createProductMutation.error,
     _updateProductMutation.error,
     _archiveProductMutation.error,
     restoreProductMutation.error,
     _deleteProductMutation.error,
-  ].find((error) => error instanceof ApiError)
+  ])
 
   const archiveProductMutation = {
     isPending: _archiveProductMutation.isPending,
@@ -155,26 +374,7 @@ export function PortfolioEnvironment() {
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
-    const payload = {
-      name: values.name,
-      brand: values.brand,
-      category: values.category,
-      packagingClass: values.packagingClass,
-      measurementUnit: values.measurementUnit,
-      measurementValue: values.measurementValue,
-      unitsPerPackage: values.unitsPerPackage,
-      isCombo: values.isCombo,
-      comboDescription: values.comboDescription,
-      comboItems: values.comboItems,
-      description: values.description,
-      unitCost: values.unitCost,
-      unitPrice: values.unitPrice,
-      currency: values.currency,
-      stock: values.stock,
-      requiresKitchen: values.requiresKitchen ?? false,
-      lowStockThreshold: values.lowStockThreshold ?? null,
-    }
-
+    const payload = buildProductPayload(values)
     if (editingProduct) {
       updateProductMutation.mutate({ productId: editingProduct.id, values: payload })
       return
@@ -190,31 +390,16 @@ export function PortfolioEnvironment() {
     restoreProductMutation.isPending ||
     deleteProductMutation.isPending
 
-  const normalizedSearch = searchQuery.trim().toLocaleLowerCase('pt-BR')
-  const filteredProducts = normalizedSearch
-    ? products.filter((product) =>
-        [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
-          const normalizedValue = value.toLocaleLowerCase('pt-BR')
-          return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
-        }),
-      )
-    : products
-
+  const filteredProducts = filterProducts(products, searchQuery)
   const avgMargin = calcAvgMargin(products)
-  const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((c) => c.potentialProfit) ?? [0]), 0)
+  const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((category) => category.potentialProfit) ?? [0]), 0)
   const handleDeleteProduct = (productId: string) => {
     const target = products.find((product) => product.id === productId)
-    const confirmed =
-      typeof window === 'undefined'
-        ? true
-        : window.confirm(
-            `Excluir "${target?.name ?? 'este produto'}" em definitivo?\n\nEssa ação remove o item do portfólio ativo e preserva apenas o histórico de vendas já consolidado.`,
-          )
-
-    if (confirmed) {
+    if (confirmProductDeletion(target?.name)) {
       deleteProductMutation.mutate(productId)
     }
   }
+  const displayCurrency = String(finance?.displayCurrency ?? 'BRL')
 
   return (
     <section className="space-y-6">
@@ -226,32 +411,12 @@ export function PortfolioEnvironment() {
       />
 
       {/* summary strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryPill
-          icon={Package}
-          helper={productsTotals ? `${productsTotals.inactiveProducts} arquivado(s)` : undefined}
-          label="SKUs ativos"
-          value={productsTotals ? String(productsTotals.activeProducts) : '—'}
-        />
-        <SummaryPill
-          icon={Boxes}
-          helper={productsTotals ? `${productsTotals.stockBaseUnits} unidades base` : undefined}
-          label="Capital em estoque"
-          value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, String(finance?.displayCurrency ?? 'BRL') as never) : '—'}
-        />
-        <SummaryPill
-          helper={productsTotals ? formatCurrency(productsTotals.potentialProfit, String(finance?.displayCurrency ?? 'BRL') as never) + ' em lucro potencial' : undefined}
-          icon={TrendingUp}
-          label="Venda potencial"
-          value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, String(finance?.displayCurrency ?? 'BRL') as never) : '—'}
-        />
-        <SummaryPill
-          helper={`Margem média ${avgMargin}`}
-          icon={Tags}
-          label="Itens em alerta"
-          value={finance ? String(finance.totals.lowStockItems) : '—'}
-        />
-      </div>
+      <PortfolioSummaryStrip
+        avgMargin={avgMargin}
+        displayCurrency={displayCurrency}
+        lowStockItems={finance?.totals.lowStockItems ?? null}
+        productsTotals={productsTotals}
+      />
 
       {/* form + import + category */}
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
@@ -266,104 +431,26 @@ export function PortfolioEnvironment() {
         </div>
 
         {/* categories */}
-        <div className="imperial-card p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
-              <Tags className="size-4 text-[var(--accent)]" />
-            </span>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                Categorias
-              </p>
-              <h2 className="text-base font-semibold text-white leading-snug">Fluxo por categoria</h2>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            {finance?.categoryBreakdown.length ? (
-              finance.categoryBreakdown.map((item) => (
-                <CategoryCard
-                  key={item.category}
-                  category={item.category}
-                  products={item.products}
-                  inventoryCostValue={item.inventoryCostValue}
-                  potentialProfit={item.potentialProfit}
-                  inventorySalesValue={item.inventorySalesValue}
-                  displayCurrency={String(finance.displayCurrency)}
-                  maxProfit={maxCategoryProfit}
-                />
-              ))
-            ) : (
-              <div className="rounded-[16px] border border-dashed border-white/8 px-5 py-8 text-center">
-                <Tags className="mx-auto size-7 text-[var(--text-soft)]/50 mb-3" />
-                <p className="text-sm text-[var(--text-soft)]">
-                  Cadastre produtos para destravar a leitura por categoria.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        <PortfolioCategoryPanel
+          categoryBreakdown={finance?.categoryBreakdown ?? []}
+          displayCurrency={displayCurrency}
+          maxCategoryProfit={maxCategoryProfit}
+        />
       </div>
 
-      {/* product list */}
-      <section className="imperial-card p-6 md:p-8">
-        {/* list header */}
-        <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Produtos cadastrados</h2>
-            <p className="mt-1.5 text-sm text-[var(--text-soft)]">
-              {filteredProducts.length === products.length
-                ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
-                : `${filteredProducts.length} de ${products.length} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`}
-            </p>
-          </div>
-          <div className="sm:w-72">
-            <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
-          </div>
-        </div>
-
-        {/* errors */}
-        {productsError ? (
-          <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
-            {productsError}
-          </p>
-        ) : null}
-        {productMutationError ? (
-          <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
-            {productMutationError.message}
-          </p>
-        ) : null}
-
-        {/* grid */}
-        <div className="mt-6 grid gap-3 xl:grid-cols-2">
-          {filteredProducts.length ? (
-            filteredProducts.map((product) => (
-              <ProductCard
-                busy={productBusy}
-                key={product.id}
-                onArchive={archiveProductMutation.mutate}
-                onDelete={handleDeleteProduct}
-                onEdit={setEditingProduct}
-                onRestore={restoreProductMutation.mutate}
-                product={product}
-              />
-            ))
-          ) : (
-            <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
-              <Search className="mx-auto size-9 text-[var(--text-soft)]/50 mb-3" />
-              <p className="text-base font-semibold text-white">
-                {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-                {products.length
-                  ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
-                  : 'Use o formulário ao lado para criar os primeiros itens do portfólio.'}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+      <PortfolioProductList
+        busy={productBusy}
+        filteredProducts={filteredProducts}
+        mutationError={productMutationError}
+        onArchive={archiveProductMutation.mutate}
+        onDelete={handleDeleteProduct}
+        onEdit={setEditingProduct}
+        onRestore={restoreProductMutation.mutate}
+        products={products}
+        productsError={productsError}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
     </section>
   )
 }

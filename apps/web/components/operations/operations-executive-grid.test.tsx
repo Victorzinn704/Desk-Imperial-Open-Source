@@ -99,6 +99,30 @@ function makeRow(overrides: Partial<OperationGridRow> = {}): OperationGridRow {
 }
 
 describe('OperationsExecutiveGrid', () => {
+  it('mostra estados vazios quando ainda não existe colaborador selecionado', () => {
+    render(<OperationsExecutiveGrid rows={[]} />)
+
+    expect(screen.getByText(/nenhum funcionário conectado ainda/i)).toBeInTheDocument()
+    expect(screen.getByText(/o grid executivo já está importado com ag grid/i)).toBeInTheDocument()
+  })
+
+  it('mostra estados vazios dos painéis quando o colaborador ainda não movimentou o turno', () => {
+    render(
+      <OperationsExecutiveGrid
+        rows={[
+          makeRow({
+            tables: [],
+            movements: [],
+          }),
+        ]}
+      />,
+    )
+
+    expect(screen.getByText(/nenhuma mesa ativa neste turno/i)).toBeInTheDocument()
+    expect(screen.getByText(/sem movimentos lançados/i)).toBeInTheDocument()
+    expect(screen.getByText(/nada novo para mostrar/i)).toBeInTheDocument()
+  })
+
   it('renderiza a leitura viva do colaborador selecionado com mesas e registros', () => {
     render(<OperationsExecutiveGrid rows={[makeRow()]} />)
 

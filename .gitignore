@@ -92,3 +92,5 @@ Desktop.ini
 .vercel
 .netlify
 .aider*
+.scannerwork/
+.local-tools/
