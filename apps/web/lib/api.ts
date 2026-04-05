@@ -136,10 +136,6 @@ export type ConsentOverview = {
   cookiePreferences: CookiePreferences
 }
 
-export type FetchProductsOptions = {
-  includeInactive?: boolean
-}
-
 export type ProductPayload = {
   name: string
   brand?: string
@@ -416,16 +412,8 @@ export async function fetchConsentOverview() {
   })
 }
 
-export async function fetchProducts(options?: FetchProductsOptions) {
-  const params = new URLSearchParams()
-
-  if (options?.includeInactive !== undefined) {
-    params.set('includeInactive', String(options.includeInactive))
-  }
-
-  const suffix = params.toString() ? `?${params.toString()}` : ''
-
-  return apiFetch<ProductsResponse>(`/products${suffix}`, {
+export async function fetchProducts() {
+  return apiFetch<ProductsResponse>('/products?includeInactive=true', {
     method: 'GET',
   })
 }
@@ -453,6 +441,12 @@ export async function archiveProduct(productId: string) {
 export async function restoreProduct(productId: string) {
   return apiFetch<{ product: ProductRecord }>(`/products/${productId}/restore`, {
     method: 'POST',
+  })
+}
+
+export async function deleteProductPermanently(productId: string) {
+  return apiFetch<{ success: boolean; deletedProductId: string }>(`/products/${productId}/permanent`, {
+    method: 'DELETE',
   })
 }
 
@@ -565,7 +559,6 @@ export type OperationsLiveOptions = {
   businessDate?: string
   includeCashMovements?: boolean
   compactMode?: boolean
-  includeClosed?: boolean
 }
 
 function buildOperationsLiveParams(input?: string | OperationsLiveOptions) {
@@ -587,10 +580,6 @@ function buildOperationsLiveParams(input?: string | OperationsLiveOptions) {
 
   if (options?.compactMode !== undefined) {
     params.set('compactMode', String(options.compactMode))
-  }
-
-  if (options?.includeClosed !== undefined) {
-    params.set('includeClosed', String(options.includeClosed))
   }
 
   return params
@@ -1299,7 +1288,12 @@ function reportApiErrorTelemetry(
   })
 }
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, requestPath: string) {
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  requestPath: string,
+) {
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
     controller.abort()
@@ -1320,3 +1314,4 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, tim
     clearTimeout(timeoutHandle)
   }
 }
+ 

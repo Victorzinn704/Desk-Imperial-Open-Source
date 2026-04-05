@@ -7,6 +7,7 @@ export type Mesa = {
   numero: string
   capacidade: number
   status: MesaStatus
+  section?: string
   comandaId?: string // comanda vinculada (quando ocupada)
   garcomId?: string // garçom responsável
   garcomNome?: string // nome do garçom para exibição

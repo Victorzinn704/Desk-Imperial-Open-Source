@@ -5,7 +5,6 @@ import { Armchair, ClipboardList, Grid3X3, List, Plus, Zap } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
-import { OPERATIONS_LIVE_FULL_QUERY_KEY } from '@/lib/operations'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import { calcTotal, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
@@ -56,15 +55,16 @@ export function SalaoEnvironment() {
   // payload completo só quando realmente precisamos dos itens.
   const { data: compactLiveData, isLoading: compactLiveLoading } = useQuery({
     queryKey: LIVE_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true, includeClosed: false }),
+    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     refetchInterval: 15_000,
     staleTime: 10_000,
     enabled: view === 'operacional',
     refetchOnWindowFocus: false,
   })
 
+  const FULL_LIVE_QUERY_KEY = ['operations', 'live', 'full'] as const
   const { data: detailedLiveData, isLoading: detailedLiveLoading } = useQuery({
-    queryKey: OPERATIONS_LIVE_FULL_QUERY_KEY,
+    queryKey: FULL_LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
     staleTime: 10_000,
@@ -86,7 +86,7 @@ export function SalaoEnvironment() {
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
     void queryClient.invalidateQueries({ queryKey: LIVE_QUERY_KEY })
-    void queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_FULL_QUERY_KEY })
+    void queryClient.invalidateQueries({ queryKey: FULL_LIVE_QUERY_KEY })
   }
 
   // ── mutations ─────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ export function SalaoEnvironment() {
     [updateMutation],
   )
 
-  const { dragging, dragPosition, getMesaPosition, handleMouseDown } = useMesaDrag({
+  const { dragging, dragPosition, getMesaPosition, handlePointerDown } = useMesaDrag({
     onPositionSave,
     canvasRef,
   })
@@ -328,6 +328,7 @@ export function SalaoEnvironment() {
               backgroundColor: 'rgba(0,0,0,0.28)',
               cursor: dragging ? 'grabbing' : 'default',
               userSelect: 'none',
+              touchAction: 'none',
             }}
           >
             {mesasLoading && (
@@ -355,7 +356,7 @@ export function SalaoEnvironment() {
                   x={currentPosition.x}
                   y={currentPosition.y}
                   isDragging={isDraggingThis}
-                  onMouseDown={handleMouseDown}
+                  onPointerDown={handlePointerDown}
                 />
               )
             })}
@@ -406,18 +407,18 @@ const FloorMesaNode = memo(function FloorMesaNode({
   x,
   y,
   isDragging,
-  onMouseDown,
+  onPointerDown,
 }: {
   mesa: MesaRecord
   index: number
   x: number
   y: number
   isDragging: boolean
-  onMouseDown: (event: React.MouseEvent, mesa: MesaRecord, autoIndex: number) => void
+  onPointerDown: (event: React.PointerEvent, mesa: MesaRecord, autoIndex: number) => void
 }) {
   return (
     <div
-      onMouseDown={(event) => onMouseDown(event, mesa, index)}
+      onPointerDown={(event) => onPointerDown(event, mesa, index)}
       style={{
         position: 'absolute',
         left: x,
@@ -426,9 +427,10 @@ const FloorMesaNode = memo(function FloorMesaNode({
         height: CARD_H,
         zIndex: isDragging ? 50 : 1,
         transform: isDragging ? 'scale(1.07)' : 'scale(1)',
-        transition: isDragging ? 'none' : 'transform 0.12s',
+        transition: isDragging ? 'none' : 'left 0.14s ease-out, top 0.14s ease-out, transform 0.14s ease-out',
         cursor: isDragging ? 'grabbing' : 'grab',
         willChange: isDragging ? 'transform,left,top' : undefined,
+        touchAction: 'none',
       }}
     >
       <MesaFloorCard mesa={mesa} isDragging={isDragging} />
@@ -449,9 +451,45 @@ function OperacionalView({
   garcomNames: Record<string, string>
   isLoading: boolean
 }) {
+  const [sectionFilter, setSectionFilter] = useState<string>('all')
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
-  const comandaById = useMemo(() => new Map(liveComandas.map((comanda) => [comanda.id, comanda])), [liveComandas])
+  const livres = liveMesas.filter((m) => m.status === 'livre')
+  const ocupadas = liveMesas.filter((m) => m.status === 'ocupada')
+  const reservadas = liveMesas.filter((m) => m.status === 'reservada')
+  const receitaAberta = ocupadas.reduce((sum, m) => {
+    const comanda = liveComandas.find((c) => c.id === m.comandaId)
+    return sum + (comanda ? calcTotal(comanda) : 0)
+  }, 0)
+  const garconsAtivos = new Set(
+    ocupadas.map((mesa) => mesa.garcomId).filter((value): value is string => Boolean(value)),
+  ).size
+  const ticketMedioAberto = ocupadas.length > 0 ? receitaAberta / ocupadas.length : 0
+  const occupiedRate = liveMesas.length > 0 ? Math.round((ocupadas.length / liveMesas.length) * 100) : 0
+  const sectionPills = useMemo(() => {
+    const grouped = new Map<string, { total: number; occupied: number }>()
+
+    for (const mesa of liveMesas) {
+      const key = mesa.section?.trim() || 'Sem seção'
+      const current = grouped.get(key) ?? { total: 0, occupied: 0 }
+      current.total += 1
+      if (mesa.status === 'ocupada') current.occupied += 1
+      grouped.set(key, current)
+    }
+
+    return Array.from(grouped.entries())
+      .map(([label, stats]) => ({
+        label,
+        total: stats.total,
+        occupied: stats.occupied,
+        occupancy: stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0,
+      }))
+      .sort((left, right) => right.occupied - left.occupied || left.label.localeCompare(right.label))
+  }, [liveMesas])
+  const visibleMesas =
+    sectionFilter === 'all'
+      ? liveMesas
+      : liveMesas.filter((mesa) => (mesa.section?.trim() || 'Sem seção') === sectionFilter)
 
   if (isLoading) {
     return (
@@ -483,30 +521,92 @@ function OperacionalView({
     )
   }
 
-  const livres = liveMesas.filter((m) => m.status === 'livre')
-  const ocupadas = liveMesas.filter((m) => m.status === 'ocupada')
-  const reservadas = liveMesas.filter((m) => m.status === 'reservada')
-
-  const receitaAberta = ocupadas.reduce((sum, m) => {
-    const comanda = m.comandaId ? comandaById.get(m.comandaId) : undefined
-    return sum + (comanda ? calcTotal(comanda) : 0)
-  }, 0)
-
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Premium Summary Strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:flex items-center rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl">
+      <div className="grid grid-cols-2 gap-3 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 xl:grid-cols-5">
         <KpiCard label="Receita Circulante" value={fmtBRL(receitaAberta)} color="var(--accent)" isHighlight />
-        <div className="hidden h-12 w-px bg-gradient-to-b from-transparent via-[rgba(255,255,255,0.1)] to-transparent md:block" />
-        <KpiCard label="Ocupadas" value={ocupadas.length} color="#f87171" total={liveMesas.length} />
+        <KpiCard label="Ticket Aberto" value={fmtBRL(ticketMedioAberto)} color="#fbbf24" />
+        <KpiCard label="Equipe em giro" value={garconsAtivos} color="#60a5fa" />
+        <KpiCard label="Ocupação" value={`${occupiedRate}%`} color="#f87171" />
         <KpiCard label="Livres" value={livres.length} color="#36f57c" total={liveMesas.length} />
-        <KpiCard label="Reservas" value={reservadas.length} color="#60a5fa" total={liveMesas.length} />
+      </div>
+
+      <div className="rounded-[26px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Leitura por seção
+            </p>
+            <h3 className="mt-2 text-xl font-semibold text-white">Toque na área do salão que você quer acompanhar</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
+              Em vez de uma grade seca, o salão agora deixa você focar por setor. Assim fica mais fácil bater o olho em
+              onde está a pressão operacional agora.
+            </p>
+          </div>
+
+          <div className="rounded-full border border-[rgba(96,165,250,0.14)] bg-[rgba(96,165,250,0.08)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#93c5fd]">
+            {reservadas.length} reserva{reservadas.length === 1 ? '' : 's'} em preparação
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <button
+            type="button"
+            onClick={() => setSectionFilter('all')}
+            className={`rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+              sectionFilter === 'all'
+                ? 'border-[rgba(201,168,76,0.32)] bg-[rgba(201,168,76,0.12)] text-[#f4d78b]'
+                : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-white'
+            }`}
+          >
+            Salão inteiro · {liveMesas.length}
+          </button>
+
+          {sectionPills.map((section) => {
+            const isActive = sectionFilter === section.label
+            const tone =
+              section.occupancy >= 75
+                ? {
+                    text: '#fca5a5',
+                    border: 'rgba(248,113,113,0.28)',
+                    bg: 'rgba(248,113,113,0.10)',
+                  }
+                : section.occupancy >= 40
+                  ? {
+                      text: '#f4d78b',
+                      border: 'rgba(201,168,76,0.28)',
+                      bg: 'rgba(201,168,76,0.10)',
+                    }
+                  : {
+                      text: '#8fffb9',
+                      border: 'rgba(54,245,124,0.22)',
+                      bg: 'rgba(54,245,124,0.08)',
+                    }
+
+            return (
+              <button
+                key={section.label}
+                type="button"
+                onClick={() => setSectionFilter(section.label)}
+                className="rounded-full border px-3.5 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em] transition hover:-translate-y-[1px]"
+                style={{
+                  color: tone.text,
+                  borderColor: isActive ? tone.border : 'rgba(255,255,255,0.08)',
+                  background: isActive ? tone.bg : 'rgba(255,255,255,0.03)',
+                }}
+              >
+                {section.label} · {section.occupied}/{section.total}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Mesas Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-        {liveMesas.map((mesa) => {
-          const comanda = mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
+        {visibleMesas.map((mesa) => {
+          const comanda = mesa.comandaId ? liveComandas.find((c) => c.id === mesa.comandaId) : undefined
           const garcomName = mesa.garcomId ? garcomNames[mesa.garcomId] : undefined
 
           let urgency: 0 | 1 | 2 | 3 = 0
@@ -526,6 +626,15 @@ function OperacionalView({
           )
         })}
       </div>
+
+      {visibleMesas.length === 0 ? (
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[26px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-center">
+          <p className="text-sm font-medium text-white">Nenhuma mesa nessa área agora.</p>
+          <p className="mt-2 text-sm text-[var(--text-soft)]">
+            Troque a seção ou volte para o salão inteiro para acompanhar o restante da operação.
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

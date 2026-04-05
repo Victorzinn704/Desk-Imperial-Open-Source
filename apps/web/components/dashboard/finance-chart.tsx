@@ -14,11 +14,11 @@ import {
   Legend,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { Skeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
 import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
@@ -370,7 +370,7 @@ function renderChart({
 
   if (activeView === 'timeline') {
     return (
-      <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+      <ChartResponsiveContainer>
         <AreaChart data={timelineData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
           <defs>
             <linearGradient id="timelineRevenue" x1="0" x2="0" y1="0" y2="1">
@@ -412,13 +412,13 @@ function renderChart({
             type="monotone"
           />
         </AreaChart>
-      </ResponsiveContainer>
+      </ChartResponsiveContainer>
     )
   }
 
   if (activeView === 'channels') {
     return (
-      <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+      <ChartResponsiveContainer>
         <BarChart data={channelData} layout="vertical" margin={{ top: 12, right: 12, left: 18, bottom: 0 }}>
           <CartesianGrid stroke="#20262f" strokeDasharray="3 3" horizontal={false} />
           <XAxis
@@ -443,13 +443,13 @@ function renderChart({
           <Bar dataKey="revenue" fill="#36f57c" name="Receita" radius={[0, 14, 14, 0]} />
           <Bar dataKey="profit" fill="#38bdf8" name="Lucro" radius={[0, 14, 14, 0]} />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartResponsiveContainer>
     )
   }
 
   if (activeView === 'customers') {
     return (
-      <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+      <ChartResponsiveContainer>
         <BarChart data={customerData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
           <CartesianGrid stroke="#20262f" strokeDasharray="3 3" vertical={false} />
           <XAxis axisLine={false} dataKey="label" tick={{ fill: '#99a3b1', fontSize: 12 }} tickLine={false} />
@@ -469,12 +469,12 @@ function renderChart({
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ChartResponsiveContainer>
     )
   }
 
   return (
-    <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+    <ChartResponsiveContainer>
       <PieChart>
         <Tooltip
           content={<DashboardChartTooltip valueFormatter={(value) => formatCurrency(value, displayCurrency)} />}
@@ -495,7 +495,7 @@ function renderChart({
           ))}
         </Pie>
       </PieChart>
-    </ResponsiveContainer>
+    </ChartResponsiveContainer>
   )
 }
 

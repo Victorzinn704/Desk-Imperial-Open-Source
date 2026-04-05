@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { Archive, PencilLine, RotateCcw } from 'lucide-react'
+import { Archive, PencilLine, RotateCcw, Trash2 } from 'lucide-react'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatCurrencyComparison } from '@/lib/currency'
 import { formatMeasurement, formatStockBreakdown } from '@/lib/product-packaging'
@@ -57,12 +57,14 @@ export const ProductCard = memo(function ProductCard({
   onEdit,
   onArchive,
   onRestore,
+  onDelete,
   busy,
 }: Readonly<{
   product: ProductRecord
   onEdit: (product: ProductRecord) => void
   onArchive: (productId: string) => void
   onRestore: (productId: string) => void
+  onDelete: (productId: string) => void
   busy?: boolean
 }>) {
   const costValue = formatCurrencyComparison({
@@ -180,10 +182,22 @@ export const ProductCard = memo(function ProductCard({
               Arquivar
             </Button>
           ) : (
-            <Button disabled={busy} onClick={() => onRestore(product.id)} size="sm" variant="ghost">
-              <RotateCcw className="size-3.5" />
-              Reativar
-            </Button>
+            <>
+              <Button disabled={busy} onClick={() => onRestore(product.id)} size="sm" variant="ghost">
+                <RotateCcw className="size-3.5" />
+                Reativar
+              </Button>
+              <Button
+                className="border-[rgba(248,113,113,0.18)] text-[#fca5a5] hover:border-[rgba(248,113,113,0.3)] hover:bg-[rgba(248,113,113,0.08)] hover:text-[#fecaca]"
+                disabled={busy}
+                onClick={() => onDelete(product.id)}
+                size="sm"
+                variant="ghost"
+              >
+                <Trash2 className="size-3.5" />
+                Excluir
+              </Button>
+            </>
           )}
         </div>
       </div>

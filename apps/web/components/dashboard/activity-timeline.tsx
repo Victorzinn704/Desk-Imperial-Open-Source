@@ -46,6 +46,8 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
     queryKey: ['auth', 'activity-feed'],
     queryFn: fetchActivityFeed,
     staleTime: 30_000,
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: true,
   })
 
   const activities = (data ?? []).map(toActivityViewModel)
@@ -59,14 +61,14 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
         onClick={onClose}
       />
 
-      <aside className="fixed right-0 top-0 z-40 h-screen w-96 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
+      <aside className="fixed right-0 top-0 z-40 h-screen w-[28rem] overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)]">
             <Activity className="size-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white">Atividades do workspace</h2>
-            <p className="text-xs text-[var(--text-soft)]">Eventos reais de operação, autenticação e gestão</p>
+            <h2 className="text-xl font-semibold text-white">Pulso do workspace</h2>
+            <p className="text-xs text-[var(--text-soft)]">Leitura manual das movimentações mais recentes, com atualização automática.</p>
           </div>
           <button
             className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
@@ -92,31 +94,35 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
         ) : null}
 
         {!isLoading && !error && activities.length > 0 ? (
-          <div className="space-y-4">
-            {activities.map((activity, index) => {
-              const isLast = index === activities.length - 1
+          <div className="space-y-3">
+            {activities.map((activity) => {
               const IconComponent = activity.icon
 
               return (
-                <div key={activity.id} className="relative">
-                  {!isLast ? <div className="absolute left-4 top-10 h-8 w-0.5 bg-[var(--border)]" /> : null}
-
-                  <div className="flex gap-4">
+                <div
+                  key={activity.id}
+                  className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3"
+                >
+                  <div className="flex gap-3">
                     <div
-                      className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-[rgba(255,255,255,0.1)]"
-                      style={{ backgroundColor: `${activity.color}20`, borderColor: `${activity.color}40` }}
+                      className="flex size-9 shrink-0 items-center justify-center rounded-2xl border"
+                      style={{ backgroundColor: `${activity.color}18`, borderColor: `${activity.color}36` }}
                     >
                       <IconComponent className="size-4" style={{ color: activity.color }} />
                     </div>
-                    <div className="flex-1 pb-4">
-                      <p className="text-sm font-semibold text-white">{activity.title}</p>
-                      <p className="text-xs text-[var(--text-soft)]">{activity.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{activity.title}</p>
+                          <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{activity.description}</p>
+                        </div>
+                        <time className="shrink-0 text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                          {getRelativeTime(activity.timestamp)}
+                        </time>
+                      </div>
                       {activity.ipAddress ? (
-                        <p className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">{activity.ipAddress}</p>
+                        <p className="mt-2 font-mono text-[11px] text-[var(--text-muted)]">{activity.ipAddress}</p>
                       ) : null}
-                      <time className="mt-1 block text-xs text-[var(--text-muted)]">
-                        {getRelativeTime(activity.timestamp)}
-                      </time>
                     </div>
                   </div>
                 </div>
@@ -125,10 +131,10 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
           </div>
         ) : null}
 
-        <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
+        <div className="mt-8 rounded-[18px] border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
           <div className="flex items-center justify-center gap-2">
             <TrendingUp className="size-3" />
-            <span>Painel ligado à trilha real de auditoria</span>
+            <span>Painel sincronizado com a trilha real de auditoria a cada 15 segundos</span>
           </div>
         </div>
       </aside>

@@ -24,13 +24,7 @@ export function SettingsEnvironment({
 }: Readonly<SettingsEnvironmentProps>) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const { sessionQuery, consentQuery } = useDashboardQueries({
-    enableConsent: true,
-    enableProducts: false,
-    enableOrders: false,
-    enableEmployees: false,
-    enableFinance: false,
-  })
+  const { sessionQuery, consentQuery } = useDashboardQueries({ section: 'settings' })
   const { logoutMutation: _logoutMutation, preferenceMutation, updateProfileMutation } = useDashboardMutations()
 
   const user = sessionQuery.data?.user

@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import { ResponsiveContainer, LineChart, Line } from 'recharts'
+import { LineChart, Line } from 'recharts'
 import { MetricCardSkeleton } from '@/components/shared/skeleton'
+import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { Tooltip } from '@/components/shared/tooltip'
 
 export function MetricCard({
@@ -51,7 +52,7 @@ export function MetricCard({
 
         {sparkData && sparkData.length > 1 && (
           <div className="h-12 w-24 shrink-0">
-            <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+            <ChartResponsiveContainer>
               <LineChart data={sparkData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                 <Line
                   dataKey="v"
@@ -64,7 +65,7 @@ export function MetricCard({
                   type="natural"
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartResponsiveContainer>
           </div>
         )}
       </div>
