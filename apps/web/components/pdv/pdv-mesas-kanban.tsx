@@ -64,7 +64,6 @@ const MesaSquare = memo(function MesaSquare({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={handleClick}
           className="select-none cursor-grab active:cursor-grabbing"
           style={{
             ...provided.draggableProps.style,
@@ -72,15 +71,15 @@ const MesaSquare = memo(function MesaSquare({
           }}
         >
           {/* Square card — pool view */}
-          <div
-            className="flex flex-col items-center justify-center rounded-xl border transition-all duration-200 hover:scale-105 hover:shadow-lg"
+          <button
+            className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-xl border bg-transparent transition-all duration-200 hover:scale-105 hover:shadow-lg"
             style={{
-              width: 76,
-              height: 76,
               background: 'rgba(54,245,124,0.06)',
               borderColor: snapshot.isDragging ? '#36f57c' : 'rgba(54,245,124,0.3)',
               boxShadow: snapshot.isDragging ? '0 0 20px rgba(54,245,124,0.25)' : undefined,
             }}
+            type="button"
+            onClick={handleClick}
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(54,245,124,0.6)]">Mesa</p>
             <p className="text-2xl font-bold text-white leading-none mt-0.5">{mesa.numero}</p>
@@ -88,7 +87,7 @@ const MesaSquare = memo(function MesaSquare({
               <Users className="size-2.5" />
               <span className="text-[9px]">{mesa.capacidade}</span>
             </div>
-          </div>
+          </button>
         </div>
       )}
     </Draggable>
@@ -122,17 +121,18 @@ const MesaRectCard = memo(function MesaRectCard({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={handleClick}
           className="select-none cursor-grab active:cursor-grabbing"
           style={{ ...provided.draggableProps.style }}
         >
-          <div
-            className="rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5"
+          <button
+            className="w-full rounded-xl border bg-transparent p-3 text-left transition-all duration-200 hover:-translate-y-0.5"
             style={{
               background: snapshot.isDragging ? `${colColor}18` : `${colColor}0a`,
               borderColor: snapshot.isDragging ? colColor : `${colColor}44`,
               boxShadow: snapshot.isDragging ? `0 8px 24px ${colColor}22` : undefined,
             }}
+            type="button"
+            onClick={handleClick}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -172,7 +172,7 @@ const MesaRectCard = memo(function MesaRectCard({
                 Clique para abrir comanda
               </p>
             )}
-          </div>
+          </button>
         </div>
       )}
     </Draggable>

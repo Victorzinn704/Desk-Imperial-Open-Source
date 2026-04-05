@@ -6,6 +6,7 @@ import {
   createEmployee,
   createOrder,
   createProduct,
+  deleteProductPermanently,
   importProducts,
   logout,
   restoreEmployee,
@@ -85,6 +86,11 @@ export function useDashboardMutations() {
     onSuccess: () => invalidateCatalog(),
   })
 
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteProductPermanently,
+    onSuccess: () => invalidateCatalog(),
+  })
+
   const importProductsMutation = useMutation({
     mutationFn: importProducts,
     onSuccess: () => invalidateCatalog(),
@@ -123,6 +129,7 @@ export function useDashboardMutations() {
     updateProductMutation,
     archiveProductMutation,
     restoreProductMutation,
+    deleteProductMutation,
     importProductsMutation,
     createOrderMutation,
     cancelOrderMutation,

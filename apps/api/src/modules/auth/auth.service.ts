@@ -594,7 +594,7 @@ export class AuthService {
       workspaceOwnerUserId: ownerUser.id,
       employeeId: employee.id,
       employeeCode: employee.employeeCode,
-      passwordHash: 'demo-bypass',
+      passwordHash: hashToken(`demo-session:${ownerUser.id}:${employee.id}:${employee.employeeCode}`),
       status: employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
       emailVerifiedAt: ownerUser.emailVerifiedAt,
       fullName: employee.displayName,
@@ -2185,7 +2185,16 @@ export class AuthService {
   }
 
   private pickMostRestrictiveRateLimitState(states: RateLimitState[]): RateLimitState {
-    return states.reduce((current, candidate) => {
+    const [initialState, ...remainingStates] = states
+    if (!initialState) {
+      return {
+        count: 0,
+        firstAttemptAt: 0,
+        lockedUntil: null,
+      }
+    }
+
+    return remainingStates.reduce((current, candidate) => {
       const currentLockedUntil = current.lockedUntil ?? 0
       const candidateLockedUntil = candidate.lockedUntil ?? 0
 
@@ -2198,7 +2207,7 @@ export class AuthService {
       }
 
       return current
-    })
+    }, initialState)
   }
 }
 

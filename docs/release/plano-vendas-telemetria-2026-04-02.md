@@ -269,9 +269,115 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 ---
 
+### Fase 0.10 — prova de produção para `fresh → stale → cold`
+
+**Objetivo**
+
+- confirmar em produção se o comportamento novo do `finance/summary` é real ou só “parece rápido” por cache oportunista
+
+**Implementado**
+
+- criamos um probe reutilizável em `scripts/probe-finance-cache.mjs`
+- o comando oficial ficou em `package.json`:
+  - `npm run perf:probe:finance-cache`
+- o probe:
+  - autentica
+  - mede `baseline`
+  - mede repetição quente
+  - espera a janela pós-`fresh`
+  - mede leitura após refresh em background
+  - espera expirar a janela `stale`
+  - mede o comportamento pós-expiração
+- o relatório bruto da rodada atual ficou em `docs/release/finance-cache-probe-2026-04-03.json`
+
+**Como rodamos**
+
+- produção real em `https://api.deskimperial.online/api`
+- login demo com `OWNER`
+- `User-Agent` técnico dedicado para não reutilizar o fingerprint já esgotado do navegador local
+- esperas reais:
+  - `125s` para passar a janela `fresh`
+  - `5s` para observar o refresh em background
+  - `305s` para atravessar a janela `stale`
+
+**Resultados**
+
+- `baseline`: `686ms`
+- `warm-repeat`: `659ms`
+- `after-fresh-window`: `904ms`
+- `post-background-refresh`: `871ms`
+- `after-stale-expiry`: `5559ms`
+
+**Leitura do resultado**
+
+- o request continuou rápido depois de `125s`, então o caminho `fresh/stale-while-revalidate` está funcionando de verdade
+- a leitura `5s` depois permaneceu quente, reforçando que o refresh em background não está travando o caller
+- quando deixamos passar `305s`, a rota voltou para `~5.6s`, o que mostra que o custo frio **ainda existe** quando a janela stale acaba
+
+**Conclusão sênior**
+
+- a melhoria é **real**, não cosmética
+- o refresh-ahead derruba o engasgo periódico de curta duração
+- o problema remanescente agora ficou bem delimitado:
+  - quando o cache expira de verdade, o rebuild ainda é caro
+- então a próxima decisão madura não é “mais cache genérico”, e sim:
+  1. levar essa métrica para Alloy/Prometheus/Grafana
+  2. decidir com número na mão se vale:
+     - quebrar `finance/summary` em slices
+     - pré-computar partes do resumo
+     - ou manter a rota única e só endurecer a política de aquecimento
+
+**Caveat**
+
+- essa rodada usa o workspace demo compartilhado, então tráfego externo ainda pode influenciar baseline/temperatura do cache
+- apesar disso, o salto de `~0.9s` para `~5.6s` após a janela stale é forte o bastante para servir como evidência operacional
+
+---
+
 ## 3. Próximos ataques em ordem madura
 
 ### Fase 1 — Medição real no stack OSS
+
+### Fase 1.1 — trilha local validada de ponta a ponta
+
+**O que estava quebrando de verdade**
+
+- a API local nao estava “morrendo sem motivo”; ela estava subindo com `.env` apontando para a Neon, o que mascarava o bootstrap local e deixava a experiencia parecendo aleatoria
+- mesmo quando a API subia, as metricas de negocio nao apareciam no Prometheus porque o OpenTelemetry era inicializado tarde demais, depois do carregamento do app
+
+**O que corrigimos**
+
+- criamos um banco dedicado de observabilidade local: `partner_portal_observability`
+- adicionamos `scripts/prepare-local-observability-db.mjs` para provisionar banco/role de forma idempotente
+- centralizamos as variaveis em `scripts/with-local-observability-env.mjs`
+- a API passou a carregar env antes e inicializar OTel antes de importar o `AppModule`
+- o smoke local ficou alinhado ao contrato real do snapshot operacional
+
+**Comandos oficiais**
+
+- `npm run obs:up`
+- `npm run obs:api:prepare`
+- `npm run obs:api:build`
+- `npm run obs:api:start`
+- `npm run obs:smoke:local`
+
+**Evidencia validada**
+
+- a API local sobe em `http://localhost:4000/api/health`
+- o Prometheus passa a listar:
+  - `desk_finance_summary_duration_milliseconds_*`
+  - `desk_operations_live_duration_milliseconds_*`
+  - `desk_operations_kitchen_duration_milliseconds_*`
+- os labels uteis ja aparecem nas series:
+  - `desk_finance_cache_hit`
+  - `desk_finance_cache_state`
+  - `desk_operations_cache_hit`
+  - `desk_operations_compact_mode`
+
+**Leitura sênior**
+
+- agora a trilha `API -> Alloy -> Prometheus -> Grafana` saiu do estado “infra de laboratorio” e virou validacao reproduzivel
+- isso nos da base segura para o proximo passo: dashboards e alertas mais precisos sem adivinhar comportamento
 
 **Objetivo**
 
@@ -300,6 +406,33 @@ Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, us
 
 - o gargalo já precisa chegar instrumentado e com recortes de payload reais, senão o dashboard só “desenha o problema” sem ajudar a resolver
 - com o `includeClosed=false` e o scoping de realtime já no código, a leitura em Grafana passa a refletir um caminho quente mais honesto
+
+**Ataque inicial já entregue**
+
+- dashboard novo provisionado em `infra/docker/observability/grafana/dashboards/business-performance.json`
+- foco do dashboard:
+  - `finance p95 (fresh)`
+  - `finance p95 (cache miss)`
+  - `operations/live p95`
+  - `kitchen p95`
+  - shape médio de `finance/summary`
+  - shape médio de `operations/live`
+- alertas reais adicionados em `infra/docker/observability/prometheus/alert.rules.yml`:
+  - `FinanceSummaryCacheMissSlowP95`
+  - `OperationsLiveSlowP95`
+- validação prática local:
+  - Grafana provisionou o dashboard `Business Performance`
+  - Prometheus carregou as regras com `health=ok`
+  - stack local subiu com `alloy`, `prometheus`, `tempo`, `loki`, `alertmanager`, `grafana` e `blackbox`
+  - fluxo local repetível documentado com:
+    - `npm run obs:api:build`
+    - `npm run obs:api:start`
+    - `npm run obs:smoke:local`
+
+**Leitura sênior**
+
+- essa fase saiu do papel: agora o stack já responde perguntas de produto, não só de infra
+- o próximo ganho vem de ligar a API local/staging ao OTLP e verificar o nome/volume real das séries em produção controlada
 
 ### Fase 2 — Separação cirúrgica do domínio de vendas
 
@@ -392,3 +525,323 @@ Consideramos essa frente madura quando:
 - `finance/summary` e `operations/live` ficam instrumentados com métricas úteis
 - o stack OSS recebe essas métricas e mostra o gargalo real
 - a próxima otimização acontece por evidência, não por sensação
+
+---
+
+## 7. Hardening operacional mobile/web — 2026-04-03
+
+**Problemas reais atacados**
+
+- mesas aparecendo livres para o staff enquanto já estavam ocupadas por outra equipe
+- autoabertura de caixa disparando em qualquer `409`, inclusive em conflito de mesa
+- abertura/fechamento de comanda demorando a refletir no estado da mesa
+- fluxo mobile do PDV com categorias e lista de itens brigando pela mesma tela
+
+**Correções aplicadas**
+
+- `apps/api/src/modules/operations/operations-helpers.service.ts`
+  - ocupação de mesa passou a vir de uma query mínima global de comandas abertas com `mesaId`, sem depender do recorte por funcionário
+- `apps/web/lib/operations/operations-optimistic.ts`
+  - otimista de comanda agora atualiza também `mesas.status`, `comandaId` e `currentEmployeeId`
+- `apps/web/components/staff-mobile/staff-mobile-shell.tsx`
+- `apps/web/components/owner-mobile/owner-mobile-shell.tsx`
+  - retry automático de caixa ficou restrito a erros realmente relacionados a caixa
+  - invalidação pós-mutation passou a usar o prefixo `['operations', 'live']` para autocura mais rápida do snapshot
+- `apps/web/components/staff-mobile/mobile-order-builder.tsx`
+  - o builder mobile virou fluxo em duas etapas: categoria primeiro, itens depois
+
+**Validação**
+
+- API: `689/689` testes verdes
+- Web: `39/39` testes verdes
+- `npm --workspace @partner/api run lint` ✅
+- `npm --workspace @partner/api run typecheck` ✅
+- `npm --workspace @partner/api run build` ✅
+- `npm --workspace @partner/web run lint` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- esse pacote reduz bug operacional real, não só latência percebida
+- o próximo passo natural é medir em staging/produção o efeito no `operations/live` e no tempo de abertura de mesa/comanda antes de seguir para dashboards mais profundos no Grafana
+
+---
+
+## 8. Portfólio + combos + KPIs — 2026-04-03
+
+**Problemas reais atacados**
+
+- o portfólio ainda só permitia `editar + arquivar/restaurar`, sem saída definitiva para item aposentado
+- o motor de venda não consumia componentes de combo; o cadastro existia, mas não impactava estoque/custo
+- a leitura executiva do portfólio ainda estava muito presa em `und/caixa`, sem KPIs mais fortes de capital e retorno
+
+**Correções aplicadas**
+
+- `apps/api/src/modules/products/products.service.ts`
+- `apps/api/src/modules/products/products.controller.ts`
+  - exclusão definitiva entrou como fluxo explícito e seguro
+  - regra de segurança: só exclui produto já arquivado
+  - proteção extra: bloqueia exclusão se o item ainda compõe outro combo
+- `apps/web/lib/api.ts`
+- `apps/web/components/dashboard/hooks/useDashboardMutations.ts`
+- `apps/web/components/dashboard/product-card.tsx`
+- `apps/web/components/dashboard/environments/portfolio-environment.tsx`
+  - card do portfólio passou a oferecer `Excluir` só no estado arquivado
+  - confirmação local evita exclusão acidental
+  - os KPIs do topo migraram de volume físico genérico para leitura de capital, venda potencial, lucro potencial e itens em alerta
+  - a quebra por categoria agora fala mais de capital e margem do que só de unidades
+- `apps/api/src/modules/products/product-combo-consumption.util.ts`
+- `apps/api/src/modules/orders/orders.service.ts`
+- `apps/api/src/modules/operations/operations-helpers.service.ts`
+  - combos agora consomem componentes no pedido direto e no fechamento de comanda
+  - custo de linha e custo total passaram a refletir a composição real do combo
+  - cancelamento de venda direta repõe os componentes consumidos pelo combo
+
+**Validação**
+
+- testes cirúrgicos:
+  - `npm --workspace @partner/api run test -- products.service.spec.ts orders.service.spec.ts operations-helpers.branches.spec.ts` ✅
+  - `npm --workspace @partner/web run test -- components/dashboard/product-card.test.tsx` ✅
+- suíte ampla:
+  - API: `695/695` testes verdes
+  - Web: `41/41` testes verdes
+  - `npm --workspace @partner/api run lint` ✅
+  - `npm --workspace @partner/api run typecheck` ✅
+  - `npm --workspace @partner/api run build` ✅
+  - `npm --workspace @partner/web run lint` ✅
+  - `npm --workspace @partner/web run typecheck` ✅
+  - `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- agora o bloco de portfólio deixa de ser só cadastro e passa a governar venda real
+- a exclusão definitiva ficou madura o bastante para limpar lixo do catálogo sem desmontar histórico consolidado
+- o próximo refinamento natural aqui é revisar a experiência de edição/arquivamento ao vivo no dashboard para garantir que a sensação de resposta ficou tão boa quanto a lógica
+
+---
+
+## 9. Entrada + operação comercial + pulso manual — 2026-04-03
+
+**Problemas reais atacados**
+
+- a entrada no app ainda sofria com transição seca e lenta entre login e dashboard
+- o shell do dashboard carregava blocos demais por padrão, mesmo quando a seção ativa não precisava deles
+- a seção `Operação` do sidebar ainda parecia um SaaS genérico e não o centro comercial do Desk Imperial
+- o painel lateral de atividades estava monótono, com sensação de congelamento e pouca leitura humana
+- o manifest seguia apontando para ícones inexistentes, gerando ruído silencioso no navegador
+
+**Correções aplicadas**
+
+- `apps/web/components/auth/login-form.tsx`
+  - entrada agora faz prewarm assíncrono do caminho mais provável após autenticação
+  - owner pré-aquece `auth/me + finance/summary`
+  - staff pré-aquece `auth/me + products + orders/summary`
+  - navegação pós-login passou para `router.replace('/dashboard')`, reduzindo sensação de salto e histórico desnecessário
+- `apps/web/components/dashboard/hooks/useDashboardQueries.ts`
+- `apps/web/components/dashboard/dashboard-shell.tsx`
+- `apps/web/components/dashboard/environments/*.tsx`
+  - queries do dashboard foram escopadas por seção ativa
+  - `settings` não carrega mais blocos comerciais que não vai usar
+  - `pdv` deixa de herdar peso executivo por padrão
+  - `sales` recebe somente o que importa para vender e ler a operação
+- `apps/web/components/dashboard/environments/sales-environment.tsx`
+  - a seção `Operação` foi redesenhada como central comercial real
+  - KPIs do topo passaram a falar de receita, lucro, ticket e ritmo da equipe
+  - o painel de categorias/cores do dashboard inicial foi reaproveitado no eixo lateral para leitura de mix
+  - a lista de pedidos recentes saiu do padrão “card repetido” e virou trilho manual mais denso e mais próximo do caixa
+- `apps/web/components/dashboard/activity-timeline.tsx`
+  - o painel virou um `Pulso do workspace`
+  - atualização automática a cada `15s`
+  - leitura mais manual e menos “timeline de template”
+- `apps/web/public/manifest.json`
+  - removidos ícones inexistentes para parar o ruído de `404` e avisos de PWA
+- `apps/web/eslint.config.mjs`
+  - ignorado `coverage/**` para evitar lint em artefato gerado, não em código do produto
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- não foi só maquiagem visual: o shell realmente deixou de pedir dados fora do contexto da seção ativa
+- a seção `Operação` agora fica mais próxima do uso humano diário, com menos cara de componente genérico
+- o próximo passo natural depois do deploy é medir no Railway se o ganho percebido da entrada confirma o prewarm e, se confirmar, atacar os pontos restantes de fricção no calendário e no bloco visual do salão
+
+## 10. PWA sem manifest fantasma + calendários manuais — 2026-04-03
+
+**Problemas reais atacados**
+
+- o PWA continuava emitindo ruído silencioso por causa de manifest antigo e ícones inexistentes em clientes com cache anterior
+- o service worker ainda podia segurar referência velha de manifest entre builds
+- `react-big-calendar` continuava pesando e trazendo uma estética genérica demais para agenda comercial e timeline operacional
+- o calendário comercial e a linha do tempo da operação estavam brigando com a identidade do produto em vez de reforçá-la
+
+**Correções aplicadas**
+
+- `apps/web/app/layout.tsx`
+- `apps/web/app/app/layout.tsx`
+- `apps/web/app/manifest.ts`
+- `apps/web/public/manifest.json`
+  - o app passou a anunciar `manifest.webmanifest` versionado (`?v=20260403`)
+  - o manifest novo agora aponta apenas para ícones que existem no repositório
+  - o fallback legado em `manifest.json` foi alinhado com a mesma verdade, para clientes antigos não continuarem pedindo assets fantasmas
+- `apps/web/components/shared/sw-registrar.tsx`
+- `apps/web/public/sw.js`
+  - o registro do service worker agora força `registration.update()` após subir
+  - o cache do SW foi rotacionado para `desk-imperial-v2-20260403`
+  - `manifest.json` e `manifest.webmanifest` saíram do escopo de cache do SW para refletirem sempre o build atual
+- `apps/web/components/calendar/commercial-calendar.tsx`
+  - o calendário comercial deixou de depender de `react-big-calendar`
+  - entrou uma agenda manual com visões `semana`, `mês` e `agenda`, cards editáveis e leitura mais humana do comercial
+- `apps/web/components/operations/operations-timeline.tsx`
+  - a timeline operacional também saiu da camada visual externa pesada
+  - agora renderiza faixas manuais por recurso/mesa, com blocos absolutos leves e leitura de caixa/equipe mais próxima da operação real
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- esse lote ataca dois problemas diferentes, mas conectados: ruído silencioso de PWA e peso visual/mental de calendários genéricos
+- a mudança de calendário é madura o bastante para teste em produção, mas ainda merece uma passada futura de refinamento fino de densidade e interação caso a equipe aprove a direção manual
+- o ganho mais importante aqui não é só visual: é recuperar previsibilidade do PWA e tirar um ponto recorrente de estranheza da experiência operacional
+
+## 11. Charts estáveis + salão mais fluido no toque — 2026-04-03
+
+**Problemas reais atacados**
+
+- o dashboard ainda emitia warning de `width(-1)/height(-1)` quando os gráficos renderizavam antes de o container ter tamanho válido
+- o salão desktop continuava com sensação de atraso no arraste das mesas, especialmente em toque/pointer, e a leitura operacional seguia seca demais
+- a camada `Operacional` do salão não ajudava o usuário a focar por setor; mostrava tudo de uma vez, mas com pouca prioridade visual
+- o snapshot já trazia `section` da mesa, mas a modelagem do PDV não carregava esse campo até a superfície do salão
+
+**Correções aplicadas**
+
+- `apps/web/components/dashboard/chart-responsive-container.tsx`
+- `apps/web/components/dashboard/finance-chart.tsx`
+- `apps/web/components/dashboard/finance-doughnut-chart.tsx`
+- `apps/web/components/dashboard/metric-card.tsx`
+- `apps/web/components/dashboard/sales-performance-card.tsx`
+  - os gráficos passaram a usar um container próprio que espera largura/altura reais antes de montar o `ResponsiveContainer`
+  - isso reduz o warning silencioso dos gráficos sem trocar a biblioteca nem mascarar problema de layout
+- `apps/web/eslint.config.mjs`
+  - o allowlist de imports de `recharts` foi alinhado ao novo wrapper canônico do dashboard
+- `apps/web/components/dashboard/salao/hooks/use-mesa-drag.ts`
+- `apps/web/components/dashboard/salao/constants.ts`
+  - o arraste de mesas migrou de mouse events soltos para pointer events com `pointerId`, `pointercapture` e flush por `requestAnimationFrame`
+  - isso deixa o gesto mais previsível em toque e mouse, com menos jitter e menos risco de “perder” a mesa no meio do movimento
+- `apps/web/components/dashboard/salao-environment.tsx`
+  - a faixa de KPIs do operacional ficou mais útil (`Receita Circulante`, `Ticket Aberto`, `Equipe em giro`, `Ocupação`, `Livres`)
+  - entrou um filtro visual por seção para o salão, permitindo focar em uma área específica sem poluir a leitura do restante
+  - o empty state agora explica quando a seção escolhida não tem mesas visíveis
+- `apps/web/components/pdv/pdv-types.ts`
+- `apps/web/components/pdv/pdv-operations.ts`
+  - `Mesa.section` entrou de verdade no shape derivado do snapshot, permitindo que o filtro por área não dependa de dados fantasma
+
+**Validação**
+
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm test` ✅
+  - API: `695/695`
+  - Web: `88/88`
+- `npm run build` ✅
+
+**Leitura**
+
+- aqui não teve maquiagem: o warning dos charts foi tratado na origem da renderização, e não escondido por CSS ou delay artificial
+- o salão ficou mais responsivo no gesto e mais claro para operação, mas sem recomeçar a tela do zero nem quebrar o fluxo atual
+- o próximo passo depois do deploy é validar em produção se o warning do Recharts sumiu de vez e se o salão responde melhor no toque real
+
+## 12. Rollback cirúrgico do calendário comercial — 2026-04-03
+
+**Problema real reconhecido**
+
+- o calendário da seção `Calendário` não era o alvo da correção anterior
+- a troca para a agenda manual fez o produto perder uma interação que já estava boa: drag-and-drop e resize dos eventos comerciais
+- o calendário de atendimento, por outro lado, era o ponto que realmente precisava sair da camada pesada/genérica
+
+**Correção aplicada**
+
+- `apps/web/components/calendar/commercial-calendar.tsx`
+  - restaurado para a versão anterior com `react-big-calendar` + addon de drag-and-drop
+  - mantidos os estilos visuais do Desk Imperial e o modal de criação/edição
+  - retornaram os gestos de mover evento, redimensionar e navegar pelas views nativas do calendário comercial
+
+**O que foi preservado**
+
+- `apps/web/components/operations/operations-timeline.tsx`
+  - continua manual e mais leve, porque esse sim era o calendário de atendimento que precisava mudar
+- nenhuma mudança foi feita nesta passada em:
+  - AG Grid
+  - visão executiva por colaborador
+  - mesas do atendimento
+  - bloco `Pedro Alves`
+  - movimentos
+  - últimos registros
+
+**Validação**
+
+- `npm --workspace @partner/web run lint -- components/calendar/commercial-calendar.tsx` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Leitura**
+
+- aqui a decisão madura foi voltar um passo, não insistir numa mudança errada
+- o calendário comercial recupera o comportamento que já funcionava bem, enquanto o atendimento mantém a melhora que realmente fez sentido
+
+## 13. Bloco executivo do PDV com leitura menos genérica — 2026-04-03
+
+**Problemas reais atacados**
+
+- o bloco `AG Grid` do PDV estava funcional, mas ainda passava sensação de painel-placeholder: grid genérico, detalhe pobre e pouca leitura operacional no colaborador selecionado
+- `Mesas do atendimento`, `Movimentos` e `Últimos registros` não estavam ajudando o dono a bater o olho e entender o turno
+- a descrição da timeline ainda citava `FullCalendar`, mesmo depois da troca para a linha do tempo manual
+- o adapter do operacional tratava `cashCurrentAmount` como espelho do `expectedCashAmount`, mesmo quando já existia leitura contada
+
+**Correções aplicadas**
+
+- `apps/web/components/operations/operations-executive-grid.tsx`
+  - o topo do grid virou `Radar da equipe`, mantendo AG Grid como superfície principal de seleção
+  - o colaborador selecionado ganhou um painel próprio com código, perfil, status do caixa e KPIs do turno
+  - `Mesas do atendimento` saiu da tabela seca e virou lista manual com status, abertura, atualização, subtotal, desconto, total e notas
+  - `Movimentos` virou resumo executivo com entradas, saídas e últimos lançamentos
+  - `Últimos registros` agora mistura caixas e mesas em uma trilha manual, em vez de um bloco frio e pouco expressivo
+- `apps/web/lib/operations/operations-adapters.ts`
+  - `cashCurrentAmount` agora prefere `countedCashAmount` quando já existe leitura contada; se não existir, continua usando o esperado
+- `apps/web/components/dashboard/environments/pdv-environment.tsx`
+  - a descrição da timeline foi atualizada para refletir a camada manual real, sem mencionar `FullCalendar`
+
+**Validação**
+
+- `npm --workspace @partner/web run lint` ✅
+- `npm --workspace @partner/web run typecheck` ✅
+- `npm --workspace @partner/web run test -- components/operations/operations-executive-grid.test.tsx lib/operations/operations-adapters.test.ts` ✅
+- `npm --workspace @partner/web run build` ✅
+
+**Cobertura nova**
+
+- `apps/web/components/operations/operations-executive-grid.test.tsx`
+  - garante render do colaborador em foco
+  - garante troca de seleção no grid
+- `apps/web/lib/operations/operations-adapters.test.ts`
+  - garante que `cashCurrentAmount` usa o valor contado quando disponível
+
+**Leitura**
+
+- aqui o objetivo não foi “embelezar o AG Grid”, e sim dar função real para ele dentro do fluxo executivo
+- o grid continua sendo a superfície de seleção, mas a leitura importante agora acontece em painéis humanos, mais próximos do que um gestor realmente precisa enxergar durante o turno

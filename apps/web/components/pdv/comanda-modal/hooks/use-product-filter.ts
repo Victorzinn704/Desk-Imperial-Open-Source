@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import type { SimpleProduct } from '../types'
 
 export function useProductFilter(products: SimpleProduct[]) {
@@ -12,18 +13,23 @@ export function useProductFilter(products: SimpleProduct[]) {
     () =>
       Array.from(new Set(products.map((p) => p.category)))
         .filter(Boolean)
-        .sort(),
+        .sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base', numeric: true })),
     [products],
   )
 
   const filtered = useMemo(
-    () =>
-      products.filter((p) => {
+    () => {
+      const normalizedSearch = normalizeTextForSearch(search)
+
+      return products.filter((p) => {
         const matchSearch =
-          p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase())
+          normalizedSearch.length === 0 ||
+          normalizeTextForSearch(p.name).includes(normalizedSearch) ||
+          normalizeTextForSearch(p.category).includes(normalizedSearch)
         const matchCat = selectedCategory ? p.category === selectedCategory : true
         return matchSearch && matchCat
-      }),
+      })
+    },
     [products, search, selectedCategory],
   )
 

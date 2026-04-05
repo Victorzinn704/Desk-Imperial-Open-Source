@@ -81,7 +81,6 @@ export const MesaCard = memo(
 
     const card = (
       <div
-        onClick={handleClick}
         className="group relative select-none rounded-[16px] border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         style={{
           background: isAssignTarget ? 'rgba(52,242,127,0.06)' : cfg.bg,
@@ -90,14 +89,21 @@ export const MesaCard = memo(
           animation: urgency === 3 ? 'salao-border-pulse 1.8s ease-in-out infinite' : undefined,
         }}
       >
+        <button
+          aria-label={mesa.status === 'ocupada' ? `Abrir comanda da mesa ${mesa.numero}` : `Abrir mesa ${mesa.numero}`}
+          className="absolute inset-0 rounded-[16px] border-0 bg-transparent p-0"
+          type="button"
+          onClick={handleClick}
+        />
+
         {/* Urgência badge */}
         {urgency === 3 && (
-          <span className="absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#f87171]">
+          <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#f87171]">
             <AlertCircle className="size-2.5 text-white" />
           </span>
         )}
         {urgency === 2 && (
-          <span className="absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#fbbf24]">
+          <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#fbbf24]">
             <AlertCircle className="size-2.5 text-black" />
           </span>
         )}
@@ -116,7 +122,6 @@ export const MesaCard = memo(
             return (
               <div
                 className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] bg-[rgba(14,16,24,0.92)] px-3 backdrop-blur-sm"
-                onClick={(e) => e.stopPropagation()}
               >
                 <AlertCircle className="size-4 text-[#fbbf24]" />
                 <p className="text-center text-[11px] font-semibold leading-snug text-white">
@@ -151,32 +156,34 @@ export const MesaCard = memo(
             )
           })()}
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 pt-3 pb-1">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${cfg.color}80` }}>
-              Mesa
-            </p>
-            <p className="text-2xl font-bold text-white leading-none">{mesa.numero}</p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-              style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}35` }}
-            >
-              {cfg.label}
-            </span>
-            <div className="flex items-center gap-0.5 text-[var(--text-muted)]">
-              <Users className="size-2.5" />
-              <span className="text-[9px]">{mesa.capacidade}</span>
+        <div className="pointer-events-none relative z-10">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 pt-3 pb-1">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${cfg.color}80` }}>
+                Mesa
+              </p>
+              <p className="text-2xl font-bold text-white leading-none">{mesa.numero}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}35` }}
+              >
+                {cfg.label}
+              </span>
+              <div className="flex items-center gap-0.5 text-[var(--text-muted)]">
+                <Users className="size-2.5" />
+                <span className="text-[9px]">{mesa.capacidade}</span>
+              </div>
             </div>
           </div>
+
+          <div className="mx-3 border-t border-[rgba(255,255,255,0.05)]" />
         </div>
 
-        <div className="mx-3 border-t border-[rgba(255,255,255,0.05)]" />
-
         {/* Garçom row */}
-        <div className="relative px-3 py-2">
+        <div className="relative z-20 px-3 py-2">
           <button
             type="button"
             onClick={(e) => {
@@ -221,10 +228,12 @@ export const MesaCard = memo(
         {/* Comanda info */}
         {mesa.status === 'ocupada' && comanda && (
           <div
-            className="relative mx-3 mb-3 space-y-1 rounded-[10px] px-2.5 py-2"
+            className="pointer-events-none relative z-10 mx-3 mb-3 space-y-1 rounded-[10px] px-2.5 py-2"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            <ItemsTooltip comanda={comanda} />
+            <div className="pointer-events-auto">
+              <ItemsTooltip comanda={comanda} />
+            </div>
             {comanda.clienteNome && (
               <p className="truncate text-[11px] font-semibold text-white">{comanda.clienteNome}</p>
             )}
@@ -245,7 +254,9 @@ export const MesaCard = memo(
         )}
 
         {(mesa.status === 'reservada' || mesa.status === 'livre') && (
-          <p className="px-3 pb-3 text-[10px] text-[var(--text-muted)]">Clique para abrir comanda</p>
+          <p className="pointer-events-none relative z-10 px-3 pb-3 text-[10px] text-[var(--text-muted)]">
+            Clique para abrir comanda
+          </p>
         )}
       </div>
     )

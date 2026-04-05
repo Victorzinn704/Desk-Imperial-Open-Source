@@ -176,12 +176,16 @@ export function PdvComandaModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-4">
+      <button
+        aria-label="Fechar comanda"
+        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onClose}
+      />
 
       <div
-        className="imperial-card relative flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]"
-        onClick={(event) => event.stopPropagation()}
+        className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]"
       >
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
           <div>

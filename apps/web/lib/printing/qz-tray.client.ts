@@ -37,14 +37,12 @@ export async function printRawQzTrayJob(printerName: string, rawDocument: string
 async function ensureQzTrayConnection() {
   const qz = await getQzTrayModule()
 
-  if (qz.websocket.isActive()) {
-    return qz
+  if (!qz.websocket.isActive()) {
+    await qz.websocket.connect({
+      retries: 1,
+      delay: 0,
+    })
   }
-
-  await qz.websocket.connect({
-    retries: 1,
-    delay: 0,
-  })
 
   return qz
 }

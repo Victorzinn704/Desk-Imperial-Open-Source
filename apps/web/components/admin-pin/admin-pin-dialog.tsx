@@ -18,6 +18,7 @@ export function AdminPinDialog({
   onConfirm,
   onCancel,
 }: Readonly<AdminPinDialogProps>) {
+  const pinInputIds = ['admin-pin-digit-0', 'admin-pin-digit-1', 'admin-pin-digit-2', 'admin-pin-digit-3'] as const
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState('')
   const [isBlocked, setIsBlocked] = useState(false)
@@ -120,10 +121,15 @@ export function AdminPinDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <button
+        aria-label="Fechar verificação de PIN"
+        className="absolute inset-0 border-0 bg-black/75 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onCancel}
+      />
 
-      <div className="imperial-card relative w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+      <div className="imperial-card relative z-10 w-full max-w-xs">
         <button
           className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:text-white"
           type="button"
@@ -157,7 +163,8 @@ export function AdminPinDialog({
             <div className="flex justify-center gap-3 px-6 pb-2">
               {digits.map((digit, idx) => (
                 <input
-                  key={idx}
+                  key={pinInputIds[idx]}
+                  id={pinInputIds[idx]}
                   ref={refs[idx]}
                   className="size-14 rounded-[16px] border text-center text-xl font-bold text-white outline-none transition-all"
                   disabled={isLoading}

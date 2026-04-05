@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LetterCard } from '@/components/marketing/letter-card'
+import { FounderContactCard } from '@/components/marketing/founder-contact-card'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
 import { HeroFloatingCard } from '@/components/marketing/hero-floating-card'
 import { InteractionFlowCard } from '@/components/marketing/interaction-flow-card'
@@ -255,15 +256,8 @@ export function LandingPage() {
     pointerY.set(0)
   }
 
-  const handlePageClick = (e: ReactMouseEvent<HTMLElement>) => {
-    void fireConfetti(e.clientX, e.clientY)
-  }
-
   return (
-    <main
-      className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]"
-      onClick={handlePageClick}
-    >
+    <main className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <CustomCursor />
       <SpaceBackground />
 
@@ -432,10 +426,18 @@ export function LandingPage() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/cadastro">
+              <Link
+                className="rainbow-hover hero-entry-button w-full sm:w-auto"
+                href="/cadastro"
+                onClick={(event) => void fireConfetti(event.clientX, event.clientY)}
+              >
                 <span className="sp">Cadastrar-se</span>
               </Link>
-              <Link className="rainbow-hover hero-entry-button w-full sm:w-auto" href="/login">
+              <Link
+                className="rainbow-hover hero-entry-button w-full sm:w-auto"
+                href="/login"
+                onClick={(event) => void fireConfetti(event.clientX, event.clientY)}
+              >
                 <span className="sp">Login</span>
               </Link>
             </div>
@@ -459,6 +461,7 @@ export function LandingPage() {
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
             <FounderPortraitCard />
+            <FounderContactCard />
 
             <div className="glass-card relative z-10 p-6">
               <div className="flex items-center justify-between">
@@ -469,8 +472,8 @@ export function LandingPage() {
               </div>
 
               <div className="mt-8 grid gap-4">
-                {pillars.map((pillar, index) => (
-                  <article className={index % 2 === 0 ? 'glass-card p-5' : 'glass-card p-5'} key={pillar.title}>
+                {pillars.map((pillar) => (
+                  <article className="glass-card p-5" key={pillar.title}>
                     <div>
                       <h2 className="text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">{pillar.description}</p>

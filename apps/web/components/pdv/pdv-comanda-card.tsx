@@ -38,15 +38,16 @@ export const PdvComandaCard = memo(function PdvComandaCard({
             ...provided.draggableProps.style,
             willChange: snapshot.isDragging ? 'transform' : undefined,
           }}
-          onClick={() => onClick(comanda)}
         >
-          <div
-            className="rounded-[18px] border p-4 transition-all duration-200"
+          <button
+            className="w-full rounded-[18px] border bg-transparent p-4 text-left transition-all duration-200"
             style={{
               background: snapshot.isDragging ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
               borderColor: snapshot.isDragging ? column.borderColor : 'rgba(255,255,255,0.08)',
               boxShadow: snapshot.isDragging ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${column.dotColor}33` : 'none',
             }}
+            type="button"
+            onClick={() => onClick(comanda)}
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
@@ -104,7 +105,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
                 )}
               </div>
             )}
-          </div>
+          </button>
         </div>
       )}
     </Draggable>

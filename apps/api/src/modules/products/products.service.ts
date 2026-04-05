@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
-import type { CurrencyCode } from '@prisma/client'
+import { AuditSeverity, type CurrencyCode } from '@prisma/client'
 import { Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
@@ -408,6 +408,65 @@ export class ProductsService {
 
   async restoreForUser(auth: AuthContext, productId: string, context: RequestContext) {
     return this.toggleActiveState(auth, productId, true, context)
+  }
+
+  async deleteForUser(auth: AuthContext, productId: string, context: RequestContext) {
+    assertOwnerRole(auth, 'Apenas o dono pode excluir produtos.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
+
+    if (existingProduct.active) {
+      throw new ConflictException('Arquive o produto antes de excluir em definitivo.')
+    }
+
+    const combosUsingProduct = await this.prisma.productComboItem.findMany({
+      where: {
+        componentProductId: existingProduct.id,
+      },
+      select: {
+        comboProduct: {
+          select: {
+            id: true,
+            name: true,
+            active: true,
+          },
+        },
+      },
+      take: 5,
+    })
+
+    if (combosUsingProduct.length > 0) {
+      const comboNames = [...new Set(combosUsingProduct.map((item) => item.comboProduct.name).filter(Boolean))]
+      throw new ConflictException(
+        `Este produto ainda compõe ${comboNames.length > 1 ? 'combos' : 'um combo'}: ${comboNames.join(', ')}. Atualize ou remova esses combos antes de excluir em definitivo.`,
+      )
+    }
+
+    await this.prisma.product.delete({
+      where: { id: existingProduct.id },
+    })
+
+    await this.auditLogService.record({
+      actorUserId: auth.userId,
+      event: 'product.deleted',
+      resource: 'product',
+      resourceId: existingProduct.id,
+      severity: AuditSeverity.WARN,
+      metadata: {
+        name: existingProduct.name,
+        category: existingProduct.category,
+      },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    this.refreshFinanceSummary(workspaceUserId)
+    void this.invalidateProductsCache(workspaceUserId)
+
+    return {
+      success: true,
+      deletedProductId: existingProduct.id,
+    }
   }
 
   async importForUser(auth: AuthContext, file: UploadedCsvFile | undefined, context: RequestContext) {

@@ -7,8 +7,53 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
-import { ApiError, login, loginDemo, type AuthResponse, type LoginPayload } from '@/lib/api'
+import {
+  ApiError,
+  fetchCurrentUser,
+  fetchFinanceSummary,
+  fetchOrders,
+  fetchProducts,
+  login,
+  loginDemo,
+  type AuthResponse,
+  type LoginPayload,
+} from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
+
+function prewarmDashboardEntry(queryClient: ReturnType<typeof useQueryClient>, role: AuthResponse['user']['role']) {
+  const tasks = [
+    queryClient.prefetchQuery({
+      queryKey: ['auth', 'me'],
+      queryFn: fetchCurrentUser,
+      staleTime: 30_000,
+    }),
+  ]
+
+  if (role === 'OWNER') {
+    tasks.push(
+      queryClient.prefetchQuery({
+        queryKey: ['finance', 'summary'],
+        queryFn: fetchFinanceSummary,
+        staleTime: 60_000,
+      }),
+    )
+  } else {
+    tasks.push(
+      queryClient.prefetchQuery({
+        queryKey: ['products'],
+        queryFn: fetchProducts,
+        staleTime: 5 * 60_000,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['orders', 'summary'],
+        queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
+        staleTime: 30_000,
+      }),
+    )
+  }
+
+  void Promise.allSettled(tasks)
+}
 
 export function LoginForm() {
   const router = useRouter()
@@ -18,6 +63,7 @@ export function LoginForm() {
 
   useEffect(() => {
     router.prefetch('/dashboard')
+    router.prefetch('/app')
   }, [router])
 
   const {
@@ -46,9 +92,9 @@ export function LoginForm() {
     mutationFn: (payload) => login(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
+      prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.push('/dashboard')
+        router.replace('/dashboard')
       })
     },
     onError: (error, variables) => {
@@ -69,9 +115,9 @@ export function LoginForm() {
     mutationFn: loginDemo,
     onSuccess: (data) => {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
-      queryClient.invalidateQueries({ queryKey: ['consent', 'me'] })
+      prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.push('/dashboard')
+        router.replace('/dashboard')
       })
     },
   })
@@ -153,12 +199,15 @@ export function LoginForm() {
         {isStaffMode ? (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">Email da Empresa</label>
+              <label className="text-xs font-medium text-white/50" htmlFor="login-company-email">
+                Email da Empresa
+              </label>
               <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
                 <Mail className="size-4 shrink-0 text-white/30" />
                 <input
                   autoComplete="email"
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                  id="login-company-email"
                   placeholder="ceo@empresa.com"
                   type="email"
                   {...registerField('companyEmail')}
@@ -170,13 +219,16 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">ID do Funcionário</label>
+              <label className="text-xs font-medium text-white/50" htmlFor="login-employee-code">
+                ID do Funcionário
+              </label>
               <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
                 <UserRound className="size-4 shrink-0 text-white/30" />
                 <input
                   autoCapitalize="characters"
                   autoComplete="username"
                   className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-white outline-none placeholder:text-white/20"
+                  id="login-employee-code"
                   placeholder="VD-001"
                   type="text"
                   {...registerField('employeeCode')}
@@ -189,12 +241,15 @@ export function LoginForm() {
           </>
         ) : (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-white/50">Email Corporativo</label>
+            <label className="text-xs font-medium text-white/50" htmlFor="login-email">
+              Email Corporativo
+            </label>
             <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
               <Mail className="size-4 shrink-0 text-white/30" />
               <input
                 autoComplete="email"
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                id="login-email"
                 placeholder="ceo@empresa.com"
                 type="email"
                 {...registerField('email')}
@@ -206,7 +261,7 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50">
+            <label className="text-xs font-medium text-white/50" htmlFor="login-password">
               {isStaffMode ? 'PIN de acesso' : 'Senha de Acesso'}
             </label>
             {!isStaffMode && (
@@ -221,6 +276,7 @@ export function LoginForm() {
               <input
                 autoComplete="current-password"
                 className="w-full bg-transparent text-sm tracking-[0.3em] text-white outline-none placeholder:text-white/20"
+                id="login-password"
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="••••••"
@@ -231,6 +287,7 @@ export function LoginForm() {
               <input
                 autoComplete="current-password"
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                id="login-password"
                 placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
                 {...registerField('password')}

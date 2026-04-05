@@ -27,7 +27,7 @@ const OperationsTimeline = dynamic(
 )
 
 export function PdvEnvironment() {
-  const { productsQuery, sessionQuery } = useDashboardQueries()
+  const { productsQuery, sessionQuery } = useDashboardQueries({ section: 'pdv' })
 
   const user = sessionQuery.data?.user
   const operationsQuery = useQuery({
@@ -88,7 +88,7 @@ export function PdvEnvironment() {
             rows={operationsView.rows}
           />
           <OperationsTimeline
-            description="Linha do tempo dos atendimentos por funcionario e mesa, desenhada para evoluir junto do FullCalendar Timeline."
+            description="Linha do tempo manual dos atendimentos por funcionário e mesa, pensada para leitura rápida sem depender da camada pesada de calendário."
             items={operationsView.timelineItems}
             resources={operationsView.resources}
           />

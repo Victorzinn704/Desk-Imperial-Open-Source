@@ -398,6 +398,31 @@ describe('applyRealtimeEnvelope', () => {
     expect(result.kitchenPatched).toBe(false)
   })
 
+  it('ignora campos nullable inválidos sem quebrar o patch do fechamento', () => {
+    const queryClient = createQueryClientMock(buildLiveSnapshot(), buildKitchenSnapshot(), buildSummarySnapshot())
+
+    const result = applyRealtimeEnvelope(queryClient as never, {
+      event: 'cash.closure.updated',
+      payload: {
+        closureId: 'closure-1',
+        status: 'CLOSED',
+        expectedAmount: 140,
+        grossRevenueAmount: 190,
+        realizedProfitAmount: 60,
+        countedAmount: 'invalid-number',
+        differenceAmount: { nope: true },
+        openComandasCount: 1,
+        pendingCashSessions: 0,
+        businessDate: 12345,
+      },
+    })
+
+    expect(result.summaryPatched).toBe(true)
+    const patchedSummary = queryClient.getSummarySnapshot()
+    expect(patchedSummary?.kpis.caixaEsperado).toBe(140)
+    expect(patchedSummary?.kpis.openComandasCount).toBe(1)
+  })
+
   it('pede refresh quando recebe close delta-first sem base suficiente para reconstruir a comanda', () => {
     const queryClient = createQueryClientMock(buildLiveSnapshot(), buildKitchenSnapshot())
 

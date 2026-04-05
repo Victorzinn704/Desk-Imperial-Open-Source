@@ -5,6 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatBRL as formatCurrency } from '@/lib/currency'
+import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import {
   ShoppingCart,
   Plus,
@@ -37,12 +38,12 @@ const ProductItem = memo(function ProductItem({
   qty,
   onAdd,
   onRemove,
-}: {
+}: Readonly<{
   produto: ProductRecord
   qty: number
   onAdd: () => void
   onRemove: () => void
-}) {
+}>) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
@@ -114,6 +115,206 @@ function getCategoryIcon(cat: string) {
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
+type BuilderScreen = 'categories' | 'items'
+
+function getActiveProducts(produtos: ProductRecord[]) {
+  return produtos.filter((produto) => produto.active)
+}
+
+function getSortedCategories(produtos: ProductRecord[]) {
+  return Array.from(new Set(produtos.map((produto) => produto.category)))
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base', numeric: true }))
+}
+
+function filterProducts(
+  produtos: ProductRecord[],
+  deferredSearch: string,
+  selectedCategory: string | null,
+) {
+  const normalizedSearch = normalizeTextForSearch(deferredSearch)
+  return produtos.filter((produto) => {
+    const matchSearch =
+      normalizedSearch.length === 0 ||
+      normalizeTextForSearch(produto.name).includes(normalizedSearch) ||
+      normalizeTextForSearch(produto.category).includes(normalizedSearch)
+    const matchCategory = selectedCategory ? produto.category === selectedCategory : true
+    return matchSearch && matchCategory
+  })
+}
+
+function addProductToCart(cart: CartEntry[], produto: ProductRecord) {
+  const existing = cart.find((entry) => entry.produtoId === produto.id)
+  if (existing) {
+    return cart.map((entry) => (entry.produtoId === produto.id ? { ...entry, quantidade: entry.quantidade + 1 } : entry))
+  }
+
+  return [
+    ...cart,
+    {
+      _key: produto.id,
+      produtoId: produto.id,
+      nome: produto.name,
+      quantidade: 1,
+      precoUnitario: produto.unitPrice,
+    },
+  ]
+}
+
+function removeProductFromCart(cart: CartEntry[], produtoId: string) {
+  const existing = cart.find((entry) => entry.produtoId === produtoId)
+  if (!existing) {
+    return cart
+  }
+
+  if (existing.quantidade === 1) {
+    return cart.filter((entry) => entry.produtoId !== produtoId)
+  }
+
+  return cart.map((entry) => (entry.produtoId === produtoId ? { ...entry, quantidade: entry.quantidade - 1 } : entry))
+}
+
+function MobileOrderHeader({
+  categories,
+  mode,
+  mesaLabel,
+  onCancel,
+  onSearchChange,
+  screen,
+  search,
+  selectedCategory,
+}: Readonly<{
+  categories: string[]
+  mode: MobileOrderBuilderProps['mode']
+  mesaLabel: string
+  onCancel: () => void
+  onSearchChange: (value: string) => void
+  screen: BuilderScreen
+  search: string
+  selectedCategory: string | null
+}>) {
+  const showItemsScreen = screen === 'items' || categories.length === 0
+  const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
+
+  return (
+    <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" /> : null}
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">Mesa {mesaLabel}</p>
+          </div>
+          <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
+        >
+          Cancelar
+        </button>
+      </div>
+
+      {showItemsScreen ? (
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
+          <input
+            type="text"
+            placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
+          />
+        </div>
+      ) : categories.length > 0 ? (
+        <p className="mt-3 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+          Escolha a categoria primeiro. Depois abrimos só a lista daquela classe, sem dividir a tela.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function CategorySelectionScreen({
+  categories,
+  onSelectAll,
+  onSelectCategory,
+}: Readonly<{
+  categories: string[]
+  onSelectAll: () => void
+  onSelectCategory: (category: string) => void
+}>) {
+  return (
+    <div className="p-4">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">Escolha uma categoria</p>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <button
+          type="button"
+          onClick={onSelectAll}
+          className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
+        >
+          <Search className="mb-1 size-5 opacity-80 transition-opacity group-hover:opacity-100" />
+          <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category}
+            type="button"
+            onClick={() => onSelectCategory(category)}
+            className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
+          >
+            {getCategoryIcon(category)}
+            <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">{category}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CartSummaryBar({
+  busy,
+  onSubmit,
+  submitLabel,
+  totalItems,
+  totalValue,
+}: Readonly<{
+  busy?: boolean
+  onSubmit: () => void
+  submitLabel: string
+  totalItems: number
+  totalValue: number
+}>) {
+  return (
+    <div className="shrink-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
+          {totalItems > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[10px] font-bold text-black">
+              {totalItems}
+            </span>
+          )}
+        </div>
+        <div className="flex-1">
+          <p className="text-xs text-[var(--text-soft,#7a8896)]">
+            {totalItems === 0 ? 'Carrinho vazio' : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
+          </p>
+          {totalValue > 0 ? <p className="text-sm font-semibold text-white">{formatCurrency(totalValue)}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={totalItems === 0 || busy}
+          className="min-h-[48px] rounded-xl bg-[var(--accent,#9b8460)] px-5 py-3 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+        >
+          {busy ? 'Enviando...' : submitLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   mesaLabel,
   mode,
@@ -121,32 +322,20 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   produtos,
   onSubmit,
   onCancel,
-}: MobileOrderBuilderProps) {
+}: Readonly<MobileOrderBuilderProps>) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [screen, setScreen] = useState<BuilderScreen>('categories')
   const [cart, setCart] = useState<CartEntry[]>([])
   const deferredSearch = useDeferredValue(search)
   const parentRef = useRef<HTMLDivElement | null>(null)
 
-  // Memoização para evitar recálculos desnecessários
-  const activeProdutos = useMemo(() => produtos.filter((p) => p.active), [produtos])
-
-  const categories = useMemo(
-    () =>
-      Array.from(new Set(activeProdutos.map((p) => p.category)))
-        .filter(Boolean)
-        .sort(),
-    [activeProdutos],
+  const activeProdutos = useMemo(() => getActiveProducts(produtos), [produtos])
+  const categories = useMemo(() => getSortedCategories(activeProdutos), [activeProdutos])
+  const filtered = useMemo(
+    () => filterProducts(activeProdutos, deferredSearch, selectedCategory),
+    [activeProdutos, deferredSearch, selectedCategory],
   )
-
-  const filtered = useMemo(() => {
-    const searchLower = deferredSearch.toLowerCase()
-    return activeProdutos.filter((p) => {
-      const matchSearch = p.name.toLowerCase().includes(searchLower) || p.category.toLowerCase().includes(searchLower)
-      const matchCat = selectedCategory ? p.category === selectedCategory : true
-      return matchSearch && matchCat
-    })
-  }, [activeProdutos, deferredSearch, selectedCategory])
 
   // Mapa de quantidades para lookup O(1)
   const qtyMap = useMemo(() => {
@@ -158,36 +347,16 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   const getQty = useCallback((produtoId: string): number => qtyMap.get(produtoId) ?? 0, [qtyMap])
 
   const addItem = useCallback((produto: ProductRecord) => {
-    setCart((prev) => {
-      const existing = prev.find((c) => c.produtoId === produto.id)
-      if (existing) {
-        return prev.map((c) => (c.produtoId === produto.id ? { ...c, quantidade: c.quantidade + 1 } : c))
-      }
-      return [
-        ...prev,
-        {
-          _key: produto.id,
-          produtoId: produto.id,
-          nome: produto.name,
-          quantidade: 1,
-          precoUnitario: produto.unitPrice,
-        },
-      ]
-    })
+    setCart((prev) => addProductToCart(prev, produto))
   }, [])
 
   const removeItem = useCallback((produtoId: string) => {
-    setCart((prev) => {
-      const existing = prev.find((c) => c.produtoId === produtoId)
-      if (!existing) return prev
-      if (existing.quantidade === 1) return prev.filter((c) => c.produtoId !== produtoId)
-      return prev.map((c) => (c.produtoId === produtoId ? { ...c, quantidade: c.quantidade - 1 } : c))
-    })
+    setCart((prev) => removeProductFromCart(prev, produtoId))
   }, [])
 
   const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
   const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
-  const showProducts = selectedCategory !== null || deferredSearch.trim().length > 0 || categories.length === 0
+  const showItemsScreen = screen === 'items' || categories.length === 0
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
@@ -204,100 +373,46 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   }, [cart, busy, onSubmit])
 
   const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
-  const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
+  const handleSearchChange = useCallback((value: string) => {
+    startTransition(() => setSearch(value))
+  }, [])
+  const showAllProducts = useCallback(() => {
+    startTransition(() => {
+      setSelectedCategory(null)
+      setSearch('')
+      setScreen('items')
+    })
+  }, [])
+  const openCategory = useCallback((category: string) => {
+    startTransition(() => {
+      setSelectedCategory(category)
+      setSearch('')
+      setScreen('items')
+    })
+  }, [])
+  const returnToCategories = useCallback(() => {
+    startTransition(() => {
+      setScreen('categories')
+      setSearch('')
+    })
+  }, [])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Header */}
-      <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" /> : null}
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
-                Mesa {mesaLabel}
-              </p>
-            </div>
-            <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-white min-h-[44px]"
-          >
-            Cancelar
-          </button>
-        </div>
+      <MobileOrderHeader
+        categories={categories}
+        mesaLabel={mesaLabel}
+        mode={mode}
+        onCancel={onCancel}
+        onSearchChange={handleSearchChange}
+        screen={screen}
+        search={search}
+        selectedCategory={selectedCategory}
+      />
 
-        {/* Search */}
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
-          <input
-            type="text"
-            placeholder="Buscar produto..."
-            value={search}
-            onChange={(e) => {
-              const nextValue = e.target.value
-              startTransition(() => setSearch(nextValue))
-            }}
-            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
-          />
-        </div>
-
-        {/* Categories — responsivo para mobile (grid + scroll) */}
-        {categories.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {showProducts ? (
-              <button
-                onClick={() => {
-                  startTransition(() => {
-                    setSelectedCategory(null)
-                    setSearch('')
-                  })
-                }}
-                className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[rgba(255,255,255,0.2)]"
-              >
-                <Search className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-                <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
-              </button>
-            ) : null}
-
-            {categories.map((cat) => {
-              const isActive = selectedCategory === cat
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    startTransition(() => setSelectedCategory(cat))
-                  }}
-                  className={`group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all active:scale-95 ${
-                    isActive
-                      ? 'bg-[var(--accent,#9b8460)] border-[var(--accent,#9b8460)] text-black shadow-[0_4px_16px_rgba(155,132,96,0.4)]'
-                      : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft,#7a8896)] active:border-[rgba(255,255,255,0.2)]'
-                  }`}
-                >
-                  {getCategoryIcon(cat)}
-                  <span
-                    className={`line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-black' : ''}`}
-                  >
-                    {cat}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Product list */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
-        {!showProducts ? (
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <p className="text-base font-semibold text-white">Escolha uma categoria</p>
-            <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--text-soft,#7a8896)]">
-              Primeiro selecione a classe dos produtos. A lista abre logo abaixo, sem trocar de fluxo.
-            </p>
-          </div>
+        {!showItemsScreen && categories.length > 0 ? (
+          <CategorySelectionScreen categories={categories} onSelectAll={showAllProducts} onSelectCategory={openCategory} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
@@ -314,12 +429,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    startTransition(() => {
-                      setSelectedCategory(null)
-                      setSearch('')
-                    })
-                  }}
+                  onClick={returnToCategories}
                   className="inline-flex items-center gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
                 >
                   <ChevronLeft className="size-3.5" />
@@ -378,33 +488,13 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
         )}
       </div>
 
-      {/* Bottom cart bar */}
-      <div className="shrink-0 border-t border-[rgba(155,132,96,0.2)] bg-[#0a0a0a] px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
-            {totalItems > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[10px] font-bold text-black">
-                {totalItems}
-              </span>
-            )}
-          </div>
-          <div className="flex-1">
-            <p className="text-xs text-[var(--text-soft,#7a8896)]">
-              {totalItems === 0 ? 'Carrinho vazio' : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
-            </p>
-            {totalValue > 0 && <p className="text-sm font-semibold text-white">{formatCurrency(totalValue)}</p>}
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
-            disabled={cart.length === 0 || busy}
-            className="rounded-xl bg-[var(--accent,#9b8460)] px-5 py-3 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80 min-h-[48px] btn-haptic"
-          >
-            {busy ? 'Enviando...' : submitLabel}
-          </button>
-        </div>
-      </div>
+      <CartSummaryBar
+        busy={busy}
+        onSubmit={() => void handleSubmit()}
+        submitLabel={submitLabel}
+        totalItems={totalItems}
+        totalValue={totalValue}
+      />
     </div>
   )
 })

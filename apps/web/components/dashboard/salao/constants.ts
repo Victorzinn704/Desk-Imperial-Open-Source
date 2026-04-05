@@ -47,6 +47,7 @@ export type EditForm = {
 
 export type DragState = {
   mesaId: string
+  pointerId: number
   startMouseX: number
   startMouseY: number
   origX: number

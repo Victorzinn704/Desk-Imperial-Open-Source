@@ -3,8 +3,9 @@
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { Skeleton } from '@/components/shared/skeleton'
+import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts'
 
 export function SalesPerformanceCard({
   finance,
@@ -83,7 +84,7 @@ export function SalesPerformanceCard({
           {isLoading ? (
             <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
-            <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+            <ChartResponsiveContainer>
               <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
                 <defs>
                   <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
@@ -111,7 +112,7 @@ export function SalesPerformanceCard({
                   type="monotone"
                 />
               </ComposedChart>
-            </ResponsiveContainer>
+            </ChartResponsiveContainer>
           ) : (
             <div className="flex h-full items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-soft)]">
               <p className="text-xs text-[var(--text-muted)]">Sem dados de vendas ainda</p>

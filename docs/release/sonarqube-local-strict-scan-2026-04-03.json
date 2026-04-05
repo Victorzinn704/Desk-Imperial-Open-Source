@@ -1,0 +1,137 @@
+{
+  "fetchedAt": "2026-04-03T18:07:38.6197989-03:00",
+  "gateName": "Desk Imperial Strict Local 2026-04-03T1640",
+  "qualityGate": {
+    "status": "OK",
+    "conditions": [
+      {
+        "status": "OK",
+        "metricKey": "new_coverage",
+        "comparator": "LT",
+        "errorThreshold": "90",
+        "actualValue": "90.9"
+      },
+      {
+        "status": "OK",
+        "metricKey": "new_duplicated_lines_density",
+        "comparator": "GT",
+        "errorThreshold": "3",
+        "actualValue": "0.0"
+      },
+      {
+        "status": "OK",
+        "metricKey": "new_blocker_violations",
+        "comparator": "GT",
+        "errorThreshold": "0",
+        "actualValue": "0"
+      },
+      {
+        "status": "OK",
+        "metricKey": "new_critical_violations",
+        "comparator": "GT",
+        "errorThreshold": "0",
+        "actualValue": "0"
+      },
+      {
+        "status": "OK",
+        "metricKey": "new_violations",
+        "comparator": "GT",
+        "errorThreshold": "0",
+        "actualValue": "0"
+      }
+    ],
+    "ignoredConditions": false,
+    "period": {
+      "mode": "PREVIOUS_VERSION",
+      "date": "2026-04-03T15:41:06-03:00"
+    },
+    "caycStatus": "over-compliant"
+  },
+  "measures": [
+    {
+      "metric": "coverage",
+      "value": "58.3",
+      "bestValue": false
+    },
+    {
+      "metric": "minor_violations",
+      "value": "352",
+      "bestValue": false
+    },
+    {
+      "metric": "code_smells",
+      "value": "573",
+      "bestValue": false
+    },
+    {
+      "metric": "new_coverage",
+      "period": {
+        "index": 1,
+        "value": "90.9",
+        "bestValue": false
+      }
+    },
+    {
+      "metric": "security_hotspots",
+      "value": "46",
+      "bestValue": false
+    },
+    {
+      "metric": "critical_violations",
+      "value": "29",
+      "bestValue": false
+    },
+    {
+      "metric": "blocker_violations",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "bugs",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "major_violations",
+      "value": "192",
+      "bestValue": false
+    },
+    {
+      "metric": "new_critical_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "new_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "new_blocker_violations",
+      "period": {
+        "index": 1,
+        "value": "0",
+        "bestValue": true
+      }
+    },
+    {
+      "metric": "vulnerabilities",
+      "value": "0",
+      "bestValue": true
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "period": {
+        "index": 1,
+        "value": "0.0",
+        "bestValue": true
+      }
+    }
+  ]
+}

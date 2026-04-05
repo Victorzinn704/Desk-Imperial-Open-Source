@@ -43,11 +43,13 @@ const mockPrisma = {
     findUniqueOrThrow: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
     upsert: jest.fn(),
   },
   productComboItem: {
     createMany: jest.fn(),
     deleteMany: jest.fn(),
+    findMany: jest.fn(),
   },
 }
 
@@ -169,6 +171,7 @@ beforeEach(() => {
   // Defaults
   mockPrisma.$transaction.mockImplementation(async (callback) => callback(mockPrisma))
   mockPrisma.product.findUniqueOrThrow.mockResolvedValue(makeProduct())
+  mockPrisma.productComboItem.findMany.mockResolvedValue([])
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
   mockCache.isReady.mockReturnValue(true)
   mockCache.financeKey.mockReturnValue('finance:summary:user-1')
@@ -874,6 +877,48 @@ describe('ProductsService', () => {
           event: 'product.archived',
         }),
       )
+    })
+
+    it('deve excluir produto arquivado em definitivo', async () => {
+      const archivedProduct = makeProduct({ active: false })
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(archivedProduct)
+      mockPrisma.productComboItem.findMany.mockResolvedValue([])
+
+      const result = await productsService.deleteForUser(mockContext, 'product-1', requestContext)
+
+      expect(mockPrisma.product.delete).toHaveBeenCalledWith({
+        where: { id: 'product-1' },
+      })
+      expect(result).toEqual({
+        success: true,
+        deletedProductId: 'product-1',
+      })
+    })
+
+    it('deve bloquear exclusao definitiva de produto ativo', async () => {
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(makeProduct({ active: true }))
+
+      await expect(productsService.deleteForUser(mockContext, 'product-1', requestContext)).rejects.toThrow(
+        'Arquive o produto antes de excluir',
+      )
+    })
+
+    it('deve bloquear exclusao definitiva quando o produto compoe outro combo', async () => {
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(makeProduct({ active: false }))
+      mockPrisma.productComboItem.findMany.mockResolvedValue([
+        {
+          comboProduct: {
+            id: 'combo-1',
+            name: 'Combo da Casa',
+            active: true,
+          },
+        },
+      ])
+
+      await expect(productsService.deleteForUser(mockContext, 'product-1', requestContext)).rejects.toThrow(
+        'Combo da Casa',
+      )
+      expect(mockPrisma.product.delete).not.toHaveBeenCalled()
     })
   })
 

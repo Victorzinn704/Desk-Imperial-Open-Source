@@ -33,12 +33,16 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
     [dragOverrides],
   )
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent, mesa: MesaRecord, autoIndex: number) => {
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, mesa: MesaRecord, autoIndex: number) => {
       e.preventDefault()
+      if ('setPointerCapture' in e.currentTarget) {
+        e.currentTarget.setPointerCapture(e.pointerId)
+      }
       const pos = getMesaPosition(mesa, autoIndex)
       setDragging({
         mesaId: mesa.id,
+        pointerId: e.pointerId,
         startMouseX: e.clientX,
         startMouseY: e.clientY,
         origX: pos.x,
@@ -49,9 +53,11 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
     [getMesaPosition],
   )
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
       if (!dragging) return
+      if (e.pointerId !== dragging.pointerId) return
+
       const canvasEl = canvasRef.current
       const canvasW = canvasEl ? canvasEl.offsetWidth : 800
       const newX = clamp(dragging.origX + (e.clientX - dragging.startMouseX), 0, canvasW - CARD_W)
@@ -73,39 +79,46 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
     [dragging, canvasRef],
   )
 
-  const handleMouseUp = useCallback(() => {
-    if (!dragging) return
-    const pos = dragPositionRef.current
-      ? { x: dragPositionRef.current.x, y: dragPositionRef.current.y }
-      : dragOverridesRef.current[dragging.mesaId]
-    if (pos) {
-      setDragOverrides((prev) => ({ ...prev, [dragging.mesaId]: { x: pos.x, y: pos.y } }))
-      onPositionSave(dragging.mesaId, Math.round(pos.x), Math.round(pos.y))
-    }
-    if (animationFrameRef.current != null) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
-    pendingPositionRef.current = null
-    setDragPosition(null)
-    setDragging(null)
-  }, [dragging, onPositionSave])
+  const handlePointerUp = useCallback(
+    (e: PointerEvent) => {
+      if (!dragging) return
+      if (e.pointerId !== dragging.pointerId) return
+
+      const pos = dragPositionRef.current
+        ? { x: dragPositionRef.current.x, y: dragPositionRef.current.y }
+        : dragOverridesRef.current[dragging.mesaId]
+      if (pos) {
+        setDragOverrides((prev) => ({ ...prev, [dragging.mesaId]: { x: pos.x, y: pos.y } }))
+        onPositionSave(dragging.mesaId, Math.round(pos.x), Math.round(pos.y))
+      }
+      if (animationFrameRef.current != null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+      pendingPositionRef.current = null
+      setDragPosition(null)
+      setDragging(null)
+    },
+    [dragging, onPositionSave],
+  )
 
   useEffect(() => {
     if (!dragging) return
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
     }
-  }, [dragging, handleMouseMove, handleMouseUp])
+  }, [dragging, handlePointerMove, handlePointerUp])
 
   return {
     dragging,
     dragPosition,
     dragOverrides,
     getMesaPosition,
-    handleMouseDown,
+    handlePointerDown,
   }
 }

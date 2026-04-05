@@ -74,11 +74,14 @@ function KpiCard({
 
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      {children}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        aria-label="Fechar modal do caixa"
+        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onClose}
+      />
+      <div className="relative z-10">{children}</div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
 
 export const OPERATIONS_LIVE_COMPACT_QUERY_KEY = ['operations', 'live', 'compact'] as const
+export const OPERATIONS_LIVE_QUERY_PREFIX = ['operations', 'live'] as const
 export const OPERATIONS_KITCHEN_QUERY_KEY = ['operations', 'kitchen'] as const
 export const OPERATIONS_SUMMARY_QUERY_KEY = ['operations', 'summary'] as const
 
@@ -14,7 +15,7 @@ type InvalidateOperationsWorkspaceOptions = {
 
 export async function invalidateOperationsWorkspace(
   queryClient: QueryClient,
-  operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+  operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_QUERY_PREFIX,
   options?: InvalidateOperationsWorkspaceOptions,
 ) {
   const tasks = [
