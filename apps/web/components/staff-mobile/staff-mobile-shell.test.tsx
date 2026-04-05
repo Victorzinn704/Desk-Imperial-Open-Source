@@ -13,7 +13,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
 import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
-import { OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY } from '@/lib/operations'
 import { StaffMobileShell } from './staff-mobile-shell'
 
 const enqueueMock = vi.fn()
@@ -180,7 +179,7 @@ describe('StaffMobileShell', () => {
     }
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
 
-    testQueryClient.setQueryData(OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY, snapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], snapshot)
     testQueryClient.setQueryData(['operations', 'kitchen'], {
       businessDate: snapshot.businessDate,
       companyOwnerId: snapshot.companyOwnerId,
@@ -345,7 +344,7 @@ describe('StaffMobileShell', () => {
     }
 
     vi.mocked(api.fetchOperationsLive).mockResolvedValue(flowSnapshot)
-    testQueryClient.setQueryData(OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY, flowSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], flowSnapshot)
     vi.mocked(api.fetchProducts).mockResolvedValue(mockProductsResponse)
     testQueryClient.setQueryData(['products'], mockProductsResponse)
     vi.mocked(api.openComanda).mockResolvedValue({
@@ -386,7 +385,7 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    await user.click(screen.getByRole('button', { name: /mesa 3.*novo pdv/i }))
+    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
     expect(await screen.findByText(/Escolha uma categoria/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^Bebidas$/i }))
@@ -414,4 +413,106 @@ describe('StaffMobileShell', () => {
       expect(screen.getByText(/Comandas ativas/i)).toBeInTheDocument()
     })
   })
+
+  it('não tenta abrir caixa automaticamente quando o conflito é da mesa, não do caixa', async () => {
+    const user = userEvent.setup()
+    const flowSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [],
+        },
+      ],
+      unassigned: {
+        comandas: [],
+      },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-3',
+          label: 'Mesa 3',
+          capacity: 4,
+          status: 'livre',
+          comandaId: null,
+          currentEmployeeId: null,
+        }),
+      ],
+    })
+    const mockProductsResponse: Awaited<ReturnType<typeof api.fetchProducts>> = {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      items: [
+        {
+          id: 'prod-1',
+          name: 'Café especial',
+          brand: null,
+          category: 'Bebidas',
+          packagingClass: 'UNIT',
+          measurementUnit: 'ml',
+          measurementValue: 300,
+          unitsPerPackage: 1,
+          stockPackages: 20,
+          stockLooseUnits: 0,
+          description: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          unitCost: 4,
+          unitPrice: 12,
+          originalUnitCost: 4,
+          originalUnitPrice: 12,
+          stock: 20,
+          lowStockThreshold: null,
+          isLowStock: false,
+          requiresKitchen: false,
+          active: true,
+          createdAt: '2026-03-28T10:00:00.000Z',
+          updatedAt: '2026-03-28T10:00:00.000Z',
+          inventoryCostValue: 80,
+          inventorySalesValue: 240,
+          potentialProfit: 160,
+          originalInventoryCostValue: 80,
+          originalInventorySalesValue: 240,
+          originalPotentialProfit: 160,
+          stockBaseUnits: 20,
+          marginPercent: 200,
+        },
+      ],
+      totals: {
+        totalProducts: 1,
+        activeProducts: 1,
+        inactiveProducts: 0,
+        stockUnits: 20,
+        stockPackages: 20,
+        stockLooseUnits: 0,
+        stockBaseUnits: 20,
+        inventoryCostValue: 80,
+        inventorySalesValue: 240,
+        potentialProfit: 160,
+        averageMarginPercent: 200,
+        categories: ['Bebidas'],
+      },
+    }
+
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(flowSnapshot)
+    vi.mocked(api.fetchProducts).mockResolvedValue(mockProductsResponse)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], flowSnapshot)
+    testQueryClient.setQueryData(['products'], mockProductsResponse)
+    vi.mocked(api.openComanda).mockRejectedValue(new Error('Essa mesa ja possui uma comanda aberta.'))
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
+    await user.click(await screen.findByRole('button', { name: /^Bebidas$/i }))
+    await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
+    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+
+    await waitFor(() => {
+      expect(api.openCashSession).not.toHaveBeenCalled()
+      expect(screen.getByText(/Essa mesa ja possui uma comanda aberta/i)).toBeInTheDocument()
+    })
+  })
 })
+

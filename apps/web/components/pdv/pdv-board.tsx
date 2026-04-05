@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Clock3, LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
 import type { CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
 import {
   assignComanda,
   closeComanda,
   createMesa,
-  fetchOperationsLive,
   openComanda,
   replaceComanda,
   updateComandaStatus,
@@ -17,13 +16,7 @@ import {
 } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
-import {
-  buildOperationsLiveQueryKey,
-  invalidateOperationsWorkspace,
-  OPERATIONS_LIVE_QUERY_PREFIX,
-  rollbackOperationsSnapshot,
-  setOptimisticComandaStatus,
-} from '@/lib/operations'
+import { invalidateOperationsWorkspace, rollbackOperationsSnapshot, setOptimisticComandaStatus } from '@/lib/operations'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
 import {
@@ -63,6 +56,7 @@ type PdvBoardProps = {
 type ActiveTab = 'comandas' | 'salao' | 'historico'
 
 type AddMesaForm = { label: string; capacity: string }
+const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 
 export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
@@ -72,30 +66,10 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   const [mesaPreSelected, setMesaPreSelected] = useState<Mesa | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [addMesaForm, setAddMesaForm] = useState<AddMesaForm | null>(null)
-  const includeClosedInBoardSnapshot = activeTab === 'historico'
-  const boardOperationsQueryKey = useMemo(
-    () => buildOperationsLiveQueryKey({ compactMode: true, includeClosed: includeClosedInBoardSnapshot }),
-    [includeClosedInBoardSnapshot],
-  )
 
-  const boardOperationsQuery = useQuery({
-    queryKey: boardOperationsQueryKey,
-    queryFn: () =>
-      fetchOperationsLive({
-        includeCashMovements: false,
-        compactMode: true,
-        includeClosed: includeClosedInBoardSnapshot,
-      }),
-    placeholderData: keepPreviousData,
-    staleTime: 10_000,
-    refetchOnWindowFocus: false,
-  })
-
-  const operationsSnapshot = boardOperationsQuery.data ?? operations
-
-  const comandas = useMemo(() => buildPdvComandas(operationsSnapshot), [operationsSnapshot])
-  const mesas = useMemo(() => buildPdvMesas(operationsSnapshot), [operationsSnapshot])
-  const garcons = useMemo(() => buildPdvGarcons(operationsSnapshot), [operationsSnapshot])
+  const comandas = useMemo(() => buildPdvComandas(operations), [operations])
+  const mesas = useMemo(() => buildPdvMesas(operations), [operations])
+  const garcons = useMemo(() => buildPdvGarcons(operations), [operations])
   const comandasById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
   const mesasById = useMemo(() => new Map(mesas.map((mesa) => [mesa.id, mesa])), [mesas])
   const comandasByStatus = useMemo(
@@ -114,35 +88,30 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
 
   const openComandaMutation = useMutation({
     mutationFn: (payload: OpenComandaPayload) => openComanda(payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const replaceComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: ReplaceComandaPayload }) =>
       replaceComanda(comandaId, payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const assignComandaMutation = useMutation({
     mutationFn: ({ comandaId, employeeId }: { comandaId: string; employeeId?: string }) =>
       assignComanda(comandaId, employeeId, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const updateComandaStatusMutation = useMutation({
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onMutate: async ({ comandaId, status }) => {
-      await queryClient.cancelQueries({ queryKey: boardOperationsQueryKey })
-      const snapshot = setOptimisticComandaStatus(
-        queryClient,
-        boardOperationsQueryKey,
-        comandaId,
-        status,
-      )
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_QUERY_KEY, comandaId, status)
       return { snapshot }
     },
     onError: (_error, _vars, context) => {
-      rollbackOperationsSnapshot(queryClient, boardOperationsQueryKey, context?.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot)
     },
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
   const closeComandaMutation = useMutation({
     mutationFn: ({
@@ -153,20 +122,15 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       payload: { discountAmount: number; serviceFeeAmount: number }
     }) => closeComanda(comandaId, payload, { includeSnapshot: false }),
     onMutate: async ({ comandaId }) => {
-      await queryClient.cancelQueries({ queryKey: boardOperationsQueryKey })
-      const snapshot = setOptimisticComandaStatus(
-        queryClient,
-        boardOperationsQueryKey,
-        comandaId,
-        'CLOSED',
-      )
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_QUERY_KEY })
+      const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_QUERY_KEY, comandaId, 'CLOSED')
       return { snapshot }
     },
     onError: (_error, _vars, context) => {
-      rollbackOperationsSnapshot(queryClient, boardOperationsQueryKey, context?.snapshot)
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot)
     },
     onSuccess: () =>
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
         includeOrders: true,
         includeFinance: true,
       }),
@@ -174,14 +138,14 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   const createMesaMutation = useMutation({
     mutationFn: (body: CreateMesaInput) => createMesa(body),
     onSuccess: () => {
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
+      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY)
       setAddMesaForm(null)
     },
   })
 
   const updateMesaMutation = useMutation({
     mutationFn: ({ mesaId, body }: { mesaId: string; body: UpdateMesaInput }) => updateMesa(mesaId, body),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX),
+    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
   })
 
   async function persistComandaDraft(data: {

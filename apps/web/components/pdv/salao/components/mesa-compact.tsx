@@ -31,16 +31,24 @@ export const MesaCompact = memo(
             style={{ ...provided.draggableProps.style, opacity: snapshot.isDragging ? 0.8 : 1 }}
           >
             <div
-              onClick={() => {
-                if (!showGarcomSel) onClickLivre(mesa)
-              }}
               className="relative flex cursor-pointer select-none flex-col items-center justify-center gap-1 rounded-[12px] border border-[rgba(54,245,124,0.22)] bg-[rgba(54,245,124,0.05)] p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(54,245,124,0.45)] hover:bg-[rgba(54,245,124,0.09)]"
               style={{ width: 72, height: 80 }}
             >
-              <p className="text-xl font-bold leading-none text-white">{mesa.numero}</p>
-              <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#36f57c]">Livre</span>
+              <button
+                aria-label={`Abrir mesa ${mesa.numero}`}
+                className="absolute inset-0 rounded-[12px] border-0 bg-transparent p-0"
+                type="button"
+                onClick={() => {
+                  if (!showGarcomSel) onClickLivre(mesa)
+                }}
+              />
+
+              <div className="pointer-events-none relative z-10 flex flex-col items-center gap-1">
+                <p className="text-xl font-bold leading-none text-white">{mesa.numero}</p>
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#36f57c]">Livre</span>
+              </div>
               {garcom ? (
-                <div className="relative">
+                <div className="relative z-20">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -60,7 +68,7 @@ export const MesaCompact = memo(
                   )}
                 </div>
               ) : (
-                <div className="flex size-4 items-center justify-center rounded-full border border-dashed border-[rgba(255,255,255,0.15)]">
+                <div className="pointer-events-none relative z-10 flex size-4 items-center justify-center rounded-full border border-dashed border-[rgba(255,255,255,0.15)]">
                   <UserPlus className="size-2 text-[var(--text-muted)]" />
                 </div>
               )}

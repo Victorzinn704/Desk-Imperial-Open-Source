@@ -7,21 +7,107 @@ import {
   fetchOrders,
   fetchProducts,
 } from '@/lib/api'
+import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
 
-type DashboardQueryOptions = {
-  enableConsent?: boolean
-  enableProducts?: boolean
-  enableOrders?: boolean
-  enableEmployees?: boolean
-  enableFinance?: boolean
-  includeInactiveProducts?: boolean
+type UseDashboardQueriesOptions = {
+  section?: DashboardSectionId
+}
+
+function resolveSectionRequirements(section?: DashboardSectionId) {
+  const sectionRequiresConsent = section === undefined || section === 'settings'
+  const sectionRequiresProducts =
+    section === undefined || ['overview', 'sales', 'portfolio', 'pdv'].includes(section)
+  const sectionRequiresOrders = section === undefined || ['overview', 'sales', 'map'].includes(section)
+  const sectionRequiresEmployees =
+    section === undefined || ['overview', 'sales', 'payroll', 'settings'].includes(section)
+  const sectionRequiresFinance =
+    section === undefined || ['overview', 'sales', 'portfolio', 'map', 'payroll'].includes(section)
+
+  return {
+    sectionRequiresConsent,
+    sectionRequiresProducts,
+    sectionRequiresOrders,
+    sectionRequiresEmployees,
+    sectionRequiresFinance,
+  }
+}
+
+export function useDashboardScopedQueries({
+  isOwner,
+  section,
+  userId,
+}: {
+  userId?: string
+  isOwner: boolean
+  section?: DashboardSectionId
+}) {
+  const {
+    sectionRequiresConsent,
+    sectionRequiresProducts,
+    sectionRequiresOrders,
+    sectionRequiresEmployees,
+    sectionRequiresFinance,
+  } = resolveSectionRequirements(section)
+
+  const consentQuery = useQuery({
+    queryKey: ['consent', 'me'],
+    queryFn: fetchConsentOverview,
+    enabled: Boolean(userId) && sectionRequiresConsent,
+    retry: false,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
+
+  const productsQuery = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+    enabled: Boolean(userId) && sectionRequiresProducts,
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
+
+  const ordersQuery = useQuery({
+    queryKey: ['orders', 'summary'],
+    queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
+    enabled: Boolean(userId) && sectionRequiresOrders,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
+
+  const employeesQuery = useQuery({
+    queryKey: ['employees'],
+    queryFn: fetchEmployees,
+    enabled: Boolean(userId) && isOwner && sectionRequiresEmployees,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  })
+
+  const financeQuery = useQuery({
+    queryKey: ['finance', 'summary'],
+    queryFn: fetchFinanceSummary,
+    enabled: Boolean(userId) && isOwner && sectionRequiresFinance,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  })
+
+  return {
+    consentQuery,
+    productsQuery,
+    ordersQuery,
+    employeesQuery,
+    financeQuery,
+  }
 }
 
 /**
  * Hook centralizado para todas as queries do dashboard
  * Evita duplicação de lógica de queries e simplifica o componente pai
  */
-export function useDashboardQueries(options: DashboardQueryOptions = {}) {
+export function useDashboardQueries({ section }: UseDashboardQueriesOptions = {}) {
   const sessionQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
@@ -31,66 +117,16 @@ export function useDashboardQueries(options: DashboardQueryOptions = {}) {
   })
 
   const userId = sessionQuery.data?.user.userId
-  const enableConsent = options.enableConsent ?? true
-  const enableProducts = options.enableProducts ?? true
-  const enableOrders = options.enableOrders ?? true
-  const enableEmployees = options.enableEmployees ?? true
-  const enableFinance = options.enableFinance ?? true
-  const includeInactiveProducts = options.includeInactiveProducts ?? false
-
-  const consentQuery = useQuery({
-    queryKey: ['consent', 'me'],
-    queryFn: fetchConsentOverview,
-    enabled: Boolean(userId) && enableConsent,
-    retry: false,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  })
-
-  const productsQuery = useQuery({
-    queryKey: ['products', includeInactiveProducts ? 'all' : 'active'],
-    queryFn: () => fetchProducts({ includeInactive: includeInactiveProducts }),
-    enabled: Boolean(userId) && enableProducts,
-    placeholderData: keepPreviousData,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  })
-
-  const ordersQuery = useQuery({
-    queryKey: ['orders', 'summary'],
-    queryFn: () => fetchOrders({ includeCancelled: false, includeItems: false }),
-    enabled: Boolean(userId) && enableOrders,
-    placeholderData: keepPreviousData,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  })
-
   const isOwner = sessionQuery.data?.user.role === 'OWNER'
 
-  const employeesQuery = useQuery({
-    queryKey: ['employees'],
-    queryFn: fetchEmployees,
-    enabled: Boolean(userId) && isOwner && enableEmployees,
-    placeholderData: keepPreviousData,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  })
-
-  const financeQuery = useQuery({
-    queryKey: ['finance', 'summary'],
-    queryFn: fetchFinanceSummary,
-    enabled: Boolean(userId) && isOwner && enableFinance,
-    placeholderData: keepPreviousData,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+  const scopedQueries = useDashboardScopedQueries({
+    userId,
+    isOwner,
+    section,
   })
 
   return {
     sessionQuery,
-    consentQuery,
-    productsQuery,
-    ordersQuery,
-    employeesQuery,
-    financeQuery,
+    ...scopedQueries,
   }
 }

@@ -89,12 +89,8 @@ Desktop.ini
 # ─── Misc ────────────────────────────────────────────────────────────────────
 *.tgz
 *.zip
+.vercel
 .netlify
 .aider*
-eslint_report.txt
-
-# ─── Tokens de ferramentas locais (aider, etc.) ──────────────────────────────
-*.token
-!*.token.example
-.venv-aider/
-.venv/
+.scannerwork/
+.local-tools/

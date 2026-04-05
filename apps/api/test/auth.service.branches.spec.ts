@@ -352,6 +352,14 @@ describe('AuthService branch internals', () => {
     expect(selected).toEqual({ count: 9, firstAttemptAt: 1000, lockedUntil: 2_000 })
   })
 
+  it('retorna estado neutro quando nao ha chaves de rate-limit', () => {
+    const { service } = createSetup()
+
+    const selected = (service as any).pickMostRestrictiveRateLimitState([])
+
+    expect(selected).toEqual({ count: 0, firstAttemptAt: 0, lockedUntil: null })
+  })
+
   it('envia alerta de login falho apenas no threshold exato quando habilitado', async () => {
     const disabled = createSetup({
       configOverrides: {

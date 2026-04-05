@@ -51,7 +51,6 @@ export class OperationsService {
     return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
       includeCashMovements: query.includeCashMovements,
       compactMode: query.compactMode,
-      includeClosed: query.includeClosed,
     })
   }
 
@@ -290,6 +289,18 @@ export class OperationsService {
         ...(reservedUntil !== undefined && { reservedUntil }),
       },
     })
+    const openComanda = await this.prisma.comanda.findFirst({
+      where: {
+        mesaId: updated.id,
+        status: {
+          in: ['OPEN', 'IN_PREPARATION', 'READY'],
+        },
+      },
+      select: {
+        id: true,
+        currentEmployeeId: true,
+      },
+    })
     await this.auditLogService.record({
       actorUserId: auth.userId,
       event: 'operations.mesa.updated',
@@ -299,7 +310,7 @@ export class OperationsService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
-    const mesaRecord = toMesaRecord(updated, null)
+    const mesaRecord = toMesaRecord(updated, openComanda)
     this.realtime.publishMesaUpserted(auth, {
       mesaId: updated.id,
       label: updated.label,

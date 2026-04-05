@@ -87,9 +87,8 @@ describe('OperationsHelpersService', () => {
           openedAt: 'desc',
         },
       })
-      // Uma única query pelo business date window — sem segunda onda sequencial
-      expect(mockPrisma.comanda.findMany).toHaveBeenCalledTimes(1)
-      expect(mockPrisma.comanda.findMany).toHaveBeenCalledWith({
+      // Query principal do dia para a lista operacional
+      expect(mockPrisma.comanda.findMany).toHaveBeenNthCalledWith(1, {
         where: {
           companyOwnerId: 'owner-1',
           openedAt: {
@@ -106,53 +105,78 @@ describe('OperationsHelpersService', () => {
           openedAt: 'asc',
         },
       })
-      expect(response.unassigned.cashSession).toBeNull()
-      expect(mockCache.set).toHaveBeenCalledWith(
-        'operations:live:owner-1:2026-03-30:compact:with-closed:workspace:compact',
-        response,
-        30,
-      )
-    })
-
-    it('remove comandas fechadas do snapshot quente quando includeClosed=false', async () => {
-      const businessDate = new Date(2026, 2, 30)
-
-      mockPrisma.employee.findMany.mockResolvedValue([])
-      mockPrisma.cashSession.findMany.mockResolvedValue([])
-      mockPrisma.cashClosure.findUnique.mockResolvedValue(null)
-      mockPrisma.mesa.findMany.mockResolvedValue([])
-      mockPrisma.comanda.findMany.mockResolvedValue([])
-
-      await service.buildLiveSnapshot('owner-1', businessDate, null, {
-        includeCashMovements: false,
-        compactMode: true,
-        includeClosed: false,
-      })
-
-      expect(mockPrisma.comanda.findMany).toHaveBeenCalledWith({
+      // Query mínima separada para ocupação real das mesas, independente da janela do dia.
+      expect(mockPrisma.comanda.findMany).toHaveBeenNthCalledWith(2, {
         where: {
           companyOwnerId: 'owner-1',
-          openedAt: {
-            gte: new Date(2026, 2, 30, 0, 0, 0, 0),
-            lt: new Date(2026, 2, 31, 0, 0, 0, 0),
+          mesaId: {
+            not: null,
           },
           status: {
             in: ['OPEN', 'IN_PREPARATION', 'READY'],
           },
         },
-        select: expect.objectContaining({
+        select: {
           id: true,
+          mesaId: true,
+          currentEmployeeId: true,
           status: true,
-          totalAmount: true,
-        }),
-        orderBy: {
-          openedAt: 'asc',
         },
       })
+      expect(response.unassigned.cashSession).toBeNull()
       expect(mockCache.set).toHaveBeenCalledWith(
-        'operations:live:owner-1:2026-03-30:compact:open-only:workspace:compact',
-        expect.any(Object),
+        'operations:live:owner-1:2026-03-30:compact:workspace:compact',
+        response,
         30,
+      )
+    })
+
+    it('mantém a ocupação global das mesas mesmo quando o snapshot do staff é escopado por funcionário', async () => {
+      const businessDate = new Date(2026, 2, 30)
+
+      mockPrisma.employee.findMany.mockResolvedValue([
+        {
+          id: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          active: true,
+        },
+      ])
+      mockPrisma.cashSession.findMany.mockResolvedValue([])
+      mockPrisma.cashClosure.findUnique.mockResolvedValue(null)
+      mockPrisma.mesa.findMany.mockResolvedValue([
+        {
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          section: null,
+          positionX: null,
+          positionY: null,
+          active: true,
+          reservedUntil: null,
+        },
+      ])
+      mockPrisma.comanda.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+        {
+          id: 'comanda-outra-equipe',
+          mesaId: 'mesa-1',
+          currentEmployeeId: 'emp-2',
+          status: 'OPEN',
+        },
+      ])
+
+      const response = await service.buildLiveSnapshot('owner-1', businessDate, 'emp-1', {
+        compactMode: true,
+      })
+
+      expect(response.employees[0]?.comandas).toEqual([])
+      expect(response.mesas[0]).toEqual(
+        expect.objectContaining({
+          id: 'mesa-1',
+          status: 'ocupada',
+          comandaId: 'comanda-outra-equipe',
+          currentEmployeeId: 'emp-2',
+        }),
       )
     })
 
@@ -175,7 +199,8 @@ describe('OperationsHelpersService', () => {
       await service.buildLiveSnapshot('owner-1', today, null, { compactMode: true })
 
       // A query usa apenas a janela de openedAt de hoje — comanda de ontem não é capturada
-      expect(mockPrisma.comanda.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.comanda.findMany).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           where: expect.objectContaining({
             openedAt: {

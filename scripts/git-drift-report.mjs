@@ -1,67 +1,65 @@
-import { execFileSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 
 function runGit(args) {
-  return execFileSync('git', args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim()
+  const command = `git ${args.map((arg) => `"${arg.replaceAll('"', '\\"')}"`).join(' ')}`
+  const result = process.platform === 'win32'
+    ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', command], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+    : spawnSync('git', args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  if (result.status !== 0) {
+    const reason = result.stderr?.trim() || result.stdout?.trim() || `git ${args.join(' ')} failed`
+    throw new Error(reason)
+  }
+
+  return result.stdout.trim()
 }
 
-function safeRunGit(args, fallback = '') {
+function tryGit(args) {
   try {
     return runGit(args)
   } catch {
-    return fallback
+    return null
   }
 }
 
-function countLines(text) {
-  return text ? text.split(/\r?\n/).filter(Boolean).length : 0
+const branch = runGit(['branch', '--show-current']) || '(detached-head)'
+const upstream = tryGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']) ?? '(no-upstream)'
+const workingTreeEntriesRaw = runGit(['status', '--short'])
+const workingTreeEntries = workingTreeEntriesRaw ? workingTreeEntriesRaw.split(/\r?\n/).filter(Boolean) : []
+
+let comparedBase = 'origin/main'
+try {
+  runGit(['rev-parse', '--verify', 'origin/main'])
+} catch {
+  comparedBase = upstream !== '(no-upstream)' ? upstream : 'HEAD'
 }
 
-const targetRef = process.argv[2] || 'origin/main'
-const currentBranch = safeRunGit(['rev-parse', '--abbrev-ref', 'HEAD'], 'HEAD')
-const shortStatus = safeRunGit(['status', '--short'])
-const upstream = safeRunGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], '')
-const aheadBehind = upstream ? safeRunGit(['rev-list', '--left-right', '--count', `${upstream}...HEAD`], '0\t0') : '0\t0'
-const [behindRaw, aheadRaw] = aheadBehind.split(/\s+/)
-const diffNames = safeRunGit(['diff', '--name-only', `${targetRef}...HEAD`])
-
-const modifiedTracked = shortStatus
-  .split(/\r?\n/)
-  .filter(Boolean)
-  .filter((line) => !line.startsWith('??'))
-const untracked = shortStatus
-  .split(/\r?\n/)
-  .filter(Boolean)
-  .filter((line) => line.startsWith('??'))
+let diffNamesRaw = ''
+try {
+  diffNamesRaw = runGit(['diff', '--name-only', `${comparedBase}...HEAD`])
+} catch {
+  diffNamesRaw = runGit(['diff', '--name-only', comparedBase, 'HEAD'])
+}
+const diffNames = diffNamesRaw ? diffNamesRaw.split(/\r?\n/).filter(Boolean) : []
 
 const report = {
-  branch: currentBranch,
-  targetRef,
-  upstream: upstream || null,
-  workingTree: {
-    totalChangedEntries: countLines(shortStatus),
-    modifiedTracked: modifiedTracked.length,
-    untracked: untracked.length,
-  },
-  upstreamDrift: {
-    ahead: Number(aheadRaw || 0),
-    behind: Number(behindRaw || 0),
-  },
-  branchVsTarget: {
-    changedFiles: countLines(diffNames),
-  },
+  branch,
+  upstream,
+  comparedBase,
+  workingTreeCount: workingTreeEntries.length,
+  branchVsBaseCount: diffNames.length,
+  workingTreeEntries,
+  branchVsBaseEntries: diffNames,
 }
 
 console.log(JSON.stringify(report, null, 2))
-
-if (shortStatus) {
-  console.log('\nWorking tree:')
-  console.log(shortStatus)
-}
-
-if (diffNames) {
-  console.log(`\nFiles changed in ${currentBranch} vs ${targetRef}:`)
-  console.log(diffNames)
-}

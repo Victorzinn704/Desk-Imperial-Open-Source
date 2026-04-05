@@ -226,8 +226,10 @@ const ComandaCard = memo(
         }}
       >
         {!isFocused && onFocus && (
-          <div
-            className="absolute inset-0 z-10 cursor-pointer"
+          <button
+            aria-label={`Abrir detalhes da ${activeComanda.mesa ?? 'comanda'}`}
+            className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0"
+            type="button"
             onClick={() => onFocus(comanda.id)}
             style={{ WebkitTapHighlightColor: 'transparent' }}
           />

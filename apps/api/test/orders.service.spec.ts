@@ -20,6 +20,7 @@
 
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { BuyerType, CurrencyCode, OrderStatus } from '@prisma/client'
+import type { Request } from 'express'
 import { OrdersService } from '../src/modules/orders/orders.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { CurrencyService } from '../src/modules/currency/currency.service'
@@ -178,7 +179,7 @@ function makeCurrencySnapshot() {
 let ordersService: OrdersService
 let mockContext: ReturnType<typeof makeAuthContext>
 let mockRequest: ReturnType<typeof makeRequestContext>
-let mockHttpRequest: any
+let mockHttpRequest: Request
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -200,7 +201,7 @@ beforeEach(() => {
     fullName: 'João Silva',
   })
   mockRequest = makeRequestContext()
-  mockHttpRequest = { headers: {}, cookies: {} }
+  mockHttpRequest = { headers: {}, cookies: {} } as unknown as Request
 
   // Defaults
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
@@ -209,6 +210,7 @@ beforeEach(() => {
   mockCache.ordersKey.mockReturnValue('orders:summary:user-1')
   mockCache.financeKey.mockReturnValue('finance:summary:user-1')
   mockAdminPinService.hasPinConfigured.mockResolvedValue(false)
+  mockPrisma.product.findMany.mockResolvedValue([])
   mockPrisma.product.updateMany.mockResolvedValue({ count: 1 })
   mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
@@ -472,6 +474,58 @@ describe('OrdersService', () => {
       expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(2)
     })
 
+    it('deve consumir componentes quando o item vendido e um combo', async () => {
+      const dto = makeCreateOrderDto({
+        items: [{ productId: 'combo-1', quantity: 2 }],
+      })
+      const comboProduct = makeProduct({
+        id: 'combo-1',
+        name: 'Combo Imperial',
+        isCombo: true,
+        stock: 0,
+        comboComponents: [
+          {
+            componentProductId: 'product-1',
+            totalUnits: 3,
+            componentProduct: {
+              id: 'product-1',
+              name: 'Coxinha',
+              stock: 20,
+              unitCost: 4,
+              currency: CurrencyCode.BRL,
+            },
+          },
+        ],
+      })
+      mockPrisma.product.findMany.mockResolvedValue([comboProduct])
+      mockPrisma.order.create.mockResolvedValue(makeOrder())
+      mockGeocodingService.geocodeCityLocation.mockResolvedValue({
+        city: 'São Paulo',
+        country: 'Brasil',
+        label: 'São Paulo, Brasil',
+      })
+
+      await ordersService.createForUser(mockContext, dto, mockRequest, mockHttpRequest)
+
+      expect(mockPrisma.product.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'product-1',
+            stock: { gte: 6 },
+          }),
+        }),
+      )
+      expect(mockPrisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            items: {
+              create: [expect.objectContaining({ unitCost: 12, lineCost: 24 })],
+            },
+          }),
+        }),
+      )
+    })
+
     it('deve registrar audit log após criação', async () => {
       const dto = makeCreateOrderDto({
         items: [{ productId: 'product-1', quantity: 1 }],
@@ -538,6 +592,7 @@ describe('OrdersService', () => {
       })
       mockPrisma.order.findFirst.mockResolvedValue(order)
       mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.product.findMany.mockResolvedValue([makeProduct({ id: 'product-1', stock: 10 })])
 
       const result = await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 
@@ -564,6 +619,47 @@ describe('OrdersService', () => {
       await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow('ja foi cancelado')
     })
 
+    it('deve devolver componentes quando cancela uma venda de combo', async () => {
+      const order = makeOrder({
+        status: OrderStatus.COMPLETED,
+        items: [makeOrderItem({ productId: 'combo-1', quantity: 2 })],
+      })
+      mockPrisma.order.findFirst.mockResolvedValue(order)
+      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.product.findMany.mockResolvedValue([
+        makeProduct({
+          id: 'combo-1',
+          isCombo: true,
+          comboComponents: [
+            {
+              componentProductId: 'product-1',
+              totalUnits: 2,
+              componentProduct: {
+                id: 'product-1',
+                name: 'Refrigerante',
+                stock: 5,
+                unitCost: 3,
+                currency: CurrencyCode.BRL,
+              },
+            },
+          ],
+        }),
+      ])
+
+      await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
+
+      expect(mockPrisma.product.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'product-1',
+          }),
+          data: expect.objectContaining({
+            stock: { increment: 4 },
+          }),
+        }),
+      )
+    })
+
     it('deve rejeitar cancelamento de pedido inexistente', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null)
 
@@ -582,13 +678,13 @@ describe('OrdersService', () => {
             lineRevenue: 40,
             lineCost: 20,
             lineProfit: 20,
-            comandaId: 'comanda-1',
           }),
           makeOrderItem({ id: 'order-item-2', productId: 'product-1', quantity: 1 }),
         ],
       })
       mockPrisma.order.findFirst.mockResolvedValue(order)
       mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.product.findMany.mockResolvedValue([makeProduct({ id: 'product-1', stock: 10 })])
 
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 

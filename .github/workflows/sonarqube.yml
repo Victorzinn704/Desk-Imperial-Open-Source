@@ -1,0 +1,98 @@
+name: SonarQube
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: sonarqube-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: SonarQube Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+
+    steps:
+      - name: Check SonarQube configuration
+        id: check
+        shell: bash
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [[ -n "$SONAR_HOST_URL" && -n "$SONAR_TOKEN" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "SonarQube is configured for this repository." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## SonarQube skipped"
+              echo
+              echo "This workflow is ready, but it needs both of these settings before a real scan can run:"
+              echo "- repository variable \`SONAR_HOST_URL\`"
+              echo "- repository secret \`SONAR_TOKEN\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  scan:
+    name: SonarQube Scan
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_ENV: test
+      TZ: America/Sao_Paulo
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      DATABASE_URL: postgresql://desk_imperial_ci:desk_imperial_ci_password@localhost:5432/partner_portal_test
+      COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
+      CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
+      ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
+      SESSION_TTL_HOURS: '24'
+      PASSWORD_RESET_TTL_MINUTES: '30'
+      CONSENT_VERSION: '2026.03'
+      ENABLE_SWAGGER: 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install CI native bindings
+        run: node ./scripts/install-ci-native-bindings.mjs
+
+      - name: Generate Prisma client
+        run: npm --workspace @partner/api run prisma:generate
+
+      - name: Run API coverage
+        run: npm --workspace @partner/api run test -- --coverage --ci --forceExit --coverageReporters=json-summary --coverageReporters=lcov --coverageReporters=text-summary
+
+      - name: Run web coverage
+        run: npm --workspace @partner/web run test:coverage:sonar
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4 # v7.1.0
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ROOT_CERT: ${{ secrets.SONAR_ROOT_CERT }}

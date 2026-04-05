@@ -631,8 +631,14 @@ describe('OperationsHelpersService - branches', () => {
               unitPrice: 15,
               totalAmount: 30,
               product: {
+                id: 'prod-1',
+                name: 'Pizza',
+                stock: 10,
                 unitCost: 10,
+                currency: CurrencyCode.BRL,
                 category: 'Alimentos',
+                isCombo: false,
+                comboComponents: [],
               },
             },
             {
@@ -672,6 +678,79 @@ describe('OperationsHelpersService - branches', () => {
       expect.objectContaining({ category: 'Alimentos', lineCost: 20, lineRevenue: 30, lineProfit: 10 }),
       expect.objectContaining({ category: 'Comanda manual', lineCost: 0, lineRevenue: 20, lineProfit: 20 }),
     ])
+  })
+
+  it('ensureOrderForClosedComanda consome componentes quando a comanda fecha combo', async () => {
+    const transaction = {
+      product: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      order: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 'order-created' }),
+      },
+      comanda: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'comanda-2',
+          customerName: 'Cliente Combo',
+          customerDocument: null,
+          currentEmployeeId: null,
+          currentEmployee: null,
+          notes: null,
+          totalAmount: 60,
+          items: [
+            {
+              productId: 'combo-1',
+              productName: 'Combo Imperial',
+              quantity: 2,
+              unitPrice: 30,
+              totalAmount: 60,
+              product: {
+                id: 'combo-1',
+                category: 'Combos',
+                unitCost: 1,
+                isCombo: true,
+                comboComponents: [
+                  {
+                    componentProductId: 'product-1',
+                    totalUnits: 3,
+                    componentProduct: {
+                      id: 'product-1',
+                      name: 'Mini salgado',
+                      stock: 40,
+                      unitCost: 4,
+                      currency: CurrencyCode.BRL,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      },
+    }
+
+    await service.ensureOrderForClosedComanda(transaction as any, 'owner-1', 'comanda-2')
+
+    expect(transaction.product.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'product-1',
+          stock: { gte: 6 },
+        }),
+      }),
+    )
+    expect(transaction.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          totalCost: 24,
+          totalProfit: 36,
+          items: {
+            create: [expect.objectContaining({ unitCost: 12, lineCost: 24, lineProfit: 36 })],
+          },
+        }),
+      }),
+    )
   })
 
   it('assertBusinessDayOpen bloqueia dias consolidados e permite dias abertos', async () => {

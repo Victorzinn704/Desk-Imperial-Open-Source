@@ -1,11 +1,10 @@
 import type { MesaRecord } from '@contracts/contracts'
 import { formatBRL } from '@/lib/currency'
-import { OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY } from '@/lib/operations'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
 
 export const QUERY_KEY = ['mesas'] as const
-export const LIVE_QUERY_KEY = OPERATIONS_LIVE_OPEN_ONLY_QUERY_KEY
+export const LIVE_QUERY_KEY = ['operations', 'live', 'compact'] as const
 
 // ── Canvas / Grid Layout ──────────────────────────────────────────────────────
 
@@ -48,6 +47,7 @@ export type EditForm = {
 
 export type DragState = {
   mesaId: string
+  pointerId: number
   startMouseX: number
   startMouseY: number
   origX: number

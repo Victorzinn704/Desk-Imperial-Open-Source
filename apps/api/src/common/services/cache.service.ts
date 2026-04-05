@@ -162,11 +162,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     workspaceOwnerUserId: string,
     businessDate: string,
     includeCashMovements: boolean,
-    includeClosed: boolean,
     scopedEmployeeId?: string | null,
   ) {
     const scopeSegment = scopedEmployeeId ? `employee:${scopedEmployeeId}` : 'workspace'
-    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${includeClosed ? 'with-closed' : 'open-only'}:${scopeSegment}`
+    return `operations:live:${workspaceOwnerUserId}:${businessDate}:${includeCashMovements ? 'full' : 'compact'}:${scopeSegment}`
   }
 
   static operationsKitchenPrefix(workspaceOwnerUserId: string, businessDate: string) {

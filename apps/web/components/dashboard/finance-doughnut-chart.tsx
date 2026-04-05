@@ -1,7 +1,8 @@
 'use client'
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
+import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency } from '@/lib/currency'
 
 const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
@@ -29,7 +30,7 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
 
   return (
     <div className="size-[120px] shrink-0">
-      <ResponsiveContainer height="100%" minHeight={1} minWidth={1} width="100%">
+      <ChartResponsiveContainer>
         <PieChart>
           <Pie
             data={data}
@@ -56,7 +57,7 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
             }}
           />
         </PieChart>
-      </ResponsiveContainer>
+      </ChartResponsiveContainer>
     </div>
   )
 }

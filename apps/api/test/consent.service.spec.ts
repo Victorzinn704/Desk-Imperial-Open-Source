@@ -1,11 +1,45 @@
-import type { PrismaService } from '../src/database/prisma.service'
+import { ConsentKind } from '@prisma/client'
 import type { CacheService } from '../src/common/services/cache.service'
+import type { PrismaService } from '../src/database/prisma.service'
 import { ConsentService } from '../src/modules/consent/consent.service'
 import { COOKIE_DOCUMENT_KEYS, DEFAULT_CONSENT_DOCUMENTS } from '../src/modules/consent/consent.constants'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import { makeRequestContext } from './helpers/request-context.factory'
 
 describe('ConsentService', () => {
+  type ConsentDocumentSeed = {
+    id: string
+    key: string
+    version: string
+    title: string
+    description: string | null
+    contentUrl: string | null
+    kind: ConsentKind
+    required: boolean
+    active: boolean
+    publishedAt: Date
+    createdAt: Date
+    updatedAt: Date
+  }
+
+  function makeConsentDocument(overrides: Partial<ConsentDocumentSeed> = {}): ConsentDocumentSeed {
+    return {
+      id: 'doc-1',
+      key: 'terms-of-use',
+      version: '2026.03',
+      title: 'Termos',
+      description: null,
+      contentUrl: null,
+      kind: ConsentKind.LEGAL,
+      required: true,
+      active: true,
+      publishedAt: new Date('2026-04-01T00:00:00.000Z'),
+      createdAt: new Date('2026-04-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-01T00:00:00.000Z'),
+      ...overrides,
+    }
+  }
+
   const prisma = {
     consentDocument: {
       upsert: jest.fn(),
@@ -45,16 +79,29 @@ describe('ConsentService', () => {
       return operations
     })
 
-    prisma.consentDocument.upsert.mockImplementation(async (params: any) => ({
-      id: `doc-${params.where.key_version.key}`,
-      key: params.create.key,
-      version: params.create.version,
-      title: params.create.title,
-      description: params.create.description,
-      kind: params.create.kind,
-      required: params.create.required,
-      active: params.create.active,
-    }))
+    prisma.consentDocument.upsert.mockImplementation(
+      async (params: {
+        where: { key_version: { key: string } }
+        create: {
+          key: string
+          version: string
+          title: string
+          description: string | null
+          kind: string
+          required: boolean
+          active: boolean
+        }
+      }) => ({
+        id: `doc-${params.where.key_version.key}`,
+        key: params.create.key,
+        version: params.create.version,
+        title: params.create.title,
+        description: params.create.description,
+        kind: params.create.kind,
+        required: params.create.required,
+        active: params.create.active,
+      }),
+    )
 
     service = new ConsentService(
       prisma as unknown as PrismaService,
@@ -130,22 +177,15 @@ describe('ConsentService', () => {
 
   it('registra aceite legal apenas para documentos obrigatorios', async () => {
     jest.spyOn(service, 'ensureDefaultDocuments').mockResolvedValue([
-      {
-        id: 'doc-terms',
-        key: 'terms-of-use',
-        required: true,
-      },
-      {
-        id: 'doc-privacy',
-        key: 'privacy-policy',
-        required: true,
-      },
-      {
+      makeConsentDocument({ id: 'doc-terms', key: 'terms-of-use', required: true }),
+      makeConsentDocument({ id: 'doc-privacy', key: 'privacy-policy', required: true }),
+      makeConsentDocument({
         id: 'doc-analytics',
         key: COOKIE_DOCUMENT_KEYS.analytics,
         required: false,
-      },
-    ] as any)
+        kind: ConsentKind.COOKIE,
+      }),
+    ])
     prisma.$transaction.mockResolvedValue([])
 
     await service.recordLegalAcceptances({
@@ -170,15 +210,19 @@ describe('ConsentService', () => {
 
   it('atualiza preferencias e sincroniza consentimento opcional', async () => {
     jest.spyOn(service, 'ensureDefaultDocuments').mockResolvedValue([
-      {
+      makeConsentDocument({
         id: 'doc-analytics',
         key: COOKIE_DOCUMENT_KEYS.analytics,
-      },
-      {
+        kind: ConsentKind.COOKIE,
+        required: false,
+      }),
+      makeConsentDocument({
         id: 'doc-marketing',
         key: COOKIE_DOCUMENT_KEYS.marketing,
-      },
-    ] as any)
+        kind: ConsentKind.COOKIE,
+        required: false,
+      }),
+    ])
 
     prisma.cookiePreference.upsert.mockResolvedValue({ id: 'pref-1', analytics: false, marketing: false })
     prisma.userConsent.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'existing-marketing' })
@@ -219,11 +263,13 @@ describe('ConsentService', () => {
 
   it('ativa consentimento opcional quando preferencia habilitada', async () => {
     jest.spyOn(service, 'ensureDefaultDocuments').mockResolvedValue([
-      {
+      makeConsentDocument({
         id: 'doc-analytics',
         key: COOKIE_DOCUMENT_KEYS.analytics,
-      },
-    ] as any)
+        kind: ConsentKind.COOKIE,
+        required: false,
+      }),
+    ])
 
     prisma.cookiePreference.upsert.mockResolvedValue({ id: 'pref-2', analytics: true, marketing: false })
     prisma.userConsent.findUnique.mockResolvedValueOnce(null)
@@ -251,23 +297,21 @@ describe('ConsentService', () => {
 
   it('monta overview de consentimento com fallback de preferencias', async () => {
     jest.spyOn(service, 'listActiveDocuments').mockResolvedValue([
-      {
+      makeConsentDocument({
         id: 'doc-terms',
         key: 'terms-of-use',
         title: 'Termos',
-        kind: 'LEGAL',
+        kind: ConsentKind.LEGAL,
         required: true,
-        active: true,
-      },
-      {
+      }),
+      makeConsentDocument({
         id: 'doc-analytics',
         key: COOKIE_DOCUMENT_KEYS.analytics,
         title: 'Analytics',
-        kind: 'COOKIE',
+        kind: ConsentKind.COOKIE,
         required: false,
-        active: true,
-      },
-    ] as any)
+      }),
+    ])
 
     prisma.cookiePreference.findUnique.mockResolvedValue(null)
     prisma.userConsent.findMany.mockResolvedValue([

@@ -30,131 +30,130 @@ export function validateEnvironment(config: EnvShape) {
   const issues: string[] = []
   const nodeEnv = env.NODE_ENV ?? 'development'
 
-  if (!['development', 'test', 'production'].includes(nodeEnv)) {
-    issues.push('NODE_ENV deve ser development, test ou production.')
-  }
-
-  if (!env.DATABASE_URL?.trim()) {
-    issues.push('DATABASE_URL é obrigatório para iniciar a API.')
-  }
-
-  for (const key of URL_KEYS) {
-    const value = env[key]
-    if (!value) {
-      continue
-    }
-
-    if (!isValidUrl(value)) {
-      issues.push(`${key} deve ser uma URL válida.`)
-    }
-  }
-
-  for (const key of REDIS_URL_CANDIDATE_KEYS) {
-    const value = env[key]
-    if (!value) {
-      continue
-    }
-
-    if (!isValidUrl(value)) {
-      issues.push(`${key} deve ser uma URL válida.`)
-    }
-  }
-
-  for (const key of OPTIONAL_URL_KEYS) {
-    const value = env[key]
-    if (!value) {
-      continue
-    }
-
-    if (!isValidOriginLikeValue(value)) {
-      issues.push(`${key} deve ser uma URL válida.`)
-    }
-  }
-
-  for (const key of OPTIONAL_OBSERVABILITY_URL_KEYS) {
-    const value = env[key]
-    if (!value) {
-      continue
-    }
-
-    if (!isValidUrl(value)) {
-      issues.push(`${key} deve ser uma URL válida.`)
-    }
-  }
-
-  for (const key of BOOLEAN_KEYS) {
-    const value = env[key]
-    if (value === undefined) {
-      continue
-    }
-
-    if (!['true', 'false'].includes(value)) {
-      issues.push(`${key} deve ser "true" ou "false".`)
-    }
-  }
-
-  for (const key of POSITIVE_NUMBER_KEYS) {
-    const value = env[key]
-    if (value === undefined) {
-      continue
-    }
-
-    const numericValue = Number(value)
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
-      issues.push(`${key} deve ser um numero positivo.`)
-    }
-  }
-
-  if (env.COOKIE_SAME_SITE !== undefined) {
-    const sameSite = env.COOKIE_SAME_SITE.trim().toLowerCase()
-    if (!['lax', 'strict', 'none'].includes(sameSite)) {
-      issues.push('COOKIE_SAME_SITE deve ser "lax", "strict" ou "none".')
-    }
-
-    const secureCookieEnabled = nodeEnv === 'production' || env.COOKIE_SECURE === 'true'
-    if (sameSite === 'none' && !secureCookieEnabled) {
-      issues.push('COOKIE_SAME_SITE=none exige cookie secure (COOKIE_SECURE=true) ou ambiente de produção.')
-    }
-  }
-
-  if (env.PORT !== undefined) {
-    const port = Number(env.PORT)
-    if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-      issues.push('PORT deve ser um inteiro válido entre 1 e 65535.')
-    }
-  }
-
-  if (env.TRUST_PROXY !== undefined && env.TRUST_PROXY !== 'true' && env.TRUST_PROXY !== 'false') {
-    const hops = Number(env.TRUST_PROXY)
-    if (!Number.isInteger(hops) || hops < 0) {
-      issues.push('TRUST_PROXY deve ser "true", "false" ou um inteiro não negativo.')
-    }
-  }
+  validateNodeEnvironment(nodeEnv, issues)
+  validateRequiredDatabaseUrl(env, issues)
+  validateUrlGroup(env, URL_KEYS, issues)
+  validateUrlGroup(env, REDIS_URL_CANDIDATE_KEYS, issues)
+  validateUrlGroup(env, OPTIONAL_URL_KEYS, issues, isValidOriginLikeValue)
+  validateUrlGroup(env, OPTIONAL_OBSERVABILITY_URL_KEYS, issues)
+  validateBooleanGroup(env, BOOLEAN_KEYS, issues)
+  validatePositiveNumberGroup(env, POSITIVE_NUMBER_KEYS, issues)
+  validateCookieSameSite(env, nodeEnv, issues)
+  validatePort(env.PORT, issues)
+  validateTrustProxy(env.TRUST_PROXY, issues)
 
   validateSecretLength(env.COOKIE_SECRET, 16, 'COOKIE_SECRET', issues)
   validateSecretLength(env.CSRF_SECRET, 32, 'CSRF_SECRET', issues)
-
-  if (nodeEnv === 'production') {
-    if (!env.COOKIE_SECRET?.trim()) {
-      issues.push('COOKIE_SECRET é obrigatório em produção.')
-    }
-
-    if (!env.CSRF_SECRET?.trim()) {
-      issues.push('CSRF_SECRET é obrigatório em produção.')
-    }
-
-    if (!hasRedisUrl(env)) {
-      issues.push(
-        `Uma URL Redis é obrigatória em produção para cache e sincronização realtime entre instâncias (${REDIS_URL_CANDIDATE_KEYS.join(' | ')}).`,
-      )
-    }
-  }
+  validateProductionRequirements(env, nodeEnv, issues)
 
   if (issues.length > 0) {
     throw new Error(`Configuração inválida da API:\n- ${issues.join('\n- ')}`)
   }
 
   return env
+}
+
+function validateNodeEnvironment(nodeEnv: string, issues: string[]) {
+  if (!['development', 'test', 'production'].includes(nodeEnv)) {
+    issues.push('NODE_ENV deve ser development, test ou production.')
+  }
+}
+
+function validateRequiredDatabaseUrl(env: EnvShape, issues: string[]) {
+  if (!env.DATABASE_URL?.trim()) {
+    issues.push('DATABASE_URL é obrigatório para iniciar a API.')
+  }
+}
+
+function validateUrlGroup(
+  env: EnvShape,
+  keys: readonly string[],
+  issues: string[],
+  validator: (value: string) => boolean = isValidUrl,
+) {
+  for (const key of keys) {
+    const value = env[key]
+    if (value && !validator(value)) {
+      issues.push(`${key} deve ser uma URL válida.`)
+    }
+  }
+}
+
+function validateBooleanGroup(env: EnvShape, keys: readonly string[], issues: string[]) {
+  for (const key of keys) {
+    const value = env[key]
+    if (value !== undefined && !['true', 'false'].includes(value)) {
+      issues.push(`${key} deve ser "true" ou "false".`)
+    }
+  }
+}
+
+function validatePositiveNumberGroup(env: EnvShape, keys: readonly string[], issues: string[]) {
+  for (const key of keys) {
+    const value = env[key]
+    if (value !== undefined && !isPositiveNumber(value)) {
+      issues.push(`${key} deve ser um numero positivo.`)
+    }
+  }
+}
+
+function validateCookieSameSite(env: EnvShape, nodeEnv: string, issues: string[]) {
+  if (env.COOKIE_SAME_SITE === undefined) {
+    return
+  }
+
+  const sameSite = env.COOKIE_SAME_SITE.trim().toLowerCase()
+  if (!['lax', 'strict', 'none'].includes(sameSite)) {
+    issues.push('COOKIE_SAME_SITE deve ser "lax", "strict" ou "none".')
+  }
+
+  const secureCookieEnabled = nodeEnv === 'production' || env.COOKIE_SECURE === 'true'
+  if (sameSite === 'none' && !secureCookieEnabled) {
+    issues.push('COOKIE_SAME_SITE=none exige cookie secure (COOKIE_SECURE=true) ou ambiente de produção.')
+  }
+}
+
+function validatePort(portValue: string | undefined, issues: string[]) {
+  if (portValue === undefined) {
+    return
+  }
+
+  const port = Number(portValue)
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    issues.push('PORT deve ser um inteiro válido entre 1 e 65535.')
+  }
+}
+
+function validateTrustProxy(trustProxyValue: string | undefined, issues: string[]) {
+  if (trustProxyValue === undefined || trustProxyValue === 'true' || trustProxyValue === 'false') {
+    return
+  }
+
+  const hops = Number(trustProxyValue)
+  if (!Number.isInteger(hops) || hops < 0) {
+    issues.push('TRUST_PROXY deve ser "true", "false" ou um inteiro não negativo.')
+  }
+}
+
+function validateProductionRequirements(env: EnvShape, nodeEnv: string, issues: string[]) {
+  if (nodeEnv !== 'production') {
+    return
+  }
+
+  validateRequiredSecret(env.COOKIE_SECRET, 'COOKIE_SECRET', issues)
+  validateRequiredSecret(env.CSRF_SECRET, 'CSRF_SECRET', issues)
+
+  if (!hasRedisUrl(env)) {
+    issues.push(
+      `Uma URL Redis é obrigatória em produção para cache e sincronização realtime entre instâncias (${REDIS_URL_CANDIDATE_KEYS.join(' | ')}).`,
+    )
+  }
+}
+
+function validateRequiredSecret(value: string | undefined, label: string, issues: string[]) {
+  if (!value?.trim()) {
+    issues.push(`${label} é obrigatório em produção.`)
+  }
 }
 
 function validateSecretLength(value: string | undefined, minLength: number, label: string, issues: string[]) {
@@ -178,4 +177,9 @@ function isValidUrl(value: string) {
 
 function isValidOriginLikeValue(value: string) {
   return isValidUrl(value) || isValidUrl(`https://${value}`)
+}
+
+function isPositiveNumber(value: string) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) && numericValue > 0
 }
