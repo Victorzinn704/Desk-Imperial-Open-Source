@@ -19,6 +19,7 @@ describe('OperationsService (facade)', () => {
     },
     comanda: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
   }
 
@@ -66,6 +67,7 @@ describe('OperationsService (facade)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    prisma.comanda.findFirst.mockResolvedValue(null)
   })
 
   it('delega consultas de snapshot para helpers com escopo correto', async () => {
@@ -80,7 +82,6 @@ describe('OperationsService (facade)', () => {
       businessDate: '2026-04-01',
       includeCashMovements: true,
       compactMode: true,
-      includeClosed: false,
     })
     const kitchen = await service.getKitchenView(ownerAuth, { businessDate: '2026-04-01' })
     const summary = await service.getSummaryView(ownerAuth, { businessDate: '2026-04-01' })
@@ -93,7 +94,7 @@ describe('OperationsService (facade)', () => {
       'owner-1',
       expect.any(Date),
       'employee-9',
-      expect.objectContaining({ includeCashMovements: true, compactMode: true, includeClosed: false }),
+      expect.objectContaining({ includeCashMovements: true, compactMode: true }),
     )
     expect(helpers.buildKitchenView).toHaveBeenCalledWith('owner-1', expect.any(Date), null)
     expect(helpers.buildSummaryView).toHaveBeenCalledWith('owner-1', expect.any(Date), null)

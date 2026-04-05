@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common'
 import { trace } from '@opentelemetry/api'
 import type { Prisma } from '@prisma/client'
@@ -18,10 +19,6 @@ import {
   type Employee,
 } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import {
-  recordOperationsKitchenTelemetry,
-  recordOperationsLiveTelemetry,
-} from '../../common/observability/business-telemetry.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
 import { PrismaService } from '../../database/prisma.service'
@@ -48,6 +45,16 @@ import {
   resolveBuyerTypeFromDocument,
   toNumber,
 } from './operations-domain.utils'
+import {
+  recordOperationsKitchenTelemetry,
+  recordOperationsLiveTelemetry,
+} from '../../common/observability/business-telemetry.util'
+import {
+  calculateEffectiveUnitCost,
+  calculateRawEffectiveUnitCost,
+  buildProductConsumptionMap,
+} from '../products/product-combo-consumption.util'
+import { CurrencyService } from '../currency/currency.service'
 
 type TransactionClient = Prisma.TransactionClient
 
@@ -227,6 +234,7 @@ export class OperationsHelpersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    @Optional() private readonly currencyService?: CurrencyService,
   ) {}
 
   async buildLiveSnapshot(
@@ -236,57 +244,48 @@ export class OperationsHelpersService {
     options?: {
       includeCashMovements?: boolean
       compactMode?: boolean
-      includeClosed?: boolean
     },
   ): Promise<OperationsLiveResponse> {
     const startedAt = performance.now()
     const window = buildBusinessDateWindow(businessDate)
     const includeCashMovements = options?.includeCashMovements === true
     const compactMode = options?.compactMode === true
-    const includeClosed = options?.includeClosed !== false
     const cacheKey =
       CacheService.operationsLiveKey(
         workspaceOwnerUserId,
         formatBusinessDateKey(businessDate),
         includeCashMovements,
-        includeClosed,
         scopedEmployeeId,
       ) + (compactMode ? ':compact' : '')
 
     if (cacheKey) {
       const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
       if (cached) {
-        const comandasCount =
+        const totalComandas =
           cached.unassigned.comandas.length +
           cached.employees.reduce((total, employee) => total + employee.comandas.length, 0)
-        const attributes = {
-          'desk.operations.cache_hit': true,
-          'desk.operations.compact_mode': compactMode,
-          'desk.operations.include_cash_movements': includeCashMovements,
-          'desk.operations.include_closed': includeClosed,
-          'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
-        }
+
         recordOperationsLiveTelemetry(
           performance.now() - startedAt,
           {
             employees: cached.employees.length,
-            comandas: comandasCount,
+            comandas: totalComandas,
             mesas: cached.mesas.length,
           },
-          attributes,
+          {
+            'desk.operations.cache_hit': true,
+            'desk.operations.compact_mode': compactMode,
+            'desk.operations.include_cash_movements': includeCashMovements,
+            'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+          },
         )
-        trace.getActiveSpan()?.setAttributes({
-          ...attributes,
-          'desk.operations.live.employees': cached.employees.length,
-          'desk.operations.live.comandas': comandasCount,
-          'desk.operations.live.mesas': cached.mesas.length,
-        })
+
         return cached
       }
     }
 
     const comandaSelect = compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect
-    const [employees, sessions, closure, mesas, comandas] = await Promise.all([
+    const [employees, sessions, closure, mesas, comandas, mesaOccupancyComandas] = await Promise.all([
       this.prisma.employee.findMany({
         where: {
           userId: workspaceOwnerUserId,
@@ -334,18 +333,28 @@ export class OperationsHelpersService {
             gte: window.start,
             lt: window.end,
           },
-          ...(!includeClosed
-            ? {
-                status: {
-                  in: OPEN_COMANDA_STATUSES,
-                },
-              }
-            : {}),
           ...(scopedEmployeeId ? { currentEmployeeId: scopedEmployeeId } : {}),
         },
         select: comandaSelect,
         orderBy: {
           openedAt: 'asc',
+        },
+      }),
+      this.prisma.comanda.findMany({
+        where: {
+          companyOwnerId: workspaceOwnerUserId,
+          mesaId: {
+            not: null,
+          },
+          status: {
+            in: OPEN_COMANDA_STATUSES,
+          },
+        },
+        select: {
+          id: true,
+          mesaId: true,
+          currentEmployeeId: true,
+          status: true,
         },
       }),
     ])
@@ -372,7 +381,7 @@ export class OperationsHelpersService {
     }
 
     // Build a map of mesaId → open comanda for status derivation
-    const openComandas = comandas.filter((comanda) => OPEN_COMANDA_STATUSES.includes(comanda.status))
+    const openComandas = mesaOccupancyComandas.filter((comanda) => OPEN_COMANDA_STATUSES.includes(comanda.status))
     const openComandaByMesa = new Map<string, (typeof openComandas)[number]>()
     for (const comanda of openComandas) {
       if (comanda.mesaId) openComandaByMesa.set(comanda.mesaId, comanda)
@@ -401,32 +410,37 @@ export class OperationsHelpersService {
       }),
     }
 
-    if (cacheKey) {
-      void this.cache.set(cacheKey, snapshot, OPERATIONS_LIVE_CACHE_TTL_SECONDS)
-    }
+    const totalComandas =
+      snapshot.unassigned.comandas.length +
+      snapshot.employees.reduce((total, employee) => total + employee.comandas.length, 0)
 
-    const attributes = {
-      'desk.operations.cache_hit': false,
-      'desk.operations.compact_mode': compactMode,
-      'desk.operations.include_cash_movements': includeCashMovements,
-      'desk.operations.include_closed': includeClosed,
-      'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
-    }
     recordOperationsLiveTelemetry(
       performance.now() - startedAt,
       {
         employees: snapshot.employees.length,
-        comandas: comandas.length,
+        comandas: totalComandas,
         mesas: snapshot.mesas.length,
       },
-      attributes,
+      {
+        'desk.operations.cache_hit': false,
+        'desk.operations.compact_mode': compactMode,
+        'desk.operations.include_cash_movements': includeCashMovements,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      },
     )
+
     trace.getActiveSpan()?.setAttributes({
-      ...attributes,
-      'desk.operations.live.employees': snapshot.employees.length,
-      'desk.operations.live.comandas': comandas.length,
-      'desk.operations.live.mesas': snapshot.mesas.length,
+      'desk.operations.cache_hit': false,
+      'desk.operations.compact_mode': compactMode,
+      'desk.operations.include_cash_movements': includeCashMovements,
+      'desk.operations.employee_count': snapshot.employees.length,
+      'desk.operations.comanda_count': totalComandas,
+      'desk.operations.mesa_count': snapshot.mesas.length,
     })
+
+    if (cacheKey) {
+      void this.cache.set(cacheKey, snapshot, OPERATIONS_LIVE_CACHE_TTL_SECONDS)
+    }
 
     return snapshot
   }
@@ -441,15 +455,17 @@ export class OperationsHelpersService {
     const cacheKey = CacheService.operationsKitchenKey(workspaceOwnerUserId, businessDateKey, scopedEmployeeId)
     const cached = await this.cache.get<OperationsKitchenResponse>(cacheKey)
     if (cached) {
-      const attributes = {
-        'desk.operations.cache_hit': true,
-        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
-      }
-      recordOperationsKitchenTelemetry(performance.now() - startedAt, { items: cached.items.length }, attributes)
-      trace.getActiveSpan()?.setAttributes({
-        ...attributes,
-        'desk.operations.kitchen.items': cached.items.length,
-      })
+      recordOperationsKitchenTelemetry(
+        performance.now() - startedAt,
+        {
+          items: cached.items.length,
+        },
+        {
+          'desk.operations.cache_hit': true,
+          'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+        },
+      )
+
       return cached
     }
 
@@ -518,17 +534,18 @@ export class OperationsHelpersService {
       statusCounts,
     }
 
-    void this.cache.set(cacheKey, response, OPERATIONS_KITCHEN_CACHE_TTL_SECONDS)
+    recordOperationsKitchenTelemetry(
+      performance.now() - startedAt,
+      {
+        items: response.items.length,
+      },
+      {
+        'desk.operations.cache_hit': false,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      },
+    )
 
-    const attributes = {
-      'desk.operations.cache_hit': false,
-      'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
-    }
-    recordOperationsKitchenTelemetry(performance.now() - startedAt, { items: response.items.length }, attributes)
-    trace.getActiveSpan()?.setAttributes({
-      ...attributes,
-      'desk.operations.kitchen.items': response.items.length,
-    })
+    void this.cache.set(cacheKey, response, OPERATIONS_KITCHEN_CACHE_TTL_SECONDS)
 
     return response
   }
@@ -1261,7 +1278,23 @@ export class OperationsHelpersService {
         currentEmployee: true,
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                comboComponents: {
+                  include: {
+                    componentProduct: {
+                      select: {
+                        id: true,
+                        name: true,
+                        stock: true,
+                        unitCost: true,
+                        currency: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
           orderBy: {
             createdAt: 'asc',
@@ -1274,9 +1307,19 @@ export class OperationsHelpersService {
       throw new NotFoundException('Comanda nao encontrada para gerar o pedido.')
     }
 
+    const costSnapshot = this.currencyService ? await this.currencyService.getSnapshot() : null
+
     const totalCost = roundCurrency(
       comanda.items.reduce((sum, item) => {
-        const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+        const unitCost = item.product
+          ? this.currencyService && costSnapshot
+            ? calculateEffectiveUnitCost(item.product, {
+                currencyService: this.currencyService,
+                displayCurrency: CurrencyCode.BRL,
+                snapshot: costSnapshot,
+              })
+            : calculateRawEffectiveUnitCost(item.product)
+          : 0
         return sum + roundCurrency(unitCost * item.quantity)
       }, 0),
     )
@@ -1284,12 +1327,19 @@ export class OperationsHelpersService {
     const totalProfit = roundCurrency(totalRevenue - totalCost)
     const totalItems = comanda.items.reduce((sum, item) => sum + item.quantity, 0)
 
-    // Descontar estoque dos produtos vinculados à comanda
-    const stockByProduct = new Map<string, number>()
-    for (const item of comanda.items) {
-      if (!item.productId) continue
-      stockByProduct.set(item.productId, (stockByProduct.get(item.productId) ?? 0) + item.quantity)
-    }
+    const comboAwareProducts = comanda.items
+      .map((item) => item.product)
+      .filter((product): product is NonNullable<(typeof comanda.items)[number]['product']> => Boolean(product))
+    const comboAwareProductsById = new Map(comboAwareProducts.map((product) => [product.id, product]))
+    const stockByProduct = buildProductConsumptionMap(
+      comanda.items
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
+      comboAwareProductsById,
+    )
 
     for (const [productId, qty] of stockByProduct.entries()) {
       await transaction.product.updateMany({
@@ -1300,6 +1350,7 @@ export class OperationsHelpersService {
         },
         data: { stock: { decrement: qty } },
       })
+
       // Se stock < qty o produto continua com estoque 0 (não bloqueia o fechamento da comanda)
       await transaction.product.updateMany({
         where: {
@@ -1331,7 +1382,15 @@ export class OperationsHelpersService {
         totalItems,
         items: {
           create: comanda.items.map((item) => {
-            const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+            const unitCost = item.product
+              ? this.currencyService && costSnapshot
+                ? calculateEffectiveUnitCost(item.product, {
+                    currencyService: this.currencyService,
+                    displayCurrency: CurrencyCode.BRL,
+                    snapshot: costSnapshot,
+                  })
+                : calculateRawEffectiveUnitCost(item.product)
+              : 0
             const lineRevenue = roundCurrency(toNumber(item.totalAmount))
             const lineCost = roundCurrency(unitCost * item.quantity)
 
