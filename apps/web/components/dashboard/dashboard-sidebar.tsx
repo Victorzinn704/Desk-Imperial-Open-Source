@@ -1,19 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import {
-  Building2,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  CircleDot,
-  LogOut,
-  PanelLeftOpen,
-  Settings,
-  UserRound,
-  X,
-} from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight, CircleDot, LogOut, Settings, UserRound } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
 import { cn } from '@/lib/utils'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -59,116 +47,106 @@ export function DashboardSidebar({
     if (typeof window === 'undefined') return false
     return localStorage.getItem(COLLAPSE_KEY) === 'true'
   })
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map((group) => [group.id, true])),
-  )
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, String(collapsed))
     onCollapseChange?.(collapsed)
   }, [collapsed, onCollapseChange])
 
-  useEffect(() => {
-    document.body.classList.toggle('overflow-hidden', mobileOpen)
-
-    return () => {
-      document.body.classList.remove('overflow-hidden')
-    }
-  }, [mobileOpen])
-
-  const toggleGroup = (groupId: string) => {
-    setOpenGroups((current) => ({
-      ...current,
-      [groupId]: !(current[groupId] ?? true),
-    }))
-  }
-
-  const handleNavigate = (section: DashboardSectionId) => {
-    onNavigate(section)
-    setMobileOpen(false)
-  }
-
-  const handleOpenSettings = (section: DashboardSettingsSectionId) => {
-    onOpenSettings(section)
-    setMobileOpen(false)
-  }
-
-  const handleQuickAction = (action: DashboardQuickAction) => {
-    onQuickAction(action)
-    setMobileOpen(false)
-  }
-
   return (
     <>
       {/* ═══════════════════════════════════════════
           NAV MOBILE — visível abaixo de xl
           ═══════════════════════════════════════════ */}
-      <div className="sticky top-0 z-40 border-b border-white/[0.06] bg-[rgba(5,6,9,0.92)] p-2 backdrop-blur-xl xl:hidden">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] text-muted-foreground transition hover:bg-white/[0.07] hover:text-white"
-          aria-controls="dashboard-mobile-sidebar"
-          aria-expanded={mobileOpen}
-          aria-haspopup="dialog"
-          aria-label="Abrir navegação"
-          onClick={() => setMobileOpen(true)}
-        >
-          <PanelLeftOpen className="size-5" />
-        </button>
-      </div>
-
-      {mobileOpen ? (
-        <button
-          type="button"
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] xl:hidden"
-          aria-label="Fechar navegação"
-          onClick={() => setMobileOpen(false)}
-        />
-      ) : null}
-
-      <aside
-        id="dashboard-mobile-sidebar"
-        className={cn(
-          'fixed inset-y-0 left-0 z-[60] flex w-72 max-w-[86vw] flex-col border-r border-white/[0.07] bg-[rgba(7,9,13,0.98)] shadow-[24px_0_60px_rgba(0,0,0,0.42)] transition-transform duration-300 xl:hidden',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-        role="dialog"
-        aria-label="Navegação do painel"
-        aria-modal="true"
-      >
-        <header className="flex shrink-0 items-center justify-between gap-3 p-4">
+      <section className="imperial-card sticky top-0 z-40 p-4 xl:hidden" style={{ backdropFilter: 'blur(16px)' }}>
+        <div className="min-w-0">
           <BrandMark />
-          <button
-            type="button"
-            className="flex size-8 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-muted-foreground transition hover:bg-white/[0.08] hover:text-white"
-            aria-label="Fechar navegação"
-            onClick={() => setMobileOpen(false)}
-          >
-            <X className="size-4" />
-          </button>
-        </header>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {companyName || 'Painel corporativo'}
+            <span className="mx-1.5 text-white/20">·</span>
+            {formatAccountStatus(status)}
+          </p>
+        </div>
 
-        <SidebarNavigation
-          activeSection={activeSection}
-          collapsed={false}
-          groups={groups}
-          openGroups={openGroups}
-          onNavigate={handleNavigate}
-          onToggleGroup={toggleGroup}
-        />
+        {/* Ações rápidas */}
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon
+            return (
+              <button
+                className="rounded-[18px] border border-white/6 bg-white/[0.025] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/24 hover:bg-accent/[0.06]"
+                key={action.id}
+                onClick={() => onQuickAction(action)}
+                type="button"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-white/8 bg-white/[0.03]">
+                    <Icon className="size-3.5 text-accent" />
+                  </span>
+                  <span className="text-sm font-semibold text-white">{action.label}</span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-[1.5] text-muted-foreground">{action.description}</p>
+              </button>
+            )
+          })}
+        </div>
 
-        <div className="shrink-0 border-t border-white/[0.06] p-3">
+        {/* Separador */}
+        <div className="my-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+
+        {/* Navegação por grupos */}
+        <nav className="space-y-4">
+          {groups.map((group) => (
+            <div key={group.id}>
+              <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/60">
+                {group.label}
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = activeSection === item.id
+                  return (
+                    <button
+                      className={cn(
+                        'flex items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-200',
+                        isActive
+                          ? 'border-accent/24 bg-accent/[0.09] text-white'
+                          : 'border-white/6 bg-white/[0.02] text-muted-foreground hover:border-white/12 hover:bg-white/[0.04] hover:text-white',
+                      )}
+                      key={item.id}
+                      onClick={() => onNavigate(item.id)}
+                      type="button"
+                    >
+                      <span
+                        className={cn(
+                          'flex size-7 shrink-0 items-center justify-center rounded-[9px] border transition-colors',
+                          isActive
+                            ? 'border-accent/20 bg-accent/[0.1] text-accent'
+                            : 'border-white/8 bg-white/[0.03] text-muted-foreground',
+                        )}
+                      >
+                        <Icon className="size-3.5" />
+                      </span>
+                      <span className="truncate text-xs font-semibold">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="mt-5 border-t border-white/[0.06] pt-5">
           <MobileAccountDock
             email={email}
             role={role}
             status={status}
             userName={userName || companyName || 'Conta'}
-            onOpenSettings={handleOpenSettings}
+            onOpenSettings={onOpenSettings}
             onSignOut={onSignOut}
           />
         </div>
-      </aside>
+      </section>
 
       {/* ═══════════════════════════════════════════
           SIDEBAR DESKTOP — visível em xl+
@@ -219,7 +197,7 @@ export function DashboardSidebar({
                     <button
                       className="workspace-quick-action workspace-quick-action--compact"
                       key={action.id}
-                      onClick={() => handleQuickAction(action)}
+                      onClick={() => onQuickAction(action)}
                       type="button"
                     >
                       <span className="workspace-quick-action__icon">
@@ -237,14 +215,62 @@ export function DashboardSidebar({
             </div>
           )}
 
-          <SidebarNavigation
-            activeSection={activeSection}
-            collapsed={collapsed}
-            groups={groups}
-            openGroups={openGroups}
-            onNavigate={handleNavigate}
-            onToggleGroup={toggleGroup}
-          />
+          {/* Navegação — flex-1 sem scroll visível */}
+          <nav
+            className={cn(
+              'mt-4 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden',
+              collapsed ? 'space-y-2' : 'space-y-4 pr-1',
+            )}
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {groups.map((group) => (
+              <section className="workspace-nav-group" key={group.id}>
+                {!collapsed ? <p className="workspace-nav-group__label">{group.label}</p> : null}
+
+                <div className={cn('space-y-1', collapsed ? 'space-y-2' : '')}>
+                  {group.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = activeSection === item.id
+
+                    if (collapsed) {
+                      return (
+                        <button
+                          className={cn(
+                            'flex w-full cursor-pointer items-center justify-center rounded-[18px] border p-2.5 transition-colors duration-200',
+                            isActive
+                              ? 'border-accent/24 bg-accent/[0.09] text-white'
+                              : 'border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.04] hover:text-white',
+                          )}
+                          key={item.id}
+                          onClick={() => onNavigate(item.id)}
+                          title={item.label}
+                          type="button"
+                          aria-current={isActive ? 'page' : undefined}
+                        >
+                          <Icon className="size-5" />
+                        </button>
+                      )
+                    }
+
+                    return (
+                      <button
+                        className={cn('workspace-nav-item group', isActive && 'workspace-nav-item--active')}
+                        key={item.id}
+                        onClick={() => onNavigate(item.id)}
+                        type="button"
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        <span className="workspace-nav-item__icon">
+                          <Icon className="size-4" />
+                        </span>
+                        <span className="block truncate text-sm font-semibold">{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            ))}
+          </nav>
 
           {/* Rodapé: bloco de conta unificado — shrink-0 */}
           <div className={cn('mt-3 shrink-0 border-t border-white/[0.06] pt-3')}>
@@ -254,7 +280,7 @@ export function DashboardSidebar({
                   className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
                   title="Configurações"
                   type="button"
-                  onClick={() => handleOpenSettings('account')}
+                  onClick={() => onOpenSettings('account')}
                 >
                   <Settings className="size-5" />
                 </button>
@@ -274,7 +300,7 @@ export function DashboardSidebar({
                 role={role}
                 status={status}
                 userName={userName}
-                onOpenSettings={handleOpenSettings}
+                onOpenSettings={onOpenSettings}
                 onSignOut={onSignOut}
               />
             )}
@@ -282,104 +308,6 @@ export function DashboardSidebar({
         </div>
       </aside>
     </>
-  )
-}
-
-function SidebarNavigation({
-  activeSection,
-  collapsed,
-  groups,
-  openGroups,
-  onNavigate,
-  onToggleGroup,
-}: Readonly<{
-  activeSection: DashboardSectionId
-  collapsed: boolean
-  groups: DashboardNavigationGroup[]
-  openGroups: Record<string, boolean>
-  onNavigate: (section: DashboardSectionId) => void
-  onToggleGroup: (groupId: string) => void
-}>) {
-  return (
-    <nav
-      className={cn(
-        'mt-2 flex-1 overflow-y-auto px-2 pb-4 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2',
-        collapsed ? 'space-y-2 px-0' : 'space-y-1',
-      )}
-      style={{ scrollbarWidth: 'thin' }}
-    >
-      {groups.map((group) => {
-        const isOpen = openGroups[group.id] ?? true
-
-        return (
-          <section className={cn('workspace-nav-group', collapsed && 'items-center')} key={group.id}>
-            {collapsed ? null : (
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70 transition hover:bg-white/[0.04] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/60"
-                aria-controls={`dashboard-sidebar-group-${group.id}`}
-                aria-expanded={isOpen}
-                onClick={() => onToggleGroup(group.id)}
-              >
-                <span className="min-w-0 flex-1 truncate">{group.label}</span>
-                {isOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-              </button>
-            )}
-
-            <div
-              className={cn(
-                'overflow-hidden transition-[height,opacity] duration-200',
-                isOpen || collapsed ? 'h-auto opacity-100' : 'h-0 opacity-0',
-              )}
-              id={`dashboard-sidebar-group-${group.id}`}
-            >
-              <div className={cn('space-y-1', collapsed ? 'space-y-2' : 'pb-2')}>
-                {group.items.map((item) => {
-                  const Icon = item.icon
-                  const isActive = activeSection === item.id
-
-                  if (collapsed) {
-                    return (
-                      <button
-                        className={cn(
-                          'flex w-full cursor-pointer items-center justify-center rounded-[18px] border p-2.5 transition-colors duration-200',
-                          isActive
-                            ? 'border-accent/24 bg-accent/[0.09] text-white'
-                            : 'border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.04] hover:text-white',
-                        )}
-                        key={item.id}
-                        onClick={() => onNavigate(item.id)}
-                        title={item.label}
-                        type="button"
-                        aria-current={isActive ? 'page' : undefined}
-                      >
-                        <Icon className="size-5" />
-                      </button>
-                    )
-                  }
-
-                  return (
-                    <button
-                      className={cn('workspace-nav-item group', isActive && 'workspace-nav-item--active')}
-                      key={item.id}
-                      onClick={() => onNavigate(item.id)}
-                      type="button"
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      <span className="workspace-nav-item__icon">
-                        <Icon className="size-4" />
-                      </span>
-                      <span className="block min-w-0 flex-1 truncate text-sm font-semibold">{item.label}</span>
-                      <ChevronRight className="size-3.5 text-muted-foreground/60 transition group-hover:text-white/70" />
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </section>
-        )
-      })}
-    </nav>
   )
 }
 
@@ -404,7 +332,7 @@ function DesktopAccountDock({
     <div className="workspace-sidebar__surface">
       {/* Linha de identidade */}
       <div className="flex items-center gap-2.5">
-        <span className="desk-avatar-ring flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -465,7 +393,7 @@ function MobileAccountDock({
   return (
     <div className="workspace-sidebar__surface">
       <div className="flex items-center gap-3">
-        <span className="desk-avatar-ring flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">

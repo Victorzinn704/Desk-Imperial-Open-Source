@@ -6,16 +6,16 @@ export function Skeleton({ className }: Readonly<{ className?: string }>) {
 
 export function MetricCardSkeleton() {
   return (
-    <article className="desk-stat-card flex flex-col overflow-hidden">
-      <div className="flex items-start justify-between gap-2 px-5 pt-5">
-        <Skeleton className="size-9 rounded-xl" />
-        <Skeleton className="h-5 w-14 rounded-full" />
+    <article className="imperial-card-stat space-y-3 p-5">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20 rounded-full" />
+        <Skeleton className="h-6 w-32 rounded-lg" />
       </div>
-      <div className="space-y-2 px-5 pb-4 pt-3">
-        <Skeleton className="h-3 w-20 rounded-full" />
-        <Skeleton className="h-7 w-28 rounded-lg" />
+      <Skeleton className="h-12 rounded-2xl" />
+      <div className="flex items-center justify-between pt-2">
+        <Skeleton className="h-3 w-24 rounded-full" />
+        <Skeleton className="h-3 w-16 rounded-full" />
       </div>
-      <Skeleton className="mt-auto h-14 w-full rounded-none" />
     </article>
   )
 }
