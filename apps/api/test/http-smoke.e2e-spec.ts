@@ -89,11 +89,22 @@ describe('HTTP smoke (e2e)', () => {
       mockPrisma.isHealthy.mockResolvedValue(false)
       mockCache.ping.mockResolvedValue(true)
 
-      const response = await request(app.getHttpServer()).get('/api/health').expect(200)
+      const response = await request(app.getHttpServer()).get('/api/health').expect(503)
 
       expect(response.body.status).toBe('error')
       expect(response.body.dbHealthy).toBe(false)
       expect(response.body.redisHealthy).toBe(true)
+    })
+
+    it('returns error when redis is unhealthy', async () => {
+      mockPrisma.isHealthy.mockResolvedValue(true)
+      mockCache.ping.mockResolvedValue(false)
+
+      const response = await request(app.getHttpServer()).get('/api/health').expect(503)
+
+      expect(response.body.status).toBe('error')
+      expect(response.body.dbHealthy).toBe(true)
+      expect(response.body.redisHealthy).toBe(false)
     })
   })
 

@@ -166,7 +166,7 @@ Diagnostico:
 
 Evidencia tecnica:
 
-- controller retorna 410 no endpoint de importacao.
+- endpoint de importacao CSV esta ativo no controller.
 - service ainda contem regras de importacao.
 
 Impacto de produto:

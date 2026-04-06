@@ -18,23 +18,7 @@ Cada item tem:
 
 ## Limitações de produto
 
-### L-01 — Importação CSV de produtos desativada
-
-| Campo      | Valor                   |
-| ---------- | ----------------------- |
-| Severidade | Média                   |
-| Tipo       | Limitação de produto    |
-| Status     | Bloqueado (intencional) |
-
-O endpoint de importação de produtos via CSV retorna HTTP 410 (Gone). A lógica de parsing e importação existe no service mas o endpoint está desativado no controller.
-
-**Impacto:** quem quer cadastrar muitos produtos precisa fazer um por um pela interface.
-
-**Por que está bloqueado:** o endpoint foi desativado enquanto a lógica de validação e rollback não está robusta o suficiente para produção.
-
----
-
-### L-02 — Sem integração com plataformas de entrega
+### L-01 — Sem integração com plataformas de entrega
 
 | Campo      | Valor                |
 | ---------- | -------------------- |
@@ -50,7 +34,7 @@ O sistema não se integra com iFood, Rappi ou outras plataformas de delivery. Os
 
 ---
 
-### L-03 — Sem relatórios avançados ou dashboards customizáveis
+### L-02 — Sem relatórios avançados ou dashboards customizáveis
 
 | Campo      | Valor                |
 | ---------- | -------------------- |
@@ -62,7 +46,7 @@ Os KPIs financeiros são fixos. Não é possível criar relatórios customizados
 
 ---
 
-### L-04 — Sem suporte a múltiplas unidades no mesmo workspace
+### L-03 — Sem suporte a múltiplas unidades no mesmo workspace
 
 | Campo      | Valor                |
 | ---------- | -------------------- |

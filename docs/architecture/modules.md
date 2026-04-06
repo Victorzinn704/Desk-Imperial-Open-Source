@@ -182,7 +182,7 @@ modules/
 - Combos agrupam múltiplos produtos com preço único
 - Produtos inativos não aparecem no PDV mas mantêm histórico
 - Preço suporta múltiplas moedas (BRL, USD, EUR)
-- Import CSV: lógica existe no service, endpoint bloqueado (HTTP 410)
+- Import CSV: endpoint ativo no controller, protegido por sessão + CSRF e apoiado pela lógica de importação no service
 
 ---
 

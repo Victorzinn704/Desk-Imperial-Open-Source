@@ -18,7 +18,7 @@ Fase inicial da migracao para stack OSS com foco em baixo overhead:
 - A API ja possui inicializacao real de OpenTelemetry no bootstrap
 - O frontend ja possui Grafana Faro integrado ao runtime e aos boundaries de erro
 - O stack local provisiona Alloy, Tempo, Loki, Prometheus, Alertmanager, Grafana e Blackbox
-- O collector do frontend ainda nao esta fechado dentro do compose do repositorio; `NEXT_PUBLIC_FARO_COLLECTOR_URL` continua sendo dependencia explicita de ambiente
+- O receiver Faro local agora esta fechado na Alloy oficial do stack OSS em `http://localhost:12347/collect`; `NEXT_PUBLIC_FARO_COLLECTOR_URL` continua sendo a variavel que aponta para esse endpoint no runtime do frontend
 
 ## Variaveis de ambiente
 
@@ -52,6 +52,10 @@ OTEL_TRACES_SAMPLE_RATE=0.03
 OTEL_METRICS_EXPORT_INTERVAL_MS=15000
 OTEL_SERVICE_NAME=desk-imperial-api
 OTEL_SERVICE_ENVIRONMENT=development
+NEXT_PUBLIC_FARO_COLLECTOR_URL=http://localhost:12347/collect
+NEXT_PUBLIC_FARO_APP_NAME=desk-imperial-web
+NEXT_PUBLIC_FARO_APP_VERSION=0.1.0
+NEXT_PUBLIC_FARO_ENVIRONMENT=development
 ```
 
 Subir stack OSS local:
@@ -69,6 +73,7 @@ Endpoints locais:
 - OTLP ingest (Alloy): `http://localhost:4318/v1/traces`
 - OTLP ingest metricas (Alloy): `http://localhost:4318/v1/metrics`
 - OTLP ingest logs (Alloy): `http://localhost:4318/v1/logs`
+- Faro receiver (Alloy): `http://localhost:12347/collect`
 - Alloy metrics/UI: `http://localhost:12345`
 - Blackbox exporter: `http://localhost:9115`
 
@@ -79,17 +84,17 @@ Estado real desta fase hoje:
 - cliente Faro implementado no codigo web
 - CSP preparada para liberar o dominio do collector
 - limitadores de ruido e sanitizacao aplicados no cliente
-- ingestao do browser ainda depende de um collector configurado fora do stack local atual
+- ingestao do browser agora pode apontar para o receiver Faro local da Alloy; para producao, continue usando um collector HTTPS externo
 
 Consequencia pratica:
 
 - sem `NEXT_PUBLIC_FARO_COLLECTOR_URL` valido no ambiente, o frontend continua seguro, mas nao envia eventos
-- a stack local atual cobre bem API/infra, porem ainda nao fecha sozinha a trilha browser -> collector -> Grafana
+- a stack local atual fecha a trilha browser -> collector -> Grafana quando o runtime do frontend aponta para `http://localhost:12347/collect`
 
 Variaveis recomendadas:
 
 ```env
-NEXT_PUBLIC_FARO_COLLECTOR_URL=https://seu-collector-faro/collect
+NEXT_PUBLIC_FARO_COLLECTOR_URL=http://localhost:12347/collect
 NEXT_PUBLIC_FARO_APP_NAME=desk-imperial-web
 NEXT_PUBLIC_FARO_APP_VERSION=0.1.0
 NEXT_PUBLIC_FARO_ENVIRONMENT=production
@@ -138,7 +143,7 @@ Prometheus e regras:
 Limitacoes atuais:
 
 - dashboard provisionado hoje e mais forte em saude da infraestrutura do que em fluxo de produto
-- Alertmanager ainda nao sai para destino externo por padrao
+- Alertmanager ainda nao sai para destino externo por padrao, a menos que `ALERTMANAGER_WEBHOOK_URL` seja definido no ambiente do compose
 - o probe `desk-api-health` pressupoe a API local respondendo em `http://host.docker.internal:4000/api/health`
 
 Arquivos de referencia:
@@ -179,5 +184,5 @@ npm run obs:down
 - enriquecer labels de logs no Alloy com contexto de dominio por modulo
 - adicionar metricas de negocio (RED) no backend para dashboards de produto
 - ampliar alertas com SLO de latencia/erro de API
-- fechar collector do frontend dentro do desenho oficial da stack
+- padronizar o receiver Faro local na stack oficial e manter a URL HTTPS externa para producao
 - publicar dashboards separados para browser, auth e operacao

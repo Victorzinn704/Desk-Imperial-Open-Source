@@ -85,18 +85,54 @@ Essa camada deve entrar **depois** da aplicação estar estável, para não mist
 
 ---
 
+## Artefatos executáveis já materializados
+
+A base mínima e honesta de runtime para Oracle/VM agora fica materializada nestes arquivos:
+
+- `infra/oracle/compose.yaml`
+- `infra/oracle/Caddyfile`
+- `infra/oracle/docker/api.Dockerfile`
+- `infra/oracle/docker/web.Dockerfile`
+- `infra/oracle/.env.example`
+- `infra/oracle/README.md`
+- `infra/scripts/oracle-bootstrap.sh`
+
+Esses artefatos cobrem a fase 1 documentada aqui:
+
+- `web`
+- `api`
+- `Redis`
+- reverse proxy
+
+---
+
+## O que continua DADO AUSENTE
+
+O plano continua dependente de itens que ainda não estão materializados neste repositório:
+
+- DNS/domínio final
+- TLS/certificado
+- IP público ou hostname estável
+- IAM / secret manager externo
+- backup e DR
+- observabilidade fase 2
+- SonarQube como serviço persistente da Oracle
+
+---
+
 ## Serviços e responsabilidade
 
-| Serviço | Função | Observação |
-| --- | --- | --- |
-| `web` | Next.js do Desk Imperial | exposto por proxy |
-| `api` | NestJS + Socket.IO | exposto por proxy |
-| `redis` | cache, rate limit e base do realtime horizontal | interno |
-| `grafana` | visualização operacional | expor com autenticação |
-| `prometheus` | métricas e alert rules | preferencialmente interno |
-| `alloy` | recepção OTLP e roteamento | interno ou parcialmente exposto |
-| `alertmanager` | entrega de alertas | interno |
-| `sonarqube` | auditoria estática contínua | acesso controlado |
+| Serviço        | Função                                          | Observação                      |
+| -------------- | ----------------------------------------------- | ------------------------------- |
+| `proxy`        | reverse proxy HTTP da VM Oracle                 | expõe `web` e `api` na borda    |
+| `web`          | Next.js do Desk Imperial                        | exposto por proxy               |
+| `api`          | NestJS + Socket.IO                              | exposto por proxy               |
+| `redis`        | cache, rate limit e base do realtime horizontal | interno                         |
+| `grafana`      | visualização operacional                        | expor com autenticação          |
+| `prometheus`   | métricas e alert rules                          | preferencialmente interno       |
+| `alloy`        | recepção OTLP e roteamento                      | interno ou parcialmente exposto |
+| `alertmanager` | entrega de alertas                              | interno                         |
+| `sonarqube`    | auditoria estática contínua                     | acesso controlado               |
 
 ---
 

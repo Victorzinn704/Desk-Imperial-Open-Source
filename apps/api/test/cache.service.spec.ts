@@ -272,7 +272,9 @@ describe('CacheService', () => {
     })
 
     it('deve gerar prefixo e chave de kitchen por workspace e escopo', () => {
-      expect(CacheService.operationsKitchenPrefix('owner-1', '2026-03-30')).toBe('operations:kitchen:owner-1:2026-03-30:')
+      expect(CacheService.operationsKitchenPrefix('owner-1', '2026-03-30')).toBe(
+        'operations:kitchen:owner-1:2026-03-30:',
+      )
       expect(CacheService.operationsKitchenKey('owner-1', '2026-03-30')).toBe(
         'operations:kitchen:owner-1:2026-03-30:workspace',
       )
@@ -282,7 +284,9 @@ describe('CacheService', () => {
     })
 
     it('deve gerar prefixo e chave de summary por workspace e escopo', () => {
-      expect(CacheService.operationsSummaryPrefix('owner-1', '2026-03-30')).toBe('operations:summary:owner-1:2026-03-30:')
+      expect(CacheService.operationsSummaryPrefix('owner-1', '2026-03-30')).toBe(
+        'operations:summary:owner-1:2026-03-30:',
+      )
       expect(CacheService.operationsSummaryKey('owner-1', '2026-03-30')).toBe(
         'operations:summary:owner-1:2026-03-30:workspace',
       )
@@ -300,6 +304,22 @@ describe('CacheService', () => {
       await expect(service.get('key')).resolves.toBeNull()
       await expect(service.set('key', {}, 300)).resolves.toBeUndefined()
       await expect(service.del('key')).resolves.toBeUndefined()
+    })
+
+    it('deve desligar o cache após falhas consecutivas no Redis', async () => {
+      const mockRedis = new Redis()
+      ;(mockRedis.set as jest.Mock).mockRejectedValue(new Error('Connection lost'))
+
+      const service = new CacheService()
+      ;(service as any).client = mockRedis
+      ;(service as any).enabled = true
+
+      await service.set('key-1', {}, 300)
+      await service.set('key-2', {}, 300)
+      await service.set('key-3', {}, 300)
+
+      expect(service.isReady()).toBe(false)
+      expect(mockRedis.set).toHaveBeenCalledTimes(3)
     })
 
     it('deve continuar operando quando Redis falha', async () => {

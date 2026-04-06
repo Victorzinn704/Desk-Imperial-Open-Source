@@ -235,4 +235,8 @@ async function bootstrap() {
   logger.log(`API pronta em http://localhost:${port}/api`)
 }
 
-void bootstrap()
+void bootstrap().catch((error: unknown) => {
+  const logger = new Logger('Bootstrap')
+  logger.error('Falha ao iniciar a API.', error instanceof Error ? error.stack : String(error))
+  process.exit(1)
+})

@@ -14,6 +14,35 @@ otelcol.receiver.otlp "default" {
   }
 }
 
+faro.receiver "frontend" {
+  extra_log_labels = {
+    telemetry_source = "browser",
+  }
+  log_format = "json"
+
+  server {
+    listen_address = "0.0.0.0"
+    listen_port    = 12347
+    cors_allowed_origins = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://app.deskimperial.online",
+      "https://deskimperial.online",
+    ]
+
+    rate_limiting {
+      enabled    = true
+      rate       = 50
+      burst_size = 100
+    }
+  }
+
+  output {
+    logs   = [loki.write.default.receiver]
+    traces = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
 otelcol.processor.batch "default" {
   output {
     metrics = [otelcol.exporter.prometheus.default.input]

@@ -84,13 +84,13 @@
 
 ### RF-06 — Gestão de produtos e portfólio
 
-| ID      | Requisito                                                                | Status                                                    |
-| ------- | ------------------------------------------------------------------------ | --------------------------------------------------------- |
-| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade | Implementado                                              |
-| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado    | Implementado                                              |
-| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão             | Implementado                                              |
-| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)       | Implementado                                              |
-| RF-06.5 | Importação de produtos via CSV                                           | Bloqueado (HTTP 410 — lógica existe, endpoint desativado) |
+| ID      | Requisito                                                                | Status       |
+| ------- | ------------------------------------------------------------------------ | ------------ |
+| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade | Implementado |
+| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado    | Implementado |
+| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão             | Implementado |
+| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)       | Implementado |
+| RF-06.5 | Importação de produtos via CSV                                           | Implementado |
 
 ---
 
@@ -270,7 +270,6 @@
 
 ## Restrições conhecidas
 
-1. **Importação CSV de produtos** está desativada (HTTP 410). A lógica existe no service mas o endpoint foi bloqueado.
-2. **Observabilidade OSS** ainda está em rollout progressivo entre ambientes.
-3. **Service Worker** está limitado ao módulo `/app` — não cobre todas as rotas.
-4. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.
+1. **Observabilidade OSS** ainda está em rollout progressivo entre ambientes.
+2. **Service Worker** está limitado ao módulo `/app` — não cobre todas as rotas.
+3. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.

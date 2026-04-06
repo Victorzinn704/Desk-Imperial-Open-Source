@@ -109,11 +109,11 @@ Código aberto porque a transparência gera confiança. Gratuito porque é para 
 
 ### Em evolução
 
-| Módulo                             | Status                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| Import CSV de produtos             | ⚠️ Desativado (lógica existe, endpoint bloqueado) |
-| Monitoramento de erros em produção | ⚠️ Stack OSS em implantação progressiva           |
-| Cobertura de testes frontend       | ⚠️ Parcial                                        |
+| Módulo                             | Status                                  |
+| ---------------------------------- | --------------------------------------- |
+| Import CSV de produtos             | ✅ Produção                             |
+| Monitoramento de erros em produção | ⚠️ Stack OSS em implantação progressiva |
+| Cobertura de testes frontend       | ⚠️ Parcial                              |
 
 ---
 

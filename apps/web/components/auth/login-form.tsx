@@ -315,16 +315,17 @@ export function LoginForm() {
           {isLoading ? 'Entrando...' : 'Entrar no portal'}
         </button>
 
-        {/* Demo */}
         <button
-          className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20"
+          className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20 disabled:opacity-50"
+          disabled={isLoading}
           type="button"
           onClick={() => {
             if (isStaffMode) {
               demoLoginMutation.mutate({ loginMode: 'STAFF', employeeCode: 'VD-001' })
-            } else {
-              demoLoginMutation.mutate({ loginMode: 'OWNER' })
+              return
             }
+
+            demoLoginMutation.mutate({ loginMode: 'OWNER' })
           }}
         >
           <div>

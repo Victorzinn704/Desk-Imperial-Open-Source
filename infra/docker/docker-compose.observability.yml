@@ -8,6 +8,7 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
+      - '12347:12347'
       - '12345:12345'
     depends_on:
       - loki
@@ -70,11 +71,14 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.28.1
     container_name: desk-observability-alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+    environment:
+      ALERTMANAGER_WEBHOOK_URL: ${ALERTMANAGER_WEBHOOK_URL:-}
+    entrypoint:
+      - '/bin/sh'
+      - '/etc/alertmanager/render-config.sh'
     volumes:
       - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./observability/alertmanager/render-config.sh:/etc/alertmanager/render-config.sh:ro
       - alertmanager-data:/alertmanager
     ports:
       - '9093:9093'
