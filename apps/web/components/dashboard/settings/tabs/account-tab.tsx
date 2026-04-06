@@ -32,9 +32,9 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
 
   return (
     <>
-      <article className="imperial-card p-7">
+      <article className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(195,164,111,0.18)] bg-[rgba(195,164,111,0.08)] text-[var(--accent)]">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] text-[var(--accent)]">
             <UserRound className="size-5" />
           </span>
           <div>

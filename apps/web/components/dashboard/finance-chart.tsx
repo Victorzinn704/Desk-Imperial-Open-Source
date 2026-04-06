@@ -40,7 +40,7 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#639371', '#5a95c4', '#C9A84C', '#d47373', '#a78bfa', '#fb923c', '#e879f9', '#2265d8']
+const palette = ['#3b82f6', '#10b981', '#6366f1', '#f43f5e', '#8b5cf6', '#f59e0b', '#06b6d4', '#4f46e5']
 
 const chartViews: ChartViewOption[] = [
   {
@@ -207,7 +207,7 @@ export function FinanceChart({ finance, ordersTotals, isLoading = false, error =
                 className={cn(
                   'inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors duration-200',
                   activeView === view.id
-                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_12px_30px_rgba(212,177,106,0.12)]'
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_4px_12px_rgba(37,99,235,0.15)]'
                     : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
                 )}
                 key={view.id}

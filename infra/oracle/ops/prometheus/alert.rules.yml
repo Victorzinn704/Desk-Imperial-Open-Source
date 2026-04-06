@@ -1,0 +1,110 @@
+groups:
+  - name: desk-imperial-observability
+    rules:
+      - alert: AlloyDown
+        expr: up{job="alloy"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Alloy indisponivel
+          description: O serviço Alloy está sem scrape válido por mais de 2 minutos.
+
+      - alert: TempoDown
+        expr: up{job="tempo"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Tempo indisponivel
+          description: O serviço Tempo está sem scrape válido por mais de 2 minutos.
+
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Loki indisponivel
+          description: O serviço Loki está sem scrape válido por mais de 2 minutos.
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus indisponivel
+          description: O serviço Prometheus está sem scrape válido por mais de 2 minutos.
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Alertmanager indisponivel
+          description: O serviço Alertmanager está sem scrape válido por mais de 3 minutos.
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Grafana indisponivel
+          description: O serviço Grafana está sem scrape válido por mais de 3 minutos.
+
+      - alert: BlackboxDown
+        expr: up{job="blackbox"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Blackbox exporter indisponivel
+          description: O blackbox exporter está sem scrape válido por mais de 3 minutos.
+
+      - alert: ApiHealthProbeFailed
+        expr: probe_success{job="desk-api-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: API health probe falhou
+          description: O probe HTTP da API falhou continuamente por mais de 2 minutos.
+
+      - alert: AppHealthProbeFailed
+        expr: probe_success{job="desk-app-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: App health probe falhou
+          description: O probe HTTP do frontend falhou continuamente por mais de 2 minutos.
+
+      - alert: SonarQubeHealthProbeFailed
+        expr: probe_success{job="sonarqube-health"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: SonarQube health probe falhou
+          description: O endpoint de status do SonarQube nao respondeu com sucesso por mais de 5 minutos.
+
+      - alert: OracleNodeExporterDown
+        expr: up{job="oracle-node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node exporter indisponivel em VM Oracle
+          description: O node exporter de {{ $labels.oracle_vm }} esta sem scrape valido por mais de 5 minutos.
+
+      - alert: PrometheusScrapeStalled
+        expr: sum(increase(scrape_samples_scraped[10m])) <= 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Possível estagnação de scrape no Prometheus
+          description: Não houve coleta de samples nos últimos 10 minutos; revisar collectors/targets.

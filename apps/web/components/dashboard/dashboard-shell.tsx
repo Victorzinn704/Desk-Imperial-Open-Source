@@ -31,13 +31,10 @@ import {
 } from '@/components/dashboard/dashboard-navigation'
 import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
 
-const StaffMobileShell = dynamic(
-  () => import('@/components/staff-mobile').then((module) => module.StaffMobileShell),
-  {
-    ssr: false,
-    loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
-  },
-)
+const StaffMobileShell = dynamic(() => import('@/components/staff-mobile').then((module) => module.StaffMobileShell), {
+  ssr: false,
+  loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
+})
 
 const OwnerMobileShell = dynamic(
   () => import('@/components/owner-mobile/owner-mobile-shell').then((module) => module.OwnerMobileShell),
@@ -138,12 +135,15 @@ export function resolveActiveNavigation(
 ) {
   const fallbackNavigation = activeSection === 'settings' ? settingsNavigationFallback : navigationGroups[0]?.items[0]
   return (
-    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
-    fallbackNavigation
+    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ?? fallbackNavigation
   )
 }
 
-function buildStaffDashboardSignals(activeSection: DashboardSectionId, ordersCompleted: number, productsActive: number): DashboardSignal[] {
+function buildStaffDashboardSignals(
+  activeSection: DashboardSectionId,
+  ordersCompleted: number,
+  productsActive: number,
+): DashboardSignal[] {
   const isSalesSection = activeSection === 'sales'
   const isPdvSection = activeSection === 'pdv'
 
@@ -202,7 +202,9 @@ function buildOwnerDashboardSignals({
   return [
     {
       label: hasFinance ? 'Receita do mes' : 'Workspace',
-      value: hasFinance ? formatCurrency(financeTotals?.currentMonthRevenue ?? 0, displayCurrency) : activeNavigationLabel,
+      value: hasFinance
+        ? formatCurrency(financeTotals?.currentMonthRevenue ?? 0, displayCurrency)
+        : activeNavigationLabel,
       helper: hasFinance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
     },
     {
@@ -278,10 +280,10 @@ export function DashboardWorkspaceHeader({
   signals: DashboardSignal[]
 }>) {
   return (
-    <header className="imperial-card p-6 md:p-8" id="workspace-header">
+    <header className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8" id="workspace-header">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             <span className="size-2 rounded-full bg-[var(--accent)]" />
             {activeHero.badge}
           </div>
@@ -290,12 +292,14 @@ export function DashboardWorkspaceHeader({
           <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
         </div>
 
-        <div className="flex flex-col gap-4 xl:max-w-[520px]">
-          <div className="grid gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-6 xl:max-w-[520px]">
+          <div className="flex divide-x divide-white/5">
             {signals.map((signal) => (
-              <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{signal.label}</p>
-                <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
+              <div className="flex-1 px-4 first:pl-0 last:pr-0" key={signal.label}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {signal.label}
+                </p>
+                <p className="mt-3 text-2xl font-semibold text-white">{signal.value}</p>
                 <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
               </div>
             ))}
@@ -330,7 +334,11 @@ export function DashboardWorkspaceHeader({
                 <ArrowUpRight className="size-4" />
               </Button>
             </Link>
-            <Button size="lg" variant={isTimelineOpen ? 'primary' : 'ghost'} onClick={() => setIsTimelineOpen(!isTimelineOpen)}>
+            <Button
+              size="lg"
+              variant={isTimelineOpen ? 'primary' : 'ghost'}
+              onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+            >
               <Clock className="size-4" />
               Atividades
             </Button>
@@ -618,7 +626,7 @@ function EvaluationModeBanner({
     <section className="imperial-card-soft px-5 py-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.14)] text-[var(--accent)]">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.22)] bg-[rgba(37,99,235,0.14)] text-[var(--accent)]">
             <TimerReset className="size-5" />
           </span>
           <div>
@@ -678,7 +686,7 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
           Por seguranca, o painel so e liberado apos a confirmacao do codigo enviado para o email cadastrado.
         </p>
 
-        <div className="mt-8 rounded-[24px] border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.06)] p-4 text-sm text-[var(--text-soft)]">
+        <div className="mt-8 rounded-[24px] border border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.06)] p-4 text-sm text-[var(--text-soft)]">
           Email em validacao: <span className="font-semibold text-white">{email}</span>
         </div>
 

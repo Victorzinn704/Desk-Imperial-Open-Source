@@ -28,8 +28,8 @@ export function MetricCard({
 
   const sparkData = trend?.map((v, i) => ({ i, v }))
 
-  const [r, g, b] = hexToRgb(trendColor.startsWith('#') ? trendColor : '#d4b16a')
-  const iconGlow = `0 0 18px rgba(${r},${g},${b},0.28)`
+  const [r, g, b] = hexToRgb(trendColor.startsWith('#') ? trendColor : '#2563eb')
+  const iconGlow = `0 4px 12px rgba(${r},${g},${b},0.15)`
   const iconBorderColor = `rgba(${r},${g},${b},0.32)`
   const iconBg = `rgba(${r},${g},${b},0.1)`
 
