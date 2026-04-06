@@ -392,6 +392,413 @@ select {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESK V2 — FLUID CARD SYSTEM
+   Inspirado nos padrões de shadcn-admin e TailAdmin.
+   Convive com o sistema imperial-card (landing). No dashboard, usar desk-card-*.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Base card ─────────────────────────────────────────────────────────────── */
+.desk-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.25rem;
+  background: rgba(13, 17, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    0 12px 40px rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.desk-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 52px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Stat card — left accent border, clean hierarchy ──────────────────────── */
+.desk-stat-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.25rem;
+  background: rgba(13, 17, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    0 8px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+
+.desk-stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--stat-accent, #c3a46f);
+  border-radius: 0;
+  opacity: 0.85;
+  transition: opacity 0.22s ease;
+}
+
+.desk-stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.09);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 14px 44px rgba(0, 0, 0, 0.28);
+}
+
+.desk-stat-card:hover::before {
+  opacity: 1;
+}
+
+/* ─── KPI card — gradient top border, used for hero metrics ────────────────── */
+.desk-kpi-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  background: rgba(11, 15, 20, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 16px 52px rgba(0, 0, 0, 0.28);
+}
+
+.desk-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--kpi-accent, #c3a46f),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+/* ─── Chart card — structured header + body, sem beam ──────────────────────── */
+.desk-chart-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  background: rgba(11, 15, 20, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    0 20px 64px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.desk-chart-card__header {
+  padding: 1.25rem 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.desk-chart-card__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.desk-chart-card__body {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+/* ─── Glass card — backdrop blur, usado em overlays e modais leves ──────────── */
+.desk-glass-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.375rem;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Flat card — sem sombra, para conteúdo aninhado ───────────────────────── */
+.desk-card-flat {
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ─── Pill badge system ─────────────────────────────────────────────────────── */
+.desk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.desk-pill-up {
+  background: rgba(99, 147, 113, 0.16);
+  color: #82c49a;
+  border: 1px solid rgba(99, 147, 113, 0.28);
+}
+
+.desk-pill-down {
+  background: rgba(212, 115, 115, 0.16);
+  color: #e08888;
+  border: 1px solid rgba(212, 115, 115, 0.28);
+}
+
+.desk-pill-neutral {
+  background: rgba(122, 136, 150, 0.12);
+  color: #7a8896;
+  border: 1px solid rgba(122, 136, 150, 0.18);
+}
+
+.desk-pill-accent {
+  background: rgba(195, 164, 111, 0.13);
+  color: #c3a46f;
+  border: 1px solid rgba(195, 164, 111, 0.26);
+}
+
+.desk-pill-info {
+  background: rgba(90, 149, 196, 0.14);
+  color: #7aafd4;
+  border: 1px solid rgba(90, 149, 196, 0.26);
+}
+
+/* ─── Section header ────────────────────────────────────────────────────────── */
+.desk-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.25rem;
+}
+
+/* ─── Divider ───────────────────────────────────────────────────────────────── */
+.desk-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  margin: 1.25rem 0;
+}
+
+/* ─── List row — para tabelas e listas dentro de cards ──────────────────────── */
+.desk-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.desk-list-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.desk-list-row:first-child {
+  padding-top: 0;
+}
+
+/* ─── Icon badge ────────────────────────────────────────────────────────────── */
+.desk-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* ─── Data label — caption acima de valores ─────────────────────────────────── */
+.desk-data-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+/* ─── Value display — número principal ─────────────────────────────────────── */
+.desk-data-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.desk-data-value-lg {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #fff;
+}
+
+/* ─── Sidebar nav item — substitui os estilos inline do dashboard-sidebar ───── */
+.desk-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  user-select: none;
+}
+
+.desk-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.desk-nav-item--active {
+  background: rgba(195, 164, 111, 0.1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.desk-nav-item--active:hover {
+  background: rgba(195, 164, 111, 0.14);
+}
+
+/* ─── Avatar ring — user profile no sidebar ─────────────────────────────────── */
+.desk-avatar-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desk-avatar-ring::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(195, 164, 111, 0.5), rgba(195, 164, 111, 0.08));
+  z-index: -1;
+}
+
+/* ─── Progress bar ───────────────────────────────────────────────────────────── */
+.desk-progress-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.desk-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--fill-color, #c3a46f);
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Sparkline area wrapper ─────────────────────────────────────────────────── */
+.desk-sparkline {
+  overflow: hidden;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+/* ─── Stat row — par label/valor em linha ───────────────────────────────────── */
+.desk-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* ─── Highlight number — acento dourado em valores relevantes ───────────────── */
+.desk-highlight {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ─── Trend indicator ────────────────────────────────────────────────────────── */
+.desk-trend-up {
+  color: #82c49a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.desk-trend-down {
+  color: #e08888;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* ─── Keyframes extras ───────────────────────────────────────────────────────── */
+@keyframes desk-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes desk-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.desk-animate-in {
+  animation: desk-fade-in 0.3s ease forwards;
+}
+
 /* ─── Leaflet map controls ──────────────────────────────────────────────────── */
 
 .leaflet-container {

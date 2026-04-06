@@ -40,10 +40,35 @@
   --color-info: var(--color-desk-info);
   --color-success: var(--color-desk-success);
 
+  /* Superfícies v2 */
+  --color-desk-surface-chart: #0b0f14;
+  --color-desk-surface-input: #0f1318;
+  --color-desk-surface-hover: rgb(255 255 255 / 0.04);
+  --color-desk-surface-active: rgb(195 164 111 / 0.1);
+
+  /* Sombras */
   --shadow-desk-panel: 0 24px 80px rgb(0 0 0 / 0.28);
   --shadow-desk-panel-strong: 0 32px 100px rgb(0 0 0 / 0.38);
+  --shadow-desk-card: 0 8px 32px rgb(0 0 0 / 0.22);
+  --shadow-desk-stat: 0 4px 20px rgb(0 0 0 / 0.18);
+  --shadow-desk-glow-accent: 0 0 24px rgb(195 164 111 / 0.18);
+  --shadow-desk-glow-success: 0 0 20px rgb(99 147 113 / 0.22);
+  --shadow-desk-glow-danger: 0 0 20px rgb(212 115 115 / 0.22);
 
+  /* Radii */
   --radius-desk-card: 1.75rem;
+  --radius-desk-card-md: 1.25rem;
+  --radius-desk-card-sm: 0.875rem;
   --radius-desk-control: 1.2rem;
   --radius-desk-sidebar: 1.4rem;
+  --radius-desk-pill: 9999px;
+  --radius-desk-badge: 0.5rem;
+
+  /* Gradientes de borda */
+  --gradient-desk-border-accent: linear-gradient(135deg, rgb(195 164 111 / 0.5), rgb(195 164 111 / 0.1));
+  --gradient-desk-border-subtle: linear-gradient(135deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03));
+  --gradient-desk-top-accent: linear-gradient(90deg, transparent, #c3a46f, transparent);
+  --gradient-desk-top-info: linear-gradient(90deg, transparent, #5a95c4, transparent);
+  --gradient-desk-top-success: linear-gradient(90deg, transparent, #639371, transparent);
+  --gradient-desk-top-danger: linear-gradient(90deg, transparent, #d47373, transparent);
 }
