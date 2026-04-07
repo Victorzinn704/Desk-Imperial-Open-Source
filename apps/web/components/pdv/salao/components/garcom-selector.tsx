@@ -37,7 +37,7 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
             onAssign(g.id)
             onClose()
           }}
-          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-white hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
         >
           <GarcomAvatar garcom={g} size={18} />
           {g.nome}

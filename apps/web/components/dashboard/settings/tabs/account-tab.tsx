@@ -39,7 +39,7 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
           </span>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Conta e identidade</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Dados principais da operação</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Dados principais da operação</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Nome da empresa, responsável e moeda principal passam a ser geridos dentro do mesmo ambiente do dashboard.
             </p>

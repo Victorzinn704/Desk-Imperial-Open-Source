@@ -549,9 +549,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <header
-        className="flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
+        className="flex shrink-0 items-center justify-between bg-[var(--bg)] px-5 pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
@@ -573,7 +573,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 }}
               />
             </div>
-            <span className="text-sm font-medium text-white">{displayName.split(' ')[0]}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">{displayName.split(' ')[0]}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -581,7 +581,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             type="button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-white transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-[var(--text-primary)] transition-transform active:scale-95"
             aria-label="Encerrar sessão"
           >
             <LogOut className="size-4" />
@@ -640,7 +640,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
               <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
                 <ShoppingCart className="size-7 text-[#7a8896]" />
               </div>
-              <p className="text-sm font-medium text-white">Selecione uma mesa primeiro</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Selecione uma mesa primeiro</p>
               <p className="mt-1 text-xs text-[#7a8896]">
                 Vá para a aba Mesas e toque em uma mesa para criar um pedido
               </p>
@@ -681,7 +681,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       </main>
 
       <nav
-        className="shrink-0 bg-[#000000] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
+        className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">

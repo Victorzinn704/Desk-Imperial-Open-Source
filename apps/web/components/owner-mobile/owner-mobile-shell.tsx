@@ -352,12 +352,12 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const mesasOcupadas = useMemo(() => mesas.filter((m) => m.status === 'ocupada').length, [mesas])
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#000000] text-white">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       {/* Header */}
       {/* Header Minimalista */}
       <header
         data-testid="owner-header"
-        className="relative z-50 flex shrink-0 items-center justify-between bg-[#000000] px-5 pb-3"
+        className="relative z-50 flex shrink-0 items-center justify-between bg-[var(--bg)] px-5 pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
@@ -379,7 +379,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               />
             </div>
-            <span data-testid="user-display-name" className="text-sm font-medium text-white">
+            <span data-testid="user-display-name" className="text-sm font-medium text-[var(--text-primary)]">
               {displayName.split(' ')[0]}
             </span>
           </div>
@@ -406,7 +406,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             data-testid="logout-button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-white transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-[var(--text-primary)] transition-transform active:scale-95"
             aria-label="Encerrar sessão"
           >
             <LogOut className="size-4" />
@@ -492,7 +492,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
       {/* Bottom nav Moderna (iFood style) */}
       <nav
-        className="shrink-0 bg-[#000000] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
+        className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
@@ -620,7 +620,7 @@ function OwnerResumoTab({
               {isLoading ? (
                 <div className="h-6 w-20 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
               ) : (
-                <p className="text-lg font-bold text-white">{value}</p>
+                <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
               )}
               <p className="mt-1 text-[10px] text-[#7a8896]">{sub}</p>
             </div>
@@ -669,7 +669,7 @@ function OwnerResumoTab({
                     {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
                   </span>
                   <div>
-                    <p className="text-xs font-semibold text-white">{g.nome}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">{g.nome}</p>
                     <p className="text-[10px] text-[#7a8896]">{g.comandas} comandas</p>
                   </div>
                 </div>
@@ -699,7 +699,7 @@ function OwnerResumoTab({
                   className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-xs font-semibold text-white truncate max-w-[65%]">{p.nome}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[65%]">{p.nome}</p>
                     <div className="text-right">
                       <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
                       <span className="ml-2 text-[10px] text-[#7a8896]">×{p.qtd}</span>

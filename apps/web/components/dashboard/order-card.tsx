@@ -40,7 +40,9 @@ export const OrderCard = memo(function OrderCard({
           </span>
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-lg font-semibold text-white">{order.customerName || 'Cliente não informado'}</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                {order.customerName || 'Cliente não informado'}
+              </h3>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
                   order.status === 'COMPLETED'
@@ -84,21 +86,21 @@ export const OrderCard = memo(function OrderCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Receita</p>
-          <p className="mt-2 text-lg font-semibold text-white">{revenueValue.primary}</p>
+          <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{revenueValue.primary}</p>
           {revenueValue.secondary ? (
             <p className="mt-1 text-xs text-[var(--text-soft)]">{revenueValue.secondary}</p>
           ) : null}
         </div>
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro</p>
-          <p className="mt-2 text-lg font-semibold text-white">{profitValue.primary}</p>
+          <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{profitValue.primary}</p>
           {profitValue.secondary ? (
             <p className="mt-1 text-xs text-[var(--text-soft)]">{profitValue.secondary}</p>
           ) : null}
         </div>
         <div className="imperial-card-stat px-4 py-3">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Unidades</p>
-          <p className="mt-2 text-lg font-semibold text-white">{order.totalItems}</p>
+          <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{order.totalItems}</p>
           <p className="mt-1 text-xs text-[var(--text-soft)]">{order.items.length} linha(s) no pedido</p>
         </div>
       </div>

@@ -41,7 +41,7 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
           {initials || 'IT'}
         </span>
         <div>
-          <p className="text-sm font-medium text-white line-clamp-2">{product.name}</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">{product.name}</p>
           <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
           {product.isCombo ? (
             <span className="mt-1 inline-flex rounded-full border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.14)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">

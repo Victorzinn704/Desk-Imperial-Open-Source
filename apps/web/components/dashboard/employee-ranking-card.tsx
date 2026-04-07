@@ -25,7 +25,9 @@ export function EmployeeRankingCard({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--success)]">
             Performance comercial
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">Ranking de rendimento por funcionario</h2>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+            Ranking de rendimento por funcionario
+          </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
             O painel cruza receita, lucro e ticket medio com base no vendedor vinculado em cada pedido.
           </p>
@@ -77,7 +79,7 @@ export function EmployeeRankingCard({
                         {index === 0 ? <Trophy className="size-4" /> : <Award className="size-4" />}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-white">{employee.employeeName}</p>
+                        <p className="truncate font-medium text-[var(--text-primary)]">{employee.employeeName}</p>
                         <p className="mt-1 text-sm text-[var(--text-soft)]">
                           {employee.employeeCode ? `ID ${employee.employeeCode}` : 'Venda sem snapshot de ID'}
                         </p>
@@ -135,7 +137,7 @@ function TopMetric({
         <Icon className="size-4" />
       </span>
       <p className="mt-4 text-sm text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }
@@ -144,7 +146,7 @@ function EmployeeStat({ label, value }: Readonly<{ label: string; value: string 
   return (
     <div className="imperial-card-stat px-4 py-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-white">{value}</p>
+      <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

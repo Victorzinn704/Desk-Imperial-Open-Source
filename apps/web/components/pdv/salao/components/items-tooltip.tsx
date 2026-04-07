@@ -13,7 +13,7 @@ export function ItemsTooltip({ comanda }: ItemsTooltipProps) {
       <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)] mb-1.5">Últimos itens</p>
       {lastItems.map((item, i) => (
         <div key={i} className="flex items-center justify-between gap-2 py-0.5">
-          <span className="text-[11px] text-white truncate flex-1">
+          <span className="text-[11px] text-[var(--text-primary)] truncate flex-1">
             {item.quantidade}× {item.nome}
           </span>
           <span className="text-[10px] text-[var(--text-soft)] shrink-0">

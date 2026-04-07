@@ -98,7 +98,9 @@ export function FinanceChart({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Analytics Profissional</p>
-          <h2 className="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">Desempenho Comercial</h2>
+          <h2 className="mt-3 text-3xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+            Desempenho Comercial
+          </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500 dark:text-muted-foreground">
             {activeViewOption.description}
           </p>
@@ -113,7 +115,7 @@ export function FinanceChart({
                   'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors duration-200',
                   activeView === view.id
                     ? 'border-accent bg-accent/10 text-accent dark:text-accent-strong shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:border-white/20 dark:hover:text-white',
+                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:border-white/20 dark:hover:text-[var(--text-primary)]',
                 )}
                 key={view.id}
                 onClick={() => setActiveView(view.id)}

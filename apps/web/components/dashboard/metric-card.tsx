@@ -51,7 +51,7 @@ export function MetricCard({
       <div className="flex items-end justify-between mt-5">
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
-          <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white/90">{value}</h4>
+          <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-[var(--text-primary)]/90">{value}</h4>
           {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-gray-500 dark:text-gray-500">{hint}</p> : null}
         </div>
 

@@ -35,7 +35,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
       />
       <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#111318] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
         <button
-          className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full text-[var(--text-soft)] transition hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+          className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full text-[var(--text-soft)] transition hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)]"
           type="button"
           onClick={onClose}
         >
@@ -43,7 +43,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
         </button>
 
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Nova Mesa</p>
-        <h2 className="mt-1 text-xl font-semibold text-white">Criar mesa</h2>
+        <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">Criar mesa</h2>
 
         <div className="mt-6 space-y-4">
           {/* Número / label da mesa */}
@@ -51,7 +51,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
             <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Número / Identificação</label>
             <input
               autoFocus
-              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
               maxLength={20}
               placeholder="Ex: 1, VIP, Balcão..."
               type="text"
@@ -65,15 +65,15 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
             <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Capacidade (pessoas)</label>
             <div className="flex items-center gap-3">
               <button
-                className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-white transition hover:bg-[rgba(255,255,255,0.08)]"
+                className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.08)]"
                 type="button"
                 onClick={() => setCapacidade((v) => Math.max(1, v - 1))}
               >
                 −
               </button>
-              <span className="w-8 text-center text-lg font-bold text-white">{capacidade}</span>
+              <span className="w-8 text-center text-lg font-bold text-[var(--text-primary)]">{capacidade}</span>
               <button
-                className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-white transition hover:bg-[rgba(255,255,255,0.08)]"
+                className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.08)]"
                 type="button"
                 onClick={() => setCapacidade((v) => Math.min(30, v + 1))}
               >
@@ -107,7 +107,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
 
         <div className="mt-6 flex gap-3">
           <button
-            className="flex-1 rounded-[12px] border border-[rgba(255,255,255,0.08)] py-2.5 text-sm text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.16)] hover:text-white"
+            className="flex-1 rounded-[12px] border border-[rgba(255,255,255,0.08)] py-2.5 text-sm text-[var(--text-soft)] transition hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
           >

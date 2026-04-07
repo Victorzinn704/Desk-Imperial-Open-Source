@@ -68,7 +68,11 @@ export function ProductForm({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
-  const { fields: comboFields, append: appendComboItem, remove: removeComboItem } = useFieldArray({
+  const {
+    fields: comboFields,
+    append: appendComboItem,
+    remove: removeComboItem,
+  } = useFieldArray({
     control,
     name: 'comboItems',
   })
@@ -211,7 +215,7 @@ export function ProductForm({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
             {product ? 'Editar produto' : 'Novo produto'}
           </p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">
+          <h2 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
             {product ? 'Atualize os dados do portfólio.' : 'Cadastre um item para o dashboard.'}
           </h2>
         </div>
@@ -271,7 +275,7 @@ export function ProductForm({
         ) : (
           <>
             <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-              <p className="font-medium text-white">Classe ativa</p>
+              <p className="font-medium text-[var(--text-primary)]">Classe ativa</p>
               <p className="mt-2">
                 {packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}
               </p>
@@ -309,21 +313,21 @@ export function ProductForm({
         </div>
 
         <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-          <p className="font-medium text-white">Leitura rápida do cadastro</p>
+          <p className="font-medium text-[var(--text-primary)]">Leitura rápida do cadastro</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
-              <p className="mt-2 text-base font-semibold text-white">
+              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
                 {formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
               </p>
             </div>
             <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada caixa/fardo</p>
-              <p className="mt-2 text-base font-semibold text-white">{unitsPerPackage} und</p>
+              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{unitsPerPackage} und</p>
             </div>
             <div className="imperial-card-stat px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
-              <p className="mt-2 text-base font-semibold text-white">{calculatedStockTotal} und</p>
+              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{calculatedStockTotal} und</p>
             </div>
           </div>
         </div>
@@ -341,7 +345,7 @@ export function ProductForm({
 
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
           <div>
-            <p className="text-sm font-medium text-white">Produto do tipo combo</p>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Produto do tipo combo</p>
             <p className="mt-0.5 text-xs text-[var(--text-soft)]">
               Ative para montar composição de itens por caixa/unidade para venda em combo no PDV.
             </p>
@@ -373,10 +377,10 @@ export function ProductForm({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-white">Componentes do combo</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Componentes do combo</p>
                 <button
                   type="button"
-                  className="rounded-[10px] border border-[rgba(255,255,255,0.14)] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[rgba(255,255,255,0.24)]"
+                  className="rounded-[10px] border border-[rgba(255,255,255,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[rgba(255,255,255,0.24)]"
                   onClick={() =>
                     appendComboItem({
                       productId: '',
@@ -520,7 +524,7 @@ export function ProductForm({
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-white">Envia para a cozinha</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Envia para a cozinha</p>
               {categoryValue && isKitchenCategory(categoryValue) && (
                 <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#9b8460)]">
                   auto

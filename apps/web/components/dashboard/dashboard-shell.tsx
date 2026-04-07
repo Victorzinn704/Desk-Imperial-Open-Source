@@ -294,7 +294,7 @@ export function DashboardWorkspaceHeader({
           <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
             Início / Painel operacional / {activeNavigationLabel}
           </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-white sm:text-5xl">
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-[var(--text-primary)] sm:text-5xl">
             {activeHero.title}
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-gray-600 dark:text-muted-foreground">
@@ -309,7 +309,9 @@ export function DashboardWorkspaceHeader({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
                   {signal.label}
                 </p>
-                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">{signal.value}</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                  {signal.value}
+                </p>
                 <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-muted-foreground">{signal.helper}</p>
               </div>
             ))}
@@ -325,11 +327,11 @@ export function DashboardWorkspaceHeader({
                   onClick={() => handleQuickAction(action)}
                   type="button"
                 >
-                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-white">
+                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-[var(--text-primary)]">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                       {action.label}
                     </span>
                     <span className="block truncate text-xs text-gray-500 dark:text-muted-foreground">
@@ -655,7 +657,7 @@ function EvaluationModeBanner({
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sessão temporária</p>
-            <h2 className="mt-2 text-lg font-semibold text-white">
+            <h2 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
               Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
@@ -666,7 +668,7 @@ function EvaluationModeBanner({
 
         <div className="imperial-card-stat px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tempo restante</p>
-          <p className="mt-2 text-2xl font-semibold text-white">{formatted}</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{formatted}</p>
         </div>
       </div>
     </section>
@@ -679,7 +681,7 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
       <div className="imperial-card mx-auto max-w-4xl p-8 sm:p-10">
         <BrandMark />
         <p className="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso necessario</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessão ainda não está ativa.</h1>
+        <h1 className="mt-4 text-4xl font-semibold text-[var(--text-primary)]">Sua sessão ainda não está ativa.</h1>
         <p className="mt-4 max-w-2xl text-base leading-8 text-muted-foreground">{message}</p>
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -705,13 +707,15 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
         <p className="mt-10 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
           Confirmacao obrigatoria
         </p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">Valide seu email para liberar o sistema</h1>
+        <h1 className="mt-4 text-3xl font-semibold text-[var(--text-primary)]">
+          Valide seu email para liberar o sistema
+        </h1>
         <p className="mt-4 text-base leading-8 text-muted-foreground">
           Por seguranca, o painel so e liberado apos a confirmacao do codigo enviado para o email cadastrado.
         </p>
 
         <div className="mt-8 rounded-[24px] border border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.06)] p-4 text-sm text-[var(--text-soft)]">
-          Email em validacao: <span className="font-semibold text-white">{email}</span>
+          Email em validacao: <span className="font-semibold text-[var(--text-primary)]">{email}</span>
         </div>
 
         <div className="mt-8">

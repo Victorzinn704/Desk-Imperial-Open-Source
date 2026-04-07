@@ -82,7 +82,7 @@ const MesaSquare = memo(function MesaSquare({
             onClick={handleClick}
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(54,245,124,0.6)]">Mesa</p>
-            <p className="text-2xl font-bold text-white leading-none mt-0.5">{mesa.numero}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)] leading-none mt-0.5">{mesa.numero}</p>
             <div className="mt-1 flex items-center gap-0.5 text-[rgba(54,245,124,0.55)]">
               <Users className="size-2.5" />
               <span className="text-[9px]">{mesa.capacidade}</span>
@@ -139,7 +139,7 @@ const MesaRectCard = memo(function MesaRectCard({
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: `${colColor}99` }}>
                   Mesa
                 </p>
-                <p className="text-xl font-bold text-white leading-none">{mesa.numero}</p>
+                <p className="text-xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
               </div>
               <div className="flex items-center gap-1" style={{ color: `${colColor}88` }}>
                 <Users className="size-3" />
@@ -153,7 +153,7 @@ const MesaRectCard = memo(function MesaRectCard({
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 {comanda.clienteNome && (
-                  <p className="text-[11px] font-medium text-white truncate">{comanda.clienteNome}</p>
+                  <p className="text-[11px] font-medium text-[var(--text-primary)] truncate">{comanda.clienteNome}</p>
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--text-soft)]">

@@ -48,7 +48,7 @@ export function DashboardTopbar({
             <input
               type="text"
               placeholder="Search or type command..."
-              className="h-11 w-full xl:w-[430px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-gray-800 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-accent"
+              className="h-11 w-full xl:w-[430px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-gray-800 dark:bg-gray-900/50 dark:text-[var(--text-primary)] dark:placeholder:text-gray-500 dark:focus:border-accent"
             />
             <button className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
               <span className="font-sans">⌘</span>

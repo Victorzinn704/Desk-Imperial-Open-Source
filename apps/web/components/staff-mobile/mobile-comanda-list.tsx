@@ -246,7 +246,9 @@ const ComandaCard = memo(
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl font-bold text-white tracking-tight">{activeComanda.mesa ?? 'Comanda'}</span>
+                <span className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                  {activeComanda.mesa ?? 'Comanda'}
+                </span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.15em] border"
                   style={{
@@ -259,7 +261,9 @@ const ComandaCard = memo(
                 </span>
               </div>
               {activeComanda.clienteNome && (
-                <p className="text-sm font-medium text-white mb-0.5 truncate">{activeComanda.clienteNome}</p>
+                <p className="text-sm font-medium text-[var(--text-primary)] mb-0.5 truncate">
+                  {activeComanda.clienteNome}
+                </p>
               )}
               <p className="text-xs text-[var(--text-soft,#7a8896)] flex items-center gap-1.5 opacity-80">
                 <span>
@@ -271,7 +275,9 @@ const ComandaCard = memo(
             </div>
 
             <div className="flex flex-col items-end shrink-0">
-              <span className="text-lg font-bold text-white tracking-tight">{formatCurrency(total)}</span>
+              <span className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                {formatCurrency(total)}
+              </span>
               {isFocused && (
                 <button
                   type="button"
@@ -331,9 +337,9 @@ const ComandaCard = memo(
                               {item.quantidade}x
                             </span>
                             <div className="flex flex-col">
-                              <span className="font-medium text-white/90">{item.nome}</span>
+                              <span className="font-medium text-[var(--text-primary)]/90">{item.nome}</span>
                               {item.observacao && (
-                                <span className="text-[10px] text-white/40 italic">{`"${item.observacao}"`}</span>
+                                <span className="text-[10px] text-[var(--text-primary)]/40 italic">{`"${item.observacao}"`}</span>
                               )}
                             </div>
                           </div>
@@ -358,7 +364,7 @@ const ComandaCard = memo(
                     max={100}
                     value={discountPercent}
                     onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
+                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(155,132,96,0.4)]"
                   />
                 </div>
                 <div>
@@ -371,7 +377,7 @@ const ComandaCard = memo(
                     max={100}
                     value={surchargePercent}
                     onChange={(e) => setSurchargePercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
+                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(155,132,96,0.4)]"
                   />
                 </div>
               </div>
@@ -395,7 +401,7 @@ const ComandaCard = memo(
                   <button
                     type="button"
                     onClick={() => void onUpdateStatus(comanda.id, config.nextStatus!)}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-white transition-all active:scale-[0.98] shadow-lg"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg"
                     style={{
                       backgroundColor: config.nextBg,
                       border: `1px solid ${config.chipColor}44`,
@@ -472,7 +478,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
       >
         <div className="text-left">
           <div className="mb-1 flex items-center gap-2">
-            <p className="text-sm font-semibold text-white">Mesa {comanda.mesa ?? '—'}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Mesa {comanda.mesa ?? '—'}</p>
             <span
               className="rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
               style={{ color: badge.color, background: badge.bg }}
@@ -510,14 +516,14 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
                 className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-xs font-semibold text-white">
+                  <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
                     {item.quantidade}× {item.nome}
                   </p>
                   {item.observacao && (
                     <p className="mt-1 text-[10px] italic text-[var(--text-soft,#7a8896)]">{item.observacao}</p>
                   )}
                 </div>
-                <span className="shrink-0 text-xs font-semibold text-white">
+                <span className="shrink-0 text-xs font-semibold text-[var(--text-primary)]">
                   {formatCurrency(item.quantidade * item.precoUnitario)}
                 </span>
               </li>
@@ -542,7 +548,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
+            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
               <span className="text-[#36f57c]">{formatCurrency(total)}</span>
             </div>

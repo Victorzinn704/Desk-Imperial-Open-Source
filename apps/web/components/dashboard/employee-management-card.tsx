@@ -54,7 +54,7 @@ export function EmployeeManagementCard({
         </span>
         <div>
           <p className="text-sm text-[var(--text-soft)]">Equipe comercial</p>
-          <h2 className="text-xl font-semibold text-white">Funcionários vinculados à venda</h2>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Funcionários vinculados à venda</h2>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export function EmployeeManagementCard({
                   </span>
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <p className="font-medium text-white">{employee.displayName}</p>
+                      <p className="font-medium text-[var(--text-primary)]">{employee.displayName}</p>
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
                           employee.active
@@ -186,7 +186,7 @@ function MiniEmployeeMetric({
         <Icon className="size-4" />
       </span>
       <p className="mt-4 text-sm text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

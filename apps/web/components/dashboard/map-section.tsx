@@ -68,9 +68,9 @@ export function MapSection({
                   Nenhuma venda mapeada
                 </p>
                 <p className="max-w-sm text-sm leading-7 text-[var(--text-soft)]">
-                  Registre pedidos com <strong className="text-white">estado</strong> e{' '}
-                  <strong className="text-white">cidade</strong> informados para ativar o monitoramento geográfico e
-                  análise da cobertura de mercado.
+                  Registre pedidos com <strong className="text-[var(--text-primary)]">estado</strong> e{' '}
+                  <strong className="text-[var(--text-primary)]">cidade</strong> informados para ativar o monitoramento
+                  geográfico e análise da cobertura de mercado.
                 </p>
               </div>
             ) : (

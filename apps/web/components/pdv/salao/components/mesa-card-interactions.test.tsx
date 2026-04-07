@@ -42,9 +42,7 @@ function makeGarcom(overrides: Partial<Garcom> = {}): Garcom {
 }
 
 function getNativeButtonByName(name: RegExp) {
-  return screen
-    .getAllByRole('button', { name })
-    .find((element) => element.tagName === 'BUTTON') as HTMLButtonElement
+  return screen.getAllByRole('button', { name }).find((element) => element.tagName === 'BUTTON') as HTMLButtonElement
 }
 
 describe('Salão mesa cards', () => {

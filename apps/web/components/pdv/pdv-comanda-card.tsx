@@ -56,7 +56,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
                   className="inline-block size-2 rounded-full flex-shrink-0 mt-0.5"
                   style={{ background: column.dotColor }}
                 />
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">
                   {comanda.mesa ? `Mesa ${comanda.mesa}` : `#${comanda.id.slice(-4).toUpperCase()}`}
                 </span>
               </div>

@@ -54,7 +54,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
   if (mesas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-        <p className="text-sm font-medium text-white">Nenhuma mesa cadastrada</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">Nenhuma mesa cadastrada</p>
         <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">O dono pode adicionar mesas pelo painel web</p>
       </div>
     )
@@ -157,7 +157,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                         >
                           {waiterName.charAt(0).toUpperCase()}
                         </span>
-                        <span className="text-[9px] font-semibold text-white/80 truncate max-w-[60px]">
+                        <span className="text-[9px] font-semibold text-[var(--text-primary)]/80 truncate max-w-[60px]">
                           {waiterName.split(' ')[0]}
                         </span>
                       </div>

@@ -63,12 +63,12 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="size-4" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white">{selectedCategory}</p>
+            <p className="truncate text-sm font-bold text-[var(--text-primary)]">{selectedCategory}</p>
             <p className="text-[10px] text-[var(--text-soft)]">
               {selectedCat.products} produto{selectedCat.products !== 1 ? 's' : ''} · {catPct.toFixed(0)}% do portfólio
             </p>
@@ -89,8 +89,8 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
               className={cn(
                 'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors duration-200',
                 activeTab === id
-                  ? 'bg-[rgba(255,255,255,0.08)] text-white shadow-sm'
-                  : 'text-[var(--text-soft)] hover:text-white',
+                  ? 'bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm'
+                  : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]',
               )}
             >
               {id === 'products' ? 'Produtos' : 'Métricas'}
@@ -111,12 +111,12 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                   key={product.id}
                   className="space-y-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3"
                 >
-                  <p className="truncate text-sm font-semibold text-white">{product.name}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
 
                   <div className="grid grid-cols-2 gap-1.5">
                     <div className="rounded-lg bg-[rgba(255,255,255,0.04)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Custo</p>
-                      <p className="text-xs font-bold text-white">
+                      <p className="text-xs font-bold text-[var(--text-primary)]">
                         {formatCompactCurrency(product.inventoryCostValue, displayCurrency)}
                       </p>
                     </div>
@@ -156,7 +156,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
           <div className="space-y-2">
             <div className="flex items-center justify-between rounded-xl bg-[rgba(255,255,255,0.04)] px-3 py-2.5">
               <p className="text-xs text-[var(--text-soft)]">Custo Total</p>
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
                 {formatCompactCurrency(selectedCat.inventoryCostValue, displayCurrency)}
               </p>
             </div>
@@ -228,7 +228,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white">{cat.category}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{cat.category}</p>
                     <p className="mt-0.5 text-[10px] text-[var(--text-soft)]">
                       {cat.products} produto{cat.products !== 1 ? 's' : ''} ·{' '}
                       {formatCompactCurrency(cat.inventorySalesValue, displayCurrency)}
@@ -273,7 +273,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{product.name}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-[#36f57c]">

@@ -39,7 +39,7 @@ export function MapRankingPanel({
               'flex-1 cursor-pointer rounded-[14px] border px-1.5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors duration-200',
               tab === t.id
                 ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
-                : 'border-transparent text-[var(--text-soft)] hover:text-white',
+                : 'border-transparent text-[var(--text-soft)] hover:text-[var(--text-primary)]',
             )}
             key={t.id}
             type="button"
@@ -72,7 +72,7 @@ export function MapRankingPanel({
                       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[rgba(52,242,127,0.12)] text-[10px] font-bold text-[#36f57c]">
                         {i + 1}
                       </span>
-                      <p className="truncate text-sm font-semibold text-white">{region.label}</p>
+                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{region.label}</p>
                     </div>
                     <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
                       <div
@@ -85,7 +85,7 @@ export function MapRankingPanel({
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-sm font-semibold text-white">{displayValue}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{displayValue}</p>
                     <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-soft)]">{pct}%</p>
                   </div>
                 </div>

@@ -119,7 +119,7 @@ function RecentAccessList({
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">{formatActivityTitle(entry)}</p>
+              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(entry)}</p>
               <p className="mt-1 truncate text-xs text-[var(--text-soft)]">
                 {formatActivityDescription(entry)}
                 {entry.ipAddress ? ` · ${entry.ipAddress}` : ''}
@@ -146,14 +146,16 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
     <>
       <article className="imperial-card p-7">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[var(--text-primary)]">
             <LogOut className="size-5" />
           </span>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
               Sessão e rastreabilidade
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Acessos recentes e controle da sessão ativa</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+              Acessos recentes e controle da sessão ativa
+            </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Toda leitura relevante da conta passa por aqui: dispositivo, histórico recente e encerramento manual da
               sessão.
@@ -165,7 +167,7 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Últimos acessos</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Leitura recente da conta</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Leitura recente da conta</h3>
           <div className="mt-6">
             <RecentAccessList activity={activity} activityError={activityError} activityLoading={activityLoading} />
           </div>
@@ -173,7 +175,7 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
 
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Sessão atual</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Encerramento seguro</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Encerramento seguro</h3>
 
           <div className="mt-6 space-y-4">
             <SettingsInfoCard hint="Conta autenticada neste dispositivo" label="Usuário" value={user.fullName} />

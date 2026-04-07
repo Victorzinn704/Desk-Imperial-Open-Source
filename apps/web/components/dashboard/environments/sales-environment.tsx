@@ -157,23 +157,25 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 Ritmo da operação
               </p>
-              <h2 className="mt-3 text-xl font-semibold text-white">
+              <h2 className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
                 Seu foco aqui é vender, registrar e manter o fluxo vivo.
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-[18px] border border-[rgba(54,245,124,0.16)] bg-[rgba(54,245,124,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#36f57c]">Pedido</p>
-                  <p className="mt-1 text-sm text-white">Monte o carrinho sem sair da mesma superfície operacional.</p>
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">
+                    Monte o carrinho sem sair da mesma superfície operacional.
+                  </p>
                 </div>
                 <div className="rounded-[18px] border border-[rgba(96,165,250,0.16)] bg-[rgba(96,165,250,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#60a5fa]">Equipe</p>
-                  <p className="mt-1 text-sm text-white">
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">
                     Cada venda fica atribuída ao operador e entra no ranking do dia.
                   </p>
                 </div>
                 <div className="rounded-[18px] border border-[rgba(201,168,76,0.16)] bg-[rgba(201,168,76,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C9A84C]">PIN</p>
-                  <p className="mt-1 text-sm text-white">
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">
                     Preço manual e desconto continuam pedindo validação do dono quando protegido.
                   </p>
                 </div>
@@ -206,7 +208,9 @@ function OperationRecentOrdersPanel({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Pulso de vendas</p>
-          <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Últimos registros da operação</h2>
+          <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+            Últimos registros da operação
+          </h2>
           <p className="mt-2 text-sm text-gray-500 dark:text-muted-foreground">
             Lista manual, mais densa e mais próxima do ritmo do caixa do que cartões repetidos.
           </p>
@@ -231,7 +235,7 @@ function OperationRecentOrdersPanel({
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                     {order.customerName || order.sellerName || 'Venda sem identificação'}
                   </p>
                   <span
@@ -260,7 +264,7 @@ function OperationRecentOrdersPanel({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-muted-foreground">
                   Receita
                 </p>
-                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                   {formatCurrency(order.totalRevenue, currency as never)}
                 </p>
                 <p className="mt-1 text-[11px] text-gray-500 dark:text-muted-foreground">

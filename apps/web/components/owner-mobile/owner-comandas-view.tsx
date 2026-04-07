@@ -130,7 +130,7 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
       >
         <div className="min-w-0 flex-1 text-left">
           <div className="mb-1 flex items-center gap-2">
-            <p className="text-sm font-semibold text-white">Mesa {activeComanda.mesa ?? '—'}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Mesa {activeComanda.mesa ?? '—'}</p>
             <span
               className="shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]"
               style={{ color: badge.color, background: badge.bg }}
@@ -171,11 +171,13 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Responsável</p>
-              <p className="mt-1 text-sm font-semibold text-white">{activeComanda.garcomNome ?? 'Operação geral'}</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {activeComanda.garcomNome ?? 'Operação geral'}
+              </p>
             </div>
             <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Itens</p>
-              <p className="mt-1 text-sm font-semibold text-white">{itemCount}</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{itemCount}</p>
             </div>
           </div>
 
@@ -195,14 +197,14 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                   className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-white">
+                    <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
                       {item.quantidade}× {item.nome}
                     </p>
                     {item.observacao && (
                       <p className="mt-1 text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-semibold text-white">
+                  <span className="shrink-0 text-xs font-semibold text-[var(--text-primary)]">
                     {formatCurrency(item.quantidade * item.precoUnitario)}
                   </span>
                 </li>
@@ -227,7 +229,7 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
+            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
               <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
             </div>

@@ -18,7 +18,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
     <div className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.025)] px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-white">{item.nome}</p>
+          <p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.nome}</p>
           <p className="mt-1 text-xs text-[var(--text-soft)]">
             {formatCurrency(item.precoUnitario, 'BRL')} por unidade
           </p>
@@ -29,7 +29,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
-            className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
+            className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
             type="button"
             onClick={() => onChangeQty(item.produtoId, -1)}
           >
@@ -38,7 +38,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
           <input
             type="number"
             min={1}
-            className="w-10 bg-transparent text-center text-sm font-semibold text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-10 bg-transparent text-center text-sm font-semibold text-[var(--text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             value={item.quantidade}
             onChange={(e) => {
               const v = Math.max(1, Math.floor(Number(e.target.value) || 1))
@@ -46,7 +46,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
             }}
           />
           <button
-            className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-white"
+            className="flex size-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
             type="button"
             onClick={() => onChangeQty(item.produtoId, 1)}
           >

@@ -19,7 +19,7 @@ export function DashboardSectionHeading({
 
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{eyebrow}</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
+        <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{description}</p>
       </div>
     </div>

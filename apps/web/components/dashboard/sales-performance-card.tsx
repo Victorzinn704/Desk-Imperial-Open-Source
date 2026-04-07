@@ -51,7 +51,7 @@ export function SalesPerformanceCard({
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
                 Performance comercial
               </p>
-              <h3 className="text-sm font-semibold text-white">Receita &amp; lucro</h3>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Receita &amp; lucro</h3>
             </div>
           </div>
 
@@ -163,7 +163,7 @@ function MetricTile({
       {isLoading ? (
         <Skeleton className="mt-1.5 h-6 w-24 rounded-md" />
       ) : (
-        <p className="mt-1 text-base font-semibold text-white">{value}</p>
+        <p className="mt-1 text-base font-semibold text-[var(--text-primary)]">{value}</p>
       )}
       {!isLoading && (
         <span
@@ -202,7 +202,7 @@ function PerformanceTooltip({
               <span className="size-2 rounded-full" style={{ background: item.color }} />
               {item.name}
             </span>
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-[var(--text-primary)]">
               {formatCurrency(item.value ?? 0, displayCurrency as 'BRL')}
             </span>
           </div>

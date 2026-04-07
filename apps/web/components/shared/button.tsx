@@ -11,9 +11,9 @@ const buttonVariants = cva(
         primary:
           'border border-transparent bg-[var(--accent)] text-white shadow-sm hover:bg-[var(--accent-strong)] hover:shadow-md active:scale-[0.98]',
         secondary:
-          'border border-white/10 bg-white/5 text-[var(--text-primary)] hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-[0.98]',
+          'border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-primary)] hover:border-[var(--border)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)] active:scale-[0.98]',
         ghost:
-          'border border-transparent bg-transparent text-[var(--text-soft)] hover:bg-white/5 hover:text-white active:scale-[0.98]',
+          'border border-transparent bg-transparent text-[var(--text-soft)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)] active:scale-[0.98]',
       },
       size: {
         sm: 'h-10 px-4 text-sm',

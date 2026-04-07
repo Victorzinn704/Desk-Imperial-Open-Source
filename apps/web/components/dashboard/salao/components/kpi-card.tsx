@@ -23,7 +23,7 @@ export const KpiCard = memo(function KpiCard({ label, value, color, isHighlight,
         <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)]">{label}</p>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+        <p className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">{value}</p>
         {percentage !== null && (
           <p className="text-xs font-medium" style={{ color: `${color}99` }}>
             {percentage}%

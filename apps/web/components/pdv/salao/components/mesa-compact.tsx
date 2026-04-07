@@ -44,7 +44,7 @@ export const MesaCompact = memo(
               />
 
               <div className="pointer-events-none relative z-10 flex flex-col items-center gap-1">
-                <p className="text-xl font-bold leading-none text-white">{mesa.numero}</p>
+                <p className="text-xl font-bold leading-none text-[var(--text-primary)]">{mesa.numero}</p>
                 <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#36f57c]">Livre</span>
               </div>
               {garcom ? (

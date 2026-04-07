@@ -67,11 +67,13 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
             <Activity className="size-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white">Pulso do workspace</h2>
-            <p className="text-xs text-[var(--text-soft)]">Leitura manual das movimentações mais recentes, com atualização automática.</p>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Pulso do workspace</h2>
+            <p className="text-xs text-[var(--text-soft)]">
+              Leitura manual das movimentações mais recentes, com atualização automática.
+            </p>
           </div>
           <button
-            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
           >
@@ -113,7 +115,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-white">{activity.title}</p>
+                          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{activity.title}</p>
                           <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{activity.description}</p>
                         </div>
                         <time className="shrink-0 text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">

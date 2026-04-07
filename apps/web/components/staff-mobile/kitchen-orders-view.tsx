@@ -82,7 +82,7 @@ function KitchenCard({
             </span>
             {elapsed && <span className="text-[10px] text-[#7a8896]">{elapsed}</span>}
           </div>
-          <p className="text-sm font-semibold text-white leading-snug">
+          <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
             {item.quantity}× {item.productName}
           </p>
           {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">{`"${item.notes}"`}</p>}
@@ -240,7 +240,7 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
             <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
               <ChefHat className="size-7 text-[#7a8896]" />
             </div>
-            <p data-testid="kitchen-view-empty" className="text-sm font-medium text-white">
+            <p data-testid="kitchen-view-empty" className="text-sm font-medium text-[var(--text-primary)]">
               Cozinha livre
             </p>
             <p className="mt-1 text-xs text-[#7a8896]">Nenhum pedido aguardando preparo</p>

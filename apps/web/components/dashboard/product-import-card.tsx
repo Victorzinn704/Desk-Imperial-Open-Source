@@ -58,7 +58,7 @@ export function ProductImportCard({
         </span>
         <div>
           <p className="text-sm text-[var(--text-soft)]">Importação assistida</p>
-          <h2 className="text-xl font-semibold text-white">Suba o portfólio por CSV</h2>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Suba o portfólio por CSV</h2>
         </div>
       </div>
 
@@ -142,7 +142,7 @@ export function ProductImportCard({
 
       <label className="imperial-card-soft mt-5 flex cursor-pointer flex-col items-center justify-center border-dashed px-5 py-8 text-center transition-colors duration-200 hover:border-[var(--accent)] hover:bg-[rgba(212,177,106,0.06)]">
         <Upload className="size-6 text-[var(--accent)]" />
-        <span className="mt-3 text-sm font-medium text-white">
+        <span className="mt-3 text-sm font-medium text-[var(--text-primary)]">
           {selectedFile ? selectedFile.name : 'Escolha um arquivo CSV'}
         </span>
         <span className="mt-2 text-sm text-[var(--text-soft)]">
@@ -207,7 +207,7 @@ function ImportMetric({ label, value }: Readonly<{ label: string; value: string 
   return (
     <div className="imperial-card-stat px-4 py-3">
       <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

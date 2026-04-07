@@ -160,10 +160,10 @@ export function LoginForm() {
   return (
     <div className="w-full space-y-8">
       <div className="space-y-1.5">
-        <h2 className="text-2xl font-semibold tracking-tight text-white">
+        <h2 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
           {isStaffMode ? 'Entre na operação do dia' : 'Entre e comande seu comércio'}
         </h2>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-[var(--text-primary)]/40">
           {isStaffMode
             ? 'Use o e-mail da empresa, seu ID e o PIN de 6 dígitos configurado pelo dono.'
             : 'Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.'}
@@ -171,10 +171,10 @@ export function LoginForm() {
       </div>
 
       <form className="space-y-5" onSubmit={onSubmit}>
-        <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           <button
             className={`flex items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors ${
-              !isStaffMode ? 'bg-white text-black' : 'text-white/55 hover:text-white'
+              !isStaffMode ? 'bg-white text-black' : 'text-[var(--text-primary)]/55 hover:text-[var(--text-primary)]'
             }`}
             type="button"
             onClick={() => setLoginMode('OWNER')}
@@ -184,7 +184,7 @@ export function LoginForm() {
           </button>
           <button
             className={`flex items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors ${
-              isStaffMode ? 'bg-white text-black' : 'text-white/55 hover:text-white'
+              isStaffMode ? 'bg-white text-black' : 'text-[var(--text-primary)]/55 hover:text-[var(--text-primary)]'
             }`}
             type="button"
             onClick={() => setLoginMode('STAFF')}
@@ -199,14 +199,14 @@ export function LoginForm() {
         {isStaffMode ? (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50" htmlFor="login-company-email">
+              <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-company-email">
                 Email da Empresa
               </label>
-              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-                <Mail className="size-4 shrink-0 text-white/30" />
+              <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+                <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
                 <input
                   autoComplete="email"
-                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                  className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                   id="login-company-email"
                   placeholder="ceo@empresa.com"
                   type="email"
@@ -219,15 +219,15 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50" htmlFor="login-employee-code">
+              <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-employee-code">
                 ID do Funcionário
               </label>
-              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-                <UserRound className="size-4 shrink-0 text-white/30" />
+              <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+                <UserRound className="size-4 shrink-0 text-[var(--text-primary)]/30" />
                 <input
                   autoCapitalize="characters"
                   autoComplete="username"
-                  className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-white outline-none placeholder:text-white/20"
+                  className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                   id="login-employee-code"
                   placeholder="VD-001"
                   type="text"
@@ -241,14 +241,14 @@ export function LoginForm() {
           </>
         ) : (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-white/50" htmlFor="login-email">
+            <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-email">
               Email Corporativo
             </label>
-            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-              <Mail className="size-4 shrink-0 text-white/30" />
+            <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+              <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
               <input
                 autoComplete="email"
-                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                 id="login-email"
                 placeholder="ceo@empresa.com"
                 type="email"
@@ -261,21 +261,24 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50" htmlFor="login-password">
+            <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-password">
               {isStaffMode ? 'PIN de acesso' : 'Senha de Acesso'}
             </label>
             {!isStaffMode && (
-              <Link className="text-xs text-white/40 hover:text-white/70 transition-colors" href="/recuperar-senha">
+              <Link
+                className="text-xs text-[var(--text-primary)]/40 hover:text-[var(--text-primary)]/70 transition-colors"
+                href="/recuperar-senha"
+              >
                 Esqueci a senha
               </Link>
             )}
           </div>
-          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-            <LockKeyhole className="size-4 shrink-0 text-white/30" />
+          <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+            <LockKeyhole className="size-4 shrink-0 text-[var(--text-primary)]/30" />
             {isStaffMode ? (
               <input
                 autoComplete="current-password"
-                className="w-full bg-transparent text-sm tracking-[0.3em] text-white outline-none placeholder:text-white/20"
+                className="w-full bg-transparent text-sm tracking-[0.3em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                 id="login-password"
                 inputMode="numeric"
                 maxLength={6}
@@ -286,7 +289,7 @@ export function LoginForm() {
             ) : (
               <input
                 autoComplete="current-password"
-                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/20"
+                className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                 id="login-password"
                 placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
@@ -294,7 +297,7 @@ export function LoginForm() {
               />
             )}
             <button
-              className="shrink-0 text-white/30 hover:text-white/60 transition-colors"
+              className="shrink-0 text-[var(--text-primary)]/30 hover:text-[var(--text-primary)]/60 transition-colors"
               type="button"
               onClick={() => setShowPassword((v) => !v)}
             >
@@ -316,7 +319,7 @@ export function LoginForm() {
         </button>
 
         <button
-          className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20 disabled:opacity-50"
+          className="flex w-full items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-4 text-left transition-colors duration-200 hover:border-white/20 disabled:opacity-50"
           disabled={isLoading}
           type="button"
           onClick={() => {
@@ -329,28 +332,34 @@ export function LoginForm() {
           }}
         >
           <div>
-            <p className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               Acessar Sessão Demo {isStaffMode ? 'Funcionário' : 'Empresa'}
             </p>
-            <p className="text-xs text-white/40">Experimente sem compromisso</p>
+            <p className="text-xs text-[var(--text-primary)]/40">Experimente sem compromisso</p>
           </div>
-          <svg className="size-4 text-white/30" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg
+            className="size-4 text-[var(--text-primary)]/30"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
             <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </form>
 
-      <p className="text-center text-sm text-white/40">
+      <p className="text-center text-sm text-[var(--text-primary)]/40">
         Não possui uma conta?{' '}
         <Link
-          className="font-semibold text-white underline underline-offset-4 hover:text-white/70 transition-colors"
+          className="font-semibold text-[var(--text-primary)] underline underline-offset-4 hover:text-[var(--text-primary)]/70 transition-colors"
           href="/cadastro"
         >
           Solicitar acesso
         </Link>
       </p>
 
-      <p className="text-center text-xs leading-5 text-white/20">
+      <p className="text-center text-xs leading-5 text-[var(--text-primary)]/20">
         Ao acessar, você atesta compromisso com os guias de uso restrito interno de Governança e Operação.
       </p>
     </div>

@@ -257,7 +257,10 @@ export function LandingPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <main
+      className="dark relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]"
+      style={{ colorScheme: 'dark' }}
+    >
       <CustomCursor />
       <SpaceBackground />
 

@@ -99,7 +99,7 @@ export const MesaCard = memo(
         {/* Urgência badge */}
         {urgency === 3 && (
           <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#f87171]">
-            <AlertCircle className="size-2.5 text-white" />
+            <AlertCircle className="size-2.5 text-[var(--text-primary)]" />
           </span>
         )}
         {urgency === 2 && (
@@ -120,11 +120,9 @@ export const MesaCard = memo(
           (() => {
             const novoGarcom = garcons.find((g) => g.id === assigningGarcomId)
             return (
-              <div
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] bg-[rgba(14,16,24,0.92)] px-3 backdrop-blur-sm"
-              >
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] bg-[rgba(14,16,24,0.92)] px-3 backdrop-blur-sm">
                 <AlertCircle className="size-4 text-[#fbbf24]" />
-                <p className="text-center text-[11px] font-semibold leading-snug text-white">
+                <p className="text-center text-[11px] font-semibold leading-snug text-[var(--text-primary)]">
                   Mesa já tem garçom.
                   <br />
                   <span className="text-[10px] text-[var(--text-soft)]">
@@ -136,7 +134,7 @@ export const MesaCard = memo(
                   <button
                     type="button"
                     onClick={() => setShowConfirm(false)}
-                    className="rounded-[8px] border border-[rgba(255,255,255,0.1)] px-3 py-1 text-[11px] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+                    className="rounded-[8px] border border-[rgba(255,255,255,0.1)] px-3 py-1 text-[11px] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]"
                   >
                     Cancelar
                   </button>
@@ -163,7 +161,7 @@ export const MesaCard = memo(
               <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${cfg.color}80` }}>
                 Mesa
               </p>
-              <p className="text-2xl font-bold text-white leading-none">{mesa.numero}</p>
+              <p className="text-2xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
               <span
@@ -203,7 +201,9 @@ export const MesaCard = memo(
             {garcom ? (
               <>
                 <GarcomAvatar garcom={garcom} size={20} />
-                <span className="flex-1 truncate text-[11px] font-medium text-white">{garcom.nome}</span>
+                <span className="flex-1 truncate text-[11px] font-medium text-[var(--text-primary)]">
+                  {garcom.nome}
+                </span>
               </>
             ) : (
               <>
@@ -235,7 +235,7 @@ export const MesaCard = memo(
               <ItemsTooltip comanda={comanda} />
             </div>
             {comanda.clienteNome && (
-              <p className="truncate text-[11px] font-semibold text-white">{comanda.clienteNome}</p>
+              <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{comanda.clienteNome}</p>
             )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-[var(--text-soft)]">

@@ -38,7 +38,11 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
     }
   }, [value])
 
-  return <span className="text-3xl font-bold text-white sm:text-4xl">{formatCurrency(displayed, currency)}</span>
+  return (
+    <span className="text-3xl font-bold text-[var(--text-primary)] sm:text-4xl">
+      {formatCurrency(displayed, currency)}
+    </span>
+  )
 }
 
 export function FinanceOverviewTotal({ finance, isLoading }: Props) {
@@ -98,7 +102,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="imperial-card-soft rounded-xl px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

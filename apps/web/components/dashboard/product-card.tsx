@@ -107,7 +107,7 @@ export const ProductCard = memo(function ProductCard({
         <div className="flex-1 min-w-0">
           {/* name + status */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-base font-semibold text-white truncate">{product.name}</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)] truncate">{product.name}</h3>
             <span
               className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] border ${
                 product.active
@@ -250,7 +250,10 @@ function StatTile({
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-sm font-semibold text-white" style={accent ? { color: accent } : undefined}>
+      <p
+        className="mt-2 text-sm font-semibold text-[var(--text-primary)]"
+        style={accent ? { color: accent } : undefined}
+      >
         {primary}
       </p>
       {(secondary ?? dotLabel) ? (

@@ -18,7 +18,7 @@ export function SecurityTab({ activity, activityError, activityLoading }: Securi
           </span>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Segurança operacional</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Proteção das ações críticas</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Proteção das ações críticas</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               O PIN administrativo segue como confirmação curta para desconto elevado, exclusão e ajustes sensíveis do
               workspace.

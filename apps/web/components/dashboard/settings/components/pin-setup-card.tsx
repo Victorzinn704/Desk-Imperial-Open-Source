@@ -44,7 +44,7 @@ function RecentAccessSummary({
 
   return (
     <div className="mt-3 rounded-[14px] border border-white/8 bg-white/[0.02] px-4 py-4">
-      <p className="text-sm font-semibold text-white">{formatActivityTitle(latest)}</p>
+      <p className="text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(latest)}</p>
       <p className="mt-1 text-xs text-[var(--text-soft)]">
         {new Intl.DateTimeFormat('pt-BR', {
           day: '2-digit',
@@ -227,14 +227,14 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
           </span>
           <div>
             <p className="text-sm text-[var(--text-soft)]">PIN administrativo</p>
-            <h3 className="text-xl font-semibold text-white">Controle fino das ações sensíveis</h3>
+            <h3 className="text-xl font-semibold text-[var(--text-primary)]">Controle fino das ações sensíveis</h3>
           </div>
         </div>
 
         <div className="mt-6 rounded-[20px] border border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)] p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-white">Estado atual</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Estado atual</p>
               <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
                 {pinActive
                   ? 'O fluxo sensível do PDV está protegido por confirmação administrativa.'
@@ -264,7 +264,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                   {pinDigits.map((digit, index) => (
                     <input
                       aria-label={`Digito ${index + 1} do PIN`}
-                      className="size-12 rounded-[12px] border border-white/10 bg-white/[0.04] text-center text-lg font-bold text-white outline-none focus:border-[rgba(52,242,127,0.35)] [appearance:textfield]"
+                      className="size-12 rounded-[12px] border border-white/10 bg-white/[0.04] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.35)] [appearance:textfield]"
                       disabled={pinSaving}
                       inputMode="numeric"
                       key={index}
@@ -316,13 +316,17 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                 </div>
               ) : (
                 <div className="rounded-[16px] border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.05)] p-4">
-                  <p className="text-sm font-semibold text-white">Confirme o PIN atual para desativar</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    Confirme o PIN atual para desativar
+                  </p>
 
                   {removeBlocked ? (
                     <div className="mt-4 rounded-[14px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-4 text-center">
                       <ShieldAlert className="mx-auto mb-2 size-5 text-[#fca5a5]" />
                       <p className="text-sm font-semibold text-[#fca5a5]">Tentativas bloqueadas</p>
-                      <p className="mt-2 text-2xl font-bold text-white">{formatCountdown(removeSecondsLeft)}</p>
+                      <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                        {formatCountdown(removeSecondsLeft)}
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -332,7 +336,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                           {confirmRemoveDigits.map((digit, index) => (
                             <input
                               aria-label={`Confirmacao do digito ${index + 1}`}
-                              className="size-12 rounded-[12px] border border-white/10 bg-white/[0.03] text-center text-lg font-bold text-white outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
+                              className="size-12 rounded-[12px] border border-white/10 bg-white/[0.03] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
                               disabled={removing}
                               inputMode="numeric"
                               key={index}
@@ -350,7 +354,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                   )}
 
                   <button
-                    className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-white"
+                    className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-[var(--text-primary)]"
                     type="button"
                     onClick={() => {
                       setShowConfirmRemove(false)
@@ -369,7 +373,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
 
       <article className="imperial-card p-7">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Recuperação e revisão</p>
-        <h3 className="mt-3 text-2xl font-semibold text-white">Fluxo seguro da conta principal</h3>
+        <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Fluxo seguro da conta principal</h3>
         <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
           A troca definitiva de senha continua via validação segura por email enquanto o painel administrativo interno é
           endurecido.
@@ -384,7 +388,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
         </div>
 
         <div className="mt-6 border-t border-white/[0.06] pt-6">
-          <p className="text-sm font-semibold text-white">Leitura recente</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Leitura recente</p>
           <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
         </div>
       </article>

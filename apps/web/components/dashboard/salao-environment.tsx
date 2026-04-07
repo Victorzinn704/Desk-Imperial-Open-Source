@@ -511,7 +511,7 @@ function OperacionalView({
           <Armchair className="size-8 text-[var(--text-soft)]" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white tracking-tight">Salão vazio</h3>
+          <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Salão vazio</h3>
           <p className="mt-2 text-sm text-[var(--text-soft)]">Seu salão ainda não possui mesas ativas.</p>
         </div>
         <p className="rounded-full bg-[rgba(255,255,255,0.05)] px-4 py-1.5 text-xs font-medium text-[var(--text-muted)]">
@@ -538,7 +538,9 @@ function OperacionalView({
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
               Leitura por seção
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-white">Toque na área do salão que você quer acompanhar</h3>
+            <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
+              Toque na área do salão que você quer acompanhar
+            </h3>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Em vez de uma grade seca, o salão agora deixa você focar por setor. Assim fica mais fácil bater o olho em
               onde está a pressão operacional agora.
@@ -557,7 +559,7 @@ function OperacionalView({
             className={`rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
               sectionFilter === 'all'
                 ? 'border-[rgba(201,168,76,0.32)] bg-[rgba(201,168,76,0.12)] text-[#f4d78b]'
-                : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-white'
+                : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
           >
             Salão inteiro · {liveMesas.length}
@@ -629,7 +631,7 @@ function OperacionalView({
 
       {visibleMesas.length === 0 ? (
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[26px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-center">
-          <p className="text-sm font-medium text-white">Nenhuma mesa nessa área agora.</p>
+          <p className="text-sm font-medium text-[var(--text-primary)]">Nenhuma mesa nessa área agora.</p>
           <p className="mt-2 text-sm text-[var(--text-soft)]">
             Troque a seção ou volte para o salão inteiro para acompanhar o restante da operação.
           </p>
@@ -685,7 +687,7 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
             className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
               filtro === id
                 ? 'bg-[var(--accent)] text-black'
-                : 'bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] hover:text-white'
+                : 'bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
           >
             {label}
@@ -726,7 +728,9 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                   onClick={() => setExpandedId(isExpanded ? null : comanda.id)}
                   className="grid w-full grid-cols-[1fr_120px_1fr_130px_80px_110px] gap-2 items-center border-b border-[rgba(255,255,255,0.04)] px-4 py-3 text-left transition-colors hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.05)]"
                 >
-                  <span className="text-sm font-semibold text-white truncate">{comanda.mesa ?? '—'}</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                    {comanda.mesa ?? '—'}
+                  </span>
                   <span
                     className="inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                     style={{ color: badge.color, background: badge.bg }}
@@ -765,9 +769,9 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                         </span>
                         {comanda.itens.map((item, idx) => (
                           <div key={idx} className="contents">
-                            <span className="text-white truncate py-0.5">{item.nome}</span>
+                            <span className="text-[var(--text-primary)] truncate py-0.5">{item.nome}</span>
                             <span className="text-[var(--text-soft)] text-center py-0.5">{item.quantidade}</span>
-                            <span className="text-white text-right py-0.5">
+                            <span className="text-[var(--text-primary)] text-right py-0.5">
                               {fmtBRL(item.quantidade * item.precoUnitario)}
                             </span>
                           </div>
@@ -775,7 +779,7 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                       </div>
                     )}
                     <div className="mt-3 flex justify-end border-t border-[rgba(255,255,255,0.06)] pt-2">
-                      <span className="text-sm font-bold text-white">Total: {fmtBRL(total)}</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)]">Total: {fmtBRL(total)}</span>
                     </div>
                   </div>
                 )}

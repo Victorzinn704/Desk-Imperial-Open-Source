@@ -37,7 +37,10 @@ export function AuthShell({
   children: ReactNode
 }>) {
   return (
-    <main className="min-h-screen bg-[#020304] text-white lg:h-screen lg:overflow-hidden">
+    <main
+      className="dark min-h-screen bg-[#020304] text-white lg:h-screen lg:overflow-hidden"
+      style={{ colorScheme: 'dark' }}
+    >
       <div className="grid min-h-screen lg:h-screen lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden px-12 py-10 lg:flex lg:flex-col lg:justify-between xl:px-14">
           <div aria-hidden className="pointer-events-none absolute inset-0" style={leftPanelBackdropStyle} />

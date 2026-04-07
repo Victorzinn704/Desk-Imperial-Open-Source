@@ -222,7 +222,9 @@ export function OrderForm({
     <div className="imperial-card p-7">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Pedido multi-item</p>
-        <h2 className="mt-3 text-2xl font-semibold text-white">Monte a venda como um carrinho de mercado.</h2>
+        <h2 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
+          Monte a venda como um carrinho de mercado.
+        </h2>
         <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
           Organizei a operação em etapas para deixar o preenchimento mais claro: primeiro o carrinho, depois a
           configuração da venda e por fim os dados do comprador.
@@ -262,7 +264,7 @@ export function OrderForm({
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8fffb9]">1. Monte o carrinho</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">
+                <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
                   Escolha os produtos e adicione cada linha ao pedido
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
@@ -313,7 +315,7 @@ export function OrderForm({
 
           {selectedDraftProduct ? (
             <div className="imperial-card-soft mt-4 px-4 py-3 text-sm leading-7 text-[var(--text-soft)]">
-              <span className="font-medium text-white">{selectedDraftProduct.name}</span>
+              <span className="font-medium text-[var(--text-primary)]">{selectedDraftProduct.name}</span>
               {` • ${selectedDraftProduct.category} • Estoque ${selectedStockLabel} • Preço base ${formatCurrency(selectedDraftProduct.unitPrice, selectedDraftProduct.displayCurrency)}`}
             </div>
           ) : null}
@@ -330,7 +332,9 @@ export function OrderForm({
                   <div className="imperial-card-soft px-4 py-4" key={field.id}>
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                       <div>
-                        <p className="font-medium text-white">{product?.name ?? 'Produto removido do portfólio'}</p>
+                        <p className="font-medium text-[var(--text-primary)]">
+                          {product?.name ?? 'Produto removido do portfólio'}
+                        </p>
                         <p className="mt-1 text-sm text-[var(--text-soft)]">
                           {product
                             ? `${product.category} • ${formatStockBreakdown(product.stock, product.unitsPerPackage)}`
@@ -358,7 +362,7 @@ export function OrderForm({
               })
             ) : (
               <div className="imperial-card-soft border-dashed px-4 py-6 text-center">
-                <p className="text-lg font-semibold text-white">Seu carrinho ainda está vazio.</p>
+                <p className="text-lg font-semibold text-[var(--text-primary)]">Seu carrinho ainda está vazio.</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
                   Adicione um ou mais produtos para transformar a operação em pedido multi-item.
                 </p>
@@ -373,7 +377,9 @@ export function OrderForm({
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 2. Configure a operação
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-white">Defina moeda, vendedor e contexto da venda</h3>
+              <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
+                Defina moeda, vendedor e contexto da venda
+              </h3>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
               Essa etapa alimenta o ranking da equipe, a análise por canal e o comportamento do pedido dentro do painel.
@@ -392,7 +398,9 @@ export function OrderForm({
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
                   Responsável pela venda
                 </p>
-                <p className="mt-2 text-sm font-medium text-white">Seu acesso será vinculado automaticamente.</p>
+                <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
+                  Seu acesso será vinculado automaticamente.
+                </p>
                 <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
                   O sistema grava sua autoria em tempo real para auditoria da empresa.
                 </p>
@@ -435,7 +443,9 @@ export function OrderForm({
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 3. Identifique o comprador
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-white">Registre quem comprou e de onde saiu a venda</h3>
+              <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
+                Registre quem comprou e de onde saiu a venda
+              </h3>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[var(--text-soft)]">
               Esses dados sustentam mapa de vendas, compliance e leitura do cliente no financeiro.
@@ -512,7 +522,7 @@ function MiniInfo({ label, value }: Readonly<{ label: string; value: string }>) 
   return (
     <div className="imperial-card-stat px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

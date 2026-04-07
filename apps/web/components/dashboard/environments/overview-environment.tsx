@@ -16,8 +16,9 @@ import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 
 export function OverviewEnvironment() {
-  const { sessionQuery, financeQuery, ordersQuery, employeesQuery, productsQuery } =
-    useDashboardQueries({ section: 'overview' })
+  const { sessionQuery, financeQuery, ordersQuery, employeesQuery, productsQuery } = useDashboardQueries({
+    section: 'overview',
+  })
 
   const user = sessionQuery.data?.user
   const finance = financeQuery.data

@@ -72,7 +72,7 @@ function MesaChip({
         type="button"
         title="Remover mesa"
         onClick={onUnassign}
-        className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
+        className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
       >
         <X className="size-3" />
       </button>
@@ -82,7 +82,7 @@ function MesaChip({
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: `${garcomCor}80` }}>
             Mesa
           </p>
-          <p className="text-2xl font-bold text-white leading-none">{mesa.numero}</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
         </div>
         <div className="flex items-center gap-1" style={{ color: `${garcomCor}70` }}>
           <Users className="size-3" />
@@ -96,7 +96,7 @@ function MesaChip({
           style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
         >
           {comanda.clienteNome && (
-            <p className="text-[11px] font-medium text-white truncate mb-0.5">{comanda.clienteNome}</p>
+            <p className="text-[11px] font-medium text-[var(--text-primary)] truncate mb-0.5">{comanda.clienteNome}</p>
           )}
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[var(--text-soft)]">
@@ -145,7 +145,7 @@ function AssignModal({
         className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
         style={{ background: '#0e1018', borderColor: 'rgba(255,255,255,0.1)' }}
       >
-        <h3 className="text-base font-bold text-white mb-4">Atribuir Mesa ao Garçom</h3>
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4">Atribuir Mesa ao Garçom</h3>
 
         <div className="space-y-3">
           <div>
@@ -153,7 +153,7 @@ function AssignModal({
               Mesa
             </label>
             <select
-              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               value={selectedMesa}
               onChange={(e) => setSelectedMesa(e.target.value)}
             >
@@ -171,7 +171,7 @@ function AssignModal({
               Garçom
             </label>
             <select
-              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               value={selectedGarcom}
               onChange={(e) => setSelectedGarcom(e.target.value)}
             >
@@ -217,12 +217,12 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
         className="w-full max-w-xs rounded-2xl border p-6 shadow-2xl"
         style={{ background: '#0e1018', borderColor: 'rgba(255,255,255,0.1)' }}
       >
-        <h3 className="text-base font-bold text-white mb-4">Novo Garçom</h3>
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4">Novo Garçom</h3>
         <input
           autoFocus
           type="text"
           placeholder="Nome do garçom"
-          className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
+          className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           onKeyDown={(e) => {
@@ -353,7 +353,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
                   type="button"
                   title="Remover garçom"
                   onClick={() => onRemoveGarcom(garcom.id)}
-                  className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+                  className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)]"
                 >
                   <X className="size-3" />
                 </button>
@@ -363,7 +363,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
                   <StickFigure color={cor} />
                 </div>
 
-                <p className="text-sm font-bold text-white mt-1">{garcom.nome}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] mt-1">{garcom.nome}</p>
 
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-[10px] text-[var(--text-muted)]">

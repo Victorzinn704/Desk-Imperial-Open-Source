@@ -132,7 +132,9 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                   )}
                 >
                   <td className="max-w-[180px] px-4 py-3">
-                    <p className="truncate font-semibold text-white">{order.customerName || 'Cliente não informado'}</p>
+                    <p className="truncate font-semibold text-[var(--text-primary)]">
+                      {order.customerName || 'Cliente não informado'}
+                    </p>
                   </td>
                   <td
                     className={cn(
@@ -168,7 +170,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -178,7 +180,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-white disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
             >
               <ChevronRight className="size-4" />
             </button>

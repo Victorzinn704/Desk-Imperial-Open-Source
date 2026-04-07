@@ -2,7 +2,11 @@
 
 import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { LazyMotionDiv as MotionDiv, LazyAnimatePresence as AnimatePresence, LazyMotionLi as MotionLi } from '@/components/shared/lazy-components'
+import {
+  LazyMotionDiv as MotionDiv,
+  LazyAnimatePresence as AnimatePresence,
+  LazyMotionLi as MotionLi,
+} from '@/components/shared/lazy-components'
 import {
   BrainCircuit,
   ArrowLeft,

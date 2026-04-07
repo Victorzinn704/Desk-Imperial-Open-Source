@@ -69,7 +69,7 @@ function GarcomStrip({
         <button
           type="button"
           onClick={() => onSelect(null)}
-          className="flex items-center gap-1 rounded-full border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-white"
+          className="flex items-center gap-1 rounded-full border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
         >
           <X className="size-2.5" /> cancelar
         </button>
@@ -199,7 +199,7 @@ function SalaoView({
               <button
                 type="button"
                 onClick={() => setCompactLivres((v) => !v)}
-                className="flex items-center gap-1 rounded-[8px] border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-white"
+                className="flex items-center gap-1 rounded-[8px] border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {compactLivres ? <Maximize2 className="size-3" /> : <Minimize2 className="size-3" />}
                 {compactLivres ? 'Expandir' : 'Compactar'}
@@ -440,7 +440,7 @@ function EquipeView({
                     type="button"
                     title="Remover garçom"
                     onClick={() => onRemoveGarcom(garcom.id)}
-                    className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-white hover:opacity-100"
+                    className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)] hover:opacity-100"
                   >
                     <X className="size-3" />
                   </button>
@@ -451,7 +451,7 @@ function EquipeView({
                 >
                   {initials(garcom.nome)}
                 </div>
-                <p className="mt-1 text-sm font-bold text-white">{garcom.nome}</p>
+                <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{garcom.nome}</p>
                 <div className="flex items-center gap-3">
                   <span className="text-[10px] text-[var(--text-muted)]">
                     {garcomMesas.length} mesa{garcomMesas.length !== 1 ? 's' : ''}
@@ -519,12 +519,12 @@ function EquipeView({
       {showAdd && allowRosterEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-xs rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[#0e1018] p-6 shadow-2xl">
-            <h3 className="mb-4 text-base font-bold text-white">Novo Garçom</h3>
+            <h3 className="mb-4 text-base font-bold text-[var(--text-primary)]">Novo Garçom</h3>
             <input
               autoFocus
               type="text"
               placeholder="Nome do garçom"
-              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
               value={newNome}
               onChange={(e) => setNewNome(e.target.value)}
               onKeyDown={(e) => {
@@ -706,7 +706,7 @@ export function SalaoUnificado({
           {totalAberto > 0 && (
             <div className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 text-xs">
               <span className="text-[var(--text-muted)]">Em aberto </span>
-              <span className="font-bold text-white">{formatCurrency(totalAberto, 'BRL')}</span>
+              <span className="font-bold text-[var(--text-primary)]">{formatCurrency(totalAberto, 'BRL')}</span>
             </div>
           )}
           <div className="flex rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-0.5">

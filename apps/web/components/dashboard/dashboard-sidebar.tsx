@@ -63,7 +63,7 @@ export function DashboardSidebar({
           <BrandMark />
           <p className="mt-1.5 text-xs text-muted-foreground">
             {companyName || 'Painel corporativo'}
-            <span className="mx-1.5 text-white/20">·</span>
+            <span className="mx-1.5 text-[var(--text-primary)]/20">·</span>
             {formatAccountStatus(status)}
           </p>
         </div>
@@ -83,7 +83,7 @@ export function DashboardSidebar({
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-white/8 bg-white/[0.03]">
                     <Icon className="size-3.5 text-accent" />
                   </span>
-                  <span className="text-sm font-semibold text-white">{action.label}</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">{action.label}</span>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-[1.5] text-muted-foreground">{action.description}</p>
               </button>
@@ -110,8 +110,8 @@ export function DashboardSidebar({
                       className={cn(
                         'flex items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-200',
                         isActive
-                          ? 'border-accent/24 bg-accent/[0.09] text-white'
-                          : 'border-white/6 bg-white/[0.02] text-muted-foreground hover:border-white/12 hover:bg-white/[0.04] hover:text-white',
+                          ? 'border-accent/24 bg-accent/[0.09] text-[var(--text-primary)]'
+                          : 'border-white/6 bg-white/[0.02] text-muted-foreground hover:border-white/12 hover:bg-white/[0.04] hover:text-[var(--text-primary)]',
                       )}
                       key={item.id}
                       onClick={() => onNavigate(item.id)}
@@ -167,7 +167,7 @@ export function DashboardSidebar({
               </span>
             )}
             <button
-              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.07] hover:text-white"
+              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.07] hover:text-[var(--text-primary)]"
               aria-expanded={!collapsed}
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
@@ -185,7 +185,9 @@ export function DashboardSidebar({
                   <Building2 className="size-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">{companyName || 'Painel corporativo'}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                    {companyName || 'Painel corporativo'}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">Centro principal da operação</p>
                 </div>
               </div>
@@ -204,7 +206,9 @@ export function DashboardSidebar({
                         <Icon className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
+                        <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
+                          {action.label}
+                        </span>
                         <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
                       </span>
                       <ChevronRight className="size-4 text-muted-foreground" />
@@ -238,8 +242,8 @@ export function DashboardSidebar({
                           className={cn(
                             'flex w-full cursor-pointer items-center justify-center rounded-[18px] border p-2.5 transition-colors duration-200',
                             isActive
-                              ? 'border-accent/24 bg-accent/[0.09] text-white'
-                              : 'border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.04] hover:text-white',
+                              ? 'border-accent/24 bg-accent/[0.09] text-[var(--text-primary)]'
+                              : 'border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.04] hover:text-[var(--text-primary)]',
                           )}
                           key={item.id}
                           onClick={() => onNavigate(item.id)}
@@ -277,7 +281,7 @@ export function DashboardSidebar({
             {collapsed ? (
               <div className="space-y-2">
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-[var(--text-primary)]"
                   title="Configurações"
                   type="button"
                   onClick={() => onOpenSettings('account')}
@@ -332,11 +336,13 @@ function DesktopAccountDock({
     <div className="workspace-sidebar__surface">
       {/* Linha de identidade */}
       <div className="flex items-center gap-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-primary)]">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{userName || companyName || 'Conta'}</p>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+            {userName || companyName || 'Conta'}
+          </p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
       </div>
@@ -357,7 +363,7 @@ function DesktopAccountDock({
         <button
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-white"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
@@ -393,11 +399,11 @@ function MobileAccountDock({
   return (
     <div className="workspace-sidebar__surface">
       <div className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-white">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-primary)]">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{userName}</p>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{userName}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
       </div>
@@ -414,7 +420,7 @@ function MobileAccountDock({
         <button
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-white"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações

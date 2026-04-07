@@ -42,7 +42,7 @@ export function MarketIntelligenceCard() {
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Consultor com IA</p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
             Gemini Flash como copiloto de previsão e gestão comercial.
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
@@ -109,7 +109,7 @@ export function MarketIntelligenceCard() {
             </span>
             <div>
               <p className="text-sm text-[var(--text-soft)]">Consulta ativa</p>
-              <h3 className="text-lg font-semibold text-white">{activeFocus}</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">{activeFocus}</h3>
             </div>
           </div>
 
@@ -119,7 +119,7 @@ export function MarketIntelligenceCard() {
                 {insightQuery.data.model}
                 {insightQuery.data.cached ? ' • cache' : ' • tempo real'}
               </p>
-              <p className="mt-2 text-sm text-white">
+              <p className="mt-2 text-sm text-[var(--text-primary)]">
                 {new Date(insightQuery.data.generatedAt).toLocaleString('pt-BR')}
               </p>
             </div>
@@ -144,7 +144,7 @@ export function MarketIntelligenceCard() {
                 </span>
                 <div>
                   <p className="text-sm text-[var(--text-soft)]">Resumo executivo</p>
-                  <h3 className="text-lg font-semibold text-white">Leitura consolidada</h3>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">Leitura consolidada</h3>
                 </div>
               </div>
 
@@ -192,7 +192,7 @@ function InsightListCard({
         </span>
         <div>
           <p className="text-sm text-[var(--text-soft)]">Leitura assistida</p>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>
         </div>
       </div>
 

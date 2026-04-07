@@ -122,7 +122,7 @@ describe('dashboard-shell helpers', () => {
     await user.click(screen.getByRole('button', { name: /encerrar sessão/i }))
 
     expect(handleQuickAction).toHaveBeenCalledWith(
-        expect.objectContaining({
+      expect.objectContaining({
         id: 'new-event',
       }),
     )

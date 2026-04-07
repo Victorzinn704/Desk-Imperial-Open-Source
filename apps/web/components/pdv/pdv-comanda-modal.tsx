@@ -184,13 +184,11 @@ export function PdvComandaModal({
         onClick={onClose}
       />
 
-      <div
-        className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]"
-      >
+      <div className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]">
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">
                 {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
               </h2>
               {isEditing ? (
@@ -210,7 +208,7 @@ export function PdvComandaModal({
             </p>
           </div>
           <button
-            className="flex size-9 items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-white"
+            className="flex size-9 items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]"
             onClick={onClose}
             type="button"
           >
@@ -224,7 +222,7 @@ export function PdvComandaModal({
               <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
                 <Search className="size-4 text-[var(--text-soft)]" />
                 <input
-                  className="flex-1 bg-transparent text-sm text-white placeholder-[var(--text-soft)] outline-none"
+                  className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-soft)] outline-none"
                   placeholder="Buscar produto..."
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
@@ -243,7 +241,7 @@ export function PdvComandaModal({
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               {!showProducts ? (
                 <div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
-                  <p className="text-base font-semibold text-white">Escolha uma categoria</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)]">Escolha uma categoria</p>
                   <p className="mt-2 max-w-[24rem] text-sm leading-6 text-[var(--text-soft)]">
                     Primeiro selecione a classe do produto. A lista aparece no mesmo painel, sem trocar de tela.
                   </p>
@@ -265,7 +263,7 @@ export function PdvComandaModal({
                         setSelectedCategory(null)
                         setSearch('')
                       }}
-                      className="rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:text-white"
+                      className="rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
                     >
                       Ver categorias
                     </button>
@@ -301,7 +299,7 @@ export function PdvComandaModal({
                   Mesa
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                   placeholder="Ex: 4"
                   value={mesa}
                   onChange={(event) => setMesa(event.target.value)}
@@ -312,7 +310,7 @@ export function PdvComandaModal({
                   Cliente
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                   placeholder="Nome (opcional)"
                   value={clienteNome}
                   onChange={(event) => setClienteNome(event.target.value)}
@@ -337,7 +335,7 @@ export function PdvComandaModal({
               </label>
               <div className="flex gap-2">
                 <input
-                  className="flex-1 rounded-[12px] border bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none transition-colors"
+                  className="flex-1 rounded-[12px] border bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors"
                   inputMode="numeric"
                   placeholder="000.000.000-00 ou 00.000.000/0001-00"
                   style={{
@@ -352,7 +350,7 @@ export function PdvComandaModal({
                 />
                 {clienteDocumento ? (
                   <button
-                    className="rounded-[12px] border border-[rgba(255,255,255,0.08)] px-2.5 text-[var(--text-soft)] hover:text-white"
+                    className="rounded-[12px] border border-[rgba(255,255,255,0.08)] px-2.5 text-[var(--text-soft)] hover:text-[var(--text-primary)]"
                     type="button"
                     onClick={() => setClienteDocumento('')}
                   >
@@ -368,7 +366,7 @@ export function PdvComandaModal({
                   Desconto %
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                   max="100"
                   min="0"
                   type="number"
@@ -392,7 +390,7 @@ export function PdvComandaModal({
                   Acrescimo %
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                   max="100"
                   min="0"
                   type="number"
@@ -448,7 +446,7 @@ export function PdvComandaModal({
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button
-                  className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-white transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={itens.length === 0 || connectionState === 'printing' || isBusy}
                   type="button"
                   onClick={() => void handleSave()}
@@ -478,7 +476,9 @@ export function PdvComandaModal({
           <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
             <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tela da comanda</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">Itens ao vivo da mesa {mesa || 'sem numero'}</h3>
+              <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
+                Itens ao vivo da mesa {mesa || 'sem numero'}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
                 Sempre que abrir ou editar uma comanda, esta coluna mostra os itens que vao sair para o atendimento.
               </p>
@@ -487,11 +487,13 @@ export function PdvComandaModal({
             <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
               <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
-                <p className="mt-2 truncate text-sm font-medium text-white">{clienteNome || 'Nao identificado'}</p>
+                <p className="mt-2 truncate text-sm font-medium text-[var(--text-primary)]">
+                  {clienteNome || 'Nao identificado'}
+                </p>
               </div>
               <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Status</p>
-                <p className="mt-2 text-sm font-medium text-white">
+                <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
                   {draftComanda.status === 'aberta'
                     ? 'Aberta'
                     : draftComanda.status === 'em_preparo'
@@ -515,7 +517,7 @@ export function PdvComandaModal({
             >
               {itens.length === 0 ? (
                 <div className="flex h-full min-h-52 flex-col items-center justify-center rounded-[18px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
-                  <p className="text-sm font-semibold text-white">Nenhum item ainda</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Nenhum item ainda</p>
                   <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
                     Arraste produtos da esquerda ou toque para adicionar.
                   </p>

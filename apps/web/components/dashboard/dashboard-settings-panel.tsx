@@ -97,7 +97,7 @@ export function DashboardSettingsPanel({
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
                   'relative shrink-0 px-5 py-3.5 text-sm font-semibold transition-colors duration-150',
-                  isActive ? 'text-white' : 'text-[var(--text-soft)] hover:text-white',
+                  isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]',
                 )}
               >
                 {tab.label}

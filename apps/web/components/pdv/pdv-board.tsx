@@ -291,7 +291,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Comandas abertas</p>
-            <p className="mt-1 text-2xl font-bold text-white">{abertas.length}</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{abertas.length}</p>
           </div>
         </div>
 
@@ -311,7 +311,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Mesas</p>
-            <p className="mt-1 text-2xl font-bold text-white">
+            <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
               <span className="text-[#36f57c]">{mesasLivres}</span>
               <span className="mx-1 text-[var(--text-muted)] text-lg">/</span>
               <span className="text-[#fb923c]">{mesasOcupadas}</span>
@@ -511,7 +511,7 @@ function AddMesaModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="imperial-card w-full max-w-sm p-6">
-        <h2 className="text-lg font-semibold text-white">Nova mesa</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Nova mesa</h2>
         <p className="mt-1 text-sm text-[var(--text-soft)]">Informe o nome e a capacidade da mesa.</p>
 
         <div className="mt-5 space-y-4">
@@ -521,7 +521,7 @@ function AddMesaModal({
             </label>
             <input
               autoFocus
-              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white placeholder-[var(--text-muted)] outline-none focus:border-[rgba(52,242,127,0.5)]"
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-[rgba(52,242,127,0.5)]"
               placeholder="Ex: Mesa 1, Varanda 3, VIP"
               value={form.label}
               onChange={(e) => onChange({ ...form, label: e.target.value })}
@@ -538,7 +538,7 @@ function AddMesaModal({
               type="number"
               min={1}
               max={50}
-              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.5)]"
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.5)]"
               value={form.capacity}
               onChange={(e) => onChange({ ...form, capacity: e.target.value })}
             />
@@ -551,7 +551,7 @@ function AddMesaModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[10px] border border-[rgba(255,255,255,0.1)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-white"
+            className="rounded-[10px] border border-[rgba(255,255,255,0.1)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>

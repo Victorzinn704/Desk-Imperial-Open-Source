@@ -35,15 +35,18 @@ function CategoryCard({
 }>) {
   const barPct = maxProfit > 0 ? Math.max(4, (potentialProfit / maxProfit) * 100) : 4
   const categoryMargin =
-    inventorySalesValue > 0 ? `${Math.round((potentialProfit / inventorySalesValue) * 100)}% margem estimada` : 'sem venda projetada'
+    inventorySalesValue > 0
+      ? `${Math.round((potentialProfit / inventorySalesValue) * 100)}% margem estimada`
+      : 'sem venda projetada'
 
   return (
     <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4 hover:border-white/10 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white leading-snug">{category}</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">{category}</p>
           <p className="mt-1 text-[11px] text-[var(--text-soft)]">
-            {products} SKU{products !== 1 ? 's' : ''} · {formatCurrency(inventoryCostValue, displayCurrency as never)} de capital
+            {products} SKU{products !== 1 ? 's' : ''} · {formatCurrency(inventoryCostValue, displayCurrency as never)}{' '}
+            de capital
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -89,7 +92,7 @@ function SummaryPill({
       </span>
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
-        <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
+        <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
         {helper ? <p className="mt-0.5 text-[10px] text-[var(--text-soft)]">{helper}</p> : null}
       </div>
     </div>
@@ -183,12 +186,21 @@ function PortfolioSummaryStrip({
         value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, displayCurrency as never) : '—'}
       />
       <SummaryPill
-        helper={productsTotals ? `${formatCurrency(productsTotals.potentialProfit, displayCurrency as never)} em lucro potencial` : undefined}
+        helper={
+          productsTotals
+            ? `${formatCurrency(productsTotals.potentialProfit, displayCurrency as never)} em lucro potencial`
+            : undefined
+        }
         icon={TrendingUp}
         label="Venda potencial"
         value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, displayCurrency as never) : '—'}
       />
-      <SummaryPill helper={`Margem média ${avgMargin}`} icon={Tags} label="Itens em alerta" value={String(lowStockItems ?? '—')} />
+      <SummaryPill
+        helper={`Margem média ${avgMargin}`}
+        icon={Tags}
+        label="Itens em alerta"
+        value={String(lowStockItems ?? '—')}
+      />
     </div>
   )
 }
@@ -210,7 +222,7 @@ function PortfolioCategoryPanel({
         </span>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Categorias</p>
-          <h2 className="text-base font-semibold leading-snug text-white">Fluxo por categoria</h2>
+          <h2 className="text-base font-semibold leading-snug text-[var(--text-primary)]">Fluxo por categoria</h2>
         </div>
       </div>
 
@@ -269,7 +281,7 @@ function PortfolioProductList({
       <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Produtos cadastrados</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">Produtos cadastrados</h2>
           <p className="mt-1.5 text-sm text-[var(--text-soft)]">
             {filteredProducts.length === products.length
               ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
@@ -308,7 +320,7 @@ function PortfolioProductList({
         ) : (
           <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
             <Search className="mx-auto mb-3 size-9 text-[var(--text-soft)]/50" />
-            <p className="text-base font-semibold text-white">
+            <p className="text-base font-semibold text-[var(--text-primary)]">
               {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
             </p>
             <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
@@ -392,7 +404,10 @@ export function PortfolioEnvironment() {
 
   const filteredProducts = filterProducts(products, searchQuery)
   const avgMargin = calcAvgMargin(products)
-  const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((category) => category.potentialProfit) ?? [0]), 0)
+  const maxCategoryProfit = Math.max(
+    ...(finance?.categoryBreakdown.map((category) => category.potentialProfit) ?? [0]),
+    0,
+  )
   const handleDeleteProduct = (productId: string) => {
     const target = products.find((product) => product.id === productId)
     if (confirmProductDeletion(target?.name)) {

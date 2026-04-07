@@ -267,7 +267,13 @@ describe('PortfolioEnvironment', () => {
         data: {
           items: [
             makeProduct({ id: 'product-1', name: 'Pizza Imperial', brand: 'Casa', category: 'Pizzas' }),
-            makeProduct({ id: 'product-2', name: 'Combo Executivo', brand: 'Desk', category: 'Combos', packagingClass: 'Combo promocional' }),
+            makeProduct({
+              id: 'product-2',
+              name: 'Combo Executivo',
+              brand: 'Desk',
+              category: 'Combos',
+              packagingClass: 'Combo promocional',
+            }),
           ],
           totals: {
             totalProducts: 2,
@@ -339,7 +345,13 @@ describe('PortfolioEnvironment', () => {
         data: {
           items: [
             makeProduct({ id: 'active-1', name: 'Lasanha', active: true }),
-            makeProduct({ id: 'archived-1', name: 'Combo Arquivado', active: false, isCombo: true, comboDescription: 'combo antigo' }),
+            makeProduct({
+              id: 'archived-1',
+              name: 'Combo Arquivado',
+              active: false,
+              isCombo: true,
+              comboDescription: 'combo antigo',
+            }),
           ],
           totals: {
             totalProducts: 2,

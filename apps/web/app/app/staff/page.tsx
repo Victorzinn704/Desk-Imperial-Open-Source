@@ -32,7 +32,7 @@ export default function StaffAppPage() {
 
   if (!user || !isStaff) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
         <div className="size-8 animate-spin rounded-full border-2 border-[rgba(255,255,255,0.1)] border-t-[var(--accent,#9b8460)]" />
       </div>
     )

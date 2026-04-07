@@ -44,7 +44,9 @@ export function ComplianceTab({
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
               Governança e consentimento
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Conformidade integrada à central da conta</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+              Conformidade integrada à central da conta
+            </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               O bloco de conformidade deixa a navegação principal mais limpa e passa a viver onde a governança realmente
               faz sentido.
@@ -56,7 +58,7 @@ export function ComplianceTab({
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
         <article className="imperial-card p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Documentos aceitos</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Histórico de consentimento</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Histórico de consentimento</h3>
 
           <div className="mt-6 space-y-3">
             {legalAcceptances.length ? (
@@ -78,7 +80,7 @@ export function ComplianceTab({
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Preferências de cookies
           </p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Controle de consentimento opcional</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Controle de consentimento opcional</h3>
 
           <div className="mt-6 grid gap-3">
             <CheckboxField

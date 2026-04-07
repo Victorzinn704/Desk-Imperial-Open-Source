@@ -120,7 +120,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
               >
                 {garcomInitials}
               </div>
-              <span className="mt-1.5 text-[10px] font-bold text-white tracking-wide drop-shadow-md">
+              <span className="mt-1.5 text-[10px] font-bold text-[var(--text-primary)] tracking-wide drop-shadow-md">
                 {shortGarcom}
               </span>
             </div>
@@ -129,7 +129,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
 
         {/* Mesa Label - Big & Bold */}
         <div className="mt-3 flex-1">
-          <h4 className="text-xl font-black tracking-tight text-white drop-shadow-sm">{mesa.numero}</h4>
+          <h4 className="text-xl font-black tracking-tight text-[var(--text-primary)] drop-shadow-sm">{mesa.numero}</h4>
           {comanda?.clienteNome && (
             <p className="mt-1 truncate text-xs font-medium text-[var(--text-soft)]" title={comanda.clienteNome}>
               {comanda.clienteNome}
@@ -154,7 +154,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
             </div>
 
             <div className="text-right">
-              <span className="flex items-baseline justify-end text-lg font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]">
+              <span className="flex items-baseline justify-end text-lg font-black tracking-tight text-[var(--text-primary)] drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]">
                 {fmtBRL(total)}
               </span>
             </div>

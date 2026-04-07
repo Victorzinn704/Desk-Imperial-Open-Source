@@ -25,7 +25,9 @@ export function PreferencesTab({ preferences, onNavigateSection, onPreferencesCh
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
               Preferências do workspace
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Leitura visual e rotina da operação</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+              Leitura visual e rotina da operação
+            </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Essas preferências organizam o ambiente neste dispositivo sem interferir no núcleo crítico do sistema.
             </p>
@@ -38,7 +40,9 @@ export function PreferencesTab({ preferences, onNavigateSection, onPreferencesCh
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Painéis com prioridade
           </p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">O que fica mais visível na leitura executiva</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
+            O que fica mais visível na leitura executiva
+          </h3>
 
           <div className="mt-6 grid gap-3">
             {(
@@ -84,7 +88,7 @@ export function PreferencesTab({ preferences, onNavigateSection, onPreferencesCh
 
         <article className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Agenda operacional</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Atalhos da rotina comercial</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Atalhos da rotina comercial</h3>
           <div className="mt-6 space-y-4">
             <SettingsInfoCard
               hint="A agenda comercial agora fica acessível como módulo dedicado do workspace."

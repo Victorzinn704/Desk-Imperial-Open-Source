@@ -58,16 +58,11 @@ describe('MobileOrderBuilder', () => {
       />,
     )
 
-    const categoryButtons = screen.getAllByRole('button').filter((button) =>
-      ['Todos', 'Água', 'Bebidas', 'Zebra'].includes(button.textContent ?? ''),
-    )
+    const categoryButtons = screen
+      .getAllByRole('button')
+      .filter((button) => ['Todos', 'Água', 'Bebidas', 'Zebra'].includes(button.textContent ?? ''))
 
-    expect(categoryButtons.map((button) => button.textContent?.trim())).toEqual([
-      'Todos',
-      'Água',
-      'Bebidas',
-      'Zebra',
-    ])
+    expect(categoryButtons.map((button) => button.textContent?.trim())).toEqual(['Todos', 'Água', 'Bebidas', 'Zebra'])
   })
 
   it('matches categories and names accent-insensitively when searching', () => {
@@ -177,9 +172,7 @@ describe('MobileOrderBuilder', () => {
         mesaLabel="11"
         mode="new"
         busy
-        produtos={[
-          makeProduct({ id: 'inactive-1', active: false, category: 'Ocultos', name: 'Fora de linha' }),
-        ]}
+        produtos={[makeProduct({ id: 'inactive-1', active: false, category: 'Ocultos', name: 'Fora de linha' })]}
         onSubmit={onSubmit}
         onCancel={onCancel}
       />,

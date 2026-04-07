@@ -70,7 +70,7 @@ export function EmployeePayrollCard({
         </span>
         <div>
           <p className="text-sm text-[var(--text-soft)]">Gestão salarial</p>
-          <h2 className="text-xl font-semibold text-white">Folha de Pagamento</h2>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Folha de Pagamento</h2>
         </div>
       </div>
 
@@ -81,21 +81,21 @@ export function EmployeePayrollCard({
             <DollarSign className="size-4 text-[#36f57c]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Folha total</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-white">{formatCurrency(folhaTotal, currency)}</p>
+          <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{formatCurrency(folhaTotal, currency)}</p>
         </div>
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
             <Users className="size-4 text-[#60a5fa]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Colaboradores</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-white">{activeEmployees.length}</p>
+          <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{activeEmployees.length}</p>
         </div>
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="size-4 text-[#fb923c]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Top comissão</p>
           </div>
-          <p className="mt-2 truncate text-sm font-bold text-white">
+          <p className="mt-2 truncate text-sm font-bold text-[var(--text-primary)]">
             {maiorComissionado && maiorComissionado.comissao > 0
               ? maiorComissionado.emp.displayName.split(' ')[0]
               : '—'}
@@ -129,7 +129,7 @@ export function EmployeePayrollCard({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-semibold text-white">{emp.displayName}</p>
+                    <p className="truncate font-semibold text-[var(--text-primary)]">{emp.displayName}</p>
                     <span className="shrink-0 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#8fffb9]">
                       {emp.employeeCode}
                     </span>
@@ -163,7 +163,7 @@ export function EmployeePayrollCard({
                       </label>
                       <input
                         key={`${emp.id}-salario-${config.salarioBase}`}
-                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                         defaultValue={config.salarioBase / 100}
                         min="0"
                         step="10"
@@ -179,7 +179,7 @@ export function EmployeePayrollCard({
                       </label>
                       <input
                         key={`${emp.id}-pct-${config.percentualVendas}`}
-                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)]"
+                        className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                         defaultValue={config.percentualVendas}
                         max="30"
                         min="0"
@@ -195,7 +195,9 @@ export function EmployeePayrollCard({
                   <div className="mt-4 rounded-[12px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3 space-y-2">
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Vendas no mês</span>
-                      <span className="shrink-0 font-medium text-white">{formatCurrency(vendasDoMes, currency)}</span>
+                      <span className="shrink-0 font-medium text-[var(--text-primary)]">
+                        {formatCurrency(vendasDoMes, currency)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Comissão ({config.percentualVendas}%)</span>
@@ -203,12 +205,12 @@ export function EmployeePayrollCard({
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-[var(--text-soft)]">Salário base</span>
-                      <span className="shrink-0 font-medium text-white">
+                      <span className="shrink-0 font-medium text-[var(--text-primary)]">
                         {formatCurrency(salarioBaseReais, currency)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
-                      <span className="text-white">Total a pagar</span>
+                      <span className="text-[var(--text-primary)]">Total a pagar</span>
                       <span className="shrink-0 text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
                     </div>
                   </div>

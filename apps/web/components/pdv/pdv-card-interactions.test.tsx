@@ -48,9 +48,7 @@ function makeMesa(overrides: Partial<Mesa> = {}): Mesa {
 }
 
 function getNativeButtonByName(name: RegExp) {
-  return screen
-    .getAllByRole('button', { name })
-    .find((element) => element.tagName === 'BUTTON') as HTMLButtonElement
+  return screen.getAllByRole('button', { name }).find((element) => element.tagName === 'BUTTON') as HTMLButtonElement
 }
 
 describe('PDV cards', () => {
@@ -58,9 +56,7 @@ describe('PDV cards', () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
 
-    renderWithDnd(
-      <PdvComandaCard comanda={makeComanda()} index={0} column={KANBAN_COLUMNS[0]!} onClick={onClick} />,
-    )
+    renderWithDnd(<PdvComandaCard comanda={makeComanda()} index={0} column={KANBAN_COLUMNS[0]!} onClick={onClick} />)
 
     await user.click(getNativeButtonByName(/mesa 10/i))
 
@@ -74,12 +70,7 @@ describe('PDV cards', () => {
     const onDelete = vi.fn()
 
     render(
-      <PdvMesaCard
-        mesa={makeMesa()}
-        onClickLivre={onClickLivre}
-        onClickOcupada={onClickOcupada}
-        onDelete={onDelete}
-      />,
+      <PdvMesaCard mesa={makeMesa()} onClickLivre={onClickLivre} onClickOcupada={onClickOcupada} onDelete={onDelete} />,
     )
 
     await user.click(screen.getByRole('button', { name: /abrir mesa 10/i }))

@@ -47,7 +47,7 @@ const ProductItem = memo(function ProductItem({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-white">{produto.name}</p>
+        <p className="truncate text-sm font-medium text-[var(--text-primary)]">{produto.name}</p>
         <p className="mt-0.5 text-xs text-[var(--text-soft,#7a8896)]">
           {produto.category} · {formatCurrency(produto.unitPrice)}
         </p>
@@ -83,7 +83,7 @@ const ProductItem = memo(function ProductItem({
             >
               <Minus className="size-4" />
             </button>
-            <span className="min-w-[24px] text-center text-sm font-semibold text-white">{qty}</span>
+            <span className="min-w-[24px] text-center text-sm font-semibold text-[var(--text-primary)]">{qty}</span>
           </>
         )}
         <button
@@ -127,11 +127,7 @@ function getSortedCategories(produtos: ProductRecord[]) {
     .sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base', numeric: true }))
 }
 
-function filterProducts(
-  produtos: ProductRecord[],
-  deferredSearch: string,
-  selectedCategory: string | null,
-) {
+function filterProducts(produtos: ProductRecord[], deferredSearch: string, selectedCategory: string | null) {
   const normalizedSearch = normalizeTextForSearch(deferredSearch)
   return produtos.filter((produto) => {
     const matchSearch =
@@ -146,7 +142,9 @@ function filterProducts(
 function addProductToCart(cart: CartEntry[], produto: ProductRecord) {
   const existing = cart.find((entry) => entry.produtoId === produto.id)
   if (existing) {
-    return cart.map((entry) => (entry.produtoId === produto.id ? { ...entry, quantidade: entry.quantidade + 1 } : entry))
+    return cart.map((entry) =>
+      entry.produtoId === produto.id ? { ...entry, quantidade: entry.quantidade + 1 } : entry,
+    )
   }
 
   return [
@@ -202,14 +200,16 @@ function MobileOrderHeader({
         <div>
           <div className="flex items-center gap-2">
             {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#9b8460)]" /> : null}
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">Mesa {mesaLabel}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+              Mesa {mesaLabel}
+            </p>
           </div>
           <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
+          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
         >
           Cancelar
         </button>
@@ -223,7 +223,7 @@ function MobileOrderHeader({
             placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-white placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
+            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] py-3 pl-9 pr-4 text-base text-[var(--text-primary)] placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(155,132,96,0.45)]"
           />
         </div>
       ) : categories.length > 0 ? (
@@ -246,7 +246,9 @@ function CategorySelectionScreen({
 }>) {
   return (
     <div className="p-4">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">Escolha uma categoria</p>
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#9b8460)]">
+        Escolha uma categoria
+      </p>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         <button
           type="button"
@@ -300,7 +302,9 @@ function CartSummaryBar({
           <p className="text-xs text-[var(--text-soft,#7a8896)]">
             {totalItems === 0 ? 'Carrinho vazio' : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
           </p>
-          {totalValue > 0 ? <p className="text-sm font-semibold text-white">{formatCurrency(totalValue)}</p> : null}
+          {totalValue > 0 ? (
+            <p className="text-sm font-semibold text-[var(--text-primary)]">{formatCurrency(totalValue)}</p>
+          ) : null}
         </div>
         <button
           type="button"
@@ -412,7 +416,11 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
         {!showItemsScreen && categories.length > 0 ? (
-          <CategorySelectionScreen categories={categories} onSelectAll={showAllProducts} onSelectCategory={openCategory} />
+          <CategorySelectionScreen
+            categories={categories}
+            onSelectAll={showAllProducts}
+            onSelectCategory={openCategory}
+          />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
@@ -430,7 +438,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                 <button
                   type="button"
                   onClick={returnToCategories}
-                  className="inline-flex items-center gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-white"
+                  className="inline-flex items-center gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
                 >
                   <ChevronLeft className="size-3.5" />
                   Categorias

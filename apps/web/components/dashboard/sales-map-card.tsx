@@ -35,7 +35,9 @@ export function SalesMapCard({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">Inteligência Operacional</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Mapa de Vendas — Monitoramento Geográfico</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+              Mapa de Vendas — Monitoramento Geográfico
+            </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
               Monitore a operação em tempo real através da geolocalização automática de cada venda. Cada ponto
               representa um pedido geocodificado por estado e cidade, permitindo análise de mercado, identificação de
@@ -82,7 +84,7 @@ export function SalesMapCard({
           </span>
           <div>
             <p className="text-sm text-[var(--text-soft)]">Desempenho regional</p>
-            <h2 className="text-xl font-semibold text-white">Regiões de maior receita</h2>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Regiões de maior receita</h2>
           </div>
         </div>
 
@@ -110,13 +112,13 @@ export function SalesMapCard({
               <div className="imperial-card-soft p-4" key={region.label}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-medium text-white">{region.label}</p>
+                    <p className="font-medium text-[var(--text-primary)]">{region.label}</p>
                     <p className="mt-2 text-sm text-[var(--text-soft)]">
                       {region.orders} venda(s) • lucro {formatCurrency(region.profit, displayCurrency)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
                       {formatCurrency(region.revenue, displayCurrency)}
                     </p>
                     <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">receita</p>
@@ -154,7 +156,7 @@ function MapMetric({
         <Icon className="size-4" />
       </span>
       <p className="mt-4 text-sm text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{value}</p>
       <p className="mt-2 text-sm text-[var(--text-soft)]">{hint}</p>
     </div>
   )

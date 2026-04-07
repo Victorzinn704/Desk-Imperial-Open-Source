@@ -36,7 +36,7 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
           </span>
           <div>
             <p className="text-xs text-[var(--text-soft)]">Histórico financeiro</p>
-            <h2 className="text-base font-semibold text-white">Pedidos recentes</h2>
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">Pedidos recentes</h2>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ function Tab({
         'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition-colors duration-200',
         active
           ? 'border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] text-[#36f57c]'
-          : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.16)] hover:text-white',
+          : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]',
       )}
     >
       {label}
