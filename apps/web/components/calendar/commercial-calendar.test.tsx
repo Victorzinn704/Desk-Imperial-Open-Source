@@ -36,4 +36,24 @@ describe('ActivityModal', () => {
       }),
     )
   })
+
+  it('permite classificar jogo em campeonato monitorado', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+
+    render(<ActivityModal initialStart={new Date('2026-04-03T12:00:00.000Z')} onClose={vi.fn()} onSave={onSave} />)
+
+    await user.type(screen.getByLabelText(/^nome$/i), 'Jogo da Libertadores')
+    await user.click(screen.getByRole('button', { name: /^jogo$/i }))
+    await user.click(screen.getByRole('button', { name: /libertadores/i }))
+    await user.click(screen.getByRole('button', { name: /criar atividade/i }))
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        footballCompetition: 'libertadores',
+        title: 'Jogo da Libertadores',
+        type: 'jogo',
+      }),
+    )
+  })
 })

@@ -5,13 +5,14 @@ import { Calendar, dateFnsLocalizer, type View } from 'react-big-calendar'
 import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarDays, Plus, X } from 'lucide-react'
+import { CalendarDays, Plus, Radio, Trophy, X } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ActivityType = 'evento' | 'jogo' | 'promocao' | 'reuniao' | 'outro'
+export type FootballCompetition = 'serie_a' | 'copa_do_brasil' | 'libertadores' | 'sulamericana'
 
 export type CommercialActivity = {
   id: string
@@ -20,7 +21,12 @@ export type CommercialActivity = {
   start: Date
   end: Date
   descricao?: string
+  footballCompetition?: FootballCompetition
+  homeTeam?: string
   impactoEsperado?: number
+  isAutoManaged?: boolean
+  operationalHint?: string
+  visitorTeam?: string
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
@@ -41,9 +47,24 @@ const DnDCalendar = withDragAndDrop<CommercialActivity>(Calendar)
 
 const ACTIVITY_COLORS: Record<ActivityType, { bg: string; border: string; text: string; dot: string }> = {
   evento: { bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.4)', text: '#fca5a5', dot: '#ef4444' },
-  jogo: { bg: 'rgba(234,179,8,0.16)', border: 'rgba(234,179,8,0.4)', text: '#fde047', dot: '#eab308' },
-  promocao: { bg: 'rgba(54,245,124,0.14)', border: 'rgba(54,245,124,0.38)', text: '#86efac', dot: '#36f57c' },
-  reuniao: { bg: 'rgba(96,165,250,0.14)', border: 'rgba(96,165,250,0.38)', text: '#93c5fd', dot: '#60a5fa' },
+  jogo: {
+    bg: 'color-mix(in srgb, var(--warning) 16%, transparent)',
+    border: 'rgba(234,179,8,0.4)',
+    text: '#fde047',
+    dot: 'var(--warning)',
+  },
+  promocao: {
+    bg: 'color-mix(in srgb, var(--success) 14%, transparent)',
+    border: 'rgba(54,245,124,0.38)',
+    text: 'color-mix(in srgb, var(--success) 60%, white)',
+    dot: 'var(--success)',
+  },
+  reuniao: {
+    bg: 'rgba(96,165,250,0.14)',
+    border: 'rgba(96,165,250,0.38)',
+    text: 'var(--accent-strong)',
+    dot: 'var(--accent)',
+  },
   outro: { bg: 'rgba(168,85,247,0.14)', border: 'rgba(168,85,247,0.38)', text: '#c4b5fd', dot: '#a855f7' },
 }
 
@@ -54,6 +75,81 @@ const ACTIVITY_LABELS: Record<ActivityType, string> = {
   reuniao: 'Reunião',
   outro: 'Outro',
 }
+
+const FOOTBALL_COMPETITION_LABELS: Record<FootballCompetition, string> = {
+  serie_a: 'Série A',
+  copa_do_brasil: 'Copa do Brasil',
+  libertadores: 'Libertadores',
+  sulamericana: 'Sul-Americana',
+}
+
+const FOOTBALL_COMPETITION_SHORT_LABELS: Record<FootballCompetition, string> = {
+  serie_a: 'A',
+  copa_do_brasil: 'CB',
+  libertadores: 'LIB',
+  sulamericana: 'SUL',
+}
+
+const FOOTBALL_COMPETITIONS = Object.keys(FOOTBALL_COMPETITION_LABELS) as FootballCompetition[]
+
+const FOOTBALL_GAME_ACTIVITIES: CommercialActivity[] = [
+  {
+    id: 'football-serie-a-1',
+    title: 'Série A · jogo com telão',
+    type: 'jogo',
+    footballCompetition: 'serie_a',
+    homeTeam: 'Time da casa',
+    visitorTeam: 'Rival nacional',
+    start: new Date(2026, 3, 11, 19, 0),
+    end: new Date(2026, 3, 11, 21, 0),
+    descricao: 'Preparar telão, balcão e combo de bebidas.',
+    impactoEsperado: 42,
+    isAutoManaged: true,
+    operationalHint: 'Reforçar bebidas e salão 60 min antes',
+  },
+  {
+    id: 'football-copa-brasil-1',
+    title: 'Copa do Brasil · mata-mata',
+    type: 'jogo',
+    footballCompetition: 'copa_do_brasil',
+    homeTeam: 'Clube brasileiro',
+    visitorTeam: 'Adversário nacional',
+    start: new Date(2026, 3, 15, 21, 30),
+    end: new Date(2026, 3, 15, 23, 30),
+    descricao: 'Noite de decisão: preparar cozinha, combos e reforço no caixa.',
+    impactoEsperado: 58,
+    isAutoManaged: true,
+    operationalHint: 'Tratar como pico noturno',
+  },
+  {
+    id: 'football-libertadores-1',
+    title: 'Libertadores · clube brasileiro',
+    type: 'jogo',
+    footballCompetition: 'libertadores',
+    homeTeam: 'Brasileiro na Libertadores',
+    visitorTeam: 'Adversário continental',
+    start: new Date(2026, 3, 21, 21, 30),
+    end: new Date(2026, 3, 21, 23, 30),
+    descricao: 'Jogo de alto impacto para bar/restaurante com transmissão.',
+    impactoEsperado: 64,
+    isAutoManaged: true,
+    operationalHint: 'Reservar mesas e preparar estoque de maior giro',
+  },
+  {
+    id: 'football-sulamericana-1',
+    title: 'Sul-Americana · clube brasileiro',
+    type: 'jogo',
+    footballCompetition: 'sulamericana',
+    homeTeam: 'Brasileiro na Sul-Americana',
+    visitorTeam: 'Adversário continental',
+    start: new Date(2026, 3, 23, 19, 0),
+    end: new Date(2026, 3, 23, 21, 0),
+    descricao: 'Transmissão com impacto moderado no movimento.',
+    impactoEsperado: 36,
+    isAutoManaged: true,
+    operationalHint: 'Oferta leve para balcão e delivery',
+  },
+]
 
 const INITIAL_ACTIVITIES: CommercialActivity[] = [
   {
@@ -69,11 +165,13 @@ const INITIAL_ACTIVITIES: CommercialActivity[] = [
     id: '2',
     title: 'Jogo do Brasileirão',
     type: 'jogo',
+    footballCompetition: 'serie_a',
     start: new Date(2026, 2, 23, 16, 0),
     end: new Date(2026, 2, 23, 18, 0),
     descricao: 'Transmissão no telão',
     impactoEsperado: 60,
   },
+  ...FOOTBALL_GAME_ACTIVITIES,
   {
     id: '3',
     title: 'Lançamento Cardápio Verão',
@@ -123,6 +221,9 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
   const [title, setTitle] = useState(activity?.title ?? '')
   const [type, setType] = useState<ActivityType>(activity?.type ?? 'evento')
   const [descricao, setDescricao] = useState(activity?.descricao ?? '')
+  const [footballCompetition, setFootballCompetition] = useState<FootballCompetition>(
+    activity?.footballCompetition ?? 'serie_a',
+  )
   const [impacto, setImpacto] = useState<number | ''>(activity?.impactoEsperado ?? '')
 
   const defaultDate = initialStart ?? activity?.start ?? new Date()
@@ -138,6 +239,7 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
     onSave({
       title: title.trim(),
       type,
+      footballCompetition: type === 'jogo' ? footballCompetition : undefined,
       start: new Date(startStr),
       end: new Date(endStr),
       descricao: descricao || undefined,
@@ -188,9 +290,7 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
           </div>
 
           <div>
-            <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-              Tipo
-            </p>
+            <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Tipo</p>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
                 const isActive = type === t
@@ -207,13 +307,47 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                     type="button"
                     onClick={() => setType(t)}
                   >
-                    <span className="size-2 rounded-full" style={{ background: isActive ? c.dot : '#7a8896' }} />
+                    <span
+                      className="size-2 rounded-full"
+                      style={{ background: isActive ? c.dot : 'var(--text-muted)' }}
+                    />
                     {ACTIVITY_LABELS[t]}
                   </button>
                 )
               })}
             </div>
           </div>
+
+          {type === 'jogo' && (
+            <div>
+              <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+                Campeonato monitorado
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {FOOTBALL_COMPETITIONS.map((competition) => {
+                  const isActive = footballCompetition === competition
+                  return (
+                    <button
+                      key={competition}
+                      className="rounded-[12px] border px-3 py-2 text-left text-xs font-semibold transition-all"
+                      style={{
+                        background: isActive ? 'rgba(234,179,8,0.12)' : 'rgba(255,255,255,0.03)',
+                        borderColor: isActive ? 'rgba(234,179,8,0.45)' : 'rgba(255,255,255,0.08)',
+                        color: isActive ? '#fde047' : 'var(--text-soft)',
+                      }}
+                      type="button"
+                      onClick={() => setFootballCompetition(competition)}
+                    >
+                      {FOOTBALL_COMPETITION_LABELS[competition]}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-[var(--text-muted)]">
+                O widget considera apenas jogos do Brasil nesses quatro campeonatos.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -341,13 +475,91 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
               </div>
               <p className="shrink-0 text-xs text-[var(--text-soft)]">{format(a.start, 'dd/MM', { locale: ptBR })}</p>
               {a.impactoEsperado && (
-                <span className="shrink-0 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-bold text-[#36f57c]">
+                <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--success)]">
                   +{a.impactoEsperado}%
                 </span>
               )}
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+function FootballGamesWidget({ activities }: { activities: CommercialActivity[] }) {
+  const footballGames = activities
+    .filter((activity) => activity.type === 'jogo' && activity.footballCompetition)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  const upcomingGames = footballGames.filter((activity) => activity.start >= new Date()).slice(0, 5)
+
+  if (footballGames.length === 0) return null
+
+  return (
+    <div className="imperial-card-soft rounded-[20px] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(234,179,8,0.28)] bg-[rgba(234,179,8,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#fde047]">
+            <Trophy className="size-3" />
+            Jogos do Brasil
+          </div>
+          <p className="mt-3 text-sm font-semibold text-white">Agenda esportiva do comércio</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-soft)]">
+            Série A, Copa do Brasil, Libertadores e Sul-Americana entram como sinal de movimento.
+          </p>
+        </div>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[rgba(234,179,8,0.10)] text-[#fde047]">
+          <Radio className="size-4" />
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {FOOTBALL_COMPETITIONS.map((competition) => {
+          const count = footballGames.filter((activity) => activity.footballCompetition === competition).length
+          return (
+            <div
+              key={competition}
+              className="rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-3 py-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#fde047]">
+                  {FOOTBALL_COMPETITION_SHORT_LABELS[competition]}
+                </span>
+                <span className="rounded-full bg-[rgba(234,179,8,0.10)] px-1.5 py-0.5 text-[10px] font-bold text-[#fde047]">
+                  {count}
+                </span>
+              </div>
+              <p className="mt-1 truncate text-[11px] font-medium text-[var(--text-soft)]">
+                {FOOTBALL_COMPETITION_LABELS[competition]}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-[rgba(255,255,255,0.06)] pt-4">
+        {upcomingGames.map((game) => (
+          <div key={game.id} className="rounded-[14px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{game.title}</p>
+                <p className="mt-1 truncate text-xs text-[var(--text-soft)]">
+                  {[game.homeTeam, game.visitorTeam].filter(Boolean).join(' x ') || game.descricao}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-xs font-bold text-[#fde047]">{format(game.start, 'dd/MM', { locale: ptBR })}</p>
+                <p className="text-[11px] text-[var(--text-soft)]">{format(game.start, 'HH:mm', { locale: ptBR })}</p>
+              </div>
+            </div>
+            {game.operationalHint && (
+              <p className="mt-2 rounded-lg bg-[rgba(234,179,8,0.08)] px-2 py-1 text-[11px] leading-4 text-[#fde68a]">
+                {game.operationalHint}
+              </p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -454,7 +666,7 @@ export function CommercialCalendar() {
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--text-soft)]">Arraste para mover eventos</span>
           <button
-            className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
+            className="flex items-center gap-2 rounded-[14px] border border-[color-mix(in_srgb,_var(--success)_40%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] px-4 py-2.5 text-sm font-semibold text-[var(--success)] transition-all hover:bg-[color-mix(in_srgb,_var(--success)_18%,_transparent)]"
             type="button"
             onClick={() => {
               setSelectedSlotStart(new Date())
@@ -475,7 +687,7 @@ export function CommercialCalendar() {
             .imperial-cal .rbc-toolbar { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); background: transparent !important; }
             .imperial-cal .rbc-toolbar button { color: #7a8896; background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
             .imperial-cal .rbc-toolbar button:hover { color: #fff; border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); }
-            .imperial-cal .rbc-toolbar button.rbc-active { color: #36f57c; border-color: rgba(52,242,127,0.4); background: rgba(52,242,127,0.1); }
+            .imperial-cal .rbc-toolbar button.rbc-active { color: var(--success); border-color: rgba(52,242,127,0.4); background: rgba(52,242,127,0.1); }
             .imperial-cal .rbc-toolbar button.rbc-active:hover { background: rgba(52,242,127,0.16); }
             .imperial-cal .rbc-toolbar-label { font-size: 15px; font-weight: 600; color: #fff; }
 
@@ -489,7 +701,7 @@ export function CommercialCalendar() {
             .imperial-cal .rbc-off-range-bg { background: rgba(0,0,0,0.25) !important; }
             .imperial-cal .rbc-today { background: rgba(52,242,127,0.04) !important; }
             .imperial-cal .rbc-date-cell { padding: 6px 8px; font-size: 12px; font-weight: 600; color: #7a8896; }
-            .imperial-cal .rbc-date-cell.rbc-now a { color: #36f57c; }
+            .imperial-cal .rbc-date-cell.rbc-now a { color: var(--success); }
 
             .imperial-cal .rbc-time-view { border: none !important; background: transparent !important; }
             .imperial-cal .rbc-time-view .rbc-row { background: transparent !important; }
@@ -507,13 +719,13 @@ export function CommercialCalendar() {
             .imperial-cal .rbc-day-slot { background: transparent !important; }
             .imperial-cal .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.025) !important; background: transparent !important; }
             .imperial-cal .rbc-day-slot .rbc-events-container { margin-right: 8px; }
-            .imperial-cal .rbc-current-time-indicator { background: #36f57c !important; height: 2px; box-shadow: 0 0 6px rgba(52,242,127,0.5); }
+            .imperial-cal .rbc-current-time-indicator { background: var(--success) !important; height: 2px; box-shadow: 0 0 6px rgba(52,242,127,0.5); }
             .imperial-cal .rbc-slot-selection { background: rgba(52,242,127,0.1) !important; border: 1px solid rgba(52,242,127,0.3) !important; }
 
             .imperial-cal .rbc-event { outline: none !important; }
             .imperial-cal .rbc-event:focus { outline: 2px solid rgba(52,242,127,0.4) !important; }
             .imperial-cal .rbc-event-label { font-size: 11px; }
-            .imperial-cal .rbc-show-more { color: #36f57c; font-size: 11px; font-weight: 600; background: transparent; }
+            .imperial-cal .rbc-show-more { color: var(--success); font-size: 11px; font-weight: 600; background: transparent; }
 
             .imperial-cal .rbc-agenda-view { background: transparent !important; }
             .imperial-cal .rbc-agenda-view table { color: #e2ddd6; border-color: rgba(255,255,255,0.06) !important; width: 100%; background: transparent !important; }
@@ -553,6 +765,7 @@ export function CommercialCalendar() {
 
         {/* Sidebar */}
         <div className="space-y-4">
+          <FootballGamesWidget activities={activities} />
           <UpcomingEvents activities={activities} />
 
           {/* Stats */}
@@ -572,7 +785,7 @@ export function CommercialCalendar() {
                     <span className="text-sm text-white">{ACTIVITY_LABELS[t]}</span>
                     <span className="text-xs text-[var(--text-soft)]">({count})</span>
                   </div>
-                  {impact > 0 && <span className="text-xs font-semibold text-[#36f57c]">+{impact}%</span>}
+                  {impact > 0 && <span className="text-xs font-semibold text-[var(--success)]">+{impact}%</span>}
                 </div>
               )
             })}
