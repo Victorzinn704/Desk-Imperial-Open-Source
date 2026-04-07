@@ -29,7 +29,7 @@ type ChartViewOption = {
   icon: LucideIcon
 }
 
-const palette = ['#3b82f6', '#10b981', '#6366f1', '#f43f5e', '#8b5cf6', '#f59e0b', '#06b6d4', '#4f46e5']
+const palette = ['#008cff', '#22c55e', '#38bdf8', '#f87171', '#fb923c', '#94a3b8', '#0ea5e9', '#1d4ed8']
 
 const chartViews: ChartViewOption[] = [
   {
@@ -185,7 +185,7 @@ function renderChart({
   if (activeView === 'timeline') {
     const options: ApexCharts.ApexOptions = {
       chart: { type: 'area', toolbar: { show: false }, background: 'transparent' },
-      colors: ['#36f57c', '#3b82f6'],
+      colors: ['#008cff', '#22c55e'],
       dataLabels: { enabled: false },
       stroke: { curve: 'smooth', width: 3 },
       xaxis: {
@@ -219,7 +219,7 @@ function renderChart({
     const options: ApexCharts.ApexOptions = {
       chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
       plotOptions: { bar: { columnWidth: '40%', borderRadius: 4 } },
-      colors: ['#8b5cf6', '#10b981'],
+      colors: ['#008cff', '#22c55e'],
       dataLabels: { enabled: false },
       xaxis: {
         categories: timelineData.map((d) => d.label),

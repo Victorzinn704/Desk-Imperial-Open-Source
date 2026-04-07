@@ -5,7 +5,7 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency } from '@/lib/currency'
 
-const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
+const COLORS = ['#008cff', '#22c55e', '#38bdf8', '#fb923c', '#f87171', '#94a3b8', '#0ea5e9', '#1d4ed8']
 
 type Props = {
   categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
@@ -49,8 +49,8 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
           <Tooltip
             formatter={(value, name) => [formatCompactCurrency(Number(value), displayCurrency), name]}
             contentStyle={{
-              background: 'rgba(18,24,20,0.97)',
-              border: '1px solid rgba(52,242,127,0.18)',
+              background: 'rgba(18,21,26,0.97)',
+              border: '1px solid rgba(0,140,255,0.18)',
               borderRadius: '12px',
               color: '#fff',
               fontSize: '12px',

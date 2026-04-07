@@ -22,11 +22,11 @@ function StatusBadge({ status }: { status: RecentOrder['status'] }) {
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
         isCompleted
-          ? 'border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'
+          ? 'border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]'
           : 'border-[rgba(240,68,56,0.25)] bg-[rgba(240,68,56,0.08)] text-red-400',
       )}
     >
-      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[#36f57c]' : 'bg-red-400')} />
+      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[#22c55e]' : 'bg-red-400')} />
       {isCompleted ? 'Concluído' : 'Cancelado'}
     </span>
   )
@@ -85,7 +85,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
     <div className="space-y-3">
       <div className="flex justify-end">
         <button
-          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
+          className="flex items-center gap-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(0,140,255,0.3)] hover:text-[var(--accent)]"
           type="button"
           onClick={handleExport}
         >
@@ -93,10 +93,10 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
           Exportar CSV ({orders.length})
         </button>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-[rgba(255,255,255,0.06)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+            <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)]">
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">
                 Pedido
               </th>
@@ -127,7 +127,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                 <tr
                   key={order.id}
                   className={cn(
-                    'border-b border-[rgba(255,255,255,0.04)] transition-colors hover:bg-[rgba(255,255,255,0.02)]',
+                    'border-b border-[var(--border)] transition-colors hover:bg-[rgba(255,255,255,0.02)]',
                     i % 2 === 0 ? 'bg-transparent' : 'bg-[rgba(255,255,255,0.01)]',
                   )}
                 >
@@ -139,7 +139,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                   <td
                     className={cn(
                       'px-4 py-3 text-right font-semibold',
-                      isCompleted ? 'text-[#36f57c]' : 'text-red-400',
+                      isCompleted ? 'text-[#22c55e]' : 'text-red-400',
                     )}
                   >
                     {isCompleted ? '' : '−'}
@@ -170,7 +170,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] transition-colors hover:border-[rgba(0,140,255,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -180,7 +180,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
+              className="flex size-7 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] transition-colors hover:border-[rgba(0,140,255,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
             >
               <ChevronRight className="size-4" />
             </button>

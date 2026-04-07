@@ -184,8 +184,8 @@ export function PdvComandaModal({
         onClick={onClose}
       />
 
-      <div className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]">
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
+      <div className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none bg-[rgba(8,10,14,0.95)] sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]">
+        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.2)] p-4 sm:p-6">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-xl font-semibold text-[var(--text-primary)]">
@@ -216,10 +216,10 @@ export function PdvComandaModal({
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 overflow-y-auto xl:overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
-          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
+        <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
+          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.3)] xl:border-b-0 xl:border-r">
             <div className="p-4">
-              <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
+              <div className="flex items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.06)] px-3 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
                 <Search className="size-4 text-[var(--text-soft)]" />
                 <input
                   className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-soft)] outline-none"
@@ -238,16 +238,16 @@ export function PdvComandaModal({
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-              {!showProducts ? (
-                <div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
-                  <p className="text-base font-semibold text-[var(--text-primary)]">Escolha uma categoria</p>
-                  <p className="mt-2 max-w-[24rem] text-sm leading-6 text-[var(--text-soft)]">
-                    Primeiro selecione a classe do produto. A lista aparece no mesmo painel, sem trocar de tela.
-                  </p>
-                </div>
-              ) : (
-                <>
+              <div className="flex-1 overflow-y-auto px-4 pb-6">
+                {!showProducts ? (
+                  <div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-6 text-center">
+                    <p className="text-base font-semibold text-[var(--text-primary)]">Escolha uma categoria</p>
+                    <p className="mt-2 max-w-[24rem] text-sm leading-6 text-[var(--text-soft)]">
+                      Primeiro selecione a classe do produto. A lista aparece no mesmo painel, sem trocar de tela.
+                    </p>
+                  </div>
+                ) : (
+                  <>
                   <div className="mb-3 flex items-center justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-2">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
@@ -269,7 +269,7 @@ export function PdvComandaModal({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-1">
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                     {filteredProducts.map((product) => {
                       const inCart = itens.find((item) => item.produtoId === product.id)
                       return (
@@ -292,7 +292,7 @@ export function PdvComandaModal({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
+          <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.25)] xl:border-b-0 xl:border-r">
             <div className="grid grid-cols-2 gap-3 p-4 pb-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
@@ -411,7 +411,7 @@ export function PdvComandaModal({
               </div>
             </div>
 
-            <div className="m-4 flex items-center justify-between rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
+            <div className="m-4 flex items-center justify-between rounded-[18px] border border-[rgba(0,140,255,0.25)] bg-[rgba(0,140,255,0.1)] px-4 py-3 shadow-[0_0_20px_rgba(0,140,255,0.12)]">
               <div>
                 {bruto !== total ? (
                   <p className="text-xs text-[var(--text-soft)] line-through">{formatCurrency(bruto, 'BRL')}</p>
@@ -431,7 +431,7 @@ export function PdvComandaModal({
               />
             ) : null}
 
-            <div className="border-t border-[rgba(255,255,255,0.06)] p-4">
+            <div className="border-t border-[rgba(255,255,255,0.08)] p-4">
               <PrinterSection
                 printers={printers}
                 selectedPrinterName={selectedPrinterName}
@@ -473,7 +473,7 @@ export function PdvComandaModal({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
+          <div className="flex min-h-0 flex-col border-l border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)]">
             <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tela da comanda</p>
               <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
@@ -484,7 +484,7 @@ export function PdvComandaModal({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
+            <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.08)] px-4 py-4">
               <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
                 <p className="mt-2 truncate text-sm font-medium text-[var(--text-primary)]">
@@ -531,8 +531,8 @@ export function PdvComandaModal({
               )}
             </div>
 
-            <div className="border-t border-[rgba(255,255,255,0.06)] px-4 py-4">
-              <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] p-4">
+            <div className="border-t border-[rgba(255,255,255,0.08)] px-4 py-4">
+              <div className="rounded-[18px] border border-[rgba(0,0,0,0.4)] bg-gradient-to-br from-[rgba(0,0,0,0.9)] to-[rgba(6,8,12,0.85)] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
                 <div className="flex items-center justify-between text-sm text-[var(--text-soft)]">
                   <span>Subtotal</span>
                   <span>{formatCurrency(bruto, 'BRL')}</span>

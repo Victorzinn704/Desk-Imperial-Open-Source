@@ -1,8 +1,9 @@
 'use client'
 
 import { ThemeToggleButton } from '@/components/shared/theme-toggle'
-import { Menu, Search, X } from 'lucide-react'
+import { Bell, CircleDot, Menu, Search, X } from 'lucide-react'
 import { BrandMark } from '@/components/shared/brand-mark'
+import { cn } from '@/lib/utils'
 
 export function DashboardTopbar({
   onMenuClick,
@@ -24,11 +25,11 @@ export function DashboardTopbar({
     )
   }
   return (
-    <header className="sticky top-0 flex w-full bg-white border-b border-gray-200 z-40 dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4 xl:hidden">
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] backdrop-blur-xl">
+      <div className="flex min-h-[60px] flex-col justify-between xl:flex-row xl:items-center xl:px-6">
+        <div className="flex w-full items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:gap-4 xl:hidden xl:border-b-0 xl:px-0 xl:py-4">
           <button
-            className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg dark:border-gray-800 flex dark:text-gray-400"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]"
             onClick={onMenuClick}
             aria-label="Toggle Sidebar"
           >
@@ -40,30 +41,55 @@ export function DashboardTopbar({
           <div className="w-10"></div>
         </div>
 
-        <div className="hidden xl:flex items-center gap-2">
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Search className="size-4 text-gray-500 dark:text-gray-400" />
+        <div className="hidden min-w-0 flex-1 items-center gap-4 px-6 py-4 xl:flex">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Workspace</p>
+            <div className="mt-1 flex items-center gap-3">
+              <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">{user.fullName}</h2>
+              <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(0,140,255,0.18)] bg-[rgba(0,140,255,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">
+                <CircleDot className="size-3" />
+                Operação online
+              </span>
+            </div>
+          </div>
+
+          <div className="relative ml-auto w-full max-w-[420px]">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+              <Search className="size-4 text-[var(--text-muted)]" />
             </span>
             <input
               type="text"
-              placeholder="Search or type command..."
-              className="h-11 w-full xl:w-[430px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-gray-800 dark:bg-gray-900/50 dark:text-[var(--text-primary)] dark:placeholder:text-gray-500 dark:focus:border-accent"
+              placeholder="Buscar pedidos, produtos ou comandos..."
+              className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-14 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:bg-[var(--surface)]"
             />
-            <button className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+            <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)]">
               <span className="font-sans">⌘</span>
               <span className="font-sans">K</span>
             </button>
           </div>
         </div>
 
-        <div className="hidden items-center justify-between w-full gap-4 px-5 py-4 xl:flex shadow-theme-md xl:justify-end xl:px-0 xl:shadow-none">
-          <div className="flex items-center gap-2 2xsm:gap-3">
+        <div className="hidden items-center justify-end gap-2 px-6 py-4 xl:flex">
+          <button
+            type="button"
+            className={cn(
+              'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-medium',
+              'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]',
+            )}
+          >
+            <Bell className="size-4" />
+            Alertas
+          </button>
+          <div className="flex items-center gap-2">
             <ThemeToggleButton />
           </div>
-          {/* Avatar Area */}
-          <div className="size-10 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">{getInitials(user.fullName)}</span>
+          <div className="flex h-10 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-[rgba(0,140,255,0.12)] text-[var(--accent)]">
+              <span className="text-xs font-semibold">{getInitials(user.fullName)}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{user.fullName}</p>
+            </div>
           </div>
         </div>
       </div>

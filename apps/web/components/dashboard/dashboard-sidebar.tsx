@@ -58,7 +58,7 @@ export function DashboardSidebar({
       {/* ═══════════════════════════════════════════
           NAV MOBILE — visível abaixo de xl
           ═══════════════════════════════════════════ */}
-      <section className="imperial-card sticky top-0 z-40 p-4 xl:hidden" style={{ backdropFilter: 'blur(16px)' }}>
+      <section className="sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] p-4 backdrop-blur-xl xl:hidden">
         <div className="min-w-0">
           <BrandMark />
           <p className="mt-1.5 text-xs text-muted-foreground">
@@ -74,13 +74,13 @@ export function DashboardSidebar({
             const Icon = action.icon
             return (
               <button
-                className="rounded-[18px] border border-white/6 bg-white/[0.025] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/24 hover:bg-accent/[0.06]"
+                className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-left transition-colors duration-200 hover:border-[rgba(0,140,255,0.24)] hover:bg-[rgba(0,140,255,0.06)]"
                 key={action.id}
                 onClick={() => onQuickAction(action)}
                 type="button"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-white/8 bg-white/[0.03]">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
                     <Icon className="size-3.5 text-accent" />
                   </span>
                   <span className="text-sm font-semibold text-[var(--text-primary)]">{action.label}</span>
@@ -98,7 +98,7 @@ export function DashboardSidebar({
         <nav className="space-y-4">
           {groups.map((group) => (
             <div key={group.id}>
-              <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/60">
+              <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {group.label}
               </p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4">
@@ -110,8 +110,8 @@ export function DashboardSidebar({
                       className={cn(
                         'flex items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-200',
                         isActive
-                          ? 'border-accent/24 bg-accent/[0.09] text-[var(--text-primary)]'
-                          : 'border-white/6 bg-white/[0.02] text-muted-foreground hover:border-white/12 hover:bg-white/[0.04] hover:text-[var(--text-primary)]',
+                          ? 'border-[rgba(0,140,255,0.2)] bg-[rgba(0,140,255,0.08)] text-[var(--text-primary)]'
+                          : 'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]',
                       )}
                       key={item.id}
                       onClick={() => onNavigate(item.id)}
@@ -162,12 +162,12 @@ export function DashboardSidebar({
           <div className={cn('flex shrink-0 items-center', collapsed ? 'justify-center' : 'justify-between gap-2')}>
             {!collapsed && <BrandMark />}
             {collapsed && (
-              <span className="flex size-10 items-center justify-center rounded-2xl border border-accent/20 bg-accent/[0.08] text-accent">
+                <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(0,140,255,0.18)] bg-[rgba(0,140,255,0.08)] text-[var(--accent)]">
                 <Building2 className="size-4" />
               </span>
             )}
             <button
-              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.07] hover:text-[var(--text-primary)]"
+              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] transition-colors duration-200 hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
               aria-expanded={!collapsed}
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
@@ -195,9 +195,9 @@ export function DashboardSidebar({
               <div className="mt-4 grid gap-2">
                 {quickActions.map((action) => {
                   const Icon = action.icon
-                  return (
-                    <button
-                      className="workspace-quick-action workspace-quick-action--compact"
+                    return (
+                      <button
+                        className="workspace-quick-action workspace-quick-action--compact"
                       key={action.id}
                       onClick={() => onQuickAction(action)}
                       type="button"
@@ -281,7 +281,7 @@ export function DashboardSidebar({
             {collapsed ? (
               <div className="space-y-2">
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-[var(--text-primary)]"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-colors duration-200 hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                   title="Configurações"
                   type="button"
                   onClick={() => onOpenSettings('account')}
@@ -289,7 +289,7 @@ export function DashboardSidebar({
                   <Settings className="size-5" />
                 </button>
                 <button
-                  className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-red-500/20 hover:bg-red-500/[0.06] hover:text-red-400"
+                  className="flex w-full items-center justify-center rounded-[16px] border border-transparent p-2.5 text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/20 hover:bg-red-500/[0.06] hover:text-red-400"
                   title="Encerrar sessão"
                   type="button"
                   onClick={onSignOut}

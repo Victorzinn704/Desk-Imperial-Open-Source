@@ -55,39 +55,55 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
   }
 
   return (
-    <div className="imperial-card flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
-      <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
-
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-          Receita realizada total
-        </p>
-
-        <AnimatedValue value={totals.realizedRevenue} currency={displayCurrency} />
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            {isPositive ? (
-              <TrendingUp className="size-4 text-[#36f57c]" />
-            ) : (
-              <TrendingDown className="size-4 text-red-400" />
-            )}
-            <span className={`text-sm font-semibold ${isPositive ? 'text-[#36f57c]' : 'text-red-400'}`}>
-              {isPositive ? '+' : ''}
-              {growth.toFixed(1)}% vs mês anterior
-            </span>
-          </div>
-
-          <span className="text-xs text-[var(--text-soft)]">
-            {categoryBreakdown.length} categoria{categoryBreakdown.length !== 1 ? 's' : ''} ativas
-          </span>
-
-          <span className="rounded-full border border-[rgba(201,168,76,0.3)] bg-[rgba(201,168,76,0.08)] px-2.5 py-0.5 text-xs font-semibold text-[#C9A84C]">
+    <div className="imperial-card grid gap-6 p-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-center xl:p-8">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-soft)]">Distribuição</p>
+          <span className="rounded-full border border-[rgba(0,140,255,0.24)] bg-[rgba(0,140,255,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)]">
             {displayCurrency}
           </span>
         </div>
+        <div className="mt-4 flex justify-center">
+          <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
+        </div>
+        <p className="mt-4 text-center text-xs leading-6 text-[var(--text-soft)]">
+          {categoryBreakdown.length} categoria{categoryBreakdown.length !== 1 ? 's' : ''} ativas no retrato financeiro atual.
+        </p>
+      </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-soft)]">
+              Receita realizada total
+            </p>
+            <div className="mt-3">
+              <AnimatedValue value={totals.realizedRevenue} currency={displayCurrency} />
+            </div>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">
+              Painel consolidado do turno financeiro, com faturamento, lucro e margem média da operação.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 xl:min-w-[240px]">
+            <div className="flex items-center gap-1.5">
+              {isPositive ? (
+                <TrendingUp className="size-4 text-[#22c55e]" />
+              ) : (
+                <TrendingDown className="size-4 text-[var(--danger)]" />
+              )}
+              <span className={`text-sm font-semibold ${isPositive ? 'text-[#22c55e]' : 'text-[var(--danger)]'}`}>
+                {isPositive ? '+' : ''}
+                {growth.toFixed(1)}% vs mês anterior
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
+              Evolução líquida da receita frente ao fechamento do mês passado.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="Pedidos" value={String(totals.completedOrders)} />
           <MiniStat label="Lucro realizado" value={formatCurrency(totals.realizedProfit, displayCurrency)} />
           <MiniStat label="Margem média" value={`${totals.averageMarginPercent.toFixed(1)}%`} />
@@ -100,9 +116,9 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="imperial-card-soft rounded-xl px-3 py-2">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
+      <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

@@ -524,7 +524,7 @@ function OperacionalView({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Premium Summary Strip */}
-      <div className="grid grid-cols-2 gap-3 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(0,0,0,0.85)] via-[rgba(0,0,0,0.6)] to-[rgba(0,0,0,0.4)] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:grid-cols-3 xl:grid-cols-5">
         <KpiCard label="Receita Circulante" value={fmtBRL(receitaAberta)} color="var(--accent)" isHighlight />
         <KpiCard label="Ticket Aberto" value={fmtBRL(ticketMedioAberto)} color="#fbbf24" />
         <KpiCard label="Equipe em giro" value={garconsAtivos} color="#60a5fa" />
@@ -532,7 +532,7 @@ function OperacionalView({
         <KpiCard label="Livres" value={livres.length} color="#36f57c" total={liveMesas.length} />
       </div>
 
-      <div className="rounded-[26px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      <div className="rounded-[26px] border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(255,255,255,0.04)] to-[rgba(255,255,255,0.01)] p-4 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
@@ -558,7 +558,7 @@ function OperacionalView({
             onClick={() => setSectionFilter('all')}
             className={`rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
               sectionFilter === 'all'
-                ? 'border-[rgba(201,168,76,0.32)] bg-[rgba(201,168,76,0.12)] text-[#f4d78b]'
+                ? 'border-[rgba(0,140,255,0.4)] bg-[rgba(0,140,255,0.16)] text-[#008cff]'
                 : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
           >
