@@ -51,56 +51,47 @@ const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string
   overview: {
     badge: 'Ambiente executivo',
     title: 'Visão consolidada da empresa em um único ambiente.',
-    description:
-      'A camada principal cruza financeiro, indicadores, operação e segurança para uma leitura rápida e mais estratégica.',
+    description: 'Financeiro, indicadores e operação para leitura rápida.',
   },
   sales: {
     badge: 'Ambiente comercial',
     title: 'Pedidos e vendas em um módulo exclusivo da operação.',
-    description:
-      'Esse ambiente concentra o registro de vendas, leitura dos pedidos mais recentes e o pulso do resultado realizado.',
+    description: 'Registro de vendas, pedidos recentes e resultado realizado.',
   },
   portfolio: {
     badge: 'Ambiente de portfólio',
     title: 'Produtos, estoque e margem organizados em um fluxo próprio.',
-    description:
-      'Aqui o foco sai da visão geral e entra no cadastro, na rentabilidade e na estrutura que sustenta o caixa.',
+    description: 'Cadastro, rentabilidade e estrutura que sustenta o caixa.',
   },
   pdv: {
     badge: 'Ponto de venda',
     title: 'Comandas e atendimento em tempo real.',
-    description:
-      'Gerencie as comandas do salão em um kanban visual. Mova os pedidos entre Aberta, Em Preparo, Pronta e Fechada com drag-and-drop.',
+    description: 'Comandas, preparo e fechamento em tempo real.',
   },
   calendario: {
     badge: 'Agenda comercial',
     title: 'Planeje eventos, promoções e jogos no calendário.',
-    description:
-      'Arraste atividades para mudar datas, redimensione para ajustar duração e acompanhe o impacto esperado em vendas de cada evento.',
+    description: 'Eventos, jogos, promoções e impacto previsto em vendas.',
   },
   payroll: {
     badge: 'Folha operacional',
     title: 'Salários, comissões e fechamento da equipe em um único fluxo.',
-    description:
-      'Acompanhe base salarial, comissão variável e leitura consolidada da folha com o mesmo padrão da operação comercial.',
+    description: 'Base salarial, comissão variável e fechamento da equipe.',
   },
   salao: {
     badge: 'Gestão do salão',
     title: 'Mesas, capacidade e planta baixa.',
-    description:
-      'Cadastre e organize as mesas do salão, defina capacidade e seção, e posicione cada uma na planta baixa com drag-and-drop.',
+    description: 'Organize mesas, capacidade e planta baixa do salão.',
   },
   map: {
     badge: 'Inteligência territorial',
     title: 'Mapa de vendas — território de guerra.',
-    description:
-      'Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido.',
+    description: 'Concentração geográfica das vendas por cidade e estado.',
   },
   settings: {
     badge: 'Conta e governança',
     title: 'Configurações, segurança e conformidade em uma única central.',
-    description:
-      'A camada administrativa agora reúne conta, preferências, sessão e consentimento sem quebrar a navegação operacional.',
+    description: 'Conta, preferências, sessão e consentimento no mesmo lugar.',
   },
 }
 
@@ -333,9 +324,6 @@ export function DashboardWorkspaceHeader({
                   <span className="min-w-0 flex-1 text-left">
                     <span className="block truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                       {action.label}
-                    </span>
-                    <span className="block truncate text-xs text-gray-500 dark:text-muted-foreground">
-                      {action.description}
                     </span>
                   </span>
                 </button>

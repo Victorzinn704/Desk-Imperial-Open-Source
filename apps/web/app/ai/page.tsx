@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { ApiError, fetchMarketInsight } from '@/lib/api'
+import { APP_SCOPED_AI_MESSAGE, isAppScopedAiFocus } from '@/lib/ai-app-scope'
 import { Button } from '@/components/shared/button'
 import { cn } from '@/lib/utils'
 
@@ -39,11 +40,11 @@ const quickFocuses = [
 function ThinkingIndicator() {
   return (
     <div className="flex items-center gap-4 px-2 py-6">
-      <div className="ai-glyph-pulse flex size-10 items-center justify-center rounded-2xl border border-[rgba(195,164,111,0.25)] bg-[rgba(195,164,111,0.1)]">
+      <div className="ai-glyph-pulse flex size-10 items-center justify-center rounded-2xl border border-accent/25 bg-accent/[0.1]">
         <BrainCircuit className="size-5 text-[var(--accent)]" />
       </div>
       <div className="space-y-1.5">
-        <p className="text-sm font-semibold text-white">Processando análise...</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Processando análise...</p>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <span key={i} className="ai-dot size-2 rounded-full bg-[var(--accent)]" />
@@ -106,7 +107,7 @@ function FocusButton({ label, icon: Icon, active, onClick }: FocusButtonProps) {
       className={cn(
         'group flex w-full items-center gap-3 rounded-[14px] border px-3.5 py-2.5 text-left text-sm transition-all duration-200',
         active
-          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_6px_20px_rgba(195,164,111,0.15)]'
+          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_6px_20px_rgba(37,99,235,0.14)]'
           : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
       )}
     >
@@ -114,7 +115,7 @@ function FocusButton({ label, icon: Icon, active, onClick }: FocusButtonProps) {
         className={cn(
           'flex size-6 shrink-0 items-center justify-center rounded-[7px] border transition-colors',
           active
-            ? 'border-[rgba(195,164,111,0.35)] bg-[rgba(195,164,111,0.15)] text-[var(--accent)]'
+            ? 'border-accent/35 bg-accent/[0.14] text-[var(--accent)]'
             : 'border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] group-hover:text-[var(--text-muted)]',
         )}
       >
@@ -129,10 +130,12 @@ function FocusButton({ label, icon: Icon, active, onClick }: FocusButtonProps) {
 export default function AIConsultantPage() {
   const [draftFocus, setDraftFocus] = useState('')
   const [activeFocus, setActiveFocus] = useState<string>(quickFocuses[0].label)
+  const [scopeError, setScopeError] = useState<string | null>(null)
 
   const insightQuery = useQuery({
     queryKey: ['market-intelligence', activeFocus],
     queryFn: () => fetchMarketInsight(activeFocus),
+    enabled: isAppScopedAiFocus(activeFocus),
     staleTime: 10 * 60 * 1000,
   })
 
@@ -144,6 +147,12 @@ export default function AIConsultantPage() {
   const handleApplyFocus = useCallback(() => {
     const trimmed = draftFocus.trim()
     if (!trimmed) return
+    if (!isAppScopedAiFocus(trimmed)) {
+      setScopeError(APP_SCOPED_AI_MESSAGE)
+      return
+    }
+
+    setScopeError(null)
     setActiveFocus(trimmed)
     setDraftFocus('')
   }, [draftFocus])
@@ -166,18 +175,18 @@ export default function AIConsultantPage() {
             <div className="h-5 w-px bg-[var(--border)]" />
 
             <div className="flex items-center gap-3">
-              <div className="ai-glyph-pulse flex size-9 items-center justify-center rounded-xl border border-[rgba(195,164,111,0.3)] bg-[rgba(195,164,111,0.1)]">
+              <div className="ai-glyph-pulse flex size-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/[0.1]">
                 <BrainCircuit className="size-4.5 text-[var(--accent)]" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold text-white">Consultor IA</h1>
-                <p className="text-[11px] text-[var(--text-soft)]">Gemini Flash · análise em tempo real</p>
+                <h1 className="text-sm font-semibold text-[var(--text-primary)]">Consultor IA</h1>
+                <p className="text-[11px] text-[var(--text-soft)]">Perguntas do app · análise operacional</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-full border border-[rgba(195,164,111,0.18)] bg-[rgba(195,164,111,0.06)] px-3 py-1.5 sm:flex">
+            <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.06] px-3 py-1.5 sm:flex">
               <span className="size-1.5 rounded-full bg-[var(--accent)] opacity-80" />
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 Foco ativo
@@ -214,7 +223,10 @@ export default function AIConsultantPage() {
                     label={focus.label}
                     icon={focus.icon}
                     active={activeFocus === focus.label}
-                    onClick={() => setActiveFocus(focus.label)}
+                    onClick={() => {
+                      setScopeError(null)
+                      setActiveFocus(focus.label)
+                    }}
                   />
                 ))}
               </div>
@@ -248,22 +260,22 @@ export default function AIConsultantPage() {
           {/* Input card */}
           <div className="imperial-card p-6 sm:p-8">
             <div className="mb-5 flex items-start gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(195,164,111,0.2)] bg-[rgba(195,164,111,0.08)] text-[var(--accent)]">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent/[0.08] text-[var(--accent)]">
                 <Sparkles className="size-4" />
               </span>
               <div>
-                <h2 className="font-semibold text-white">Consulta personalizada</h2>
+                <h2 className="font-semibold text-[var(--text-primary)]">Consulta personalizada</h2>
                 <p className="mt-0.5 text-xs text-[var(--text-soft)]">
-                  Descreva o cenário ou pergunta estratégica que deseja analisar.
+                  Pergunte sobre caixa, vendas, estoque, PDV, salão, agenda, equipe ou perfil.
                 </p>
               </div>
             </div>
 
             <div className="relative">
               <textarea
-                className="min-h-28 w-full resize-none rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] px-5 py-4 text-sm leading-7 text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(195,164,111,0.14)]"
+                className="min-h-28 w-full resize-none rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] px-5 py-4 text-sm leading-7 text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.14)]"
                 maxLength={500}
-                placeholder="Ex.: Avalie se devemos concentrar vendas no Centro de Araruama ou expandir para outras regiões. Considere sazonalidade e concorrência local."
+                placeholder="Ex.: Avalie o caixa e o estoque crítico antes do próximo turno."
                 value={draftFocus}
                 onChange={(e) => setDraftFocus(e.currentTarget.value)}
                 onKeyDown={(e) => {
@@ -302,6 +314,11 @@ export default function AIConsultantPage() {
                 Gerar consultoria
               </Button>
             </div>
+            {scopeError ? (
+              <p className="mt-3 rounded-[14px] border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.07)] px-4 py-3 text-sm text-[var(--danger)]">
+                {scopeError}
+              </p>
+            ) : null}
           </div>
 
           {/* Analysis output */}
@@ -309,10 +326,10 @@ export default function AIConsultantPage() {
             {/* Card header */}
             <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4 sm:px-8">
               <div className="flex items-center gap-3">
-                <span className="flex size-8 items-center justify-center rounded-xl border border-[rgba(195,164,111,0.2)] bg-[rgba(195,164,111,0.08)] text-[var(--accent)]">
+                <span className="flex size-8 items-center justify-center rounded-xl border border-accent/20 bg-accent/[0.08] text-[var(--accent)]">
                   <Activity className="size-3.5" />
                 </span>
-                <h3 className="font-semibold text-white">Análise executiva</h3>
+                <h3 className="font-semibold text-[var(--text-primary)]">Análise executiva</h3>
               </div>
 
               {insightQuery.data?.generatedAt && (
@@ -350,10 +367,10 @@ export default function AIConsultantPage() {
               {/* Empty state */}
               {!insightQuery.data && !insightQuery.isLoading && !insightQuery.error && (
                 <div className="flex flex-col items-center py-12 text-center">
-                  <div className="ai-glyph-pulse flex size-16 items-center justify-center rounded-3xl border border-[rgba(195,164,111,0.2)] bg-[rgba(195,164,111,0.07)]">
+                  <div className="ai-glyph-pulse flex size-16 items-center justify-center rounded-3xl border border-accent/20 bg-accent/[0.07]">
                     <BrainCircuit className="size-7 text-[var(--accent)]" />
                   </div>
-                  <p className="mt-5 text-base font-semibold text-white">Pronto para analisar</p>
+                  <p className="mt-5 text-base font-semibold text-[var(--text-primary)]">Pronto para analisar</p>
                   <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--text-soft)]">
                     Selecione um foco estratégico na barra lateral ou escreva uma consulta personalizada acima.
                   </p>
@@ -372,7 +389,7 @@ export default function AIConsultantPage() {
                     className="space-y-7"
                   >
                     {/* Summary */}
-                    <AnalysisSection title="Resumo Executivo" color="#c3a46f" icon={Activity} delay={0}>
+                    <AnalysisSection title="Resumo Executivo" color="#2563eb" icon={Activity} delay={0}>
                       <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.summary}</p>
                     </AnalysisSection>
 
@@ -458,7 +475,10 @@ export default function AIConsultantPage() {
                   label={focus.label}
                   icon={focus.icon}
                   active={activeFocus === focus.label}
-                  onClick={() => setActiveFocus(focus.label)}
+                  onClick={() => {
+                    setScopeError(null)
+                    setActiveFocus(focus.label)
+                  }}
                 />
               ))}
             </div>

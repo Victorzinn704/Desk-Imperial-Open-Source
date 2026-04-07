@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Boxes, Package, Search, Tags, TrendingUp } from 'lucide-react'
 import type { FinanceSummaryResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
@@ -40,7 +40,7 @@ function CategoryCard({
       : 'sem venda projetada'
 
   return (
-    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4 hover:border-white/10 transition-colors">
+    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--border-strong)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">{category}</p>
@@ -50,7 +50,7 @@ function CategoryCard({
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-sm font-semibold text-[#c9a96e]">
+          <p className="text-sm font-semibold text-[var(--accent)]">
             {formatCurrency(potentialProfit, displayCurrency as never)}
           </p>
           <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-soft)]">lucro pot.</p>
@@ -58,7 +58,7 @@ function CategoryCard({
       </div>
 
       {/* progress bar */}
-      <div className="mt-3.5 h-1 rounded-full bg-white/6 overflow-hidden">
+      <div className="mt-3.5 h-1 overflow-hidden rounded-full bg-[var(--surface-soft)]">
         <div
           className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
           style={{ width: `${barPct}%` }}
@@ -86,8 +86,8 @@ function SummaryPill({
   helper?: string
 }>) {
   return (
-    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3.5 flex items-center gap-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
+    <div className="flex items-center gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-[var(--shadow-panel)]">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-accent/20 bg-accent/[0.08]">
         <Icon className="size-3.5 text-[var(--accent)]" />
       </span>
       <div>
@@ -217,7 +217,7 @@ function PortfolioCategoryPanel({
   return (
     <div className="imperial-card p-6">
       <div className="mb-5 flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
+        <span className="flex size-9 items-center justify-center rounded-[12px] border border-accent/20 bg-accent/[0.08]">
           <Tags className="size-4 text-[var(--accent)]" />
         </span>
         <div>
@@ -241,7 +241,7 @@ function PortfolioCategoryPanel({
             />
           ))
         ) : (
-          <div className="rounded-[16px] border border-dashed border-white/8 px-5 py-8 text-center">
+          <div className="rounded-[16px] border border-dashed border-[var(--border)] px-5 py-8 text-center">
             <Tags className="mx-auto mb-3 size-7 text-[var(--text-soft)]/50" />
             <p className="text-sm text-[var(--text-soft)]">Cadastre produtos para destravar a leitura por categoria.</p>
           </div>
@@ -278,13 +278,13 @@ function PortfolioProductList({
 }>) {
   return (
     <section className="imperial-card p-6 md:p-8">
-      <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
           <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">Produtos cadastrados</h2>
           <p className="mt-1.5 text-sm text-[var(--text-soft)]">
             {filteredProducts.length === products.length
-              ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
+              ? `${products.length} item${products.length !== 1 ? 'ns' : ''}`
               : `${filteredProducts.length} de ${products.length} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`}
           </p>
         </div>
@@ -318,7 +318,7 @@ function PortfolioProductList({
             />
           ))
         ) : (
-          <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
+          <div className="col-span-2 rounded-[20px] border border-dashed border-[var(--border)] px-6 py-14 text-center">
             <Search className="mx-auto mb-3 size-9 text-[var(--text-soft)]/50" />
             <p className="text-base font-semibold text-[var(--text-primary)]">
               {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
@@ -340,6 +340,7 @@ function PortfolioProductList({
 export function PortfolioEnvironment() {
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const productFormRef = useRef<HTMLDivElement | null>(null)
 
   const { financeQuery, productsQuery } = useDashboardQueries({ section: 'portfolio' })
   const {
@@ -414,6 +415,23 @@ export function PortfolioEnvironment() {
       deleteProductMutation.mutate(productId)
     }
   }
+  const handleEditProduct = (product: ProductRecord | null) => {
+    setEditingProduct(product)
+
+    if (!product || typeof window === 'undefined') {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      const formElement = productFormRef.current
+      if (!formElement) return
+
+      if (typeof formElement.scrollIntoView === 'function') {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      formElement.focus({ preventScroll: true })
+    })
+  }
   const displayCurrency = String(finance?.displayCurrency ?? 'BRL')
 
   return (
@@ -435,7 +453,7 @@ export function PortfolioEnvironment() {
 
       {/* form + import + category */}
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
-        <div className="space-y-4">
+        <div ref={productFormRef} className="scroll-mt-24 space-y-4 outline-none" tabIndex={-1}>
           <ProductForm
             availableProducts={products}
             loading={_createProductMutation.isPending || updateProductMutation.isPending}
@@ -459,7 +477,7 @@ export function PortfolioEnvironment() {
         mutationError={productMutationError}
         onArchive={archiveProductMutation.mutate}
         onDelete={handleDeleteProduct}
-        onEdit={setEditingProduct}
+        onEdit={handleEditProduct}
         onRestore={restoreProductMutation.mutate}
         products={products}
         productsError={productsError}

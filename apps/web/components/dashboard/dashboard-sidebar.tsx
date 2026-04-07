@@ -1,7 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Building2, ChevronLeft, ChevronRight, CircleDot, LogOut, Settings, UserRound } from 'lucide-react'
+import { Bot, Building2, ChevronLeft, ChevronRight, CircleDot, LogOut, Settings, UserRound } from 'lucide-react'
 import { formatAccountStatus } from '@/lib/dashboard-format'
 import { cn } from '@/lib/utils'
 import { BrandMark } from '@/components/shared/brand-mark'
@@ -13,6 +14,37 @@ import type {
 } from '@/components/dashboard/dashboard-navigation'
 
 const COLLAPSE_KEY = 'desk_imperial_sidebar_collapsed'
+
+function AiConsultantSidebarLink({ collapsed = false }: Readonly<{ collapsed?: boolean }>) {
+  if (collapsed) {
+    return (
+      <Link
+        aria-label="Abrir consultor IA do aplicativo"
+        className="mt-3 flex w-full items-center justify-center rounded-[18px] border border-accent/20 bg-accent/[0.08] p-2.5 text-accent transition-colors duration-200 hover:border-accent/35 hover:bg-accent/[0.14]"
+        href="/ai"
+        title="Consultor IA"
+      >
+        <Bot className="size-5" />
+      </Link>
+    )
+  }
+
+  return (
+    <Link
+      aria-label="Abrir consultor IA do aplicativo"
+      className="mt-3 flex items-center gap-3 rounded-[18px] border border-accent/20 bg-accent/[0.07] px-3 py-3 text-sm font-semibold text-[var(--text-primary)] transition-colors duration-200 hover:border-accent/35 hover:bg-accent/[0.12]"
+      href="/ai"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-[13px] border border-accent/20 bg-accent/[0.1] text-accent">
+        <Bot className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1 truncate">Consultor IA</span>
+      <span className="rounded-full border border-accent/20 bg-accent/[0.08] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
+        App
+      </span>
+    </Link>
+  )
+}
 
 export function DashboardSidebar({
   activeSection,
@@ -85,11 +117,12 @@ export function DashboardSidebar({
                   </span>
                   <span className="text-sm font-semibold text-[var(--text-primary)]">{action.label}</span>
                 </div>
-                <p className="mt-1.5 text-[11px] leading-[1.5] text-muted-foreground">{action.description}</p>
               </button>
             )
           })}
         </div>
+
+        <AiConsultantSidebarLink />
 
         {/* Separador */}
         <div className="my-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
@@ -209,7 +242,6 @@ export function DashboardSidebar({
                         <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
                           {action.label}
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
                       </span>
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </button>
@@ -218,6 +250,8 @@ export function DashboardSidebar({
               </div>
             </div>
           )}
+
+          <AiConsultantSidebarLink collapsed={collapsed} />
 
           {/* Navegação — flex-1 sem scroll visível */}
           <nav

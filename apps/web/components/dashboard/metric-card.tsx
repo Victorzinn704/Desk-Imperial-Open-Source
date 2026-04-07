@@ -33,9 +33,9 @@ export function MetricCard({
   }
 
   return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm dark:shadow-none">
+    <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-panel)] md:p-6">
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800"
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-muted)]"
         style={
           color
             ? {
@@ -45,14 +45,14 @@ export function MetricCard({
             : undefined
         }
       >
-        <Icon className="size-6 text-gray-800 dark:text-gray-200" style={color ? { color } : undefined} />
+        <Icon className="size-5 text-[var(--text-primary)]" style={color ? { color } : undefined} />
       </div>
 
       <div className="flex items-end justify-between mt-5">
         <div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <span className="text-sm text-[var(--text-soft)]">{label}</span>
           <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-[var(--text-primary)]/90">{value}</h4>
-          {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-gray-500 dark:text-gray-500">{hint}</p> : null}
+          {hint ? <p className="mt-1 max-w-44 truncate text-xs leading-5 text-[var(--text-muted)]">{hint}</p> : null}
         </div>
 
         {hasTrend && (

@@ -24,7 +24,7 @@ export function DashboardTopbar({
     )
   }
   return (
-    <header className="sticky top-0 flex w-full bg-white border-b border-gray-200 z-40 dark:border-gray-800 dark:bg-gray-900">
+    <header className="sticky top-0 z-40 flex w-full border-b border-[var(--border)] bg-[var(--surface)]">
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4 xl:hidden">
           <button
@@ -47,10 +47,10 @@ export function DashboardTopbar({
             </span>
             <input
               type="text"
-              placeholder="Search or type command..."
-              className="h-11 w-full xl:w-[430px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-gray-800 dark:bg-gray-900/50 dark:text-[var(--text-primary)] dark:placeholder:text-gray-500 dark:focus:border-accent"
+              placeholder="Buscar no app..."
+              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-14 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent xl:w-[430px]"
             />
-            <button className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+            <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)]">
               <span className="font-sans">⌘</span>
               <span className="font-sans">K</span>
             </button>
@@ -62,8 +62,8 @@ export function DashboardTopbar({
             <ThemeToggleButton />
           </div>
           {/* Avatar Area */}
-          <div className="size-10 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">{getInitials(user.fullName)}</span>
+          <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
+            <span className="text-sm font-semibold text-[var(--text-soft)]">{getInitials(user.fullName)}</span>
           </div>
         </div>
       </div>

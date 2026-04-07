@@ -6,18 +6,24 @@ import { Moon, Sun } from 'lucide-react'
 export function ThemeToggleButton() {
   const { resolvedTheme, setTheme } = useTheme()
 
-  // resolvedTheme is undefined during SSR — render placeholder to avoid hydration mismatch
   if (!resolvedTheme) {
-    return <div className="h-10 w-10 rounded-full" />
+    return <div className="h-10 w-[92px] rounded-full border border-[var(--border)] bg-[var(--surface)]" />
   }
+
+  const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
+  const label = resolvedTheme === 'dark' ? 'Claro' : 'Escuro'
 
   return (
     <button
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-      className="flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition-colors duration-200 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-      aria-label="Toggle Theme"
+      onClick={() => setTheme(nextTheme)}
+      className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 text-sm font-semibold text-[var(--text-soft)] shadow-[var(--shadow-panel)] transition-colors duration-200 hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+      aria-label={`Alternar para tema ${nextTheme === 'light' ? 'claro' : 'escuro'}`}
+      type="button"
     >
-      {resolvedTheme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      <span className="flex size-6 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--accent)]">
+        {resolvedTheme === 'dark' ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+      </span>
+      {label}
     </button>
   )
 }

@@ -62,13 +62,14 @@ export default function RootLayout({
           </QueryProvider>
         </ThemeProvider>
         <Toaster
-          theme="dark"
+          theme="system"
           position="top-center"
           richColors
           toastOptions={{
             style: {
-              background: 'rgba(15,15,15,0.95)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
               backdropFilter: 'blur(12px)',
             },
           }}

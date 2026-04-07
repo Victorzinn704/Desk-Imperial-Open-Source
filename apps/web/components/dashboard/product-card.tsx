@@ -25,9 +25,9 @@ function marginTone(pct: number) {
   if (pct >= 30)
     return {
       label: `${pct.toFixed(0)}%`,
-      textClass: 'text-[#c9a96e]',
-      borderClass: 'border-[rgba(201,169,110,0.28)] bg-[rgba(201,169,110,0.07)]',
-      accentColor: '#c9a96e',
+      textClass: 'text-[var(--accent)]',
+      borderClass: 'border-accent/25 bg-accent/[0.07]',
+      accentColor: 'var(--accent)',
     }
   if (pct >= 15)
     return {
@@ -95,11 +95,11 @@ export const ProductCard = memo(function ProductCard({
   const stock = stockTone(product.stock)
 
   // left accent: cor da margem se ativo, cinza se arquivado
-  const accentColor = !product.active ? 'rgba(255,255,255,0.08)' : (margin?.accentColor ?? 'rgba(155,132,96,0.5)')
+  const accentColor = !product.active ? 'var(--border)' : (margin?.accentColor ?? 'var(--accent)')
 
   return (
     <article
-      className="relative overflow-hidden rounded-[22px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-5 transition-colors hover:border-white/10 hover:bg-[rgba(255,255,255,0.035)]"
+      className="relative overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-panel)] transition-colors hover:border-[var(--border-strong)] sm:p-5"
       style={{ boxShadow: product.active ? `inset 3px 0 0 ${accentColor}` : undefined }}
     >
       {/* header row */}
@@ -118,7 +118,7 @@ export const ProductCard = memo(function ProductCard({
               {product.active ? 'ativo' : 'arquivado'}
             </span>
             {product.isCombo ? (
-              <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+              <span className="rounded-full border border-accent/25 bg-accent/[0.1] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
                 combo
               </span>
             ) : null}
@@ -133,34 +133,34 @@ export const ProductCard = memo(function ProductCard({
 
           {/* chips: categoria, marca, medida */}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
+            <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
               {product.category}
             </span>
             {product.brand ? (
-              <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">
+              <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">
                 {product.brand}
               </span>
             ) : null}
-            <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
+            <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
               {measurementLabel}
             </span>
             {product.packagingClass && product.packagingClass !== 'UN' ? (
-              <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
+              <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
                 {product.packagingClass}
               </span>
             ) : null}
           </div>
 
           {product.description ? (
-            <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-2">{product.description}</p>
+            <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-1">{product.description}</p>
           ) : null}
 
           {product.isCombo && product.comboDescription ? (
-            <p className="mt-2 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
+            <p className="mt-2 line-clamp-1 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
           ) : null}
 
           {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
-            <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft)]">
+            <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-[var(--text-soft)]">
               {product.comboItems
                 ?.slice(0, 3)
                 .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
@@ -171,8 +171,14 @@ export const ProductCard = memo(function ProductCard({
         </div>
 
         {/* actions */}
-        <div className="flex shrink-0 gap-2">
-          <Button disabled={busy} onClick={() => onEdit(product)} size="sm" variant="secondary">
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          <Button
+            aria-label={`Editar ${product.name}`}
+            disabled={busy}
+            onClick={() => onEdit(product)}
+            size="sm"
+            variant="secondary"
+          >
             <PencilLine className="size-3.5" />
             Editar
           </Button>
@@ -241,7 +247,7 @@ function StatTile({
   accent?: string
 }) {
   return (
-    <div className="rounded-[14px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-3.5 py-3">
+    <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3.5 py-3">
       <div className="flex items-center justify-between gap-1.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
         {dot ? (

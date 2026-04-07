@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BrainCircuit, Bot, RefreshCcw, Sparkles, TrendingUp } from 'lucide-react'
 import { ApiError, fetchMarketInsight } from '@/lib/api'
+import { APP_SCOPED_AI_MESSAGE, isAppScopedAiFocus } from '@/lib/ai-app-scope'
 import { Button } from '@/components/shared/button'
 import { CardSkeleton } from '@/components/shared/skeleton'
 import { cn } from '@/lib/utils'
@@ -18,9 +19,11 @@ const quickFocuses = [
 export function MarketIntelligenceCard() {
   const [draftFocus, setDraftFocus] = useState('')
   const [activeFocus, setActiveFocus] = useState<string>(quickFocuses[0])
+  const [scopeError, setScopeError] = useState<string | null>(null)
   const insightQuery = useQuery({
     queryKey: ['market-intelligence', activeFocus],
     queryFn: () => fetchMarketInsight(activeFocus),
+    enabled: isAppScopedAiFocus(activeFocus),
     staleTime: 10 * 60 * 1000,
   })
 
@@ -30,11 +33,18 @@ export function MarketIntelligenceCard() {
       : 'A leitura executiva da IA ainda não conseguiu responder à consulta.'
 
   const handleApplyFocus = () => {
-    if (!draftFocus.trim()) {
+    const trimmedFocus = draftFocus.trim()
+    if (!trimmedFocus) {
       return
     }
 
-    setActiveFocus(draftFocus.trim())
+    if (!isAppScopedAiFocus(trimmedFocus)) {
+      setScopeError(APP_SCOPED_AI_MESSAGE)
+      return
+    }
+
+    setScopeError(null)
+    setActiveFocus(trimmedFocus)
   }
 
   return (
@@ -69,12 +79,15 @@ export function MarketIntelligenceCard() {
             className={cn(
               'rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors duration-200',
               activeFocus === focus
-                ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_12px_28px_rgba(212,177,106,0.16)]'
+                ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_12px_28px_rgba(37,99,235,0.14)]'
                 : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
             )}
             key={focus}
             type="button"
-            onClick={() => setActiveFocus(focus)}
+            onClick={() => {
+              setScopeError(null)
+              setActiveFocus(focus)
+            }}
           >
             {focus}
           </button>
@@ -130,16 +143,18 @@ export function MarketIntelligenceCard() {
           <div className="mt-6">
             <CardSkeleton rows={3} />
           </div>
-        ) : insightQuery.error ? (
+        ) : scopeError || insightQuery.error ? (
           <div className="mt-6 rounded-[24px] border border-[rgba(245,132,132,0.24)] bg-[rgba(245,132,132,0.06)] px-5 py-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">IA indisponivel</p>
-            <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{errorMessage}</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--danger)]">
+              {scopeError ? 'Foco fora do app' : 'IA indisponivel'}
+            </p>
+            <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{scopeError ?? errorMessage}</p>
           </div>
         ) : insightQuery.data ? (
           <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
             <article className="imperial-card-soft p-5">
               <div className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)] text-[var(--accent)]">
+                <span className="flex size-10 items-center justify-center rounded-2xl border border-accent/20 bg-accent/[0.08] text-[var(--accent)]">
                   <Bot className="size-4" />
                 </span>
                 <div>

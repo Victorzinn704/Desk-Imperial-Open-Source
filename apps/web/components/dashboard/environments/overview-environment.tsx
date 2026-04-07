@@ -10,7 +10,6 @@ import { FinanceCategoriesSidebar } from '@/components/dashboard/finance-categor
 import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-panel'
 import { FinanceChart } from '@/components/dashboard/finance-chart'
 import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
-import { MarketIntelligenceCard } from '@/components/dashboard/market-intelligence-card'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
@@ -106,7 +105,6 @@ export function OverviewEnvironment() {
       ) : null}
 
       <SalesPerformanceCard finance={finance} isLoading={financeQuery.isLoading} />
-      <MarketIntelligenceCard />
       <FinanceChart
         error={financeError}
         finance={finance}
