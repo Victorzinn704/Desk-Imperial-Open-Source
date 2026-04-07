@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
 import { QueryProvider } from '@/providers/query-provider'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 // Otimização de fonte: carregamento local com display swap
-const manrope = Manrope({
+const outfit = Outfit({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-manrope',
+  variable: '--font-outfit',
   preload: true,
   fallback: ['Inter', 'Segoe UI', 'sans-serif'],
 })
@@ -51,11 +52,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={manrope.variable}>
-      <body className={manrope.className}>
-        <QueryProvider>
-          <div id="app-shell">{children}</div>
-        </QueryProvider>
+    <html lang="pt-BR" className={outfit.variable} suppressHydrationWarning>
+      <body
+        className={`${outfit.className} bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors`}
+      >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <QueryProvider>
+            <div id="app-shell">{children}</div>
+          </QueryProvider>
+        </ThemeProvider>
         <Toaster
           theme="dark"
           position="top-center"

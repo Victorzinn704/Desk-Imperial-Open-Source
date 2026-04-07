@@ -14,11 +14,11 @@ Documentar com honestidade a próxima etapa de infraestrutura do Desk Imperial:
 
 ### Produção atual
 
-- **Frontend e API:** Railway
+- **Frontend e API:** Oracle Cloud `vm-free-01`
 - **Banco relacional:** Neon PostgreSQL
-- **Cache / rate limit / realtime horizontal:** Redis
-- **Observabilidade OSS:** base pronta no repositório, rollout ainda parcial entre ambientes
-- **SonarQube:** baseline oficial validado localmente, ainda não consolidado como serviço persistente de ambiente
+- **Cache / rate limit / realtime horizontal:** Redis na `vm-free-01`
+- **Observabilidade OSS:** stack persistente na `vm-free-02`
+- **SonarQube:** serviço persistente na `vm-free-02`
 
 ### O que já existe no código
 
@@ -73,7 +73,7 @@ Essa fase prioriza:
 
 ### Fase 2 — observabilidade e governança
 
-Na mesma VM inicial ou em separação posterior, subir:
+Na `vm-free-02`, subir:
 
 - Grafana
 - Prometheus
@@ -81,7 +81,7 @@ Na mesma VM inicial ou em separação posterior, subir:
 - Alertmanager
 - SonarQube
 
-Essa camada deve entrar **depois** da aplicação estar estável, para não misturar migração de runtime com rollout de monitoramento.
+Essa camada fica separada da produção para não competir com `web`, `api`, `redis` e `nginx` por CPU/I/O durante build, scan e retenção de métricas.
 
 ---
 
@@ -104,35 +104,39 @@ Esses artefatos cobrem a fase 1 documentada aqui:
 - `Redis`
 - reverse proxy
 
+A camada operacional da fase 2 fica materializada em:
+
+- `infra/oracle/ops/compose.yaml`
+- `infra/oracle/ops/prometheus/prometheus.yml`
+- `infra/oracle/ops/prometheus/alert.rules.yml`
+- `infra/oracle/ops/README.md`
+- `infra/scripts/oracle-ops-tunnel.ps1`
+
 ---
 
 ## O que continua DADO AUSENTE
 
 O plano continua dependente de itens que ainda não estão materializados neste repositório:
 
-- DNS/domínio final
-- TLS/certificado
-- IP público ou hostname estável
 - IAM / secret manager externo
 - backup e DR
-- observabilidade fase 2
-- SonarQube como serviço persistente da Oracle
+- receiver externo real para o Alertmanager (`ALERTMANAGER_WEBHOOK_URL`)
 
 ---
 
 ## Serviços e responsabilidade
 
-| Serviço        | Função                                          | Observação                      |
-| -------------- | ----------------------------------------------- | ------------------------------- |
-| `proxy`        | reverse proxy HTTP da VM Oracle                 | expõe `web` e `api` na borda    |
-| `web`          | Next.js do Desk Imperial                        | exposto por proxy               |
-| `api`          | NestJS + Socket.IO                              | exposto por proxy               |
-| `redis`        | cache, rate limit e base do realtime horizontal | interno                         |
-| `grafana`      | visualização operacional                        | expor com autenticação          |
-| `prometheus`   | métricas e alert rules                          | preferencialmente interno       |
-| `alloy`        | recepção OTLP e roteamento                      | interno ou parcialmente exposto |
-| `alertmanager` | entrega de alertas                              | interno                         |
-| `sonarqube`    | auditoria estática contínua                     | acesso controlado               |
+| Serviço        | Função                                          | Observação                   |
+| -------------- | ----------------------------------------------- | ---------------------------- |
+| `proxy`        | reverse proxy HTTP da VM Oracle                 | expõe `web` e `api` na borda |
+| `web`          | Next.js do Desk Imperial                        | exposto por proxy            |
+| `api`          | NestJS + Socket.IO                              | exposto por proxy            |
+| `redis`        | cache, rate limit e base do realtime horizontal | interno                      |
+| `grafana`      | visualização operacional                        | `127.0.0.1` na `vm-free-02`  |
+| `prometheus`   | métricas e alert rules                          | `127.0.0.1` na `vm-free-02`  |
+| `alloy`        | recepção OTLP e roteamento                      | OTLP no IP privado da VCN    |
+| `alertmanager` | entrega de alertas                              | `127.0.0.1` na `vm-free-02`  |
+| `sonarqube`    | auditoria estática contínua                     | `127.0.0.1` na `vm-free-02`  |
 
 ---
 
@@ -207,13 +211,13 @@ Considerar a fase Oracle “aceitável” quando:
 - health check reportar `dbHealthy` e `redisHealthy`
 - Grafana receber métricas reais da API
 - SonarQube estiver acessível e pronto para CI
+- Prometheus tiver targets `up` para app, API, observabilidade, SonarQube e node exporters das VMs Oracle
 
 ---
 
 ## Próximo passo recomendado
 
-1. concluir o bootstrap da VM Oracle
-2. acessar por SSH
-3. preparar Docker + repositório
-4. subir primeiro `web + api + redis`
-5. só depois acoplar observabilidade e SonarQube
+1. configurar `ALERTMANAGER_WEBHOOK_URL` com um receiver real
+2. cadastrar `SONAR_HOST_URL` e `SONAR_TOKEN` nos repositórios GitHub
+3. evoluir dashboards de negócio separados para financeiro, operações e browser
+4. formalizar backup/DR da camada operacional

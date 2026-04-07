@@ -4,17 +4,48 @@ Este documento registra a separação operacional adotada para manter o Desk Imp
 
 ## Distribuição
 
-| VM                | Papel           | Responsabilidade                                       |
-| ----------------- | --------------- | ------------------------------------------------------ |
-| `vm-free-01`      | Produção        | `nginx`, `web`, `api`, `redis` e `certbot`             |
-| `vm-free-02`      | Builder/Staging | build das imagens Docker e validação antes da promoção |
-| `vm-amd-micro-01` | Sentinela leve  | healthcheck externo e tarefas pequenas de bastion/ops  |
+| VM                | Papel       | Responsabilidade                                                                                                            |
+| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `vm-free-01`      | Produção    | `nginx`, `web`, `api`, `redis`, `certbot` e `node-exporter` preso ao loopback                                               |
+| `vm-free-02`      | Ops/Builder | build das imagens Docker, registry privado, Grafana, Prometheus, Loki, Tempo, Alloy, Alertmanager, Blackbox, SonarQube e DB |
+| `vm-amd-micro-01` | Sentinela   | healthcheck externo e tarefas pequenas de bastion/ops                                                                       |
 
 ## Decisão
 
 - A produção não deve ser usada como máquina principal de build.
 - A `vm-free-02` deve absorver build e validação para reduzir CPU, I/O e risco operacional na `vm-free-01`.
+- A `vm-free-02` também concentra observabilidade e SonarQube porque tem memória suficiente, enquanto mantém as UIs presas em `127.0.0.1`.
 - A AMD micro tem pouca memória; por isso não deve rodar aplicação, observabilidade pesada, SonarQube ou build.
+
+## Camada de operações
+
+A stack operacional da `vm-free-02` fica em:
+
+- `/opt/desk-ops` na VM
+- `infra/oracle/ops` no repositório
+
+Serviços:
+
+- Grafana: `127.0.0.1:3001`
+- Prometheus: `127.0.0.1:9090`
+- Alertmanager: `127.0.0.1:9093`
+- SonarQube: `127.0.0.1:9000`
+- Loki: `127.0.0.1:3100`
+- Tempo: `127.0.0.1:3200`
+- Alloy UI: `127.0.0.1:12345`
+- Alloy OTLP HTTP privado: `10.10.1.166:4318`
+- Alloy OTLP gRPC privado: `10.10.1.166:4317`
+
+O acesso humano deve usar túnel SSH:
+
+```powershell
+.\infra\scripts\oracle-ops-tunnel.ps1
+```
+
+O Prometheus coleta métricas de host de duas formas:
+
+- `vm-free-02`: `node-exporter` como serviço do compose
+- `vm-free-01`: `node-exporter` em `127.0.0.1:9100` acessado por proxy SSH interno `prod-node-exporter-proxy:19100`
 
 ## Fluxo de deploy rápido
 

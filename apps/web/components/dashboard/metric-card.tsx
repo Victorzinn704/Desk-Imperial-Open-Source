@@ -1,91 +1,58 @@
 import type { LucideIcon } from 'lucide-react'
-import { LineChart, Line } from 'recharts'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { MetricCardSkeleton } from '@/components/shared/skeleton'
-import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
-import { Tooltip } from '@/components/shared/tooltip'
 
 export function MetricCard({
   icon: Icon,
   label,
   value,
-  hint,
   loading = false,
   trend,
-  color,
 }: Readonly<{
   icon: LucideIcon
   label: string
   value: string
-  hint: string
   loading?: boolean
   trend?: number[]
-  color?: string
 }>) {
   if (loading) return <MetricCardSkeleton />
 
-  const trendColor =
-    color ?? (!trend || trend.length < 2 ? '#7a8896' : trend[trend.length - 1] >= trend[0] ? '#36f57c' : '#ef4444')
+  const hasTrend = trend && trend.length >= 2
+  let trendPercent = 0
+  let isUp = true
 
-  const sparkData = trend?.map((v, i) => ({ i, v }))
-
-  const [r, g, b] = hexToRgb(trendColor.startsWith('#') ? trendColor : '#2563eb')
-  const iconGlow = `0 4px 12px rgba(${r},${g},${b},0.15)`
-  const iconBorderColor = `rgba(${r},${g},${b},0.32)`
-  const iconBg = `rgba(${r},${g},${b},0.1)`
+  if (hasTrend) {
+    const prev = trend[trend.length - 2]
+    const curr = trend[trend.length - 1]
+    isUp = curr >= prev
+    trendPercent = prev !== 0 ? Math.abs(((curr - prev) / prev) * 100) : 100
+  }
 
   return (
-    <article className="imperial-card-stat p-5">
-      <div className="flex items-start justify-between gap-2">
-        <Tooltip content={hint} side="top">
-          <span
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
-            style={{
-              background: iconBg,
-              borderColor: iconBorderColor,
-              boxShadow: iconGlow,
-              color: trendColor,
-            }}
-          >
-            <Icon className="size-5" />
-          </span>
-        </Tooltip>
-
-        {sparkData && sparkData.length > 1 && (
-          <div className="h-12 w-24 shrink-0">
-            <ChartResponsiveContainer>
-              <LineChart data={sparkData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                <Line
-                  dataKey="v"
-                  dot={false}
-                  isAnimationActive={false}
-                  stroke={trendColor}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  type="natural"
-                />
-              </LineChart>
-            </ChartResponsiveContainer>
-          </div>
-        )}
+    <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm dark:shadow-none">
+      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+        <Icon className="text-gray-800 size-6 dark:text-gray-200" />
       </div>
 
-      <p className="mt-5 text-sm font-medium text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-[var(--text-soft)]">{hint}</p>
+      <div className="flex items-end justify-between mt-5">
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white/90">{value}</h4>
+        </div>
+
+        {hasTrend && (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+              isUp
+                ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500'
+                : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500'
+            }`}
+          >
+            {isUp ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
+            {trendPercent.toFixed(1)}%
+          </span>
+        )}
+      </div>
     </article>
   )
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace('#', '')
-  const full =
-    clean.length === 3
-      ? clean
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : clean
-  const n = parseInt(full, 16)
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }

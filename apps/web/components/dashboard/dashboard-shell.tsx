@@ -22,6 +22,7 @@ import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
+import { DashboardTopbar } from '@/components/dashboard/dashboard-topbar'
 import {
   dashboardDefaultSection,
   dashboardDefaultSettingsSection,
@@ -280,27 +281,36 @@ export function DashboardWorkspaceHeader({
   signals: DashboardSignal[]
 }>) {
   return (
-    <header className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8" id="workspace-header">
+    <header
+      className="rounded-xl border border-gray-200 bg-white dark:bg-white/[0.02] dark:border-white/5 p-6 md:p-8 shadow-sm dark:shadow-none"
+      id="workspace-header"
+    >
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            <span className="size-2 rounded-full bg-[var(--accent)]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+            <span className="size-2 rounded-full bg-accent" />
             {activeHero.badge}
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">Início / Painel operacional / {activeNavigationLabel}</p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">{activeHero.title}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
+          <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
+            Início / Painel operacional / {activeNavigationLabel}
+          </p>
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-white sm:text-5xl">
+            {activeHero.title}
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-gray-600 dark:text-muted-foreground">
+            {activeHero.description}
+          </p>
         </div>
 
         <div className="flex flex-col gap-6 xl:max-w-[520px]">
-          <div className="flex divide-x divide-white/5">
+          <div className="flex divide-x divide-gray-200 dark:divide-white/5">
             {signals.map((signal) => (
               <div className="flex-1 px-4 first:pl-0 last:pr-0" key={signal.label}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
                   {signal.label}
                 </p>
-                <p className="mt-3 text-2xl font-semibold text-white">{signal.value}</p>
-                <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">{signal.value}</p>
+                <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-muted-foreground">{signal.helper}</p>
               </div>
             ))}
           </div>
@@ -310,17 +320,21 @@ export function DashboardWorkspaceHeader({
               const Icon = action.icon
               return (
                 <button
-                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
+                  className="workspace-quick-action flex-1 sm:min-w-[150px] border-gray-200 bg-gray-50 dark:border-white/5 dark:bg-white/[0.02]"
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
                   type="button"
                 >
-                  <span className="workspace-quick-action__icon">
+                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-white">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-white">
+                      {action.label}
+                    </span>
+                    <span className="block truncate text-xs text-gray-500 dark:text-muted-foreground">
+                      {action.description}
+                    </span>
                   </span>
                 </button>
               )
@@ -485,7 +499,7 @@ export function DashboardShell({
   return (
     <main className="bg-background text-foreground h-screen overflow-hidden">
       <div
-        className="workspace-shell xl:grid xl:h-full"
+        className="workspace-shell xl:grid xl:h-full transition-all duration-300"
         style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
       >
         <DashboardSidebar
@@ -504,8 +518,18 @@ export function DashboardShell({
           userName={user.fullName}
         />
 
-        <div ref={scrollRef} className="workspace-shell__main h-screen overflow-y-auto" onScroll={onScroll}>
-          <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+        <div
+          ref={scrollRef}
+          className="workspace-shell__main relative flex flex-col h-screen overflow-hidden overflow-y-auto"
+          onScroll={onScroll}
+        >
+          <DashboardTopbar
+            isMobileOpen={!sidebarCollapsed}
+            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            user={user}
+          />
+
+          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
             <DashboardWorkspaceHeader
               activeHero={activeHero}
               activeNavigationLabel={activeNavigation.label}

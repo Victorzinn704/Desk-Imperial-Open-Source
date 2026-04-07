@@ -69,6 +69,38 @@ services:
     depends_on:
       - alertmanager
       - blackbox
+      - node-exporter
+    restart: unless-stopped
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    container_name: desk-ops-node-exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($$|/)'
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+
+  prod-node-exporter-proxy:
+    image: alpine:3.20
+    container_name: desk-ops-prod-node-exporter-proxy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache openssh-client >/dev/null
+        exec ssh -N -T \
+          -o ExitOnForwardFailure=yes \
+          -o ServerAliveInterval=30 \
+          -o ServerAliveCountMax=3 \
+          -o StrictHostKeyChecking=accept-new \
+          -i /run/secrets/prod_node_exporter_tunnel \
+          -L 0.0.0.0:19100:127.0.0.1:9100 \
+          ubuntu@10.10.1.221
+    volumes:
+      - ./ssh/prod-node-exporter-tunnel:/run/secrets/prod_node_exporter_tunnel:ro
     restart: unless-stopped
 
   alertmanager:
@@ -138,7 +170,7 @@ services:
       SONAR_JDBC_PASSWORD: ${SONAR_JDBC_PASSWORD}
       SONAR_WEB_JAVAOPTS: ${SONAR_WEB_JAVAOPTS:--Xms256m -Xmx768m}
       SONAR_CE_JAVAOPTS: ${SONAR_CE_JAVAOPTS:--Xms256m -Xmx768m}
-      SONAR_SEARCH_JAVAOPTS: ${SONAR_SEARCH_JAVAOPTS:--Xms512m -Xmx768m -XX:MaxDirectMemorySize=256m}
+      SONAR_SEARCH_JAVAOPTS: ${SONAR_SEARCH_JAVAOPTS:--Xms768m -Xmx768m -XX:MaxDirectMemorySize=256m}
     ulimits:
       nofile:
         soft: 131072

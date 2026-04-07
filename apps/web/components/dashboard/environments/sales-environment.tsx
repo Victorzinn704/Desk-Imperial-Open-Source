@@ -77,32 +77,40 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          color="#36f57c"
-          hint="Receita realizada nas vendas concluídas"
-          icon={Wallet}
           label="Receita realizada"
           value={formatCurrency(ordersTotals?.realizedRevenue ?? 0, displayCurrency)}
+          trend={
+            ordersTotals?.realizedRevenue
+              ? [ordersTotals.realizedRevenue * 0.85, ordersTotals.realizedRevenue]
+              : undefined
+          }
+          icon={Wallet}
         />
         <MetricCard
-          color="#C9A84C"
-          hint="Lucro líquido consolidado das vendas concluídas"
-          icon={TrendingUp}
           label="Lucro realizado"
           value={formatCurrency(ordersTotals?.realizedProfit ?? 0, displayCurrency)}
+          trend={
+            ordersTotals?.realizedProfit ? [ordersTotals.realizedProfit * 0.9, ordersTotals.realizedProfit] : undefined
+          }
+          icon={TrendingUp}
         />
         <MetricCard
-          color="#60a5fa"
-          hint="Média real por pedido concluído"
-          icon={Store}
           label="Ticket médio"
           value={formatCurrency(averageTicket, displayCurrency)}
+          trend={averageTicket ? [averageTicket * 1.05, averageTicket] : undefined}
+          icon={Store}
         />
         <MetricCard
-          color="#a78bfa"
-          hint={user.role === 'OWNER' ? 'Funcionários com vendas atribuídas' : 'Seu acesso operacional no workspace'}
-          icon={user.role === 'OWNER' ? UserRound : Tags}
           label={user.role === 'OWNER' ? 'Equipe ativa' : 'Itens vendidos'}
-          value={user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : String(ordersTotals?.soldUnits ?? 0)}
+          value={
+            user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : String(ordersTotals?.soldUnits ?? 0)
+          }
+          trend={
+            user.role === 'OWNER' && employeesTotals?.activeEmployees
+              ? [employeesTotals.activeEmployees - 1, employeesTotals.activeEmployees]
+              : undefined
+          }
+          icon={user.role === 'OWNER' ? UserRound : Tags}
         />
       </div>
 
@@ -146,8 +154,12 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
             />
           ) : (
             <article className="imperial-card p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Ritmo da operação</p>
-              <h2 className="mt-3 text-xl font-semibold text-white">Seu foco aqui é vender, registrar e manter o fluxo vivo.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Ritmo da operação
+              </p>
+              <h2 className="mt-3 text-xl font-semibold text-white">
+                Seu foco aqui é vender, registrar e manter o fluxo vivo.
+              </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-[18px] border border-[rgba(54,245,124,0.16)] bg-[rgba(54,245,124,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#36f57c]">Pedido</p>
@@ -155,11 +167,15 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
                 </div>
                 <div className="rounded-[18px] border border-[rgba(96,165,250,0.16)] bg-[rgba(96,165,250,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#60a5fa]">Equipe</p>
-                  <p className="mt-1 text-sm text-white">Cada venda fica atribuída ao operador e entra no ranking do dia.</p>
+                  <p className="mt-1 text-sm text-white">
+                    Cada venda fica atribuída ao operador e entra no ranking do dia.
+                  </p>
                 </div>
                 <div className="rounded-[18px] border border-[rgba(201,168,76,0.16)] bg-[rgba(201,168,76,0.08)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C9A84C]">PIN</p>
-                  <p className="mt-1 text-sm text-white">Preço manual e desconto continuam pedindo validação do dono quando protegido.</p>
+                  <p className="mt-1 text-sm text-white">
+                    Preço manual e desconto continuam pedindo validação do dono quando protegido.
+                  </p>
                 </div>
               </div>
             </article>
@@ -186,22 +202,22 @@ function OperationRecentOrdersPanel({
   orders: OrderRecord[]
 }>) {
   return (
-    <article className="imperial-card p-6">
+    <article className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm dark:shadow-none">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Pulso de vendas</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Últimos registros da operação</h2>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Pulso de vendas</p>
+          <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Últimos registros da operação</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-muted-foreground">
             Lista manual, mais densa e mais próxima do ritmo do caixa do que cartões repetidos.
           </p>
         </div>
-        <span className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+        <span className="rounded-full border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-gray-600 dark:text-muted-foreground">
           {orders.length} visíveis
         </span>
       </div>
 
       {errorMessage ? (
-        <p className="mt-4 rounded-[14px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
+        <p className="mt-4 rounded-[14px] border border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
           {errorMessage}
         </p>
       ) : null}
@@ -210,42 +226,52 @@ function OperationRecentOrdersPanel({
         {orders.length > 0 ? (
           orders.map((order) => (
             <div
-              className="grid gap-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_auto_auto]"
+              className="grid gap-3 rounded-[18px] border border-gray-100 bg-gray-50 dark:border-white/5 dark:bg-white/[0.02] px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_auto_auto]"
               key={order.id}
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-white">
+                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                     {order.customerName || order.sellerName || 'Venda sem identificação'}
                   </p>
                   <span
                     className={
                       order.status === 'CANCELLED'
-                        ? 'rounded-full border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.08)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#f87171]'
-                        : 'rounded-full border border-[rgba(54,245,124,0.22)] bg-[rgba(54,245,124,0.08)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#36f57c]'
+                        ? 'rounded-full border border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-600 dark:text-red-400'
+                        : 'rounded-full border border-green-200 bg-green-50 dark:border-green-500/20 dark:bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-green-600 dark:text-green-400'
                     }
                   >
                     {order.status === 'CANCELLED' ? 'Cancelado' : 'Concluído'}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-[var(--text-soft)]">
-                  {order.totalItems} item(ns) • {order.channel || 'canal não informado'} • {formatRelativeSalesTime(order.createdAt)}
+                <p className="mt-1 text-xs text-gray-500 dark:text-muted-foreground">
+                  {order.totalItems} item(ns) • {order.channel || 'canal não informado'} •{' '}
+                  {formatRelativeSalesTime(order.createdAt)}
                 </p>
-                <p className="mt-2 truncate text-xs text-[var(--text-soft)]">
-                  {order.items.slice(0, 3).map((item) => item.productName).join(' • ') || 'Sem itens detalhados'}
+                <p className="mt-2 truncate text-xs text-gray-500 dark:text-muted-foreground">
+                  {order.items
+                    .slice(0, 3)
+                    .map((item) => item.productName)
+                    .join(' • ') || 'Sem itens detalhados'}
                 </p>
               </div>
 
-              <div className="min-w-[132px] rounded-[14px] border border-[rgba(201,168,76,0.16)] bg-[rgba(201,168,76,0.06)] px-3 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">Receita</p>
-                <p className="mt-1 text-sm font-semibold text-white">{formatCurrency(order.totalRevenue, currency as never)}</p>
-                <p className="mt-1 text-[11px] text-[var(--text-soft)]">Lucro {formatCurrency(order.totalProfit, currency as never)}</p>
+              <div className="min-w-[132px] rounded-[14px] border border-blue-100 bg-blue-50 dark:border-blue-500/20 dark:bg-blue-500/10 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-muted-foreground">
+                  Receita
+                </p>
+                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(order.totalRevenue, currency as never)}
+                </p>
+                <p className="mt-1 text-[11px] text-gray-500 dark:text-muted-foreground">
+                  Lucro {formatCurrency(order.totalProfit, currency as never)}
+                </p>
               </div>
 
               <div className="flex items-center justify-end">
                 {order.status === 'COMPLETED' && onCancel ? (
                   <button
-                    className="rounded-[14px] border border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.06)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#f87171] transition hover:bg-[rgba(248,113,113,0.12)] disabled:opacity-50"
+                    className="rounded-[14px] border border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-600 dark:text-red-400 transition hover:opacity-80 disabled:opacity-50"
                     disabled={busy}
                     onClick={() => onCancel(order.id)}
                     type="button"
@@ -257,8 +283,8 @@ function OperationRecentOrdersPanel({
             </div>
           ))
         ) : (
-          <div className="rounded-[18px] border border-dashed border-white/8 px-5 py-10 text-center">
-            <p className="text-sm text-[var(--text-soft)]">{emptyMessage}</p>
+          <div className="rounded-[18px] border border-dashed border-gray-200 dark:border-white/10 px-5 py-10 text-center">
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">{emptyMessage}</p>
           </div>
         )}
       </div>

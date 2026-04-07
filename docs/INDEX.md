@@ -79,6 +79,8 @@ Navegação central de toda a documentação do projeto.
 | [operations/flows.md](./operations/flows.md)                                       | Fluxos operacionais do sistema       |
 | [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)         | Mapeamento de KPIs em tempo real     |
 | [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
+| [../infra/oracle/ops/README.md](../infra/oracle/ops/README.md)                     | Runbook da stack Oracle Ops          |
+| [../infra/oracle/THREE_VM_STRATEGY.md](../infra/oracle/THREE_VM_STRATEGY.md)       | Estratégia operacional das 3 VMs     |
 
 ---
 
