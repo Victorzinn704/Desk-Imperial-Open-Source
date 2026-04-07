@@ -19,7 +19,10 @@ function Invoke-Remote {
     [string] $Command
   )
 
-  ssh -i $KeyPath -o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=60 $HostName $Command
+  $NormalizedCommand = $Command -replace "`r`n", "`n"
+  $NormalizedCommand = $NormalizedCommand -replace "`r", "`n"
+
+  ssh -i $KeyPath -o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=60 $HostName $NormalizedCommand
   if ($LASTEXITCODE -ne 0) {
     throw "Comando remoto falhou em ${HostName} com exit code $LASTEXITCODE."
   }
