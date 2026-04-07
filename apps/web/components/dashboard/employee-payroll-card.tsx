@@ -65,7 +65,7 @@ export function EmployeePayrollCard({
     <article className="imperial-card p-7">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+        <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[var(--success)]">
           <Wallet className="size-5" />
         </span>
         <div>
@@ -78,14 +78,14 @@ export function EmployeePayrollCard({
       <div className="mt-6 grid grid-cols-3 gap-3">
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
-            <DollarSign className="size-4 text-[#36f57c]" />
+            <DollarSign className="size-4 text-[var(--success)]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Folha total</p>
           </div>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{formatCurrency(folhaTotal, currency)}</p>
         </div>
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
-            <Users className="size-4 text-[#60a5fa]" />
+            <Users className="size-4 text-[var(--accent)]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Colaboradores</p>
           </div>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{activeEmployees.length}</p>
@@ -123,7 +123,7 @@ export function EmployeePayrollCard({
                 type="button"
                 onClick={() => setExpanded(isOpen ? null : emp.id)}
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px] border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.06)] text-xs font-bold text-[#36f57c]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px] border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.06)] text-xs font-bold text-[var(--success)]">
                   {emp.displayName.slice(0, 2).toUpperCase()}
                 </span>
 
@@ -140,7 +140,7 @@ export function EmployeePayrollCard({
                 </div>
 
                 <div className="shrink-0 text-right">
-                  <p className="text-base font-bold text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</p>
+                  <p className="text-base font-bold text-[var(--success)]">{formatCurrency(totalAPagar, currency)}</p>
                   <p className="text-xs text-[var(--text-soft)]">a pagar</p>
                 </div>
 
@@ -211,7 +211,7 @@ export function EmployeePayrollCard({
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                       <span className="text-[var(--text-primary)]">Total a pagar</span>
-                      <span className="shrink-0 text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
+                      <span className="shrink-0 text-[var(--success)]">{formatCurrency(totalAPagar, currency)}</span>
                     </div>
                   </div>
 

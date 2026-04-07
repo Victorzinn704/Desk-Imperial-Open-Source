@@ -18,6 +18,7 @@ type FinanceChartProps = {
   ordersTotals?: OrdersResponse['totals']
   isLoading?: boolean
   error?: string | null
+  variant?: 'standalone' | 'embedded'
 }
 
 type ChartView = 'timeline' | 'channels' | 'customers' | 'categories' | 'growth'
@@ -69,6 +70,7 @@ export function FinanceChart({
   ordersTotals: _ordersTotals,
   isLoading = false,
   error = null,
+  variant = 'standalone',
 }: FinanceChartProps) {
   const [activeView, setActiveView] = useState<ChartView>('timeline')
   const { theme } = useTheme()
@@ -94,44 +96,88 @@ export function FinanceChart({
   const activeViewOption = chartViews.find((view) => view.id === activeView) ?? chartViews[0]
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm dark:shadow-none md:p-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Analytics Profissional</p>
-          <h2 className="mt-3 text-3xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
-            Desempenho Comercial
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500 dark:text-muted-foreground">
-            {activeViewOption.description}
-          </p>
-        </div>
+    <section
+      className={cn(
+        variant === 'embedded'
+          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4'
+          : 'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8',
+      )}
+    >
+      {variant === 'standalone' ? (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+              Analytics Profissional
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Desempenho Comercial</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-muted)]">{activeViewOption.description}</p>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          {chartViews.map((view) => {
-            const Icon = view.icon
-            return (
-              <button
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors duration-200',
-                  activeView === view.id
-                    ? 'border-accent bg-accent/10 text-accent dark:text-accent-strong shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:border-white/20 dark:hover:text-[var(--text-primary)]',
-                )}
-                key={view.id}
-                onClick={() => setActiveView(view.id)}
-                type="button"
-              >
-                <Icon className="size-4" />
-                {view.label}
-              </button>
-            )
-          })}
+          <div className="flex flex-wrap gap-2">
+            {chartViews.map((view) => {
+              const Icon = view.icon
+              return (
+                <button
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors duration-200',
+                    activeView === view.id
+                      ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm'
+                      : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
+                  )}
+                  key={view.id}
+                  onClick={() => setActiveView(view.id)}
+                  type="button"
+                >
+                  <Icon className="size-4" />
+                  {view.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <activeViewOption.icon className="size-4 text-[var(--accent)]" />
+            <div>
+              <p className="text-xs font-semibold text-[var(--text-primary)]">{activeViewOption.label}</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{activeViewOption.description}</p>
+            </div>
+          </div>
 
-      <div className="mt-8">
-        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-white/5 dark:bg-white/[0.02]">
-          <div className="h-[400px]">
+          <div className="flex gap-1">
+            {chartViews.map((view) => {
+              const Icon = view.icon
+              return (
+                <button
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
+                    activeView === view.id
+                      ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                      : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+                  )}
+                  key={view.id}
+                  onClick={() => setActiveView(view.id)}
+                  type="button"
+                  title={view.label}
+                >
+                  <Icon className="size-3.5" />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className={cn('mt-6', variant === 'embedded' && 'mt-4')}>
+        <div
+          className={cn(
+            variant === 'embedded'
+              ? 'rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] p-2'
+              : 'rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4',
+          )}
+        >
+          <div className={cn(variant === 'embedded' ? 'min-h-[300px]' : 'h-[400px]')}>
             {renderChart({
               activeView,
               categoryData,
@@ -185,6 +231,7 @@ function renderChart({
   if (activeView === 'timeline') {
     const options: ApexCharts.ApexOptions = {
       chart: { type: 'area', toolbar: { show: false }, background: 'transparent' },
+      // TODO: sync with --success and --accent tokens
       colors: ['#36f57c', '#3b82f6'],
       dataLabels: { enabled: false },
       stroke: { curve: 'smooth', width: 3 },

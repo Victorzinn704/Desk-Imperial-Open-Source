@@ -162,13 +162,13 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-[18px] border border-[rgba(54,245,124,0.16)] bg-[rgba(54,245,124,0.08)] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#36f57c]">Pedido</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--success)]">Pedido</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">
                     Monte o carrinho sem sair da mesma superfície operacional.
                   </p>
                 </div>
                 <div className="rounded-[18px] border border-[rgba(96,165,250,0.16)] bg-[rgba(96,165,250,0.08)] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#60a5fa]">Equipe</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Equipe</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">
                     Cada venda fica atribuída ao operador e entra no ranking do dia.
                   </p>

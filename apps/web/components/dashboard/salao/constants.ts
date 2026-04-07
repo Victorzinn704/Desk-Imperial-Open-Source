@@ -1,5 +1,6 @@
 import type { MesaRecord } from '@contracts/contracts'
 import { formatBRL } from '@/lib/currency'
+export { STATUS_COLORS, GARCOM_COLORS, getStatusColor, type StatusKey } from '@/lib/design-tokens'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
 
@@ -20,9 +21,9 @@ export const CANVAS_PADDING = 24
 
 export const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> = {
   aberta: { text: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { text: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { text: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { text: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
+  em_preparo: { text: 'Em preparo', color: 'var(--warning)', bg: 'rgba(234,179,8,0.15)' },
+  pronta: { text: 'Pronta', color: 'var(--accent)', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { text: 'Paga', color: 'var(--success)', bg: 'rgba(54,245,124,0.12)' },
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────

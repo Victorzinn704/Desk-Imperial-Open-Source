@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Cookie, ShieldCheck } from 'lucide-react'
 import { updateCookiePreferences } from '@/lib/api'
 import { persistCookieConsent, readCookieConsentChoice, type CookieConsentChoice } from '@/lib/cookie-consent'
@@ -12,6 +13,7 @@ const DEFAULT_COOKIE_PREFERENCES: CookieConsentChoice = {
 }
 
 export function CookieConsentBanner() {
+  const pathname = usePathname()
   const [isReady, setIsReady] = useState(false)
   const [hasDecision, setHasDecision] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,7 +40,7 @@ export function CookieConsentBanner() {
     [],
   )
 
-  if (!isReady || hasDecision) {
+  if (pathname?.startsWith('/design-lab') || !isReady || hasDecision) {
     return null
   }
 

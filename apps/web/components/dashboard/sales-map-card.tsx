@@ -79,7 +79,7 @@ export function SalesMapCard({
 
       <article className="imperial-card p-7">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[color-mix(in_srgb,_var(--success)_20%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] text-[var(--success)]">
             <MapPinned className="size-5" />
           </span>
           <div>

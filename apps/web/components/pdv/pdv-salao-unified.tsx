@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { DragDropContext, Droppable, type DropResult } from '@hello-pangea/dnd'
 import { Plus, AlertCircle, LayoutGrid, Users2, X, Zap, Minimize2, Maximize2 } from 'lucide-react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Mesa, Comanda, Garcom, MesaStatus } from './pdv-types'
 import { calcTotal } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
@@ -164,17 +165,17 @@ function SalaoView({
     {
       id: 'ocupada' as MesaStatus,
       label: 'Ocupada',
-      color: '#f87171',
-      border: 'rgba(248,113,113,0.2)',
-      bg: 'rgba(248,113,113,0.03)',
+      color: STATUS_COLORS.ocupada.solid,
+      border: STATUS_COLORS.ocupada.border,
+      bg: STATUS_COLORS.ocupada.softBg,
       list: ocupMesas,
     },
     {
       id: 'reservada' as MesaStatus,
       label: 'Reservada',
-      color: '#60a5fa',
-      border: 'rgba(96,165,250,0.2)',
-      bg: 'rgba(96,165,250,0.03)',
+      color: STATUS_COLORS.reservada.solid,
+      border: STATUS_COLORS.reservada.border,
+      bg: STATUS_COLORS.reservada.softBg,
       list: resMesas,
     },
   ]
@@ -187,12 +188,20 @@ function SalaoView({
         {/* Pool livre */}
         <div
           className="rounded-2xl border p-4"
-          style={{ borderColor: 'rgba(54,245,124,0.22)', background: 'rgba(54,245,124,0.02)' }}
+          style={{ borderColor: STATUS_COLORS.livre.border, background: STATUS_COLORS.livre.softBg }}
         >
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#36f57c] shadow-[0_0_6px_#36f57c]" />
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#36f57c]">Livre</span>
+              <span
+                className="size-2 rounded-full shadow-[0_0_6px_#36f57c]"
+                style={{ backgroundColor: STATUS_COLORS.livre.solid }}
+              />
+              <span
+                className="text-xs font-bold uppercase tracking-[0.2em]"
+                style={{ color: STATUS_COLORS.livre.solid }}
+              >
+                Livre
+              </span>
               <span className="text-xs text-[var(--text-muted)]">— clique para comanda · arraste para reservar</span>
             </div>
             <div className="flex items-center gap-2">
@@ -208,7 +217,12 @@ function SalaoView({
                 <button
                   type="button"
                   onClick={onAddMesa}
-                  className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.13)]"
+                  className="flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[rgba(54,245,124,0.13)]"
+                  style={{
+                    borderColor: `${STATUS_COLORS.livre.solid}4d`,
+                    backgroundColor: STATUS_COLORS.livre.bg,
+                    color: STATUS_COLORS.livre.solid,
+                  }}
                 >
                   <Plus className="size-3" /> Nova Mesa
                 </button>
@@ -223,8 +237,10 @@ function SalaoView({
                 {...provided.droppableProps}
                 className="flex flex-wrap gap-3 min-h-[100px] rounded-xl p-1 transition-colors duration-150"
                 style={{
-                  background: snapshot.isDraggingOver ? 'rgba(54,245,124,0.05)' : 'transparent',
-                  outline: snapshot.isDraggingOver ? '1.5px dashed rgba(54,245,124,0.4)' : '1.5px dashed transparent',
+                  background: snapshot.isDraggingOver ? STATUS_COLORS.livre.softBg : 'transparent',
+                  outline: snapshot.isDraggingOver
+                    ? `1.5px dashed ${STATUS_COLORS.livre.border}`
+                    : '1.5px dashed transparent',
                 }}
               >
                 {livreMesas.length === 0 && !snapshot.isDraggingOver && (
@@ -670,7 +686,7 @@ export function SalaoUnificado({
             label="Livres"
             count={livres}
             active={filter === 'livre'}
-            color="#36f57c"
+            color={STATUS_COLORS.livre.solid}
             onClick={() => setFilter('livre')}
           />
           <FilterChip

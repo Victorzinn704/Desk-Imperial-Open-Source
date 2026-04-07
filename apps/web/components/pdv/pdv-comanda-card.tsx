@@ -83,7 +83,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
               </div>
 
               <div
-                className={`flex items-center gap-1.5 ${isOld && comanda.status !== 'fechada' ? 'text-[#fb923c]' : 'text-[var(--text-soft)]'}`}
+                className={`flex items-center gap-1.5 ${isOld && comanda.status !== 'fechada' ? 'text-[var(--warning)]' : 'text-[var(--text-soft)]'}`}
               >
                 <Clock className="size-3" />
                 <span className="text-xs font-medium">{elapsed}</span>
@@ -94,12 +94,12 @@ export const PdvComandaCard = memo(function PdvComandaCard({
             {(comanda.desconto > 0 || comanda.acrescimo > 0) && (
               <div className="mt-3 flex gap-1.5">
                 {comanda.desconto > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#36f57c]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--success)]">
                     <Percent className="size-2.5" />-{comanda.desconto}%
                   </span>
                 )}
                 {comanda.acrescimo > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(251,146,60,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#fb923c]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,_var(--warning)_10%,_transparent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--warning)]">
                     <Percent className="size-2.5" />+{comanda.acrescimo}%
                   </span>
                 )}

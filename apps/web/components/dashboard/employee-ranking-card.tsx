@@ -4,36 +4,55 @@ import { Award, BadgeDollarSign, Target, Trophy, UserRoundCog, type LucideIcon }
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { formatCurrency } from '@/lib/currency'
+import { cn } from '@/lib/utils'
 
 export function EmployeeRankingCard({
   finance,
   isLoading = false,
   error = null,
+  variant = 'standalone',
 }: Readonly<{
   finance?: FinanceSummaryResponse
   isLoading?: boolean
   error?: string | null
+  variant?: 'standalone' | 'embedded'
 }>) {
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
   const topEmployees = finance?.topEmployees ?? []
   const bestRevenue = topEmployees[0]?.revenue ?? 0
 
   return (
-    <article className="imperial-card p-7">
+    <article
+      className={cn(
+        variant === 'embedded'
+          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5'
+          : 'imperial-card p-7',
+      )}
+    >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--success)]">
             Performance comercial
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+          <p
+            className={cn(
+              'font-semibold text-[var(--text-primary)]',
+              variant === 'embedded' ? 'mt-2 text-xl' : 'mt-3 text-3xl',
+            )}
+          >
             Ranking de rendimento por funcionario
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
+          </p>
+          <p
+            className={cn(
+              'max-w-3xl text-[var(--text-soft)]',
+              variant === 'embedded' ? 'mt-2 text-xs' : 'mt-3 text-sm leading-7',
+            )}
+          >
             O painel cruza receita, lucro e ticket medio com base no vendedor vinculado em cada pedido.
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className={cn('grid sm:grid-cols-3', variant === 'embedded' ? 'gap-2' : 'gap-3')}>
           <TopMetric icon={UserRoundCog} label="Funcionarios no ranking" value={String(topEmployees.length)} />
           <TopMetric
             icon={BadgeDollarSign}

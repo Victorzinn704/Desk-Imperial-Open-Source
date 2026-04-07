@@ -15,12 +15,13 @@
   --color-desk-fg-muted: #a7b2be;
   --color-desk-fg-soft: #7d8a99;
 
-  --color-desk-accent: #c3a46f;
-  --color-desk-accent-strong: #d8bb86;
-  --color-desk-accent-soft: rgb(195 164 111 / 0.14);
+  --color-desk-accent: var(--accent);
+  --color-desk-accent-strong: var(--accent-strong);
+  --color-desk-accent-soft: var(--accent-soft);
   --color-desk-info: #5a95c4;
-  --color-desk-success: #639371;
-  --color-desk-danger: #d47373;
+  --color-desk-success: var(--success);
+  --color-desk-danger: var(--danger);
+  --color-desk-warning: var(--warning);
 
   --color-background: var(--color-desk-ink);
   --color-foreground: var(--color-desk-fg);
@@ -39,6 +40,7 @@
   --color-border-strong: var(--color-desk-line-strong);
   --color-info: var(--color-desk-info);
   --color-success: var(--color-desk-success);
+  --color-warning: var(--color-desk-warning);
 
   --shadow-desk-panel: 0 24px 80px rgb(0 0 0 / 0.28);
   --shadow-desk-panel-strong: 0 32px 100px rgb(0 0 0 / 0.38);

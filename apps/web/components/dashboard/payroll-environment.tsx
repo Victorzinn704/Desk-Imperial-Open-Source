@@ -186,7 +186,7 @@ export function PayrollEnvironment({
             Exportar CSV
           </button>
           <button
-            className="flex items-center gap-2 rounded-[12px] border border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.08)] px-4 py-2 text-sm font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(52,242,127,0.14)]"
+            className="flex items-center gap-2 rounded-[12px] border border-[color-mix(in_srgb,_var(--success)_30%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] px-4 py-2 text-sm font-semibold text-[var(--success)] transition-colors hover:bg-[color-mix(in_srgb,_var(--success)_14%,_transparent)]"
             type="button"
             onClick={markAllPaid}
           >
@@ -200,14 +200,14 @@ export function PayrollEnvironment({
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
-            <DollarSign className="size-4 text-[#36f57c]" />
+            <DollarSign className="size-4 text-[var(--success)]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Folha total</p>
           </div>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{formatCurrency(folhaTotal, currency)}</p>
         </div>
         <div className="imperial-card-soft p-4">
           <div className="flex items-center gap-2">
-            <Users className="size-4 text-[#60a5fa]" />
+            <Users className="size-4 text-[var(--accent)]" />
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Colaboradores</p>
           </div>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">{activeEmployees.length}</p>
@@ -225,7 +225,7 @@ export function PayrollEnvironment({
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Pagos</p>
           </div>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">
-            <span className="text-[#36f57c]">{paidCount}</span>
+            <span className="text-[var(--success)]">{paidCount}</span>
             <span className="mx-1 text-lg text-[var(--text-muted)]">/</span>
             {rows.length}
           </p>
@@ -267,7 +267,7 @@ export function PayrollEnvironment({
                     type="button"
                     onClick={() => setExpanded(isOpen ? null : emp.id)}
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px] border border-[rgba(52,242,127,0.16)] bg-[rgba(52,242,127,0.06)] text-xs font-bold text-[#36f57c]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px] border border-[color-mix(in_srgb,_var(--success)_16%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_6%,_transparent)] text-xs font-bold text-[var(--success)]">
                       {emp.displayName.slice(0, 2).toUpperCase()}
                     </span>
 
@@ -284,7 +284,9 @@ export function PayrollEnvironment({
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <p className="text-base font-bold text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</p>
+                      <p className="text-base font-bold text-[var(--success)]">
+                        {formatCurrency(totalAPagar, currency)}
+                      </p>
                       <p className="text-xs text-[var(--text-soft)]">a pagar</p>
                     </div>
 
@@ -300,7 +302,7 @@ export function PayrollEnvironment({
                     className={[
                       'shrink-0 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors',
                       isPaid
-                        ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
+                        ? 'border-[color-mix(in_srgb,_var(--success)_30%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] text-[var(--success)]'
                         : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:border-[rgba(52,242,127,0.2)] hover:text-[#8fffb9]',
                     ].join(' ')}
                     type="button"
@@ -371,7 +373,7 @@ export function PayrollEnvironment({
                       </div>
                       <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-2 text-sm font-semibold">
                         <span className="text-[var(--text-primary)]">Total a pagar</span>
-                        <span className="shrink-0 text-[#36f57c]">{formatCurrency(totalAPagar, currency)}</span>
+                        <span className="shrink-0 text-[var(--success)]">{formatCurrency(totalAPagar, currency)}</span>
                       </div>
                     </div>
 

@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Pencil, Power } from 'lucide-react'
 import type { MesaRecord } from '@contracts/contracts'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 
 interface MesaListCardProps {
   mesa: MesaRecord
@@ -42,11 +43,16 @@ export const MesaListCard = memo(function MesaListCard({ mesa, onEdit, onToggle,
           style={{
             background:
               mesa.status === 'ocupada'
-                ? 'rgba(248,113,113,0.12)'
+                ? STATUS_COLORS.ocupada.bg
                 : mesa.status === 'reservada'
-                  ? 'rgba(96,165,250,0.12)'
-                  : 'rgba(52,242,127,0.08)',
-            color: mesa.status === 'ocupada' ? '#f87171' : mesa.status === 'reservada' ? '#60a5fa' : '#36f57c',
+                  ? STATUS_COLORS.reservada.bg
+                  : STATUS_COLORS.livre.bg,
+            color:
+              mesa.status === 'ocupada'
+                ? STATUS_COLORS.ocupada.solid
+                : mesa.status === 'reservada'
+                  ? STATUS_COLORS.reservada.solid
+                  : STATUS_COLORS.livre.solid,
           }}
         >
           {mesa.status === 'ocupada' ? 'Ocupada' : mesa.status === 'reservada' ? 'Reservada' : 'Livre'}

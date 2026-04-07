@@ -22,11 +22,11 @@ function StatusBadge({ status }: { status: RecentOrder['status'] }) {
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
         isCompleted
-          ? 'border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'
+          ? 'border-[color-mix(in_srgb,_var(--success)_25%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] text-[var(--success)]'
           : 'border-[rgba(240,68,56,0.25)] bg-[rgba(240,68,56,0.08)] text-red-400',
       )}
     >
-      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[#36f57c]' : 'bg-red-400')} />
+      <span className={cn('size-1.5 rounded-full', isCompleted ? 'bg-[var(--success)]' : 'bg-red-400')} />
       {isCompleted ? 'Concluído' : 'Cancelado'}
     </span>
   )
@@ -85,7 +85,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
     <div className="space-y-3">
       <div className="flex justify-end">
         <button
-          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.3)] hover:text-[#36f57c]"
+          className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-[color-mix(in_srgb,_var(--success)_30%,_transparent)] hover:text-[var(--success)]"
           type="button"
           onClick={handleExport}
         >
@@ -139,7 +139,7 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
                   <td
                     className={cn(
                       'px-4 py-3 text-right font-semibold',
-                      isCompleted ? 'text-[#36f57c]' : 'text-red-400',
+                      isCompleted ? 'text-[var(--success)]' : 'text-red-400',
                     )}
                   >
                     {isCompleted ? '' : '−'}

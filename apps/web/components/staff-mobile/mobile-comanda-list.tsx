@@ -1,6 +1,7 @@
 'use client'
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
 import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
@@ -33,27 +34,27 @@ type StatusConfig = {
 const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada'>, StatusConfig> = {
   aberta: {
     label: 'Aberta',
-    chipColor: '#60a5fa',
-    chipBg: 'rgba(96, 165, 250, 0.12)',
+    chipColor: STATUS_COLORS.reservada.solid,
+    chipBg: STATUS_COLORS.reservada.bg,
     nextStatus: 'em_preparo',
     nextLabel: 'Iniciar preparo',
-    nextBg: 'rgba(251, 146, 60, 0.15)',
+    nextBg: STATUS_COLORS.emPreparo.bg,
   },
   em_preparo: {
     label: 'Em Preparo',
-    chipColor: '#fb923c',
-    chipBg: 'rgba(251, 146, 60, 0.12)',
+    chipColor: STATUS_COLORS.emPreparo.solid,
+    chipBg: STATUS_COLORS.emPreparo.bg,
     nextStatus: 'pronta',
     nextLabel: 'Marcar pronta',
-    nextBg: 'rgba(54, 245, 124, 0.12)',
+    nextBg: STATUS_COLORS.livre.bg,
   },
   pronta: {
     label: 'Pronta',
-    chipColor: '#36f57c',
-    chipBg: 'rgba(54, 245, 124, 0.12)',
+    chipColor: STATUS_COLORS.livre.solid,
+    chipBg: STATUS_COLORS.livre.bg,
     nextStatus: 'fechada',
     nextLabel: 'Fechar comanda',
-    nextBg: 'rgba(122, 136, 150, 0.12)',
+    nextBg: STATUS_COLORS.fechada.bg,
   },
 }
 
@@ -453,10 +454,10 @@ const ComandaCard = memo(
 
 // ── Extrato expandível ────────────────────────────────────────────────────────
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Aberta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
-  pronta: { label: 'Pronta', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-  fechada: { label: 'Paga', color: '#7a8896', bg: 'rgba(122,136,150,0.12)' },
+  aberta: { label: 'Aberta', color: STATUS_COLORS.reservada.solid, bg: STATUS_COLORS.reservada.bg },
+  em_preparo: { label: 'Em preparo', color: STATUS_COLORS.emPreparo.solid, bg: STATUS_COLORS.emPreparo.bg },
+  pronta: { label: 'Pronta', color: STATUS_COLORS.livre.solid, bg: STATUS_COLORS.livre.bg },
+  fechada: { label: 'Paga', color: STATUS_COLORS.fechada.solid, bg: STATUS_COLORS.fechada.bg },
 }
 
 function ExtratoCard({ comanda }: { comanda: Comanda }) {
@@ -495,7 +496,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
               Total
             </p>
-            <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
+            <span className="text-sm font-bold text-[var(--success)]">{formatCurrency(total)}</span>
           </div>
           {open ? (
             <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
@@ -550,7 +551,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
             )}
             <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
-              <span className="text-[#36f57c]">{formatCurrency(total)}</span>
+              <span className="text-[var(--success)]">{formatCurrency(total)}</span>
             </div>
           </div>
         </div>

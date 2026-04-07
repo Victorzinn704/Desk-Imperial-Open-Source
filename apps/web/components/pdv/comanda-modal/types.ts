@@ -1,3 +1,4 @@
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { ComandaItem, Comanda } from '../pdv-types'
 
 export type SimpleProduct = {
@@ -32,8 +33,8 @@ export type StatusOption = {
 }
 
 export const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'aberta', label: 'Aberta', color: '#60a5fa' },
-  { value: 'em_preparo', label: 'Em Preparo', color: '#fb923c' },
-  { value: 'pronta', label: 'Pronta', color: '#36f57c' },
-  { value: 'fechada', label: 'Fechar Comanda', color: '#7a8896' },
+  { value: 'aberta', label: 'Aberta', color: STATUS_COLORS.reservada.solid },
+  { value: 'em_preparo', label: 'Em Preparo', color: STATUS_COLORS.emPreparo.solid },
+  { value: 'pronta', label: 'Pronta', color: STATUS_COLORS.livre.solid },
+  { value: 'fechada', label: 'Fechar Comanda', color: STATUS_COLORS.fechada.solid },
 ]

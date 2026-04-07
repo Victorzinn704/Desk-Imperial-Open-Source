@@ -192,11 +192,11 @@ export function PdvComandaModal({
                 {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
               </h2>
               {isEditing ? (
-                <span className="rounded-full border border-[rgba(251,146,60,0.24)] bg-[rgba(251,146,60,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#fb923c]">
+                <span className="rounded-full border border-[color-mix(in_srgb,_var(--warning)_24%,_transparent)] bg-[color-mix(in_srgb,_var(--warning)_10%,_transparent)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--warning)]">
                   Modo edicao
                 </span>
               ) : (
-                <span className="rounded-full border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#36f57c]">
+                <span className="rounded-full border border-[color-mix(in_srgb,_var(--success)_24%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--success)]">
                   Abrir comanda
                 </span>
               )}
@@ -299,7 +299,7 @@ export function PdvComandaModal({
                   Mesa
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
                   placeholder="Ex: 4"
                   value={mesa}
                   onChange={(event) => setMesa(event.target.value)}
@@ -310,7 +310,7 @@ export function PdvComandaModal({
                   Cliente
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
                   placeholder="Nome (opcional)"
                   value={clienteNome}
                   onChange={(event) => setClienteNome(event.target.value)}
@@ -325,8 +325,10 @@ export function PdvComandaModal({
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                     style={{
-                      background: docValidation.valid ? 'rgba(52,242,127,0.1)' : 'rgba(239,68,68,0.1)',
-                      color: docValidation.valid ? '#36f57c' : '#fca5a5',
+                      background: docValidation.valid
+                        ? 'var(--accent-soft)'
+                        : 'color-mix(in srgb, var(--danger) 10%, transparent)',
+                      color: docValidation.valid ? 'var(--accent)' : 'var(--danger)',
                     }}
                   >
                     {docValidation.valid ? `${docLabel} valido` : (docValidation.message ?? `${docLabel} invalido`)}
@@ -341,7 +343,7 @@ export function PdvComandaModal({
                   style={{
                     borderColor: clienteDocumento
                       ? docValidation.valid
-                        ? 'rgba(52,242,127,0.35)'
+                        ? 'var(--accent)'
                         : 'rgba(239,68,68,0.35)'
                       : 'rgba(255,255,255,0.08)',
                   }}
@@ -366,7 +368,7 @@ export function PdvComandaModal({
                   Desconto %
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
                   max="100"
                   min="0"
                   type="number"
@@ -390,7 +392,7 @@ export function PdvComandaModal({
                   Acrescimo %
                 </label>
                 <input
-                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
+                  className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
                   max="100"
                   min="0"
                   type="number"
@@ -411,12 +413,12 @@ export function PdvComandaModal({
               </div>
             </div>
 
-            <div className="m-4 flex items-center justify-between rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
+            <div className="m-4 flex items-center justify-between rounded-[14px] border border-[color-mix(in_srgb,_var(--accent)_20%,_transparent)] bg-[var(--accent-soft)] px-4 py-3">
               <div>
                 {bruto !== total ? (
                   <p className="text-xs text-[var(--text-soft)] line-through">{formatCurrency(bruto, 'BRL')}</p>
                 ) : null}
-                <p className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</p>
+                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(total, 'BRL')}</p>
               </div>
               <p className="text-xs text-[var(--text-soft)]">{itemCount} itens</p>
             </div>
@@ -442,7 +444,7 @@ export function PdvComandaModal({
                 onRefreshPrinters={() => void refreshPrinters()}
               />
 
-              {saveError ? <p className="mt-3 text-xs text-[#fca5a5]">{saveError}</p> : null}
+              {saveError ? <p className="mt-3 text-xs text-[var(--danger)]">{saveError}</p> : null}
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button
@@ -455,7 +457,7 @@ export function PdvComandaModal({
                 </button>
 
                 <button
-                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[color-mix(in_srgb,_var(--success)_40%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_12%,_transparent)] py-3 text-sm font-semibold text-[var(--success)] transition-all hover:bg-[color-mix(in_srgb,_var(--success)_20%,_transparent)] disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={
                     itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing' || isBusy
                   }
@@ -549,7 +551,7 @@ export function PdvComandaModal({
                   <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
                     Total final
                   </span>
-                  <span className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</span>
+                  <span className="text-xl font-bold text-[var(--success)]">{formatCurrency(total, 'BRL')}</span>
                 </div>
               </div>
             </div>

@@ -42,23 +42,24 @@ export function OverviewEnvironment() {
         title="Dashboard financeiro da operação"
       />
 
+      {/* Metric cards row */}
       <div className="grid gap-4 xl:grid-cols-5">
         <MetricCard
-          color="#60a5fa"
+          color="var(--accent)"
           hint={user.fullName}
           icon={UserRound}
           label="Conta"
           value={user.companyName || 'Conta Demo'}
         />
         <MetricCard
-          color="#36f57c"
+          color="var(--success)"
           hint="Status da identidade no portal"
           icon={ShieldCheck}
           label="Status"
           value={formatAccountStatus(user.status)}
         />
         <MetricCard
-          color="#a78bfa"
+          color="var(--info)"
           hint="Produtos ativos com sessão autenticada"
           icon={Box}
           label="Portfólio"
@@ -67,7 +68,7 @@ export function OverviewEnvironment() {
           value={String(productsTotals?.activeProducts ?? 0)}
         />
         <MetricCard
-          color="#fb923c"
+          color="var(--warning)"
           hint="Pedidos concluídos considerados no financeiro"
           icon={ShoppingCart}
           label="Pedidos"
@@ -76,7 +77,7 @@ export function OverviewEnvironment() {
           value={String(ordersTotals?.completedOrders ?? 0)}
         />
         <MetricCard
-          color="#fbbf24"
+          color="var(--accent-strong)"
           hint="Equipe apta a registrar vendas"
           icon={ShieldCheck}
           label="Equipe ativa"
@@ -88,11 +89,36 @@ export function OverviewEnvironment() {
 
       {finance ? (
         <>
-          <FinanceOverviewTotal finance={finance} isLoading={financeQuery.isLoading} />
+          {/* Painel Executivo: Revenue hero + métricas */}
+          <FinanceOverviewTotal finance={finance} isLoading={financeQuery.isLoading} variant="embedded" />
 
+          {/* Composição Financeira: canais + categorias */}
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <FinanceChannelsPanel finance={finance} isLoading={financeQuery.isLoading} />
-            <FinanceCategoriesSidebar finance={finance} isLoading={financeQuery.isLoading} />
+            <FinanceCategoriesSidebar finance={finance} isLoading={financeQuery.isLoading} variant="embedded" />
+          </div>
+
+          {/* Performance: sales + chart side by side */}
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+            <SalesPerformanceCard finance={finance} isLoading={financeQuery.isLoading} variant="embedded" />
+            <FinanceChart
+              error={financeError}
+              finance={finance}
+              isLoading={financeQuery.isLoading}
+              ordersTotals={ordersTotals}
+              variant="embedded"
+            />
+          </div>
+
+          {/* Equipe + Inteligência */}
+          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:items-start">
+            <EmployeeRankingCard
+              error={financeError}
+              finance={finance}
+              isLoading={financeQuery.isLoading}
+              variant="embedded"
+            />
+            <MarketIntelligenceCard variant="embedded" />
           </div>
         </>
       ) : financeQuery.isLoading ? (
@@ -105,15 +131,7 @@ export function OverviewEnvironment() {
         </div>
       ) : null}
 
-      <SalesPerformanceCard finance={finance} isLoading={financeQuery.isLoading} />
-      <MarketIntelligenceCard />
-      <FinanceChart
-        error={financeError}
-        finance={finance}
-        isLoading={financeQuery.isLoading}
-        ordersTotals={ordersTotals}
-      />
-      <EmployeeRankingCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
+      {/* Mapa: full width */}
       <SalesMapCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
     </section>
   )

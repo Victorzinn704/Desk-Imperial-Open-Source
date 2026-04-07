@@ -108,7 +108,7 @@ export function ProductImportCard({
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       required
-                        ? 'bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
+                        ? 'bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] text-[var(--success)]'
                         : 'bg-[rgba(255,255,255,0.05)] text-[var(--text-soft)]'
                     }`}
                   >

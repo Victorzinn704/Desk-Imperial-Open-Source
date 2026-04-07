@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useMemo } from 'react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Mesa, MesaStatus } from '@/components/pdv/pdv-types'
 import { Plus } from 'lucide-react'
 
@@ -11,9 +12,9 @@ interface MobileTableGridProps {
 }
 
 const STATUS_COLOR: Record<MesaStatus, string> = {
-  livre: '#36f57c',
-  ocupada: '#f87171',
-  reservada: '#60a5fa',
+  livre: STATUS_COLORS.livre.solid,
+  ocupada: STATUS_COLORS.ocupada.solid,
+  reservada: STATUS_COLORS.reservada.solid,
 }
 
 const STATUS_LABEL: Record<MesaStatus, string> = {
@@ -82,11 +83,11 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                 }}
               >
                 <div className="absolute -inset-2 rounded-full bg-[rgba(54,245,124,0.15)] opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
-                <span className="relative z-10 text-[26px] font-extrabold text-[#36f57c] tracking-tighter">
+                <span className="relative z-10 text-[26px] font-extrabold text-[var(--success)] tracking-tighter">
                   {mesa.numero}
                 </span>
                 <div className="relative z-10 flex flex-col items-center justify-center gap-0.5 mt-0.5">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#36f57c] opacity-90">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--success)] opacity-90">
                     Livre
                   </span>
                   <span className="text-[10px] font-medium text-[var(--accent,#9b8460)]">Novo PdV</span>

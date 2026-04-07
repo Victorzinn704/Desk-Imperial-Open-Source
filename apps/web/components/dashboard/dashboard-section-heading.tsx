@@ -13,7 +13,7 @@ export function DashboardSectionHeading({
 }>) {
   return (
     <div className="imperial-card-soft flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
-      <span className="flex size-12 items-center justify-center rounded-[20px] border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.09)] text-[#36f57c] shadow-[0_0_30px_rgba(52,242,127,0.12)]">
+      <span className="flex size-12 items-center justify-center rounded-[20px] border border-[color-mix(in_srgb,_var(--success)_24%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_9%,_transparent)] text-[var(--success)] shadow-[0_0_30px_rgba(52,242,127,0.12)]">
         <Icon className="size-5" />
       </span>
 

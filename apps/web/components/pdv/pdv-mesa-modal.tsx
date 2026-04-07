@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { MesaStatus } from './pdv-types'
 
 type PdvMesaModalProps = {
@@ -10,8 +11,8 @@ type PdvMesaModalProps = {
 }
 
 const STATUS_OPTIONS: { value: MesaStatus; label: string; color: string }[] = [
-  { value: 'livre', label: 'Livre', color: '#36f57c' },
-  { value: 'reservada', label: 'Reservada', color: '#60a5fa' },
+  { value: 'livre', label: 'Livre', color: STATUS_COLORS.livre.solid },
+  { value: 'reservada', label: 'Reservada', color: STATUS_COLORS.reservada.solid },
 ]
 
 export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
@@ -114,7 +115,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
             Cancelar
           </button>
           <button
-            className="flex-1 rounded-[12px] bg-[rgba(52,242,127,0.12)] py-2.5 text-sm font-semibold text-[#36f57c] transition hover:bg-[rgba(52,242,127,0.2)] disabled:opacity-40"
+            className="flex-1 rounded-[12px] bg-[color-mix(in_srgb,_var(--success)_12%,_transparent)] py-2.5 text-sm font-semibold text-[var(--success)] transition hover:bg-[color-mix(in_srgb,_var(--success)_20%,_transparent)] disabled:opacity-40"
             type="button"
             disabled={!numero.trim()}
             onClick={handleSave}

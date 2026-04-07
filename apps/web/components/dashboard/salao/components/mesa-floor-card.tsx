@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import type { MesaRecord } from '@contracts/contracts'
+import { getStatusColor } from '@/lib/design-tokens'
 
 interface MesaFloorCardProps {
   mesa: MesaRecord
@@ -7,7 +8,7 @@ interface MesaFloorCardProps {
 }
 
 export const MesaFloorCard = memo(function MesaFloorCard({ mesa, isDragging }: MesaFloorCardProps) {
-  const statusColor = mesa.status === 'ocupada' ? '#ef4444' : mesa.status === 'reservada' ? '#a78bfa' : '#34d399'
+  const statusColor = getStatusColor(mesa.status).solid
 
   return (
     <div

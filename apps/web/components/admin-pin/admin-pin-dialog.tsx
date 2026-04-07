@@ -140,7 +140,7 @@ export function AdminPinDialog({
 
         <div className="p-6 text-center">
           <span
-            className={`mx-auto flex size-14 items-center justify-center rounded-[20px] border ${isBlocked ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-red-400' : 'border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]'}`}
+            className={`mx-auto flex size-14 items-center justify-center rounded-[20px] border ${isBlocked ? 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.1)] text-red-400' : 'border-[color-mix(in_srgb,_var(--success)_20%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] text-[var(--success)]'}`}
           >
             {isBlocked ? <ShieldAlert className="size-6" /> : <LockKeyhole className="size-6" />}
           </span>
@@ -193,7 +193,7 @@ export function AdminPinDialog({
 
               <div className="flex h-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
                 <div
-                  className="h-full rounded-full bg-[#36f57c] transition-all duration-200"
+                  className="h-full rounded-full bg-[var(--success)] transition-all duration-200"
                   style={{ width: `${(filled / 4) * 100}%` }}
                 />
               </div>

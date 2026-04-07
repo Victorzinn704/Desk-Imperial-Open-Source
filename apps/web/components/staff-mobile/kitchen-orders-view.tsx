@@ -27,24 +27,24 @@ const STATUS_CONFIG: Record<
   QUEUED: {
     label: 'Na fila',
     Icon: Clock,
-    color: '#fbbf24',
-    bg: 'rgba(251,191,36,0.1)',
+    color: 'var(--warning)',
+    bg: 'color-mix(in srgb, var(--warning) 10%, transparent)',
     nextStatus: 'IN_PREPARATION',
     nextLabel: 'Iniciar preparo',
   },
   IN_PREPARATION: {
     label: 'Em preparo',
     Icon: Flame,
-    color: '#fb923c',
-    bg: 'rgba(251,146,60,0.1)',
+    color: 'var(--warning)',
+    bg: 'color-mix(in srgb, var(--warning) 10%, transparent)',
     nextStatus: 'READY',
     nextLabel: 'Marcar como pronto',
   },
   READY: {
     label: 'Pronto',
     Icon: CheckCircle2,
-    color: '#34d399',
-    bg: 'rgba(52,211,153,0.1)',
+    color: 'var(--success)',
+    bg: 'color-mix(in srgb, var(--success) 10%, transparent)',
     nextStatus: 'DELIVERED',
     nextLabel: 'Entregar',
   },
@@ -80,12 +80,12 @@ function KitchenCard({
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: config.color }}>
               Mesa {item.mesaLabel}
             </span>
-            {elapsed && <span className="text-[10px] text-[#7a8896]">{elapsed}</span>}
+            {elapsed && <span className="text-[10px] text-[var(--text-muted)]">{elapsed}</span>}
           </div>
           <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
             {item.quantity}× {item.productName}
           </p>
-          {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">{`"${item.notes}"`}</p>}
+          {item.notes && <p className="mt-1 text-xs text-[var(--text-muted)] italic">{`"${item.notes}"`}</p>}
         </div>
         <button
           type="button"
@@ -93,7 +93,7 @@ function KitchenCard({
           onClick={() => onAdvance(item.itemId, config.nextStatus)}
           className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition-opacity active:opacity-70 disabled:opacity-40"
           style={{
-            background: `rgba(${config.color === '#fbbf24' ? '251,191,36' : config.color === '#fb923c' ? '251,146,60' : '52,211,153'}, 0.2)`,
+            background: `color-mix(in srgb, ${config.color} 20%, transparent)`,
             color: config.color,
           }}
         >
@@ -203,7 +203,7 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
               className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
               style={{
                 background: isActive ? config.bg : 'rgba(255,255,255,0.04)',
-                color: isActive ? config.color : '#7a8896',
+                color: isActive ? config.color : 'var(--text-muted)',
                 border: `1px solid ${isActive ? config.color + '40' : 'rgba(255,255,255,0.06)'}`,
               }}
             >
@@ -238,16 +238,18 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
         {!hasItems ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
-              <ChefHat className="size-7 text-[#7a8896]" />
+              <ChefHat className="size-7 text-[var(--text-muted)]" />
             </div>
             <p data-testid="kitchen-view-empty" className="text-sm font-medium text-[var(--text-primary)]">
               Cozinha livre
             </p>
-            <p className="mt-1 text-xs text-[#7a8896]">Nenhum pedido aguardando preparo</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">Nenhum pedido aguardando preparo</p>
           </div>
         ) : tabItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-sm text-[#7a8896]">Nenhum item {STATUS_CONFIG[activeTab].label.toLowerCase()}</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              Nenhum item {STATUS_CONFIG[activeTab].label.toLowerCase()}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

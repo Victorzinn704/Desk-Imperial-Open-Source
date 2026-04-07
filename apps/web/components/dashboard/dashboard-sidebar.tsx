@@ -349,7 +349,7 @@ function DesktopAccountDock({
 
       {/* Chips de status */}
       <div className="mt-2.5 flex items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8fffb9]">
+        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,_var(--success)_22%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_7%,_transparent)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--success)]">
           <CircleDot className="size-2.5" />
           {formatAccountStatus(status)}
         </span>
@@ -408,7 +408,7 @@ function MobileAccountDock({
         </div>
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8fffb9]">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,_var(--success)_22%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_7%,_transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--success)]">
           <CircleDot className="size-3" />
           {formatAccountStatus(status)}
         </span>

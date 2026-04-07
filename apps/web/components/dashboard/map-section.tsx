@@ -96,8 +96,8 @@ function StatusPill({ value }: Readonly<{ value: string }>) {
   return (
     <div className="flex items-center gap-2 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-2">
       <span className="relative flex size-2 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#36f57c] opacity-60" />
-        <span className="relative inline-flex size-2 rounded-full bg-[#36f57c]" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-60" />
+        <span className="relative inline-flex size-2 rounded-full bg-[var(--success)]" />
       </span>
       <span className="text-xs font-semibold text-[#8fffb9]">{value}</span>
     </div>

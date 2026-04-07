@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import { calcTotal, type Comanda } from './pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
@@ -10,10 +11,10 @@ type Filtro = 'tudo' | 'abertas' | 'fechadas'
 type Ordenacao = 'recentes' | 'maior_valor'
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  aberta: { label: 'Aberta', color: STATUS_COLORS.ocupada.solid, bg: STATUS_COLORS.ocupada.bg },
   em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
+  pronta: { label: 'Pronta', color: STATUS_COLORS.reservada.solid, bg: STATUS_COLORS.reservada.bg },
+  fechada: { label: 'Paga', color: STATUS_COLORS.livre.solid, bg: STATUS_COLORS.livre.bg },
 }
 
 function formatDateTime(date: Date) {
@@ -111,7 +112,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
                 onChange={(event) => setBusca(event.target.value)}
                 placeholder="Buscar por mesa, cliente, documento, item ou responsável"
                 aria-label="Buscar comandas"
-                className="w-full rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] py-3 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-soft)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+                className="w-full rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] py-3 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:outline-none"
               />
             </label>
 
@@ -119,7 +120,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
               value={responsavel}
               onChange={(event) => setResponsavel(event.target.value)}
               aria-label="Filtrar por responsável"
-              className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+              className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:outline-none"
             >
               {responsaveis.map((item) => (
                 <option className="bg-[#11161d] text-[var(--text-primary)]" key={item} value={item}>
@@ -132,7 +133,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
               value={ordenacao}
               onChange={(event) => setOrdenacao(event.target.value as Ordenacao)}
               aria-label="Ordenar comandas"
-              className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+              className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:outline-none"
             >
               <option className="bg-[#11161d] text-[var(--text-primary)]" value="recentes">
                 Mais recentes
@@ -157,9 +158,12 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
                 onClick={() => setFiltro(id)}
                 className="rounded-[10px] px-4 py-2 text-sm font-medium transition-all"
                 style={{
-                  background: filtro === id ? 'rgba(52,242,127,0.1)' : 'transparent',
-                  color: filtro === id ? '#36f57c' : 'var(--text-soft)',
-                  border: filtro === id ? '1px solid rgba(52,242,127,0.25)' : '1px solid transparent',
+                  background: filtro === id ? 'var(--accent-soft)' : 'transparent',
+                  color: filtro === id ? 'var(--accent)' : 'var(--text-soft)',
+                  border:
+                    filtro === id
+                      ? '1px solid color-mix(in srgb, var(--accent) 25%, transparent)'
+                      : '1px solid transparent',
                 }}
               >
                 {label}
@@ -277,7 +281,7 @@ function HistoricoCard({ comanda }: Readonly<{ comanda: Comanda }>) {
                   </div>
                 ) : null}
                 {comanda.acrescimo > 0 ? (
-                  <div className="flex items-center justify-between text-[#fb923c]">
+                  <div className="flex items-center justify-between text-[var(--warning)]">
                     <span>Serviço ({comanda.acrescimo}%)</span>
                     <span>+ {formatCurrency(acrescimoVal)}</span>
                   </div>

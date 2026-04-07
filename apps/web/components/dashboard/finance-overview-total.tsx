@@ -6,10 +6,12 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { CardSkeleton } from '@/components/shared/skeleton'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
+import { cn } from '@/lib/utils'
 
 type Props = {
   finance: FinanceSummaryResponse
   isLoading?: boolean
+  variant?: 'standalone' | 'embedded'
 }
 
 function AnimatedValue({ value, currency }: { value: number; currency: FinanceSummaryResponse['displayCurrency'] }) {
@@ -45,7 +47,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
   )
 }
 
-export function FinanceOverviewTotal({ finance, isLoading }: Props) {
+export function FinanceOverviewTotal({ finance, isLoading, variant = 'standalone' }: Props) {
   const { totals, categoryBreakdown, displayCurrency } = finance
   const growth = totals.revenueGrowthPercent
   const isPositive = growth >= 0
@@ -55,7 +57,14 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
   }
 
   return (
-    <div className="imperial-card flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
+    <div
+      className={cn(
+        'flex flex-col sm:flex-row sm:items-center',
+        variant === 'embedded'
+          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 gap-4'
+          : 'imperial-card gap-6 p-6 sm:p-8',
+      )}
+    >
       <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
 
       <div className="flex flex-col gap-2">
@@ -68,11 +77,11 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-1.5">
             {isPositive ? (
-              <TrendingUp className="size-4 text-[#36f57c]" />
+              <TrendingUp className="size-4 text-[var(--success)]" />
             ) : (
               <TrendingDown className="size-4 text-red-400" />
             )}
-            <span className={`text-sm font-semibold ${isPositive ? 'text-[#36f57c]' : 'text-red-400'}`}>
+            <span className={`text-sm font-semibold ${isPositive ? 'text-[var(--success)]' : 'text-red-400'}`}>
               {isPositive ? '+' : ''}
               {growth.toFixed(1)}% vs mês anterior
             </span>

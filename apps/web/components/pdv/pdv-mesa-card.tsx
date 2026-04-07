@@ -2,33 +2,10 @@
 
 import { memo } from 'react'
 import { Users, ShoppingBag, Clock } from 'lucide-react'
+import { STATUS_COLORS, type StatusKey } from '@/lib/design-tokens'
 import type { Mesa, Comanda } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
-
-const STATUS_CONFIG = {
-  livre: {
-    label: 'Livre',
-    dot: '#36f57c',
-    bg: 'rgba(54, 245, 124, 0.07)',
-    border: 'rgba(54, 245, 124, 0.22)',
-    text: 'text-[#36f57c]',
-  },
-  ocupada: {
-    label: 'Ocupada',
-    dot: '#fb923c',
-    bg: 'rgba(251, 146, 60, 0.08)',
-    border: 'rgba(251, 146, 60, 0.28)',
-    text: 'text-[#fb923c]',
-  },
-  reservada: {
-    label: 'Reservada',
-    dot: '#60a5fa',
-    bg: 'rgba(96, 165, 250, 0.08)',
-    border: 'rgba(96, 165, 250, 0.22)',
-    text: 'text-[#60a5fa]',
-  },
-}
 
 type PdvMesaCardProps = {
   mesa: Mesa
@@ -45,7 +22,8 @@ export const PdvMesaCard = memo(function PdvMesaCard({
   onClickOcupada,
   onDelete,
 }: Readonly<PdvMesaCardProps>) {
-  const cfg = STATUS_CONFIG[mesa.status]
+  const cfg = STATUS_COLORS[mesa.status as StatusKey] ?? STATUS_COLORS.fechada
+  const statusLabel = mesa.status === 'livre' ? 'Livre' : mesa.status === 'ocupada' ? 'Ocupada' : 'Reservada'
 
   function handleClick() {
     if (mesa.status === 'livre' || mesa.status === 'reservada') {
@@ -88,11 +66,11 @@ export const PdvMesaCard = memo(function PdvMesaCard({
             <p className="mt-0.5 text-3xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
           </div>
           <span
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${cfg.text}`}
-            style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${cfg.border}` }}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${cfg.border}`, color: cfg.solid }}
           >
-            <span className="inline-block size-1.5 rounded-full" style={{ background: cfg.dot }} />
-            {cfg.label}
+            <span className="inline-block size-1.5 rounded-full" style={{ background: cfg.solid }} />
+            {statusLabel}
           </span>
         </div>
 
@@ -122,7 +100,7 @@ export const PdvMesaCard = memo(function PdvMesaCard({
                 {comanda.clienteNome}
               </p>
             )}
-            <p className="mt-1 text-sm font-bold text-[#fb923c]">{formatCurrency(calcTotal(comanda), 'BRL')}</p>
+            <p className="mt-1 text-sm font-bold text-[var(--warning)]">{formatCurrency(calcTotal(comanda), 'BRL')}</p>
           </div>
         )}
 

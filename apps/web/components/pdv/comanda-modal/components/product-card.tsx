@@ -31,13 +31,13 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
   return (
     <button
       draggable
-      className="group flex min-h-[96px] w-full flex-col justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[rgba(52,242,127,0.22)] hover:bg-[rgba(52,242,127,0.04)] cursor-grab active:cursor-grabbing xl:min-h-0 xl:flex-row xl:items-center"
+      className="group flex min-h-[96px] w-full flex-col justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-3 py-3 text-left transition-all hover:border-[color-mix(in_srgb,_var(--accent)_22%,_transparent)] hover:bg-[color-mix(in_srgb,_var(--accent)_4%,_transparent)] cursor-grab active:cursor-grabbing xl:min-h-0 xl:flex-row xl:items-center"
       type="button"
       onClick={onAdd}
       onDragStart={onDragStart}
     >
       <div className="flex items-start gap-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[11px] font-bold tracking-[0.08em] text-[#36f57c]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[color-mix(in_srgb,_var(--success)_20%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] text-[11px] font-bold tracking-[0.08em] text-[var(--success)]">
           {initials || 'IT'}
         </span>
         <div>
@@ -64,7 +64,7 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
       </div>
       <div className="mt-2 flex items-center justify-between gap-3 xl:mt-0">
         <div className="flex flex-col items-start gap-0.5 xl:items-end">
-          <span className="text-sm font-semibold text-[#36f57c] group-hover:text-[#5cfb99]">
+          <span className="text-sm font-semibold text-[var(--success)] group-hover:text-[color-mix(in_srgb,_var(--success)_85%,_white)]">
             {formatCurrency(product.unitPrice, 'BRL')}
           </span>
           <span className="text-[10px] font-medium" style={{ color: stockColor }}>
@@ -72,7 +72,7 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
           </span>
         </div>
         {inCartQty > 0 ? (
-          <span className="flex size-6 items-center justify-center rounded-full bg-[rgba(52,242,127,0.16)] text-[11px] font-bold text-[#36f57c]">
+          <span className="flex size-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,_var(--success)_16%,_transparent)] text-[11px] font-bold text-[var(--success)]">
             {inCartQty}
           </span>
         ) : null}

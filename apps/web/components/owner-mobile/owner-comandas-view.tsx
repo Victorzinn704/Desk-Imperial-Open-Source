@@ -18,9 +18,9 @@ type Filtro = 'tudo' | 'abertas' | 'fechadas'
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
+  em_preparo: { label: 'Em preparo', color: 'var(--warning)', bg: 'rgba(234,179,8,0.15)' },
+  pronta: { label: 'Pronta', color: 'var(--accent)', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { label: 'Paga', color: 'var(--success)', bg: 'rgba(54,245,124,0.12)' },
 }
 
 interface Props {
@@ -63,7 +63,7 @@ export function OwnerComandasView({ comandas }: Props) {
             className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
             style={{
               background: filtro === id ? 'rgba(155,132,96,0.2)' : 'rgba(255,255,255,0.04)',
-              color: filtro === id ? '#9b8460' : '#7a8896',
+              color: filtro === id ? 'var(--accent)' : 'var(--text-muted)',
               border: `1px solid ${filtro === id ? 'rgba(155,132,96,0.4)' : 'rgba(255,255,255,0.06)'}`,
             }}
           >

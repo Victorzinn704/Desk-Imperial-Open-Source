@@ -3,6 +3,7 @@
 import { memo, useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import { Users, Plus } from 'lucide-react'
+import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Mesa, Comanda, MesaStatus } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 import { calcTotal, formatElapsed } from './pdv-types'
@@ -20,18 +21,18 @@ const COLUMNS = [
   {
     id: 'ocupada' as MesaStatus,
     label: 'Ocupada',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.06)',
-    border: 'rgba(248,113,113,0.22)',
-    glow: 'rgba(248,113,113,0.12)',
+    color: STATUS_COLORS.ocupada.solid,
+    bg: STATUS_COLORS.ocupada.softBg,
+    border: STATUS_COLORS.ocupada.border,
+    glow: `${STATUS_COLORS.ocupada.solid}1f`,
   },
   {
     id: 'reservada' as MesaStatus,
     label: 'Reservada',
-    color: '#60a5fa',
-    bg: 'rgba(96,165,250,0.06)',
-    border: 'rgba(96,165,250,0.22)',
-    glow: 'rgba(96,165,250,0.12)',
+    color: STATUS_COLORS.reservada.solid,
+    bg: STATUS_COLORS.reservada.softBg,
+    border: STATUS_COLORS.reservada.border,
+    glow: `${STATUS_COLORS.reservada.solid}1f`,
   },
 ]
 
@@ -74,14 +75,19 @@ const MesaSquare = memo(function MesaSquare({
           <button
             className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-xl border bg-transparent transition-all duration-200 hover:scale-105 hover:shadow-lg"
             style={{
-              background: 'rgba(54,245,124,0.06)',
-              borderColor: snapshot.isDragging ? '#36f57c' : 'rgba(54,245,124,0.3)',
-              boxShadow: snapshot.isDragging ? '0 0 20px rgba(54,245,124,0.25)' : undefined,
+              background: `${STATUS_COLORS.livre.softBg}`,
+              borderColor: snapshot.isDragging ? STATUS_COLORS.livre.solid : STATUS_COLORS.livre.border,
+              boxShadow: snapshot.isDragging ? `0 0 20px ${STATUS_COLORS.livre.solid}40` : undefined,
             }}
             type="button"
             onClick={handleClick}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(54,245,124,0.6)]">Mesa</p>
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: `${STATUS_COLORS.livre.solid}99` }}
+            >
+              Mesa
+            </p>
             <p className="text-2xl font-bold text-[var(--text-primary)] leading-none mt-0.5">{mesa.numero}</p>
             <div className="mt-1 flex items-center gap-0.5 text-[rgba(54,245,124,0.55)]">
               <Users className="size-2.5" />
@@ -226,15 +232,15 @@ export function PdvMesasKanban({
             <div className="flex items-center gap-2">
               <span
                 className="inline-block size-2 rounded-full"
-                style={{ background: '#36f57c', boxShadow: '0 0 6px #36f57c' }}
+                style={{ background: 'var(--success)', boxShadow: '0 0 6px var(--success)' }}
               />
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#36f57c]">Livre</span>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--success)]">Livre</span>
               <span className="text-xs text-[var(--text-muted)]">— arraste para ocupar ou reservar</span>
             </div>
             <button
               type="button"
               onClick={onAddMesa}
-              className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.14)]"
+              className="flex items-center gap-1.5 rounded-[10px] border border-[color-mix(in_srgb,_var(--success)_30%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_7%,_transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--success)] transition-colors hover:bg-[color-mix(in_srgb,_var(--success)_14%,_transparent)]"
             >
               <Plus className="size-3" />
               Nova Mesa

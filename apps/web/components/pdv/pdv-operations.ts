@@ -1,8 +1,7 @@
 import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
 import { calcSubtotal, type Mesa, type Comanda, type Garcom } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
-
-const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
+import { GARCOM_COLORS as GARCOM_CORES } from '@/lib/design-tokens'
 
 export const DEFAULT_TABLE_LABELS = [...Array.from({ length: 12 }, (_, index) => String(index + 1)), 'VIP']
 

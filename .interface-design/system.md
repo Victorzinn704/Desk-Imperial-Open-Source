@@ -23,6 +23,8 @@ O frontend deve seguir uma linha **admin dashboard direto, limpo e funcional**, 
 - TailAdmin Logistics: usar lógica de operações em movimento — etapas, tracking, canais, rotas e tabela — traduzida para pedidos, caixa, salão, retirada e delivery do Desk.
 - next-shadcn-admin-dashboard: header compacto, sidebar com grupos, cards com badge e gráfico de área.
 - free-react-tailwind-admin-dashboard: métrica direta, borda leve, bg branco/dark e estrutura de gráficos ApexCharts.
+- `whatsapp-sender-pro-ui.zip`: aproveitar apenas a lógica de app cheio, sidebar fixa, topbar utilitária e colunas/listas operacionais; não copiar verde, shader ou estética WhatsApp.
+- `untitled.zip`: aproveitar densidade de tabela/status e leitura operacional compacta; não copiar roxo, neon, CRT ou visual financeiro cripto.
 
 ## Anti-padrões proibidos
 
@@ -39,6 +41,13 @@ O frontend deve seguir uma linha **admin dashboard direto, limpo e funcional**, 
 ## Assinatura desejada
 
 O Desk Imperial deve parecer um admin real de comércio: sidebar, topbar, métricas, gráficos e tabelas. A identidade vem da escolha dos dados e nomes do produto, não de efeitos visuais.
+
+## Vocabulário obrigatório do produto
+
+- Preferir termos reais do Desk Imperial: caixa, turno, salão, mesas, comandas, PDV, portfólio, estoque, margem, funcionário, financeiro e mapa.
+- Evitar rótulos genéricos como “logistics”, “tracking” ou “enterprise” quando eles não forem traduzidos para a operação comercial brasileira.
+- Usar referências externas como lógica de composição; o conteúdo precisa nascer da rotina do comerciante no Desk.
+- O bloco mais autoral deve ser o “mapa rápido do salão”: mesa, status, garçom, tempo e valor em células compactas, para diferenciar o Desk de dashboards SaaS genéricos.
 
 ## Aplicação segura
 

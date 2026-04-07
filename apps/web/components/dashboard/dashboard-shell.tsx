@@ -281,38 +281,29 @@ export function DashboardWorkspaceHeader({
   signals: DashboardSignal[]
 }>) {
   return (
-    <header
-      className="rounded-xl border border-gray-200 bg-white dark:bg-white/[0.02] dark:border-white/5 p-6 md:p-8 shadow-sm dark:shadow-none"
-      id="workspace-header"
-    >
+    <header className="imperial-card p-6 md:p-8" id="workspace-header">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <span className="size-2 rounded-full bg-accent" />
             {activeHero.badge}
           </div>
-          <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
-            Início / Painel operacional / {activeNavigationLabel}
-          </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-[var(--text-primary)] sm:text-5xl">
+          <p className="mt-4 text-sm text-[var(--text-muted)]">Início / Painel operacional / {activeNavigationLabel}</p>
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-[var(--text-primary)] sm:text-5xl">
             {activeHero.title}
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-gray-600 dark:text-muted-foreground">
-            {activeHero.description}
-          </p>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--text-soft)]">{activeHero.description}</p>
         </div>
 
         <div className="flex flex-col gap-6 xl:max-w-[520px]">
-          <div className="flex divide-x divide-gray-200 dark:divide-white/5">
+          <div className="flex divide-x divide-[var(--border)]">
             {signals.map((signal) => (
               <div className="flex-1 px-4 first:pl-0 last:pr-0" key={signal.label}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {signal.label}
                 </p>
-                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
-                  {signal.value}
-                </p>
-                <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-muted-foreground">{signal.helper}</p>
+                <p className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{signal.value}</p>
+                <p className="mt-2 text-xs leading-6 text-[var(--text-muted)]">{signal.helper}</p>
               </div>
             ))}
           </div>
@@ -322,21 +313,19 @@ export function DashboardWorkspaceHeader({
               const Icon = action.icon
               return (
                 <button
-                  className="workspace-quick-action flex-1 sm:min-w-[150px] border-gray-200 bg-gray-50 dark:border-white/5 dark:bg-white/[0.02]"
+                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
                   type="button"
                 >
-                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-[var(--text-primary)]">
+                  <span className="workspace-quick-action__icon">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                    <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
                       {action.label}
                     </span>
-                    <span className="block truncate text-xs text-gray-500 dark:text-muted-foreground">
-                      {action.description}
-                    </span>
+                    <span className="block truncate text-xs text-[var(--text-muted)]">{action.description}</span>
                   </span>
                 </button>
               )
@@ -526,6 +515,7 @@ export function DashboardShell({
           onScroll={onScroll}
         >
           <DashboardTopbar
+            activeSectionLabel={activeNavigation.label}
             isMobileOpen={!sidebarCollapsed}
             onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             user={user}
@@ -652,7 +642,7 @@ function EvaluationModeBanner({
     <section className="imperial-card-soft px-5 py-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.22)] bg-[rgba(37,99,235,0.14)] text-[var(--accent)]">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[color-mix(in_srgb,_var(--accent)_22%,_transparent)] bg-[color-mix(in_srgb,_var(--accent)_14%,_transparent)] text-[var(--accent)]">
             <TimerReset className="size-5" />
           </span>
           <div>
@@ -714,7 +704,7 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
           Por seguranca, o painel so e liberado apos a confirmacao do codigo enviado para o email cadastrado.
         </p>
 
-        <div className="mt-8 rounded-[24px] border border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.06)] p-4 text-sm text-[var(--text-soft)]">
+        <div className="mt-8 rounded-[24px] border border-[color-mix(in_srgb,_var(--accent)_20%,_transparent)] bg-[color-mix(in_srgb,_var(--accent)_6%,_transparent)] p-4 text-sm text-[var(--text-soft)]">
           Email em validacao: <span className="font-semibold text-[var(--text-primary)]">{email}</span>
         </div>
 

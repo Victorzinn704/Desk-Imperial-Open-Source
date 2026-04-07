@@ -1,24 +1,39 @@
 import type { Mesa, Comanda, Garcom, MesaStatus } from '../pdv-types'
+import { STATUS_COLORS, GARCOM_COLORS } from '@/lib/design-tokens'
+export { STATUS_COLORS, GARCOM_COLORS, getStatusColor, type StatusKey } from '@/lib/design-tokens'
+
+export const STATUS_CONFIG: Record<MesaStatus, { label: string; color: string; bg: string; border: string }> = {
+  livre: {
+    label: 'Livre',
+    color: STATUS_COLORS.livre.solid,
+    bg: STATUS_COLORS.livre.bg,
+    border: STATUS_COLORS.livre.border,
+  },
+  ocupada: {
+    label: 'Ocupada',
+    color: STATUS_COLORS.ocupada.solid,
+    bg: STATUS_COLORS.ocupada.bg,
+    border: STATUS_COLORS.ocupada.border,
+  },
+  reservada: {
+    label: 'Reservada',
+    color: STATUS_COLORS.reservada.solid,
+    bg: STATUS_COLORS.reservada.bg,
+    border: STATUS_COLORS.reservada.border,
+  },
+}
+
+export const GARCOM_CORES = GARCOM_COLORS
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
 export type SalaoView = 'salao' | 'equipe'
 export type FilterStatus = 'todos' | MesaStatus | 'sem_garcom' | 'atencao'
 
-// ─── Cores de status ───────────────────────────────────────────────────────────
-
-export const STATUS_CONFIG = {
-  livre: { label: 'Livre', color: '#36f57c', bg: 'rgba(54,245,124,0.07)', border: 'rgba(54,245,124,0.25)' },
-  ocupada: { label: 'Ocupada', color: '#f87171', bg: 'rgba(248,113,113,0.07)', border: 'rgba(248,113,113,0.25)' },
-  reservada: { label: 'Reservada', color: '#60a5fa', bg: 'rgba(96,165,250,0.07)', border: 'rgba(96,165,250,0.25)' },
-} as const
-
-export const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 export function garcomCor(garcon: Garcom, all: Garcom[]) {
-  return garcon.cor || GARCOM_CORES[all.findIndex((g) => g.id === garcon.id) % GARCOM_CORES.length]
+  return garcon.cor || GARCOM_COLORS[all.findIndex((g) => g.id === garcon.id) % GARCOM_COLORS.length]
 }
 
 export function initials(nome: string) {

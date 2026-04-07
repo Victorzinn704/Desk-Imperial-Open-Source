@@ -49,7 +49,7 @@ export const PrinterSection = memo(function PrinterSection({
 
       <div className="mt-3 grid gap-3">
         <select
-          className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
+          className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
           value={selectedPrinterName}
           onChange={(event) => onChoosePrinter(event.target.value)}
         >
@@ -65,7 +65,7 @@ export const PrinterSection = memo(function PrinterSection({
         <p
           className={`text-xs leading-6 ${
             connectionState === 'error'
-              ? 'text-[#fca5a5]'
+              ? 'text-[var(--danger)]'
               : connectionState === 'connected'
                 ? 'text-[#86efac]'
                 : 'text-[var(--text-soft)]'
