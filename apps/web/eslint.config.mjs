@@ -3,7 +3,7 @@ import nextTypeScript from 'eslint-config-next/typescript'
 
 const config = [
   {
-    ignores: ['coverage/**'],
+    ignores: ['coverage/**', 'components/charts/**'],
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,
@@ -56,6 +56,7 @@ const config = [
       'components/operations/operations-executive-grid.tsx',
       'components/operations/operations-timeline.tsx',
       'components/calendar/**/*.{ts,tsx,mts,cts}',
+      'components/charts/**/*.{ts,tsx,mts,cts}',
       'components/shared/lazy-components.tsx',
       'apps/web/components/dashboard/finance-chart.tsx',
       'apps/web/components/dashboard/chart-responsive-container.tsx',
@@ -67,6 +68,7 @@ const config = [
       'apps/web/components/operations/operations-executive-grid.tsx',
       'apps/web/components/operations/operations-timeline.tsx',
       'apps/web/components/calendar/**/*.{ts,tsx,mts,cts}',
+      'apps/web/components/charts/**/*.{ts,tsx,mts,cts}',
       'apps/web/components/shared/lazy-components.tsx',
     ],
     rules: {

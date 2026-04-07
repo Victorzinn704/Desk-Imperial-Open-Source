@@ -94,3 +94,6 @@ Desktop.ini
 .aider*
 .scannerwork/
 .local-tools/
+
+# ─── WIP / design drafts ────────────────────────────────────────────────────
+apps/web/components/charts/

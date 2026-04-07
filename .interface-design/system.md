@@ -13,11 +13,14 @@ O frontend deve seguir uma linha **admin dashboard direto, limpo e funcional**, 
 - Conteúdo com espaçamento controlado, mas sem sensação de cartão gigante flutuando.
 - Paleta principal: preto, branco, cinzas e azul vivo.
 - Azul base aprovado para protótipo: `#008CFF`; evitar o azul `#465fff` quando ele parecer robótico ou genérico.
+- O tema escuro deve ser literalmente preto/cinza com azul como ação e estado principal.
+- O tema claro deve ser predominantemente branco, com bordas cinza leves e azul como marca/ação.
 - Remover dourado, roxo, glow decorativo e aparência de dashboard conceitual.
 
 ## Referências que devem guiar a execução
 
 - TailAdmin: estrutura de sidebar, topbar, cards simples e gráficos ApexCharts.
+- TailAdmin Logistics: usar lógica de operações em movimento — etapas, tracking, canais, rotas e tabela — traduzida para pedidos, caixa, salão, retirada e delivery do Desk.
 - next-shadcn-admin-dashboard: header compacto, sidebar com grupos, cards com badge e gráfico de área.
 - free-react-tailwind-admin-dashboard: métrica direta, borda leve, bg branco/dark e estrutura de gráficos ApexCharts.
 
