@@ -58,12 +58,6 @@ type ActiveTab = 'comandas' | 'salao' | 'historico'
 type AddMesaForm = { label: string; capacity: string }
 const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 
-const TAB_OPTIONS: Array<{ id: ActiveTab; label: string; icon: typeof ShoppingBag }> = [
-  { id: 'comandas', label: 'Comandas', icon: ShoppingBag },
-  { id: 'salao', label: 'Salão', icon: LayoutGrid },
-  { id: 'historico', label: 'Histórico', icon: Clock3 },
-]
-
 export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ActiveTab>('comandas')
@@ -290,76 +284,72 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className="imperial-card-soft flex items-center gap-4 overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_15px_45px_rgba(0,0,0,0.16)]">
-          <span className="flex size-12 items-center justify-center rounded-[16px] bg-[rgba(0,140,255,0.12)] text-[#008cff]">
+      <div className="grid grid-cols-3 gap-4">
+        <div className="imperial-card-soft flex items-center gap-4 p-4">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(96,165,250,0.12)] text-[#60a5fa]">
             <ShoppingBag className="size-5" />
           </span>
-          <div className="flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--text-soft)]">Comandas abertas</p>
-            <p className="mt-1 text-3xl font-black text-[var(--text-primary)]">{abertas.length}</p>
-            <p className="text-xs text-[var(--text-soft)]">Atualizadas automaticamente em tempo real</p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Comandas abertas</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{abertas.length}</p>
           </div>
         </div>
 
-        <div className="imperial-card-soft flex items-center gap-4 overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_15px_45px_rgba(0,0,0,0.16)]">
-          <span className="flex size-12 items-center justify-center rounded-[16px] bg-[rgba(0,140,255,0.12)] text-[#008cff]">
+        <div className="imperial-card-soft flex items-center gap-4 p-4">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(52,242,127,0.12)] text-[#36f57c]">
             <TrendingUp className="size-5" />
           </span>
-          <div className="flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--text-soft)]">Valor em aberto</p>
-            <p className="mt-1 text-3xl font-black text-[#36f57c]">{formatCurrency(totalEmAberto, 'BRL')}</p>
-            <p className="text-xs text-[var(--text-soft)]">Fluxo estimado em atendimento</p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Em aberto</p>
+            <p className="mt-1 text-2xl font-bold text-[#36f57c]">{formatCurrency(totalEmAberto, 'BRL')}</p>
           </div>
         </div>
 
-        <div className="imperial-card-soft flex flex-col gap-2 overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_15px_45px_rgba(0,0,0,0.16)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--text-soft)]">Mesas</p>
-            <p className="text-3xl font-black text-[var(--text-primary)]">{mesas.length}</p>
-            </div>
-            <LayoutGrid className="size-6 text-[var(--text-soft)]" />
+        <div className="imperial-card-soft flex items-center gap-4 p-4">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(122,136,150,0.12)] text-[var(--text-soft)]">
+            <LayoutGrid className="size-5" />
+          </span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Mesas</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
+              <span className="text-[#36f57c]">{mesasLivres}</span>
+              <span className="mx-1 text-[var(--text-muted)] text-lg">/</span>
+              <span className="text-[#fb923c]">{mesasOcupadas}</span>
+              <span className="ml-1.5 text-xs font-normal text-[var(--text-soft)]">livres / ocupadas</span>
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="rounded-[14px] bg-[rgba(54,245,124,0.12)] px-3 py-1 text-[#36f57c]">
-              {mesasLivres} livres
-            </span>
-            <span className="rounded-[14px] bg-[rgba(251,146,60,0.12)] px-3 py-1 text-[#fb923c]">
-              {mesasOcupadas} ocupadas
-            </span>
-          </div>
-          <p className="text-xs text-[var(--text-soft)]">Capacidade em operação com métricas acionáveis</p>
         </div>
       </div>
 
       {actionError ? (
-        <div className="rounded-[16px] border border-[rgba(245,132,132,0.35)] bg-[rgba(245,132,132,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
+        <div className="rounded-[14px] border border-[rgba(245,132,132,0.2)] bg-[rgba(245,132,132,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
           {actionError}
         </div>
       ) : null}
 
-      <div role="tablist" aria-label="Abas do PDV" className="flex flex-wrap items-center gap-3 rounded-[20px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] p-1">
-        {TAB_OPTIONS.map(({ id, label, icon: Icon }) => {
-          const selected = activeTab === id
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              className={`flex items-center gap-2 rounded-[14px] px-4 py-2 text-sm font-semibold transition-all ${
-                selected
-                  ? 'bg-[var(--accent)] text-black shadow-[0_8px_30px_rgba(0,140,255,0.18)]'
-                  : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
-              }`}
-              onClick={() => setActiveTab(id)}
-            >
-              <Icon className="size-4" />
-              {label}
-            </button>
-          )
-        })}
+      <div className="flex items-center gap-1 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1 w-fit">
+        {(
+          [
+            { id: 'comandas' as ActiveTab, label: 'Comandas', icon: ShoppingBag },
+            { id: 'salao' as ActiveTab, label: 'Salão', icon: LayoutGrid },
+            { id: 'historico' as ActiveTab, label: 'Histórico', icon: Clock3 },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-medium transition-all"
+            style={{
+              background: activeTab === id ? 'rgba(52,242,127,0.1)' : 'transparent',
+              color: activeTab === id ? '#36f57c' : 'var(--text-soft)',
+              border: activeTab === id ? '1px solid rgba(52,242,127,0.25)' : '1px solid transparent',
+            }}
+            onClick={() => setActiveTab(id)}
+          >
+            <Icon className="size-4" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'comandas' ? (

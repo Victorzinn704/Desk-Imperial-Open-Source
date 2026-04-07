@@ -1,3 +1,4 @@
+import { UserRound } from 'lucide-react'
 import type { ProfileFormValues } from '@/lib/validation'
 import type { AuthUser } from '@/lib/api'
 import { AccountProfileCard } from '@/components/dashboard/account-profile-card'
@@ -30,46 +31,29 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
   const companyLocation = formatCompanyLocation(user)
 
   return (
-    <section className="space-y-6">
-      <article className="imperial-card flex flex-col gap-6 p-6 md:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <>
+      <article className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8">
+        <div className="flex items-start gap-3">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] text-[var(--accent)]">
+            <UserRound className="size-5" />
+          </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--text-soft)]">Conta e identidade</p>
-            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Painel administrativo da conta</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Conta e identidade</p>
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Dados principais da operação</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Nome da empresa, responsável e moeda principal estão agora centralizados com o mesmo cuidado do dashboard financeiro.
+              Nome da empresa, responsável e moeda principal passam a ser geridos dentro do mesmo ambiente do dashboard.
             </p>
-          </div>
-          <div className="space-y-3 lg:max-w-sm">
-            <SettingsInfoCard hint="Identificador seguro" label="Responsável" value={user.fullName} caption="Cargo principal" />
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <SettingsInfoCard
-            hint="Identidade eletrônica do workspace"
-            label="Empresa"
-            value={user.companyName || 'Não preenchido'}
-            badge="Identidade"
-          />
-          <SettingsInfoCard hint="Email de contato administrativo" label="Email" value={user.email} />
-          <SettingsInfoCard hint={companyLocation.helper} label="Endereço" value={companyLocation.label} />
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <SettingsInfoCard hint="Identidade principal da conta" label="Responsável" value={user.fullName} />
+          <SettingsInfoCard hint="Identificador seguro de acesso" label="Email" value={user.email} />
+          <SettingsInfoCard hint={companyLocation.helper} label="Localização" value={companyLocation.label} />
         </div>
       </article>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(220px,1fr)]">
-        <AccountProfileCard error={profileError} loading={profileLoading} onSubmit={onProfileSubmit} user={user} />
-
-        <article className="imperial-card p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--text-soft)]">Insights rápidos</p>
-          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Status prioritários</h3>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">Esses indicadores ajudam a confirmar que a identidade da conta está pronta para operação.</p>
-          <div className="mt-6 grid gap-4">
-            <SettingsInfoCard hint="Plano administrativo" label="Plano ativo" value="Desk Imperial Plus" badge="Premium" />
-            <SettingsInfoCard hint="Sessões resolvidas" label="Última autenticação" value="Agora" caption="Gerada automaticamente pelo feed" />
-          </div>
-        </article>
-      </div>
-    </section>
+      <AccountProfileCard error={profileError} loading={profileLoading} onSubmit={onProfileSubmit} user={user} />
+    </>
   )
 }

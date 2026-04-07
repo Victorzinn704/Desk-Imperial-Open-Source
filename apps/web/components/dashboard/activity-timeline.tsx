@@ -61,9 +61,9 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
         onClick={onClose}
       />
 
-      <aside className="fixed right-0 top-0 z-40 h-screen w-[28rem] max-w-full overflow-y-auto border-l border-[var(--border)] bg-[rgba(3,6,16,0.95)] p-6 shadow-[0_25px_45px_rgba(0,0,0,0.6)]">
+      <aside className="fixed right-0 top-0 z-40 h-screen w-[28rem] overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(0,140,255,0.2)] bg-[rgba(0,140,255,0.08)]">
+          <div className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.08)]">
             <Activity className="size-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
@@ -103,29 +103,27 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
               return (
                 <div
                   key={activity.id}
-                  className="rounded-[18px] border border-white/10 bg-white/5 px-4 py-4 shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition hover:border-[#008cff]/40"
+                  className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3"
                 >
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white"
-                      style={{ boxShadow: `0 0 25px ${activity.color}33` }}
+                      className="flex size-9 shrink-0 items-center justify-center rounded-2xl border"
+                      style={{ backgroundColor: `${activity.color}18`, borderColor: `${activity.color}36` }}
                     >
-                      <IconComponent className="size-5" style={{ color: activity.color }} />
+                      <IconComponent className="size-4" style={{ color: activity.color }} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-white">{activity.title}</p>
+                          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{activity.title}</p>
                           <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{activity.description}</p>
                         </div>
-                        <time className="shrink-0 text-[10px] uppercase tracking-[0.4em] text-[var(--text-muted)]">
+                        <time className="shrink-0 text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
                           {getRelativeTime(activity.timestamp)}
                         </time>
                       </div>
                       {activity.ipAddress ? (
-                        <p className="mt-3 text-[0.65rem] font-mono uppercase tracking-[0.25em] text-[var(--text-muted)]">
-                          {activity.ipAddress}
-                        </p>
+                        <p className="mt-2 font-mono text-[11px] text-[var(--text-muted)]">{activity.ipAddress}</p>
                       ) : null}
                     </div>
                   </div>
@@ -135,7 +133,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
           </div>
         ) : null}
 
-        <div className="mt-8 rounded-[18px] border border-white/10 bg-white/5 p-3 text-center text-xs text-[var(--text-muted)]">
+        <div className="mt-8 rounded-[18px] border border-[var(--border)] bg-[var(--bg)] p-3 text-center text-xs text-[var(--text-muted)]">
           <div className="flex items-center justify-center gap-2">
             <TrendingUp className="size-3" />
             <span>Painel sincronizado com a trilha real de auditoria a cada 15 segundos</span>
@@ -152,7 +150,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
     title: 'Atividade registrada',
     description: `${actorName} executou ${entry.event}.`,
     icon: Activity,
-    color: '#38bdf8',
+    color: '#4ecdc4',
   }
 
   const mapping = resolveActivityPresentation(entry, actorName)
@@ -182,7 +180,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Movimento de caixa',
         description: `${actor} atualizou o ciclo operacional do caixa.`,
         icon: Shield,
-        color: '#008cff',
+        color: '#d4b16a',
       }
     }
 
@@ -191,7 +189,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Comanda movimentada',
         description: `${actor} alterou uma comanda do salão.`,
         icon: ClipboardList,
-        color: '#38bdf8',
+        color: '#60a5fa',
       }
     }
 
@@ -200,7 +198,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Equipe atualizada',
         description: `${actor} alterou um vínculo de funcionário.`,
         icon: UserRound,
-        color: '#22c55e',
+        color: '#8fffb9',
       }
     }
 
@@ -230,7 +228,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Pedido registrado',
         description: `${actor} gerou ou atualizou um pedido comercial.`,
         icon: ReceiptText,
-        color: '#008cff',
+        color: '#8b5cf6',
       }
     }
 

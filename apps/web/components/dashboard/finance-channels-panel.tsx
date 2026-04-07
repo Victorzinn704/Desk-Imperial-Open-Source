@@ -31,11 +31,11 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
     <div className="imperial-card p-6">
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(0,140,255,0.2)] bg-[rgba(0,140,255,0.08)] text-[var(--accent)]">
+          <span className="flex size-10 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <ShoppingCart className="size-5" />
           </span>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Histórico financeiro</p>
+            <p className="text-xs text-[var(--text-soft)]">Histórico financeiro</p>
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Pedidos recentes</h2>
           </div>
         </div>
@@ -81,15 +81,15 @@ function Tab({
       className={cn(
         'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition-colors duration-200',
         active
-          ? 'border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] text-[var(--accent)]'
-          : 'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
+          ? 'border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] text-[#36f57c]'
+          : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]',
       )}
     >
       {label}
       <span
         className={cn(
           'rounded-full px-1.5 py-0.5 text-[10px]',
-          active ? 'bg-[rgba(0,140,255,0.16)] text-[var(--accent)]' : 'bg-[rgba(255,255,255,0.06)] text-[var(--text-soft)]',
+          active ? 'bg-[rgba(52,242,127,0.2)] text-[#36f57c]' : 'bg-[rgba(255,255,255,0.06)] text-[var(--text-soft)]',
         )}
       >
         {count}

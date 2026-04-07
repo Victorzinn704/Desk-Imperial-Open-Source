@@ -10,7 +10,6 @@ export function MetricCard({
   value,
   loading = false,
   trend,
-  className,
 }: Readonly<{
   color?: string
   hint?: string
@@ -19,7 +18,6 @@ export function MetricCard({
   value: string
   loading?: boolean
   trend?: number[]
-  className?: string
 }>) {
   if (loading) return <MetricCardSkeleton />
 
@@ -34,44 +32,41 @@ export function MetricCard({
     trendPercent = prev !== 0 ? Math.abs(((curr - prev) / prev) * 100) : 100
   }
 
-  const rootClasses = [
-    'grid h-full gap-3 rounded-2xl border border-white/[0.08] bg-white/80 p-5 shadow-sm transition duration-200 ease-in-out dark:border-white/5 dark:bg-white/[0.02] dark:shadow-none md:p-6',
-    className,
-  ]
-
   return (
-    <article className={rootClasses.filter(Boolean).join(' ')}>
-      <div className="flex items-center justify-between gap-4">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-xl border"
-          style={{
-            borderColor: color ? `${color}40` : 'transparent',
-            backgroundColor: color ? `${color}15` : 'transparent',
-            color: color || 'currentColor',
-          }}
-        >
-          <Icon className="size-6" style={color ? { color } : undefined} />
-        </span>
+    <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm dark:shadow-none">
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800"
+        style={
+          color
+            ? {
+                backgroundColor: `${color}1A`,
+                color,
+              }
+            : undefined
+        }
+      >
+        <Icon className="size-6 text-gray-800 dark:text-gray-200" style={color ? { color } : undefined} />
+      </div>
+
+      <div className="flex items-end justify-between mt-5">
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-[var(--text-primary)]/90">{value}</h4>
+          {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-gray-500 dark:text-gray-500">{hint}</p> : null}
+        </div>
+
         {hasTrend && (
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
               isUp
-                ? 'border-green-300 bg-green-50 text-green-600 dark:border-green-500/40 dark:bg-green-500/10'
-                : 'border-red-300 bg-red-50 text-red-600 dark:border-red-500/40 dark:bg-red-500/10'
+                ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500'
+                : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500'
             }`}
           >
             {isUp ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
             {trendPercent.toFixed(1)}%
           </span>
         )}
-      </div>
-
-      <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">{label}</p>
-        <h4 className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{value}</h4>
-        {hint ? (
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{hint}</p>
-        ) : null}
       </div>
     </article>
   )

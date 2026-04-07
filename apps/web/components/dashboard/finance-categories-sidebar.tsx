@@ -15,12 +15,12 @@ type Props = {
 type Tab = 'products' | 'metrics'
 
 const CATEGORY_COLORS = [
-  { bar: 'bg-[#008cff]', text: 'text-[#36a3ff]', bg: 'bg-[rgba(0,140,255,0.08)]' },
-  { bar: 'bg-[#22c55e]', text: 'text-[#4ade80]', bg: 'bg-[rgba(34,197,94,0.08)]' },
+  { bar: 'bg-[#36f57c]', text: 'text-[#36f57c]', bg: 'bg-[rgba(52,242,127,0.08)]' },
+  { bar: 'bg-[#2265d8]', text: 'text-blue-400', bg: 'bg-[rgba(34,101,216,0.1)]' },
+  { bar: 'bg-[#C9A84C]', text: 'text-[#C9A84C]', bg: 'bg-[rgba(201,168,76,0.08)]' },
+  { bar: 'bg-[#f04438]', text: 'text-red-400', bg: 'bg-[rgba(240,68,56,0.08)]' },
+  { bar: 'bg-[#a78bfa]', text: 'text-purple-400', bg: 'bg-[rgba(167,139,250,0.08)]' },
   { bar: 'bg-[#38bdf8]', text: 'text-sky-400', bg: 'bg-[rgba(56,189,248,0.08)]' },
-  { bar: 'bg-[#fb923c]', text: 'text-orange-400', bg: 'bg-[rgba(251,146,60,0.08)]' },
-  { bar: 'bg-[#f87171]', text: 'text-red-400', bg: 'bg-[rgba(248,113,113,0.08)]' },
-  { bar: 'bg-[#94a3b8]', text: 'text-slate-300', bg: 'bg-[rgba(148,163,184,0.08)]' },
 ]
 
 export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
@@ -63,7 +63,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="size-4" />
           </button>
@@ -81,7 +81,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-1">
+        <div className="flex gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
           {(['products', 'metrics'] as Tab[]).map((id) => (
             <button
               key={id}
@@ -89,7 +89,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
               className={cn(
                 'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors duration-200',
                 activeTab === id
-                  ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm'
+                  ? 'bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]',
               )}
             >
@@ -109,41 +109,41 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
               categoryProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="space-y-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3"
+                  className="space-y-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3"
                 >
                   <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
 
                   <div className="grid grid-cols-2 gap-1.5">
-                    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5">
+                    <div className="rounded-lg bg-[rgba(255,255,255,0.04)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Custo</p>
                       <p className="text-xs font-bold text-[var(--text-primary)]">
                         {formatCompactCurrency(product.inventoryCostValue, displayCurrency)}
                       </p>
                     </div>
 
-                    <div className="rounded-lg border border-[rgba(0,140,255,0.16)] bg-[rgba(0,140,255,0.08)] px-2 py-1.5">
+                    <div className="rounded-lg border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.08)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Valor</p>
-                      <p className="text-xs font-bold text-[var(--accent)]">
+                      <p className="text-xs font-bold text-[#36f57c]">
                         {formatCompactCurrency(product.inventorySalesValue, displayCurrency)}
                       </p>
                     </div>
 
-                    <div className="rounded-lg border border-[rgba(34,197,94,0.14)] bg-[rgba(34,197,94,0.08)] px-2 py-1.5">
+                    <div className="rounded-lg border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.08)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Potencial</p>
-                      <p className="text-xs font-bold text-[#22c55e]">
+                      <p className="text-xs font-bold text-[#C9A84C]">
                         {formatCompactCurrency(product.potentialProfit, displayCurrency)}
                       </p>
                     </div>
 
-                    <div className="rounded-lg border border-[rgba(56,189,248,0.14)] bg-[rgba(56,189,248,0.08)] px-2 py-1.5">
+                    <div className="rounded-lg border border-[rgba(167,139,250,0.12)] bg-[rgba(167,139,250,0.08)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Margem</p>
-                      <p className="text-xs font-bold text-sky-400">{product.marginPercent.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-purple-400">{product.marginPercent.toFixed(1)}%</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-lg border border-[rgba(148,163,184,0.14)] bg-[rgba(148,163,184,0.08)] px-2 py-1.5">
-                    <p className="text-[10px] text-slate-300">Unidades em Estoque</p>
-                    <p className="text-xs font-bold text-slate-200">{product.stock} un.</p>
+                  <div className="flex items-center justify-between rounded-lg border border-[rgba(34,101,216,0.12)] bg-[rgba(34,101,216,0.08)] px-2 py-1.5">
+                    <p className="text-[10px] text-blue-300">Unidades em Estoque</p>
+                    <p className="text-xs font-bold text-blue-300">{product.stock} un.</p>
                   </div>
                 </div>
               ))
@@ -154,39 +154,39 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         {/* Metrics tab */}
         {activeTab === 'metrics' && (
           <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5">
+            <div className="flex items-center justify-between rounded-xl bg-[rgba(255,255,255,0.04)] px-3 py-2.5">
               <p className="text-xs text-[var(--text-soft)]">Custo Total</p>
               <p className="text-sm font-bold text-[var(--text-primary)]">
                 {formatCompactCurrency(selectedCat.inventoryCostValue, displayCurrency)}
               </p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-[rgba(0,140,255,0.16)] bg-[rgba(0,140,255,0.08)] px-3 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.06)] px-3 py-2.5">
               <p className="text-xs text-[var(--text-soft)]">Valor em Estoque</p>
-              <p className="text-sm font-bold text-[var(--accent)]">
+              <p className="text-sm font-bold text-[#36f57c]">
                 {formatCompactCurrency(selectedCat.inventorySalesValue, displayCurrency)}
               </p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-[rgba(34,197,94,0.14)] bg-[rgba(34,197,94,0.08)] px-3 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.06)] px-3 py-2.5">
               <p className="text-xs text-[var(--text-soft)]">Lucro Potencial</p>
-              <p className="text-sm font-bold text-[#22c55e]">
+              <p className="text-sm font-bold text-[#C9A84C]">
                 {formatCompactCurrency(selectedCat.potentialProfit, displayCurrency)}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="rounded-xl border border-[rgba(56,189,248,0.14)] bg-[rgba(56,189,248,0.08)] px-3 py-2.5 text-center">
+              <div className="rounded-xl border border-[rgba(167,139,250,0.12)] bg-[rgba(167,139,250,0.06)] px-3 py-2.5 text-center">
                 <p className="text-[10px] text-[var(--text-soft)]">Margem</p>
-                <p className="text-sm font-bold text-sky-400">{catMargin.toFixed(1)}%</p>
+                <p className="text-sm font-bold text-purple-400">{catMargin.toFixed(1)}%</p>
               </div>
-              <div className="rounded-xl border border-[rgba(148,163,184,0.14)] bg-[rgba(148,163,184,0.08)] px-3 py-2.5 text-center">
+              <div className="rounded-xl border border-[rgba(34,101,216,0.12)] bg-[rgba(34,101,216,0.06)] px-3 py-2.5 text-center">
                 <p className="text-[10px] text-[var(--text-soft)]">Unidades</p>
-                <p className="text-sm font-bold text-slate-200">{selectedCat.units} un.</p>
+                <p className="text-sm font-bold text-blue-400">{selectedCat.units} un.</p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.04)] px-3 py-2.5">
               <p className="mb-1.5 text-[10px] text-[var(--text-soft)]">Representatividade</p>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
                 <div
@@ -223,7 +223,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                 className={cn(
                   'w-full cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200',
                   color.bg,
-                  'border-[var(--border)] hover:border-[var(--border-strong)]',
+                  'border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)]',
                 )}
               >
                 <div className="flex items-center justify-between gap-2">

@@ -282,45 +282,68 @@ export function DashboardWorkspaceHeader({
 }>) {
   return (
     <header
-      className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-5 shadow-sm sm:px-6 sm:py-6"
+      className="rounded-xl border border-gray-200 bg-white dark:bg-white/[0.02] dark:border-white/5 p-6 md:p-8 shadow-sm dark:shadow-none"
       id="workspace-header"
     >
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px] xl:items-start">
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,140,255,0.18)] bg-[rgba(0,140,255,0.08)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <span className="size-2 rounded-full bg-accent" />
             {activeHero.badge}
           </div>
-          <p className="mt-4 text-sm text-[var(--text-muted)]">
+          <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
             Início / Painel operacional / {activeNavigationLabel}
           </p>
-          <h1 className="mt-4 max-w-4xl text-3xl font-semibold leading-tight text-[var(--text-primary)] sm:text-[2.75rem]">
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-[var(--text-primary)] sm:text-5xl">
             {activeHero.title}
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)] sm:text-[15px]">
+          <p className="mt-4 max-w-3xl text-base leading-8 text-gray-600 dark:text-muted-foreground">
             {activeHero.description}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+        <div className="flex flex-col gap-6 xl:max-w-[520px]">
+          <div className="flex divide-x divide-gray-200 dark:divide-white/5">
             {signals.map((signal) => (
-              <div
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
-                key={signal.label}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="flex-1 px-4 first:pl-0 last:pr-0" key={signal.label}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
                   {signal.label}
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                   {signal.value}
                 </p>
-                <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">{signal.helper}</p>
+                <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-muted-foreground">{signal.helper}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {quickActions.map((action) => {
+              const Icon = action.icon
+              return (
+                <button
+                  className="workspace-quick-action flex-1 sm:min-w-[150px] border-gray-200 bg-gray-50 dark:border-white/5 dark:bg-white/[0.02]"
+                  key={action.id}
+                  onClick={() => handleQuickAction(action)}
+                  type="button"
+                >
+                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-[var(--text-primary)]">
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                      {action.label}
+                    </span>
+                    <span className="block truncate text-xs text-gray-500 dark:text-muted-foreground">
+                      {action.description}
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Link href="/">
               <Button size="lg" variant="ghost">
                 Ver site
@@ -340,25 +363,6 @@ export function DashboardWorkspaceHeader({
               Encerrar sessão
             </SpotlightButton>
           </div>
-
-          {quickActions.length ? (
-            <div className="mt-4 grid gap-2">
-              {quickActions.map((action) => {
-                const Icon = action.icon
-                return (
-                  <button className="workspace-quick-action" key={action.id} onClick={() => handleQuickAction(action)} type="button">
-                    <span className="workspace-quick-action__icon">
-                      <Icon className="size-4" />
-                    </span>
-                    <span className="min-w-0 flex-1 text-left">
-                      <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{action.label}</span>
-                      <span className="block truncate text-xs text-[var(--text-soft)]">{action.description}</span>
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : null}
         </div>
       </div>
     </header>
@@ -498,7 +502,7 @@ export function DashboardShell({
     <main className="bg-background text-foreground h-screen overflow-hidden">
       <div
         className="workspace-shell xl:grid xl:h-full transition-all duration-300"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '78px minmax(0,1fr)' : '248px minmax(0,1fr)' }}
+        style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
@@ -527,7 +531,7 @@ export function DashboardShell({
             user={user}
           />
 
-          <div className="mx-auto flex w-full max-w-[1640px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-7 xl:py-6">
+          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
             <DashboardWorkspaceHeader
               activeHero={activeHero}
               activeNavigationLabel={activeNavigation.label}
