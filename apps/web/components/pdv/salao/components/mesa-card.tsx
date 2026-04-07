@@ -6,8 +6,7 @@ import { Users, Clock, AlertCircle, ChevronDown, UserPlus } from 'lucide-react'
 import type { Mesa, Comanda, Garcom } from '../../pdv-types'
 import { calcTotal, formatElapsed } from '../../pdv-types'
 import { formatCurrency } from '@/lib/currency'
-import { STATUS_COLORS, type StatusKey } from '@/lib/design-tokens'
-import { urgencyLevel, urgencyBorderColor, urgencyShadow, type SalaoView } from '../constants'
+import { STATUS_CONFIG, urgencyLevel, urgencyBorderColor, urgencyShadow, type SalaoView } from '../constants'
 import { GarcomAvatar } from './garcom-avatar'
 import { GarcomSelector } from './garcom-selector'
 import { ItemsTooltip } from './items-tooltip'
@@ -42,18 +41,19 @@ export const MesaCard = memo(
   }: MesaCardProps) {
     const [showGarcomSel, setShowGarcomSel] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
-    const cfg = STATUS_COLORS[mesa.status as StatusKey] ?? STATUS_COLORS.fechada
-    const statusLabel = mesa.status === 'livre' ? 'Livre' : mesa.status === 'ocupada' ? 'Ocupada' : 'Reservada'
+    const cfg = STATUS_CONFIG[mesa.status]
     const garcom = garcons.find((g) => g.id === mesa.garcomId)
     const urgency = urgencyLevel(mesa, comanda, now)
     const total = comanda ? calcTotal(comanda) : 0
     const isAssignTarget = assigningGarcomId !== null
 
-    const borderColor = isAssignTarget ? 'var(--accent)' : urgency > 0 ? urgencyBorderColor(urgency) : cfg.border
+    const borderColor = isAssignTarget
+      ? 'rgba(52,242,127,0.65)'
+      : urgency > 0
+        ? urgencyBorderColor(urgency)
+        : cfg.border
 
-    const shadow = isAssignTarget
-      ? '0 0 18px color-mix(in srgb, var(--accent) 22%, transparent)'
-      : urgencyShadow(urgency)
+    const shadow = isAssignTarget ? '0 0 18px rgba(52,242,127,0.22)' : urgencyShadow(urgency)
 
     function handleClick() {
       if (showGarcomSel) {
@@ -83,7 +83,7 @@ export const MesaCard = memo(
       <div
         className="group relative select-none rounded-[16px] border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         style={{
-          background: isAssignTarget ? 'var(--accent-soft)' : cfg.bg,
+          background: isAssignTarget ? 'rgba(52,242,127,0.06)' : cfg.bg,
           borderColor,
           boxShadow: shadow,
           animation: urgency === 3 ? 'salao-border-pulse 1.8s ease-in-out infinite' : undefined,
@@ -98,22 +98,19 @@ export const MesaCard = memo(
 
         {/* Urgência badge */}
         {urgency === 3 && (
-          <span
-            className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full"
-            style={{ backgroundColor: STATUS_COLORS.ocupada.solid }}
-          >
+          <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#f87171]">
             <AlertCircle className="size-2.5 text-[var(--text-primary)]" />
           </span>
         )}
         {urgency === 2 && (
-          <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[var(--warning)]">
+          <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex size-4 items-center justify-center rounded-full bg-[#fbbf24]">
             <AlertCircle className="size-2.5 text-black" />
           </span>
         )}
 
         {/* Assignment mode: badge leve no canto */}
         {isAssignTarget && !showConfirm && (
-          <span className="absolute left-2 top-2 z-10 rounded-full bg-[color-mix(in_srgb,_var(--success)_18%,_transparent)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-[var(--success)] pointer-events-none">
+          <span className="absolute left-2 top-2 z-10 rounded-full bg-[rgba(52,242,127,0.18)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-[#36f57c] pointer-events-none">
             ✓ atribuir
           </span>
         )}
@@ -130,7 +127,7 @@ export const MesaCard = memo(
                   <br />
                   <span className="text-[10px] text-[var(--text-soft)]">
                     Substituir por{' '}
-                    <span style={{ color: novoGarcom?.cor ?? 'var(--success)' }}>{novoGarcom?.nome ?? '?'}</span>?
+                    <span style={{ color: novoGarcom?.cor ?? '#36f57c' }}>{novoGarcom?.nome ?? '?'}</span>?
                   </span>
                 </p>
                 <div className="flex gap-2">
@@ -148,7 +145,7 @@ export const MesaCard = memo(
                       setShowConfirm(false)
                     }}
                     className="rounded-[8px] px-3 py-1 text-[11px] font-bold text-black transition-opacity hover:opacity-90"
-                    style={{ background: novoGarcom?.cor ?? 'var(--success)' }}
+                    style={{ background: novoGarcom?.cor ?? '#36f57c' }}
                   >
                     Substituir
                   </button>
@@ -161,7 +158,7 @@ export const MesaCard = memo(
           {/* Header */}
           <div className="flex items-center justify-between px-3 pt-3 pb-1">
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${cfg.solid}80` }}>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: `${cfg.color}80` }}>
                 Mesa
               </p>
               <p className="text-2xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
@@ -169,9 +166,9 @@ export const MesaCard = memo(
             <div className="flex flex-col items-end gap-1">
               <span
                 className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ background: `${cfg.solid}18`, color: cfg.solid, border: `1px solid ${cfg.solid}35` }}
+                style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}35` }}
               >
-                {statusLabel}
+                {cfg.label}
               </span>
               <div className="flex items-center gap-0.5 text-[var(--text-muted)]">
                 <Users className="size-2.5" />
@@ -249,7 +246,7 @@ export const MesaCard = memo(
                   {comanda.itens.length} item{comanda.itens.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <span className="text-[11px] font-bold" style={{ color: urgency >= 2 ? '#fbbf24' : cfg.solid }}>
+              <span className="text-[11px] font-bold" style={{ color: urgency >= 2 ? '#fbbf24' : cfg.color }}>
                 {formatCurrency(total, 'BRL')}
               </span>
             </div>

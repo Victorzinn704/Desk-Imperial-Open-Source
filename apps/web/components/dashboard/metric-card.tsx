@@ -33,34 +33,34 @@ export function MetricCard({
   }
 
   return (
-    <article className="imperial-card p-5 md:p-6">
+    <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm dark:shadow-none">
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-xl"
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800"
         style={
           color
             ? {
-                backgroundColor: `${color}14`,
+                backgroundColor: `${color}1A`,
                 color,
               }
-            : { backgroundColor: 'var(--surface-soft)', color: 'var(--text-muted)' }
+            : undefined
         }
       >
-        <Icon className="size-6" style={color ? { color } : { color: 'var(--text-muted)' }} />
+        <Icon className="size-6 text-gray-800 dark:text-gray-200" style={color ? { color } : undefined} />
       </div>
 
       <div className="flex items-end justify-between mt-5">
         <div>
-          <span className="text-sm text-[var(--text-muted)]">{label}</span>
-          <h4 className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{value}</h4>
-          {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-[var(--text-muted)]">{hint}</p> : null}
+          <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+          <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-[var(--text-primary)]/90">{value}</h4>
+          {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-gray-500 dark:text-gray-500">{hint}</p> : null}
         </div>
 
         {hasTrend && (
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
               isUp
-                ? 'bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] text-[var(--success)]'
-                : 'bg-[color-mix(in_srgb,_var(--danger)_10%,_transparent)] text-[var(--danger)]'
+                ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500'
+                : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500'
             }`}
           >
             {isUp ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}

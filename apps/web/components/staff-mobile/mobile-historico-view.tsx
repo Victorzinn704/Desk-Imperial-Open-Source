@@ -2,21 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
-import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Em aberto', color: STATUS_COLORS.ocupada.solid, bg: STATUS_COLORS.ocupada.bg },
-  em_preparo: {
-    label: 'Em preparo',
-    color: 'var(--warning)',
-    bg: 'color-mix(in srgb, var(--warning) 15%, transparent)',
-  },
-  pronta: { label: 'Pronta', color: STATUS_COLORS.reservada.solid, bg: STATUS_COLORS.reservada.bg },
-  fechada: { label: 'Paga', color: STATUS_COLORS.livre.solid, bg: STATUS_COLORS.livre.bg },
+  aberta: { label: 'Em aberto', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
+  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
 interface Props {

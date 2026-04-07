@@ -372,7 +372,7 @@ export default function AIConsultantPage() {
                     className="space-y-7"
                   >
                     {/* Summary */}
-                    <AnalysisSection title="Resumo Executivo" color="var(--accent)" icon={Activity} delay={0}>
+                    <AnalysisSection title="Resumo Executivo" color="#c3a46f" icon={Activity} delay={0}>
                       <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.summary}</p>
                     </AnalysisSection>
 

@@ -41,15 +41,15 @@ export const CategoryGrid = memo(function CategoryGrid({
             onClick={() => onSelectCategory(null)}
             className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
               selectedCategory === null
-                ? 'bg-[color-mix(in_srgb,_var(--success)_15%,_transparent)] border-[color-mix(in_srgb,_var(--success)_50%,_transparent)] text-[var(--success)] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
+                ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
                 : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]'
             }`}
           >
             <Search
-              className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[var(--success)]' : ''}`}
+              className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
             />
             <span
-              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[var(--success)]' : ''}`}
+              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
             >
               Todos
             </span>
@@ -64,14 +64,12 @@ export const CategoryGrid = memo(function CategoryGrid({
               onClick={() => onSelectCategory(cat)}
               className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
                 isActive
-                  ? 'bg-[color-mix(in_srgb,_var(--success)_15%,_transparent)] border-[color-mix(in_srgb,_var(--success)_50%,_transparent)] text-[var(--success)] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
+                  ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
                   : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]'
               }`}
             >
               {getCategoryIcon(cat)}
-              <span
-                className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[var(--success)]' : ''}`}
-              >
+              <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
                 {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
               </span>
             </button>

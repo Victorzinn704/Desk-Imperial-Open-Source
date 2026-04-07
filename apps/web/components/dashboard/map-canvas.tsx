@@ -133,7 +133,6 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
 
         const marker = L.circleMarker([point.latitude, point.longitude], {
           radius,
-          // TODO: sync with --success token (Leaflet JS config can't use CSS vars)
           color: '#36f57c',
           fillColor: '#36f57c',
           fillOpacity,
@@ -159,7 +158,6 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
             icon: L.divIcon({
               className: '',
               html: `<div class="map-marker-pulse" style="width:${radius * 2 + 16}px;height:${radius * 2 + 16}px;border-radius:50%;border:2px solid #36f57c;"></div>`,
-              // TODO: sync with --success token (Leaflet JS config can't use CSS vars)
               iconSize: [0, 0],
               iconAnchor: [radius + 8, radius + 8],
             }),

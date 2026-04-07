@@ -41,7 +41,7 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
         >
           <GarcomAvatar garcom={g} size={18} />
           {g.nome}
-          {mesa.garcomId === g.id && <span className="ml-auto text-[10px] text-[var(--success)]">✓</span>}
+          {mesa.garcomId === g.id && <span className="ml-auto text-[10px] text-[#36f57c]">✓</span>}
         </button>
       ))}
       {garcons.length === 0 && (

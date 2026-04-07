@@ -2,7 +2,6 @@ import { memo } from 'react'
 import { Armchair, Clock } from 'lucide-react'
 import { calcTotal, formatElapsed, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
 import { fmtBRL } from '../constants'
-import { STATUS_COLORS, GARCOM_COLORS, type StatusKey } from '@/lib/design-tokens'
 
 interface ModernOperacionalCardProps {
   mesa: Mesa
@@ -11,26 +10,51 @@ interface ModernOperacionalCardProps {
   urgency: 0 | 1 | 2 | 3
 }
 
+const STATUS_CFG = {
+  livre: {
+    label: 'Livre',
+    color: '#36f57c',
+    bgFrom: 'rgba(54,245,124,0.03)',
+    bgTo: 'rgba(54,245,124,0.01)',
+    border: 'rgba(54,245,124,0.15)',
+  },
+  ocupada: {
+    label: 'Ocupada',
+    color: '#f87171',
+    bgFrom: 'rgba(248,113,113,0.04)',
+    bgTo: 'rgba(248,113,113,0.01)',
+    border: 'rgba(248,113,113,0.2)',
+  },
+  reservada: {
+    label: 'Reservada',
+    color: '#60a5fa',
+    bgFrom: 'rgba(96,165,250,0.04)',
+    bgTo: 'rgba(96,165,250,0.01)',
+    border: 'rgba(96,165,250,0.2)',
+  },
+}
+
+const GARCOM_COLORS = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
+
 export const ModernOperacionalCard = memo(function ModernOperacionalCard({
   mesa,
   comanda,
   garcomName,
   urgency,
 }: ModernOperacionalCardProps) {
-  const cfg = STATUS_COLORS[mesa.status as StatusKey] ?? STATUS_COLORS.fechada
-  const statusLabel = mesa.status === 'livre' ? 'Livre' : mesa.status === 'ocupada' ? 'Ocupada' : 'Reservada'
+  const cfg = STATUS_CFG[mesa.status]
 
   const isCritical = urgency >= 3
   const isWarning = urgency === 2
 
-  let dynamicBorder: string = cfg.border
+  let dynamicBorder = cfg.border
   let dynamicShadow = '0 4px 20px rgba(0,0,0,0.2)'
   let pulseClass = ''
 
   if (mesa.status === 'ocupada') {
     if (isCritical) {
-      dynamicBorder = STATUS_COLORS.ocupada.border
-      dynamicShadow = `0 0 30px ${STATUS_COLORS.ocupada.solid}26`
+      dynamicBorder = 'rgba(248,113,113,0.6)'
+      dynamicShadow = '0 0 30px rgba(248,113,113,0.15)'
       pulseClass = 'animate-pulse'
     } else if (isWarning) {
       dynamicBorder = 'rgba(251,191,36,0.4)'
@@ -60,7 +84,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
       <div
         className="absolute inset-0 opacity-40 mix-blend-screen transition-opacity duration-1000 group-hover:opacity-60"
         style={{
-          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.softBg} 0%, ${cfg.bg} 50%, transparent 100%)`,
+          background: `radial-gradient(120% 100% at 50% 0%, ${cfg.bgFrom} 0%, ${cfg.bgTo} 50%, transparent 100%)`,
         }}
       />
 
@@ -76,9 +100,9 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
           <div className="flex items-center gap-2">
             <span
               className={`flex h-6 items-center rounded-full px-2.5 text-[9px] font-bold uppercase tracking-widest ${pulseClass}`}
-              style={{ color: cfg.solid, backgroundColor: `${cfg.solid}15`, border: `1px solid ${cfg.solid}30` }}
+              style={{ color: cfg.color, backgroundColor: `${cfg.color}15`, border: `1px solid ${cfg.color}30` }}
             >
-              {statusLabel}
+              {cfg.label}
             </span>
           </div>
           {/* Waiter Avatar ("Monitoring TV") */}
@@ -119,13 +143,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
             <div className="flex flex-col gap-1.5">
               <div
                 className="flex items-center gap-1.5 text-[11px] font-semibold"
-                style={{
-                  color: isCritical
-                    ? STATUS_COLORS.ocupada.solid
-                    : isWarning
-                      ? '#fbbf24'
-                      : STATUS_COLORS.emPreparo.solid,
-                }}
+                style={{ color: isCritical ? '#f87171' : isWarning ? '#fbbf24' : '#fb923c' }}
               >
                 <Clock className="size-3.5" />
                 <span>{elapsed}</span>
@@ -148,12 +166,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
               <span>{mesa.capacidade} lugares</span>
             </div>
             {mesa.status === 'reservada' && (
-              <span
-                className="text-[10px] font-medium uppercase tracking-widest"
-                style={{ color: STATUS_COLORS.reservada.solid }}
-              >
-                Reservado
-              </span>
+              <span className="text-[10px] font-medium uppercase tracking-widest text-[#60a5fa]">Reservado</span>
             )}
           </div>
         )}

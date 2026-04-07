@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { Plus, Users, X } from 'lucide-react'
-import { GARCOM_COLORS } from '@/lib/design-tokens'
 import type { Mesa, Comanda, Garcom } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
@@ -15,6 +14,17 @@ type Props = {
   onAddGarcom: (nome: string) => void
   onRemoveGarcom: (id: string) => void
 }
+
+const GARCOM_CORES = [
+  '#a78bfa', // roxo
+  '#34d399', // verde água
+  '#fb923c', // laranja
+  '#f472b6', // rosa
+  '#60a5fa', // azul
+  '#fbbf24', // amarelo
+  '#e879f9', // fúcsia
+  '#2dd4bf', // teal
+]
 
 function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda>) {
   return mesa.comandaId ? comandaById.get(mesa.comandaId) : undefined
@@ -256,7 +266,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
   // Garçom index → cor
   function getGarcomCor(garcom: Garcom) {
     const idx = garcons.findIndex((g) => g.id === garcom.id)
-    return garcom.cor || GARCOM_COLORS[idx % GARCOM_COLORS.length]
+    return garcom.cor || GARCOM_CORES[idx % GARCOM_CORES.length]
   }
 
   // Mesas sem garçom ou ocupadas/reservadas
@@ -266,7 +276,7 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.08)] py-20 text-center gap-5">
         <div className="opacity-40">
-          <StickFigure color="var(--accent)" />
+          <StickFigure color="#9b8460" />
         </div>
         <div>
           <p className="text-sm font-medium text-[var(--text-soft)]">Nenhum garçom cadastrado</p>

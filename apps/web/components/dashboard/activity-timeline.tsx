@@ -171,7 +171,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Acesso autenticado',
         description: `${actor} iniciou uma nova sessão no sistema.`,
         icon: LogIn,
-        color: 'var(--success)',
+        color: '#36f57c',
       }
     }
 
@@ -189,7 +189,7 @@ function toActivityViewModel(entry: ActivityFeedEntry): ActivityViewModel {
         title: 'Comanda movimentada',
         description: `${actor} alterou uma comanda do salão.`,
         icon: ClipboardList,
-        color: 'var(--accent)',
+        color: '#60a5fa',
       }
     }
 

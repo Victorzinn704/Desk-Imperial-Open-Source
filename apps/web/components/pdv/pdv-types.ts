@@ -1,5 +1,3 @@
-import { STATUS_COLORS } from '@/lib/design-tokens'
-
 export type ComandaStatus = 'aberta' | 'em_preparo' | 'pronta' | 'fechada'
 
 export type MesaStatus = 'livre' | 'ocupada' | 'reservada'
@@ -59,36 +57,36 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
   {
     id: 'aberta',
     label: 'Aberta',
-    color: 'text-[var(--accent)]',
-    dotColor: STATUS_COLORS.reservada.solid,
-    bgColor: STATUS_COLORS.reservada.bg,
-    borderColor: STATUS_COLORS.reservada.border,
+    color: 'text-[#60a5fa]',
+    dotColor: '#60a5fa',
+    bgColor: 'rgba(96, 165, 250, 0.08)',
+    borderColor: 'rgba(96, 165, 250, 0.22)',
   },
   {
     id: 'em_preparo',
     label: 'Em Preparo',
-    color: 'text-[var(--warning)]',
-    dotColor: STATUS_COLORS.emPreparo.solid,
-    bgColor: STATUS_COLORS.emPreparo.bg,
-    borderColor: STATUS_COLORS.emPreparo.border,
+    color: 'text-[#fb923c]',
+    dotColor: '#fb923c',
+    bgColor: 'rgba(251, 146, 60, 0.08)',
+    borderColor: 'rgba(251, 146, 60, 0.22)',
   },
   {
     id: 'pronta',
     label: 'Pronta',
-    color: 'text-[var(--success)]',
-    dotColor: STATUS_COLORS.livre.solid,
-    bgColor: STATUS_COLORS.livre.bg,
-    borderColor: STATUS_COLORS.livre.border,
+    color: 'text-[#36f57c]',
+    dotColor: '#36f57c',
+    bgColor: 'rgba(54, 245, 124, 0.08)',
+    borderColor: 'rgba(54, 245, 124, 0.22)',
   },
   {
     id: 'fechada',
     label: 'Fechada',
     color: 'text-[#7a8896]',
-    dotColor: STATUS_COLORS.fechada.solid,
-    bgColor: STATUS_COLORS.fechada.bg,
-    borderColor: STATUS_COLORS.fechada.border,
+    dotColor: '#7a8896',
+    bgColor: 'rgba(122, 136, 150, 0.06)',
+    borderColor: 'rgba(122, 136, 150, 0.16)',
   },
-] as const
+]
 
 export function calcSubtotal(comanda: Pick<Comanda, 'itens' | 'subtotalBackend'>): number {
   const bruto = comanda.itens.reduce((sum, item) => {

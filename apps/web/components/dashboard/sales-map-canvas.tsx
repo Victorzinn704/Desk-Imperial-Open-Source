@@ -96,7 +96,6 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
 
         const marker = L.circleMarker([point.latitude, point.longitude], {
           radius,
-          // TODO: sync with --success token (Leaflet JS config can't use CSS vars)
           color: '#36f57c',
           fillColor: '#36f57c',
           fillOpacity: 0.18,

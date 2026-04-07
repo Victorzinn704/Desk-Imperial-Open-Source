@@ -23,7 +23,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
             {formatCurrency(item.precoUnitario, 'BRL')} por unidade
           </p>
         </div>
-        <p className="shrink-0 text-sm font-semibold text-[var(--success)]">{formatCurrency(lineTotal, 'BRL')}</p>
+        <p className="shrink-0 text-sm font-semibold text-[#36f57c]">{formatCurrency(lineTotal, 'BRL')}</p>
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
@@ -54,7 +54,7 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
           </button>
         </div>
 
-        <span className="rounded-full border border-[color-mix(in_srgb,_var(--accent)_18%,_transparent)] bg-[color-mix(in_srgb,_var(--accent)_8%,_transparent)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+        <span className="rounded-full border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8fffb9]">
           {item.quantidade} und
         </span>
       </div>

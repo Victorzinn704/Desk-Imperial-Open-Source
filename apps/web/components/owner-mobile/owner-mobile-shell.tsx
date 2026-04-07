@@ -523,7 +523,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 <div className="relative z-10">
                   <Icon
                     className="size-[22px]"
-                    style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}
+                    style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   {badge > 0 && (
@@ -583,7 +583,7 @@ function OwnerResumoTab({
               label: 'Receita',
               value: formatCurrency(todayRevenue),
               sub: 'faturado',
-              color: 'var(--success)',
+              color: '#36f57c',
               Icon: TrendingUp,
             },
             {
@@ -597,7 +597,7 @@ function OwnerResumoTab({
               label: 'Pedidos',
               value: String(todayOrderCount),
               sub: 'encerrados',
-              color: 'var(--accent)',
+              color: '#60a5fa',
               Icon: ClipboardList,
             },
             {
@@ -643,7 +643,7 @@ function OwnerResumoTab({
             <p className="text-[10px] text-[#7a8896] mt-0.5">Ocupadas</p>
           </div>
           <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
-            <p className="text-2xl font-bold text-[var(--warning)]">{kitchenBadge}</p>
+            <p className="text-2xl font-bold text-[#eab308]">{kitchenBadge}</p>
             <p className="text-[10px] text-[#7a8896] mt-0.5">Cozinha</p>
           </div>
         </div>
@@ -665,10 +665,7 @@ function OwnerResumoTab({
                 className="flex items-center justify-between rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
               >
                 <div className="flex items-center gap-2.5">
-                  <span
-                    className="text-xs font-bold"
-                    style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-muted)' }}
-                  >
+                  <span className="text-xs font-bold" style={{ color: i === 0 ? '#eab308' : '#7a8896' }}>
                     {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
                   </span>
                   <div>
@@ -676,7 +673,7 @@ function OwnerResumoTab({
                     <p className="text-[10px] text-[#7a8896]">{g.comandas} comandas</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-[var(--success)]">{formatCurrency(g.valor)}</span>
+                <span className="text-xs font-bold text-[#36f57c]">{formatCurrency(g.valor)}</span>
               </li>
             ))}
           </ul>
@@ -704,14 +701,14 @@ function OwnerResumoTab({
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[65%]">{p.nome}</p>
                     <div className="text-right">
-                      <span className="text-xs font-bold text-[var(--accent)]">{formatCurrency(p.valor)}</span>
+                      <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
                       <span className="ml-2 text-[10px] text-[#7a8896]">×{p.qtd}</span>
                     </div>
                   </div>
                   <div className="h-1 w-full rounded-full bg-[rgba(255,255,255,0.06)]">
                     <div
                       className="h-1 rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: i === 0 ? 'var(--success)' : 'rgba(96,165,250,0.6)' }}
+                      style={{ width: `${pct}%`, background: i === 0 ? '#36f57c' : 'rgba(96,165,250,0.6)' }}
                     />
                   </div>
                 </li>

@@ -527,9 +527,9 @@ function OperacionalView({
       <div className="grid grid-cols-2 gap-3 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 xl:grid-cols-5">
         <KpiCard label="Receita Circulante" value={fmtBRL(receitaAberta)} color="var(--accent)" isHighlight />
         <KpiCard label="Ticket Aberto" value={fmtBRL(ticketMedioAberto)} color="#fbbf24" />
-        <KpiCard label="Equipe em giro" value={garconsAtivos} color="var(--accent)" />
+        <KpiCard label="Equipe em giro" value={garconsAtivos} color="#60a5fa" />
         <KpiCard label="Ocupação" value={`${occupiedRate}%`} color="#f87171" />
-        <KpiCard label="Livres" value={livres.length} color="var(--success)" total={liveMesas.length} />
+        <KpiCard label="Livres" value={livres.length} color="#36f57c" total={liveMesas.length} />
       </div>
 
       <div className="rounded-[26px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">

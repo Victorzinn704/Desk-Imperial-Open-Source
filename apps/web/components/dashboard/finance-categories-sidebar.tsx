@@ -10,17 +10,12 @@ import { CardSkeleton } from '@/components/shared/skeleton'
 type Props = {
   finance: FinanceSummaryResponse
   isLoading?: boolean
-  variant?: 'standalone' | 'embedded'
 }
 
 type Tab = 'products' | 'metrics'
 
 const CATEGORY_COLORS = [
-  {
-    bar: 'bg-[var(--success)]',
-    text: 'text-[var(--success)]',
-    bg: 'bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)]',
-  },
+  { bar: 'bg-[#36f57c]', text: 'text-[#36f57c]', bg: 'bg-[rgba(52,242,127,0.08)]' },
   { bar: 'bg-[#2265d8]', text: 'text-blue-400', bg: 'bg-[rgba(34,101,216,0.1)]' },
   { bar: 'bg-[#C9A84C]', text: 'text-[#C9A84C]', bg: 'bg-[rgba(201,168,76,0.08)]' },
   { bar: 'bg-[#f04438]', text: 'text-red-400', bg: 'bg-[rgba(240,68,56,0.08)]' },
@@ -28,7 +23,7 @@ const CATEGORY_COLORS = [
   { bar: 'bg-[#38bdf8]', text: 'text-sky-400', bg: 'bg-[rgba(56,189,248,0.08)]' },
 ]
 
-export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standalone' }: Props) {
+export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
   const { categoryBreakdown, topProducts, displayCurrency } = finance
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('products')
@@ -63,14 +58,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standa
       selectedCat.inventorySalesValue > 0 ? (selectedCat.potentialProfit / selectedCat.inventorySalesValue) * 100 : 0
 
     return (
-      <div
-        className={cn(
-          'flex flex-col',
-          variant === 'embedded'
-            ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 gap-3'
-            : 'imperial-card gap-4 p-6',
-        )}
-      >
+      <div className="imperial-card flex flex-col gap-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
@@ -133,9 +121,9 @@ export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standa
                       </p>
                     </div>
 
-                    <div className="rounded-lg border border-[color-mix(in_srgb,_var(--success)_12%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_8%,_transparent)] px-2 py-1.5">
+                    <div className="rounded-lg border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.08)] px-2 py-1.5">
                       <p className="text-[10px] text-[var(--text-soft)]">Valor</p>
-                      <p className="text-xs font-bold text-[var(--success)]">
+                      <p className="text-xs font-bold text-[#36f57c]">
                         {formatCompactCurrency(product.inventorySalesValue, displayCurrency)}
                       </p>
                     </div>
@@ -173,9 +161,9 @@ export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standa
               </p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-[color-mix(in_srgb,_var(--success)_12%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_6%,_transparent)] px-3 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.06)] px-3 py-2.5">
               <p className="text-xs text-[var(--text-soft)]">Valor em Estoque</p>
-              <p className="text-sm font-bold text-[var(--success)]">
+              <p className="text-sm font-bold text-[#36f57c]">
                 {formatCompactCurrency(selectedCat.inventorySalesValue, displayCurrency)}
               </p>
             </div>
@@ -217,14 +205,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standa
   // ── List view (default) ──────────────────────────────────────────────────────
 
   return (
-    <div
-      className={cn(
-        'flex flex-col',
-        variant === 'embedded'
-          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 gap-4'
-          : 'imperial-card gap-6 p-6',
-      )}
-    >
+    <div className="imperial-card flex flex-col gap-6 p-6">
       <section>
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
           Registro de Fluxo por Categoria
@@ -295,7 +276,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading, variant = 'standa
                   <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold text-[var(--success)]">
+                <p className="shrink-0 text-sm font-semibold text-[#36f57c]">
                   {formatCompactCurrency(product.inventorySalesValue, displayCurrency)}
                 </p>
               </div>

@@ -3,7 +3,6 @@
 import { memo, useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { UserPlus } from 'lucide-react'
-import { STATUS_COLORS } from '@/lib/design-tokens'
 import type { Mesa, Garcom } from '../../pdv-types'
 import { GarcomAvatar } from './garcom-avatar'
 import { GarcomSelector } from './garcom-selector'
@@ -32,13 +31,8 @@ export const MesaCompact = memo(
             style={{ ...provided.draggableProps.style, opacity: snapshot.isDragging ? 0.8 : 1 }}
           >
             <div
-              className="relative flex cursor-pointer select-none flex-col items-center justify-center gap-1 rounded-[12px] border p-2 transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                width: 72,
-                height: 80,
-                borderColor: STATUS_COLORS.livre.border,
-                backgroundColor: STATUS_COLORS.livre.softBg,
-              }}
+              className="relative flex cursor-pointer select-none flex-col items-center justify-center gap-1 rounded-[12px] border border-[rgba(54,245,124,0.22)] bg-[rgba(54,245,124,0.05)] p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(54,245,124,0.45)] hover:bg-[rgba(54,245,124,0.09)]"
+              style={{ width: 72, height: 80 }}
             >
               <button
                 aria-label={`Abrir mesa ${mesa.numero}`}
@@ -51,12 +45,7 @@ export const MesaCompact = memo(
 
               <div className="pointer-events-none relative z-10 flex flex-col items-center gap-1">
                 <p className="text-xl font-bold leading-none text-[var(--text-primary)]">{mesa.numero}</p>
-                <span
-                  className="text-[9px] font-bold uppercase tracking-[0.18em]"
-                  style={{ color: STATUS_COLORS.livre.solid }}
-                >
-                  Livre
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#36f57c]">Livre</span>
               </div>
               {garcom ? (
                 <div className="relative z-20">

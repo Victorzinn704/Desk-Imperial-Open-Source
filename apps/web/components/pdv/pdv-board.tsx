@@ -16,7 +16,6 @@ import {
 } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
-import { cn } from '@/lib/utils'
 import { invalidateOperationsWorkspace, rollbackOperationsSnapshot, setOptimisticComandaStatus } from '@/lib/operations'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
@@ -287,7 +286,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
         <div className="imperial-card-soft flex items-center gap-4 p-4">
-          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(96,165,250,0.12)] text-[#60a5fa]">
             <ShoppingBag className="size-5" />
           </span>
           <div>
@@ -297,25 +296,25 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
         </div>
 
         <div className="imperial-card-soft flex items-center gap-4 p-4">
-          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[color-mix(in_srgb,_var(--success)_12%,_transparent)] text-[var(--success)]">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(52,242,127,0.12)] text-[#36f57c]">
             <TrendingUp className="size-5" />
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Em aberto</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--success)]">{formatCurrency(totalEmAberto, 'BRL')}</p>
+            <p className="mt-1 text-2xl font-bold text-[#36f57c]">{formatCurrency(totalEmAberto, 'BRL')}</p>
           </div>
         </div>
 
         <div className="imperial-card-soft flex items-center gap-4 p-4">
-          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[color-mix(in_srgb,_var(--text-muted)_12%,_transparent)] text-[var(--text-soft)]">
+          <span className="flex size-11 items-center justify-center rounded-[18px] bg-[rgba(122,136,150,0.12)] text-[var(--text-soft)]">
             <LayoutGrid className="size-5" />
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Mesas</p>
             <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
-              <span className="text-[var(--success)]">{mesasLivres}</span>
+              <span className="text-[#36f57c]">{mesasLivres}</span>
               <span className="mx-1 text-[var(--text-muted)] text-lg">/</span>
-              <span className="text-[var(--warning)]">{mesasOcupadas}</span>
+              <span className="text-[#fb923c]">{mesasOcupadas}</span>
               <span className="ml-1.5 text-xs font-normal text-[var(--text-soft)]">livres / ocupadas</span>
             </p>
           </div>
@@ -323,12 +322,12 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       </div>
 
       {actionError ? (
-        <div className="rounded-[14px] border border-[color-mix(in_srgb,_var(--danger)_20%,_transparent)] bg-[color-mix(in_srgb,_var(--danger)_8%,_transparent)] px-4 py-3 text-sm text-[var(--danger)]">
+        <div className="rounded-[14px] border border-[rgba(245,132,132,0.2)] bg-[rgba(245,132,132,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
           {actionError}
         </div>
       ) : null}
 
-      <div className="flex items-center gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] p-1 w-fit">
+      <div className="flex items-center gap-1 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1 w-fit">
         {(
           [
             { id: 'comandas' as ActiveTab, label: 'Comandas', icon: ShoppingBag },
@@ -339,12 +338,12 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
           <button
             key={id}
             type="button"
-            className={cn(
-              'flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-medium transition-all',
-              activeTab === id
-                ? 'bg-[color-mix(in_srgb,_var(--accent)_10%,_transparent)] text-[var(--accent)] border border-[color-mix(in_srgb,_var(--accent)_25%,_transparent)]'
-                : 'text-[var(--text-soft)] border border-transparent hover:text-[var(--text-primary)]',
-            )}
+            className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-medium transition-all"
+            style={{
+              background: activeTab === id ? 'rgba(52,242,127,0.1)' : 'transparent',
+              color: activeTab === id ? '#36f57c' : 'var(--text-soft)',
+              border: activeTab === id ? '1px solid rgba(52,242,127,0.25)' : '1px solid transparent',
+            }}
             onClick={() => setActiveTab(id)}
           >
             <Icon className="size-4" />
@@ -360,7 +359,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
               Arraste as comandas entre colunas para atualizar o status real da operação
             </p>
             <button
-              className="flex items-center gap-2 rounded-[14px] border border-[color-mix(in_srgb,_var(--accent)_40%,_transparent)] bg-[var(--accent-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--accent)] transition-all hover:bg-[color-mix(in_srgb,_var(--accent)_18%,_transparent)]"
+              className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
               type="button"
               onClick={() => {
                 setMesaPreSelected(null)
@@ -522,7 +521,7 @@ function AddMesaModal({
             </label>
             <input
               autoFocus
-              className="imperial-input mt-2 w-full rounded-[10px] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-[rgba(52,242,127,0.5)]"
               placeholder="Ex: Mesa 1, Varanda 3, VIP"
               value={form.label}
               onChange={(e) => onChange({ ...form, label: e.target.value })}
@@ -539,7 +538,7 @@ function AddMesaModal({
               type="number"
               min={1}
               max={50}
-              className="imperial-input mt-2 w-full rounded-[10px] px-3 py-2.5 text-sm text-[var(--text-primary)]"
+              className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.5)]"
               value={form.capacity}
               onChange={(e) => onChange({ ...form, capacity: e.target.value })}
             />
@@ -560,7 +559,7 @@ function AddMesaModal({
             type="button"
             disabled={busy || !form.label.trim()}
             onClick={onConfirm}
-            className="rounded-[10px] bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--accent)] transition-colors hover:bg-[color-mix(in_srgb,_var(--accent)_22%,_transparent)] disabled:opacity-40"
+            className="rounded-[10px] bg-[rgba(52,242,127,0.12)] px-4 py-2 text-sm font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(52,242,127,0.22)] disabled:opacity-40"
           >
             {busy ? 'Criando...' : 'Criar mesa'}
           </button>

@@ -5,7 +5,6 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency } from '@/lib/currency'
 
-// TODO: sync with --success token
 const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
 
 type Props = {

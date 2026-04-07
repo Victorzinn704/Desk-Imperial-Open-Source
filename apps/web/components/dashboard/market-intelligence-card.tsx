@@ -15,11 +15,7 @@ const quickFocuses = [
   'Onde está o maior risco operacional agora?',
 ]
 
-export function MarketIntelligenceCard({
-  variant = 'standalone',
-}: Readonly<{
-  variant?: 'standalone' | 'embedded'
-}>) {
+export function MarketIntelligenceCard() {
   const [draftFocus, setDraftFocus] = useState('')
   const [activeFocus, setActiveFocus] = useState<string>(quickFocuses[0])
   const insightQuery = useQuery({
@@ -42,13 +38,7 @@ export function MarketIntelligenceCard({
   }
 
   return (
-    <section
-      className={cn(
-        variant === 'embedded'
-          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5'
-          : 'imperial-card p-8',
-      )}
-    >
+    <section className="imperial-card p-8">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Consultor com IA</p>
@@ -73,7 +63,7 @@ export function MarketIntelligenceCard({
         </Button>
       </div>
 
-      <div className={cn('flex flex-wrap gap-2', variant === 'embedded' ? 'mt-5' : 'mt-6')}>
+      <div className="mt-6 flex flex-wrap gap-2">
         {quickFocuses.map((focus) => (
           <button
             className={cn(
@@ -91,7 +81,7 @@ export function MarketIntelligenceCard({
         ))}
       </div>
 
-      <div className={cn('grid gap-3 lg:grid-cols-[1fr_auto]', variant === 'embedded' ? 'mt-5' : 'mt-4')}>
+      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
         <textarea
           className="min-h-28 rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-4 text-sm leading-7 text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-soft)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
           maxLength={280}
@@ -111,7 +101,7 @@ export function MarketIntelligenceCard({
         </div>
       </div>
 
-      <div className={cn('imperial-card-soft p-6', variant === 'embedded' ? 'mt-5' : 'mt-6')}>
+      <div className="imperial-card-soft mt-6 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(143,183,255,0.2)] bg-[rgba(143,183,255,0.08)] text-[var(--info)]">

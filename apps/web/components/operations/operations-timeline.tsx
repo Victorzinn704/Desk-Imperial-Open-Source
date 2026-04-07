@@ -125,7 +125,7 @@ export function OperationsTimeline({
                 background: rgba(255, 255, 255, 0.04);
               }
               .operations-rbc .rbc-toolbar button.rbc-active {
-                color: var(--success);
+                color: #36f57c;
                 border-color: rgba(52, 242, 127, 0.4);
                 background: rgba(52, 242, 127, 0.1);
               }
@@ -205,7 +205,7 @@ export function OperationsTimeline({
                 background: transparent !important;
               }
               .operations-rbc .rbc-current-time-indicator {
-                background: var(--success) !important;
+                background: #36f57c !important;
                 height: 2px;
                 box-shadow: 0 0 6px rgba(52, 242, 127, 0.5);
               }

@@ -6,16 +6,13 @@ import { Skeleton } from '@/components/shared/skeleton'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
 import { Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts'
-import { cn } from '@/lib/utils'
 
 export function SalesPerformanceCard({
   finance,
   isLoading = false,
-  variant = 'standalone',
 }: Readonly<{
   finance?: FinanceSummaryResponse
   isLoading?: boolean
-  variant?: 'standalone' | 'embedded'
 }>) {
   const timeline = finance?.revenueTimeline ?? []
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
@@ -25,39 +22,28 @@ export function SalesPerformanceCard({
   const currentProfit = finance?.totals.currentMonthProfit ?? 0
 
   return (
-    <div
-      className={cn(
-        'group relative flex w-full flex-col transition-shadow duration-300',
-        variant === 'embedded'
-          ? 'rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4'
-          : 'rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl hover:shadow-[0_12px_36px_rgba(0,0,0,0.4)]',
-      )}
-    >
-      {variant === 'standalone' && (
-        <>
-          {/* gradient border glow */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-[28px] opacity-20 blur-sm transition-opacity duration-300 group-hover:opacity-35"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent), rgba(52,242,127,0.8), rgba(143,183,255,0.9))',
-            }}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-px rounded-[27px]"
-            style={{ background: 'var(--surface)' }}
-          />
-        </>
-      )}
+    <div className="group relative flex w-full flex-col rounded-[28px] bg-[var(--surface)] p-5 shadow-2xl transition-shadow duration-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.4)]">
+      {/* gradient border glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[28px] opacity-20 blur-sm transition-opacity duration-300 group-hover:opacity-35"
+        style={{
+          background: 'linear-gradient(135deg, var(--accent), rgba(52,242,127,0.8), rgba(143,183,255,0.9))',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-px rounded-[27px]"
+        style={{ background: 'var(--surface)' }}
+      />
 
-      <div className={cn(variant === 'standalone' && 'relative')}>
+      <div className="relative">
         {/* header */}
-        <div className={cn('mb-5 flex items-center justify-between', variant === 'embedded' && 'mb-4')}>
+        <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div
               className="flex size-9 items-center justify-center rounded-2xl"
-              style={{ background: 'linear-gradient(135deg, var(--success), #38bdf8)' }}
+              style={{ background: 'linear-gradient(135deg, #36f57c, #38bdf8)' }}
             >
               <TrendingUp className="size-4 text-[var(--surface)]" />
             </div>
@@ -69,18 +55,16 @@ export function SalesPerformanceCard({
             </div>
           </div>
 
-          {variant === 'standalone' && (
-            <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[#8fffb9]">
-              <span className="size-1.5 animate-pulse rounded-full bg-[var(--success)]" />
-              Ao vivo
-            </span>
-          )}
+          <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[#8fffb9]">
+            <span className="size-1.5 animate-pulse rounded-full bg-[#36f57c]" />
+            Ao vivo
+          </span>
         </div>
 
         {/* two metrics */}
-        <div className={cn('mb-5 grid grid-cols-2 gap-3', variant === 'embedded' && 'mb-4 gap-2')}>
+        <div className="mb-5 grid grid-cols-2 gap-3">
           <MetricTile
-            color="var(--success)"
+            color="#36f57c"
             growth={revenueGrowth}
             isLoading={isLoading}
             label="Receita do mês"
@@ -96,7 +80,7 @@ export function SalesPerformanceCard({
         </div>
 
         {/* chart */}
-        <div className={cn('mb-4 w-full', variant === 'embedded' ? 'min-h-[160px]' : 'h-[188px]')}>
+        <div className="mb-4 h-[188px] w-full">
           {isLoading ? (
             <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
@@ -104,8 +88,8 @@ export function SalesPerformanceCard({
               <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
                 <defs>
                   <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="var(--success)" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="var(--success)" stopOpacity={0.55} />
+                    <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
@@ -143,7 +127,7 @@ export function SalesPerformanceCard({
           </p>
           <div className="flex items-center gap-3 text-[11px] font-medium text-[var(--text-soft)]">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-3 rounded-sm bg-[var(--success)]" />
+              <span className="h-2.5 w-3 rounded-sm bg-[#36f57c]" />
               Receita
             </span>
             <span className="flex items-center gap-1.5">
@@ -184,7 +168,7 @@ function MetricTile({
       {!isLoading && (
         <span
           className="mt-1 flex items-center gap-1 text-[11px] font-semibold"
-          style={{ color: isPositive ? 'var(--success)' : 'var(--danger)' }}
+          style={{ color: isPositive ? '#36f57c' : 'var(--danger)' }}
         >
           <Icon className="size-3" />
           {isPositive ? '+' : ''}

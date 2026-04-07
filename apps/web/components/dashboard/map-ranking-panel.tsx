@@ -38,7 +38,7 @@ export function MapRankingPanel({
             className={cn(
               'flex-1 cursor-pointer rounded-[14px] border px-1.5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors duration-200',
               tab === t.id
-                ? 'border-[color-mix(in_srgb,_var(--success)_30%,_transparent)] bg-[color-mix(in_srgb,_var(--success)_10%,_transparent)] text-[var(--success)]'
+                ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
                 : 'border-transparent text-[var(--text-soft)] hover:text-[var(--text-primary)]',
             )}
             key={t.id}
@@ -69,14 +69,14 @@ export function MapRankingPanel({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,_var(--success)_12%,_transparent)] text-[10px] font-bold text-[var(--success)]">
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[rgba(52,242,127,0.12)] text-[10px] font-bold text-[#36f57c]">
                         {i + 1}
                       </span>
                       <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{region.label}</p>
                     </div>
                     <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
                       <div
-                        className="h-full rounded-full bg-[var(--success)] transition-all duration-500"
+                        className="h-full rounded-full bg-[#36f57c] transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
