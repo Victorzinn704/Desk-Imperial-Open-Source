@@ -3,12 +3,16 @@ import { ArrowDown, ArrowUp } from 'lucide-react'
 import { MetricCardSkeleton } from '@/components/shared/skeleton'
 
 export function MetricCard({
+  color,
+  hint,
   icon: Icon,
   label,
   value,
   loading = false,
   trend,
 }: Readonly<{
+  color?: string
+  hint?: string
   icon: LucideIcon
   label: string
   value: string
@@ -30,14 +34,25 @@ export function MetricCard({
 
   return (
     <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm dark:shadow-none">
-      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-        <Icon className="text-gray-800 size-6 dark:text-gray-200" />
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800"
+        style={
+          color
+            ? {
+                backgroundColor: `${color}1A`,
+                color,
+              }
+            : undefined
+        }
+      >
+        <Icon className="size-6 text-gray-800 dark:text-gray-200" style={color ? { color } : undefined} />
       </div>
 
       <div className="flex items-end justify-between mt-5">
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
           <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white/90">{value}</h4>
+          {hint ? <p className="mt-1 max-w-44 text-xs leading-5 text-gray-500 dark:text-gray-500">{hint}</p> : null}
         </div>
 
         {hasTrend && (
