@@ -334,11 +334,7 @@ function HeaderSection() {
           Acompanhamento de pedidos, preparo, retirada e delivery com leitura de logística aplicada ao Desk Imperial.
         </p>
       </div>
-      <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-panel)] shadow-[var(--lab-shadow)] sm:min-w-[420px]">
-        <SmallStat className="border-r border-[var(--lab-border-soft)] p-4" label="SLA médio" value="11m" />
-        <SmallStat className="border-r border-[var(--lab-border-soft)] p-4" label="Caixa" value="Aberto" />
-        <SmallStat className="p-4" label="Sincronia" value="Online" />
-      </div>
+      <TurnoFlow />
     </div>
   )
 }
@@ -696,11 +692,39 @@ function MiniBadge({ label, value }: { label: string; value: string }) {
   )
 }
 
-function SmallStat({ className, label, value }: { className?: string; label: string; value: string }) {
+function TurnoFlow() {
   return (
-    <div className={className}>
-      <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--lab-faint)]">{label}</p>
-      <p className="mt-1 text-lg font-semibold tracking-[-0.03em] text-[var(--lab-text)]">{value}</p>
+    <div className="w-full rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-panel)] p-4 shadow-[var(--lab-shadow)] xl:max-w-[520px]">
+      <div className="flex items-start justify-between gap-5">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--lab-faint)]">Turno em andamento</p>
+          <p className="mt-1 text-sm font-semibold text-[var(--lab-text)]">Pedidos fluindo sem gargalo crítico</p>
+        </div>
+        <div className="shrink-0 rounded-full border border-[var(--lab-border)] bg-[var(--lab-blue-soft)] px-3 py-1 text-xs font-semibold text-[var(--lab-blue-strong)]">
+          34 em rota
+        </div>
+      </div>
+
+      <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-[var(--lab-control)]">
+        <span className="w-[48%] bg-[var(--lab-blue)]" />
+        <span className="w-[30%] bg-[rgba(0,140,255,0.48)]" />
+        <span className="w-[22%] bg-[var(--lab-border)]" />
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+        <TurnoFlowItem label="Salão" value="18 mesas" />
+        <TurnoFlowItem label="Retirada" value="12 pedidos" />
+        <TurnoFlowItem label="Delivery" value="34 rotas" />
+      </div>
+    </div>
+  )
+}
+
+function TurnoFlowItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="truncate font-semibold text-[var(--lab-text)]">{label}</p>
+      <p className="mt-0.5 truncate text-[var(--lab-muted)]">{value}</p>
     </div>
   )
 }
