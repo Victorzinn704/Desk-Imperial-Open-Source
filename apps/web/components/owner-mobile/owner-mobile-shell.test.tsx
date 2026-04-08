@@ -26,6 +26,7 @@ vi.mock('@/lib/api', () => ({
   fetchOperationsSummary: vi.fn(),
   fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
+  fetchComandaDetails: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
   addComandaItem: vi.fn(),
@@ -73,6 +74,7 @@ describe('OwnerMobileShell', () => {
     const mockFetchOperationsSummary = vi.mocked(api.fetchOperationsSummary)
     const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
+    const mockFetchComandaDetails = vi.mocked(api.fetchComandaDetails)
 
     const mockSnapshot = buildOperationsSnapshot({
       closure: {
@@ -128,6 +130,41 @@ describe('OwnerMobileShell', () => {
     })
 
     mockFetchOperationsLive.mockResolvedValue(mockSnapshot)
+    mockFetchComandaDetails.mockResolvedValue({
+      comanda: {
+        id: 'c-2',
+        companyOwnerId: mockSnapshot.companyOwnerId,
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-2',
+        currentEmployeeId: 'emp-1',
+        tableLabel: '2',
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: 'OPEN',
+        subtotalAmount: 80,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 80,
+        notes: null,
+        openedAt: '2026-03-28T11:00:00.000Z',
+        closedAt: null,
+        items: [
+          {
+            id: 'i-2',
+            productId: null,
+            productName: 'Café',
+            quantity: 1,
+            unitPrice: 10,
+            totalAmount: 10,
+            notes: null,
+            kitchenStatus: 'QUEUED',
+            kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+            kitchenReadyAt: null,
+          },
+        ],
+      },
+    })
     mockFetchOperationsKitchen.mockResolvedValue({
       businessDate: mockSnapshot.businessDate,
       companyOwnerId: mockSnapshot.companyOwnerId,
@@ -466,6 +503,46 @@ describe('OwnerMobileShell', () => {
       expect(screen.getByTestId('owner-kpi-pedidos')).toHaveTextContent('2')
       expect(screen.getByTestId('owner-kpi-comandas')).toHaveTextContent('2')
       expect(screen.getByText('Ranking garçons')).toBeInTheDocument()
+    })
+  })
+
+  it('permite fechar uma comanda aberta pelo mobile do owner', async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.closeComanda).mockResolvedValue({
+      comanda: {
+        id: 'c-2',
+        companyOwnerId: 'owner-1',
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-2',
+        currentEmployeeId: 'emp-1',
+        tableLabel: '2',
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: 'CLOSED',
+        subtotalAmount: 80,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 80,
+        notes: null,
+        openedAt: '2026-03-28T11:00:00.000Z',
+        closedAt: '2026-03-28T11:20:00.000Z',
+        items: [],
+      },
+    })
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-comandas'))
+    await user.click(await screen.findByText('Mesa 2'))
+    await user.click(await screen.findByRole('button', { name: /fechar pedido/i }))
+
+    await waitFor(() => {
+      expect(api.closeComanda).toHaveBeenCalledWith(
+        'c-2',
+        { discountAmount: 0, serviceFeeAmount: 0 },
+        { includeSnapshot: false },
+      )
     })
   })
 })

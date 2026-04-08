@@ -86,7 +86,7 @@ export function DashboardSettingsPanel({
       </div>
 
       {/* Tab bar horizontal — sem sidebar interna */}
-      <div className="border-b border-white/[0.06]">
+      <div className="border-b border-[var(--border)]">
         <nav className="-mb-px flex gap-0 overflow-x-auto">
           {dashboardSettingsNav.map((tab) => {
             const isActive = tab.id === activeTab
@@ -175,7 +175,7 @@ function formatCompanyLocation(user: AuthUser) {
   return {
     helper: user.companyLocation.postalCode
       ? `CEP ${user.companyLocation.postalCode}`
-      : 'Complete a localização para alimentar mapa e operação',
+      : 'Complete a localização para manter cadastro e atendimento consistentes',
     label: addressParts.length ? addressParts.join(', ') : 'Endereço não informado',
   }
 }

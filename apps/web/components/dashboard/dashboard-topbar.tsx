@@ -25,10 +25,10 @@ export function DashboardTopbar({
   }
   return (
     <header className="sticky top-0 z-40 flex w-full border-b border-[var(--border)] bg-[var(--surface)]">
-      <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4 xl:hidden">
+      <div className="flex grow flex-col items-center justify-between lg:flex-row lg:px-4 xl:px-6">
+        <div className="flex w-full items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:gap-4 lg:hidden">
           <button
-            className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg dark:border-gray-800 flex dark:text-gray-400"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
             onClick={onMenuClick}
             aria-label="Toggle Sidebar"
           >
@@ -40,7 +40,7 @@ export function DashboardTopbar({
           <div className="w-10"></div>
         </div>
 
-        <div className="hidden xl:flex items-center gap-2">
+        <div className="hidden items-center gap-2 lg:flex">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
               <Search className="size-4 text-gray-500 dark:text-gray-400" />
@@ -48,7 +48,7 @@ export function DashboardTopbar({
             <input
               type="text"
               placeholder="Buscar no app..."
-              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-14 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent xl:w-[430px]"
+              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-14 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent lg:w-[300px] xl:w-[430px]"
             />
             <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)]">
               <span className="font-sans">⌘</span>
@@ -57,7 +57,7 @@ export function DashboardTopbar({
           </div>
         </div>
 
-        <div className="hidden items-center justify-between w-full gap-4 px-5 py-4 xl:flex shadow-theme-md xl:justify-end xl:px-0 xl:shadow-none">
+        <div className="hidden w-full items-center justify-between gap-4 px-5 py-4 shadow-theme-md lg:flex lg:justify-end lg:px-0 lg:shadow-none">
           <div className="flex items-center gap-2 2xsm:gap-3">
             <ThemeToggleButton />
           </div>

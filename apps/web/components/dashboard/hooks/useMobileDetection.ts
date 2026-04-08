@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const DEFAULT_BREAKPOINT = 768
+const DEFAULT_BREAKPOINT = 1024
 
 /**
  * Detects if the viewport is below a given breakpoint.

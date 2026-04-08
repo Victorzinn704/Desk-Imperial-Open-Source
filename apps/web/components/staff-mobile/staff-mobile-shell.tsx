@@ -558,7 +558,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           <BrandMark />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#9b8460)]">
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)]">
                 Operacional
               </span>
               <span
@@ -581,7 +581,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             type="button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-[var(--text-primary)] transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
             aria-label="Encerrar sessão"
           >
             <LogOut className="size-4" />
@@ -637,17 +637,17 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             />
           ) : (
             <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-              <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
-                <ShoppingCart className="size-7 text-[#7a8896]" />
+              <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+                <ShoppingCart className="size-7 text-[var(--text-soft)]" />
               </div>
               <p className="text-sm font-medium text-[var(--text-primary)]">Selecione uma mesa primeiro</p>
-              <p className="mt-1 text-xs text-[#7a8896]">
+              <p className="mt-1 text-xs text-[var(--text-soft)]">
                 Vá para a aba Mesas e toque em uma mesa para criar um pedido
               </p>
               <button
                 type="button"
                 onClick={() => setActiveTab('mesas')}
-                className="mt-6 rounded-xl bg-[rgba(155,132,96,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
+                className="mt-6 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
               >
                 Ver mesas
               </button>
@@ -684,7 +684,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
         className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
+        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
@@ -707,23 +707,23 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isActive && (
-                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(155,132,96,0.15)] pointer-events-none" />
+                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(0,140,255,0.15)] pointer-events-none" />
                 )}
                 <div className="relative z-10">
                   <Icon
                     className="size-[22px]"
-                    style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
+                    style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   {badge > 0 && (
-                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[10px] font-bold text-[#000000] ring-2 ring-black">
+                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-white ring-2 ring-[var(--bg)]">
                       {badge}
                     </span>
                   )}
                 </div>
                 <span
                   className="relative z-10 text-[10px] font-semibold tracking-wide"
-                  style={{ color: isActive ? 'white' : '#7a8896' }}
+                  style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}
                 </span>

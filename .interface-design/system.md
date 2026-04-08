@@ -7,7 +7,7 @@ O frontend deve seguir uma linha **admin dashboard direto, limpo e funcional**, 
 ## Decisão visual
 
 - Usar a página inteira, sem “ilha” central envolvendo todo o produto.
-- Sidebar encostada no canto esquerdo, fixa, mais enxuta: `248px` aberta e `76px` recolhida.
+- Sidebar encostada no canto esquerdo, fixa, mais enxuta: `232px` aberta e `68px` recolhida.
 - Sidebar precisa ter modo recolhido com ícones, preservando a navegação no canto sem ocupar largura excessiva.
 - Topbar encostada no topo, compacta, estável e alinhada ao conteúdo, com altura próxima de `58px`.
 - Conteúdo com espaçamento controlado, mas sem sensação de cartão gigante flutuando.
@@ -42,6 +42,6 @@ O Desk Imperial deve parecer um admin real de comércio: sidebar, topbar, métri
 
 ## Aplicação segura
 
-1. Prototipar primeiro em `apps/web/app/design-lab`.
-2. Validar visualmente com o usuário.
-3. Só depois migrar para `DashboardShell`, `DashboardSidebar`, `MetricCard`, `FinanceChart` e telas reais.
+1. Evitar big-bang visual e laboratório conceitual quando o usuário pedir app real.
+2. Alterar superfícies reais de forma incremental, com rollback fácil.
+3. Validar visual, responsividade, tema claro/escuro, build e testes antes de deploy.

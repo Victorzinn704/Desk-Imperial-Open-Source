@@ -20,7 +20,7 @@ type ComplianceTabProps = Readonly<{
 
 function EmptyCard({ message }: Readonly<{ message: string }>) {
   return (
-    <div className="rounded-[18px] border border-dashed border-white/8 bg-white/[0.02] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
+    <div className="rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
       {message}
     </div>
   )

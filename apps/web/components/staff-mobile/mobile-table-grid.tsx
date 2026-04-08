@@ -43,7 +43,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
           {Array.from({ length: 6 }, (_, index) => (
             <div
               key={index}
-              className="min-h-[96px] rounded-[18px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] animate-pulse"
+              className="min-h-[96px] rounded-[18px] border border-[var(--border)] bg-[var(--surface)] animate-pulse"
             />
           ))}
         </div>
@@ -89,7 +89,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                   <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#36f57c] opacity-90">
                     Livre
                   </span>
-                  <span className="text-[10px] font-medium text-[var(--accent,#9b8460)]">Novo PdV</span>
+                  <span className="text-[10px] font-medium text-[var(--accent,#008cff)]">Novo PdV</span>
                 </div>
               </button>
             ))}
@@ -164,7 +164,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                     )}
 
                     {isOcupada && mesa.comandaId && !waiterName && (
-                      <span className="flex items-center gap-0.5 text-[9px] font-semibold tracking-wide text-[var(--accent,#9b8460)]">
+                      <span className="flex items-center gap-0.5 text-[9px] font-semibold tracking-wide text-[var(--accent,#008cff)]">
                         <Plus className="size-2.5" strokeWidth={3} />
                         ITENS
                       </span>

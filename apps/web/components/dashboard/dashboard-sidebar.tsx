@@ -88,9 +88,12 @@ export function DashboardSidebar({
   return (
     <>
       {/* ═══════════════════════════════════════════
-          NAV MOBILE — visível abaixo de xl
+          NAV MOBILE — visível abaixo de lg
           ═══════════════════════════════════════════ */}
-      <section className="imperial-card sticky top-0 z-40 p-4 xl:hidden" style={{ backdropFilter: 'blur(16px)' }}>
+      <section
+        className="imperial-card sticky top-0 z-40 p-3 sm:p-4 lg:hidden"
+        style={{ backdropFilter: 'blur(16px)' }}
+      >
         <div className="min-w-0">
           <BrandMark />
           <p className="mt-1.5 text-xs text-muted-foreground">
@@ -101,21 +104,21 @@ export function DashboardSidebar({
         </div>
 
         {/* Ações rápidas */}
-        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+        <div className="mt-4 grid gap-2 sm:mt-5 sm:grid-cols-3">
           {quickActions.map((action) => {
             const Icon = action.icon
             return (
               <button
-                className="rounded-[18px] border border-white/6 bg-white/[0.025] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/24 hover:bg-accent/[0.06]"
+                className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/24 hover:bg-accent/[0.06]"
                 key={action.id}
                 onClick={() => onQuickAction(action)}
                 type="button"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-white/8 bg-white/[0.03]">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
                     <Icon className="size-3.5 text-accent" />
                   </span>
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">{action.label}</span>
+                  <span className="text-xs font-semibold text-[var(--text-primary)] sm:text-sm">{action.label}</span>
                 </div>
               </button>
             )
@@ -125,7 +128,7 @@ export function DashboardSidebar({
         <AiConsultantSidebarLink />
 
         {/* Separador */}
-        <div className="my-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+        <div className="my-5 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
         {/* Navegação por grupos */}
         <nav className="space-y-4">
@@ -141,10 +144,10 @@ export function DashboardSidebar({
                   return (
                     <button
                       className={cn(
-                        'flex items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition-colors duration-200',
+                        'flex items-center gap-2 rounded-[14px] border px-2.5 py-2 text-left transition-colors duration-200 sm:gap-2.5 sm:px-3 sm:py-2.5',
                         isActive
                           ? 'border-accent/24 bg-accent/[0.09] text-[var(--text-primary)]'
-                          : 'border-white/6 bg-white/[0.02] text-muted-foreground hover:border-white/12 hover:bg-white/[0.04] hover:text-[var(--text-primary)]',
+                          : 'border-[var(--border)] bg-[var(--surface)] text-muted-foreground hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]',
                       )}
                       key={item.id}
                       onClick={() => onNavigate(item.id)}
@@ -155,12 +158,12 @@ export function DashboardSidebar({
                           'flex size-7 shrink-0 items-center justify-center rounded-[9px] border transition-colors',
                           isActive
                             ? 'border-accent/20 bg-accent/[0.1] text-accent'
-                            : 'border-white/8 bg-white/[0.03] text-muted-foreground',
+                            : 'border-[var(--border)] bg-[var(--surface)] text-muted-foreground',
                         )}
                       >
                         <Icon className="size-3.5" />
                       </span>
-                      <span className="truncate text-xs font-semibold">{item.label}</span>
+                      <span className="truncate text-[11px] font-semibold sm:text-xs">{item.label}</span>
                     </button>
                   )
                 })}
@@ -169,7 +172,7 @@ export function DashboardSidebar({
           ))}
         </nav>
 
-        <div className="mt-5 border-t border-white/[0.06] pt-5">
+        <div className="mt-5 border-t border-[var(--border)] pt-5">
           <MobileAccountDock
             email={email}
             role={role}
@@ -182,9 +185,9 @@ export function DashboardSidebar({
       </section>
 
       {/* ═══════════════════════════════════════════
-          SIDEBAR DESKTOP — visível em xl+
+          SIDEBAR DESKTOP — visível em lg+
           ═══════════════════════════════════════════ */}
-      <aside className="hidden xl:flex xl:h-screen xl:overflow-hidden">
+      <aside className="hidden lg:flex lg:h-screen lg:overflow-hidden">
         <div
           className={cn(
             'workspace-sidebar flex h-full flex-col overflow-hidden transition-[padding] duration-300',
@@ -200,7 +203,7 @@ export function DashboardSidebar({
               </span>
             )}
             <button
-              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.07] hover:text-[var(--text-primary)]"
+              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-muted-foreground transition-colors duration-200 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               aria-expanded={!collapsed}
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
@@ -218,10 +221,10 @@ export function DashboardSidebar({
                   <Building2 className="size-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                  <p className="truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
                     {companyName || 'Painel corporativo'}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">Centro principal da operação</p>
+                  <p className="truncate text-[11px] text-muted-foreground xl:text-xs">Centro principal da operação</p>
                 </div>
               </div>
 
@@ -239,7 +242,7 @@ export function DashboardSidebar({
                         <Icon className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
+                        <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
                           {action.label}
                         </span>
                       </span>
@@ -277,7 +280,7 @@ export function DashboardSidebar({
                             'flex w-full cursor-pointer items-center justify-center rounded-[18px] border p-2.5 transition-colors duration-200',
                             isActive
                               ? 'border-accent/24 bg-accent/[0.09] text-[var(--text-primary)]'
-                              : 'border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.04] hover:text-[var(--text-primary)]',
+                              : 'border-transparent text-muted-foreground hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]',
                           )}
                           key={item.id}
                           onClick={() => onNavigate(item.id)}
@@ -301,7 +304,7 @@ export function DashboardSidebar({
                         <span className="workspace-nav-item__icon">
                           <Icon className="size-4" />
                         </span>
-                        <span className="block truncate text-sm font-semibold">{item.label}</span>
+                        <span className="block truncate text-[13px] font-semibold xl:text-sm">{item.label}</span>
                       </button>
                     )
                   })}
@@ -311,11 +314,11 @@ export function DashboardSidebar({
           </nav>
 
           {/* Rodapé: bloco de conta unificado — shrink-0 */}
-          <div className={cn('mt-3 shrink-0 border-t border-white/[0.06] pt-3')}>
+          <div className={cn('mt-3 shrink-0 border-t border-[var(--border)] pt-3')}>
             {collapsed ? (
               <div className="space-y-2">
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-white/8 hover:bg-white/[0.04] hover:text-[var(--text-primary)]"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-[16px] border border-transparent p-2.5 text-muted-foreground transition-colors duration-200 hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                   title="Configurações"
                   type="button"
                   onClick={() => onOpenSettings('account')}
@@ -370,14 +373,14 @@ function DesktopAccountDock({
     <div className="workspace-sidebar__surface">
       {/* Linha de identidade */}
       <div className="flex items-center gap-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-primary)]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+          <p className="truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
             {userName || companyName || 'Conta'}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+          <p className="truncate text-[11px] text-muted-foreground xl:text-xs">{email}</p>
         </div>
       </div>
 
@@ -387,17 +390,17 @@ function DesktopAccountDock({
           <CircleDot className="size-2.5" />
           {formatAccountStatus(status)}
         </span>
-        <span className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+        <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
           {role === 'OWNER' ? 'Admin' : 'Staff'}
         </span>
       </div>
 
       {/* Ações integradas no mesmo bloco */}
-      <div className="mt-3 flex items-center gap-1.5 border-t border-white/[0.05] pt-3">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border)] pt-3">
         <button
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
@@ -405,7 +408,7 @@ function DesktopAccountDock({
         <button
           type="button"
           onClick={onSignOut}
-          className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-white/[0.06] bg-white/[0.02] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
+          className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
           title="Encerrar sessão"
         >
           <LogOut className="size-3.5" />
@@ -433,7 +436,7 @@ function MobileAccountDock({
   return (
     <div className="workspace-sidebar__surface">
       <div className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-primary)]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]">
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -446,15 +449,15 @@ function MobileAccountDock({
           <CircleDot className="size-3" />
           {formatAccountStatus(status)}
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
           {role === 'OWNER' ? 'Admin' : 'Operação'}
         </span>
       </div>
-      <div className="mt-3 flex items-center gap-1.5 border-t border-white/[0.05] pt-3">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border)] pt-3">
         <button
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-white/[0.06] bg-white/[0.02] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
@@ -462,7 +465,7 @@ function MobileAccountDock({
         <button
           type="button"
           onClick={onSignOut}
-          className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-white/[0.06] bg-white/[0.02] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
+          className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
           title="Encerrar sessão"
         >
           <LogOut className="size-3.5" />

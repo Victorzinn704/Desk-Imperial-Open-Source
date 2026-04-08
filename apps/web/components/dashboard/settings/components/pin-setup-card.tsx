@@ -43,7 +43,7 @@ function RecentAccessSummary({
   }
 
   return (
-    <div className="mt-3 rounded-[14px] border border-white/8 bg-white/[0.02] px-4 py-4">
+    <div className="mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
       <p className="text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(latest)}</p>
       <p className="mt-1 text-xs text-[var(--text-soft)]">
         {new Intl.DateTimeFormat('pt-BR', {
@@ -246,7 +246,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]',
                 pinActive
                   ? 'border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
-                  : 'border border-white/8 bg-white/[0.03] text-[var(--text-soft)]',
+                  : 'border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]',
               )}
             >
               <ShieldCheck className="size-3" />
@@ -264,7 +264,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                   {pinDigits.map((digit, index) => (
                     <input
                       aria-label={`Digito ${index + 1} do PIN`}
-                      className="size-12 rounded-[12px] border border-white/10 bg-white/[0.04] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.35)] [appearance:textfield]"
+                      className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.45)] [appearance:textfield]"
                       disabled={pinSaving}
                       inputMode="numeric"
                       key={index}
@@ -336,7 +336,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                           {confirmRemoveDigits.map((digit, index) => (
                             <input
                               aria-label={`Confirmacao do digito ${index + 1}`}
-                              className="size-12 rounded-[12px] border border-white/10 bg-white/[0.03] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
+                              className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
                               disabled={removing}
                               inputMode="numeric"
                               key={index}
@@ -387,7 +387,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
           </Link>
         </div>
 
-        <div className="mt-6 border-t border-white/[0.06] pt-6">
+        <div className="mt-6 border-t border-[var(--border)] pt-6">
           <p className="text-sm font-semibold text-[var(--text-primary)]">Leitura recente</p>
           <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
         </div>

@@ -15,7 +15,7 @@ type SessionTabProps = Readonly<{
 
 function EmptyCard({ message }: Readonly<{ message: string }>) {
   return (
-    <div className="rounded-[18px] border border-dashed border-white/8 bg-white/[0.02] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
+    <div className="rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
       {message}
     </div>
   )
@@ -88,7 +88,7 @@ function RecentAccessList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div className="h-12 animate-pulse rounded-xl bg-white/[0.04]" key={index} />
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface-muted)]" key={index} />
         ))}
       </div>
     )
@@ -107,10 +107,10 @@ function RecentAccessList({
       {activity.map((entry) => {
         return (
           <div
-            className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[0.02] px-4 py-3"
+            className="flex items-center gap-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
             key={entry.id}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-soft)]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]">
               {entry.event === 'auth.login.succeeded' ? (
                 <Monitor className="size-4" />
               ) : (
@@ -146,7 +146,7 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
     <>
       <article className="imperial-card p-7">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[var(--text-primary)]">
+          <span className="flex size-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-primary)]">
             <LogOut className="size-5" />
           </span>
           <div>

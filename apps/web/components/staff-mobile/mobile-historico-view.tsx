@@ -26,10 +26,7 @@ interface Props {
 function SummaryCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   const testId = `summary-card-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
-    <div
-      data-testid={testId}
-      className="rounded-[16px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-4 py-3"
-    >
+    <div data-testid={testId} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
       <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{hint}</p>
@@ -88,10 +85,10 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
   const itemCount = comanda.itens.reduce((s, i) => s + i.quantidade, 0)
 
   return (
-    <li className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,9,13,0.78)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+    <li className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-3 px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-center justify-between gap-3 px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
@@ -128,9 +125,9 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
       </button>
 
       {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
+        <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
           {comanda.itens.length === 0 ? (
-            <div className="mb-4 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-5 text-center text-xs text-[var(--text-soft,#7a8896)]">
+            <div className="mb-4 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs text-[var(--text-soft,#7a8896)]">
               Nenhum item detalhado nesta visualização. Totais mantidos pelo backend.
             </div>
           ) : (
@@ -138,7 +135,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
               {comanda.itens.map((item, idx) => (
                 <li
                   key={`${item.produtoId}-${idx}`}
-                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
@@ -156,7 +153,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
             </ul>
           )}
 
-          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-xs">
+          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-xs">
             <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
@@ -173,7 +170,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
+            <div className="mt-3 flex justify-between border-t border-[var(--border)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
               <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
             </div>

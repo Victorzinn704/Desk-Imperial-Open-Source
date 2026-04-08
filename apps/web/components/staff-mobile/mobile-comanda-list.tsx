@@ -113,7 +113,7 @@ export function MobileComandaList({
             <button
               type="button"
               onClick={onNewComanda}
-              className="flex items-center gap-2 rounded-xl bg-[rgba(155,132,96,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
+              className="flex items-center gap-2 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
             >
               <Plus className="size-4" />
               Nova comanda
@@ -135,7 +135,7 @@ export function MobileComandaList({
           <button
             type="button"
             onClick={onNewComanda}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.2)]"
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.2)]"
           >
             <Plus className="size-3.5" />
             Nova
@@ -219,8 +219,8 @@ const ComandaCard = memo(
         ref={ref}
         className="group relative overflow-hidden rounded-[20px] transition-all duration-300"
         style={{
-          background: isFocused ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-          border: `1px solid ${isFocused ? `${config.chipColor}55` : 'rgba(255,255,255,0.06)'}`,
+          background: isFocused ? 'var(--surface-muted)' : 'var(--surface)',
+          border: `1px solid ${isFocused ? `${config.chipColor}55` : 'var(--border)'}`,
           boxShadow: isFocused ? `0 0 24px ${config.chipColor}15` : undefined,
           backdropFilter: isFocused ? 'blur(16px)' : 'blur(8px)',
         }}
@@ -297,11 +297,11 @@ const ComandaCard = memo(
                   <button
                     type="button"
                     onClick={() => onAddItems(activeComanda)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.12)] py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-all active:scale-95"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.4)] bg-[rgba(0,140,255,0.12)] py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-all active:scale-95"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
                     <Edit2 className="size-4" />
-                    Editar / Itens
+                    Editar itens
                   </button>
                 )}
 
@@ -328,12 +328,12 @@ const ComandaCard = memo(
                 </div>
               ) : (
                 activeComanda.itens.length > 0 && (
-                  <div className="mb-5 rounded-[14px] bg-[rgba(0,0,0,0.3)] p-3 border border-[rgba(255,255,255,0.04)]">
+                  <div className="mb-5 rounded-[14px] bg-[var(--surface-muted)] p-3 border border-[var(--border)]">
                     <ul className="space-y-2.5">
                       {activeComanda.itens.map((item, idx) => (
                         <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
                           <div className="flex gap-2.5 items-start">
-                            <span className="font-bold text-[var(--accent,#9b8460)] w-4 text-center">
+                            <span className="font-bold text-[var(--accent,#008cff)] w-4 text-center">
                               {item.quantidade}x
                             </span>
                             <div className="flex flex-col">
@@ -364,7 +364,7 @@ const ComandaCard = memo(
                     max={100}
                     value={discountPercent}
                     onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(155,132,96,0.4)]"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                   />
                 </div>
                 <div>
@@ -377,20 +377,20 @@ const ComandaCard = memo(
                     max={100}
                     value={surchargePercent}
                     onChange={(e) => setSurchargePercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(155,132,96,0.4)]"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                   />
                 </div>
               </div>
 
               {(discountPercent > 0 || surchargePercent > 0) && (
-                <div className="mb-4 flex items-center justify-between rounded-xl border border-[rgba(155,132,96,0.2)] bg-[rgba(155,132,96,0.06)] px-4 py-3">
+                <div className="mb-4 flex items-center justify-between rounded-xl border border-[rgba(0,140,255,0.2)] bg-[rgba(0,140,255,0.06)] px-4 py-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-soft,#7a8896)]">
                       Total Final
                     </p>
                     <p className="text-xs text-[var(--text-soft,#7a8896)] line-through">{formatCurrency(total)}</p>
                   </div>
-                  <span className="text-xl font-bold text-[var(--accent,#9b8460)]">
+                  <span className="text-xl font-bold text-[var(--accent,#008cff)]">
                     {formatCurrency(adjustedTotal)}
                   </span>
                 </div>
@@ -417,14 +417,14 @@ const ComandaCard = memo(
                   <button
                     type="button"
                     onClick={() => void onCloseComanda(comanda.id, discountPercent, surchargePercent)}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[#94a3b8] transition-all active:bg-[rgba(255,255,255,0.06)]"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[var(--text-soft)] transition-all active:bg-[var(--surface-soft)]"
                     style={{
                       border: '1px solid rgba(148,163,184,0.15)',
                       background: 'rgba(148,163,184,0.05)',
                       WebkitTapHighlightColor: 'transparent',
                     }}
                   >
-                    Fechar Comanda (com desconto/juros)
+                    Fechar pedido
                   </button>
                 )}
 
@@ -432,14 +432,14 @@ const ComandaCard = memo(
                   <button
                     type="button"
                     onClick={() => void onUpdateStatus(comanda.id, 'fechada')}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[#94a3b8] transition-all active:bg-[rgba(255,255,255,0.06)]"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[var(--text-soft)] transition-all active:bg-[var(--surface-soft)]"
                     style={{
                       border: '1px solid rgba(148,163,184,0.15)',
                       background: 'rgba(148,163,184,0.05)',
                       WebkitTapHighlightColor: 'transparent',
                     }}
                   >
-                    Efetuar Pagamento (Caixa)
+                    Efetuar pagamento
                   </button>
                 )}
               </div>
@@ -456,7 +456,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   aberta: { label: 'Aberta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
   em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
   pronta: { label: 'Pronta', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-  fechada: { label: 'Paga', color: '#7a8896', bg: 'rgba(122,136,150,0.12)' },
+  fechada: { label: 'Paga', color: 'var(--text-soft, #7a8896)', bg: 'rgba(122,136,150,0.12)' },
 }
 
 function ExtratoCard({ comanda }: { comanda: Comanda }) {
@@ -468,11 +468,11 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
   const badge = STATUS_BADGE[comanda.status] ?? STATUS_BADGE.aberta
 
   return (
-    <li className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,9,13,0.78)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+    <li className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
       {/* Header — clicável */}
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
@@ -507,13 +507,13 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
 
       {/* Extrato expandido */}
       {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
+        <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
           {/* Itens */}
           <ul className="mb-4 space-y-2">
             {comanda.itens.map((item, idx) => (
               <li
                 key={idx}
-                className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+                className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
               >
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
@@ -531,7 +531,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
           </ul>
 
           {/* Totais */}
-          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-xs">
+          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-xs">
             <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
@@ -548,7 +548,7 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
+            <div className="mt-3 flex justify-between border-t border-[var(--border)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
               <span className="text-[#36f57c]">{formatCurrency(total)}</span>
             </div>

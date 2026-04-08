@@ -558,7 +558,7 @@ function OperacionalView({
             onClick={() => setSectionFilter('all')}
             className={`rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
               sectionFilter === 'all'
-                ? 'border-[rgba(201,168,76,0.32)] bg-[rgba(201,168,76,0.12)] text-[#f4d78b]'
+                ? 'border-[rgba(0,140,255,0.32)] bg-[rgba(0,140,255,0.12)] text-[#f4d78b]'
                 : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
           >
@@ -577,8 +577,8 @@ function OperacionalView({
                 : section.occupancy >= 40
                   ? {
                       text: '#f4d78b',
-                      border: 'rgba(201,168,76,0.28)',
-                      bg: 'rgba(201,168,76,0.10)',
+                      border: 'rgba(0,140,255,0.28)',
+                      bg: 'rgba(0,140,255,0.10)',
                     }
                   : {
                       text: '#8fffb9',

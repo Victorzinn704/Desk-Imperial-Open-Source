@@ -82,7 +82,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
             {categoryBreakdown.length} categoria{categoryBreakdown.length !== 1 ? 's' : ''} ativas
           </span>
 
-          <span className="rounded-full border border-[rgba(201,168,76,0.3)] bg-[rgba(201,168,76,0.08)] px-2.5 py-0.5 text-xs font-semibold text-[#C9A84C]">
+          <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-2.5 py-0.5 text-xs font-semibold text-[#008CFF]">
             {displayCurrency}
           </span>
         </div>

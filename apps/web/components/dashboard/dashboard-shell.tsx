@@ -273,10 +273,10 @@ export function DashboardWorkspaceHeader({
 }>) {
   return (
     <header
-      className="rounded-xl border border-gray-200 bg-white dark:bg-white/[0.02] dark:border-white/5 p-6 md:p-8 shadow-sm dark:shadow-none"
+      className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm dark:shadow-none sm:p-5 xl:p-6"
       id="workspace-header"
     >
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <span className="size-2 rounded-full bg-accent" />
@@ -285,25 +285,30 @@ export function DashboardWorkspaceHeader({
           <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
             Início / Painel operacional / {activeNavigationLabel}
           </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-gray-900 dark:text-[var(--text-primary)] sm:text-5xl">
+          <h1 className="mt-3 max-w-4xl text-2xl font-semibold leading-tight text-gray-900 dark:text-[var(--text-primary)] sm:text-3xl xl:text-4xl">
             {activeHero.title}
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-gray-600 dark:text-muted-foreground">
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-600 dark:text-muted-foreground sm:text-base sm:leading-7">
             {activeHero.description}
           </p>
         </div>
 
-        <div className="flex flex-col gap-6 xl:max-w-[520px]">
-          <div className="flex divide-x divide-gray-200 dark:divide-white/5">
+        <div className="flex flex-col gap-4 xl:max-w-[520px]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:divide-x sm:divide-gray-200 sm:dark:divide-white/5">
             {signals.map((signal) => (
-              <div className="flex-1 px-4 first:pl-0 last:pr-0" key={signal.label}>
+              <div
+                className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:first:pl-0 sm:last:pr-0"
+                key={signal.label}
+              >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
                   {signal.label}
                 </p>
-                <p className="mt-3 text-2xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                <p className="mt-2 text-xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
                   {signal.value}
                 </p>
-                <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-muted-foreground">{signal.helper}</p>
+                <p className="mt-1 line-clamp-1 text-xs leading-5 text-gray-500 dark:text-muted-foreground">
+                  {signal.helper}
+                </p>
               </div>
             ))}
           </div>
@@ -313,12 +318,12 @@ export function DashboardWorkspaceHeader({
               const Icon = action.icon
               return (
                 <button
-                  className="workspace-quick-action flex-1 sm:min-w-[150px] border-gray-200 bg-gray-50 dark:border-white/5 dark:bg-white/[0.02]"
+                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
                   type="button"
                 >
-                  <span className="workspace-quick-action__icon border-gray-200 bg-white text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-[var(--text-primary)]">
+                  <span className="workspace-quick-action__icon text-[var(--text-primary)]">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
@@ -487,10 +492,10 @@ export function DashboardShell({
   // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
-    <main className="bg-background text-foreground h-screen overflow-hidden">
+    <main className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div
-        className="workspace-shell xl:grid xl:h-full transition-all duration-300"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
+        className="workspace-shell lg:grid lg:h-full transition-all duration-300"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
@@ -519,7 +524,7 @@ export function DashboardShell({
             user={user}
           />
 
-          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-5 px-3 py-4 sm:px-5 lg:px-5 lg:py-5 xl:px-7 xl:py-6">
             <DashboardWorkspaceHeader
               activeHero={activeHero}
               activeNavigationLabel={activeNavigation.label}
@@ -559,7 +564,7 @@ export function DashboardShell({
 
 function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-[var(--text-soft)]">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 text-center text-sm text-[var(--text-soft)]">
       {label}
     </main>
   )
@@ -569,9 +574,9 @@ function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
 
 function LoadingState() {
   return (
-    <main className="min-h-screen bg-background text-foreground xl:h-screen xl:overflow-hidden">
-      <div className="workspace-shell xl:grid xl:h-full" style={{ gridTemplateColumns: '288px minmax(0,1fr)' }}>
-        <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
+      <div className="workspace-shell lg:grid lg:h-full" style={{ gridTemplateColumns: '232px minmax(0,1fr)' }}>
+        <aside className="hidden lg:block lg:h-screen lg:overflow-hidden">
           <div className="workspace-sidebar flex h-full flex-col gap-4 px-4 py-5">
             <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
             <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
@@ -584,8 +589,8 @@ function LoadingState() {
           </div>
         </aside>
 
-        <div className="workspace-shell__main xl:h-screen xl:overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+        <div className="workspace-shell__main lg:h-screen lg:overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-6 lg:py-6 xl:px-8 xl:py-8">
             <div className="imperial-card p-6 md:p-8">
               <div className="skeleton-shimmer h-6 w-32 rounded-full" />
               <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />

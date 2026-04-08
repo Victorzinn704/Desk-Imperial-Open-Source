@@ -77,7 +77,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const [activeTab, setActiveTab] = useState<Tab>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
-  const [, setFocusedComandaId] = useState<string | null>(null)
+  const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
 
@@ -364,7 +364,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <BrandMark />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#9b8460)]">
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)]">
                 {companyName}
               </span>
               <span
@@ -388,7 +388,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <button
             type="button"
             onClick={() => router.push('/dashboard?view=settings&panel=account')}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
             aria-label="Configurações"
           >
             <Cog className="size-4" />
@@ -396,7 +396,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <button
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(155,132,96,0.12)] text-[var(--accent,#9b8460)] transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
             aria-label="Abrir painel completo"
           >
             <Building2 className="size-4" />
@@ -406,7 +406,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             data-testid="logout-button"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.06)] text-[var(--text-primary)] transition-transform active:scale-95"
+            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
             aria-label="Encerrar sessão"
           >
             <LogOut className="size-4" />
@@ -469,7 +469,15 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
         ) : null}
 
-        {activeTab === 'comandas' ? <OwnerComandasView comandas={comandas} /> : null}
+        {activeTab === 'comandas' ? (
+          <OwnerComandasView
+            comandas={comandas}
+            focusedId={focusedComandaId}
+            onCloseComanda={(comandaId, discountAmount, serviceFeeAmount) =>
+              closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount })
+            }
+          />
+        ) : null}
 
         {activeTab === 'resumo' ? (
           <OwnerResumoTab
@@ -495,7 +503,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] px-0.5 relative">
+        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Building2, badge: 0 },
@@ -518,23 +526,23 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isActive && (
-                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(155,132,96,0.15)] pointer-events-none" />
+                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(0,140,255,0.15)] pointer-events-none" />
                 )}
                 <div className="relative z-10">
                   <Icon
                     className="size-[22px]"
-                    style={{ color: isActive ? 'var(--accent, #9b8460)' : '#7a8896' }}
+                    style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   {badge > 0 && (
-                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#9b8460)] text-[10px] font-bold text-[#000000] ring-2 ring-black">
+                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-white ring-2 ring-[var(--bg)]">
                       {badge}
                     </span>
                   )}
                 </div>
                 <span
                   className="relative z-10 text-[10px] font-semibold tracking-wide"
-                  style={{ color: isActive ? 'white' : '#7a8896' }}
+                  style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}
                 </span>
@@ -611,18 +619,18 @@ function OwnerResumoTab({
             <div
               key={label}
               data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"
             >
               <div className="mb-1 flex items-center gap-1.5">
                 <Icon className="size-3.5" style={{ color }} />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8896]">{label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">{label}</p>
               </div>
               {isLoading ? (
-                <div className="h-6 w-20 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
+                <div className="h-6 w-20 animate-pulse rounded bg-[var(--surface-soft)]" />
               ) : (
                 <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
               )}
-              <p className="mt-1 text-[10px] text-[#7a8896]">{sub}</p>
+              <p className="mt-1 text-[10px] text-[var(--text-soft)]">{sub}</p>
             </div>
           ))}
         </div>
@@ -634,17 +642,17 @@ function OwnerResumoTab({
           Ao vivo
         </p>
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
             <p className="text-2xl font-bold text-[#34d399]">{mesasLivres}</p>
-            <p className="text-[10px] text-[#7a8896] mt-0.5">Livres</p>
+            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Livres</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
             <p className="text-2xl font-bold text-[#f87171]">{mesasOcupadas}</p>
-            <p className="text-[10px] text-[#7a8896] mt-0.5">Ocupadas</p>
+            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Ocupadas</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
             <p className="text-2xl font-bold text-[#eab308]">{kitchenBadge}</p>
-            <p className="text-[10px] text-[#7a8896] mt-0.5">Cozinha</p>
+            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Cozinha</p>
           </div>
         </div>
       </div>
@@ -656,21 +664,24 @@ function OwnerResumoTab({
           Ranking garçons
         </p>
         {garconRanking.length === 0 ? (
-          <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum garçom com vendas hoje</p>
+          <p className="text-xs text-[var(--text-soft)] py-2 text-center">Nenhum garçom com vendas hoje</p>
         ) : (
           <ul className="space-y-2">
             {garconRanking.map((g, i) => (
               <li
                 key={g.nome}
-                className="flex items-center justify-between rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-bold" style={{ color: i === 0 ? '#eab308' : '#7a8896' }}>
+                  <span
+                    className="text-xs font-bold"
+                    style={{ color: i === 0 ? '#eab308' : 'var(--text-soft, #7a8896)' }}
+                  >
                     {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-[var(--text-primary)]">{g.nome}</p>
-                    <p className="text-[10px] text-[#7a8896]">{g.comandas} comandas</p>
+                    <p className="text-[10px] text-[var(--text-soft)]">{g.comandas} comandas</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-[#36f57c]">{formatCurrency(g.valor)}</span>
@@ -687,25 +698,22 @@ function OwnerResumoTab({
           Top produtos
         </p>
         {topProdutos.length === 0 ? (
-          <p className="text-xs text-[#7a8896] py-2 text-center">Nenhum produto vendido hoje ainda</p>
+          <p className="text-xs text-[var(--text-soft)] py-2 text-center">Nenhum produto vendido hoje ainda</p>
         ) : (
           <ul className="space-y-2">
             {topProdutos.map((p, i) => {
               const maxValor = topProdutos[0]?.valor ?? 1
               const pct = Math.round((p.valor / maxValor) * 100)
               return (
-                <li
-                  key={p.nome}
-                  className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
-                >
+                <li key={p.nome} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[65%]">{p.nome}</p>
                     <div className="text-right">
                       <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
-                      <span className="ml-2 text-[10px] text-[#7a8896]">×{p.qtd}</span>
+                      <span className="ml-2 text-[10px] text-[var(--text-soft)]">×{p.qtd}</span>
                     </div>
                   </div>
-                  <div className="h-1 w-full rounded-full bg-[rgba(255,255,255,0.06)]">
+                  <div className="h-1 w-full rounded-full bg-[var(--surface-muted)]">
                     <div
                       className="h-1 rounded-full transition-all"
                       style={{ width: `${pct}%`, background: i === 0 ? '#36f57c' : 'rgba(96,165,250,0.6)' }}
@@ -721,7 +729,7 @@ function OwnerResumoTab({
       <button
         type="button"
         onClick={onOpenFullDashboard}
-        className="w-full rounded-2xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
+        className="w-full rounded-2xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
       >
         Painel completo →
       </button>

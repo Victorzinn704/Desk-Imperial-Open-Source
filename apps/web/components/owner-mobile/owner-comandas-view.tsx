@@ -25,9 +25,11 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 
 interface Props {
   comandas: Comanda[]
+  focusedId?: string | null
+  onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
 }
 
-export function OwnerComandasView({ comandas }: Props) {
+export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('tudo')
 
   const filtered = useMemo(
@@ -40,7 +42,16 @@ export function OwnerComandasView({ comandas }: Props) {
     [comandas, filtro],
   )
 
-  const sorted = useMemo(() => [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime()), [filtered])
+  const sorted = useMemo(() => {
+    const ordered = [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime())
+    if (!focusedId) return ordered
+
+    return ordered.sort((a, b) => {
+      if (a.id === focusedId) return -1
+      if (b.id === focusedId) return 1
+      return 0
+    })
+  }, [filtered, focusedId])
 
   const countAbertas = useMemo(() => comandas.filter((c) => c.status !== 'fechada').length, [comandas])
   const countFechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada').length, [comandas])
@@ -62,9 +73,9 @@ export function OwnerComandasView({ comandas }: Props) {
             onClick={() => setFiltro(id)}
             className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
             style={{
-              background: filtro === id ? 'rgba(155,132,96,0.2)' : 'rgba(255,255,255,0.04)',
-              color: filtro === id ? '#9b8460' : '#7a8896',
-              border: `1px solid ${filtro === id ? 'rgba(155,132,96,0.4)' : 'rgba(255,255,255,0.06)'}`,
+              background: filtro === id ? 'rgba(0,140,255,0.2)' : 'var(--surface)',
+              color: filtro === id ? '#008cff' : 'var(--text-soft, #7a8896)',
+              border: `1px solid ${filtro === id ? 'rgba(0,140,255,0.4)' : 'var(--border)'}`,
             }}
           >
             {label}
@@ -81,7 +92,12 @@ export function OwnerComandasView({ comandas }: Props) {
       ) : (
         <ul className="space-y-2">
           {sorted.map((comanda) => (
-            <ComandaCard key={comanda.id} comanda={comanda} />
+            <ComandaCard
+              key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
+              comanda={comanda}
+              defaultOpen={comanda.id === focusedId}
+              onCloseComanda={onCloseComanda}
+            />
           ))}
         </ul>
       )}
@@ -89,8 +105,17 @@ export function OwnerComandasView({ comandas }: Props) {
   )
 }
 
-function ComandaCard({ comanda }: { comanda: Comanda }) {
-  const [open, setOpen] = useState(false)
+function ComandaCard({
+  comanda,
+  defaultOpen = false,
+  onCloseComanda,
+}: {
+  comanda: Comanda
+  defaultOpen?: boolean
+  onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
   const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
     queryKey: ['comanda-details', comanda.id],
     queryFn: async () => {
@@ -108,6 +133,7 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
   const acrescimoVal = subtotal * (activeComanda.acrescimo / 100)
   const badge = STATUS_MAP[activeComanda.status] ?? STATUS_MAP.aberta
   const itemCount = activeComanda.itens.reduce((sum, item) => sum + item.quantidade, 0)
+  const canClose = activeComanda.status !== 'fechada'
   const detailHint =
     itemCount > 0
       ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`
@@ -119,12 +145,12 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
 
   return (
     <li
-      className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.07)] bg-[rgba(7,9,13,0.82)] shadow-[0_16px_34px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+      className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-panel)]"
       data-testid={`owner-comanda-card-${comanda.id}`}
     >
       <button
         type="button"
-        className="flex w-full items-start justify-between gap-3 px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-start justify-between gap-3 px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
@@ -144,8 +170,10 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                 {activeComanda.garcomNome}
               </span>
             )}
-            <span className="text-[11px] text-[#7a8896]">Aberta em {formatDateTime(activeComanda.abertaEm)}</span>
-            <span className="text-[11px] text-[#7a8896]">
+            <span className="text-[11px] text-[var(--text-soft)]">
+              Aberta em {formatDateTime(activeComanda.abertaEm)}
+            </span>
+            <span className="text-[11px] text-[var(--text-soft)]">
               {detailHint} · há {formatElapsed(activeComanda.abertaEm)}
             </span>
           </div>
@@ -153,40 +181,42 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
 
         <div className="ml-2 flex shrink-0 items-center gap-2 pt-0.5">
           <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Total final</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Total final</p>
             <span className="text-sm font-bold" style={{ color: badge.color }}>
               {formatCurrency(total)}
             </span>
           </div>
           {open ? (
-            <ChevronDown className="size-4 text-[#7a8896]" />
+            <ChevronDown className="size-4 text-[var(--text-soft)]" />
           ) : (
-            <ChevronRight className="size-4 text-[#7a8896]" />
+            <ChevronRight className="size-4 text-[var(--text-soft)]" />
           )}
         </div>
       </button>
 
       {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
+        <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
           <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Responsável</p>
+            <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+                Responsável
+              </p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {activeComanda.garcomNome ?? 'Operação geral'}
               </p>
             </div>
-            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Itens</p>
+            <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Itens</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{itemCount}</p>
             </div>
           </div>
 
           {isLoadingDetails ? (
-            <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-6 text-xs text-[#7a8896]">
+            <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-6 text-xs text-[var(--text-soft)]">
               Carregando extrato detalhado...
             </div>
           ) : activeComanda.itens.length === 0 ? (
-            <div className="mb-4 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-5 text-center text-xs text-[#7a8896]">
+            <div className="mb-4 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs text-[var(--text-soft)]">
               Nenhum item detalhado para esta comanda.
             </div>
           ) : (
@@ -194,14 +224,14 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
               {activeComanda.itens.map((item, idx) => (
                 <li
                   key={`${item.produtoId}-${idx}`}
-                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-3"
+                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
                       {item.quantidade}× {item.nome}
                     </p>
                     {item.observacao && (
-                      <p className="mt-1 text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>
+                      <p className="mt-1 text-[10px] italic text-[var(--text-soft)]">{`"${item.observacao}"`}</p>
                     )}
                   </div>
                   <span className="shrink-0 text-xs font-semibold text-[var(--text-primary)]">
@@ -212,8 +242,8 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
             </ul>
           )}
 
-          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4 text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="flex justify-between text-[#94a3b8]">
+          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-xs">
+            <div className="flex justify-between text-[var(--text-soft)]">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
@@ -229,11 +259,21 @@ function ComandaCard({ comanda }: { comanda: Comanda }) {
                 <span>+ {formatCurrency(acrescimoVal)}</span>
               </div>
             )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-[var(--text-primary)]">
+            <div className="mt-3 flex justify-between border-t border-[var(--border)] pt-3 font-semibold text-[var(--text-primary)]">
               <span>Total final</span>
               <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
             </div>
           </div>
+
+          {canClose && onCloseComanda ? (
+            <button
+              type="button"
+              className="mt-3 flex w-full items-center justify-center rounded-[14px] border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-[var(--accent)] transition active:scale-[0.98]"
+              onClick={() => void onCloseComanda(activeComanda.id, 0, 0)}
+            >
+              Fechar pedido
+            </button>
+          ) : null}
         </div>
       )}
     </li>

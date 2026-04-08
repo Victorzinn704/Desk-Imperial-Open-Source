@@ -173,8 +173,8 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
                     Cada venda fica atribuída ao operador e entra no ranking do dia.
                   </p>
                 </div>
-                <div className="rounded-[18px] border border-[rgba(201,168,76,0.16)] bg-[rgba(201,168,76,0.08)] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C9A84C]">PIN</p>
+                <div className="rounded-[18px] border border-[rgba(0,140,255,0.16)] bg-[rgba(0,140,255,0.08)] px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#008CFF]">PIN</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">
                     Preço manual e desconto continuam pedindo validação do dono quando protegido.
                   </p>

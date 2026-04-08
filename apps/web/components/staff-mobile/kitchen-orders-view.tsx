@@ -73,19 +73,19 @@ function KitchenCard({
   const elapsed = elapsedLabel(item.kitchenQueuedAt)
 
   return (
-    <div className="rounded-2xl border border-[rgba(255,255,255,0.07)] p-4" style={{ background: config.bg }}>
+    <div className="rounded-2xl border border-[var(--border)] p-4" style={{ background: config.bg }}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: config.color }}>
               Mesa {item.mesaLabel}
             </span>
-            {elapsed && <span className="text-[10px] text-[#7a8896]">{elapsed}</span>}
+            {elapsed && <span className="text-[10px] text-[var(--text-soft)]">{elapsed}</span>}
           </div>
           <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
             {item.quantity}× {item.productName}
           </p>
-          {item.notes && <p className="mt-1 text-xs text-[#7a8896] italic">{`"${item.notes}"`}</p>}
+          {item.notes && <p className="mt-1 text-xs text-[var(--text-soft)] italic">{`"${item.notes}"`}</p>}
         </div>
         <button
           type="button"
@@ -202,9 +202,9 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
               onClick={() => setActiveTab(tab)}
               className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
               style={{
-                background: isActive ? config.bg : 'rgba(255,255,255,0.04)',
-                color: isActive ? config.color : '#7a8896',
-                border: `1px solid ${isActive ? config.color + '40' : 'rgba(255,255,255,0.06)'}`,
+                background: isActive ? config.bg : 'var(--surface)',
+                color: isActive ? config.color : 'var(--text-soft, #7a8896)',
+                border: `1px solid ${isActive ? config.color + '40' : 'var(--border)'}`,
               }}
             >
               {config.label}
@@ -237,17 +237,19 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
       <div className="flex-1 overflow-y-auto px-4 pb-6">
         {!hasItems ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)]">
-              <ChefHat className="size-7 text-[#7a8896]" />
+            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <ChefHat className="size-7 text-[var(--text-soft)]" />
             </div>
             <p data-testid="kitchen-view-empty" className="text-sm font-medium text-[var(--text-primary)]">
               Cozinha livre
             </p>
-            <p className="mt-1 text-xs text-[#7a8896]">Nenhum pedido aguardando preparo</p>
+            <p className="mt-1 text-xs text-[var(--text-soft)]">Nenhum pedido aguardando preparo</p>
           </div>
         ) : tabItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-sm text-[#7a8896]">Nenhum item {STATUS_CONFIG[activeTab].label.toLowerCase()}</p>
+            <p className="text-sm text-[var(--text-soft)]">
+              Nenhum item {STATUS_CONFIG[activeTab].label.toLowerCase()}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

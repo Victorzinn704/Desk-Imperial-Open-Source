@@ -356,7 +356,7 @@ export function ProductForm({
             aria-checked={isComboValue}
             onClick={() => setValue('isCombo', !isComboValue, { shouldDirty: true, shouldValidate: true })}
             className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
-            style={{ background: isComboValue ? 'var(--accent, #9b8460)' : 'rgba(255,255,255,0.12)' }}
+            style={{ background: isComboValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
           >
             <span
               className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
@@ -526,7 +526,7 @@ export function ProductForm({
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium text-[var(--text-primary)]">Envia para a cozinha</p>
               {categoryValue && isKitchenCategory(categoryValue) && (
-                <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#9b8460)]">
+                <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#008cff)]">
                   auto
                 </span>
               )}
@@ -541,7 +541,7 @@ export function ProductForm({
             aria-checked={requiresKitchenValue}
             onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
             className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
-            style={{ background: requiresKitchenValue ? 'var(--accent, #9b8460)' : 'rgba(255,255,255,0.12)' }}
+            style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
           >
             <span
               className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"

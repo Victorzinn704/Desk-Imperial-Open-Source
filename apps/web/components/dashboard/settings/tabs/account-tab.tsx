@@ -22,7 +22,7 @@ function formatCompanyLocation(user: AuthUser) {
   return {
     helper: user.companyLocation.postalCode
       ? `CEP ${user.companyLocation.postalCode}`
-      : 'Complete a localização para alimentar mapa e operação',
+      : 'Complete a localização para manter cadastro e atendimento consistentes',
     label: addressParts.length ? addressParts.join(', ') : 'Endereço não informado',
   }
 }
@@ -32,7 +32,7 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
 
   return (
     <>
-      <article className="rounded-xl border border-white/5 bg-surface/50 p-6 md:p-8">
+      <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
         <div className="flex items-start gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] text-[var(--accent)]">
             <UserRound className="size-5" />

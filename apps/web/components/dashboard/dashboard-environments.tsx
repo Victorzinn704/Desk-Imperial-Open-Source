@@ -35,12 +35,6 @@ const CalendarioEnvironment = dynamic(
   },
 )
 
-// MapEnvironment: Leaflet tiles + markers (~320 KB)
-const MapEnvironment = dynamic(() => import('./environments/map-environment').then((m) => m.MapEnvironment), {
-  loading: () => <EnvironmentSkeleton rows={1} tall />,
-  ssr: false,
-})
-
 // PayrollEnvironment: multiple sub-tables, AG-Grid-like (~180 KB)
 const PayrollEnvironment = dynamic(() => import('./payroll-environment').then((m) => m.PayrollEnvironment), {
   loading: () => <EnvironmentSkeleton rows={5} />,
@@ -73,8 +67,6 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       return <PdvEnvironment />
     case 'calendario':
       return <CalendarioEnvironment />
-    case 'map':
-      return <MapEnvironment />
     case 'payroll':
       return <PayrollEnvironment employees={props.employees} finance={props.finance} />
     case 'salao':

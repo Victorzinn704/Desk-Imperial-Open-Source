@@ -377,7 +377,7 @@ function EquipeView({
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(155,132,96,0.16)]"
+            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(0,140,255,0.35)] bg-[rgba(0,140,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(0,140,255,0.16)]"
           >
             <Plus className="size-3.5" /> Garçom
           </button>
@@ -509,7 +509,7 @@ function EquipeView({
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 rounded-[14px] border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.1)] px-5 py-2.5 text-sm font-semibold text-[var(--accent)] transition-all hover:bg-[rgba(155,132,96,0.18)]"
+            className="flex items-center gap-2 rounded-[14px] border border-[rgba(0,140,255,0.4)] bg-[rgba(0,140,255,0.1)] px-5 py-2.5 text-sm font-semibold text-[var(--accent)] transition-all hover:bg-[rgba(0,140,255,0.18)]"
           >
             <Plus className="size-4" /> Adicionar Garçom
           </button>

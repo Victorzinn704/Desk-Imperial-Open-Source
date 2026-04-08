@@ -24,7 +24,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
     ],
     apple: [{ url: '/icons/icon-180.png', sizes: '180x180', type: 'image/png' }],
-    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#9b8460' }],
+    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#008cff' }],
   },
   // PWA e mobile optimization
   manifest: '/manifest.json',
@@ -53,9 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={outfit.variable} suppressHydrationWarning>
-      <body
-        className={`${outfit.className} bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors`}
-      >
+      <body className={`${outfit.className} bg-[var(--bg)] text-[var(--text-primary)] transition-colors`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <div id="app-shell">{children}</div>

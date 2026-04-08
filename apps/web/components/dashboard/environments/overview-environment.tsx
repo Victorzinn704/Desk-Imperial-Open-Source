@@ -11,7 +11,6 @@ import { FinanceChannelsPanel } from '@/components/dashboard/finance-channels-pa
 import { FinanceChart } from '@/components/dashboard/finance-chart'
 import { FinanceOverviewTotal } from '@/components/dashboard/finance-overview-total'
 import { MetricCard } from '@/components/dashboard/metric-card'
-import { SalesMapCard } from '@/components/dashboard/sales-map-card'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
 
 export function OverviewEnvironment() {
@@ -112,7 +111,6 @@ export function OverviewEnvironment() {
         ordersTotals={ordersTotals}
       />
       <EmployeeRankingCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
-      <SalesMapCard error={financeError} finance={finance} isLoading={financeQuery.isLoading} />
     </section>
   )
 }
