@@ -54,7 +54,13 @@ Write-Host "==> Empacotando working tree: $archive"
 if (Test-Path -LiteralPath $archive) {
   Remove-Item -LiteralPath $archive -Force
 }
-git ls-files -z -co --exclude-standard | tar --null -czf $archive -T -
+$hasLocalChanges = [bool](git status --porcelain)
+if (-not $hasLocalChanges) {
+  git archive --format=tar.gz --output=$archive HEAD
+}
+else {
+  git ls-files -z -co --exclude-standard | tar.exe --null -czf $archive -T -
+}
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $archive)) {
   throw "Empacotamento do working tree falhou."
 }
