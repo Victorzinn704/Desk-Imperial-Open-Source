@@ -357,14 +357,14 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       {/* Header Minimalista */}
       <header
         data-testid="owner-header"
-        className="relative z-50 flex shrink-0 items-center justify-between bg-[var(--bg)] px-5 pb-3"
+        className="relative z-50 flex shrink-0 items-center justify-between bg-[var(--bg)] px-4 pb-2.5 sm:px-5 sm:pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
           <BrandMark />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)] sm:text-[11px]">
                 {companyName}
               </span>
               <span
@@ -379,7 +379,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               />
             </div>
-            <span data-testid="user-display-name" className="text-sm font-medium text-[var(--text-primary)]">
+            <span data-testid="user-display-name" className="text-xs font-medium text-[var(--text-primary)] sm:text-sm">
               {displayName.split(' ')[0]}
             </span>
           </div>
@@ -500,7 +500,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
       {/* Bottom nav Moderna (iFood style) */}
       <nav
-        className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
+        className="shrink-0 bg-[var(--bg)] px-1.5 pb-1.5 pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
@@ -541,7 +541,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                   )}
                 </div>
                 <span
-                  className="relative z-10 text-[10px] font-semibold tracking-wide"
+                  className="relative z-10 text-[9px] font-semibold tracking-wide sm:text-[10px]"
                   style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}
@@ -581,11 +581,13 @@ function OwnerResumoTab({
   onOpenFullDashboard: () => void
 }) {
   return (
-    <div className="p-4 pb-8 space-y-5">
+    <div className="space-y-4 p-3 pb-6">
       {/* KPIs do dia */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">Hoje</p>
-        <div className="grid grid-cols-2 gap-3">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+          Hoje
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
           {[
             {
               label: 'Receita',
@@ -619,7 +621,7 @@ function OwnerResumoTab({
             <div
               key={label}
               data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5"
             >
               <div className="mb-1 flex items-center gap-1.5">
                 <Icon className="size-3.5" style={{ color }} />
@@ -638,19 +640,19 @@ function OwnerResumoTab({
 
       {/* Mesas + Cozinha ao vivo */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
           Ao vivo
         </p>
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
             <p className="text-2xl font-bold text-[#34d399]">{mesasLivres}</p>
             <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Livres</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
             <p className="text-2xl font-bold text-[#f87171]">{mesasOcupadas}</p>
             <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Ocupadas</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
             <p className="text-2xl font-bold text-[#eab308]">{kitchenBadge}</p>
             <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Cozinha</p>
           </div>
@@ -659,7 +661,7 @@ function OwnerResumoTab({
 
       {/* Ranking garçons */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
           <Users className="inline size-3 mr-1" />
           Ranking garçons
         </p>
@@ -693,7 +695,7 @@ function OwnerResumoTab({
 
       {/* Top produtos */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
           <Package className="inline size-3 mr-1" />
           Top produtos
         </p>

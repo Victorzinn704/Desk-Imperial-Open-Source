@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ComandaRecord } from '@contracts/contracts'
 import * as api from '@/lib/api'
-import { OwnerComandasView } from './owner-comandas-view'
+import { MobileComandaList } from './mobile-comanda-list'
 
 vi.mock('@/lib/api', () => ({
   fetchComandaDetails: vi.fn(),
@@ -19,15 +19,19 @@ const createTestQueryClient = () =>
     },
   })
 
-describe('OwnerComandasView', () => {
+describe('MobileComandaList', () => {
   let queryClient: QueryClient
 
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: vi.fn(),
+    })
     queryClient = createTestQueryClient()
   })
 
-  it('carrega o extrato detalhado ao expandir uma comanda compacta', async () => {
+  it('expõe a ação de fechamento com rótulo curto e valores atuais', async () => {
     const user = userEvent.setup()
     const onCloseComanda = vi.fn()
 
@@ -35,17 +39,17 @@ describe('OwnerComandasView', () => {
       id: 'c-1',
       companyOwnerId: 'owner-1',
       cashSessionId: 'cash-1',
-      mesaId: 'mesa-4',
+      mesaId: 'mesa-7',
       currentEmployeeId: 'emp-1',
-      tableLabel: '4',
-      customerName: 'Mesa varanda',
+      tableLabel: '7',
+      customerName: 'Mesa lateral',
       customerDocument: null,
       participantCount: 2,
       status: 'OPEN',
-      subtotalAmount: 72,
-      discountAmount: 7.2,
-      serviceFeeAmount: 0,
-      totalAmount: 64.8,
+      subtotalAmount: 50,
+      discountAmount: 5,
+      serviceFeeAmount: 2.5,
+      totalAmount: 47.5,
       notes: null,
       openedAt: '2026-03-30T13:00:00.000Z',
       closedAt: null,
@@ -53,11 +57,11 @@ describe('OwnerComandasView', () => {
         {
           id: 'i-1',
           productId: 'p-1',
-          productName: 'Risoto de camarão',
-          quantity: 2,
-          unitPrice: 36,
-          totalAmount: 72,
-          notes: 'Sem pimenta',
+          productName: 'Café',
+          quantity: 1,
+          unitPrice: 12.5,
+          totalAmount: 12.5,
+          notes: null,
           kitchenStatus: 'READY',
           kitchenQueuedAt: '2026-03-30T13:02:00.000Z',
           kitchenReadyAt: '2026-03-30T13:15:00.000Z',
@@ -69,40 +73,36 @@ describe('OwnerComandasView', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <OwnerComandasView
+        <MobileComandaList
           comandas={[
             {
               id: 'c-1',
               status: 'aberta',
-              mesa: '4',
-              clienteNome: 'Mesa varanda',
-              garcomNome: 'Marina',
+              mesa: '7',
+              clienteNome: 'Mesa lateral',
+              garcomNome: 'Paulo',
               itens: [],
               desconto: 10,
-              acrescimo: 0,
+              acrescimo: 5,
               abertaEm: new Date('2026-03-30T13:00:00.000Z'),
-              subtotalBackend: 72,
-              totalBackend: 64.8,
+              subtotalBackend: 50,
+              totalBackend: 47.5,
             },
           ]}
+          focusedId="c-1"
+          onUpdateStatus={vi.fn()}
           onCloseComanda={onCloseComanda}
+          onFocus={vi.fn()}
         />
       </QueryClientProvider>,
     )
-
-    await user.click(screen.getByText('Mesa 4'))
 
     await waitFor(() => {
       expect(api.fetchComandaDetails).toHaveBeenCalledWith('c-1')
     })
 
-    expect(await screen.findByText(/Risoto de camarão/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sem pimenta/i)).toBeInTheDocument()
-    expect(screen.getByTestId('owner-comanda-items-c-1')).toBeInTheDocument()
-    expect(screen.getAllByText(/64,80/)).toHaveLength(2)
-
     await user.click(screen.getByRole('button', { name: /^Fechar$/i }))
 
-    expect(onCloseComanda).toHaveBeenCalledWith('c-1', 7.2, 0)
+    expect(onCloseComanda).toHaveBeenCalledWith('c-1', 10, 5)
   })
 })

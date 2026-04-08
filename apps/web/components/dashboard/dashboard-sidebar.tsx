@@ -50,6 +50,7 @@ export function DashboardSidebar({
   activeSection,
   companyName,
   email,
+  compact = false,
   groups,
   role,
   quickActions,
@@ -74,16 +75,25 @@ export function DashboardSidebar({
   onCollapseChange?: (collapsed: boolean) => void
   status: string
   userName: string
+  compact?: boolean
 }>) {
-  const [collapsed, setCollapsed] = useState(() => {
+  const [manualCollapsed, setManualCollapsed] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return false
-    return localStorage.getItem(COLLAPSE_KEY) === 'true'
+    const stored = localStorage.getItem(COLLAPSE_KEY)
+    if (stored === 'true' || stored === 'false') {
+      return stored === 'true'
+    }
+    return null
   })
+  const collapsed = manualCollapsed ?? compact
 
   useEffect(() => {
-    localStorage.setItem(COLLAPSE_KEY, String(collapsed))
+    if (typeof window === 'undefined') return
+    if (manualCollapsed !== null) {
+      localStorage.setItem(COLLAPSE_KEY, String(manualCollapsed))
+    }
     onCollapseChange?.(collapsed)
-  }, [collapsed, onCollapseChange])
+  }, [collapsed, manualCollapsed, onCollapseChange])
 
   return (
     <>
@@ -191,7 +201,7 @@ export function DashboardSidebar({
         <div
           className={cn(
             'workspace-sidebar flex h-full flex-col overflow-hidden transition-[padding] duration-300',
-            collapsed ? 'px-3 py-4' : 'px-4 py-5',
+            compact || collapsed ? 'px-3 py-4' : 'px-4 py-5',
           )}
         >
           {/* Cabeçalho — shrink-0 */}
@@ -207,7 +217,9 @@ export function DashboardSidebar({
               aria-expanded={!collapsed}
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
-              onClick={() => setCollapsed((v) => !v)}
+              onClick={() => {
+                setManualCollapsed(!collapsed)
+              }}
             >
               {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
             </button>
@@ -221,10 +233,12 @@ export function DashboardSidebar({
                   <Building2 className="size-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
+                  <p className="truncate text-[12px] font-semibold text-[var(--text-primary)] 2xl:text-[13px]">
                     {companyName || 'Painel corporativo'}
                   </p>
-                  <p className="truncate text-[11px] text-muted-foreground xl:text-xs">Centro principal da operação</p>
+                  <p className="truncate text-[10px] text-muted-foreground 2xl:text-[11px]">
+                    Centro principal da operação
+                  </p>
                 </div>
               </div>
 
@@ -242,7 +256,7 @@ export function DashboardSidebar({
                         <Icon className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
+                        <span className="block truncate text-[12px] font-semibold text-[var(--text-primary)] 2xl:text-[13px]">
                           {action.label}
                         </span>
                       </span>
@@ -258,17 +272,14 @@ export function DashboardSidebar({
 
           {/* Navegação — flex-1 sem scroll visível */}
           <nav
-            className={cn(
-              'mt-4 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden',
-              collapsed ? 'space-y-2' : 'space-y-4 pr-1',
-            )}
-            style={{ scrollbarWidth: 'none' }}
+            className={cn('mt-4 flex-1 overflow-y-auto pr-1', collapsed ? 'space-y-2' : 'space-y-4 pr-1')}
+            style={{ scrollbarWidth: compact ? 'thin' : 'auto' }}
           >
             {groups.map((group) => (
               <section className="workspace-nav-group" key={group.id}>
                 {!collapsed ? <p className="workspace-nav-group__label">{group.label}</p> : null}
 
-                <div className={cn('space-y-1', collapsed ? 'space-y-2' : '')}>
+                <div className={cn('space-y-1', compact ? 'space-y-2' : '')}>
                   {group.items.map((item) => {
                     const Icon = item.icon
                     const isActive = activeSection === item.id
@@ -304,7 +315,7 @@ export function DashboardSidebar({
                         <span className="workspace-nav-item__icon">
                           <Icon className="size-4" />
                         </span>
-                        <span className="block truncate text-[13px] font-semibold xl:text-sm">{item.label}</span>
+                        <span className="block truncate text-[12px] font-semibold 2xl:text-[13px]">{item.label}</span>
                       </button>
                     )
                   })}
@@ -338,6 +349,7 @@ export function DashboardSidebar({
               <DesktopAccountDock
                 companyName={companyName}
                 email={email}
+                compact={compact}
                 role={role}
                 status={status}
                 userName={userName}
@@ -355,6 +367,7 @@ export function DashboardSidebar({
 function DesktopAccountDock({
   companyName,
   email,
+  compact = false,
   role,
   status,
   userName,
@@ -363,6 +376,7 @@ function DesktopAccountDock({
 }: Readonly<{
   companyName: string | null
   email: string
+  compact?: boolean
   role: 'OWNER' | 'STAFF'
   status: string
   userName: string
@@ -377,15 +391,19 @@ function DesktopAccountDock({
           <UserRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-[var(--text-primary)] xl:text-sm">
+          <p
+            className={`truncate font-semibold text-[var(--text-primary)] ${compact ? 'text-[12px]' : 'text-[13px] xl:text-sm'}`}
+          >
             {userName || companyName || 'Conta'}
           </p>
-          <p className="truncate text-[11px] text-muted-foreground xl:text-xs">{email}</p>
+          <p className={`truncate text-muted-foreground ${compact ? 'text-[10px]' : 'text-[11px] xl:text-xs'}`}>
+            {email}
+          </p>
         </div>
       </div>
 
       {/* Chips de status */}
-      <div className="mt-2.5 flex items-center gap-1.5">
+      <div className={cn('mt-2.5 flex items-center gap-1.5', compact && 'flex-wrap')}>
         <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8fffb9]">
           <CircleDot className="size-2.5" />
           {formatAccountStatus(status)}

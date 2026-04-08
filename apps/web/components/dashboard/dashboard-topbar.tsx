@@ -8,10 +8,12 @@ export function DashboardTopbar({
   onMenuClick,
   isMobileOpen,
   user,
+  compact = false,
 }: {
   onMenuClick: () => void
   isMobileOpen: boolean
   user: { fullName: string; [key: string]: unknown }
+  compact?: boolean
 }) {
   const getInitials = (name: string) => {
     return (
@@ -25,7 +27,9 @@ export function DashboardTopbar({
   }
   return (
     <header className="sticky top-0 z-40 flex w-full border-b border-[var(--border)] bg-[var(--surface)]">
-      <div className="flex grow flex-col items-center justify-between lg:flex-row lg:px-4 xl:px-6">
+      <div
+        className={`flex grow flex-col items-center justify-between lg:flex-row ${compact ? 'lg:px-3 xl:px-4' : 'lg:px-4 xl:px-6'}`}
+      >
         <div className="flex w-full items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:gap-4 lg:hidden">
           <button
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
@@ -43,14 +47,16 @@ export function DashboardTopbar({
         <div className="hidden items-center gap-2 lg:flex">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Search className="size-4 text-gray-500 dark:text-gray-400" />
+              <Search className="size-4 text-[var(--text-muted)]" />
             </span>
             <input
               type="text"
               placeholder="Buscar no app..."
-              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-14 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent lg:w-[300px] xl:w-[430px]"
+              className={`h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-4 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent ${
+                compact ? 'lg:w-[240px] xl:w-[320px] 2xl:w-[380px]' : 'lg:w-[300px] xl:w-[430px]'
+              }`}
             />
-            <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)]">
+            <button className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)] 2xl:inline-flex">
               <span className="font-sans">⌘</span>
               <span className="font-sans">K</span>
             </button>
@@ -62,7 +68,9 @@ export function DashboardTopbar({
             <ThemeToggleButton />
           </div>
           {/* Avatar Area */}
-          <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
+          <div
+            className={`flex ${compact ? 'size-9' : 'size-10'} items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]`}
+          >
             <span className="text-sm font-semibold text-[var(--text-soft)]">{getInitials(user.fullName)}</span>
           </div>
         </div>

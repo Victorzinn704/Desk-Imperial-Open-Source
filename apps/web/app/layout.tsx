@@ -43,7 +43,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#000000',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
 }
 
 export default function RootLayout({
@@ -53,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={outfit.variable} suppressHydrationWarning>
-      <body className={`${outfit.className} bg-[var(--bg)] text-[var(--text-primary)] transition-colors`}>
+      <body className={`${outfit.className} bg-[var(--bg)] text-[var(--text-primary)] antialiased transition-colors`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <div id="app-shell">{children}</div>

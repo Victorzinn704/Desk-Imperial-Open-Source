@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
-const DEFAULT_BREAKPOINT = 1024
+export const DEFAULT_MOBILE_BREAKPOINT = 960
+export const COMPACT_DESKTOP_BREAKPOINT = 1366
 
 /**
  * Detects if the viewport is below a given breakpoint.
  * SSR-safe: defaults to `false` (desktop) until hydrated.
  */
-export function useMobileDetection(breakpoint = DEFAULT_BREAKPOINT) {
+export function useMobileDetection(breakpoint = DEFAULT_MOBILE_BREAKPOINT) {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {

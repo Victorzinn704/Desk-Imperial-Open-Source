@@ -71,10 +71,9 @@ export function FinanceChart({
   error = null,
 }: FinanceChartProps) {
   const [activeView, setActiveView] = useState<ChartView>('timeline')
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
-  const isDark =
-    theme === 'dark' || (typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
+  const isDark = resolvedTheme === 'dark'
 
   const timelineData = finance?.revenueTimeline ?? []
   const channelData = finance?.salesByChannel ?? []
@@ -94,16 +93,12 @@ export function FinanceChart({
   const activeViewOption = chartViews.find((view) => view.id === activeView) ?? chartViews[0]
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm dark:shadow-none md:p-8">
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm dark:shadow-none md:p-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Analytics Profissional</p>
-          <h2 className="mt-3 text-3xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
-            Desempenho Comercial
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500 dark:text-muted-foreground">
-            {activeViewOption.description}
-          </p>
+          <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Desempenho Comercial</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{activeViewOption.description}</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -114,8 +109,8 @@ export function FinanceChart({
                 className={cn(
                   'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors duration-200',
                   activeView === view.id
-                    ? 'border-accent bg-accent/10 text-accent dark:text-accent-strong shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-muted-foreground dark:hover:border-white/20 dark:hover:text-[var(--text-primary)]',
+                    ? 'border-accent bg-accent/10 text-accent shadow-sm'
+                    : 'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
                 )}
                 key={view.id}
                 onClick={() => setActiveView(view.id)}
@@ -130,7 +125,7 @@ export function FinanceChart({
       </div>
 
       <div className="mt-8">
-        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-white/5 dark:bg-white/[0.02]">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
           <div className="h-[400px]">
             {renderChart({
               activeView,

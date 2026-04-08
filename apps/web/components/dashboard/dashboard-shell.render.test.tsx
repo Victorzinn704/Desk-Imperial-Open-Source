@@ -10,6 +10,7 @@ const navigateToSettings = vi.fn()
 const scrollIntoView = vi.fn()
 const logout = vi.fn()
 const useQueryMock = vi.fn()
+let viewportWidth = 1600
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -35,7 +36,8 @@ vi.mock('@/components/dashboard/hooks', () => ({
 }))
 
 vi.mock('@/components/dashboard/hooks/useMobileDetection', () => ({
-  useMobileDetection: () => ({ isMobile: false }),
+  COMPACT_DESKTOP_BREAKPOINT: 1366,
+  useMobileDetection: (breakpoint = 1024) => ({ isMobile: viewportWidth < breakpoint }),
 }))
 
 vi.mock('@/components/dashboard/hooks/useDashboardNavigation', () => ({
@@ -132,6 +134,7 @@ import { DashboardShell } from './dashboard-shell'
 describe('DashboardShell render path', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    viewportWidth = 1600
     useQueryMock.mockReturnValue({
       isLoading: false,
       error: null,
@@ -154,12 +157,13 @@ describe('DashboardShell render path', () => {
   it('renderiza o layout desktop com header, sidebar e timeline', async () => {
     const user = userEvent.setup()
 
-    render(<DashboardShell />)
+    const { container } = render(<DashboardShell />)
 
     expect(screen.getByText(/sidebar desk imperial/i)).toBeInTheDocument()
     expect(screen.getByText(/visão consolidada da empresa/i)).toBeInTheDocument()
     expect(screen.getByText(/r\$ 12.500,00/i)).toBeInTheDocument()
     expect(screen.getByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
+    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('224px')
 
     await user.click(screen.getByRole('button', { name: /ir para vendas/i }))
     expect(navigateToSection).toHaveBeenCalledWith('sales')
@@ -169,5 +173,15 @@ describe('DashboardShell render path', () => {
 
     await user.click(screen.getByRole('button', { name: /timeline stub/i }))
     expect(screen.queryByRole('button', { name: /timeline stub/i })).not.toBeInTheDocument()
+  })
+
+  it('encolhe o shell em notebooks compactos sem entrar no modo mobile', () => {
+    viewportWidth = 1365
+
+    const { container } = render(<DashboardShell />)
+
+    expect(screen.getByText(/sidebar desk imperial/i)).toBeInTheDocument()
+    expect(screen.queryByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
+    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('64px')
   })
 })

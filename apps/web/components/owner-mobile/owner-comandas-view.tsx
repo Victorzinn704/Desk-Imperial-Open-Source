@@ -57,9 +57,9 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
   const countFechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada').length, [comandas])
 
   return (
-    <div className="p-4">
+    <div className="p-3 sm:p-4">
       {/* Filtros */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {(
           [
             { id: 'tudo', label: `Tudo (${comandas.length})` },
@@ -196,7 +196,7 @@ function ComandaCard({
 
       {open && (
         <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
-          <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
                 Responsável
@@ -210,6 +210,16 @@ function ComandaCard({
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{itemCount}</p>
             </div>
           </div>
+
+          {canClose && onCloseComanda ? (
+            <button
+              type="button"
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98]"
+              onClick={() => void onCloseComanda(activeComanda.id, descontoVal, acrescimoVal)}
+            >
+              Fechar
+            </button>
+          ) : null}
 
           {isLoadingDetails ? (
             <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-6 text-xs text-[var(--text-soft)]">
@@ -264,16 +274,6 @@ function ComandaCard({
               <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
             </div>
           </div>
-
-          {canClose && onCloseComanda ? (
-            <button
-              type="button"
-              className="mt-3 flex w-full items-center justify-center rounded-[14px] border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-[var(--accent)] transition active:scale-[0.98]"
-              onClick={() => void onCloseComanda(activeComanda.id, 0, 0)}
-            >
-              Fechar pedido
-            </button>
-          ) : null}
         </div>
       )}
     </li>

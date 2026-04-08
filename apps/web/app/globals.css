@@ -80,9 +80,13 @@
   --accent: #008cff;
   --accent-strong: #006ee6;
   --accent-soft: rgba(0, 140, 255, 0.1);
+  --on-accent: #ffffff;
   --info: #0ea5e9;
   --success: #10b981;
   --danger: #ef4444;
+  --warning: #f59e0b;
+  --skeleton-base: #e2e8f0;
+  --skeleton-highlight: #f8fafc;
   --grid-line: rgba(15, 23, 42, 0.035);
   --shadow-panel: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-panel-strong: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
@@ -102,9 +106,13 @@
   --accent: #008cff;
   --accent-strong: #3b82f6;
   --accent-soft: rgba(0, 140, 255, 0.14);
+  --on-accent: #ffffff;
   --info: #0ea5e9;
   --success: #10b981;
   --danger: #ef4444;
+  --warning: #fbbf24;
+  --skeleton-base: #27272a;
+  --skeleton-highlight: #3f3f46;
   --grid-line: rgba(255, 255, 255, 0.02);
   --shadow-panel: 0 4px 24px -2px rgba(0, 0, 0, 0.28);
   --shadow-panel-strong: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -490,7 +498,7 @@ select {
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(90deg, var(--surface-soft) 25%, rgba(255, 255, 255, 0.055) 50%, var(--surface-soft) 75%);
+  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 50%, var(--skeleton-base) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.7s ease-in-out infinite;
 }

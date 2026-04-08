@@ -551,14 +551,14 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <header
-        className="flex shrink-0 items-center justify-between bg-[var(--bg)] px-5 pb-3"
+        className="flex shrink-0 items-center justify-between bg-[var(--bg)] px-4 pb-2.5 sm:px-5 sm:pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
           <BrandMark />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)] sm:text-[11px]">
                 Operacional
               </span>
               <span
@@ -573,7 +573,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 }}
               />
             </div>
-            <span className="text-sm font-medium text-[var(--text-primary)]">{displayName.split(' ')[0]}</span>
+            <span className="text-xs font-medium text-[var(--text-primary)] sm:text-sm">
+              {displayName.split(' ')[0]}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -681,7 +683,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       </main>
 
       <nav
-        className="shrink-0 bg-[var(--bg)] px-2 pb-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]"
+        className="shrink-0 bg-[var(--bg)] px-1.5 pb-1.5 pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
@@ -716,13 +718,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   {badge > 0 && (
-                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-white ring-2 ring-[var(--bg)]">
+                    <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-[var(--on-accent)] ring-2 ring-[var(--bg)]">
                       {badge}
                     </span>
                   )}
                 </div>
                 <span
-                  className="relative z-10 text-[10px] font-semibold tracking-wide"
+                  className="relative z-10 text-[9px] font-semibold tracking-wide sm:text-[10px]"
                   style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}

@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
 import { ApiError, fetchCurrentUser } from '@/lib/api'
 import { useDashboardMutations } from '@/components/dashboard/hooks'
-import { useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
+import { COMPACT_DESKTOP_BREAKPOINT, useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
 import { useDashboardNavigation } from '@/components/dashboard/hooks/useDashboardNavigation'
 import { useDashboardScopedQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useScrollMemory } from '@/components/dashboard/hooks/useScrollMemory'
@@ -51,47 +51,47 @@ const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string
   overview: {
     badge: 'Ambiente executivo',
     title: 'Visão consolidada da empresa em um único ambiente.',
-    description: 'Financeiro, indicadores e operação para leitura rápida.',
+    description: 'Financeiro, operação e segurança em leitura rápida.',
   },
   sales: {
     badge: 'Ambiente comercial',
     title: 'Pedidos e vendas em um módulo exclusivo da operação.',
-    description: 'Registro de vendas, pedidos recentes e resultado realizado.',
+    description: 'Vendas, pedidos recentes e resultado realizado.',
   },
   portfolio: {
     badge: 'Ambiente de portfólio',
     title: 'Produtos, estoque e margem organizados em um fluxo próprio.',
-    description: 'Cadastro, rentabilidade e estrutura que sustenta o caixa.',
+    description: 'Cadastro, margem e estoque que sustentam o caixa.',
   },
   pdv: {
     badge: 'Ponto de venda',
     title: 'Comandas e atendimento em tempo real.',
-    description: 'Comandas, preparo e fechamento em tempo real.',
+    description: 'Comandas, preparo e fechamento sem ruído.',
   },
   calendario: {
     badge: 'Agenda comercial',
     title: 'Planeje eventos, promoções e jogos no calendário.',
-    description: 'Eventos, jogos, promoções e impacto previsto em vendas.',
+    description: 'Eventos, jogos e impacto previsto em vendas.',
   },
   payroll: {
     badge: 'Folha operacional',
     title: 'Salários, comissões e fechamento da equipe em um único fluxo.',
-    description: 'Base salarial, comissão variável e fechamento da equipe.',
+    description: 'Base salarial, comissão e fechamento da equipe.',
   },
   salao: {
     badge: 'Gestão do salão',
     title: 'Mesas, capacidade e planta baixa.',
-    description: 'Organize mesas, capacidade e planta baixa do salão.',
+    description: 'Mesas, capacidade e planta do salão.',
   },
   map: {
     badge: 'Inteligência territorial',
     title: 'Mapa de vendas — território de guerra.',
-    description: 'Concentração geográfica das vendas por cidade e estado.',
+    description: 'Concentração geográfica por cidade e estado.',
   },
   settings: {
     badge: 'Conta e governança',
     title: 'Configurações, segurança e conformidade em uma única central.',
-    description: 'Conta, preferências, sessão e consentimento no mesmo lugar.',
+    description: 'Conta, preferência, sessão e consentimento.',
   },
 }
 
@@ -254,6 +254,7 @@ export function DashboardWorkspaceHeader({
   activeHero,
   activeNavigationLabel,
   handleQuickAction,
+  compact = false,
   isLoggingOut,
   isTimelineOpen,
   logout,
@@ -264,6 +265,7 @@ export function DashboardWorkspaceHeader({
   activeHero: (typeof sectionHeroCopy)[DashboardSectionId]
   activeNavigationLabel: string
   handleQuickAction: (action: DashboardQuickAction) => void
+  compact?: boolean
   isLoggingOut: boolean
   isTimelineOpen: boolean
   logout: () => void
@@ -273,7 +275,7 @@ export function DashboardWorkspaceHeader({
 }>) {
   return (
     <header
-      className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm dark:shadow-none sm:p-5 xl:p-6"
+      className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm dark:shadow-none ${compact ? 'p-3 sm:p-4 xl:p-5' : 'p-4 sm:p-5 xl:p-6'}`}
       id="workspace-header"
     >
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
@@ -282,31 +284,41 @@ export function DashboardWorkspaceHeader({
             <span className="size-2 rounded-full bg-accent" />
             {activeHero.badge}
           </div>
-          <p className="mt-4 text-sm text-gray-500 dark:text-muted-foreground">
+          <p className={`mt-4 text-[var(--text-muted)] ${compact ? 'text-xs' : 'text-sm'}`}>
             Início / Painel operacional / {activeNavigationLabel}
           </p>
-          <h1 className="mt-3 max-w-4xl text-2xl font-semibold leading-tight text-gray-900 dark:text-[var(--text-primary)] sm:text-3xl xl:text-4xl">
+          <h1
+            className={`mt-3 max-w-4xl font-semibold leading-tight text-[var(--text-primary)] ${
+              compact ? 'text-xl sm:text-2xl xl:text-3xl' : 'text-2xl sm:text-3xl xl:text-4xl'
+            }`}
+          >
             {activeHero.title}
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-600 dark:text-muted-foreground sm:text-base sm:leading-7">
+          <p
+            className={`mt-3 max-w-3xl leading-6 text-[var(--text-soft)] ${compact ? 'text-xs sm:text-sm sm:leading-7' : 'text-sm sm:text-base sm:leading-7'}`}
+          >
             {activeHero.description}
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 xl:max-w-[520px]">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:divide-x sm:divide-gray-200 sm:dark:divide-white/5">
+        <div className={`flex flex-col gap-4 ${compact ? 'xl:max-w-[460px]' : 'xl:max-w-[520px]'}`}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:divide-x sm:divide-[var(--border)]">
             {signals.map((signal) => (
               <div
                 className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:first:pl-0 sm:last:pr-0"
                 key={signal.label}
               >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-muted-foreground">
+                <p
+                  className={`font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-[11px]'}`}
+                >
                   {signal.label}
                 </p>
-                <p className="mt-2 text-xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                <p className={`mt-2 font-semibold text-[var(--text-primary)] ${compact ? 'text-lg' : 'text-xl'}`}>
                   {signal.value}
                 </p>
-                <p className="mt-1 line-clamp-1 text-xs leading-5 text-gray-500 dark:text-muted-foreground">
+                <p
+                  className={`mt-1 line-clamp-1 leading-5 text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-xs'}`}
+                >
                   {signal.helper}
                 </p>
               </div>
@@ -318,7 +330,7 @@ export function DashboardWorkspaceHeader({
               const Icon = action.icon
               return (
                 <button
-                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
+                  className={`workspace-quick-action flex-1 ${compact ? 'sm:min-w-[130px]' : 'sm:min-w-[150px]'}`}
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
                   type="button"
@@ -327,7 +339,9 @@ export function DashboardWorkspaceHeader({
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                    <span
+                      className={`block truncate font-semibold text-[var(--text-primary)] ${compact ? 'text-xs sm:text-sm' : 'text-sm'}`}
+                    >
                       {action.label}
                     </span>
                   </span>
@@ -375,12 +389,12 @@ export function DashboardShell({
 }: Readonly<DashboardShellProps>) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { isMobile } = useMobileDetection()
+  const { isMobile: isCompactDesktop } = useMobileDetection(COMPACT_DESKTOP_BREAKPOINT)
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(isCompactDesktop)
 
   // ── Hooks ─────────────────────────────────────────────────────────────────────
-
-  const { isMobile } = useMobileDetection()
 
   const sessionQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -421,6 +435,10 @@ export function DashboardShell({
 
   useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
 
+  useEffect(() => {
+    setSidebarCollapsed(isCompactDesktop)
+  }, [isCompactDesktop])
+
   // ── Quick action handler (orchestrates navigation + scroll) ───────────────────
 
   const handleQuickAction = (action: DashboardQuickAction) => {
@@ -441,7 +459,7 @@ export function DashboardShell({
   // ── Early returns (loading, auth, verification) ───────────────────────────────
 
   if (sessionQuery.isLoading) {
-    return <LoadingState />
+    return <LoadingState compact={isCompactDesktop} />
   }
 
   const isUnauthorized = sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401
@@ -495,12 +513,13 @@ export function DashboardShell({
     <main className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div
         className="workspace-shell lg:grid lg:h-full transition-all duration-300"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
+        style={{ gridTemplateColumns: sidebarCollapsed ? '64px minmax(0,1fr)' : '224px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
           companyName={user.companyName}
           email={user.email}
+          compact={isCompactDesktop}
           groups={navigationGroups}
           onCollapseChange={setSidebarCollapsed}
           quickActions={quickActions}
@@ -521,14 +540,18 @@ export function DashboardShell({
           <DashboardTopbar
             isMobileOpen={!sidebarCollapsed}
             onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            compact={isCompactDesktop}
             user={user}
           />
 
-          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-5 px-3 py-4 sm:px-5 lg:px-5 lg:py-5 xl:px-7 xl:py-6">
+          <div
+            className={`mx-auto flex w-full max-w-[1720px] flex-col ${isCompactDesktop ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-6 xl:py-5' : 'gap-5 px-3 py-4 sm:px-5 lg:px-5 lg:py-5 xl:px-7 xl:py-6'}`}
+          >
             <DashboardWorkspaceHeader
               activeHero={activeHero}
               activeNavigationLabel={activeNavigation.label}
               handleQuickAction={handleQuickAction}
+              compact={isCompactDesktop}
               isLoggingOut={isLoggingOut}
               isTimelineOpen={isTimelineOpen}
               logout={logout}
@@ -572,12 +595,15 @@ function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
-function LoadingState() {
+function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
-      <div className="workspace-shell lg:grid lg:h-full" style={{ gridTemplateColumns: '232px minmax(0,1fr)' }}>
+      <div
+        className="workspace-shell lg:grid lg:h-full"
+        style={{ gridTemplateColumns: compact ? '64px minmax(0,1fr)' : '224px minmax(0,1fr)' }}
+      >
         <aside className="hidden lg:block lg:h-screen lg:overflow-hidden">
-          <div className="workspace-sidebar flex h-full flex-col gap-4 px-4 py-5">
+          <div className={`workspace-sidebar flex h-full flex-col gap-4 ${compact ? 'px-3 py-4' : 'px-4 py-5'}`}>
             <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
             <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
             <div className="mt-2 flex-1 space-y-2">
@@ -590,7 +616,9 @@ function LoadingState() {
         </aside>
 
         <div className="workspace-shell__main lg:h-screen lg:overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-6 lg:py-6 xl:px-8 xl:py-8">
+          <div
+            className={`mx-auto flex w-full max-w-[1720px] flex-col ${compact ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-6 xl:py-5' : 'gap-6 px-4 py-6 sm:px-6 lg:px-6 lg:py-6 xl:px-8 xl:py-8'}`}
+          >
             <div className="imperial-card p-6 md:p-8">
               <div className="skeleton-shimmer h-6 w-32 rounded-full" />
               <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
