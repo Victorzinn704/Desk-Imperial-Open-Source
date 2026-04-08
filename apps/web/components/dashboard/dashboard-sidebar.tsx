@@ -346,16 +346,7 @@ export function DashboardSidebar({
                 </button>
               </div>
             ) : (
-              <DesktopAccountDock
-                companyName={companyName}
-                email={email}
-                compact={compact}
-                role={role}
-                status={status}
-                userName={userName}
-                onOpenSettings={onOpenSettings}
-                onSignOut={onSignOut}
-              />
+              <DesktopSidebarFooter onOpenSettings={onOpenSettings} onSignOut={onSignOut} compact={compact} />
             )}
           </div>
         </div>
@@ -364,61 +355,22 @@ export function DashboardSidebar({
   )
 }
 
-function DesktopAccountDock({
-  companyName,
-  email,
+function DesktopSidebarFooter({
   compact = false,
-  role,
-  status,
-  userName,
   onOpenSettings,
   onSignOut,
 }: Readonly<{
-  companyName: string | null
-  email: string
   compact?: boolean
-  role: 'OWNER' | 'STAFF'
-  status: string
-  userName: string
   onOpenSettings: (section: DashboardSettingsSectionId) => void
   onSignOut: () => void
 }>) {
   return (
-    <div className="workspace-sidebar__surface">
-      {/* Linha de identidade */}
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]">
-          <UserRound className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p
-            className={`truncate font-semibold text-[var(--text-primary)] ${compact ? 'text-[12px]' : 'text-[13px] xl:text-sm'}`}
-          >
-            {userName || companyName || 'Conta'}
-          </p>
-          <p className={`truncate text-muted-foreground ${compact ? 'text-[10px]' : 'text-[11px] xl:text-xs'}`}>
-            {email}
-          </p>
-        </div>
-      </div>
-
-      {/* Chips de status */}
-      <div className={cn('mt-2.5 flex items-center gap-1.5', compact && 'flex-wrap')}>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8fffb9]">
-          <CircleDot className="size-2.5" />
-          {formatAccountStatus(status)}
-        </span>
-        <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
-          {role === 'OWNER' ? 'Admin' : 'Staff'}
-        </span>
-      </div>
-
-      {/* Ações integradas no mesmo bloco */}
-      <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border)] pt-3">
+    <div className="flex items-center gap-1.5">
+      <div className={cn('grid flex-1 gap-1.5', compact ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr)_auto]')}>
         <button
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
+          className="flex items-center justify-center gap-1.5 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
@@ -426,10 +378,14 @@ function DesktopAccountDock({
         <button
           type="button"
           onClick={onSignOut}
-          className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
+          className={cn(
+            'flex items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400',
+            compact ? 'w-full gap-1.5 px-3 py-2.5 text-xs font-semibold' : 'size-[38px] shrink-0',
+          )}
           title="Encerrar sessão"
         >
           <LogOut className="size-3.5" />
+          {compact ? 'Sair' : null}
         </button>
       </div>
     </div>
