@@ -23,8 +23,8 @@ interface Props {
   }
 }
 
-function SummaryCard({ label, value, hint }: { label: string; value: string; hint: string }) {
-  const testId = `summary-card-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+function SummaryCard({ label, value, hint }: Readonly<{ label: string; value: string; hint: string }>) {
+  const testId = `summary-card-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
     <div data-testid={testId} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{label}</p>

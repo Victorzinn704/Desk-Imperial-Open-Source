@@ -253,25 +253,8 @@ export class OperationsService {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
     if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) throw new NotFoundException('Mesa não encontrada.')
-    if (dto.label && dto.label !== mesa.label) {
-      const conflict = await this.prisma.mesa.findUnique({
-        where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: dto.label } },
-      })
-      if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${dto.label}".`)
-    }
-
-    let reservedUntil: Date | null | undefined
-    if (dto.reservedUntil !== undefined) {
-      if (!dto.reservedUntil) {
-        reservedUntil = null
-      } else {
-        const parsedReservedUntil = new Date(dto.reservedUntil)
-        if (Number.isNaN(parsedReservedUntil.getTime())) {
-          throw new BadRequestException('Data de reserva inválida.')
-        }
-        reservedUntil = parsedReservedUntil
-      }
-    }
+    await this.assertMesaLabelAvailable(workspaceOwnerUserId, mesa.label, dto.label)
+    const reservedUntil = this.parseReservedUntil(dto.reservedUntil)
 
     const updated = await this.prisma.mesa.update({
       where: { id: mesaId },
@@ -318,5 +301,25 @@ export class OperationsService {
       mesa: mesaRecord,
     })
     return mesaRecord
+  }
+
+  private async assertMesaLabelAvailable(workspaceOwnerUserId: string, currentLabel: string, newLabel?: string) {
+    if (!newLabel || newLabel === currentLabel) return
+
+    const conflict = await this.prisma.mesa.findUnique({
+      where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: newLabel } },
+    })
+    if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${newLabel}".`)
+  }
+
+  private parseReservedUntil(value: string | null | undefined): Date | null | undefined {
+    if (value === undefined) return undefined
+    if (!value) return null
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException('Data de reserva inválida.')
+    }
+    return parsed
   }
 }

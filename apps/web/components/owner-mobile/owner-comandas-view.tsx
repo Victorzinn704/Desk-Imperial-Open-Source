@@ -23,11 +23,11 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
-interface Props {
+type Props = Readonly<{
   comandas: Comanda[]
   focusedId?: string | null
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
-}
+}>
 
 export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('tudo')
@@ -215,7 +215,9 @@ function ComandaCard({
             <button
               type="button"
               className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98]"
-              onClick={() => void onCloseComanda(activeComanda.id, descontoVal, acrescimoVal)}
+              onClick={() => {
+                onCloseComanda(activeComanda.id, descontoVal, acrescimoVal)
+              }}
             >
               Fechar
             </button>

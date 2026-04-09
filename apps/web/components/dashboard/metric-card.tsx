@@ -29,7 +29,7 @@ export function MetricCard({
     const prev = trend[trend.length - 2]
     const curr = trend[trend.length - 1]
     isUp = curr >= prev
-    trendPercent = prev !== 0 ? Math.abs(((curr - prev) / prev) * 100) : 100
+    trendPercent = prev === 0 ? 100 : Math.abs(((curr - prev) / prev) * 100)
   }
 
   return (

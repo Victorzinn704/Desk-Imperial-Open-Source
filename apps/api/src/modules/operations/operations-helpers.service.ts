@@ -43,7 +43,7 @@ import {
   buildBusinessDateWindow,
   formatBusinessDateKey,
   resolveBuyerTypeFromDocument,
-  toNumber,
+  toNumberOrZero,
 } from './operations-domain.utils'
 import {
   recordOperationsKitchenTelemetry,
@@ -70,13 +70,6 @@ const OPERATIONS_SUMMARY_CACHE_TTL_SECONDS = 20
 const DEFAULT_OWNER_OPERATOR_LABEL = 'Operacao de balcao'
 
 const employeeSnapshotSelect = {
-  id: true,
-  employeeCode: true,
-  displayName: true,
-  active: true,
-} as const
-
-const employeeSnapshotCompactSelect = {
   id: true,
   employeeCode: true,
   displayName: true,
@@ -218,16 +211,11 @@ const mesaSnapshotSelect = {
   reservedUntil: true,
 } as const
 
-const mesaSnapshotCompactSelect = {
-  id: true,
-  label: true,
-  capacity: true,
-  section: true,
-  positionX: true,
-  positionY: true,
-  active: true,
-  reservedUntil: true,
-} as const
+function resolveCashSessionSelect(compactMode: boolean, includeCashMovements: boolean) {
+  if (compactMode) return cashSessionCompactRefSelect
+  if (includeCashMovements) return cashSessionSnapshotSelect
+  return cashSessionSnapshotWithoutMovementsSelect
+}
 
 @Injectable()
 export class OperationsHelpersService {
@@ -259,29 +247,14 @@ export class OperationsHelpersService {
       ) + (compactMode ? ':compact' : '')
 
     if (cacheKey) {
-      const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
-      if (cached) {
-        const totalComandas =
-          cached.unassigned.comandas.length +
-          cached.employees.reduce((total, employee) => total + employee.comandas.length, 0)
-
-        recordOperationsLiveTelemetry(
-          performance.now() - startedAt,
-          {
-            employees: cached.employees.length,
-            comandas: totalComandas,
-            mesas: cached.mesas.length,
-          },
-          {
-            'desk.operations.cache_hit': true,
-            'desk.operations.compact_mode': compactMode,
-            'desk.operations.include_cash_movements': includeCashMovements,
-            'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
-          },
-        )
-
-        return cached
-      }
+      const cached = await this.tryResolveLiveSnapshotFromCache(
+        cacheKey,
+        startedAt,
+        compactMode,
+        includeCashMovements,
+        scopedEmployeeId,
+      )
+      if (cached) return cached
     }
 
     const comandaSelect = compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect
@@ -291,7 +264,7 @@ export class OperationsHelpersService {
           userId: workspaceOwnerUserId,
           ...(scopedEmployeeId ? { id: scopedEmployeeId } : {}),
         },
-        select: compactMode ? employeeSnapshotCompactSelect : employeeSnapshotSelect,
+        select: employeeSnapshotSelect,
         orderBy: [{ active: 'desc' }, { employeeCode: 'asc' }],
       }),
       this.prisma.cashSession.findMany({
@@ -300,11 +273,7 @@ export class OperationsHelpersService {
           businessDate,
           ...(scopedEmployeeId ? { employeeId: scopedEmployeeId } : {}),
         },
-        select: compactMode
-          ? cashSessionCompactRefSelect
-          : includeCashMovements
-            ? cashSessionSnapshotSelect
-            : cashSessionSnapshotWithoutMovementsSelect,
+        select: resolveCashSessionSelect(compactMode, includeCashMovements),
         orderBy: {
           openedAt: 'desc',
         },
@@ -320,7 +289,7 @@ export class OperationsHelpersService {
       }),
       this.prisma.mesa.findMany({
         where: { companyOwnerId: workspaceOwnerUserId, active: true },
-        select: compactMode ? mesaSnapshotCompactSelect : mesaSnapshotSelect,
+        select: mesaSnapshotSelect,
         orderBy: [{ section: 'asc' }, { label: 'asc' }],
       }),
       // Single query covering both session-linked and standalone comandas for the
@@ -358,19 +327,9 @@ export class OperationsHelpersService {
         },
       }),
     ])
-    const sessionSnapshotByEmployee = new Map<string | null, EmployeeSessionSnapshot>()
-    if (!compactMode) {
-      for (const session of sessions) {
-        if (!('employeeId' in session)) {
-          continue
-        }
-        const employeeId = typeof session.employeeId === 'string' ? session.employeeId : null
-        sessionSnapshotByEmployee.set(employeeId, {
-          ...session,
-          movements: 'movements' in session ? session.movements : [],
-        } as EmployeeSessionSnapshot)
-      }
-    }
+    const sessionSnapshotByEmployee = compactMode
+      ? new Map<string | null, EmployeeSessionSnapshot>()
+      : this.buildSessionSnapshotByEmployee(sessions)
 
     const comandasByEmployee = new Map<string | null, typeof comandas>()
     for (const comanda of comandas) {
@@ -443,6 +402,51 @@ export class OperationsHelpersService {
     }
 
     return snapshot
+  }
+
+  private async tryResolveLiveSnapshotFromCache(
+    cacheKey: string,
+    startedAt: number,
+    compactMode: boolean,
+    includeCashMovements: boolean,
+    scopedEmployeeId?: string | null,
+  ): Promise<OperationsLiveResponse | null> {
+    const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
+    if (!cached) return null
+
+    const totalComandas =
+      cached.unassigned.comandas.length +
+      cached.employees.reduce((total, employee) => total + employee.comandas.length, 0)
+
+    recordOperationsLiveTelemetry(
+      performance.now() - startedAt,
+      {
+        employees: cached.employees.length,
+        comandas: totalComandas,
+        mesas: cached.mesas.length,
+      },
+      {
+        'desk.operations.cache_hit': true,
+        'desk.operations.compact_mode': compactMode,
+        'desk.operations.include_cash_movements': includeCashMovements,
+        'desk.operations.scoped_employee': Boolean(scopedEmployeeId),
+      },
+    )
+
+    return cached
+  }
+
+  private buildSessionSnapshotByEmployee(sessions: Record<string, unknown>[]) {
+    const map = new Map<string | null, EmployeeSessionSnapshot>()
+    for (const session of sessions) {
+      if (!('employeeId' in session)) continue
+      const employeeId = typeof session.employeeId === 'string' ? session.employeeId : null
+      map.set(employeeId, {
+        ...session,
+        movements: 'movements' in session ? session.movements : [],
+      } as EmployeeSessionSnapshot)
+    }
+    return map
   }
 
   async buildKitchenView(
@@ -636,9 +640,9 @@ export class OperationsHelpersService {
     const employeeNameById = new Map(employees.map((employee) => [employee.id, employee.displayName]))
     const ownerDisplayName = DEFAULT_OWNER_OPERATOR_LABEL
 
-    const faturamentoAberto = toNumber(openComandasAggregate._sum.totalAmount)
-    const receitaRealizada = toNumber(closure?.grossRevenueAmount)
-    const lucroRealizado = toNumber(closure?.realizedProfitAmount)
+    const faturamentoAberto = toNumberOrZero(openComandasAggregate._sum.totalAmount)
+    const receitaRealizada = toNumberOrZero(closure?.grossRevenueAmount)
+    const lucroRealizado = toNumberOrZero(closure?.realizedProfitAmount)
 
     const kpis: OperationsExecutiveKpis = {
       receitaRealizada,
@@ -646,14 +650,14 @@ export class OperationsHelpersService {
       projecaoTotal: receitaRealizada + faturamentoAberto,
       lucroRealizado,
       lucroEsperado: lucroRealizado + faturamentoAberto,
-      caixaEsperado: toNumber(closure?.expectedCashAmount),
+      caixaEsperado: toNumberOrZero(closure?.expectedCashAmount),
       openComandasCount: closure?.openComandasCount ?? openComandasAggregate._count._all,
       openSessionsCount: closure?.openSessionsCount ?? openSessionsCount,
     }
 
     const performers: OperationsPerformerRankingEntry[] = performerGroups
       .map((group) => {
-        const valor = toNumber(group._sum.totalAmount)
+        const valor = toNumberOrZero(group._sum.totalAmount)
         const comandas = group._count._all
         if (valor <= 0 && comandas <= 0) {
           return null
@@ -675,7 +679,7 @@ export class OperationsHelpersService {
       .map((group) => ({
         nome: group.productName,
         qtd: group._sum.quantity ?? 0,
-        valor: toNumber(group._sum.totalAmount),
+        valor: toNumberOrZero(group._sum.totalAmount),
       }))
       .sort((left, right) => right.valor - left.valor)
       .slice(0, 5)
@@ -779,28 +783,32 @@ export class OperationsHelpersService {
 
     const supplyAmount = session.movements
       .filter((movement) => movement.type === CashMovementType.SUPPLY)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0)
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0)
     const withdrawalAmount = session.movements
       .filter((movement) => movement.type === CashMovementType.WITHDRAWAL)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0)
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0)
     const adjustmentAmount = session.movements
       .filter((movement) => movement.type === CashMovementType.ADJUSTMENT)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0)
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0)
     const grossRevenueAmount = roundCurrency(
-      session.comandas.reduce((sum, comanda) => sum + toNumber(comanda.totalAmount), 0),
+      session.comandas.reduce((sum, comanda) => sum + toNumberOrZero(comanda.totalAmount), 0),
     )
     const realizedProfitAmount = roundCurrency(
       session.comandas.reduce((sum, comanda) => {
         const comandaCost = comanda.items.reduce((itemsTotal, item) => {
-          const unitCost = item.product ? toNumber(item.product.unitCost) : 0
+          const unitCost = item.product ? toNumberOrZero(item.product.unitCost) : 0
           return itemsTotal + roundCurrency(unitCost * item.quantity)
         }, 0)
 
-        return sum + roundCurrency(toNumber(comanda.totalAmount) - comandaCost)
+        return sum + roundCurrency(toNumberOrZero(comanda.totalAmount) - comandaCost)
       }, 0),
     )
     const expectedCashAmount = roundCurrency(
-      toNumber(session.openingCashAmount) + supplyAmount + adjustmentAmount - withdrawalAmount + grossRevenueAmount,
+      toNumberOrZero(session.openingCashAmount) +
+        supplyAmount +
+        adjustmentAmount -
+        withdrawalAmount +
+        grossRevenueAmount,
     )
 
     return transaction.cashSession.update({
@@ -843,9 +851,9 @@ export class OperationsHelpersService {
       throw new NotFoundException('Comanda nao encontrada.')
     }
 
-    const subtotalAmount = roundCurrency(comanda.items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
-    const discountAmount = roundCurrency(overrides?.discountAmount ?? toNumber(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(overrides?.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+    const subtotalAmount = roundCurrency(comanda.items.reduce((sum, item) => sum + toNumberOrZero(item.totalAmount), 0))
+    const discountAmount = roundCurrency(overrides?.discountAmount ?? toNumberOrZero(comanda.discountAmount))
+    const serviceFeeAmount = roundCurrency(overrides?.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
     const totalAmount = roundCurrency(Math.max(0, subtotalAmount - discountAmount + serviceFeeAmount))
 
     return transaction.comanda.update({
@@ -911,13 +919,13 @@ export class OperationsHelpersService {
 
     const openSessionsCount = sessions.filter((session) => session.status === CashSessionStatus.OPEN).length
     const expectedCashAmount = roundCurrency(
-      sessions.reduce((sum, session) => sum + toNumber(session.expectedCashAmount), 0),
+      sessions.reduce((sum, session) => sum + toNumberOrZero(session.expectedCashAmount), 0),
     )
     const grossRevenueAmount = roundCurrency(
-      sessions.reduce((sum, session) => sum + toNumber(session.grossRevenueAmount), 0),
+      sessions.reduce((sum, session) => sum + toNumberOrZero(session.grossRevenueAmount), 0),
     )
     const realizedProfitAmount = roundCurrency(
-      sessions.reduce((sum, session) => sum + toNumber(session.realizedProfitAmount), 0),
+      sessions.reduce((sum, session) => sum + toNumberOrZero(session.realizedProfitAmount), 0),
     )
 
     const status =
@@ -1178,49 +1186,70 @@ export class OperationsHelpersService {
     }> = []
 
     for (const item of items) {
-      let productId: string | null = null
-      let productName: string
-      let unitPrice: number
-
-      if (item.productId) {
-        const product = productById.get(item.productId)
-
-        if (!product) {
-          throw new NotFoundException('Produto nao encontrado para esta conta.')
-        }
-
-        productId = product.id
-        productName = product.name
-        unitPrice = roundCurrency(item.unitPrice ?? toNumber(product.unitPrice))
-      } else {
-        productName = sanitizePlainText(item.productName, 'Nome do item da comanda', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!
-
-        if (item.unitPrice === undefined) {
-          throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
-        }
-
-        unitPrice = roundCurrency(item.unitPrice)
-      }
-
-      const notes = sanitizePlainText(item.notes, 'Observacoes do item', {
-        allowEmpty: true,
-        rejectFormula: false,
-      })
-
-      normalizedItems.push({
-        productId,
-        productName,
-        quantity: item.quantity,
-        unitPrice,
-        totalAmount: roundCurrency(unitPrice * item.quantity),
-        notes,
-      })
+      normalizedItems.push(this.resolveSingleDraftItem(item, productById))
     }
 
     return normalizedItems
+  }
+
+  private resolveSingleDraftItem(
+    item: ComandaDraftItemDto,
+    productById: Map<string, { id: string; name: string; unitPrice: number }>,
+  ): {
+    productId: string | null
+    productName: string
+    quantity: number
+    unitPrice: number
+    totalAmount: number
+    notes: string | null
+  } {
+    const { productId, productName, unitPrice } = item.productId
+      ? this.resolveLinkedDraftItem(item, productById)
+      : this.resolveManualDraftItem(item)
+
+    const notes = sanitizePlainText(item.notes, 'Observacoes do item', {
+      allowEmpty: true,
+      rejectFormula: false,
+    })
+
+    return {
+      productId,
+      productName,
+      quantity: item.quantity,
+      unitPrice,
+      totalAmount: roundCurrency(unitPrice * item.quantity),
+      notes,
+    }
+  }
+
+  private resolveLinkedDraftItem(
+    item: ComandaDraftItemDto,
+    productById: Map<string, { id: string; name: string; unitPrice: number }>,
+  ) {
+    const product = productById.get(item.productId!)
+    if (!product) throw new NotFoundException('Produto nao encontrado para esta conta.')
+    return {
+      productId: product.id as string | null,
+      productName: product.name,
+      unitPrice: roundCurrency(item.unitPrice ?? toNumberOrZero(product.unitPrice)),
+    }
+  }
+
+  private resolveManualDraftItem(item: ComandaDraftItemDto) {
+    const productName = sanitizePlainText(item.productName, 'Nome do item da comanda', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+
+    if (item.unitPrice === undefined) {
+      throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
+    }
+
+    return {
+      productId: null as string | null,
+      productName,
+      unitPrice: roundCurrency(item.unitPrice),
+    }
   }
 
   async assertOpenTableAvailability(
@@ -1323,7 +1352,7 @@ export class OperationsHelpersService {
         return sum + roundCurrency(unitCost * item.quantity)
       }, 0),
     )
-    const totalRevenue = roundCurrency(toNumber(comanda.totalAmount))
+    const totalRevenue = roundCurrency(toNumberOrZero(comanda.totalAmount))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
     const totalItems = comanda.items.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -1391,7 +1420,7 @@ export class OperationsHelpersService {
                   })
                 : calculateRawEffectiveUnitCost(item.product)
               : 0
-            const lineRevenue = roundCurrency(toNumber(item.totalAmount))
+            const lineRevenue = roundCurrency(toNumberOrZero(item.totalAmount))
             const lineCost = roundCurrency(unitCost * item.quantity)
 
             return {
@@ -1401,7 +1430,7 @@ export class OperationsHelpersService {
               quantity: item.quantity,
               currency: CurrencyCode.BRL,
               unitCost,
-              unitPrice: roundCurrency(toNumber(item.unitPrice)),
+              unitPrice: roundCurrency(toNumberOrZero(item.unitPrice)),
               lineRevenue,
               lineCost,
               lineProfit: roundCurrency(lineRevenue - lineCost),

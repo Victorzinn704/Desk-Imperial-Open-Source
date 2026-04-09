@@ -7,12 +7,12 @@ import type { Comanda, KanbanColumn } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
-type PdvComandaCardProps = {
+type PdvComandaCardProps = Readonly<{
   comanda: Comanda
   index: number
   column: KanbanColumn
   onClick: (comanda: Comanda) => void
-}
+}>
 
 export const PdvComandaCard = memo(function PdvComandaCard({
   comanda,

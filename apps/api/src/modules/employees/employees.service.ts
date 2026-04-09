@@ -116,36 +116,8 @@ export class EmployeesService {
 
     try {
       const employee = await this.prisma.$transaction(async (transaction) => {
-        if (dto.temporaryPassword) {
-          const nextPasswordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id })
-
-          if (existingEmployee.loginUserId) {
-            await transaction.user.update({
-              where: { id: existingEmployee.loginUserId },
-              data: {
-                passwordHash: nextPasswordHash,
-                passwordChangedAt: null,
-              },
-            })
-          }
-
-          await transaction.employee.update({
-            where: { id: existingEmployee.id },
-            data: {
-              passwordHash: nextPasswordHash,
-            },
-          })
-        }
-
-        if (existingEmployee.loginUserId && (sanitizedDisplayName !== undefined || dto.active !== undefined)) {
-          await transaction.user.update({
-            where: { id: existingEmployee.loginUserId },
-            data: {
-              ...(sanitizedDisplayName !== undefined ? { fullName: sanitizedDisplayName } : {}),
-              ...(dto.active !== undefined ? { status: dto.active ? UserStatus.ACTIVE : UserStatus.DISABLED } : {}),
-            },
-          })
-        }
+        await this.applyPasswordUpdate(transaction, existingEmployee, dto.temporaryPassword)
+        await this.syncLinkedLoginUser(transaction, existingEmployee, sanitizedDisplayName, dto.active)
 
         return transaction.employee.update({
           where: { id: existingEmployee.id },
@@ -154,7 +126,7 @@ export class EmployeesService {
             ...(sanitizedDisplayName !== undefined ? { displayName: sanitizedDisplayName } : {}),
             ...(dto.active !== undefined ? { active: dto.active } : {}),
             ...(dto.salarioBase !== undefined ? { salarioBase: dto.salarioBase } : {}),
-            ...(dto.percentualVendas !== undefined ? { percentualVendas: dto.percentualVendas } : {}),
+            ...(dto.percentualVendas === undefined ? {} : { percentualVendas: dto.percentualVendas }),
           },
         })
       })
@@ -187,6 +159,50 @@ export class EmployeesService {
 
   async restoreForUser(auth: AuthContext, employeeId: string, context: RequestContext) {
     return this.toggleActiveState(auth, employeeId, true, context)
+  }
+
+  private async applyPasswordUpdate(
+    transaction: {
+      employee: { update: (args: { where: { id: string }; data: { passwordHash: string } }) => Promise<unknown> }
+    },
+    existingEmployee: { id: string; loginUserId: string | null },
+    temporaryPassword?: string,
+  ) {
+    if (!temporaryPassword) return
+
+    const nextPasswordHash = await argon2.hash(temporaryPassword, { type: argon2.argon2id })
+
+    if (existingEmployee.loginUserId) {
+      await transaction.user.update({
+        where: { id: existingEmployee.loginUserId },
+        data: { passwordHash: nextPasswordHash, passwordChangedAt: null },
+      })
+    }
+
+    await transaction.employee.update({
+      where: { id: existingEmployee.id },
+      data: { passwordHash: nextPasswordHash },
+    })
+  }
+
+  private async syncLinkedLoginUser(
+    transaction: {
+      user: { update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown> }
+    },
+    existingEmployee: { loginUserId: string | null },
+    sanitizedDisplayName: string | undefined,
+    active: boolean | undefined,
+  ) {
+    if (!existingEmployee.loginUserId) return
+    if (sanitizedDisplayName === undefined && active === undefined) return
+
+    await transaction.user.update({
+      where: { id: existingEmployee.loginUserId },
+      data: {
+        ...(sanitizedDisplayName === undefined ? {} : { fullName: sanitizedDisplayName }),
+        ...(active === undefined ? {} : { status: active ? UserStatus.ACTIVE : UserStatus.DISABLED }),
+      },
+    })
   }
 
   private async toggleActiveState(auth: AuthContext, employeeId: string, active: boolean, context: RequestContext) {

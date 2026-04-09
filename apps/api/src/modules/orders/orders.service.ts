@@ -290,36 +290,7 @@ export class OrdersService {
       throw new BadRequestException('Informe um CNPJ valido para a compra em nome de empresa.')
     }
 
-    const seller =
-      auth.role === 'STAFF'
-        ? auth.employeeId
-          ? await this.prisma.employee.findFirst({
-              where: {
-                id: auth.employeeId,
-                userId: workspaceUserId,
-                active: true,
-              },
-            })
-          : null
-        : dto.sellerEmployeeId
-          ? await this.prisma.employee.findFirst({
-              where: {
-                id: dto.sellerEmployeeId,
-                userId: workspaceUserId,
-                active: true,
-              },
-            })
-          : null
-
-    if (auth.role === 'STAFF' && !seller) {
-      throw new ForbiddenException(
-        'Seu acesso de funcionario precisa estar vinculado a um colaborador ativo para registrar vendas.',
-      )
-    }
-
-    if (auth.role !== 'STAFF' && dto.sellerEmployeeId && !seller) {
-      throw new BadRequestException('Selecione um funcionario ativo para registrar esta venda.')
-    }
+    const seller = await this.resolveOrderSeller(auth, workspaceUserId, dto.sellerEmployeeId)
 
     const geocodedLocation = await this.resolveBuyerLocation({
       userId: workspaceUserId,
@@ -497,6 +468,27 @@ export class OrdersService {
         snapshot,
       }),
     }
+  }
+
+  private async resolveOrderSeller(auth: AuthContext, workspaceUserId: string, sellerEmployeeId?: string) {
+    const employeeId = auth.role === 'STAFF' ? auth.employeeId : sellerEmployeeId
+    if (!employeeId) return null
+
+    const seller = await this.prisma.employee.findFirst({
+      where: { id: employeeId, userId: workspaceUserId, active: true },
+    })
+
+    if (auth.role === 'STAFF' && !seller) {
+      throw new ForbiddenException(
+        'Seu acesso de funcionario precisa estar vinculado a um colaborador ativo para registrar vendas.',
+      )
+    }
+
+    if (auth.role !== 'STAFF' && sellerEmployeeId && !seller) {
+      throw new BadRequestException('Selecione um funcionario ativo para registrar esta venda.')
+    }
+
+    return seller
   }
 
   async cancelForUser(auth: AuthContext, orderId: string, context: RequestContext) {

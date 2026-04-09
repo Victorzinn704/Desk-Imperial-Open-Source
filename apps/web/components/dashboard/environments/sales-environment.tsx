@@ -40,7 +40,6 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     refetchInterval: 20_000,
-    refetchIntervalInBackground: true,
   })
 
   const products = productsQuery.data?.items ?? []

@@ -21,7 +21,7 @@ import {
   StatusButtons,
 } from './comanda-modal'
 
-type PdvComandaModalProps = {
+type PdvComandaModalProps = Readonly<{
   busy?: boolean
   comanda?: Comanda | null
   products: SimpleProduct[]
@@ -29,7 +29,221 @@ type PdvComandaModalProps = {
   onSave: (data: SaveComandaPayload) => Promise<Comanda>
   onClose: () => void
   onStatusChange?: (comanda: Comanda, status: Comanda['status']) => Promise<void>
+}>
+
+// ── Extracted sub-components ─────────────────────────────────────────────────
+
+const STATUS_LABEL_MAP: Record<Comanda['status'], string> = {
+  aberta: 'Aberta',
+  em_preparo: 'Em preparo',
+  pronta: 'Pronta',
+  fechada: 'Fechada',
 }
+
+function ModalHeader({
+  isEditing,
+  comanda,
+  onClose,
+}: Readonly<{ isEditing: boolean; comanda?: Comanda | null; onClose: () => void }>) {
+  return (
+    <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+            {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
+          </h2>
+          {isEditing ? (
+            <span className="rounded-full border border-[rgba(251,146,60,0.24)] bg-[rgba(251,146,60,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#fb923c]">
+              Modo edicao
+            </span>
+          ) : (
+            <span className="rounded-full border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#36f57c]">
+              Abrir comanda
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-[var(--text-soft)]">
+          {isEditing
+            ? 'Edite os itens dentro do PDV e acompanhe a tela lateral da comanda em tempo real.'
+            : 'Adicione itens, confirme os dados e acompanhe a tela lateral antes de abrir a comanda.'}
+        </p>
+      </div>
+      <button
+        className="flex size-9 items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]"
+        onClick={onClose}
+        type="button"
+      >
+        <X className="size-4" />
+      </button>
+    </div>
+  )
+}
+
+function DocumentBorderColor(doc: string, valid: boolean): string {
+  if (!doc) return 'rgba(255,255,255,0.08)'
+  return valid ? 'rgba(52,242,127,0.35)' : 'rgba(239,68,68,0.35)'
+}
+
+function ComandaLivePreview({
+  mesa,
+  clienteNome,
+  status,
+  itens,
+  products,
+  bruto,
+  desconto,
+  acrescimo,
+  total,
+  addItem,
+  changeQty,
+  setItens,
+}: Readonly<{
+  mesa: string
+  clienteNome: string
+  status: Comanda['status']
+  itens: ComandaItem[]
+  products: SimpleProduct[]
+  bruto: number
+  desconto: number
+  acrescimo: number
+  total: number
+  addItem: (product: SimpleProduct) => void
+  changeQty: (produtoId: string, delta: number) => void
+  setItens: React.Dispatch<React.SetStateAction<ComandaItem[]>>
+}>) {
+  return (
+    <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
+      <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tela da comanda</p>
+        <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
+          Itens ao vivo da mesa {mesa || 'sem numero'}
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
+          Sempre que abrir ou editar uma comanda, esta coluna mostra os itens que vao sair para o atendimento.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
+        <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
+          <p className="mt-2 truncate text-sm font-medium text-[var(--text-primary)]">
+            {clienteNome || 'Nao identificado'}
+          </p>
+        </div>
+        <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Status</p>
+          <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{STATUS_LABEL_MAP[status]}</p>
+        </div>
+      </div>
+
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault()
+          const id = e.dataTransfer.getData('productId')
+          const product = products.find((p) => p.id === id)
+          if (product) addItem(product)
+        }}
+      >
+        {itens.length === 0 ? (
+          <div className="flex h-full min-h-52 flex-col items-center justify-center rounded-[18px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Nenhum item ainda</p>
+            <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
+              Arraste produtos da esquerda ou toque para adicionar.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {itens.map((item) => (
+              <ComandaItemRow key={item.produtoId} item={item} onChangeQty={changeQty} setItens={setItens} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[rgba(255,255,255,0.06)] px-4 py-4">
+        <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] p-4">
+          <div className="flex items-center justify-between text-sm text-[var(--text-soft)]">
+            <span>Subtotal</span>
+            <span>{formatCurrency(bruto, 'BRL')}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
+            <span>Desconto</span>
+            <span>{desconto}%</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
+            <span>Acrescimo</span>
+            <span>{acrescimo}%</span>
+          </div>
+          <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.08)] pt-4">
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Total final
+            </span>
+            <span className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function resolveFallbackTitle(search: string): string {
+  return search.trim() ? 'Busca rápida' : 'Todos os produtos'
+}
+
+function resolveDocLabel(doc: string): string {
+  return doc.replaceAll(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
+}
+
+function addOrIncrementItem(prev: ComandaItem[], product: SimpleProduct): ComandaItem[] {
+  const existing = prev.find((item) => item.produtoId === product.id)
+  if (existing) {
+    return prev.map((item) => (item.produtoId === product.id ? { ...item, quantidade: item.quantidade + 1 } : item))
+  }
+  return [...prev, { produtoId: product.id, nome: product.name, quantidade: 1, precoUnitario: product.unitPrice }]
+}
+
+function SaveButtons({
+  isEditing,
+  isBusy,
+  hasItems,
+  connectionState,
+  onSave,
+  onSaveAndPrint,
+}: Readonly<{
+  isEditing: boolean
+  isBusy: boolean
+  hasItems: boolean
+  connectionState: string
+  onSave: () => void
+  onSaveAndPrint: () => void
+}>) {
+  const isPrinting = connectionState === 'printing'
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-3">
+      <button
+        className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={!hasItems || isPrinting || isBusy}
+        type="button"
+        onClick={onSave}
+      >
+        {isEditing ? 'Salvar alteracoes' : 'Abrir comanda'}
+      </button>
+      <button
+        className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={!hasItems || connectionState === 'discovering' || isPrinting || isBusy}
+        type="button"
+        onClick={onSaveAndPrint}
+      >
+        {isPrinting || isBusy ? <LoaderCircle className="size-4 animate-spin" /> : <Printer className="size-4" />}
+        {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
+      </button>
+    </div>
+  )
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
 
 export function PdvComandaModal({
   busy = false,
@@ -77,9 +291,8 @@ export function PdvComandaModal({
   } = useProductFilter(products)
 
   const docValidation = validateDocument(clienteDocumento)
-  const docLabel = clienteDocumento.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
+  const docLabel = resolveDocLabel(clienteDocumento)
 
-  // Helper to require PIN before executing an action
   function requirePin(action: () => void, title: string, description: string) {
     setPinDialogTitle(title)
     setPinDialogDescription(description)
@@ -101,22 +314,7 @@ export function PdvComandaModal({
   }
 
   function addItem(product: SimpleProduct) {
-    setItens((prev) => {
-      const existing = prev.find((item) => item.produtoId === product.id)
-      if (existing) {
-        return prev.map((item) => (item.produtoId === product.id ? { ...item, quantidade: item.quantidade + 1 } : item))
-      }
-
-      return [
-        ...prev,
-        {
-          produtoId: product.id,
-          nome: product.name,
-          quantidade: 1,
-          precoUnitario: product.unitPrice,
-        },
-      ]
-    })
+    setItens((prev) => addOrIncrementItem(prev, product))
   }
 
   function changeQty(produtoId: string, delta: number) {
@@ -125,6 +323,18 @@ export function PdvComandaModal({
         .map((item) => (item.produtoId === produtoId ? { ...item, quantidade: item.quantidade + delta } : item))
         .filter((item) => item.quantidade > 0),
     )
+  }
+
+  function handlePercentChange(
+    newValue: number,
+    currentValue: number,
+    setter: (v: number) => void,
+    pinTitle: string,
+    pinDescriptionFn: (v: number) => string,
+  ) {
+    const needsPin = newValue > 0 && newValue !== currentValue
+    if (needsPin) requirePin(() => setter(newValue), pinTitle, pinDescriptionFn(newValue))
+    else setter(newValue)
   }
 
   const bruto = useMemo(() => itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0), [itens])
@@ -144,28 +354,17 @@ export function PdvComandaModal({
   const isBusy = busy || isSubmitting
 
   async function handleSave(options?: { printAfterSave?: boolean }) {
-    if (itens.length === 0 || isBusy) {
-      return
-    }
+    if (itens.length === 0 || isBusy) return
 
     setSaveError(null)
     setIsSubmitting(true)
 
     try {
-      const savedComanda = await onSave({
-        mesa,
-        clienteNome,
-        clienteDocumento,
-        itens,
-        desconto,
-        acrescimo,
-      })
-
+      const savedComanda = await onSave({ mesa, clienteNome, clienteDocumento, itens, desconto, acrescimo })
       if (!options?.printAfterSave) {
         onClose()
         return
       }
-
       await printComanda(buildPrintableComanda(savedComanda))
       onClose()
     } catch (error) {
@@ -174,6 +373,9 @@ export function PdvComandaModal({
       setIsSubmitting(false)
     }
   }
+
+  const fallbackTitle = resolveFallbackTitle(search)
+  const productListTitle = selectedCategory ?? fallbackTitle
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-4">
@@ -185,36 +387,7 @@ export function PdvComandaModal({
       />
 
       <div className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]">
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-4 sm:p-6">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                {isEditing ? `Comanda #${comanda!.id.slice(-4).toUpperCase()}` : 'Nova Comanda'}
-              </h2>
-              {isEditing ? (
-                <span className="rounded-full border border-[rgba(251,146,60,0.24)] bg-[rgba(251,146,60,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#fb923c]">
-                  Modo edicao
-                </span>
-              ) : (
-                <span className="rounded-full border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#36f57c]">
-                  Abrir comanda
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-[var(--text-soft)]">
-              {isEditing
-                ? 'Edite os itens dentro do PDV e acompanhe a tela lateral da comanda em tempo real.'
-                : 'Adicione itens, confirme os dados e acompanhe a tela lateral antes de abrir a comanda.'}
-            </p>
-          </div>
-          <button
-            className="flex size-9 items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+        <ModalHeader isEditing={isEditing} comanda={comanda} onClose={onClose} />
 
         <div className="grid min-h-0 flex-1 overflow-y-auto xl:overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
           <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
@@ -229,7 +402,6 @@ export function PdvComandaModal({
                 />
               </div>
 
-              {/* Categories Kanban Squares */}
               <CategoryGrid
                 categories={categories}
                 selectedCategory={selectedCategory}
@@ -251,7 +423,7 @@ export function PdvComandaModal({
                   <div className="mb-3 flex items-center justify-between rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-2">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                        {selectedCategory ? selectedCategory : search.trim() ? 'Busca rápida' : 'Todos os produtos'}
+                        {productListTitle}
                       </p>
                       <p className="mt-1 text-xs text-[var(--text-soft)]">
                         {filteredProducts.length} produtos visíveis
@@ -338,13 +510,7 @@ export function PdvComandaModal({
                   className="flex-1 rounded-[12px] border bg-[rgba(255,255,255,0.03)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors"
                   inputMode="numeric"
                   placeholder="000.000.000-00 ou 00.000.000/0001-00"
-                  style={{
-                    borderColor: clienteDocumento
-                      ? docValidation.valid
-                        ? 'rgba(52,242,127,0.35)'
-                        : 'rgba(239,68,68,0.35)'
-                      : 'rgba(255,255,255,0.08)',
-                  }}
+                  style={{ borderColor: DocumentBorderColor(clienteDocumento, docValidation.valid) }}
                   value={clienteDocumento}
                   onChange={(event) => setClienteDocumento(maskDocument(event.target.value))}
                 />
@@ -373,15 +539,13 @@ export function PdvComandaModal({
                   value={desconto}
                   onChange={(event) => {
                     const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
-                    if (newValue > 0 && newValue !== desconto) {
-                      requirePin(
-                        () => setDesconto(newValue),
-                        'Aplicar Desconto',
-                        `Confirme o desconto de ${newValue}% com seu PIN.`,
-                      )
-                    } else {
-                      setDesconto(newValue)
-                    }
+                    handlePercentChange(
+                      newValue,
+                      desconto,
+                      setDesconto,
+                      'Aplicar Desconto',
+                      (v) => `Confirme o desconto de ${v}% com seu PIN.`,
+                    )
                   }}
                 />
               </div>
@@ -397,15 +561,13 @@ export function PdvComandaModal({
                   value={acrescimo}
                   onChange={(event) => {
                     const newValue = Math.min(100, Math.max(0, Number(event.target.value)))
-                    if (newValue > 0 && newValue !== acrescimo) {
-                      requirePin(
-                        () => setAcrescimo(newValue),
-                        'Aplicar Acréscimo',
-                        `Confirme o acréscimo de ${newValue}% com seu PIN.`,
-                      )
-                    } else {
-                      setAcrescimo(newValue)
-                    }
+                    handlePercentChange(
+                      newValue,
+                      acrescimo,
+                      setAcrescimo,
+                      'Aplicar Acréscimo',
+                      (v) => `Confirme o acréscimo de ${v}% com seu PIN.`,
+                    )
                   }}
                 />
               </div>
@@ -439,121 +601,36 @@ export function PdvComandaModal({
                 statusMessage={statusMessage}
                 isBusy={isBusy}
                 onChoosePrinter={choosePrinter}
-                onRefreshPrinters={() => void refreshPrinters()}
+                onRefreshPrinters={() => refreshPrinters()}
               />
 
               {saveError ? <p className="mt-3 text-xs text-[#fca5a5]">{saveError}</p> : null}
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  className="w-full rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] py-3 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={itens.length === 0 || connectionState === 'printing' || isBusy}
-                  type="button"
-                  onClick={() => void handleSave()}
-                >
-                  {isEditing ? 'Salvar alteracoes' : 'Abrir comanda'}
-                </button>
-
-                <button
-                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] py-3 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={
-                    itens.length === 0 || connectionState === 'discovering' || connectionState === 'printing' || isBusy
-                  }
-                  type="button"
-                  onClick={() => void handleSave({ printAfterSave: true })}
-                >
-                  {connectionState === 'printing' || isBusy ? (
-                    <LoaderCircle className="size-4 animate-spin" />
-                  ) : (
-                    <Printer className="size-4" />
-                  )}
-                  {isEditing ? 'Salvar e imprimir' : 'Abrir e imprimir'}
-                </button>
-              </div>
+              <SaveButtons
+                isEditing={isEditing}
+                isBusy={isBusy}
+                hasItems={itens.length > 0}
+                connectionState={connectionState}
+                onSave={() => void handleSave()}
+                onSaveAndPrint={() => void handleSave({ printAfterSave: true })}
+              />
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col bg-[rgba(255,255,255,0.015)]">
-            <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tela da comanda</p>
-              <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
-                Itens ao vivo da mesa {mesa || 'sem numero'}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-                Sempre que abrir ou editar uma comanda, esta coluna mostra os itens que vao sair para o atendimento.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-4">
-              <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cliente</p>
-                <p className="mt-2 truncate text-sm font-medium text-[var(--text-primary)]">
-                  {clienteNome || 'Nao identificado'}
-                </p>
-              </div>
-              <div className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Status</p>
-                <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
-                  {draftComanda.status === 'aberta'
-                    ? 'Aberta'
-                    : draftComanda.status === 'em_preparo'
-                      ? 'Em preparo'
-                      : draftComanda.status === 'pronta'
-                        ? 'Pronta'
-                        : 'Fechada'}
-                </p>
-              </div>
-            </div>
-
-            <div
-              className="flex-1 overflow-y-auto px-4 py-4"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault()
-                const id = e.dataTransfer.getData('productId')
-                const product = products.find((p) => p.id === id)
-                if (product) addItem(product)
-              }}
-            >
-              {itens.length === 0 ? (
-                <div className="flex h-full min-h-52 flex-col items-center justify-center rounded-[18px] border border-dashed border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-6 text-center">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Nenhum item ainda</p>
-                  <p className="mt-2 text-xs leading-6 text-[var(--text-soft)]">
-                    Arraste produtos da esquerda ou toque para adicionar.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {itens.map((item) => (
-                    <ComandaItemRow key={item.produtoId} item={item} onChangeQty={changeQty} setItens={setItens} />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-[rgba(255,255,255,0.06)] px-4 py-4">
-              <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(9,11,17,0.9)] p-4">
-                <div className="flex items-center justify-between text-sm text-[var(--text-soft)]">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(bruto, 'BRL')}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
-                  <span>Desconto</span>
-                  <span>{desconto}%</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-sm text-[var(--text-soft)]">
-                  <span>Acrescimo</span>
-                  <span>{acrescimo}%</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between border-t border-[rgba(255,255,255,0.08)] pt-4">
-                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                    Total final
-                  </span>
-                  <span className="text-xl font-bold text-[#36f57c]">{formatCurrency(total, 'BRL')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ComandaLivePreview
+            mesa={mesa}
+            clienteNome={clienteNome}
+            status={draftComanda.status}
+            itens={itens}
+            products={products}
+            bruto={bruto}
+            desconto={desconto}
+            acrescimo={acrescimo}
+            total={total}
+            addItem={addItem}
+            changeQty={changeQty}
+            setItens={setItens}
+          />
         </div>
       </div>
 

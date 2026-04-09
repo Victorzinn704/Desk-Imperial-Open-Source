@@ -65,6 +65,12 @@ import {
 } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
 
+function realtimeStatusColor(status: string): string {
+  if (status === 'connected') return '#34f27f'
+  if (status === 'connecting') return '#fbbf24'
+  return '#f87171'
+}
+
 type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
 type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
@@ -73,6 +79,23 @@ type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: str
 
 interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string; employeeId?: string | null } | null
+}
+
+function toApiItemPayload(item: ComandaItem) {
+  const isManual = item.produtoId.startsWith('manual-')
+  return {
+    productId: isManual ? undefined : item.produtoId,
+    productName: isManual ? item.nome : undefined,
+    quantity: item.quantidade,
+    unitPrice: item.precoUnitario,
+    notes: item.observacao,
+  }
+}
+
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof ApiError && error.status === 0) return true
+  if (error instanceof Error && error.message.toLowerCase().includes('fetch')) return true
+  return false
 }
 
 export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
@@ -385,110 +408,77 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     setActiveTab('mesas')
   }
 
+  function enqueueOfflineItems(items: ComandaItem[]) {
+    if (pendingAction?.type === 'add') {
+      for (const item of items) {
+        enqueue({ type: 'add-item', payload: { comandaId: pendingAction.comandaId, payload: toApiItemPayload(item) } })
+      }
+    } else if (pendingAction?.type === 'new') {
+      enqueue({
+        type: 'open-comanda',
+        payload: {
+          tableLabel: pendingAction.mesa.numero,
+          mesaId: pendingAction.mesa.id,
+          items: items.map(toApiItemPayload),
+        },
+      })
+    }
+    toast.info('Sem conexão — pedido salvo. Será enviado ao reconectar.')
+    haptic.medium()
+    setPendingAction(null)
+    setActiveTab('mesas')
+  }
+
+  async function handleSubmitAddItems(items: ComandaItem[], comandaId: string) {
+    const response = await addComandaItemsMutation.mutateAsync({
+      comandaId,
+      items: items.map(toApiItemPayload),
+    })
+    void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeKitchen: true,
+      includeSummary: false,
+    })
+    setPendingAction(null)
+    setFocusedComandaId(response.comanda.id)
+    setActiveTab('pedidos')
+  }
+
+  async function handleSubmitNewComanda(items: ComandaItem[], mesa: Mesa) {
+    const comParams = {
+      tableLabel: normalizeTableLabel(mesa.numero),
+      mesaId: mesa.id,
+      items: items.map(toApiItemPayload),
+    }
+
+    try {
+      await openComandaMutation.mutateAsync(comParams)
+    } catch (err: unknown) {
+      if (!isCashSessionRequiredError(err)) throw err
+      toast.dismiss()
+      toast.info('Abrindo caixa automaticamente...')
+      await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, { includeSummary: true })
+      await openComandaMutation.mutateAsync(comParams)
+    }
+    setPendingAction(null)
+    setActiveTab('pedidos')
+  }
+
   async function handleSubmit(items: ComandaItem[]) {
     if (!pendingAction) return
     setScreenError(null)
 
     try {
       if (pendingAction.type === 'add') {
-        const response = await addComandaItemsMutation.mutateAsync({
-          comandaId: pendingAction.comandaId,
-          items: items.map((item) => ({
-            productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-            productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-            quantity: item.quantidade,
-            unitPrice: item.precoUnitario,
-            notes: item.observacao,
-          })),
-        })
-        void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-          includeKitchen: true,
-          includeSummary: false,
-        })
-        setPendingAction(null)
-        setFocusedComandaId(response.comanda.id)
-        setActiveTab('pedidos')
+        await handleSubmitAddItems(items, pendingAction.comandaId)
         return
       }
-
-      // type === 'new' — tenta abrir comanda, com auto-open caixa se necessário
-      const comParams = {
-        tableLabel: normalizeTableLabel(pendingAction.mesa.numero),
-        mesaId: pendingAction.mesa.id,
-        items: items.map((item) => ({
-          productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-          productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-          quantity: item.quantidade,
-          unitPrice: item.precoUnitario,
-          notes: item.observacao,
-        })),
-      }
-
-      try {
-        await openComandaMutation.mutateAsync(comParams)
-      } catch (err: unknown) {
-        // Só autoabre caixa quando a API sinaliza de fato falta de caixa.
-        const isCaixaError = isCashSessionRequiredError(err)
-        if (isCaixaError) {
-          toast.dismiss() // Limpa o toast de erro do mutation
-          toast.info('Abrindo caixa automaticamente...')
-          await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
-          void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-            includeSummary: true,
-          })
-          await openComandaMutation.mutateAsync(comParams)
-        } else {
-          throw err
-        }
-      }
-      setPendingAction(null)
-      setActiveTab('pedidos')
+      await handleSubmitNewComanda(items, pendingAction.mesa)
     } catch (error) {
-      // Erro de rede (offline) → enfileira a ação para retry ao reconectar
-      const isNetworkError =
-        (error instanceof ApiError && error.status === 0) ||
-        (error instanceof Error && error.message.toLowerCase().includes('fetch'))
-
-      if (isNetworkError && pendingAction) {
-        if (pendingAction.type === 'add') {
-          for (const item of items) {
-            enqueue({
-              type: 'add-item',
-              payload: {
-                comandaId: pendingAction.comandaId,
-                payload: {
-                  productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-                  productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-                  quantity: item.quantidade,
-                  unitPrice: item.precoUnitario,
-                  notes: item.observacao,
-                },
-              },
-            })
-          }
-        } else {
-          enqueue({
-            type: 'open-comanda',
-            payload: {
-              tableLabel: pendingAction.mesa.numero,
-              mesaId: pendingAction.mesa.id,
-              items: items.map((item) => ({
-                productId: item.produtoId.startsWith('manual-') ? undefined : item.produtoId,
-                productName: item.produtoId.startsWith('manual-') ? item.nome : undefined,
-                quantity: item.quantidade,
-                unitPrice: item.precoUnitario,
-                notes: item.observacao,
-              })),
-            },
-          })
-        }
-        toast.info('Sem conexão — pedido salvo. Será enviado ao reconectar.')
-        haptic.medium()
-        setPendingAction(null)
-        setActiveTab('mesas')
+      if (isNetworkError(error) && pendingAction) {
+        enqueueOfflineItems(items)
         return
       }
-
       setScreenError(error instanceof Error ? error.message : 'Não foi possível processar o pedido.')
     }
   }
@@ -548,6 +538,90 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     : '?'
   const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
 
+  function renderActiveTab() {
+    if (activeTab === 'mesas') {
+      return (
+        <MobileTableGrid
+          mesas={mesas}
+          onSelectMesa={handleSelectMesa}
+          isLoading={operationsQuery.isLoading && !operationsQuery.data}
+        />
+      )
+    }
+
+    if (activeTab === 'cozinha') {
+      return <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
+    }
+
+    if (activeTab === 'pedido' && pendingAction) {
+      return (
+        <MobileOrderBuilder
+          mesaLabel={mesaLabel}
+          mode={orderMode}
+          produtos={productsQuery.data?.items ?? []}
+          busy={isBusy}
+          onSubmit={handleSubmit}
+          onCancel={() => {
+            setPendingAction(null)
+            setFocusedComandaId(null)
+            setActiveTab('mesas')
+          }}
+        />
+      )
+    }
+
+    if (activeTab === 'pedido') {
+      return (
+        <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+          <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <ShoppingCart className="size-7 text-[var(--text-soft)]" />
+          </div>
+          <p className="text-sm font-medium text-[var(--text-primary)]">Selecione uma mesa primeiro</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">
+            Vá para a aba Mesas e toque em uma mesa para criar um pedido
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveTab('mesas')}
+            className="mt-6 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
+          >
+            Ver mesas
+          </button>
+        </div>
+      )
+    }
+
+    if (activeTab === 'pedidos') {
+      return (
+        <MobileComandaList
+          comandas={activeComandas}
+          focusedId={focusedComandaId}
+          onFocus={(id: string | null) => setFocusedComandaId(id)}
+          onAddItems={handleAddItemsToComanda}
+          onUpdateStatus={handleUpdateStatus}
+          onCancelComanda={handleCancel}
+          onCloseComanda={handleCloseWithDiscount}
+          onNewComanda={handleNewComanda}
+        />
+      )
+    }
+
+    if (activeTab === 'historico') {
+      return (
+        <MobileHistoricoView
+          comandas={comandas}
+          summary={{
+            receitaRealizada: performerKpis.receitaRealizada,
+            receitaEsperada: performerKpis.receitaEsperada,
+            openComandasCount: performerKpis.openComandasCount,
+          }}
+        />
+      )
+    }
+
+    return null
+  }
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <header
@@ -564,12 +638,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
               <span
                 className="size-1.5 rounded-full"
                 style={{
-                  background:
-                    realtimeStatus === 'connected'
-                      ? '#34f27f'
-                      : realtimeStatus === 'connecting'
-                        ? '#fbbf24'
-                        : '#f87171',
+                  background: realtimeStatusColor(realtimeStatus),
                 }}
               />
             </div>
@@ -611,75 +680,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
         className={`relative ${activeTab === 'pedido' && pendingAction ? 'flex flex-col flex-1 overflow-hidden' : 'flex-1 overflow-y-auto'}`}
       >
         <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
-        {activeTab === 'mesas' ? (
-          <MobileTableGrid
-            mesas={mesas}
-            onSelectMesa={handleSelectMesa}
-            isLoading={operationsQuery.isLoading && !operationsQuery.data}
-          />
-        ) : null}
-
-        {activeTab === 'cozinha' ? (
-          <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
-        ) : null}
-
-        {activeTab === 'pedido' ? (
-          pendingAction ? (
-            <MobileOrderBuilder
-              mesaLabel={mesaLabel}
-              mode={orderMode}
-              produtos={productsQuery.data?.items ?? []}
-              busy={isBusy}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setPendingAction(null)
-                setFocusedComandaId(null)
-                setActiveTab('mesas')
-              }}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-              <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-                <ShoppingCart className="size-7 text-[var(--text-soft)]" />
-              </div>
-              <p className="text-sm font-medium text-[var(--text-primary)]">Selecione uma mesa primeiro</p>
-              <p className="mt-1 text-xs text-[var(--text-soft)]">
-                Vá para a aba Mesas e toque em uma mesa para criar um pedido
-              </p>
-              <button
-                type="button"
-                onClick={() => setActiveTab('mesas')}
-                className="mt-6 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
-              >
-                Ver mesas
-              </button>
-            </div>
-          )
-        ) : null}
-
-        {activeTab === 'pedidos' ? (
-          <MobileComandaList
-            comandas={activeComandas}
-            focusedId={focusedComandaId}
-            onFocus={(id: string | null) => setFocusedComandaId(id)}
-            onAddItems={handleAddItemsToComanda}
-            onUpdateStatus={handleUpdateStatus}
-            onCancelComanda={handleCancel}
-            onCloseComanda={handleCloseWithDiscount}
-            onNewComanda={handleNewComanda}
-          />
-        ) : null}
-
-        {activeTab === 'historico' ? (
-          <MobileHistoricoView
-            comandas={comandas}
-            summary={{
-              receitaRealizada: performerKpis.receitaRealizada,
-              receitaEsperada: performerKpis.receitaEsperada,
-              openComandasCount: performerKpis.openComandasCount,
-            }}
-          />
-        ) : null}
+        {renderActiveTab()}
       </main>
 
       <nav

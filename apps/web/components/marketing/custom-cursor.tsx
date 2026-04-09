@@ -14,8 +14,8 @@ export function CustomCursor() {
 
   useEffect(() => {
     if (
-      window.matchMedia('(pointer: coarse)').matches ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      globalThis.matchMedia('(pointer: coarse)').matches ||
+      globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       return
     }
@@ -25,13 +25,13 @@ export function CustomCursor() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let w = (canvas.width = window.innerWidth)
-    let h = (canvas.height = window.innerHeight)
+    let w = (canvas.width = globalThis.innerWidth)
+    let h = (canvas.height = globalThis.innerHeight)
     const onResize = () => {
-      w = canvas.width = window.innerWidth
-      h = canvas.height = window.innerHeight
+      w = canvas.width = globalThis.innerWidth
+      h = canvas.height = globalThis.innerHeight
     }
-    window.addEventListener('resize', onResize)
+    globalThis.addEventListener('resize', onResize)
 
     const cursor = { x: -200, y: -200 }
     const trail: TrailDot[] = []
@@ -46,9 +46,11 @@ export function CustomCursor() {
       cursor.x = e.clientX
       cursor.y = e.clientY
     }
-    window.addEventListener('mousemove', onMove)
+    globalThis.addEventListener('mousemove', onMove)
 
     let raf: number
+    let running = true
+
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
 
@@ -56,29 +58,36 @@ export function CustomCursor() {
       trail.unshift({ x: cursor.x, y: cursor.y, alpha: 1, r: 4.5 })
       if (trail.length > TRAIL_LEN) trail.pop()
 
-      // Draw trail dots (fading, shrinking)
+      // Draw trail dots (fading, shrinking) — use solid circles + globalAlpha
+      // instead of createRadialGradient per dot to reduce GPU cost
       for (let i = 0; i < trail.length; i++) {
         const dot = trail[i]
         const progress = i / TRAIL_LEN
         const a = (1 - progress) * 0.55
         const r = dot.r * (1 - progress * 0.75)
 
-        // Gold glow around each dot
-        const grad = ctx.createRadialGradient(dot.x, dot.y, 0, dot.x, dot.y, r + 6)
-        grad.addColorStop(0, `rgba(195,164,111,${a * 0.9})`)
-        grad.addColorStop(0.5, `rgba(155,132,96,${a * 0.4})`)
-        grad.addColorStop(1, 'rgba(155,132,96,0)')
+        // Outer glow — concentric solid circles simulate gradient
+        ctx.globalAlpha = a * 0.4
         ctx.beginPath()
         ctx.arc(dot.x, dot.y, r + 6, 0, Math.PI * 2)
-        ctx.fillStyle = grad
+        ctx.fillStyle = 'rgba(155,132,96,0.5)'
+        ctx.fill()
+
+        ctx.globalAlpha = a * 0.9
+        ctx.beginPath()
+        ctx.arc(dot.x, dot.y, r + 2, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(195,164,111,0.7)'
         ctx.fill()
 
         // Solid core
+        ctx.globalAlpha = Math.min(a * 1.2, 1)
         ctx.beginPath()
         ctx.arc(dot.x, dot.y, Math.max(r * 0.4, 0.5), 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,245,220,${a * 1.2 > 1 ? 1 : a * 1.2})`
+        ctx.fillStyle = 'rgba(255,245,220,1)'
         ctx.fill()
       }
+
+      ctx.globalAlpha = 1
 
       // Main cursor dot — bright white core + golden ring
       const cx = cursor.x
@@ -91,15 +100,26 @@ export function CustomCursor() {
       ctx.lineWidth = 1
       ctx.stroke()
 
-      // Inner glow
-      const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 7)
-      cGrad.addColorStop(0, 'rgba(255,255,255,0.95)')
-      cGrad.addColorStop(0.4, 'rgba(220,190,130,0.6)')
-      cGrad.addColorStop(1, 'rgba(155,132,96,0)')
+      // Inner glow — concentric solid circles instead of gradient
+      ctx.globalAlpha = 0.6
       ctx.beginPath()
       ctx.arc(cx, cy, 7, 0, Math.PI * 2)
-      ctx.fillStyle = cGrad
+      ctx.fillStyle = 'rgba(155,132,96,0.5)'
       ctx.fill()
+
+      ctx.globalAlpha = 0.8
+      ctx.beginPath()
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(220,190,130,0.7)'
+      ctx.fill()
+
+      ctx.globalAlpha = 0.95
+      ctx.beginPath()
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2)
+      ctx.fillStyle = '#ffffff'
+      ctx.fill()
+
+      ctx.globalAlpha = 1
 
       // Hard center
       ctx.beginPath()
@@ -107,14 +127,29 @@ export function CustomCursor() {
       ctx.fillStyle = '#ffffff'
       ctx.fill()
 
-      raf = requestAnimationFrame(tick)
+      if (running) raf = requestAnimationFrame(tick)
     }
+
+    // Visibility change: pause rAF when tab is hidden
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        running = false
+        cancelAnimationFrame(raf)
+      } else {
+        running = true
+        raf = requestAnimationFrame(tick)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     tick()
 
     return () => {
+      running = false
       cancelAnimationFrame(raf)
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('resize', onResize)
+      globalThis.removeEventListener('mousemove', onMove)
+      globalThis.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 

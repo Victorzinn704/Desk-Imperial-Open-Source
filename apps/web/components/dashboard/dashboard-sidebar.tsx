@@ -79,7 +79,7 @@ export function DashboardSidebar({
 }>) {
   const [manualCollapsed, setManualCollapsed] = useState<boolean | null>(() => {
     if (typeof window === 'undefined') return false
-    const stored = localStorage.getItem(COLLAPSE_KEY)
+    const stored = globalThis.localStorage.getItem(COLLAPSE_KEY)
     if (stored === 'true' || stored === 'false') {
       return stored === 'true'
     }
@@ -90,7 +90,7 @@ export function DashboardSidebar({
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (manualCollapsed !== null) {
-      localStorage.setItem(COLLAPSE_KEY, String(manualCollapsed))
+      globalThis.localStorage.setItem(COLLAPSE_KEY, String(manualCollapsed))
     }
     onCollapseChange?.(collapsed)
   }, [collapsed, manualCollapsed, onCollapseChange])

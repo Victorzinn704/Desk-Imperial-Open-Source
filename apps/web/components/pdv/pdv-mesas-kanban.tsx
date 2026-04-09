@@ -7,14 +7,14 @@ import type { Mesa, Comanda, MesaStatus } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 import { calcTotal, formatElapsed } from './pdv-types'
 
-type Props = {
+type Props = Readonly<{
   mesas: Mesa[]
   comandas: Comanda[]
   onStatusChange: (mesaId: string, newStatus: MesaStatus) => void
   onClickLivre: (mesa: Mesa) => void
   onClickOcupada: (comanda: Comanda) => void
   onAddMesa: () => void
-}
+}>
 
 const COLUMNS = [
   {

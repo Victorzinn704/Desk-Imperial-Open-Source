@@ -19,13 +19,17 @@ import {
   STATUS_LABEL,
   fmtBRL,
   defaultCreateForm,
+  useMesaDrag,
+  KpiCard,
+  ModernOperacionalCard,
+  MesaListCard,
+  MesaFloorCard,
+  CreateMesaModal,
+  EditMesaModal,
   type View,
   type CreateForm,
   type EditForm,
 } from './salao'
-import { useMesaDrag } from './salao'
-import { KpiCard, ModernOperacionalCard, MesaListCard, MesaFloorCard } from './salao'
-import { CreateMesaModal, EditMesaModal } from './salao'
 
 // ── main component ─────────────────────────────────────────────────────────────
 
@@ -133,19 +137,19 @@ export function SalaoEnvironment() {
     setFormError(null)
     if (createForm.mode === 'single') {
       if (!createForm.label.trim()) return setFormError('Nome é obrigatório')
-      const cap = parseInt(createForm.capacity, 10)
+      const cap = Number.parseInt(createForm.capacity, 10)
       createMutation.mutate({
         label: createForm.label.trim(),
         capacity: cap > 0 ? cap : 4,
         section: createForm.section.trim() || undefined,
       })
     } else {
-      const from = parseInt(createForm.bulkFrom, 10)
-      const to = parseInt(createForm.bulkTo, 10)
+      const from = Number.parseInt(createForm.bulkFrom, 10)
+      const to = Number.parseInt(createForm.bulkTo, 10)
       if (isNaN(from) || isNaN(to) || from > to || to - from > 49) {
         return setFormError('Range inválido (máx 50 de uma vez)')
       }
-      const cap = parseInt(createForm.capacity, 10)
+      const cap = Number.parseInt(createForm.capacity, 10)
       const prefix = createForm.bulkPrefix.trim() || 'Mesa'
       const section = createForm.section.trim() || undefined
       for (let n = from; n <= to; n++) {
@@ -159,12 +163,12 @@ export function SalaoEnvironment() {
     }
   }
 
-  function handleEditSubmit(e: React.FormEvent) {
+  function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!editingMesa) return
     setFormError(null)
     if (!editForm.label.trim()) return setFormError('Nome é obrigatório')
-    const cap = parseInt(editForm.capacity, 10)
+    const cap = Number.parseInt(editForm.capacity, 10)
     updateMutation.mutate({
       id: editingMesa.id,
       body: {
@@ -591,7 +595,7 @@ function OperacionalView({
                 key={section.label}
                 type="button"
                 onClick={() => setSectionFilter(section.label)}
-                className="rounded-full border px-3.5 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em] transition hover:-translate-y-[1px]"
+                className="rounded-full border px-3.5 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em] transition-colors"
                 style={{
                   color: tone.text,
                   borderColor: isActive ? tone.border : 'rgba(255,255,255,0.08)',

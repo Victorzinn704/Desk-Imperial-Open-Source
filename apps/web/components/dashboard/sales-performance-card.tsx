@@ -5,7 +5,62 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { Skeleton } from '@/components/shared/skeleton'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
-import { Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartSkeleton } from '@/components/shared/skeleton'
+
+const LazyPerformanceChart = dynamic(
+  () =>
+    import('recharts').then((mod) => {
+      const { Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } = mod
+
+      function PerformanceChart({
+        timeline,
+        displayCurrency,
+        formatCompactFn,
+        tooltipContent,
+      }: {
+        timeline: Array<Record<string, unknown>>
+        displayCurrency: string
+        formatCompactFn: (v: number, c: string) => string
+        tooltipContent: React.ReactElement
+      }) {
+        return (
+          <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
+            <defs>
+              <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
+            <XAxis axisLine={false} dataKey="label" tick={{ fill: '#6b7a8d', fontSize: 11 }} tickLine={false} />
+            <YAxis
+              axisLine={false}
+              tick={{ fill: '#6b7a8d', fontSize: 11 }}
+              tickFormatter={(v: number) => formatCompactFn(v, displayCurrency)}
+              tickLine={false}
+              width={68}
+            />
+            <Tooltip content={tooltipContent} />
+            <Bar dataKey="revenue" fill="url(#perfRevenue)" maxBarSize={32} name="Receita" radius={[6, 6, 2, 2]} />
+            <Line
+              dataKey="profit"
+              dot={{ fill: '#38bdf8', r: 3, strokeWidth: 0 }}
+              name="Lucro"
+              stroke="#38bdf8"
+              strokeWidth={2.5}
+              type="monotone"
+            />
+          </ComposedChart>
+        )
+      }
+      return PerformanceChart
+    }),
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton />,
+  },
+)
 
 export function SalesPerformanceCard({
   finance,
@@ -85,33 +140,12 @@ export function SalesPerformanceCard({
             <Skeleton className="h-full w-full rounded-[14px]" />
           ) : timeline.length > 0 ? (
             <ChartResponsiveContainer>
-              <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="perfRevenue" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#36f57c" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#36f57c" stopOpacity={0.55} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
-                <XAxis axisLine={false} dataKey="label" tick={{ fill: '#6b7a8d', fontSize: 11 }} tickLine={false} />
-                <YAxis
-                  axisLine={false}
-                  tick={{ fill: '#6b7a8d', fontSize: 11 }}
-                  tickFormatter={(v: number) => formatCompactCurrency(v, displayCurrency)}
-                  tickLine={false}
-                  width={68}
-                />
-                <Tooltip content={<PerformanceTooltip displayCurrency={displayCurrency} />} />
-                <Bar dataKey="revenue" fill="url(#perfRevenue)" maxBarSize={32} name="Receita" radius={[6, 6, 2, 2]} />
-                <Line
-                  dataKey="profit"
-                  dot={{ fill: '#38bdf8', r: 3, strokeWidth: 0 }}
-                  name="Lucro"
-                  stroke="#38bdf8"
-                  strokeWidth={2.5}
-                  type="monotone"
-                />
-              </ComposedChart>
+              <LazyPerformanceChart
+                timeline={timeline}
+                displayCurrency={displayCurrency}
+                formatCompactFn={formatCompactCurrency}
+                tooltipContent={<PerformanceTooltip displayCurrency={displayCurrency} />}
+              />
             </ChartResponsiveContainer>
           ) : (
             <div className="flex h-full items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-soft)]">

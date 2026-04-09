@@ -990,17 +990,7 @@ async function apiFetch<T>(
   headers.set('Accept', 'application/json')
 
   if (!options.skipCsrf && shouldAttachCsrfToken(options.method)) {
-    // Try multiple CSRF token sources with priority:
-    // 1. Token from cookie (always fresh across multiple tabs)
-    // 2. Persisted token from sessionStorage (fallback)
-    const csrfToken = readCsrfToken() || readPersistedCsrfToken()
-
-    if (csrfToken) {
-      headers.set('X-CSRF-Token', csrfToken)
-    } else {
-      // If no token found, log warning (helps debug CSRF issues)
-      console.warn('[CSRF] No token found for request:', path, 'method:', options.method)
-    }
+    attachCsrfHeader(headers, path, options.method)
   }
 
   const clientRequestId = ensureRequestId(headers)
@@ -1022,46 +1012,7 @@ async function apiFetch<T>(
     )
   } catch (error) {
     const elapsedMs = Math.max(0, getCurrentTimeMs() - requestStartedAt)
-
-    if (error instanceof ApiTimeoutError) {
-      const timeoutApiError = new ApiError(
-        `A requisicao demorou demais (${Math.ceil(error.timeoutMs / 1000)}s). Tente novamente.`,
-        504,
-        clientRequestId,
-      )
-      reportApiErrorTelemetry(timeoutApiError, {
-        path,
-        method,
-        requestId: clientRequestId,
-      })
-      reportApiRequestMeasurementToFaro({
-        path,
-        method,
-        status: 504,
-        durationMs: Math.max(elapsedMs, error.timeoutMs),
-        requestId: clientRequestId,
-      })
-      throw timeoutApiError
-    }
-
-    const connectionApiError = new ApiError(
-      `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
-      0,
-      clientRequestId,
-    )
-    reportApiErrorTelemetry(connectionApiError, {
-      path,
-      method,
-      requestId: clientRequestId,
-    })
-    reportApiRequestMeasurementToFaro({
-      path,
-      method,
-      status: 0,
-      durationMs: elapsedMs,
-      requestId: clientRequestId,
-    })
-    throw connectionApiError
+    throw buildFetchError(error, elapsedMs, path, method, clientRequestId)
   }
 
   const requestDurationMs = Math.max(0, getCurrentTimeMs() - requestStartedAt)
@@ -1099,6 +1050,44 @@ async function apiFetch<T>(
   }
 
   return payload
+}
+
+function buildFetchError(
+  error: unknown,
+  elapsedMs: number,
+  path: string,
+  method: string,
+  clientRequestId: string,
+): ApiError {
+  const telemetryCtx = { path, method, requestId: clientRequestId }
+
+  if (error instanceof ApiTimeoutError) {
+    const timeoutApiError = new ApiError(
+      `A requisicao demorou demais (${Math.ceil(error.timeoutMs / 1000)}s). Tente novamente.`,
+      504,
+      clientRequestId,
+    )
+    reportApiErrorTelemetry(timeoutApiError, telemetryCtx)
+    reportApiRequestMeasurementToFaro({
+      ...telemetryCtx,
+      status: 504,
+      durationMs: Math.max(elapsedMs, error.timeoutMs),
+    })
+    return timeoutApiError
+  }
+
+  const connectionApiError = new ApiError(
+    `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
+    0,
+    clientRequestId,
+  )
+  reportApiErrorTelemetry(connectionApiError, telemetryCtx)
+  reportApiRequestMeasurementToFaro({
+    ...telemetryCtx,
+    status: 0,
+    durationMs: elapsedMs,
+  })
+  return connectionApiError
 }
 
 function buildApiUrl(path: string) {
@@ -1139,6 +1128,15 @@ async function toApiError(response: Response, requestId: string | null) {
 function shouldAttachCsrfToken(method: string | undefined) {
   const normalized = (method ?? 'GET').toUpperCase()
   return normalized !== 'GET' && normalized !== 'HEAD' && normalized !== 'OPTIONS'
+}
+
+function attachCsrfHeader(headers: Headers, path: string, method?: string) {
+  const csrfToken = readCsrfToken() || readPersistedCsrfToken()
+  if (csrfToken) {
+    headers.set('X-CSRF-Token', csrfToken)
+  } else {
+    console.warn('[CSRF] No token found for request:', path, 'method:', method)
+  }
 }
 
 function readCsrfToken() {
@@ -1288,12 +1286,7 @@ function reportApiErrorTelemetry(
   })
 }
 
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  timeoutMs: number,
-  requestPath: string,
-) {
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, requestPath: string) {
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
     controller.abort()
@@ -1314,4 +1307,3 @@ async function fetchWithTimeout(
     clearTimeout(timeoutHandle)
   }
 }
- 

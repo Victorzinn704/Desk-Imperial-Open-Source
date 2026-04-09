@@ -113,6 +113,86 @@ function formatActivityDescription(entry: ActivityFeedEntry) {
   return entry.resource ? `${entry.resource} · ${entry.event}` : entry.event
 }
 
+function PinSetupForm({
+  pinDigits,
+  setPinDigits,
+  pinSaving,
+  pinSaveError,
+  setPinSaveError,
+  pinSaved,
+  onSave,
+}: {
+  pinDigits: string[]
+  setPinDigits: (v: string[]) => void
+  pinSaving: boolean
+  pinSaveError: string
+  setPinSaveError: (v: string) => void
+  pinSaved: boolean
+  onSave: () => void
+}) {
+  return (
+    <div className="mt-5 space-y-3">
+      <fieldset>
+        <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+          Defina o PIN
+        </legend>
+        <div className="mt-3 flex gap-2">
+          {pinDigits.map((digit, index) => (
+            <input
+              aria-label={`Digito ${index + 1} do PIN`}
+              className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.45)] [appearance:textfield]"
+              disabled={pinSaving}
+              inputMode="numeric"
+              key={index}
+              maxLength={1}
+              type="password"
+              value={digit}
+              onChange={(event) => {
+                const value = event.target.value.replace(/\D/g, '').slice(-1)
+                const next = [...pinDigits]
+                next[index] = value
+                setPinDigits(next)
+                setPinSaveError('')
+              }}
+            />
+          ))}
+        </div>
+      </fieldset>
+      {pinSaveError ? <p className="text-xs text-[#fca5a5]">{pinSaveError}</p> : null}
+      <Button disabled={pinDigits.join('').length !== 4} loading={pinSaving} onClick={onSave} type="button">
+        {pinSaved ? 'PIN ativado' : 'Ativar PIN'}
+      </Button>
+    </div>
+  )
+}
+
+async function savePinAction(
+  pinDigits: string[],
+  setPinSaving: (v: boolean) => void,
+  setPinSaveError: (v: string) => void,
+  setPinSaved: (v: boolean) => void,
+  setPinActive: (v: boolean) => void,
+  setPinDigits: (v: string[]) => void,
+) {
+  const pin = pinDigits.join('')
+  if (pin.length !== 4) return
+
+  setPinSaving(true)
+  setPinSaveError('')
+
+  try {
+    await setupAdminPin(pin)
+    setPinSaved(true)
+    setPinActive(true)
+    setPinDigits(['', '', '', ''])
+    globalThis.setTimeout(() => setPinSaved(false), 2600)
+  } catch (error) {
+    setPinSaveError(error instanceof ApiError ? error.message : 'Nao foi possivel ativar o PIN agora.')
+  } finally {
+    setPinSaving(false)
+  }
+}
+
 export function PinSetupCard({ activity, activityError, activityLoading }: PinSetupCardProps) {
   const [pinDigits, setPinDigits] = useState(['', '', '', ''])
   const [pinSaved, setPinSaved] = useState(false)
@@ -137,10 +217,10 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
       return
     }
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       setRemoveSecondsLeft((current) => {
         if (current <= 1) {
-          window.clearInterval(intervalId)
+          globalThis.clearInterval(intervalId)
           setRemoveBlocked(false)
           return 0
         }
@@ -148,28 +228,24 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
       })
     }, 1000)
 
-    return () => window.clearInterval(intervalId)
+    return () => globalThis.clearInterval(intervalId)
   }, [removeBlocked])
 
-  async function handleSavePin() {
-    const pin = pinDigits.join('')
-    if (pin.length !== 4) {
-      return
-    }
+  const handleSavePin = () =>
+    savePinAction(pinDigits, setPinSaving, setPinSaveError, setPinSaved, setPinActive, setPinDigits)
 
-    setPinSaving(true)
-    setPinSaveError('')
-
-    try {
-      await setupAdminPin(pin)
-      setPinSaved(true)
-      setPinActive(true)
-      setPinDigits(['', '', '', ''])
-      window.setTimeout(() => setPinSaved(false), 2600)
-    } catch (error) {
-      setPinSaveError(error instanceof ApiError ? error.message : 'Nao foi possivel ativar o PIN agora.')
-    } finally {
-      setPinSaving(false)
+  function handleRemoveError(error: unknown) {
+    if (error instanceof ApiError) {
+      if (error.status === 423) {
+        const match = error.message.match(/(\d+)\s*s/i)
+        setRemoveBlocked(true)
+        setRemoveSecondsLeft(match ? Number(match[1]) : 300)
+      } else {
+        setConfirmRemoveError(error.message || 'PIN incorreto. Tente novamente.')
+        globalThis.setTimeout(() => removeInputRefs[0].current?.focus(), 50)
+      }
+    } else {
+      setConfirmRemoveError('Erro inesperado ao remover o PIN.')
     }
   }
 
@@ -184,19 +260,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
       setConfirmRemoveError('')
     } catch (error) {
       setConfirmRemoveDigits(['', '', '', ''])
-
-      if (error instanceof ApiError) {
-        if (error.status === 423) {
-          const match = error.message.match(/(\d+)\s*s/i)
-          setRemoveBlocked(true)
-          setRemoveSecondsLeft(match ? Number(match[1]) : 300)
-        } else {
-          setConfirmRemoveError(error.message || 'PIN incorreto. Tente novamente.')
-          window.setTimeout(() => removeInputRefs[0].current?.focus(), 50)
-        }
-      } else {
-        setConfirmRemoveError('Erro inesperado ao remover o PIN.')
-      }
+      handleRemoveError(error)
     } finally {
       setRemoving(false)
     }
@@ -255,45 +319,15 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
           </div>
 
           {!pinActive ? (
-            <div className="mt-5 space-y-3">
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                  Defina o PIN
-                </legend>
-                <div className="mt-3 flex gap-2">
-                  {pinDigits.map((digit, index) => (
-                    <input
-                      aria-label={`Digito ${index + 1} do PIN`}
-                      className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.45)] [appearance:textfield]"
-                      disabled={pinSaving}
-                      inputMode="numeric"
-                      key={index}
-                      maxLength={1}
-                      type="password"
-                      value={digit}
-                      onChange={(event) => {
-                        const value = event.target.value.replace(/\D/g, '').slice(-1)
-                        const next = [...pinDigits]
-                        next[index] = value
-                        setPinDigits(next)
-                        setPinSaveError('')
-                      }}
-                    />
-                  ))}
-                </div>
-              </fieldset>
-
-              {pinSaveError ? <p className="text-xs text-[#fca5a5]">{pinSaveError}</p> : null}
-
-              <Button
-                disabled={pinDigits.join('').length !== 4}
-                loading={pinSaving}
-                onClick={() => void handleSavePin()}
-                type="button"
-              >
-                {pinSaved ? 'PIN ativado' : 'Ativar PIN'}
-              </Button>
-            </div>
+            <PinSetupForm
+              pinDigits={pinDigits}
+              setPinDigits={setPinDigits}
+              pinSaving={pinSaving}
+              pinSaveError={pinSaveError}
+              setPinSaveError={setPinSaveError}
+              pinSaved={pinSaved}
+              onSave={() => void handleSavePin()}
+            />
           ) : (
             <div className="mt-5 space-y-3">
               {!showConfirmRemove ? (

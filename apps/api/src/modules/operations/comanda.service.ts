@@ -39,10 +39,24 @@ import {
   OPEN_COMANDA_STATUSES,
   isOpenComandaStatus,
   resolveBusinessDate,
-  toNumber,
+  toNumberOrZero,
 } from './operations-domain.utils'
 
 const COMANDA_WRITE_ISOLATION_LEVEL = Prisma.TransactionIsolationLevel.Serializable
+
+const REALTIME_STATUS_MAP: Record<string, 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED'> = {
+  OPEN: 'OPEN',
+  IN_PREPARATION: 'IN_PREPARATION',
+  READY: 'READY',
+}
+
+function toRealtimeStatus(status: string): 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' {
+  return REALTIME_STATUS_MAP[status] ?? 'CLOSED'
+}
+
+function toRealtimeOpenStatus(status: string): 'OPEN' | 'IN_PREPARATION' | 'READY' {
+  return (REALTIME_STATUS_MAP[status] as 'OPEN' | 'IN_PREPARATION' | 'READY') ?? 'OPEN'
+}
 
 @Injectable()
 export class ComandaService {
@@ -126,68 +140,14 @@ export class ComandaService {
     }
 
     const operationalBusinessDate = resolveBusinessDate()
-    let currentEmployeeId: string | null = null
-    let cashSessionId: string | null = dto.cashSessionId ?? null
-    let businessDate: Date
-
-    if (auth.role === 'STAFF') {
-      if (!actorEmployee) {
-        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
-      }
-
-      const openSession = await this.prisma.cashSession.findFirst({
-        where: {
-          companyOwnerId: workspaceOwnerUserId,
-          employeeId: actorEmployee.id,
-          businessDate: operationalBusinessDate,
-          status: CashSessionStatus.OPEN,
-        },
-        orderBy: {
-          openedAt: 'desc',
-        },
-      })
-
-      if (!openSession) {
-        throw new ConflictException('Abra o caixa do funcionario antes de criar comandas.')
-      }
-
-      currentEmployeeId = actorEmployee.id
-      cashSessionId = openSession.id
-      businessDate = openSession.businessDate
-    } else {
-      if (dto.employeeId) {
-        const assignedEmployee = await this.helpers.requireOwnedEmployee(
-          this.prisma,
-          workspaceOwnerUserId,
-          dto.employeeId,
-        )
-        const employeeOpenSession = await this.prisma.cashSession.findFirst({
-          where: {
-            companyOwnerId: workspaceOwnerUserId,
-            employeeId: assignedEmployee.id,
-            businessDate: operationalBusinessDate,
-            status: CashSessionStatus.OPEN,
-          },
-          orderBy: {
-            openedAt: 'desc',
-          },
-        })
-
-        if (!employeeOpenSession) {
-          throw new ConflictException('O funcionario precisa abrir o proprio caixa antes de receber uma mesa.')
-        }
-
-        currentEmployeeId = assignedEmployee.id
-        cashSessionId = cashSessionId ?? employeeOpenSession.id
-      }
-
-      if (cashSessionId) {
-        const session = await this.helpers.requireOwnedCashSession(this.prisma, workspaceOwnerUserId, cashSessionId)
-        businessDate = session.businessDate
-      } else {
-        businessDate = operationalBusinessDate
-      }
-    }
+    const sessionContext = await this.resolveComandaSessionContext(
+      auth,
+      workspaceOwnerUserId,
+      operationalBusinessDate,
+      actorEmployee,
+      dto,
+    )
+    const { currentEmployeeId, cashSessionId, businessDate } = sessionContext
 
     const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId)
     const resolvedMesaId = mesaSelection.mesaId
@@ -323,6 +283,88 @@ export class ComandaService {
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, comanda, options)
   }
 
+  private async resolveComandaSessionContext(
+    auth: AuthContext,
+    workspaceOwnerUserId: string,
+    operationalBusinessDate: Date,
+    actorEmployee: { id: string } | null,
+    dto: OpenComandaDto,
+  ): Promise<{ currentEmployeeId: string | null; cashSessionId: string | null; businessDate: Date }> {
+    if (auth.role === 'STAFF') {
+      return this.resolveStaffSessionContext(workspaceOwnerUserId, operationalBusinessDate, actorEmployee)
+    }
+    return this.resolveOwnerSessionContext(workspaceOwnerUserId, operationalBusinessDate, dto)
+  }
+
+  private async resolveStaffSessionContext(
+    workspaceOwnerUserId: string,
+    operationalBusinessDate: Date,
+    actorEmployee: { id: string } | null,
+  ) {
+    if (!actorEmployee) {
+      throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
+    }
+
+    const openSession = await this.prisma.cashSession.findFirst({
+      where: {
+        companyOwnerId: workspaceOwnerUserId,
+        employeeId: actorEmployee.id,
+        businessDate: operationalBusinessDate,
+        status: CashSessionStatus.OPEN,
+      },
+      orderBy: { openedAt: 'desc' },
+    })
+
+    if (!openSession) {
+      throw new ConflictException('Abra o caixa do funcionario antes de criar comandas.')
+    }
+
+    return {
+      currentEmployeeId: actorEmployee.id,
+      cashSessionId: openSession.id,
+      businessDate: openSession.businessDate,
+    }
+  }
+
+  private async resolveOwnerSessionContext(
+    workspaceOwnerUserId: string,
+    operationalBusinessDate: Date,
+    dto: OpenComandaDto,
+  ) {
+    let currentEmployeeId: string | null = null
+    let cashSessionId: string | null = dto.cashSessionId ?? null
+
+    if (dto.employeeId) {
+      const assignedEmployee = await this.helpers.requireOwnedEmployee(
+        this.prisma,
+        workspaceOwnerUserId,
+        dto.employeeId,
+      )
+      const employeeOpenSession = await this.prisma.cashSession.findFirst({
+        where: {
+          companyOwnerId: workspaceOwnerUserId,
+          employeeId: assignedEmployee.id,
+          businessDate: operationalBusinessDate,
+          status: CashSessionStatus.OPEN,
+        },
+        orderBy: { openedAt: 'desc' },
+      })
+
+      if (!employeeOpenSession) {
+        throw new ConflictException('O funcionario precisa abrir o proprio caixa antes de receber uma mesa.')
+      }
+
+      currentEmployeeId = assignedEmployee.id
+      cashSessionId = cashSessionId ?? employeeOpenSession.id
+    }
+
+    const businessDate = cashSessionId
+      ? (await this.helpers.requireOwnedCashSession(this.prisma, workspaceOwnerUserId, cashSessionId)).businessDate
+      : operationalBusinessDate
+
+    return { currentEmployeeId, cashSessionId, businessDate }
+  }
+
   async addComandaItem(
     auth: AuthContext,
     comandaId: string,
@@ -364,7 +406,7 @@ export class ComandaService {
 
       productId = product.id
       productName = product.name
-      unitPrice = roundCurrency(dto.unitPrice ?? toNumber(product.unitPrice))
+      unitPrice = roundCurrency(dto.unitPrice ?? toNumberOrZero(product.unitPrice))
       // requiresKitchen: use product flag; if false but category suggests food, infer true
       // This handles products created before the auto-detection feature
       requiresKitchen = product.requiresKitchen || isKitchenCategory(product.category)
@@ -502,7 +544,9 @@ export class ComandaService {
         throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
       }
 
-      const unitPrice = roundCurrency(product ? (itemDto.unitPrice ?? toNumber(product.unitPrice)) : itemDto.unitPrice!)
+      const unitPrice = roundCurrency(
+        product ? (itemDto.unitPrice ?? toNumberOrZero(product.unitPrice)) : itemDto.unitPrice!,
+      )
       const notes = sanitizePlainText(itemDto.notes, 'Observacoes do item', {
         allowEmpty: true,
         rejectFormula: false,
@@ -524,23 +568,25 @@ export class ComandaService {
     const helpers = this.helpers
     const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(
       async (transaction) => {
-        const insertedItems = []
-        for (const item of preparedItems) {
-          const createdItem = await transaction.comandaItem.create({
-            data: {
-              comandaId: comanda.id,
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalAmount: item.totalAmount,
-              notes: item.notes,
-              kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
-              kitchenQueuedAt: item.kitchenQueuedAt,
-            },
-          })
-          insertedItems.push(createdItem)
-        }
+        await transaction.comandaItem.createMany({
+          data: preparedItems.map((item) => ({
+            comandaId: comanda.id,
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            notes: item.notes,
+            kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+            kitchenQueuedAt: item.kitchenQueuedAt,
+          })),
+        })
+
+        const insertedItems = await transaction.comandaItem.findMany({
+          where: { comandaId: comanda.id },
+          orderBy: { createdAt: 'desc' },
+          take: preparedItems.length,
+        })
 
         const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
         const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
@@ -623,8 +669,8 @@ export class ComandaService {
     })
     const participantCount = dto.participantCount ?? comanda.participantCount
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+    const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
+    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
     this.assertMonetaryAdjustmentsWithinSubtotal(
       this.calculateDraftItemsSubtotal(draftItems),
       discountAmount,
@@ -911,88 +957,63 @@ export class ComandaService {
     context: RequestContext,
   ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const helpers = this.helpers
 
-    const item = await this.prisma.comandaItem.findUnique({
-      where: { id: itemId },
-      include: {
-        comanda: {
-          select: {
-            id: true,
-            companyOwnerId: true,
-            tableLabel: true,
-            status: true,
-            cashSessionId: true,
-            openedAt: true,
+    const { updatedItem, refreshedComanda, businessDate, comandaId } = await this.prisma.$transaction(
+      async (tx) => {
+        const item = await tx.comandaItem.findUnique({
+          where: { id: itemId },
+          include: {
+            comanda: {
+              select: {
+                id: true,
+                companyOwnerId: true,
+                tableLabel: true,
+                status: true,
+                cashSessionId: true,
+                openedAt: true,
+              },
+            },
           },
-        },
-      },
-    })
-
-    if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
-      throw new NotFoundException('Item de comanda nao encontrado.')
-    }
-
-    if (!item.kitchenStatus) {
-      throw new BadRequestException('Este item nao esta na fila da cozinha.')
-    }
-
-    const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
-
-    // Update the individual item
-    const updatedItem = await this.prisma.comandaItem.update({
-      where: { id: itemId },
-      data: {
-        kitchenStatus: dto.status as KitchenItemStatus,
-        kitchenReadyAt: kitchenReadyAt ?? null,
-      },
-    })
-
-    // ── Propagate to comanda status ──────────────────────────────────────────
-    const allItems = await this.prisma.comandaItem.findMany({
-      where: { comandaId: item.comanda.id },
-      select: { kitchenStatus: true },
-    })
-
-    const kitchenItems = allItems.filter((i) => i.kitchenStatus !== null)
-    let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
-
-    if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
-      const allReady = kitchenItems.every(
-        (i) => i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
-      )
-      const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
-
-      let newComandaStatus: ComandaStatus | null = null
-      if (allReady) {
-        newComandaStatus = ComandaStatus.READY
-      } else if (anyInPrep && item.comanda.status === ComandaStatus.OPEN) {
-        newComandaStatus = ComandaStatus.IN_PREPARATION
-      }
-
-      if (newComandaStatus) {
-        refreshedComanda = await this.prisma.comanda.update({
-          where: { id: item.comanda.id },
-          data: { status: newComandaStatus },
-          include: { items: { orderBy: { createdAt: 'asc' } } },
         })
-      }
-    }
 
-    // If status didn't change, still fetch the comanda for the realtime event
-    if (!refreshedComanda) {
-      refreshedComanda =
-        (await this.prisma.comanda.findUnique({
-          where: { id: item.comanda.id },
-          include: { items: { orderBy: { createdAt: 'asc' } } },
-        })) ?? undefined
-    }
-    // ─────────────────────────────────────────────────────────────────────────
+        if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
+          throw new NotFoundException('Item de comanda nao encontrado.')
+        }
 
-    const businessDate = await this.helpers.resolveComandaBusinessDate(
-      this.prisma,
-      refreshedComanda ?? {
-        cashSessionId: item.comanda.cashSessionId,
-        openedAt: item.comanda.openedAt,
+        if (!item.kitchenStatus) {
+          throw new BadRequestException('Este item nao esta na fila da cozinha.')
+        }
+
+        const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
+
+        const txUpdatedItem = await tx.comandaItem.update({
+          where: { id: itemId },
+          data: {
+            kitchenStatus: dto.status as KitchenItemStatus,
+            kitchenReadyAt: kitchenReadyAt ?? null,
+          },
+        })
+
+        const txRefreshedComanda = await this.propagateKitchenStatusToComanda(tx, item.comanda)
+
+        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(
+          tx,
+          txRefreshedComanda ?? {
+            cashSessionId: item.comanda.cashSessionId,
+            openedAt: item.comanda.openedAt,
+          },
+        )
+
+        return {
+          updatedItem: txUpdatedItem,
+          refreshedComanda: txRefreshedComanda,
+          businessDate: resolvedBusinessDate,
+          comandaId: item.comanda.id,
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       },
     )
 
@@ -1001,24 +1022,73 @@ export class ComandaService {
       event: 'operations.kitchen_item.status_updated',
       resource: 'comanda_item',
       resourceId: itemId,
-      metadata: { status: dto.status, comandaId: item.comanda.id },
+      metadata: { status: dto.status, comandaId },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
 
     this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
 
-    // Emit kitchen item event (for Cozinha tab)
     if (refreshedComanda) {
       this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
-    }
-
-    // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
-    if (refreshedComanda) {
       this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     }
 
     return { itemId, status: dto.status }
+  }
+
+  private async propagateKitchenStatusToComanda(
+    tx: {
+      comandaItem: {
+        findMany: (args: {
+          where: { comandaId: string }
+          select: { kitchenStatus: true }
+        }) => Promise<{ kitchenStatus: KitchenItemStatus | null }[]>
+      }
+      comanda: { update: (args: { where: { id: string }; data: { status: ComandaStatus } }) => Promise<unknown> }
+    },
+    comanda: { id: string; status: ComandaStatus; cashSessionId: string | null; openedAt: Date },
+  ) {
+    const allItems = await tx.comandaItem.findMany({
+      where: { comandaId: comanda.id },
+      select: { kitchenStatus: true },
+    })
+
+    const kitchenItems = allItems.filter((i: { kitchenStatus: KitchenItemStatus | null }) => i.kitchenStatus !== null)
+    const newStatus = this.deriveComandaStatusFromKitchen(kitchenItems, comanda.status)
+
+    if (newStatus) {
+      return tx.comanda.update({
+        where: { id: comanda.id },
+        data: { status: newStatus },
+        include: { items: { orderBy: { createdAt: 'asc' } } },
+      })
+    }
+
+    return (
+      (await tx.comanda.findUnique({
+        where: { id: comanda.id },
+        include: { items: { orderBy: { createdAt: 'asc' } } },
+      })) ?? undefined
+    )
+  }
+
+  private deriveComandaStatusFromKitchen(
+    kitchenItems: Array<{ kitchenStatus: KitchenItemStatus | null }>,
+    currentStatus: ComandaStatus,
+  ): ComandaStatus | null {
+    if (kitchenItems.length === 0) return null
+    if (!isOpenComandaStatus(currentStatus)) return null
+
+    const allReady = kitchenItems.every(
+      (i) => i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
+    )
+    if (allReady) return ComandaStatus.READY
+
+    const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
+    if (anyInPrep && currentStatus === ComandaStatus.OPEN) return ComandaStatus.IN_PREPARATION
+
+    return null
   }
 
   async closeComanda(
@@ -1054,8 +1124,8 @@ export class ComandaService {
       allowEmpty: true,
       rejectFormula: false,
     })
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
+    const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
+    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
     this.assertMonetaryAdjustmentsWithinSubtotal(
       this.calculateDraftItemsSubtotal(comanda.items),
       discountAmount,
@@ -1111,7 +1181,7 @@ export class ComandaService {
       metadata: {
         discountAmount,
         serviceFeeAmount,
-        totalAmount: toNumber(refreshedComanda.totalAmount),
+        totalAmount: toNumberOrZero(refreshedComanda.totalAmount),
       },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -1200,11 +1270,11 @@ export class ComandaService {
       mesaLabel: comanda.tableLabel,
       openedAt: comanda.openedAt.toISOString(),
       employeeId: comanda.currentEmployeeId,
-      status: comanda.status === 'IN_PREPARATION' ? 'EM_PREPARO' : comanda.status === 'READY' ? 'PRONTA' : 'ABERTA',
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
+      status: toRealtimeOpenStatus(comanda.status),
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
       totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
       businessDate: formatBusinessDateKey(businessDate),
     })
@@ -1235,19 +1305,12 @@ export class ComandaService {
     this.operationsRealtimeService.publishComandaUpdated(auth, {
       comandaId: comanda.id,
       mesaLabel: comanda.tableLabel,
-      status:
-        comanda.status === 'OPEN'
-          ? 'ABERTA'
-          : comanda.status === 'IN_PREPARATION'
-            ? 'EM_PREPARO'
-            : comanda.status === 'READY'
-              ? 'PRONTA'
-              : 'FECHADA',
+      status: toRealtimeStatus(comanda.status),
       employeeId: comanda.currentEmployeeId,
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
       totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
       businessDate: formatBusinessDateKey(businessDate),
       ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
@@ -1322,11 +1385,11 @@ export class ComandaService {
       mesaLabel: comanda.tableLabel,
       closedAt: comanda.closedAt?.toISOString() ?? new Date().toISOString(),
       employeeId: comanda.currentEmployeeId,
-      status: 'FECHADA',
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
+      status: 'CLOSED',
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
       totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
       paymentMethod: null,
       businessDate: formatBusinessDateKey(businessDate),
@@ -1347,7 +1410,7 @@ export class ComandaService {
       totalAmount: { toNumber(): number } | number
     }>,
   ) {
-    return roundCurrency(items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
+    return roundCurrency(items.reduce((sum, item) => sum + toNumberOrZero(item.totalAmount), 0))
   }
 
   private assertMonetaryAdjustmentsWithinSubtotal(
@@ -1511,7 +1574,7 @@ export class ComandaService {
         existingItem.productId === nextItem.productId &&
         existingItem.productName === nextItem.productName &&
         existingItem.quantity === nextItem.quantity &&
-        roundCurrency(toNumber(existingItem.unitPrice)) === roundCurrency(nextItem.unitPrice) &&
+        roundCurrency(toNumberOrZero(existingItem.unitPrice)) === roundCurrency(nextItem.unitPrice) &&
         (existingItem.notes ?? null) === (nextItem.notes ?? null),
     )
 

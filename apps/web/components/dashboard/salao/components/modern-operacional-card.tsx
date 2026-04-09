@@ -36,6 +36,33 @@ const STATUS_CFG = {
 
 const GARCOM_COLORS = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
 
+function resolveUrgencyStyles(status: string, isCritical: boolean, isWarning: boolean, defaultBorder: string) {
+  if (status !== 'ocupada') {
+    return { dynamicBorder: defaultBorder, dynamicShadow: '0 4px 20px rgba(0,0,0,0.2)', pulseClass: '' }
+  }
+  if (isCritical) {
+    return {
+      dynamicBorder: 'rgba(248,113,113,0.6)',
+      dynamicShadow: '0 0 30px rgba(248,113,113,0.15)',
+      pulseClass: 'animate-pulse',
+    }
+  }
+  if (isWarning) {
+    return {
+      dynamicBorder: 'rgba(251,191,36,0.4)',
+      dynamicShadow: '0 0 20px rgba(251,191,36,0.1)',
+      pulseClass: '',
+    }
+  }
+  return { dynamicBorder: defaultBorder, dynamicShadow: '0 4px 20px rgba(0,0,0,0.2)', pulseClass: '' }
+}
+
+function resolveElapsedColor(isCritical: boolean, isWarning: boolean): string {
+  if (isCritical) return '#f87171'
+  if (isWarning) return '#fbbf24'
+  return '#fb923c'
+}
+
 export const ModernOperacionalCard = memo(function ModernOperacionalCard({
   mesa,
   comanda,
@@ -47,20 +74,12 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
   const isCritical = urgency >= 3
   const isWarning = urgency === 2
 
-  let dynamicBorder = cfg.border
-  let dynamicShadow = '0 4px 20px rgba(0,0,0,0.2)'
-  let pulseClass = ''
-
-  if (mesa.status === 'ocupada') {
-    if (isCritical) {
-      dynamicBorder = 'rgba(248,113,113,0.6)'
-      dynamicShadow = '0 0 30px rgba(248,113,113,0.15)'
-      pulseClass = 'animate-pulse'
-    } else if (isWarning) {
-      dynamicBorder = 'rgba(251,191,36,0.4)'
-      dynamicShadow = '0 0 20px rgba(251,191,36,0.1)'
-    }
-  }
+  const { dynamicBorder, dynamicShadow, pulseClass } = resolveUrgencyStyles(
+    mesa.status,
+    isCritical,
+    isWarning,
+    cfg.border,
+  )
 
   const total = comanda ? calcTotal(comanda) : 0
   const itemCount = comanda ? comanda.itens.reduce((s, i) => s + i.quantidade, 0) : 0
@@ -74,7 +93,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
 
   return (
     <div
-      className="group relative flex h-full min-h-[140px] flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] transition-all duration-500 hover:-translate-y-1 hover:border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.04)]"
+      className="group relative flex h-full min-h-[140px] flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.04)]"
       style={{
         boxShadow: dynamicShadow,
         borderColor: dynamicBorder,
@@ -143,7 +162,7 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
             <div className="flex flex-col gap-1.5">
               <div
                 className="flex items-center gap-1.5 text-[11px] font-semibold"
-                style={{ color: isCritical ? '#f87171' : isWarning ? '#fbbf24' : '#fb923c' }}
+                style={{ color: resolveElapsedColor(isCritical, isWarning) }}
               >
                 <Clock className="size-3.5" />
                 <span>{elapsed}</span>

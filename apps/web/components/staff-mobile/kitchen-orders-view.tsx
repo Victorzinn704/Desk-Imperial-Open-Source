@@ -204,7 +204,7 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
               style={{
                 background: isActive ? config.bg : 'var(--surface)',
                 color: isActive ? config.color : 'var(--text-soft, #7a8896)',
-                border: `1px solid ${isActive ? config.color + '40' : 'var(--border)'}`,
+                border: `1px solid ${isActive ? `${config.color}40` : 'var(--border)'}`,
               }}
             >
               {config.label}

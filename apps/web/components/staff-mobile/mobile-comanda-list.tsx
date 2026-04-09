@@ -402,11 +402,11 @@ const ComandaCard = memo(
                     type="button"
                     onClick={() => {
                       if (config.nextStatus === 'fechada' && onCloseComanda) {
-                        void onCloseComanda(comanda.id, discountPercent, surchargePercent)
+                        onCloseComanda(comanda.id, discountPercent, surchargePercent)
                         return
                       }
 
-                      void onUpdateStatus(comanda.id, config.nextStatus!)
+                      onUpdateStatus(comanda.id, config.nextStatus!)
                     }}
                     className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg"
                     style={{
@@ -423,7 +423,9 @@ const ComandaCard = memo(
                 {showDirectClose && onCloseComanda && (
                   <button
                     type="button"
-                    onClick={() => void onCloseComanda(comanda.id, discountPercent, surchargePercent)}
+                    onClick={() => {
+                      onCloseComanda(comanda.id, discountPercent, surchargePercent)
+                    }}
                     className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
@@ -436,7 +438,9 @@ const ComandaCard = memo(
                 {showDirectClose && !onCloseComanda && (
                   <button
                     type="button"
-                    onClick={() => void onUpdateStatus(comanda.id, 'fechada')}
+                    onClick={() => {
+                      onUpdateStatus(comanda.id, 'fechada')
+                    }}
                     className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
                     style={{
                       WebkitTapHighlightColor: 'transparent',

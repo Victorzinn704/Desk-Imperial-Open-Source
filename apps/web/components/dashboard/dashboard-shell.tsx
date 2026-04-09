@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
@@ -428,10 +428,13 @@ export function DashboardShell({
   const { logout, isPending: isLoggingOut, startTransition } = useDashboardLogout(rawLogoutMutation)
 
   const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
-  const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, () => {
-    queryClient.clear()
-    startTransition(() => router.replace('/login'))
-  })
+  const onEvaluationExpire = useMemo(
+    () => () => {
+      queryClient.clear()
+      startTransition(() => router.replace('/login'))
+    },
+    [queryClient, router, startTransition],
+  )
 
   useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
 
@@ -439,14 +442,58 @@ export function DashboardShell({
     setSidebarCollapsed(isCompactDesktop)
   }, [isCompactDesktop])
 
-  // ── Quick action handler (orchestrates navigation + scroll) ───────────────────
+  // ── Derived data (hooks called unconditionally, before any early return) ─────
+
+  const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
+  const employees = employeesQuery.data?.items ?? []
+  const finance = financeQuery.data
+  const displayCurrency = finance?.displayCurrency ?? currentUser?.preferredCurrency
+
+  const requiredDocumentCount = useMemo(
+    () => consentQuery.data?.documents.filter((document) => document.required).length ?? 0,
+    [consentQuery.data?.documents],
+  )
+  const activeNavigation = useMemo(
+    () => resolveActiveNavigation(activeSection, navigationGroups),
+    [activeSection, navigationGroups],
+  )
+  const signals = useMemo(
+    () =>
+      buildDashboardSignals({
+        activeNavigationLabel: activeNavigation.label,
+        activeSection,
+        companyName: currentUser?.companyName || 'Workspace',
+        displayCurrency,
+        finance,
+        isStaffUser,
+        legalAcceptancesCount: legalAcceptances.length,
+        ordersCompleted: ordersQuery.data?.totals.completedOrders ?? 0,
+        productsActive: productsQuery.data?.totals.activeProducts ?? 0,
+        requiredDocumentCount,
+      }),
+    [
+      activeNavigation.label,
+      activeSection,
+      currentUser?.companyName,
+      displayCurrency,
+      finance,
+      isStaffUser,
+      legalAcceptances.length,
+      ordersQuery.data?.totals.completedOrders,
+      productsQuery.data?.totals.activeProducts,
+      requiredDocumentCount,
+    ],
+  )
+  const activeHero = sectionHeroCopy[activeSection]
+
+  // ── Quick action handler ────────────────────────────────────────────────────
 
   const handleQuickAction = (action: DashboardQuickAction) => {
     navigateToSection(action.target)
 
     if (typeof document === 'undefined') return
 
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       const targetElement = action.anchorId
         ? document.getElementById(action.anchorId)
         : document.getElementById('workspace-header')
@@ -474,28 +521,6 @@ export function DashboardShell({
   if (!user.emailVerified) {
     return <EmailVerificationLockState email={user.email} />
   }
-
-  // ── Derived data ──────────────────────────────────────────────────────────────
-
-  const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
-  const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
-  const employees = employeesQuery.data?.items ?? []
-  const finance = financeQuery.data
-  const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
-  const activeNavigation = resolveActiveNavigation(activeSection, navigationGroups)
-  const signals = buildDashboardSignals({
-    activeNavigationLabel: activeNavigation.label,
-    activeSection,
-    companyName: user.companyName || 'Workspace',
-    displayCurrency,
-    finance,
-    isStaffUser,
-    legalAcceptancesCount: legalAcceptances.length,
-    ordersCompleted: ordersQuery.data?.totals.completedOrders ?? 0,
-    productsActive: productsQuery.data?.totals.activeProducts ?? 0,
-    requiredDocumentCount,
-  })
-  const activeHero = sectionHeroCopy[activeSection]
 
   // ── Mobile shells ─────────────────────────────────────────────────────────────
 
@@ -560,12 +585,7 @@ export function DashboardShell({
               signals={signals}
             />
 
-            {isEvaluation ? (
-              <EvaluationModeBanner
-                dailyLimitMinutes={user.evaluationAccess!.dailyLimitMinutes}
-                remainingSeconds={remainingSeconds}
-              />
-            ) : null}
+            <EvaluationModeBannerConnected evaluationAccess={evaluationAccess} onExpire={onEvaluationExpire} />
 
             {renderActiveEnvironment({
               activeSection,
@@ -658,13 +678,22 @@ function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
   )
 }
 
-function EvaluationModeBanner({
-  dailyLimitMinutes,
-  remainingSeconds,
-}: Readonly<{
+type EvaluationAccessProp = {
+  sessionExpiresAt: string
   dailyLimitMinutes: number
-  remainingSeconds: number
+} | null
+
+const EvaluationModeBannerConnected = memo(function EvaluationModeBannerConnected({
+  evaluationAccess,
+  onExpire,
+}: Readonly<{
+  evaluationAccess: EvaluationAccessProp
+  onExpire: () => void
 }>) {
+  const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, onExpire)
+
+  if (!isEvaluation) return null
+
   const minutes = Math.floor(Math.max(0, remainingSeconds) / 60)
   const seconds = Math.max(0, remainingSeconds) % 60
   const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
@@ -679,7 +708,8 @@ function EvaluationModeBanner({
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sessão temporária</p>
             <h2 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
-              Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
+              Este acesso fica disponivel por ate {evaluationAccess!.dailyLimitMinutes} minutos por dia neste
+              dispositivo.
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               Quando o tempo acabar, o portal encerra a sessão e retorna para a tela de login.
@@ -694,7 +724,7 @@ function EvaluationModeBanner({
       </div>
     </section>
   )
-}
+})
 
 function UnauthorizedState({ message }: Readonly<{ message: string }>) {
   return (

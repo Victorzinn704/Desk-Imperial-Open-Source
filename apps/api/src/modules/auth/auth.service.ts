@@ -331,7 +331,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais invalidas.')
     }
 
-    const activeActor = actor!
+    const activeActor = actor
     const isValidPassword = await argon2.verify(activeActor.passwordHash, dto.password)
 
     if (!isValidPassword) {
@@ -749,47 +749,25 @@ export class AuthService {
     })
 
     if (!user || user.status !== UserStatus.ACTIVE) {
-      await this.auditLogService.record({
-        event: 'auth.password-reset.requested',
-        resource: 'password_reset',
-        severity: AuditSeverity.WARN,
-        metadata: {
-          email: normalizedEmail,
-          userFound: false,
-          attempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
-        },
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
+      return this.auditAndReturnGenericPasswordReset({
+        actorUserId: undefined,
+        email: normalizedEmail,
+        extraMetadata: { userFound: false },
+        rateLimitState,
+        context,
+        genericMessage,
       })
-
-      return {
-        success: true,
-        message: genericMessage,
-      }
     }
 
     if (!user.emailVerifiedAt) {
-      await this.auditLogService.record({
+      return this.auditAndReturnGenericPasswordReset({
         actorUserId: user.id,
-        event: 'auth.password-reset.requested',
-        resource: 'password_reset',
-        severity: AuditSeverity.WARN,
-        metadata: {
-          email: user.email,
-          userFound: true,
-          emailVerified: false,
-          attempts: rateLimitState.count,
-          lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
-        },
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
+        email: user.email,
+        extraMetadata: { userFound: true, emailVerified: false },
+        rateLimitState,
+        context,
+        genericMessage,
       })
-
-      return {
-        success: true,
-        message: genericMessage,
-      }
     }
 
     const resetCode = await this.issueOneTimeCode({
@@ -800,6 +778,48 @@ export class AuthService {
       context,
     })
 
+    await this.deliverPasswordResetEmail(user, resetCode, rateLimitState, context, genericMessage)
+
+    return {
+      success: true,
+      message: genericMessage,
+    }
+  }
+
+  private async auditAndReturnGenericPasswordReset(params: {
+    actorUserId: string | undefined
+    email: string
+    extraMetadata: Record<string, unknown>
+    rateLimitState: { count: number; lockedUntil: number | null }
+    context: RequestContext
+    genericMessage: string
+  }) {
+    await this.auditLogService.record({
+      ...(params.actorUserId ? { actorUserId: params.actorUserId } : {}),
+      event: 'auth.password-reset.requested',
+      resource: 'password_reset',
+      severity: AuditSeverity.WARN,
+      metadata: {
+        email: params.email,
+        ...params.extraMetadata,
+        attempts: params.rateLimitState.count,
+        lockedUntil: params.rateLimitState.lockedUntil
+          ? new Date(params.rateLimitState.lockedUntil).toISOString()
+          : null,
+      },
+      ipAddress: params.context.ipAddress,
+      userAgent: params.context.userAgent,
+    })
+
+    return { success: true, message: params.genericMessage }
+  }
+
+  private async deliverPasswordResetEmail(
+    user: { id: string; email: string; fullName: string },
+    resetCode: { code: string; recordId: string },
+    rateLimitState: { count: number; lockedUntil: number | null },
+    context: RequestContext,
+  ) {
     try {
       const delivery = await this.mailerService.sendPasswordResetEmail({
         to: user.email,
@@ -844,17 +864,10 @@ export class AuthService {
           `Entrega de redefinicao indisponivel para ${user.email}. O envio sera reprocessado no modo local.`,
         )
 
-        return {
-          success: true,
-          message: genericMessage,
-        }
+        return
       }
 
-      await this.prisma.oneTimeCode.deleteMany({
-        where: {
-          id: resetCode.recordId,
-        },
-      })
+      await this.prisma.oneTimeCode.deleteMany({ where: { id: resetCode.recordId } })
 
       await this.auditLogService.record({
         actorUserId: user.id,
@@ -871,11 +884,6 @@ export class AuthService {
       })
 
       throw error
-    }
-
-    return {
-      success: true,
-      message: genericMessage,
     }
   }
 
@@ -1864,6 +1872,19 @@ export class AuthService {
       context: params.context,
     })
 
+    return this.deliverEmailVerificationCode(params, verificationCode, rateLimitState)
+  }
+
+  private async deliverEmailVerificationCode(
+    params: { userId: string; email: string; fullName: string; trigger: string; context: RequestContext },
+    verificationCode: { code: string; recordId: string; expiresAt: Date },
+    rateLimitState: { count: number; lockedUntil: number | null } | null,
+  ): Promise<EmailVerificationDeliveryResult> {
+    const rateLimitMeta = {
+      attempts: rateLimitState?.count ?? null,
+      lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+    }
+
     try {
       const delivery = await this.mailerService.sendEmailVerificationEmail({
         to: params.email,
@@ -1873,29 +1894,11 @@ export class AuthService {
       })
 
       if (delivery.mode === 'log' && this.shouldUsePortfolioEmailFallback(params.context)) {
-        await this.auditLogService.record({
-          actorUserId: params.userId,
-          event: 'auth.email-verification.preview_enabled',
-          resource: 'user',
-          resourceId: params.userId,
-          severity: AuditSeverity.WARN,
-          metadata: {
-            email: params.email,
-            trigger: params.trigger,
-            reason: 'log_delivery_mode',
-            deliveryMode: delivery.mode,
-            attempts: rateLimitState?.count ?? null,
-            lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
-          },
-          ipAddress: params.context.ipAddress,
-          userAgent: params.context.userAgent,
+        return this.handleVerificationPreviewFallback(params, verificationCode, {
+          reason: 'log_delivery_mode',
+          deliveryMode: delivery.mode,
+          ...rateLimitMeta,
         })
-
-        return {
-          deliveryMode: 'preview',
-          previewCode: verificationCode.code,
-          previewExpiresAt: verificationCode.expiresAt,
-        }
       }
 
       await this.auditLogService.record({
@@ -1907,51 +1910,25 @@ export class AuthService {
           email: params.email,
           trigger: params.trigger,
           deliveryMode: delivery.mode,
-          attempts: rateLimitState?.count ?? null,
-          lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+          ...rateLimitMeta,
         },
         ipAddress: params.context.ipAddress,
         userAgent: params.context.userAgent,
       })
 
-      return {
-        deliveryMode: 'email',
-      }
+      return { deliveryMode: 'email' }
     } catch (error) {
       if (isServiceUnavailable(error) && this.shouldUsePortfolioEmailFallback(params.context)) {
-        await this.auditLogService.record({
-          actorUserId: params.userId,
-          event: 'auth.email-verification.preview_enabled',
-          resource: 'user',
-          resourceId: params.userId,
-          severity: AuditSeverity.WARN,
-          metadata: {
-            email: params.email,
-            trigger: params.trigger,
-            reason: error instanceof Error ? error.message : 'unknown',
-            attempts: rateLimitState?.count ?? null,
-            lockedUntil: rateLimitState?.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
-          },
-          ipAddress: params.context.ipAddress,
-          userAgent: params.context.userAgent,
-        })
-
         this.logger.warn(
           `Entrega de email indisponivel para ${params.email}. Codigo de apoio liberado no modo portfolio.`,
         )
-
-        return {
-          deliveryMode: 'preview',
-          previewCode: verificationCode.code,
-          previewExpiresAt: verificationCode.expiresAt,
-        }
+        return this.handleVerificationPreviewFallback(params, verificationCode, {
+          reason: error instanceof Error ? error.message : 'unknown',
+          ...rateLimitMeta,
+        })
       }
 
-      await this.prisma.oneTimeCode.deleteMany({
-        where: {
-          id: verificationCode.recordId,
-        },
-      })
+      await this.prisma.oneTimeCode.deleteMany({ where: { id: verificationCode.recordId } })
 
       await this.auditLogService.record({
         actorUserId: params.userId,
@@ -1969,6 +1946,33 @@ export class AuthService {
       })
 
       throw error
+    }
+  }
+
+  private async handleVerificationPreviewFallback(
+    params: { userId: string; email: string; trigger: string; context: RequestContext },
+    verificationCode: { code: string; expiresAt: Date },
+    metadata: Record<string, unknown>,
+  ): Promise<EmailVerificationDeliveryResult> {
+    await this.auditLogService.record({
+      actorUserId: params.userId,
+      event: 'auth.email-verification.preview_enabled',
+      resource: 'user',
+      resourceId: params.userId,
+      severity: AuditSeverity.WARN,
+      metadata: {
+        email: params.email,
+        trigger: params.trigger,
+        ...metadata,
+      },
+      ipAddress: params.context.ipAddress,
+      userAgent: params.context.userAgent,
+    })
+
+    return {
+      deliveryMode: 'preview',
+      previewCode: verificationCode.code,
+      previewExpiresAt: verificationCode.expiresAt,
     }
   }
 
@@ -2365,7 +2369,7 @@ function sanitizePostalCode(value: string) {
     allowEmpty: false,
     rejectFormula: true,
   })!
-  const digits = normalized.replace(/\D/g, '')
+  const digits = normalized.replaceAll(/\D/g, '')
 
   if (digits.length !== 8) {
     throw new BadRequestException('Informe um CEP valido para localizar a empresa com precisao.')

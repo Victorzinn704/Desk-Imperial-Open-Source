@@ -30,13 +30,13 @@ const STATUS_CONFIG = {
   },
 }
 
-type PdvMesaCardProps = {
+type PdvMesaCardProps = Readonly<{
   mesa: Mesa
   comanda?: Comanda
   onClickLivre: (mesa: Mesa) => void
   onClickOcupada: (comanda: Comanda) => void
   onDelete: (mesaId: string) => void
-}
+}>
 
 export const PdvMesaCard = memo(function PdvMesaCard({
   mesa,

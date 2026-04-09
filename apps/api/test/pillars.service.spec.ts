@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 import { CurrencyCode } from '@prisma/client'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { CurrencyService } from '../src/modules/currency/currency.service'
+import type { CacheService } from '../src/common/services/cache.service'
 import { PillarsService } from '../src/modules/finance/pillars.service'
 import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
@@ -21,7 +22,17 @@ describe('PillarsService', () => {
     convert: jest.fn((amount: number) => amount),
   }
 
-  const service = new PillarsService(prisma as unknown as PrismaService, currencyService as unknown as CurrencyService)
+  const cacheService = {
+    get: jest.fn(async () => null),
+    set: jest.fn(async () => undefined),
+    del: jest.fn(async () => undefined),
+  }
+
+  const service = new PillarsService(
+    prisma as unknown as PrismaService,
+    currencyService as unknown as CurrencyService,
+    cacheService as unknown as CacheService,
+  )
 
   function makeOrder(params: { createdAt: Date; revenue: number; profit: number; currency?: CurrencyCode }) {
     return {

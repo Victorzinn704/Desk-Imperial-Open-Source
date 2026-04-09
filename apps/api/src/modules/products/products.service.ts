@@ -253,93 +253,13 @@ export class ProductsService {
     const normalizedComboItems = dto.comboItems ? this.normalizeComboItemsInput(dto.comboItems) : null
     const nextIsCombo = dto.isCombo ?? existingProduct.isCombo
 
-    if (!nextIsCombo && normalizedComboItems && normalizedComboItems.length > 0) {
-      throw new BadRequestException('Remova os componentes ou marque o produto como combo antes de salvar.')
-    }
-
-    if (nextIsCombo && dto.comboItems !== undefined && normalizedComboItems && normalizedComboItems.length === 0) {
-      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
-    }
-
-    if (dto.isCombo === true && !existingProduct.isCombo && dto.comboItems === undefined) {
-      throw new BadRequestException('Ao ativar um combo, informe os itens de composição.')
-    }
+    this.assertComboUpdateRules(nextIsCombo, dto, normalizedComboItems, existingProduct.isCombo)
 
     try {
       const product = await this.prisma.$transaction(async (transaction) => {
         const updatedProduct = await transaction.product.update({
           where: { id: existingProduct.id },
-          data: {
-            ...(dto.name !== undefined
-              ? {
-                  name: sanitizePlainText(dto.name, 'Nome do produto', {
-                    allowEmpty: false,
-                    rejectFormula: true,
-                  })!,
-                }
-              : {}),
-            ...(dto.brand !== undefined
-              ? {
-                  brand: sanitizePlainText(dto.brand, 'Marca', {
-                    allowEmpty: true,
-                    rejectFormula: true,
-                  }),
-                }
-              : {}),
-            ...(dto.category !== undefined
-              ? {
-                  category: sanitizePlainText(dto.category, 'Categoria', {
-                    allowEmpty: false,
-                    rejectFormula: true,
-                  })!,
-                }
-              : {}),
-            ...(dto.packagingClass !== undefined
-              ? {
-                  packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
-                    allowEmpty: false,
-                    rejectFormula: true,
-                  })!,
-                }
-              : {}),
-            ...(dto.measurementUnit !== undefined
-              ? {
-                  measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
-                    allowEmpty: false,
-                    rejectFormula: true,
-                  })!,
-                }
-              : {}),
-            ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
-            ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
-            ...(dto.description !== undefined
-              ? {
-                  description: sanitizePlainText(dto.description, 'Descricao', {
-                    allowEmpty: true,
-                    rejectFormula: true,
-                  }),
-                }
-              : {}),
-            ...(dto.isCombo !== undefined ? { isCombo: dto.isCombo } : {}),
-            ...(nextIsCombo
-              ? dto.comboDescription !== undefined
-                ? {
-                    comboDescription: sanitizePlainText(dto.comboDescription, 'Descricao do combo', {
-                      allowEmpty: true,
-                      rejectFormula: true,
-                    }),
-                  }
-                : {}
-              : {
-                  comboDescription: null,
-                }),
-            ...(dto.unitCost !== undefined ? { unitCost: dto.unitCost } : {}),
-            ...(dto.unitPrice !== undefined ? { unitPrice: dto.unitPrice } : {}),
-            ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
-            ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
-            ...(dto.active !== undefined ? { active: dto.active } : {}),
-            ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
-          },
+          data: this.buildProductUpdateData(dto, nextIsCombo),
         })
 
         if (!nextIsCombo) {
@@ -399,6 +319,27 @@ export class ProductsService {
       }
     } catch (error) {
       handleProductConflict(error)
+    }
+  }
+
+  private assertComboUpdateRules(
+    nextIsCombo: boolean,
+    dto: UpdateProductDto,
+    normalizedComboItems:
+      | { componentProductId: string; quantityPackages: number; quantityUnits: number; totalUnits: number }[]
+      | null,
+    wasCombo: boolean,
+  ) {
+    if (!nextIsCombo && normalizedComboItems && normalizedComboItems.length > 0) {
+      throw new BadRequestException('Remova os componentes ou marque o produto como combo antes de salvar.')
+    }
+
+    if (nextIsCombo && dto.comboItems !== undefined && normalizedComboItems && normalizedComboItems.length === 0) {
+      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
+    }
+
+    if (dto.isCombo === true && !wasCombo && dto.comboItems === undefined) {
+      throw new BadRequestException('Ao ativar um combo, informe os itens de composição.')
     }
   }
 
@@ -476,12 +417,7 @@ export class ProductsService {
       throw new BadRequestException('Envie um arquivo CSV para importar os produtos.')
     }
 
-    let parsedRows
-    try {
-      parsedRows = parseProductImportCsv(file.buffer.toString('utf-8'))
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Nao foi possivel ler o CSV enviado.')
-    }
+    const parsedRows = this.parseImportCsvOrThrow(file)
     if (!parsedRows.length) {
       throw new BadRequestException('O arquivo CSV esta vazio ou sem linhas validas.')
     }
@@ -492,134 +428,13 @@ export class ProductsService {
 
     for (const row of parsedRows) {
       try {
-        if (!row.name || row.name.length < 2) {
-          throw new Error('Informe um nome valido para o produto.')
-        }
-
-        if (!row.category || row.category.length < 2) {
-          throw new Error('Informe uma categoria valida.')
-        }
-
-        if (!row.packagingClass || row.packagingClass.length < 2) {
-          throw new Error('Informe uma classe de cadastro valida.')
-        }
-
-        if (!row.measurementUnit || row.measurementUnit.length < 1) {
-          throw new Error('Informe uma unidade de medida valida.')
-        }
-
-        if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0) {
-          throw new Error('A medida por item precisa ser numerica e maior que zero.')
-        }
-
-        if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1) {
-          throw new Error('A quantidade por caixa/fardo precisa ser um inteiro maior que zero.')
-        }
-
-        if (Number.isNaN(row.unitCost) || row.unitCost < 0) {
-          throw new Error('O custo unitario precisa ser numerico e nao negativo.')
-        }
-
-        if (Number.isNaN(row.unitPrice) || row.unitPrice < 0) {
-          throw new Error('O preco unitario precisa ser numerico e nao negativo.')
-        }
-
-        if (Number.isNaN(row.stock) || row.stock < 0) {
-          throw new Error('O estoque precisa ser um inteiro nao negativo.')
-        }
-
-        if (!isSupportedCurrency(row.currency)) {
-          throw new Error('Use BRL, USD ou EUR na coluna de moeda.')
-        }
-
-        const safeName = sanitizePlainText(row.name, 'Nome do produto', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!
-        const safeCategory = sanitizePlainText(row.category, 'Categoria', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!
-        const safeBrand = sanitizePlainText(row.brand, 'Marca', {
-          allowEmpty: true,
-          rejectFormula: true,
-        })
-        const safePackagingClass = sanitizePlainText(row.packagingClass, 'Classe de cadastro', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!
-        const safeMeasurementUnit = sanitizePlainText(row.measurementUnit, 'Unidade de medida', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })!
-        const safeDescription = sanitizePlainText(row.description, 'Descricao', {
-          allowEmpty: true,
-          rejectFormula: true,
-        })
-
-        const existing = await this.prisma.product.findUnique({
-          where: {
-            userId_name: {
-              userId: workspaceUserId,
-              name: safeName,
-            },
-          },
-        })
-
-        await this.prisma.product.upsert({
-          where: {
-            userId_name: {
-              userId: workspaceUserId,
-              name: safeName,
-            },
-          },
-          create: {
-            userId: workspaceUserId,
-            name: safeName,
-            brand: safeBrand,
-            category: safeCategory,
-            packagingClass: safePackagingClass,
-            measurementUnit: safeMeasurementUnit,
-            measurementValue: row.measurementValue,
-            unitsPerPackage: row.unitsPerPackage,
-            description: safeDescription,
-            unitCost: row.unitCost,
-            unitPrice: row.unitPrice,
-            currency: row.currency as CurrencyCode,
-            stock: row.stock,
-            requiresKitchen: isKitchenCategory(safeCategory),
-            active: true,
-          },
-          update: {
-            brand: safeBrand,
-            category: safeCategory,
-            packagingClass: safePackagingClass,
-            measurementUnit: safeMeasurementUnit,
-            measurementValue: row.measurementValue,
-            unitsPerPackage: row.unitsPerPackage,
-            description: safeDescription,
-            unitCost: row.unitCost,
-            unitPrice: row.unitPrice,
-            currency: row.currency as CurrencyCode,
-            stock: row.stock,
-            // On update via CSV, only override requiresKitchen if it
-            // was explicitly false (i.e. not yet set) — preserve manual config
-            requiresKitchen: isKitchenCategory(safeCategory) ? true : undefined,
-            active: true,
-          },
-        })
-
-        if (existing) {
-          updatedCount += 1
-        } else {
-          createdCount += 1
-        }
+        this.validateImportRow(row)
+        const result = await this.upsertImportRow(workspaceUserId, row)
+        if (result === 'updated') updatedCount += 1
+        else createdCount += 1
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Falha inesperada ao importar a linha.'
-        errors.push({
-          line: row.line,
-          message,
-        })
+        errors.push({ line: row.line, message })
       }
     }
 
@@ -650,6 +465,115 @@ export class ProductsService {
       },
       errors,
     }
+  }
+
+  private parseImportCsvOrThrow(file: UploadedCsvFile) {
+    try {
+      return parseProductImportCsv(file.buffer.toString('utf-8'))
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : 'Nao foi possivel ler o CSV enviado.')
+    }
+  }
+
+  private validateImportRow(row: {
+    name: string
+    category: string
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: number
+    unitsPerPackage: number
+    unitCost: number
+    unitPrice: number
+    stock: number
+    currency: string
+  }) {
+    if (!row.name || row.name.length < 2) throw new Error('Informe um nome valido para o produto.')
+    if (!row.category || row.category.length < 2) throw new Error('Informe uma categoria valida.')
+    if (!row.packagingClass || row.packagingClass.length < 2) throw new Error('Informe uma classe de cadastro valida.')
+    if (!row.measurementUnit || row.measurementUnit.length < 1) throw new Error('Informe uma unidade de medida valida.')
+    if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0)
+      throw new Error('A medida por item precisa ser numerica e maior que zero.')
+    if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1)
+      throw new Error('A quantidade por caixa/fardo precisa ser um inteiro maior que zero.')
+    if (Number.isNaN(row.unitCost) || row.unitCost < 0)
+      throw new Error('O custo unitario precisa ser numerico e nao negativo.')
+    if (Number.isNaN(row.unitPrice) || row.unitPrice < 0)
+      throw new Error('O preco unitario precisa ser numerico e nao negativo.')
+    if (Number.isNaN(row.stock) || row.stock < 0) throw new Error('O estoque precisa ser um inteiro nao negativo.')
+    if (!isSupportedCurrency(row.currency)) throw new Error('Use BRL, USD ou EUR na coluna de moeda.')
+  }
+
+  private sanitizeImportRow(row: {
+    name: string
+    category: string
+    brand: string
+    packagingClass: string
+    measurementUnit: string
+    description: string
+  }) {
+    return {
+      safeName: sanitizePlainText(row.name, 'Nome do produto', { allowEmpty: false, rejectFormula: true })!,
+      safeCategory: sanitizePlainText(row.category, 'Categoria', { allowEmpty: false, rejectFormula: true })!,
+      safeBrand: sanitizePlainText(row.brand, 'Marca', { allowEmpty: true, rejectFormula: true }),
+      safePackagingClass: sanitizePlainText(row.packagingClass, 'Classe de cadastro', {
+        allowEmpty: false,
+        rejectFormula: true,
+      })!,
+      safeMeasurementUnit: sanitizePlainText(row.measurementUnit, 'Unidade de medida', {
+        allowEmpty: false,
+        rejectFormula: true,
+      })!,
+      safeDescription: sanitizePlainText(row.description, 'Descricao', { allowEmpty: true, rejectFormula: true }),
+    }
+  }
+
+  private async upsertImportRow(workspaceUserId: string, row: Record<string, unknown>): Promise<'created' | 'updated'> {
+    const { safeName, safeCategory, safeBrand, safePackagingClass, safeMeasurementUnit, safeDescription } =
+      this.sanitizeImportRow(row)
+
+    const existing = await this.prisma.product.findUnique({
+      where: { userId_name: { userId: workspaceUserId, name: safeName } },
+    })
+
+    await this.prisma.product.upsert({
+      where: { userId_name: { userId: workspaceUserId, name: safeName } },
+      create: {
+        userId: workspaceUserId,
+        name: safeName,
+        brand: safeBrand,
+        category: safeCategory,
+        packagingClass: safePackagingClass,
+        measurementUnit: safeMeasurementUnit,
+        measurementValue: row.measurementValue,
+        unitsPerPackage: row.unitsPerPackage,
+        description: safeDescription,
+        unitCost: row.unitCost,
+        unitPrice: row.unitPrice,
+        currency: row.currency as CurrencyCode,
+        stock: row.stock,
+        requiresKitchen: isKitchenCategory(safeCategory),
+        active: true,
+      },
+      update: {
+        brand: safeBrand,
+        category: safeCategory,
+        packagingClass: safePackagingClass,
+        measurementUnit: safeMeasurementUnit,
+        measurementValue: row.measurementValue,
+        unitsPerPackage: row.unitsPerPackage,
+        description: safeDescription,
+        unitCost: row.unitCost,
+        unitPrice: row.unitPrice,
+        currency: row.currency as CurrencyCode,
+        stock: row.stock,
+        // On update via CSV, only override requiresKitchen if it
+        // was explicitly false (i.e. not yet set) — preserve manual config
+        requiresKitchen: isKitchenCategory(safeCategory) ? true : undefined,
+        active: true,
+      },
+    })
+
+    return existing ? 'updated' : 'created'
   }
 
   private async toggleActiveState(auth: AuthContext, productId: string, active: boolean, context: RequestContext) {
@@ -751,6 +675,30 @@ export class ProductsService {
     }
 
     return Array.from(groupedByProduct.values())
+  }
+
+  private buildProductUpdateData(dto: UpdateProductDto, nextIsCombo: boolean) {
+    const optionalText = (field: string | undefined, label: string, allowEmpty: boolean) =>
+      field !== undefined ? { [label]: sanitizePlainText(field, label, { allowEmpty, rejectFormula: true }) } : {}
+
+    return {
+      ...optionalText(dto.name, 'name', false),
+      ...optionalText(dto.brand, 'brand', true),
+      ...optionalText(dto.category, 'category', false),
+      ...optionalText(dto.packagingClass, 'packagingClass', false),
+      ...optionalText(dto.measurementUnit, 'measurementUnit', false),
+      ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
+      ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
+      ...optionalText(dto.description, 'description', true),
+      ...(dto.isCombo !== undefined ? { isCombo: dto.isCombo } : {}),
+      ...(nextIsCombo ? optionalText(dto.comboDescription, 'comboDescription', true) : { comboDescription: null }),
+      ...(dto.unitCost !== undefined ? { unitCost: dto.unitCost } : {}),
+      ...(dto.unitPrice !== undefined ? { unitPrice: dto.unitPrice } : {}),
+      ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
+      ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
+      ...(dto.active !== undefined ? { active: dto.active } : {}),
+      ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
+    }
   }
 
   private async buildComboItemsPayload(

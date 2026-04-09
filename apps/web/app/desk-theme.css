@@ -1,7 +1,7 @@
 /* Desk Imperial — tokens (Tailwind v4 @theme). Fonte única para cores, sombra e raio. */
 
 @theme {
-  --font-sans: 'Manrope', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-outfit), 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   --color-desk-ink: #07090c;
   --color-desk-surface-base: #0d1116;

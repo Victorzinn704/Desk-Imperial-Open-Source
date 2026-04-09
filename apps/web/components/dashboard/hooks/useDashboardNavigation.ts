@@ -73,7 +73,7 @@ export function useDashboardNavigation({
     if (typeof window === 'undefined') return
 
     const syncFromLocation = () => {
-      const params = new URLSearchParams(window.location.search)
+      const params = new URLSearchParams(globalThis.location.search)
       const sectionFromUrl = parseDashboardSectionParam(params.get('view'))
       const settingsFromUrl = parseDashboardSettingsSectionParam(params.get('panel'))
 
@@ -86,14 +86,14 @@ export function useDashboardNavigation({
     }
 
     syncFromLocation()
-    window.addEventListener('popstate', syncFromLocation)
-    return () => window.removeEventListener('popstate', syncFromLocation)
+    globalThis.addEventListener('popstate', syncFromLocation)
+    return () => globalThis.removeEventListener('popstate', syncFromLocation)
   }, [allowedSections])
 
   const navigateToSection = (sectionId: DashboardSectionId) => {
     setActiveSection(sectionId)
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', buildDashboardUrl(sectionId, activeSettingsSection))
+      globalThis.history.pushState({}, '', buildDashboardUrl(sectionId, activeSettingsSection))
     }
   }
 
@@ -101,7 +101,7 @@ export function useDashboardNavigation({
     setActiveSection('settings')
     setActiveSettingsSection(settingsSectionId)
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', buildDashboardUrl('settings', settingsSectionId))
+      globalThis.history.pushState({}, '', buildDashboardUrl('settings', settingsSectionId))
     }
   }
 

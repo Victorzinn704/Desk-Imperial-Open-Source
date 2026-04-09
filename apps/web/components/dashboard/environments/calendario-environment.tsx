@@ -1,8 +1,17 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { TimerReset } from 'lucide-react'
-import { CommercialCalendar } from '@/components/calendar/commercial-calendar'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { CalendarSkeleton } from '@/components/shared/lazy-components'
+
+const CommercialCalendar = dynamic(
+  () => import('@/components/calendar/commercial-calendar').then((m) => m.CommercialCalendar),
+  {
+    ssr: false,
+    loading: () => <CalendarSkeleton />,
+  },
+)
 
 export function CalendarioEnvironment() {
   return (

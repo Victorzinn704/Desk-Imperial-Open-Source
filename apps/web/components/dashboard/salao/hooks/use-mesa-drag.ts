@@ -67,7 +67,7 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
         return
       }
 
-      animationFrameRef.current = window.requestAnimationFrame(() => {
+      animationFrameRef.current = globalThis.requestAnimationFrame(() => {
         const nextPosition = pendingPositionRef.current
         animationFrameRef.current = null
         if (!nextPosition) {
@@ -104,13 +104,13 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
 
   useEffect(() => {
     if (!dragging) return
-    window.addEventListener('pointermove', handlePointerMove, { passive: true })
-    window.addEventListener('pointerup', handlePointerUp)
-    window.addEventListener('pointercancel', handlePointerUp)
+    globalThis.addEventListener('pointermove', handlePointerMove, { passive: true })
+    globalThis.addEventListener('pointerup', handlePointerUp)
+    globalThis.addEventListener('pointercancel', handlePointerUp)
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-      window.removeEventListener('pointercancel', handlePointerUp)
+      globalThis.removeEventListener('pointermove', handlePointerMove)
+      globalThis.removeEventListener('pointerup', handlePointerUp)
+      globalThis.removeEventListener('pointercancel', handlePointerUp)
     }
   }, [dragging, handlePointerMove, handlePointerUp])
 

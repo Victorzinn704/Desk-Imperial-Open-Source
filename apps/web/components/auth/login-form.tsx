@@ -55,6 +55,89 @@ function prewarmDashboardEntry(queryClient: ReturnType<typeof useQueryClient>, r
   void Promise.allSettled(tasks)
 }
 
+type FieldInputProps = ReturnType<ReturnType<typeof useForm<LoginFormValues>>['register']>
+type FieldErrors = ReturnType<typeof useForm<LoginFormValues>>['formState']['errors']
+
+function StaffIdentityFields({
+  registerField,
+  errors,
+}: {
+  registerField: (name: 'companyEmail' | 'employeeCode') => FieldInputProps
+  errors: FieldErrors
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-company-email">
+          Email da Empresa
+        </label>
+        <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+          <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
+          <input
+            autoComplete="email"
+            className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
+            id="login-company-email"
+            placeholder="ceo@empresa.com"
+            type="email"
+            {...registerField('companyEmail')}
+          />
+        </div>
+        {errors.companyEmail?.message ? <p className="text-xs text-red-400">{errors.companyEmail.message}</p> : null}
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-employee-code">
+          ID do Funcionário
+        </label>
+        <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+          <UserRound className="size-4 shrink-0 text-[var(--text-primary)]/30" />
+          <input
+            autoCapitalize="characters"
+            autoComplete="username"
+            className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
+            id="login-employee-code"
+            placeholder="VD-001"
+            type="text"
+            {...registerField('employeeCode')}
+          />
+        </div>
+        {errors.employeeCode?.message ? <p className="text-xs text-red-400">{errors.employeeCode.message}</p> : null}
+      </div>
+    </>
+  )
+}
+
+function OwnerIdentityField({
+  registerField,
+  errors,
+}: {
+  registerField: (name: 'email') => FieldInputProps
+  errors: FieldErrors
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-email">
+        Email Corporativo
+      </label>
+      <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
+        <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
+        <input
+          autoComplete="email"
+          className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
+          id="login-email"
+          placeholder="ceo@empresa.com"
+          type="email"
+          {...registerField('email')}
+        />
+      </div>
+      {errors.email?.message ? <p className="text-xs text-red-400">{errors.email.message}</p> : null}
+    </div>
+  )
+}
+
+function extractApiErrorMessage(error: unknown): string | null {
+  return error instanceof ApiError ? error.message : null
+}
+
 export function LoginForm() {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -153,9 +236,7 @@ export function LoginForm() {
   })
   const isLoading = loginMutation.isPending || demoLoginMutation.isPending || isRouting
 
-  const errorMessage =
-    (loginMutation.error instanceof ApiError ? loginMutation.error.message : null) ??
-    (demoLoginMutation.error instanceof ApiError ? demoLoginMutation.error.message : null)
+  const errorMessage = extractApiErrorMessage(loginMutation.error) ?? extractApiErrorMessage(demoLoginMutation.error)
 
   return (
     <div className="w-full space-y-8">
@@ -197,66 +278,9 @@ export function LoginForm() {
         <input type="hidden" {...registerField('loginMode')} />
 
         {isStaffMode ? (
-          <>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-company-email">
-                Email da Empresa
-              </label>
-              <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-                <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
-                <input
-                  autoComplete="email"
-                  className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
-                  id="login-company-email"
-                  placeholder="ceo@empresa.com"
-                  type="email"
-                  {...registerField('companyEmail')}
-                />
-              </div>
-              {errors.companyEmail?.message ? (
-                <p className="text-xs text-red-400">{errors.companyEmail.message}</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-employee-code">
-                ID do Funcionário
-              </label>
-              <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-                <UserRound className="size-4 shrink-0 text-[var(--text-primary)]/30" />
-                <input
-                  autoCapitalize="characters"
-                  autoComplete="username"
-                  className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
-                  id="login-employee-code"
-                  placeholder="VD-001"
-                  type="text"
-                  {...registerField('employeeCode')}
-                />
-              </div>
-              {errors.employeeCode?.message ? (
-                <p className="text-xs text-red-400">{errors.employeeCode.message}</p>
-              ) : null}
-            </div>
-          </>
+          <StaffIdentityFields registerField={registerField} errors={errors} />
         ) : (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-email">
-              Email Corporativo
-            </label>
-            <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
-              <Mail className="size-4 shrink-0 text-[var(--text-primary)]/30" />
-              <input
-                autoComplete="email"
-                className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
-                id="login-email"
-                placeholder="ceo@empresa.com"
-                type="email"
-                {...registerField('email')}
-              />
-            </div>
-            {errors.email?.message ? <p className="text-xs text-red-400">{errors.email.message}</p> : null}
-          </div>
+          <OwnerIdentityField registerField={registerField} errors={errors} />
         )}
 
         <div className="space-y-2">

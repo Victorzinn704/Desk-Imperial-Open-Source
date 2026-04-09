@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
@@ -39,6 +39,129 @@ const emptyValues: ProductFormInputValues = {
   stockLooseUnits: 0,
   requiresKitchen: false,
   lowStockThreshold: null,
+}
+
+function applyPackagingPreset(
+  presetKey: string,
+  currentPackagingClass: string,
+  setValue: (name: string, value: unknown, opts?: { shouldDirty?: boolean; shouldValidate?: boolean }) => void,
+  setMeasurementMode: (mode: string) => void,
+) {
+  if (!presetKey) {
+    setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
+    return
+  }
+
+  if (presetKey === manualPackagingOption) {
+    if (!currentPackagingClass) {
+      setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
+    }
+    return
+  }
+
+  const preset = productPackagingPresets.find((entry) => entry.key === presetKey)
+  if (!preset) return
+
+  setValue('packagingClass', preset.label, { shouldDirty: true, shouldValidate: true })
+  setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
+  setValue('measurementValue', preset.measurementValue, { shouldDirty: true, shouldValidate: true })
+  setValue('unitsPerPackage', preset.unitsPerPackage, { shouldDirty: true, shouldValidate: true })
+  setMeasurementMode(preset.measurementUnit)
+}
+
+function buildProductResetValues(product: ProductRecord): ProductFormInputValues {
+  return {
+    name: product.name,
+    brand: product.brand ?? '',
+    category: product.category,
+    packagingClass: product.packagingClass,
+    measurementUnit: product.measurementUnit,
+    measurementValue: product.measurementValue,
+    unitsPerPackage: product.unitsPerPackage,
+    isCombo: product.isCombo ?? false,
+    comboDescription: product.comboDescription ?? '',
+    comboItems:
+      product.comboItems?.map((item) => ({
+        productId: item.componentProductId,
+        quantityPackages: item.quantityPackages,
+        quantityUnits: item.quantityUnits,
+      })) ?? [],
+    description: product.description ?? '',
+    unitCost: product.originalUnitCost,
+    unitPrice: product.originalUnitPrice,
+    currency: product.currency,
+    stockPackages: product.stockPackages,
+    stockLooseUnits: product.stockLooseUnits,
+    requiresKitchen: product.requiresKitchen ?? false,
+    lowStockThreshold: product.lowStockThreshold ?? null,
+  }
+}
+
+function extractComboRootError(errors: { comboItems?: { message?: string } }): string | undefined {
+  return typeof errors.comboItems?.message === 'string' ? errors.comboItems.message : undefined
+}
+
+function stockLooseUnitsHint(unitsPerPackage: number): string {
+  return unitsPerPackage > 1
+    ? `Use para unidades soltas. Aqui o máximo natural é ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
+    : 'Se esse item entra solto no estoque, deixe caixa/fardo em 0 e registre tudo aqui.'
+}
+
+function PackagingClassField({
+  isManual,
+  error,
+  value,
+  register,
+}: {
+  isManual: boolean
+  error?: string
+  value: string
+  register: ReturnType<typeof useForm<ProductFormInputValues>>['register']
+}) {
+  if (isManual) {
+    return (
+      <InputField
+        error={error}
+        hint="Descreva como esse item entra no estoque: caixa, fardo, pacote ou outro formato."
+        label="Classe personalizada"
+        placeholder="Ex.: Caixa com 10 und de 1kg"
+        {...register('packagingClass')}
+      />
+    )
+  }
+  return (
+    <>
+      <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
+        <p className="font-medium text-[var(--text-primary)]">Classe ativa</p>
+        <p className="mt-2">{value || 'Selecione um dos padrões para preencher automaticamente.'}</p>
+      </div>
+      <input type="hidden" value={value} {...register('packagingClass')} />
+    </>
+  )
+}
+
+function MeasurementUnitField({
+  isManual,
+  error,
+  value,
+  register,
+}: {
+  isManual: boolean
+  error?: string
+  value: string
+  register: ReturnType<typeof useForm<ProductFormInputValues>>['register']
+}) {
+  if (isManual) {
+    return (
+      <InputField
+        error={error}
+        label="Outra unidade de medida"
+        placeholder="Ex.: pacote, saco, porção"
+        {...register('measurementUnit')}
+      />
+    )
+  }
+  return <input type="hidden" value={value} {...register('measurementUnit')} />
 }
 
 export function ProductForm({
@@ -86,7 +209,7 @@ export function ProductForm({
   const stockLooseUnits = Number(watch('stockLooseUnits') ?? 0)
   const requiresKitchenValue = watch('requiresKitchen')
   const categoryValue = watch('category')
-  const comboItemsRootError = typeof errors.comboItems?.message === 'string' ? errors.comboItems.message : undefined
+  const comboItemsRootError = extractComboRootError(errors)
   const componentProducts = useMemo(
     () => availableProducts.filter((item) => item.active && item.id !== product?.id),
     [availableProducts, product?.id],
@@ -121,45 +244,25 @@ export function ProductForm({
   const manualMeasurementMode = measurementMode === customMeasurementOption
   const calculatedStockTotal = buildStockTotalUnits(stockPackages, stockLooseUnits, unitsPerPackage)
 
+  const resetFormToDefaults = useCallback(() => {
+    reset(emptyValues)
+    setSelectedPreset('')
+    setMeasurementMode('UN')
+  }, [reset])
+
   useEffect(() => {
     if (!product) {
-      reset(emptyValues)
-      setSelectedPreset('')
-      setMeasurementMode('UN')
+      resetFormToDefaults()
       return
     }
 
     const matchedPreset = findPackagingPresetByLabel(product.packagingClass)
     const nextMeasurementMode = getMeasurementOption(product.measurementUnit)
 
-    reset({
-      name: product.name,
-      brand: product.brand ?? '',
-      category: product.category,
-      packagingClass: product.packagingClass,
-      measurementUnit: product.measurementUnit,
-      measurementValue: product.measurementValue,
-      unitsPerPackage: product.unitsPerPackage,
-      isCombo: product.isCombo ?? false,
-      comboDescription: product.comboDescription ?? '',
-      comboItems:
-        product.comboItems?.map((item) => ({
-          productId: item.componentProductId,
-          quantityPackages: item.quantityPackages,
-          quantityUnits: item.quantityUnits,
-        })) ?? [],
-      description: product.description ?? '',
-      unitCost: product.originalUnitCost,
-      unitPrice: product.originalUnitPrice,
-      currency: product.currency,
-      stockPackages: product.stockPackages,
-      stockLooseUnits: product.stockLooseUnits,
-      requiresKitchen: product.requiresKitchen ?? false,
-      lowStockThreshold: product.lowStockThreshold ?? null,
-    })
+    reset(buildProductResetValues(product))
     setSelectedPreset(matchedPreset?.key ?? manualPackagingOption)
     setMeasurementMode(nextMeasurementMode)
-  }, [product, reset])
+  }, [product, reset, resetFormToDefaults])
 
   const packagingPresetOptions = [
     { label: 'Selecione uma classe padrão', value: '' },
@@ -172,40 +275,13 @@ export function ProductForm({
 
   const handlePresetChange = (presetKey: string) => {
     setSelectedPreset(presetKey)
-
-    if (!presetKey) {
-      setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
-      return
-    }
-
-    if (presetKey === manualPackagingOption) {
-      if (!packagingClassValue) {
-        setValue('packagingClass', '', { shouldDirty: true, shouldValidate: true })
-      }
-      return
-    }
-
-    const preset = productPackagingPresets.find((entry) => entry.key === presetKey)
-    if (!preset) {
-      return
-    }
-
-    setValue('packagingClass', preset.label, { shouldDirty: true, shouldValidate: true })
-    setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
-    setValue('measurementValue', preset.measurementValue, { shouldDirty: true, shouldValidate: true })
-    setValue('unitsPerPackage', preset.unitsPerPackage, { shouldDirty: true, shouldValidate: true })
-    setMeasurementMode(preset.measurementUnit)
+    applyPackagingPreset(presetKey, packagingClassValue, setValue, setMeasurementMode)
   }
 
   const handleMeasurementModeChange = (nextValue: string) => {
     setMeasurementMode(nextValue)
-
-    if (nextValue === customMeasurementOption) {
-      setValue('measurementUnit', '', { shouldDirty: true, shouldValidate: true })
-      return
-    }
-
-    setValue('measurementUnit', nextValue, { shouldDirty: true, shouldValidate: true })
+    const unit = nextValue === customMeasurementOption ? '' : nextValue
+    setValue('measurementUnit', unit, { shouldDirty: true, shouldValidate: true })
   }
 
   return (
@@ -230,11 +306,7 @@ export function ProductForm({
         className="mt-6 space-y-5"
         onSubmit={handleSubmit((values) => {
           onSubmit(values)
-          if (!product) {
-            reset(emptyValues)
-            setSelectedPreset('')
-            setMeasurementMode('UN')
-          }
+          if (!product) resetFormToDefaults()
         })}
       >
         <div className="grid gap-5 sm:grid-cols-2">
@@ -264,25 +336,12 @@ export function ProductForm({
           />
         </div>
 
-        {selectedPresetIsManual ? (
-          <InputField
-            error={errors.packagingClass?.message}
-            hint="Descreva como esse item entra no estoque: caixa, fardo, pacote ou outro formato."
-            label="Classe personalizada"
-            placeholder="Ex.: Caixa com 10 und de 1kg"
-            {...register('packagingClass')}
-          />
-        ) : (
-          <>
-            <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-              <p className="font-medium text-[var(--text-primary)]">Classe ativa</p>
-              <p className="mt-2">
-                {packagingClassValue || 'Selecione um dos padrões para preencher automaticamente.'}
-              </p>
-            </div>
-            <input type="hidden" value={packagingClassValue} {...register('packagingClass')} />
-          </>
-        )}
+        <PackagingClassField
+          isManual={selectedPresetIsManual}
+          error={errors.packagingClass?.message}
+          value={packagingClassValue}
+          register={register}
+        />
 
         <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
           <SelectField
@@ -332,16 +391,12 @@ export function ProductForm({
           </div>
         </div>
 
-        {manualMeasurementMode ? (
-          <InputField
-            error={errors.measurementUnit?.message}
-            label="Outra unidade de medida"
-            placeholder="Ex.: pacote, saco, porção"
-            {...register('measurementUnit')}
-          />
-        ) : (
-          <input type="hidden" value={measurementUnitValue} {...register('measurementUnit')} />
-        )}
+        <MeasurementUnitField
+          isManual={manualMeasurementMode}
+          error={errors.measurementUnit?.message}
+          value={measurementUnitValue}
+          register={register}
+        />
 
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
           <div>
@@ -499,11 +554,7 @@ export function ProductForm({
           />
           <InputField
             error={errors.stockLooseUnits?.message}
-            hint={
-              unitsPerPackage > 1
-                ? `Use para unidades soltas. Aqui o máximo natural é ${unitsPerPackage - 1} und antes de virar outra caixa/fardo.`
-                : 'Se esse item entra solto no estoque, deixe caixa/fardo em 0 e registre tudo aqui.'
-            }
+            hint={stockLooseUnitsHint(unitsPerPackage)}
             label="Unidades avulsas em estoque"
             step="1"
             type="number"

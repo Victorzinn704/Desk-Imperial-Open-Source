@@ -53,23 +53,6 @@ function CalendarSkeleton() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Leaflet Map - ~200KB
- * Use: <LazyLeafletMap />
- */
-export const LazyLeafletMap = dynamic(
-  () =>
-    import('react-leaflet').then((mod) => {
-      // Retorna um componente wrapper que usa MapContainer
-      const { MapContainer } = mod
-      return MapContainer
-    }),
-  {
-    ssr: false,
-    loading: () => <MapSkeleton />,
-  },
-)
-
-/**
  * AG Grid - ~500KB
  * Use: <LazyAgGrid {...props} />
  */
@@ -79,55 +62,10 @@ export const LazyAgGrid = dynamic(() => import('ag-grid-react').then((mod) => mo
 })
 
 /**
- * Recharts - ~300KB
- * Exporta componentes individuais para tree-shaking
- */
-export const LazyLineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-})
-
-export const LazyBarChart = dynamic(() => import('recharts').then((mod) => mod.BarChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-})
-
-export const LazyAreaChart = dynamic(() => import('recharts').then((mod) => mod.AreaChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-})
-
-export const LazyPieChart = dynamic(() => import('recharts').then((mod) => mod.PieChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-})
-
-/**
- * React Big Calendar - ~100KB
- * Use: <LazyCalendar {...props} />
- */
-export const LazyCalendar = dynamic(() => import('react-big-calendar').then((mod) => mod.Calendar), {
-  ssr: false,
-  loading: () => <CalendarSkeleton />,
-})
-
-/**
  * Framer Motion - ~150KB
  * Para animações complexas que não são necessárias no carregamento inicial
  */
 export const LazyMotionDiv = dynamic(() => import('framer-motion').then((mod) => mod.motion.div), {
-  ssr: false,
-})
-
-export const LazyMotionSpan = dynamic(() => import('framer-motion').then((mod) => mod.motion.span), {
-  ssr: false,
-})
-
-export const LazyMotionP = dynamic(() => import('framer-motion').then((mod) => mod.motion.p), {
-  ssr: false,
-})
-
-export const LazyMotionH2 = dynamic(() => import('framer-motion').then((mod) => mod.motion.h2), {
   ssr: false,
 })
 

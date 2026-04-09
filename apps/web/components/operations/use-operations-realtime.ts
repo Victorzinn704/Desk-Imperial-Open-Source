@@ -239,14 +239,24 @@ export function applyRealtimeEnvelope(
     summaryNeedsRefresh: false,
   }
 
+  applyLivePatches(queryClient, envelope, result)
+  applyKitchenPatch(queryClient, envelope, result)
+  applySummaryPatch(queryClient, envelope, result)
+
+  return result
+}
+
+function applyLivePatches(
+  queryClient: QueryClient,
+  envelope: OperationsRealtimeEnvelope,
+  result: OperationsRealtimePatchResult,
+) {
   const liveQueries = queryClient.getQueriesData<OperationsLiveResponse>({
     queryKey: OPERATIONS_LIVE_QUERY_PREFIX,
   })
 
   for (const [queryKey, current] of liveQueries) {
-    if (!current) {
-      continue
-    }
+    if (!current) continue
 
     const next = patchOperationsSnapshot(current, envelope)
     if (!next) {
@@ -259,52 +269,46 @@ export function applyRealtimeEnvelope(
     }
     result.livePatched = true
   }
+}
 
-  const kitchenSnapshot = queryClient.getQueryData<{
-    businessDate: string
-    companyOwnerId: string
-    items: Array<{
-      itemId: string
-      comandaId: string
-      mesaLabel: string
-      employeeId: string | null
-      employeeName: string
-      productName: string
-      quantity: number
-      notes: string | null
-      kitchenStatus: 'QUEUED' | 'IN_PREPARATION' | 'READY'
-      kitchenQueuedAt: string | null
-      kitchenReadyAt: string | null
-    }>
-    statusCounts: { queued: number; inPreparation: number; ready: number }
-  }>(OPERATIONS_KITCHEN_QUERY_KEY)
+function applyKitchenPatch(
+  queryClient: QueryClient,
+  envelope: OperationsRealtimeEnvelope,
+  result: OperationsRealtimePatchResult,
+) {
+  const kitchenSnapshot = queryClient.getQueryData<OperationsKitchenSnapshot>(OPERATIONS_KITCHEN_QUERY_KEY)
+  if (!kitchenSnapshot) return
 
-  if (kitchenSnapshot) {
-    const nextKitchenSnapshot = patchKitchenSnapshot(kitchenSnapshot, envelope)
-    if (nextKitchenSnapshot) {
-      if (nextKitchenSnapshot !== kitchenSnapshot) {
-        queryClient.setQueryData(OPERATIONS_KITCHEN_QUERY_KEY, nextKitchenSnapshot)
-      }
-      result.kitchenPatched = true
-    } else if (isKitchenEvent(envelope.event)) {
-      result.kitchenNeedsRefresh = true
-    }
+  const nextKitchenSnapshot = patchKitchenSnapshot(kitchenSnapshot, envelope)
+  if (!nextKitchenSnapshot) {
+    if (isKitchenEvent(envelope.event)) result.kitchenNeedsRefresh = true
+    return
   }
 
+  if (nextKitchenSnapshot !== kitchenSnapshot) {
+    queryClient.setQueryData(OPERATIONS_KITCHEN_QUERY_KEY, nextKitchenSnapshot)
+  }
+  result.kitchenPatched = true
+}
+
+function applySummaryPatch(
+  queryClient: QueryClient,
+  envelope: OperationsRealtimeEnvelope,
+  result: OperationsRealtimePatchResult,
+) {
   const summarySnapshot = queryClient.getQueryData<OperationsSummaryResponse>(OPERATIONS_SUMMARY_QUERY_KEY)
-  if (summarySnapshot) {
-    const nextSummarySnapshot = patchSummarySnapshot(summarySnapshot, envelope)
-    if (nextSummarySnapshot) {
-      if (nextSummarySnapshot !== summarySnapshot) {
-        queryClient.setQueryData(OPERATIONS_SUMMARY_QUERY_KEY, nextSummarySnapshot)
-      }
-      result.summaryPatched = true
-    } else if (envelope.event === 'cash.closure.updated') {
-      result.summaryNeedsRefresh = true
-    }
+  if (!summarySnapshot) return
+
+  const nextSummarySnapshot = patchSummarySnapshot(summarySnapshot, envelope)
+  if (!nextSummarySnapshot) {
+    if (envelope.event === 'cash.closure.updated') result.summaryNeedsRefresh = true
+    return
   }
 
-  return result
+  if (nextSummarySnapshot !== summarySnapshot) {
+    queryClient.setQueryData(OPERATIONS_SUMMARY_QUERY_KEY, nextSummarySnapshot)
+  }
+  result.summaryPatched = true
 }
 
 function patchOperationsSnapshot(snapshot: OperationsLiveResponse, envelope: OperationsRealtimeEnvelope) {
@@ -1186,16 +1190,12 @@ function asArray(value: unknown) {
 
 function mapComandaStatus(value: string | null): ComandaRecord['status'] | null {
   switch (value) {
-    case 'ABERTA':
     case 'OPEN':
       return 'OPEN'
-    case 'EM_PREPARO':
     case 'IN_PREPARATION':
       return 'IN_PREPARATION'
-    case 'PRONTA':
     case 'READY':
       return 'READY'
-    case 'FECHADA':
     case 'CLOSED':
       return 'CLOSED'
     case 'CANCELLED':

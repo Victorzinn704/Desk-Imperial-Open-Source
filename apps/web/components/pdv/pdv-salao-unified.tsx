@@ -12,6 +12,13 @@ import { garcomCor, initials, urgencyLevel, resolveMesaComanda, type SalaoView, 
 import { useUrgencyTick } from './salao'
 import { GarcomAvatar, FilterChip, ViewBtn, MesaCard, MesaCompact } from './salao'
 
+function matchesMesaFilter(mesa: Mesa, comanda: Comanda | undefined, filter: FilterStatus, now: number): boolean {
+  if (filter === 'todos') return true
+  if (filter === 'sem_garcom') return !mesa.garcomId && mesa.status !== 'livre'
+  if (filter === 'atencao') return urgencyLevel(mesa, comanda, now) >= 2
+  return mesa.status === filter
+}
+
 type Props = {
   mesas: Mesa[]
   garcons: Garcom[]
@@ -41,7 +48,7 @@ function GarcomStrip({
 }) {
   if (garcons.length === 0) return null
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2">
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">Atribuir →</span>
       {garcons.map((g) => {
         const active = assigningGarcomId === g.id
@@ -52,8 +59,8 @@ function GarcomStrip({
             onClick={() => onSelect(active ? null : g.id)}
             className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold transition-all duration-150"
             style={{
-              background: active ? `${g.cor}28` : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${active ? `${g.cor}70` : 'rgba(255,255,255,0.08)'}`,
+              background: active ? `${g.cor}28` : 'var(--surface-soft)',
+              border: `1px solid ${active ? `${g.cor}70` : 'var(--border)'}`,
               color: active ? g.cor : 'var(--text-soft)',
               transform: active ? 'scale(1.06)' : 'scale(1)',
               boxShadow: active ? `0 0 8px ${g.cor}30` : 'none',
@@ -69,7 +76,7 @@ function GarcomStrip({
         <button
           type="button"
           onClick={() => onSelect(null)}
-          className="flex items-center gap-1 rounded-full border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+          className="flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
         >
           <X className="size-2.5" /> cancelar
         </button>
@@ -130,34 +137,14 @@ function SalaoView({
     const reservada: Mesa[] = []
 
     for (const mesa of mesas) {
-      const comanda = resolveMesaComanda(mesa, comandaById)
-      const matchesFilter =
-        filter === 'todos'
-          ? true
-          : filter === 'sem_garcom'
-            ? !mesa.garcomId && mesa.status !== 'livre'
-            : filter === 'atencao'
-              ? urgencyLevel(mesa, comanda, now) >= 2
-              : mesa.status === filter
+      if (!matchesMesaFilter(mesa, resolveMesaComanda(mesa, comandaById), filter, now)) continue
 
-      if (!matchesFilter) {
-        continue
-      }
-
-      if (mesa.status === 'livre') {
-        livre.push(mesa)
-      } else if (mesa.status === 'ocupada') {
-        ocupada.push(mesa)
-      } else if (mesa.status === 'reservada') {
-        reservada.push(mesa)
-      }
+      if (mesa.status === 'livre') livre.push(mesa)
+      else if (mesa.status === 'ocupada') ocupada.push(mesa)
+      else if (mesa.status === 'reservada') reservada.push(mesa)
     }
 
-    return {
-      livreMesas: livre,
-      ocupMesas: ocupada,
-      resMesas: reservada,
-    }
+    return { livreMesas: livre, ocupMesas: ocupada, resMesas: reservada }
   }, [comandaById, filter, mesas, now])
 
   const zones = [
@@ -199,7 +186,7 @@ function SalaoView({
               <button
                 type="button"
                 onClick={() => setCompactLivres((v) => !v)}
-                className="flex items-center gap-1 rounded-[8px] border border-[rgba(255,255,255,0.08)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                className="flex items-center gap-1 rounded-[8px] border border-[var(--border)] px-2 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {compactLivres ? <Maximize2 className="size-3" /> : <Minimize2 className="size-3" />}
                 {compactLivres ? 'Expandir' : 'Compactar'}
@@ -440,7 +427,7 @@ function EquipeView({
                     type="button"
                     title="Remover garçom"
                     onClick={() => onRemoveGarcom(garcom.id)}
-                    className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)] hover:opacity-100"
+                    className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)] hover:opacity-100"
                   >
                     <X className="size-3" />
                   </button>
@@ -491,7 +478,7 @@ function EquipeView({
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="flex w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.1)] text-[var(--text-muted)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-soft)]"
+            className="flex w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-soft)]"
             title="Adicionar garçom"
           >
             <Plus className="size-5" />
@@ -500,7 +487,7 @@ function EquipeView({
       </div>
 
       {garcons.length === 0 && semGarcom.length === 0 && allowRosterEditing && (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[rgba(255,255,255,0.08)] py-20">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--border)] py-20">
           <Users2 className="size-10 opacity-40 text-[var(--text-muted)]" />
           <div className="text-center">
             <p className="text-sm font-medium text-[var(--text-soft)]">Nenhum garçom em turno</p>
@@ -518,13 +505,13 @@ function EquipeView({
 
       {showAdd && allowRosterEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[#0e1018] p-6 shadow-2xl">
+          <div className="w-full max-w-xs rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl">
             <h3 className="mb-4 text-base font-bold text-[var(--text-primary)]">Novo Garçom</h3>
             <input
               autoFocus
               type="text"
               placeholder="Nome do garçom"
-              className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
               value={newNome}
               onChange={(e) => setNewNome(e.target.value)}
               onKeyDown={(e) => {
@@ -539,7 +526,7 @@ function EquipeView({
               <button
                 type="button"
                 onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)]"
+                className="flex-1 rounded-xl border border-[var(--border)] py-2.5 text-sm text-[var(--text-soft)] hover:border-[var(--border-strong)]"
               >
                 Cancelar
               </button>
@@ -551,7 +538,7 @@ function EquipeView({
                   setNewNome('')
                   setShowAdd(false)
                 }}
-                className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black disabled:opacity-40"
+                className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-[var(--on-accent)] disabled:opacity-40"
                 style={{ background: 'var(--accent)' }}
               >
                 Adicionar
@@ -704,12 +691,12 @@ export function SalaoUnificado({
 
         <div className="flex items-center gap-3">
           {totalAberto > 0 && (
-            <div className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1.5 text-xs">
+            <div className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs">
               <span className="text-[var(--text-muted)]">Em aberto </span>
               <span className="font-bold text-[var(--text-primary)]">{formatCurrency(totalAberto, 'BRL')}</span>
             </div>
           )}
-          <div className="flex rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-0.5">
+          <div className="flex rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] p-0.5">
             <ViewBtn
               active={view === 'salao'}
               onClick={() => setView('salao')}

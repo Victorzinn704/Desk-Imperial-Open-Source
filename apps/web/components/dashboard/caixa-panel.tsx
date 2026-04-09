@@ -44,23 +44,22 @@ function KpiCard({
   hint?: string
   highlight?: 'neutral' | 'positive' | 'negative' | 'accent'
 }) {
-  const borderClass =
-    highlight === 'positive'
-      ? 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)]'
-      : highlight === 'negative'
-        ? 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.05)]'
-        : highlight === 'accent'
-          ? 'border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.07)]'
-          : 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+  const borderClassMap: Record<string, string> = {
+    positive: 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)]',
+    negative: 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.05)]',
+    accent: 'border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.07)]',
+    neutral: 'border-white/6 bg-[rgba(255,255,255,0.02)]',
+  }
 
-  const iconClass =
-    highlight === 'positive'
-      ? 'text-[#34f27f]'
-      : highlight === 'negative'
-        ? 'text-[#f87171]'
-        : highlight === 'accent'
-          ? 'text-[#c9a96e]'
-          : 'text-[var(--text-soft)]'
+  const iconClassMap: Record<string, string> = {
+    positive: 'text-[#34f27f]',
+    negative: 'text-[#f87171]',
+    accent: 'text-[#c9a96e]',
+    neutral: 'text-[var(--text-soft)]',
+  }
+
+  const borderClass = borderClassMap[highlight] ?? borderClassMap.neutral
+  const iconClass = iconClassMap[highlight] ?? iconClassMap.neutral
 
   return (
     <div className={`rounded-[22px] border px-4 py-4 ${borderClass}`}>
@@ -372,6 +371,97 @@ function FecharCaixaModal({
 
 // ── main component ────────────────────────────────────────────────────────────
 
+function CaixaHeaderActions({
+  caixaAberto,
+  onOpenModal,
+  onCloseModal,
+}: Readonly<{
+  caixaAberto: boolean
+  onOpenModal: () => void
+  onCloseModal: () => void
+}>) {
+  if (caixaAberto) {
+    return (
+      <>
+        <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold text-[#34f27f]">
+          <span className="size-1.5 rounded-full bg-[#34f27f] animate-pulse" />
+          Aberto
+        </span>
+        <button
+          type="button"
+          onClick={onCloseModal}
+          className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
+        >
+          <Lock className="size-3.5" />
+          Fechar caixa
+        </button>
+      </>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenModal}
+      className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
+    >
+      <Unlock className="size-3.5" />
+      Abrir caixa
+    </button>
+  )
+}
+
+function formatCaixaSubtitle(caixaAberto: boolean, openSessionsCount: number, openComandasCount: number): string {
+  if (!caixaAberto) return 'Nenhuma sessão de caixa ativa no momento.'
+  const comandaLabel = openComandasCount === 1 ? '' : 's'
+  return `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${comandaLabel} em aberto`
+}
+
+function positiveOrNeutral(value: number): 'positive' | 'neutral' {
+  return value > 0 ? 'positive' : 'neutral'
+}
+
+function CaixaEsperadoRow({ caixaEsperado, openComandasCount }: { caixaEsperado: number; openComandasCount: number }) {
+  return (
+    <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Caixa esperado</p>
+        <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(caixaEsperado)}</p>
+        <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
+      </div>
+      {openComandasCount > 0 ? (
+        <div className="flex items-center gap-2 rounded-[12px] border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3.5 py-2.5 text-xs text-[#fbbf24]">
+          <AlertTriangle className="size-3.5 shrink-0" />
+          <span className="font-semibold">
+            {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
+            {openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
+          </span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function CaixaEmptyState({ onOpenModal }: { onOpenModal: () => void }) {
+  return (
+    <div className="mt-5 rounded-[22px] border border-dashed border-white/8 px-6 py-10 text-center">
+      <Banknote className="mx-auto size-9 text-[var(--text-soft)]/50" />
+      <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Caixa ainda não foi aberto hoje</p>
+      <p className="mt-1.5 text-xs text-[var(--text-soft)]">
+        Clique em &ldquo;Abrir caixa&rdquo; para iniciar o turno e liberar o PDV para os funcionários.
+      </p>
+      <button
+        type="button"
+        onClick={onOpenModal}
+        className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
+      >
+        <Unlock className="size-3.5" />
+        Abrir caixa agora
+      </button>
+    </div>
+  )
+}
+
 export function CaixaPanel({ operations }: { operations: OperationsLiveResponse | undefined }) {
   const [showAbrirModal, setShowAbrirModal] = useState(false)
   const [showFecharModal, setShowFecharModal] = useState(false)
@@ -392,7 +482,6 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
   return (
     <>
       <section className="imperial-card p-6 md:p-7">
-        {/* header */}
         <header className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
@@ -400,38 +489,16 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">Caixa do dia</h2>
             <p className="mt-1.5 text-sm leading-6 text-[var(--text-soft)]">
-              {caixaAberto
-                ? `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} em aberto`
-                : 'Nenhuma sessão de caixa ativa no momento.'}
+              {formatCaixaSubtitle(caixaAberto, openSessionsCount, openComandasCount)}
             </p>
           </div>
 
           <div className="flex shrink-0 items-center gap-2.5">
-            {caixaAberto ? (
-              <>
-                <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold text-[#34f27f]">
-                  <span className="size-1.5 rounded-full bg-[#34f27f] animate-pulse" />
-                  Aberto
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowFecharModal(true)}
-                  className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
-                >
-                  <Lock className="size-3.5" />
-                  Fechar caixa
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAbrirModal(true)}
-                className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
-              >
-                <Unlock className="size-3.5" />
-                Abrir caixa
-              </button>
-            )}
+            <CaixaHeaderActions
+              caixaAberto={caixaAberto}
+              onOpenModal={() => setShowAbrirModal(true)}
+              onCloseModal={() => setShowFecharModal(true)}
+            />
           </div>
         </header>
 
@@ -455,14 +522,14 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
             label="Receita realizada"
             value={fmtBRL(receitaRealizada)}
             hint="Comandas fechadas hoje"
-            highlight={receitaRealizada > 0 ? 'positive' : 'neutral'}
+            highlight={positiveOrNeutral(receitaRealizada)}
           />
           <KpiCard
             icon={TrendingUp}
             label="Lucro realizado"
             value={fmtBRL(lucroRealizado)}
             hint="Resultado líquido estimado"
-            highlight={lucroRealizado > 0 ? 'positive' : 'neutral'}
+            highlight={positiveOrNeutral(lucroRealizado)}
           />
           <KpiCard
             icon={ChevronDown}
@@ -490,45 +557,10 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           </p>
         </div>
 
-        {/* caixa esperado — linha separada */}
-        {caixaAberto ? (
-          <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                Caixa esperado
-              </p>
-              <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(caixaEsperado)}</p>
-              <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
-            </div>
-            {openComandasCount > 0 ? (
-              <div className="flex items-center gap-2 rounded-[12px] border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3.5 py-2.5 text-xs text-[#fbbf24]">
-                <AlertTriangle className="size-3.5 shrink-0" />
-                <span className="font-semibold">
-                  {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
-                  {openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
-                </span>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        {caixaAberto ? <CaixaEsperadoRow caixaEsperado={caixaEsperado} openComandasCount={openComandasCount} /> : null}
 
-        {/* estado fechado sem dados */}
         {!caixaAberto && receitaRealizada === 0 ? (
-          <div className="mt-5 rounded-[22px] border border-dashed border-white/8 px-6 py-10 text-center">
-            <Banknote className="mx-auto size-9 text-[var(--text-soft)]/50" />
-            <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Caixa ainda não foi aberto hoje</p>
-            <p className="mt-1.5 text-xs text-[var(--text-soft)]">
-              Clique em &ldquo;Abrir caixa&rdquo; para iniciar o turno e liberar o PDV para os funcionários.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowAbrirModal(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
-            >
-              <Unlock className="size-3.5" />
-              Abrir caixa agora
-            </button>
-          </div>
+          <CaixaEmptyState onOpenModal={() => setShowAbrirModal(true)} />
         ) : null}
       </section>
 

@@ -67,9 +67,9 @@ import { isCashSessionRequiredError } from '@/lib/operations/operations-error-ut
 type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
 
 type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
-interface OwnerMobileShellProps {
+type OwnerMobileShellProps = Readonly<{
   currentUser: { name?: string; fullName?: string; companyName?: string | null } | null
-}
+}>
 
 export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const router = useRouter()

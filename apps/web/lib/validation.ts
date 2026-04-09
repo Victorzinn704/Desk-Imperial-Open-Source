@@ -54,7 +54,7 @@ export const loginSchema = z
 
     if (!values.employeeCode || values.employeeCode.trim().length < 2) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['employeeCode'],
         message: 'Informe o ID do funcionário.',
       })
@@ -82,7 +82,7 @@ export const registerSchema = z
   .object({
     fullName: z.string().trim().min(3, 'Digite seu nome completo.').max(120, 'O nome está longo demais.'),
     companyName: z.string().trim().max(160, 'O nome da empresa está longo demais.').optional().or(z.literal('')),
-    email: z.string().trim().email('Digite um e-mail válido.'),
+    email: z.string().trim().email({ message: 'Digite um e-mail válido.' }),
     companyStreetLine1: z
       .string()
       .trim()

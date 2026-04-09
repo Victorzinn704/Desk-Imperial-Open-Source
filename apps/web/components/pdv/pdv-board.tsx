@@ -48,10 +48,10 @@ type SimpleProduct = {
   }>
 }
 
-type PdvBoardProps = {
+type PdvBoardProps = Readonly<{
   operations?: OperationsLiveResponse
   products: SimpleProduct[]
-}
+}>
 
 type ActiveTab = 'comandas' | 'salao' | 'historico'
 
@@ -441,7 +441,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
               onChange={setAddMesaForm}
               onConfirm={() => {
                 const label = addMesaForm.label.trim()
-                const capacity = parseInt(addMesaForm.capacity, 10)
+                const capacity = Number.parseInt(addMesaForm.capacity, 10)
                 if (!label) {
                   setActionError('Informe o nome da mesa.')
                   setAddMesaForm(null)

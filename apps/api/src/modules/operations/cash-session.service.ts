@@ -4,8 +4,7 @@ import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { assertOwnerRole } from '../../common/utils/workspace-access.util'
+import { resolveWorkspaceOwnerUserId, assertOwnerRole } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
@@ -30,7 +29,7 @@ import {
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
   resolveBusinessDate,
-  toNumber,
+  toNumberOrZero,
 } from './operations-domain.utils'
 
 @Injectable()
@@ -255,7 +254,7 @@ export class CashSessionService {
     const helpers = this.helpers
     const { refreshedSession, closure } = await this.prisma.$transaction(async (transaction) => {
       const recalculatedSession = await helpers.recalculateCashSession(transaction, session.id)
-      const differenceAmount = roundCurrency(countedCashAmount - toNumber(recalculatedSession.expectedCashAmount))
+      const differenceAmount = roundCurrency(countedCashAmount - toNumberOrZero(recalculatedSession.expectedCashAmount))
 
       const closedSession = await transaction.cashSession.update({
         where: { id: session.id },
@@ -341,7 +340,7 @@ export class CashSessionService {
       )
     }
 
-    const differenceAmount = roundCurrency(countedCashAmount - toNumber(syncedClosure.expectedCashAmount))
+    const differenceAmount = roundCurrency(countedCashAmount - toNumberOrZero(syncedClosure.expectedCashAmount))
 
     const closure = await this.prisma.cashClosure.update({
       where: {
@@ -435,7 +434,7 @@ export class CashSessionService {
     this.operationsRealtimeService.publishCashOpened(auth, {
       cashSessionId: session.id,
       openedAt: session.openedAt.toISOString(),
-      openingAmount: toNumber(session.openingCashAmount),
+      openingAmount: toNumberOrZero(session.openingCashAmount),
       currency: auth.preferredCurrency,
       employeeId: session.employeeId,
       businessDate: formatBusinessDateKey(session.businessDate),

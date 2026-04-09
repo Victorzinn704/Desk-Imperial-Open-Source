@@ -150,6 +150,154 @@ type ChannelItem = { channel: string; revenue: number }
 type CustomerItem = { label: string; revenue: number }
 type CategoryItem = { category: string; potentialProfit: number; color: string }
 
+type ChartContext = {
+  textColor: string
+  gridColor: string
+  isDark: boolean
+  displayCurrency: CurrencyCode
+  timelineData: TimelineItem[]
+  channelData: ChannelItem[]
+  customerData: CustomerItem[]
+  categoryData: CategoryItem[]
+}
+
+function buildTimelineChart(ctx: ChartContext) {
+  const options: ApexCharts.ApexOptions = {
+    chart: { type: 'area', toolbar: { show: false }, background: 'transparent' },
+    colors: ['#36f57c', '#3b82f6'],
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 3 },
+    xaxis: {
+      categories: ctx.timelineData.map((d) => d.label),
+      labels: { style: { colors: ctx.textColor } },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: {
+      labels: {
+        style: { colors: ctx.textColor },
+        formatter: (value) => formatCompactCurrency(value, ctx.displayCurrency),
+      },
+    },
+    grid: { borderColor: ctx.gridColor, strokeDashArray: 4 },
+    theme: { mode: ctx.isDark ? 'dark' : 'light' },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] },
+    },
+    legend: { position: 'top', horizontalAlign: 'right', labels: { colors: ctx.textColor } },
+  }
+  const series = [
+    { name: 'Receita', data: ctx.timelineData.map((d) => d.revenue) },
+    { name: 'Lucro', data: ctx.timelineData.map((d) => d.profit) },
+  ]
+  return <ReactApexChart options={options} series={series} type="area" height="100%" />
+}
+
+function buildGrowthChart(ctx: ChartContext) {
+  const options: ApexCharts.ApexOptions = {
+    chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
+    plotOptions: { bar: { columnWidth: '40%', borderRadius: 4 } },
+    colors: ['#8b5cf6', '#10b981'],
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: ctx.timelineData.map((d) => d.label),
+      labels: { style: { colors: ctx.textColor } },
+    },
+    yaxis: {
+      labels: {
+        style: { colors: ctx.textColor },
+        formatter: (value) => formatCompactCurrency(value, ctx.displayCurrency),
+      },
+    },
+    grid: { borderColor: ctx.gridColor, strokeDashArray: 4 },
+    theme: { mode: ctx.isDark ? 'dark' : 'light' },
+    legend: { position: 'top', horizontalAlign: 'right', labels: { colors: ctx.textColor } },
+  }
+  const series = [
+    { name: 'Ticket Médio', data: ctx.timelineData.map((d) => +(d.revenue / (d.orders || 1)).toFixed(2)) },
+    { name: 'Lucro Total', data: ctx.timelineData.map((d) => d.profit) },
+  ]
+  return <ReactApexChart options={options} series={series} type="bar" height="100%" />
+}
+
+function buildChannelsChart(ctx: ChartContext) {
+  const options: ApexCharts.ApexOptions = {
+    chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
+    plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%' } },
+    colors: ['#06b6d4'],
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: ctx.channelData.map((d) => d.channel),
+      labels: {
+        style: { colors: ctx.textColor },
+        formatter: (value) => formatCompactCurrency(Number(value), ctx.displayCurrency),
+      },
+    },
+    yaxis: { labels: { style: { colors: ctx.textColor } } },
+    grid: { borderColor: ctx.gridColor, strokeDashArray: 4 },
+    theme: { mode: ctx.isDark ? 'dark' : 'light' },
+  }
+  const series = [{ name: 'Receita', data: ctx.channelData.map((d) => d.revenue) }]
+  return <ReactApexChart options={options} series={series} type="bar" height="100%" />
+}
+
+function buildCustomersChart(ctx: ChartContext) {
+  const options: ApexCharts.ApexOptions = {
+    chart: { type: 'radar', toolbar: { show: false }, background: 'transparent' },
+    labels: ctx.customerData.map((d) => d.label),
+    stroke: { width: 2, colors: ['#f43f5e'] },
+    fill: { opacity: 0.2, colors: ['#f43f5e'] },
+    markers: { size: 4, colors: ['#fff'], strokeColors: '#f43f5e', strokeWidth: 2 },
+    yaxis: { show: false },
+    theme: { mode: ctx.isDark ? 'dark' : 'light' },
+    plotOptions: {
+      radar: {
+        polygons: { strokeColors: ctx.gridColor, connectorColors: ctx.gridColor },
+      },
+    },
+  }
+  const series = [{ name: 'Receita', data: ctx.customerData.map((d) => d.revenue) }]
+  return <ReactApexChart options={options} series={series} type="radar" height="100%" />
+}
+
+function buildCategoriesChart(ctx: ChartContext) {
+  const options: ApexCharts.ApexOptions = {
+    chart: { type: 'donut', background: 'transparent' },
+    labels: ctx.categoryData.map((d) => d.category),
+    colors: palette,
+    stroke: { show: false },
+    dataLabels: { enabled: false },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '75%',
+          labels: {
+            show: true,
+            name: { color: ctx.textColor },
+            value: {
+              color: ctx.textColor,
+              formatter: (val) => formatCompactCurrency(Number(val), ctx.displayCurrency),
+            },
+          },
+        },
+      },
+    },
+    theme: { mode: ctx.isDark ? 'dark' : 'light' },
+    legend: { position: 'right', labels: { colors: ctx.textColor } },
+  }
+  const series = ctx.categoryData.map((d) => d.potentialProfit)
+  return <ReactApexChart options={options} series={series} type="donut" height="100%" />
+}
+
+const chartBuilders: Record<ChartView, (ctx: ChartContext) => React.ReactNode> = {
+  timeline: buildTimelineChart,
+  growth: buildGrowthChart,
+  channels: buildChannelsChart,
+  customers: buildCustomersChart,
+  categories: buildCategoriesChart,
+}
+
 function renderChart({
   activeView,
   categoryData,
@@ -174,131 +322,17 @@ function renderChart({
   if (isLoading) return <Skeleton className="h-full w-full rounded-xl" />
   if (error) return <div className="text-red-500 p-6">{error}</div>
 
-  const textColor = isDark ? '#9ca3af' : '#6b7280'
-  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-
-  if (activeView === 'timeline') {
-    const options: ApexCharts.ApexOptions = {
-      chart: { type: 'area', toolbar: { show: false }, background: 'transparent' },
-      colors: ['#36f57c', '#3b82f6'],
-      dataLabels: { enabled: false },
-      stroke: { curve: 'smooth', width: 3 },
-      xaxis: {
-        categories: timelineData.map((d) => d.label),
-        labels: { style: { colors: textColor } },
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-      },
-      yaxis: {
-        labels: {
-          style: { colors: textColor },
-          formatter: (value) => formatCompactCurrency(value, displayCurrency),
-        },
-      },
-      grid: { borderColor: gridColor, strokeDashArray: 4 },
-      theme: { mode: isDark ? 'dark' : 'light' },
-      fill: {
-        type: 'gradient',
-        gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] },
-      },
-      legend: { position: 'top', horizontalAlign: 'right', labels: { colors: textColor } },
-    }
-    const series = [
-      { name: 'Receita', data: timelineData.map((d) => d.revenue) },
-      { name: 'Lucro', data: timelineData.map((d) => d.profit) },
-    ]
-    return <ReactApexChart options={options} series={series} type="area" height="100%" />
+  const ctx: ChartContext = {
+    textColor: isDark ? '#9ca3af' : '#6b7280',
+    gridColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    isDark,
+    displayCurrency,
+    timelineData,
+    channelData,
+    customerData,
+    categoryData,
   }
 
-  if (activeView === 'growth') {
-    const options: ApexCharts.ApexOptions = {
-      chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
-      plotOptions: { bar: { columnWidth: '40%', borderRadius: 4 } },
-      colors: ['#8b5cf6', '#10b981'],
-      dataLabels: { enabled: false },
-      xaxis: {
-        categories: timelineData.map((d) => d.label),
-        labels: { style: { colors: textColor } },
-      },
-      yaxis: {
-        labels: { style: { colors: textColor }, formatter: (value) => formatCompactCurrency(value, displayCurrency) },
-      },
-      grid: { borderColor: gridColor, strokeDashArray: 4 },
-      theme: { mode: isDark ? 'dark' : 'light' },
-      legend: { position: 'top', horizontalAlign: 'right', labels: { colors: textColor } },
-    }
-    const series = [
-      { name: 'Ticket Médio', data: timelineData.map((d) => +(d.revenue / (d.orders || 1)).toFixed(2)) },
-      { name: 'Lucro Total', data: timelineData.map((d) => d.profit) },
-    ]
-    return <ReactApexChart options={options} series={series} type="bar" height="100%" />
-  }
-
-  if (activeView === 'channels') {
-    const options: ApexCharts.ApexOptions = {
-      chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%' } },
-      colors: ['#06b6d4'],
-      dataLabels: { enabled: false },
-      xaxis: {
-        categories: channelData.map((d) => d.channel),
-        labels: {
-          style: { colors: textColor },
-          formatter: (value) => formatCompactCurrency(Number(value), displayCurrency),
-        },
-      },
-      yaxis: { labels: { style: { colors: textColor } } },
-      grid: { borderColor: gridColor, strokeDashArray: 4 },
-      theme: { mode: isDark ? 'dark' : 'light' },
-    }
-    const series = [{ name: 'Receita', data: channelData.map((d) => d.revenue) }]
-    return <ReactApexChart options={options} series={series} type="bar" height="100%" />
-  }
-
-  if (activeView === 'customers') {
-    const options: ApexCharts.ApexOptions = {
-      chart: { type: 'radar', toolbar: { show: false }, background: 'transparent' },
-      labels: customerData.map((d) => d.label),
-      stroke: { width: 2, colors: ['#f43f5e'] },
-      fill: { opacity: 0.2, colors: ['#f43f5e'] },
-      markers: { size: 4, colors: ['#fff'], strokeColors: '#f43f5e', strokeWidth: 2 },
-      yaxis: { show: false },
-      theme: { mode: isDark ? 'dark' : 'light' },
-      plotOptions: {
-        radar: {
-          polygons: { strokeColors: gridColor, connectorColors: gridColor },
-        },
-      },
-    }
-    const series = [{ name: 'Receita', data: customerData.map((d) => d.revenue) }]
-    return <ReactApexChart options={options} series={series} type="radar" height="100%" />
-  }
-
-  if (activeView === 'categories') {
-    const options: ApexCharts.ApexOptions = {
-      chart: { type: 'donut', background: 'transparent' },
-      labels: categoryData.map((d) => d.category),
-      colors: palette,
-      stroke: { show: false },
-      dataLabels: { enabled: false },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '75%',
-            labels: {
-              show: true,
-              name: { color: textColor },
-              value: { color: textColor, formatter: (val) => formatCompactCurrency(Number(val), displayCurrency) },
-            },
-          },
-        },
-      },
-      theme: { mode: isDark ? 'dark' : 'light' },
-      legend: { position: 'right', labels: { colors: textColor } },
-    }
-    const series = categoryData.map((d) => d.potentialProfit)
-    return <ReactApexChart options={options} series={series} type="donut" height="100%" />
-  }
-
-  return null
+  const builder = chartBuilders[activeView]
+  return builder ? builder(ctx) : null
 }

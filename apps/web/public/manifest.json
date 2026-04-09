@@ -2,7 +2,7 @@
   "name": "Desk Imperial — Operacional",
   "short_name": "Desk Imperial",
   "description": "Sistema operacional móvel para bares e restaurantes",
-  "start_url": "/app/staff",
+  "start_url": "/app",
   "scope": "/app/",
   "display": "standalone",
   "orientation": "portrait",

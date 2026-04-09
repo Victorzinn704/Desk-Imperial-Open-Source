@@ -203,13 +203,13 @@ function eventStyleGetter(event: CommercialActivity) {
 
 // ─── New/Edit Activity Modal ──────────────────────────────────────────────────
 
-type ActivityModalProps = {
+type ActivityModalProps = Readonly<{
   activity?: CommercialActivity | null
   initialStart?: Date
   onSave: (data: Omit<CommercialActivity, 'id'>) => void
   onDelete?: (id: string) => void
   onClose: () => void
-}
+}>
 
 export function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Readonly<ActivityModalProps>) {
   const titleInputId = 'commercial-activity-title'

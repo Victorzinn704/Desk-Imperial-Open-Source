@@ -20,6 +20,18 @@
   .map-marker-pulse {
     animation: none !important;
   }
+
+  .fcard-spin {
+    animation: none !important;
+  }
+
+  .fcard-face {
+    animation: none !important;
+  }
+
+  .ai-glyph-pulse {
+    animation: none !important;
+  }
 }
 
 /* Touch devices: garantir área mínima de toque de 44x44px */
@@ -133,7 +145,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background: var(--bg);
-  font-family: 'Manrope', 'Inter', 'Segoe UI', sans-serif;
+  font-family: var(--font-outfit), 'Inter', 'Segoe UI', sans-serif;
   color: var(--text-primary);
 }
 
@@ -343,7 +355,7 @@ select {
 
 .leaflet-container {
   background: #0f1318;
-  font-family: 'Manrope', 'Inter', 'Segoe UI', sans-serif;
+  font-family: var(--font-outfit), 'Inter', 'Segoe UI', sans-serif;
   height: 100% !important;
   width: 100% !important;
 }
@@ -453,7 +465,14 @@ select {
 .map-marker-pulse {
   position: absolute;
   animation: map-pulse 2s ease-out infinite;
+  animation-play-state: paused;
   pointer-events: none;
+}
+
+/* Only run pulse when inside the mounted map */
+.maplibregl-map .map-marker-pulse,
+.leaflet-container .map-marker-pulse {
+  animation-play-state: running;
 }
 
 /* ─── Input focus glow ──────────────────────────────────────────────────────── */

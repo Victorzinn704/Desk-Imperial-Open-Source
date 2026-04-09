@@ -19,7 +19,7 @@ export type OperationsRealtimeEventName =
 
 export type OperationsRealtimeActorRole = 'OWNER' | 'STAFF'
 
-export type OperationsRealtimeComandaStatus = 'ABERTA' | 'EM_PREPARO' | 'PRONTA' | 'FECHADA'
+export type OperationsRealtimeComandaStatus = 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED'
 
 export type OperationsRealtimeKitchenItemStatus = 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
 

@@ -49,7 +49,7 @@ export function getPreferredThermalPrinter(provider: ThermalPrintProvider) {
     return null
   }
 
-  return window.localStorage.getItem(`desk-imperial.thermal-printer.${provider}`)
+  return globalThis.localStorage.getItem(`desk-imperial.thermal-printer.${provider}`)
 }
 
 export function setPreferredThermalPrinter(provider: ThermalPrintProvider, printerName: string) {

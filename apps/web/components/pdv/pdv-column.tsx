@@ -5,11 +5,11 @@ import { Droppable } from '@hello-pangea/dnd'
 import { calcTotal, type Comanda, type KanbanColumn } from './pdv-types'
 import { PdvComandaCard } from './pdv-comanda-card'
 
-type PdvColumnProps = {
+type PdvColumnProps = Readonly<{
   column: KanbanColumn
   comandas: Comanda[]
   onCardClick: (comanda: Comanda) => void
-}
+}>
 
 export const PdvColumn = memo(function PdvColumn({ column, comandas, onCardClick }: Readonly<PdvColumnProps>) {
   const total = useMemo(() => comandas.reduce((sum, comanda) => sum + calcTotal(comanda), 0), [comandas])

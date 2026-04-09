@@ -275,7 +275,7 @@ describe('ComandaService helpers', () => {
       auth,
       expect.objectContaining({
         comandaId: 'comanda-1',
-        status: 'PRONTA',
+        status: 'READY',
         totalItems: 3,
         requiresKitchenRefresh: true,
         replaceKitchenItems: true,
@@ -324,7 +324,7 @@ describe('ComandaService helpers', () => {
 
     expect(operationsRealtimeService.publishComandaClosed).toHaveBeenCalledWith(
       auth,
-      expect.objectContaining({ comandaId: 'comanda-1', status: 'FECHADA' }),
+      expect.objectContaining({ comandaId: 'comanda-1', status: 'CLOSED' }),
     )
     const closedPayload = operationsRealtimeService.publishComandaClosed.mock.calls[0][1]
     expect(closedPayload.businessDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)

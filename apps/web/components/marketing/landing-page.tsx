@@ -162,7 +162,7 @@ const footerColumns = [
 
 async function fireConfetti(x: number, y: number) {
   const confetti = (await import('canvas-confetti')).default
-  const origin = { x: x / window.innerWidth, y: y / window.innerHeight }
+  const origin = { x: x / globalThis.innerWidth, y: y / globalThis.innerHeight }
   confetti({
     particleCount: 90,
     spread: 80,

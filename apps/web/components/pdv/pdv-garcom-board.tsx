@@ -6,14 +6,14 @@ import type { Mesa, Comanda, Garcom } from './pdv-types'
 import { calcTotal, formatElapsed } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
-type Props = {
+type Props = Readonly<{
   garcons: Garcom[]
   mesas: Mesa[]
   comandas: Comanda[]
   onAssign: (mesaId: string, garcomId: string | undefined) => void
   onAddGarcom: (nome: string) => void
   onRemoveGarcom: (id: string) => void
-}
+}>
 
 const GARCOM_CORES = [
   '#a78bfa', // roxo

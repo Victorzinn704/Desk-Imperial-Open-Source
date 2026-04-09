@@ -31,7 +31,7 @@ describe('ComandaService (public branches)', () => {
     mesa: {
       findUnique: jest.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: jest.fn((fn: any) => fn(prisma)),
   }
 
   const cache = {

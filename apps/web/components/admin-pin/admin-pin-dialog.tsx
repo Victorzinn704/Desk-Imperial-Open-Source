@@ -5,12 +5,12 @@ import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
 import { rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
 
-type AdminPinDialogProps = {
+type AdminPinDialogProps = Readonly<{
   title?: string
   description?: string
   onConfirm: () => void
   onCancel: () => void
-}
+}>
 
 export function AdminPinDialog({
   title = 'Ação protegida',
@@ -54,7 +54,7 @@ export function AdminPinDialog({
   }, [isBlocked, ref0])
 
   function handleChange(idx: number, value: string) {
-    const digit = value.replace(/\D/g, '').slice(-1)
+    const digit = value.replaceAll(/\D/g, '').slice(-1)
     const next = [...digits]
     next[idx] = digit
     setDigits(next)

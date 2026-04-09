@@ -288,12 +288,12 @@ function CartSummaryBar({
   totalValue: number
 }>) {
   return (
-    <div className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[#0a0a0a] px-4 py-3">
+    <div className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[var(--surface)] px-4 py-3">
       <div className="flex items-center gap-3">
         <div className="relative">
           <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
           {totalItems > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-black">
+            <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-[var(--on-accent)]">
               {totalItems}
             </span>
           )}
@@ -310,7 +310,7 @@ function CartSummaryBar({
           type="button"
           onClick={onSubmit}
           disabled={totalItems === 0 || busy}
-          className="min-h-[48px] rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-black transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+          className="min-h-[48px] rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
         >
           {busy ? 'Enviando...' : submitLabel}
         </button>

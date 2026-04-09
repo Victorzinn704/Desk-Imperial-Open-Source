@@ -52,6 +52,10 @@ export function SpaceBackground() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    // Respect prefers-reduced-motion: render one static frame, no animation
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const isMobile = window.innerWidth < 768
+
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
     const onResize = () => {
@@ -60,7 +64,8 @@ export function SpaceBackground() {
     }
     window.addEventListener('resize', onResize)
 
-    const stars: Star[] = Array.from({ length: 320 }, () => {
+    const starCount = isMobile ? 120 : 320
+    const stars: Star[] = Array.from({ length: starCount }, () => {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
@@ -76,7 +81,8 @@ export function SpaceBackground() {
       }
     })
 
-    const goldStars: Star[] = Array.from({ length: 16 }, () => {
+    const goldStarCount = isMobile ? 6 : 16
+    const goldStars: Star[] = Array.from({ length: goldStarCount }, () => {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
@@ -92,7 +98,27 @@ export function SpaceBackground() {
       }
     })
 
+    // Static render for reduced-motion: draw once and stop
+    if (prefersReducedMotion) {
+      ctx.clearRect(0, 0, w, h)
+      for (const s of stars) {
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha * 0.7})`
+        ctx.fill()
+      }
+      for (const s of goldStars) {
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(195,164,111,${s.alpha * 0.7})`
+        ctx.fill()
+      }
+      return () => window.removeEventListener('resize', onResize)
+    }
+
     let raf: number
+    let running = true
+
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
 
@@ -134,13 +160,28 @@ export function SpaceBackground() {
         ctx.fill()
       }
 
-      raf = requestAnimationFrame(tick)
+      if (running) raf = requestAnimationFrame(tick)
     }
+
+    // Visibility change: pause rAF when tab is hidden
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        running = false
+        cancelAnimationFrame(raf)
+      } else {
+        running = true
+        raf = requestAnimationFrame(tick)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     tick()
 
     return () => {
+      running = false
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
@@ -151,6 +192,10 @@ export function SpaceBackground() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    // Respect prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const isMobile = window.innerWidth < 768
+
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
     const onResize = () => {
@@ -159,7 +204,8 @@ export function SpaceBackground() {
     }
     window.addEventListener('resize', onResize)
 
-    const particles: FgParticle[] = Array.from({ length: 28 }, () => {
+    const particleCount = isMobile ? 12 : 28
+    const particles: FgParticle[] = Array.from({ length: particleCount }, () => {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
@@ -177,7 +223,8 @@ export function SpaceBackground() {
       }
     })
 
-    const orbs: FgParticle[] = Array.from({ length: 5 }, () => {
+    const orbCount = isMobile ? 2 : 5
+    const orbs: FgParticle[] = Array.from({ length: orbCount }, () => {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
@@ -195,7 +242,32 @@ export function SpaceBackground() {
       }
     })
 
+    // Pre-concatenate particles + orbs once (avoid spread each frame)
+    const allParticles = particles.concat(orbs)
+
+    // Static render for reduced-motion
+    if (prefersReducedMotion) {
+      ctx.clearRect(0, 0, w, h)
+      for (const p of allParticles) {
+        const a = p.alpha * 0.7
+        // Use solid colors with globalAlpha instead of gradient for static
+        ctx.globalAlpha = a
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r + p.glow * 0.3, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(195,164,111,0.5)'
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1
+      return () => window.removeEventListener('resize', onResize)
+    }
+
     let raf: number
+    let running = true
+
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
 
@@ -203,7 +275,7 @@ export function SpaceBackground() {
       const mx = (mouseRef.current.x - 0.5) * 60
       const my = (mouseRef.current.y - 0.5) * 40
 
-      for (const p of [...particles, ...orbs]) {
+      for (const p of allParticles) {
         p.t += p.ts
         p.oy += p.speedY
         p.ox += p.speedX
@@ -220,29 +292,59 @@ export function SpaceBackground() {
 
         const a = p.alpha * (0.55 + 0.45 * Math.sin(p.t))
 
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r + p.glow)
-        grad.addColorStop(0, `rgba(255,255,255,${a})`)
-        grad.addColorStop(0.4, `rgba(195,164,111,${a * 0.5})`)
-        grad.addColorStop(1, `rgba(92,110,200,0)`)
-
+        // Use solid colors + globalAlpha to simulate glow without createRadialGradient
+        // This avoids ~33 createRadialGradient calls per frame (~1980/min)
+        const outerR = p.r + p.glow
+        ctx.globalAlpha = a * 0.35
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r + p.glow, 0, Math.PI * 2)
-        ctx.fillStyle = grad
+        ctx.arc(p.x, p.y, outerR, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(92,110,200,0.6)'
         ctx.fill()
 
+        ctx.globalAlpha = a * 0.5
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, outerR * 0.55, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(195,164,111,0.7)'
+        ctx.fill()
+
+        ctx.globalAlpha = a
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'
+        ctx.fill()
+
+        // Bright core
+        ctx.globalAlpha = Math.min(a * 2.2, 0.85)
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,255,255,${Math.min(a * 2.2, 0.85)})`
+        ctx.fillStyle = '#ffffff'
         ctx.fill()
       }
 
-      raf = requestAnimationFrame(tick)
+      ctx.globalAlpha = 1
+
+      if (running) raf = requestAnimationFrame(tick)
     }
+
+    // Visibility change: pause rAF when tab is hidden
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        running = false
+        cancelAnimationFrame(raf)
+      } else {
+        running = true
+        raf = requestAnimationFrame(tick)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     tick()
 
     return () => {
+      running = false
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 

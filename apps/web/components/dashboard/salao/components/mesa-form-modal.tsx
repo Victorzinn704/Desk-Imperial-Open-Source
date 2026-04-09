@@ -140,7 +140,7 @@ export const CreateMesaModal = memo(function CreateMesaModal({
               <strong className="text-[var(--accent)]">
                 {form.bulkPrefix || 'Mesa'} {form.bulkTo}
               </strong>{' '}
-              — {Math.max(0, parseInt(form.bulkTo, 10) - parseInt(form.bulkFrom, 10) + 1) || 0} mesas
+              — {Math.max(0, Number.parseInt(form.bulkTo, 10) - Number.parseInt(form.bulkFrom, 10) + 1) || 0} mesas
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Capacidade padrão">

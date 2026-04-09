@@ -50,6 +50,43 @@ function stockTone(stock: number) {
   return { dot: '#34f27f', label: 'Em estoque' }
 }
 
+function ProductChips({ product, measurementLabel }: { product: ProductRecord; measurementLabel: string }) {
+  const chipClass =
+    'rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]'
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className={chipClass}>{product.category}</span>
+      {product.brand ? <span className={`${chipClass} uppercase tracking-[0.12em]`}>{product.brand}</span> : null}
+      <span className={chipClass}>{measurementLabel}</span>
+      {product.packagingClass && product.packagingClass !== 'UN' ? (
+        <span className={chipClass}>{product.packagingClass}</span>
+      ) : null}
+    </div>
+  )
+}
+
+function ProductDescriptions({ product }: { product: ProductRecord }) {
+  return (
+    <>
+      {product.description ? (
+        <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-1">{product.description}</p>
+      ) : null}
+      {product.isCombo && product.comboDescription ? (
+        <p className="mt-2 line-clamp-1 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
+      ) : null}
+      {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
+        <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-[var(--text-soft)]">
+          {product.comboItems
+            ?.slice(0, 3)
+            .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
+            .join(' • ')}
+          {(product.comboItems?.length ?? 0) > 3 ? ' • ...' : ''}
+        </p>
+      ) : null}
+    </>
+  )
+}
+
 // ── component ─────────────────────────────────────────────────────────────────
 
 export const ProductCard = memo(function ProductCard({
@@ -131,43 +168,9 @@ export const ProductCard = memo(function ProductCard({
             ) : null}
           </div>
 
-          {/* chips: categoria, marca, medida */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-              {product.category}
-            </span>
-            {product.brand ? (
-              <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">
-                {product.brand}
-              </span>
-            ) : null}
-            <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-              {measurementLabel}
-            </span>
-            {product.packagingClass && product.packagingClass !== 'UN' ? (
-              <span className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-                {product.packagingClass}
-              </span>
-            ) : null}
-          </div>
+          <ProductChips product={product} measurementLabel={measurementLabel} />
 
-          {product.description ? (
-            <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-1">{product.description}</p>
-          ) : null}
-
-          {product.isCombo && product.comboDescription ? (
-            <p className="mt-2 line-clamp-1 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
-          ) : null}
-
-          {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
-            <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-[var(--text-soft)]">
-              {product.comboItems
-                ?.slice(0, 3)
-                .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
-                .join(' • ')}
-              {(product.comboItems?.length ?? 0) > 3 ? ' • ...' : ''}
-            </p>
-          ) : null}
+          <ProductDescriptions product={product} />
         </div>
 
         {/* actions */}

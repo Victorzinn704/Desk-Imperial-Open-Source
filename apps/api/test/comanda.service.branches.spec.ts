@@ -240,14 +240,33 @@ describe('ComandaService branch happy paths', () => {
       },
     ])
 
-    let counter = 0
-    prisma.comandaItem.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
-      counter += 1
-      return {
-        id: `item-${counter}`,
-        ...data,
-      }
-    })
+    prisma.comandaItem.createMany.mockResolvedValue({ count: 2 })
+    prisma.comandaItem.findMany.mockResolvedValue([
+      {
+        id: 'item-1',
+        productId: 'product-1',
+        productName: 'Pizza',
+        quantity: 2,
+        unitPrice: 50,
+        totalAmount: 100,
+        notes: null,
+        kitchenStatus: KitchenItemStatus.QUEUED,
+        kitchenQueuedAt: new Date('2026-04-01T10:10:00.000Z'),
+        kitchenReadyAt: null,
+      },
+      {
+        id: 'item-2',
+        productId: null,
+        productName: 'Suco',
+        quantity: 2,
+        unitPrice: 20,
+        totalAmount: 40,
+        notes: null,
+        kitchenStatus: null,
+        kitchenQueuedAt: null,
+        kitchenReadyAt: null,
+      },
+    ])
 
     helpers.recalculateComanda.mockResolvedValue(
       makeComanda({

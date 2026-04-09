@@ -88,7 +88,7 @@ export async function buildOptionalOperationsSnapshot(
   }
 }
 
-export function toNumber(value: { toNumber(): number } | number | null | undefined): number {
+export function toNumberOrZero(value: { toNumber(): number } | number | null | undefined): number {
   if (value == null) {
     return 0
   }
@@ -129,23 +129,23 @@ export function buildCashUpdatedPayload(session: {
   const inflowAmount = roundCurrency(
     session.movements
       .filter((movement) => movement.type === CashMovementType.SUPPLY || movement.type === CashMovementType.ADJUSTMENT)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0),
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0),
   )
   const outflowAmount = roundCurrency(
     session.movements
       .filter((movement) => movement.type === CashMovementType.WITHDRAWAL)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0),
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0),
   )
 
   return {
     cashSessionId: session.id,
     status: session.status === CashSessionStatus.OPEN ? 'OPEN' : 'CLOSED',
-    openingAmount: toNumber(session.openingCashAmount),
+    openingAmount: toNumberOrZero(session.openingCashAmount),
     inflowAmount,
     outflowAmount,
-    expectedAmount: toNumber(session.expectedCashAmount),
-    countedAmount: session.countedCashAmount == null ? null : toNumber(session.countedCashAmount),
-    differenceAmount: session.differenceAmount == null ? null : toNumber(session.differenceAmount),
+    expectedAmount: toNumberOrZero(session.expectedCashAmount),
+    countedAmount: session.countedCashAmount == null ? null : toNumberOrZero(session.countedCashAmount),
+    differenceAmount: session.differenceAmount == null ? null : toNumberOrZero(session.differenceAmount),
     movementCount: session.movements.length,
   } as const
 }
@@ -165,16 +165,16 @@ export function buildComandaUpdatedPayload(comanda: {
     mesaLabel: comanda.tableLabel,
     status:
       comanda.status === ComandaStatus.OPEN
-        ? 'ABERTA'
+        ? 'OPEN'
         : comanda.status === ComandaStatus.IN_PREPARATION
-          ? 'EM_PREPARO'
+          ? 'IN_PREPARATION'
           : comanda.status === ComandaStatus.READY
-            ? 'PRONTA'
-            : 'FECHADA',
+            ? 'READY'
+            : 'CLOSED',
     employeeId: comanda.currentEmployeeId,
-    subtotal: toNumber(comanda.subtotalAmount),
-    discountAmount: toNumber(comanda.discountAmount),
-    totalAmount: toNumber(comanda.totalAmount),
+    subtotal: toNumberOrZero(comanda.subtotalAmount),
+    discountAmount: toNumberOrZero(comanda.discountAmount),
+    totalAmount: toNumberOrZero(comanda.totalAmount),
     totalItems: comanda.items ? comanda.items.reduce((sum, item) => sum + item.quantity, 0) : 0,
   } as const
 }
@@ -190,11 +190,11 @@ export function buildCashClosurePayload(closure: CashClosure) {
           : 'OPEN',
     openedAt: closure.createdAt.toISOString(),
     closedAt: closure.closedAt?.toISOString() ?? null,
-    expectedAmount: toNumber(closure.expectedCashAmount),
-    grossRevenueAmount: toNumber(closure.grossRevenueAmount),
-    realizedProfitAmount: toNumber(closure.realizedProfitAmount),
-    countedAmount: closure.countedCashAmount == null ? null : toNumber(closure.countedCashAmount),
-    differenceAmount: closure.differenceAmount == null ? null : toNumber(closure.differenceAmount),
+    expectedAmount: toNumberOrZero(closure.expectedCashAmount),
+    grossRevenueAmount: toNumberOrZero(closure.grossRevenueAmount),
+    realizedProfitAmount: toNumberOrZero(closure.realizedProfitAmount),
+    countedAmount: closure.countedCashAmount == null ? null : toNumberOrZero(closure.countedCashAmount),
+    differenceAmount: closure.differenceAmount == null ? null : toNumberOrZero(closure.differenceAmount),
     openComandasCount: closure.openComandasCount,
     pendingCashSessions: closure.openSessionsCount,
   } as const

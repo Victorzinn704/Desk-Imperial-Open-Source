@@ -47,7 +47,6 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
     queryFn: fetchActivityFeed,
     staleTime: 30_000,
     refetchInterval: 15_000,
-    refetchIntervalInBackground: true,
   })
 
   const activities = (data ?? []).map(toActivityViewModel)

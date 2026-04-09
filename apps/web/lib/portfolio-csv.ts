@@ -113,5 +113,5 @@ function downloadCsvFile(filename: string, content: string) {
   document.body.append(anchor)
   anchor.click()
   anchor.remove()
-  window.URL.revokeObjectURL(url)
+  globalThis.URL.revokeObjectURL(url)
 }

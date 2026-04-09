@@ -13,7 +13,7 @@ export const KpiCard = memo(function KpiCard({ label, value, color, isHighlight,
 
   return (
     <div
-      className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
+      className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-colors ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
     >
       <div className="flex items-center gap-2">
         <span

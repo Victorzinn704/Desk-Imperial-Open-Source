@@ -70,7 +70,7 @@ export const CategoryGrid = memo(function CategoryGrid({
             >
               {getCategoryIcon(cat)}
               <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
-                {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
+                {cat.length > 10 ? `${cat.substring(0, 10)}...` : cat}
               </span>
             </button>
           )

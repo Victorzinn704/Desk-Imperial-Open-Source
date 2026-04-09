@@ -34,7 +34,7 @@ export function maskBuyerDocument(document: string | null | undefined) {
     return document
   }
 
-  const digits = document.replace(/\D/g, '')
+  const digits = document.replaceAll(/\D/g, '')
 
   // CPF: mostra apenas 3 primeiros e 2 últimos dígitos — padrão LGPD
   if (digits.length === 11) {

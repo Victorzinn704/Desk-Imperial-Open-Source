@@ -373,7 +373,7 @@ function isDeskImperialAppFocus(focus: string) {
 function normalizeScopeText(value: string) {
   return value
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replaceAll(/\p{Diacritic}/gu, '')
     .toLowerCase()
 }
 

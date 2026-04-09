@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 
 /**
  * Hook para monitoramento de Web Vitals em mobile
@@ -50,7 +50,8 @@ export function useWebVitals(onMetric?: VitalsCallback) {
     const reportMetric = (metric: WebVitalsMetric) => {
       // Log em development
       if (process.env.NODE_ENV === 'development') {
-        const color = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌'
+        const ratingIcons: Record<string, string> = { good: '✅', 'needs-improvement': '⚠️' }
+        const color = ratingIcons[metric.rating] ?? '❌'
         console.warn(`${color} [Web Vitals] ${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`)
       }
       onMetric?.(metric)
@@ -252,27 +253,26 @@ export function useLowPerformanceMode(): boolean {
  * Hook para debounce de callbacks com cleanup automático
  */
 export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>(callback: T, delay: number): T {
-  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current)
       }
     }
-  }, [timeoutId])
+  }, [])
 
   const debouncedFn = useCallback(
     (...args: Parameters<T>) => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current)
       }
-      const newTimeoutId = setTimeout(() => {
+      timeoutIdRef.current = setTimeout(() => {
         callback(...args)
       }, delay)
-      setTimeoutId(newTimeoutId)
     },
-    [callback, delay, timeoutId],
+    [callback, delay],
   ) as T
 
   return debouncedFn
@@ -282,17 +282,17 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
  * Hook para throttle de callbacks
  */
 export function useThrottledCallback<T extends (...args: Parameters<T>) => void>(callback: T, delay: number): T {
-  const [lastCall, setLastCall] = useState(0)
+  const lastCallRef = useRef(0)
 
   const throttledFn = useCallback(
     (...args: Parameters<T>) => {
       const now = Date.now()
-      if (now - lastCall >= delay) {
-        setLastCall(now)
+      if (now - lastCallRef.current >= delay) {
+        lastCallRef.current = now
         callback(...args)
       }
     },
-    [callback, delay, lastCall],
+    [callback, delay],
   ) as T
 
   return throttledFn

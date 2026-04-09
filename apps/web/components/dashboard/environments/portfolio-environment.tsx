@@ -418,11 +418,11 @@ export function PortfolioEnvironment() {
   const handleEditProduct = (product: ProductRecord | null) => {
     setEditingProduct(product)
 
-    if (!product || typeof window === 'undefined') {
+    if (!product || typeof globalThis === 'undefined') {
       return
     }
 
-    window.requestAnimationFrame(() => {
+    globalThis.requestAnimationFrame(() => {
       const formElement = productFormRef.current
       if (!formElement) return
 

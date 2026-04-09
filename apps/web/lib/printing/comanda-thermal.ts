@@ -6,14 +6,14 @@ const LINE_WIDTH = 42
 
 export function buildThermalComandaTicket(comanda: PrintableComanda) {
   const lines = [
-    ESC + '@',
-    ESC + 'a' + '\x01',
-    ESC + '!' + '\x38',
+    `${ESC}@`,
+    `${ESC}a\x01`,
+    `${ESC}!\x38`,
     'DESK IMPERIAL\n',
-    ESC + '!' + '\x00',
+    `${ESC}!\x00`,
     'COMANDA DE ATENDIMENTO\n',
     `${formatDateTime(comanda.openedAtIso)}\n`,
-    ESC + 'a' + '\x00',
+    `${ESC}a\x00`,
     drawLine(),
     formatMeta('COMANDA', comanda.id.slice(-6).toUpperCase()),
     formatMeta('MESA', comanda.tableLabel ?? '-'),
@@ -32,14 +32,14 @@ export function buildThermalComandaTicket(comanda: PrintableComanda) {
       ? [formatMoneyLine(`Acrescimo ${comanda.additionalPercent}%`, calcAdditional(comanda), comanda.currency)]
       : []),
     drawLine(),
-    ESC + '!' + '\x20',
+    `${ESC}!\x20`,
     formatMoneyLine('TOTAL', comanda.totalAmount, comanda.currency),
-    ESC + '!' + '\x00',
+    `${ESC}!\x00`,
     drawLine(),
     'Leve esta comanda para conferencia.\n',
     'Impressao operacional via QZ Tray.\n',
     '\n\n',
-    GS + 'V' + '\x00',
+    `${GS}V\x00`,
   ]
 
   return lines.join('')

@@ -1,7 +1,9 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ResponsiveContainer } from 'recharts'
+
+const LazyResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), { ssr: false })
 
 type ChartResponsiveContainerProps = {
   children: ReactNode
@@ -37,7 +39,7 @@ export function ChartResponsiveContainer({
     }
 
     updateReadiness()
-    const frameId = window.requestAnimationFrame(updateReadiness)
+    const frameId = globalThis.requestAnimationFrame(updateReadiness)
 
     let observer: ResizeObserver | null = null
     if (typeof ResizeObserver !== 'undefined') {
@@ -45,21 +47,21 @@ export function ChartResponsiveContainer({
       observer.observe(host)
     }
 
-    window.addEventListener('resize', updateReadiness)
+    globalThis.addEventListener('resize', updateReadiness)
 
     return () => {
-      window.cancelAnimationFrame(frameId)
+      globalThis.cancelAnimationFrame(frameId)
       observer?.disconnect()
-      window.removeEventListener('resize', updateReadiness)
+      globalThis.removeEventListener('resize', updateReadiness)
     }
   }, [])
 
   return (
     <div className={className} ref={hostRef}>
       {isReady ? (
-        <ResponsiveContainer height={height} minHeight={minHeight} minWidth={minWidth} width={width}>
+        <LazyResponsiveContainer height={height} minHeight={minHeight} minWidth={minWidth} width={width}>
           {children}
-        </ResponsiveContainer>
+        </LazyResponsiveContainer>
       ) : (
         fallback
       )}

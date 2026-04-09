@@ -8,6 +8,7 @@ import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
 import { CacheService } from '../../common/services/cache.service'
+import { PillarsService } from './pillars.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import {
   type FinanceProductAnalyticsRecord,
@@ -107,7 +108,10 @@ export class FinanceService {
   }
 
   async invalidateSummaryCache(userId: string): Promise<void> {
-    await this.cache.del(CacheService.financeKey(userId))
+    await Promise.all([
+      this.cache.del(CacheService.financeKey(userId)),
+      this.cache.del(PillarsService.pillarsKey(userId)),
+    ])
   }
 
   async invalidateAndWarmSummary(workspaceUserId: string): Promise<void> {

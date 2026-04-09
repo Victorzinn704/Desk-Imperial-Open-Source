@@ -53,7 +53,7 @@ function exportOrdersCsv(orders: RecentOrder[], currency: string) {
     new Date(o.createdAt).toLocaleString('pt-BR'),
   ])
   const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -62,7 +62,7 @@ function exportOrdersCsv(orders: RecentOrder[], currency: string) {
   URL.revokeObjectURL(url)
 }
 
-export function FinanceOrdersTable({ orders, displayCurrency }: Props) {
+export function FinanceOrdersTable({ orders, displayCurrency }: Readonly<Props>) {
   const [page, setPage] = useState(1)
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ROWS_PER_PAGE))

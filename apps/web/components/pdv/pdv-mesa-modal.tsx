@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { MesaStatus } from './pdv-types'
 
-type PdvMesaModalProps = {
+type PdvMesaModalProps = Readonly<{
   onClose: () => void
   onSave: (data: { numero: string; capacidade: number; status: MesaStatus }) => void
-}
+}>
 
 const STATUS_OPTIONS: { value: MesaStatus; label: string; color: string }[] = [
   { value: 'livre', label: 'Livre', color: '#36f57c' },

@@ -168,13 +168,13 @@ export function RegisterForm() {
       return
     }
 
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = globalThis.setTimeout(() => {
       setLastPostalCodeLookup(normalizedPostalCode)
       mutatePostalCodeLookup(formatPostalCodeValue(normalizedPostalCode))
     }, 220)
 
     return () => {
-      window.clearTimeout(timeoutId)
+      globalThis.clearTimeout(timeoutId)
     }
   }, [lastPostalCodeLookup, mutatePostalCodeLookup, postalCodeValue])
 
@@ -526,12 +526,12 @@ function FieldShell({
 }
 
 function normalizePostalCode(value: string | undefined) {
-  const digits = (value ?? '').replace(/\D/g, '').slice(0, 8)
+  const digits = (value ?? '').replaceAll(/\D/g, '').slice(0, 8)
   return /^\d{8}$/.test(digits) ? digits : null
 }
 
 function formatPostalCodeValue(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 8)
+  const digits = value.replaceAll(/\D/g, '').slice(0, 8)
 
   if (digits.length <= 5) {
     return digits

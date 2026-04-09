@@ -46,6 +46,20 @@ function getCsrfToken(): string | null {
   return null
 }
 
+async function buildAdminApiError(response: Response): Promise<ApiError> {
+  const contentType = response.headers.get('content-type') ?? ''
+  const fallback =
+    response.status >= 500 ? 'O servidor encontrou um erro inesperado.' : 'Não foi possível concluir a requisição.'
+
+  if (!contentType.includes('application/json')) {
+    return new ApiError(fallback, response.status)
+  }
+
+  const payload = (await response.json()) as { message?: string | string[] }
+  const message = Array.isArray(payload.message) ? payload.message.join(' ') : payload.message
+  return new ApiError(message || fallback, response.status)
+}
+
 async function adminApiFetch<T>(
   path: string,
   method: 'POST' | 'DELETE' | 'GET',
@@ -91,17 +105,7 @@ async function adminApiFetch<T>(
   }
 
   if (!response.ok) {
-    const contentType = response.headers.get('content-type') ?? ''
-    const fallback =
-      response.status >= 500 ? 'O servidor encontrou um erro inesperado.' : 'Não foi possível concluir a requisição.'
-
-    if (!contentType.includes('application/json')) {
-      throw new ApiError(fallback, response.status)
-    }
-
-    const payload = (await response.json()) as { message?: string | string[] }
-    const message = Array.isArray(payload.message) ? payload.message.join(' ') : payload.message
-    throw new ApiError(message || fallback, response.status)
+    throw await buildAdminApiError(response)
   }
 
   const contentType = response.headers.get('content-type') ?? ''
@@ -150,27 +154,24 @@ export async function removeAdminPin(pin: string): Promise<void> {
  * Store a non-sensitive hint that the PIN was recently verified.
  * This is UX only and does not carry authorization.
  */
+function resolveExpiryDate(verifiedUntil: string | Date | null | undefined): Date {
+  if (verifiedUntil instanceof Date) return verifiedUntil
+  if (typeof verifiedUntil === 'string') {
+    const parsed = new Date(verifiedUntil)
+    if (!Number.isNaN(parsed.getTime())) return parsed
+  }
+  return new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
+}
+
 export function rememberAdminPinVerification(verifiedUntil?: string | Date | null): void {
   if (typeof window === 'undefined') return
   if (__storageLock) return
 
   try {
     __storageLock = true
-    const verifiedAt = new Date().toISOString()
-    const expiryDate =
-      verifiedUntil instanceof Date
-        ? verifiedUntil
-        : typeof verifiedUntil === 'string'
-          ? new Date(verifiedUntil)
-          : new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
-
-    const resolvedVerifiedUntil = Number.isNaN(expiryDate.getTime())
-      ? new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
-      : expiryDate
-
     const hint: AdminPinHint = {
-      verifiedAt,
-      verifiedUntil: resolvedVerifiedUntil.toISOString(),
+      verifiedAt: new Date().toISOString(),
+      verifiedUntil: resolveExpiryDate(verifiedUntil).toISOString(),
     }
 
     window.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
@@ -191,25 +192,26 @@ export function clearAdminPinVerification(): void {
   }
 }
 
+function isValidTimestamp(value: string | undefined): number | null {
+  if (!value) return null
+  const ts = new Date(value).getTime()
+  return Number.isNaN(ts) ? null : ts
+}
+
 export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL_MS): boolean {
   if (typeof window === 'undefined') return false
 
-  const rawHint = window.sessionStorage.getItem(ADMIN_PIN_HINT_KEY)
+  const rawHint = globalThis.sessionStorage.getItem(ADMIN_PIN_HINT_KEY)
   if (!rawHint) return false
 
   try {
     const hint = JSON.parse(rawHint) as Partial<AdminPinHint>
-    const verifiedAt = hint.verifiedAt ? new Date(hint.verifiedAt).getTime() : NaN
-    const verifiedUntil = hint.verifiedUntil ? new Date(hint.verifiedUntil).getTime() : NaN
     const now = Date.now()
+    const verifiedUntil = isValidTimestamp(hint.verifiedUntil)
+    if (verifiedUntil !== null && now < verifiedUntil) return true
 
-    if (!Number.isNaN(verifiedUntil) && now < verifiedUntil) {
-      return true
-    }
-
-    if (!Number.isNaN(verifiedAt) && now - verifiedAt < ttlMs) {
-      return true
-    }
+    const verifiedAt = isValidTimestamp(hint.verifiedAt)
+    if (verifiedAt !== null && now - verifiedAt < ttlMs) return true
   } catch {
     window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
   }
