@@ -16,7 +16,6 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   HUSKY: '0'
-  NPM_CONFIG_AUDIT: 'false'
   NPM_CONFIG_FUND: 'false'
   NODE_ENV: test
   TZ: America/Sao_Paulo
@@ -160,6 +159,9 @@ jobs:
           fail-on-severity: high
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
           comment-summary-in-pr: always
+
+      - name: npm audit
+        run: npm audit --audit-level=high
 
       - name: Runtime security audit
         run: npm run security:audit-runtime

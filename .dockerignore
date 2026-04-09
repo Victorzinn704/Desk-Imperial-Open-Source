@@ -1,6 +1,9 @@
 .git
 .github
 .claude
+.claude-plugin
+.aider*
+.venv-aider
 .turbo
 .next
 dist
@@ -12,6 +15,15 @@ logs
 .env
 .env.*
 !.env.example
+.secrets/
+secrets.json
+credentials.json
+.local-tools/
+.cache/
+.scannerwork
+.interface-design/
+scripts/
+tests/
 .sandbox-home
 .sandbox-cache
 .sandbox-tmp

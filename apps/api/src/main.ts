@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import type { NextFunction, Request, Response } from 'express'
 import helmet from 'helmet'
+import type { INestApplication } from '@nestjs/common'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { initializeApiOpenTelemetry, shutdownApiOpenTelemetry } from './common/utils/otel.util'
@@ -90,6 +91,125 @@ function registerProcessShutdownHandlers(logger: Logger) {
   processShutdownHandlersRegistered = true
 }
 
+function configureHelmet(app: INestApplication, isProduction: boolean) {
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'no-referrer' },
+      hsts: isProduction ? { maxAge: 15552000, includeSubDomains: true, preload: true } : false,
+    }),
+  )
+}
+
+function configureRequestIdMiddleware(app: INestApplication) {
+  app.use((request: Request, response: Response, next: NextFunction) => {
+    const requestId =
+      normalizeRequestId(response.getHeader('x-request-id')) ?? normalizeRequestId(request.headers['x-request-id'])
+
+    if (requestId) {
+      response.setHeader('x-request-id', requestId)
+      const activeSpan = trace.getSpan(context.active())
+      if (activeSpan) {
+        activeSpan.setAttribute('request.id', requestId)
+        activeSpan.setAttribute('http.request_id', requestId)
+      }
+    }
+
+    next()
+  })
+}
+
+function configureTrustProxy(app: INestApplication, trustProxy: string | undefined, isProduction: boolean) {
+  const httpAdapter = app.getHttpAdapter().getInstance()
+  httpAdapter.disable('x-powered-by')
+
+  if (trustProxy === 'true' || (isProduction && trustProxy !== 'false')) {
+    httpAdapter.set('trust proxy', 1)
+  } else if (trustProxy && trustProxy !== 'false') {
+    const parsed = Number(trustProxy)
+    httpAdapter.set('trust proxy', Number.isFinite(parsed) ? parsed : trustProxy)
+  }
+}
+
+function configureCors(app: INestApplication, allowedOrigins: string[]) {
+  app.enableCors({
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+      if (!origin || isAllowedOrigin(origin, allowedOrigins)) {
+        callback(null, true)
+        return
+      }
+      callback(new Error('Origin not allowed by CORS'), false)
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id'],
+  })
+}
+
+function assertBootstrapSecrets(
+  isTestEnvironment: boolean,
+  cookieSecret: string | undefined,
+  csrfSecret: string | undefined,
+) {
+  if (isTestEnvironment) return
+  if (!isConfiguredSecret(cookieSecret, 16) || !isConfiguredSecret(csrfSecret, 32)) {
+    throw new Error(
+      'Defina COOKIE_SECRET (>=16 chars) e CSRF_SECRET (>=32 chars) com valores fortes e sem placeholder change-me antes de iniciar a API.',
+    )
+  }
+}
+
+function assertBootstrapEnvironment(configService: ConfigService, isProduction: boolean, logger: Logger) {
+  const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
+  if (isProduction && portfolioFallback === 'true') {
+    throw new Error(
+      'PORTFOLIO_EMAIL_FALLBACK=true em produção altera fluxos de recuperação/verificação de email. Desative esta variável antes de iniciar a API.',
+    )
+  }
+
+  if (!isProduction && portfolioFallback === 'true') {
+    logger.warn('PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.')
+  }
+}
+
+function assertSwaggerSafety(isProduction: boolean, swaggerEnabled: boolean, swaggerAllowedInProduction: boolean) {
+  if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
+    throw new Error(
+      'ENABLE_SWAGGER=true em produção exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
+    )
+  }
+}
+
+function configureSwagger(app: INestApplication, swaggerEnabled: boolean) {
+  if (!swaggerEnabled) return
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('DESK IMPERIAL API')
+    .setDescription('API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.')
+    .setVersion('1.0.0')
+    .build()
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig)
+  SwaggerModule.setup('docs', app, document)
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -130,61 +250,12 @@ async function bootstrap() {
   registerProcessFailureHandlers(logger)
   registerProcessShutdownHandlers(logger)
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginEmbedderPolicy: false,
-      frameguard: { action: 'deny' },
-      referrerPolicy: { policy: 'no-referrer' },
-      hsts: isProduction
-        ? {
-            maxAge: 15552000,
-            includeSubDomains: true,
-            preload: true,
-          }
-        : false,
-    }),
-  )
+  configureHelmet(app, isProduction)
   app.use(cookieParser(cookieSecret))
-  app.use((request: Request, response: Response, next: NextFunction) => {
-    const requestId =
-      normalizeRequestId(response.getHeader('x-request-id')) ?? normalizeRequestId(request.headers['x-request-id'])
+  configureRequestIdMiddleware(app)
+  configureTrustProxy(app, trustProxy, isProduction)
+  configureCors(app, allowedOrigins)
 
-    if (requestId) {
-      response.setHeader('x-request-id', requestId)
-
-      const activeSpan = trace.getSpan(context.active())
-      if (activeSpan) {
-        activeSpan.setAttribute('request.id', requestId)
-        activeSpan.setAttribute('http.request_id', requestId)
-      }
-    }
-
-    next()
-  })
-
-  const httpAdapter = app.getHttpAdapter().getInstance()
-  httpAdapter.disable('x-powered-by')
-  if (trustProxy === 'true' || (isProduction && trustProxy !== 'false')) {
-    httpAdapter.set('trust proxy', 1)
-  } else if (trustProxy && trustProxy !== 'false') {
-    const parsed = Number(trustProxy)
-    httpAdapter.set('trust proxy', Number.isFinite(parsed) ? parsed : trustProxy)
-  }
-  app.enableCors({
-    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
-      if (!origin || isAllowedOrigin(origin, allowedOrigins)) {
-        callback(null, true)
-        return
-      }
-
-      callback(new Error('Origin not allowed by CORS'), false)
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Request-Id'],
-    exposedHeaders: ['X-Request-Id'],
-  })
   app.setGlobalPrefix('api')
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalPipes(
@@ -195,41 +266,10 @@ async function bootstrap() {
     }),
   )
 
-  if (!isTestEnvironment) {
-    if (!isConfiguredSecret(cookieSecret, 16) || !isConfiguredSecret(csrfSecret, 32)) {
-      throw new Error(
-        'Defina COOKIE_SECRET (>=16 chars) e CSRF_SECRET (>=32 chars) com valores fortes e sem placeholder change-me antes de iniciar a API.',
-      )
-    }
-  }
-
-  const portfolioFallback = configService.get<string>('PORTFOLIO_EMAIL_FALLBACK')
-  if (isProduction && portfolioFallback === 'true') {
-    throw new Error(
-      'PORTFOLIO_EMAIL_FALLBACK=true em produção altera fluxos de recuperação/verificação de email. Desative esta variável antes de iniciar a API.',
-    )
-  }
-
-  if (!isProduction && portfolioFallback === 'true') {
-    logger.warn('PORTFOLIO_EMAIL_FALLBACK=true está ativo apenas para requisições locais em localhost/127.0.0.1.')
-  }
-
-  if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
-    throw new Error(
-      'ENABLE_SWAGGER=true em produção exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
-    )
-  }
-
-  if (swaggerEnabled) {
-    const swaggerConfig = new DocumentBuilder()
-      .setTitle('DESK IMPERIAL API')
-      .setDescription('API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.')
-      .setVersion('1.0.0')
-      .build()
-
-    const document = SwaggerModule.createDocument(app, swaggerConfig)
-    SwaggerModule.setup('docs', app, document)
-  }
+  assertBootstrapSecrets(isTestEnvironment, cookieSecret, csrfSecret)
+  assertBootstrapEnvironment(configService, isProduction, logger)
+  assertSwaggerSafety(isProduction, swaggerEnabled, swaggerAllowedInProduction)
+  configureSwagger(app, swaggerEnabled)
 
   await app.listen(port)
   logger.log(`API pronta em http://localhost:${port}/api`)

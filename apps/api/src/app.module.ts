@@ -22,6 +22,7 @@ import { OperationsModule } from './modules/operations/operations.module'
 import { OperationsRealtimeModule } from './modules/operations-realtime.module'
 import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
+import { HealthModule } from './modules/health/health.module'
 import { validateEnvironment } from './config/env.validation'
 
 const DEFAULT_THROTTLER_TTL_MS = 60_000
@@ -133,6 +134,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
     OperationsModule,
     OperationsRealtimeModule,
     FinanceModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
