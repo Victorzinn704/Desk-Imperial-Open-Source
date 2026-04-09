@@ -1194,7 +1194,7 @@ export class OperationsHelpersService {
 
   private resolveSingleDraftItem(
     item: ComandaDraftItemDto,
-    productById: Map<string, { id: string; name: string; unitPrice: number }>,
+    productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
   ): {
     productId: string | null
     productName: string
@@ -1224,14 +1224,14 @@ export class OperationsHelpersService {
 
   private resolveLinkedDraftItem(
     item: ComandaDraftItemDto,
-    productById: Map<string, { id: string; name: string; unitPrice: number }>,
+    productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
   ) {
     const product = productById.get(item.productId!)
     if (!product) throw new NotFoundException('Produto nao encontrado para esta conta.')
     return {
       productId: product.id as string | null,
       productName: product.name,
-      unitPrice: roundCurrency(item.unitPrice ?? toNumberOrZero(product.unitPrice)),
+      unitPrice: roundCurrency(item.unitPrice ?? toNumberOrZero(product.unitPrice as number)),
     }
   }
 

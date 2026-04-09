@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
@@ -162,9 +163,7 @@ export class EmployeesService {
   }
 
   private async applyPasswordUpdate(
-    transaction: {
-      employee: { update: (args: { where: { id: string }; data: { passwordHash: string } }) => Promise<unknown> }
-    },
+    transaction: any,
     existingEmployee: { id: string; loginUserId: string | null },
     temporaryPassword?: string,
   ) {
@@ -186,9 +185,7 @@ export class EmployeesService {
   }
 
   private async syncLinkedLoginUser(
-    transaction: {
-      user: { update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown> }
-    },
+    transaction: any,
     existingEmployee: { loginUserId: string | null },
     sanitizedDisplayName: string | undefined,
     active: boolean | undefined,

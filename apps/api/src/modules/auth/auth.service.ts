@@ -778,7 +778,7 @@ export class AuthService {
       context,
     })
 
-    await this.deliverPasswordResetEmail(user, resetCode, rateLimitState, context, genericMessage)
+    await this.deliverPasswordResetEmail(user, resetCode, rateLimitState, context)
 
     return {
       success: true,

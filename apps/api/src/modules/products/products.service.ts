@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { AuditSeverity, type CurrencyCode } from '@prisma/client'
 import { Prisma } from '@prisma/client'
@@ -325,9 +326,7 @@ export class ProductsService {
   private assertComboUpdateRules(
     nextIsCombo: boolean,
     dto: UpdateProductDto,
-    normalizedComboItems:
-      | { componentProductId: string; quantityPackages: number; quantityUnits: number; totalUnits: number }[]
-      | null,
+    normalizedComboItems: any[] | null,
     wasCombo: boolean,
   ) {
     if (!nextIsCombo && normalizedComboItems && normalizedComboItems.length > 0) {
@@ -527,7 +526,7 @@ export class ProductsService {
     }
   }
 
-  private async upsertImportRow(workspaceUserId: string, row: Record<string, unknown>): Promise<'created' | 'updated'> {
+  private async upsertImportRow(workspaceUserId: string, row: any): Promise<'created' | 'updated'> {
     const { safeName, safeCategory, safeBrand, safePackagingClass, safeMeasurementUnit, safeDescription } =
       this.sanitizeImportRow(row)
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   BadRequestException,
   ConflictException,
@@ -1038,15 +1039,7 @@ export class ComandaService {
   }
 
   private async propagateKitchenStatusToComanda(
-    tx: {
-      comandaItem: {
-        findMany: (args: {
-          where: { comandaId: string }
-          select: { kitchenStatus: true }
-        }) => Promise<{ kitchenStatus: KitchenItemStatus | null }[]>
-      }
-      comanda: { update: (args: { where: { id: string }; data: { status: ComandaStatus } }) => Promise<unknown> }
-    },
+    tx: any,
     comanda: { id: string; status: ComandaStatus; cashSessionId: string | null; openedAt: Date },
   ) {
     const allItems = await tx.comandaItem.findMany({
