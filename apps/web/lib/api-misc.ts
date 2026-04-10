@@ -109,7 +109,7 @@ export async function lookupPostalCode(postalCode: string) {
       '/api/postal-code/lookup',
     )
   } catch (error) {
-    if (error instanceof ApiError && error.name === 'ApiTimeoutError') {
+    if (error instanceof Error && error.name === 'ApiTimeoutError') {
       throw new ApiError('Consulta de CEP demorou demais. Tente novamente em instantes.', 504)
     }
     throw new ApiError('Nao foi possivel consultar o CEP agora.', 0)
