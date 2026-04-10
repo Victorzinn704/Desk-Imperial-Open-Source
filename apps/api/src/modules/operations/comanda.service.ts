@@ -43,21 +43,9 @@ import {
   toNumberOrZero,
 } from './operations-domain.utils'
 
+import { toRealtimeStatus, toRealtimeOpenStatus } from './comanda-realtime.utils'
+
 const COMANDA_WRITE_ISOLATION_LEVEL = Prisma.TransactionIsolationLevel.Serializable
-
-const REALTIME_STATUS_MAP: Record<string, 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED'> = {
-  OPEN: 'OPEN',
-  IN_PREPARATION: 'IN_PREPARATION',
-  READY: 'READY',
-}
-
-function toRealtimeStatus(status: string): 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' {
-  return REALTIME_STATUS_MAP[status] ?? 'CLOSED'
-}
-
-function toRealtimeOpenStatus(status: string): 'OPEN' | 'IN_PREPARATION' | 'READY' {
-  return (REALTIME_STATUS_MAP[status] as 'OPEN' | 'IN_PREPARATION' | 'READY') ?? 'OPEN'
-}
 
 @Injectable()
 export class ComandaService {
