@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { io, type Socket } from 'socket.io-client'
+import { useCallback, useRef } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 import type {
   CashSessionRecord,
@@ -19,37 +18,22 @@ import {
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations/operations-query'
-
-const OPERATIONS_EVENTS = [
-  'cash.opened',
-  'cash.updated',
-  'comanda.opened',
-  'comanda.updated',
-  'comanda.closed',
-  'cash.closure.updated',
-  'kitchen.item.queued',
-  'kitchen.item.updated',
-  'mesa.upserted',
-] as const
+import { useOperationsSocket, OPERATIONS_EVENTS } from './hooks/use-operations-socket'
+import type { RealtimeStatus, OperationsRealtimeEnvelope } from './hooks/use-operations-socket'
 
 // Debounce para operações (200ms) e comercial (500ms para coalescer múltiplos closes)
 const OPERATIONS_DEBOUNCE_MS = 200
 const COMMERCIAL_DEBOUNCE_MS = 500
 
-export type RealtimeStatus = 'connecting' | 'connected' | 'disconnected'
+export type { RealtimeStatus } from './hooks/use-operations-socket'
+export { OPERATIONS_EVENTS }
 
 export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient): { status: RealtimeStatus } {
-  // CORREÇÃO: Estado inicial baseado em enabled para evitar setStatus no effect body
-  const [status, setStatus] = useState<RealtimeStatus>(() => (enabled ? 'connecting' : 'disconnected'))
   const operationsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const kitchenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const socketRef = useRef<Socket | null>(null)
 
-  // CORREÇÃO: Referências estáveis com useCallback para evitar vazamento de listeners
-  // Problema original: arrow functions criadas no render tinham referência diferente
-  // no cleanup, fazendo socket.off() não remover o listener correto
   const queueOperationsRefresh = useCallback(() => {
     if (operationsTimerRef.current) clearTimeout(operationsTimerRef.current)
     operationsTimerRef.current = setTimeout(() => {
@@ -58,8 +42,6 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
     }, OPERATIONS_DEBOUNCE_MS)
   }, [queryClient])
 
-  // CORREÇÃO: Debounce separado para commercial com janela maior (500ms)
-  // Isso permite coalescer múltiplos comanda.closed em um único invalidate
   const queueCommercialRefresh = useCallback(() => {
     if (commercialTimerRef.current) clearTimeout(commercialTimerRef.current)
     commercialTimerRef.current = setTimeout(() => {
@@ -116,63 +98,9 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
     [queryClient, queueCommercialRefresh, queueKitchenRefresh, queueOperationsRefresh, queueSummaryRefresh],
   )
 
-  useEffect(() => {
-    if (!enabled) {
-      setStatus('disconnected') // eslint-disable-line react-hooks/set-state-in-effect -- sync with prop
-      return
-    }
-
-    setStatus('connecting')
-
-    const socket = io(buildOperationsSocketUrl(), {
-      withCredentials: true,
-      reconnectionDelay: 2_000,
-      reconnectionDelayMax: 10_000,
-    })
-    socketRef.current = socket
-
-    const onConnect = () => setStatus('connected')
-    const onDisconnect = () => setStatus('disconnected')
-    const onConnectError = () => {
-      setStatus('disconnected')
-      // fallback: força atualização mesmo sem socket
-      handleEvent()
-    }
-
-    socket.on('connect', onConnect)
-    socket.on('disconnect', onDisconnect)
-    socket.on('connect_error', onConnectError)
-
-    for (const eventName of OPERATIONS_EVENTS) {
-      socket.on(eventName, handleEvent)
-    }
-
-    return () => {
-      // CORREÇÃO: Limpar todos os timers pendentes
-      if (operationsTimerRef.current) clearTimeout(operationsTimerRef.current)
-      if (kitchenTimerRef.current) clearTimeout(kitchenTimerRef.current)
-      if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current)
-      if (commercialTimerRef.current) clearTimeout(commercialTimerRef.current)
-
-      // CORREÇÃO: Agora remove corretamente porque as refs são estáveis
-      for (const eventName of OPERATIONS_EVENTS) {
-        socket.off(eventName, handleEvent)
-      }
-
-      socket.off('connect', onConnect)
-      socket.off('disconnect', onDisconnect)
-      socket.off('connect_error', onConnectError)
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [enabled, handleEvent])
+  const { status } = useOperationsSocket(enabled, handleEvent)
 
   return { status }
-}
-
-function buildOperationsSocketUrl() {
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-  return `${apiBaseUrl}/operations`
 }
 
 function requiresKitchenRefresh(envelope: OperationsRealtimeEnvelope) {
@@ -199,11 +127,6 @@ function requiresSummaryRefresh(event: OperationsRealtimeEnvelope['event']) {
 
 function isKitchenEvent(event: OperationsRealtimeEnvelope['event']) {
   return event === 'kitchen.item.queued' || event === 'kitchen.item.updated'
-}
-
-type OperationsRealtimeEnvelope = {
-  event: (typeof OPERATIONS_EVENTS)[number]
-  payload: Record<string, unknown>
 }
 
 type OperationsRealtimePatchResult = {
