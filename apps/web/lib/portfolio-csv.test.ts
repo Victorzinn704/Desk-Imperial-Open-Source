@@ -1,5 +1,5 @@
- 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { ProductRecord } from '@contracts/contracts'
 import { downloadProductTemplateCsv, downloadPortfolioCsv } from './portfolio-csv'
 
 describe('portfolio-csv', () => {
@@ -21,13 +21,13 @@ describe('portfolio-csv', () => {
       revokeObjectURL: revokeObjectURLMock,
     })
 
-    vi.spyOn(document.body, 'append').mockImplementation(appendMock)
+    vi.spyOn(document.body, 'append').mockImplementation(appendMock as () => void)
     vi.spyOn(document, 'createElement').mockReturnValue({
       set href(value: string) {
-        this._href = value
+        ;(this as Record<string, unknown>)._href = value
       },
-      get href() {
-        return this._href ?? ''
+      get href(): string {
+        return ((this as Record<string, unknown>)._href as string) ?? ''
       },
       _href: '',
       download: '',

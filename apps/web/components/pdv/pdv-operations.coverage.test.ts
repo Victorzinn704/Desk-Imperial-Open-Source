@@ -1,4 +1,3 @@
- 
 /**
  * @file pdv-operations.coverage.test.ts
  *
@@ -19,7 +18,6 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { ComandaStatus } from './pdv-types'
 import {
   buildPdvComandas,
   buildPdvGarcons,
@@ -56,7 +54,9 @@ describe('pdv-operations — coverage boost', () => {
   })
 
   it('toPdvComanda mapeia status desconhecido para aberta (default)', () => {
-    const comanda = buildComanda({ status: 'UNKNOWN_STATUS' as unknown as ComandaStatus })
+    const comanda = buildComanda()
+    // @ts-expect-error — force unknown status to test default branch
+    comanda.status = 'UNKNOWN_STATUS'
     expect(toPdvComanda(comanda).status).toBe('aberta')
   })
 
