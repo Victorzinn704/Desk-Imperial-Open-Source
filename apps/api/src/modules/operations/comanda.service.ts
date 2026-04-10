@@ -1,13 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  Optional,
-} from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { AuditSeverity, CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
@@ -39,6 +31,7 @@ import {
   publishKitchenItemUpdated,
   publishComandaClosed,
 } from './comanda-realtime-publish.utils'
+import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import {
   buildOptionalOperationsSnapshot,
   buildCashClosurePayload,
@@ -129,8 +122,10 @@ export class ComandaService {
     }
 
     const operationalBusinessDate = resolveBusinessDate()
-    const sessionContext = await this.resolveComandaSessionContext(
-      auth,
+    const sessionContext = await resolveComandaSessionContext(
+      this.prisma,
+      this.helpers,
+      auth.role,
       workspaceOwnerUserId,
       operationalBusinessDate,
       actorEmployee,
@@ -270,88 +265,6 @@ export class ComandaService {
     }
 
     return this.buildComandaResponse(workspaceOwnerUserId, businessDate, comanda, options)
-  }
-
-  private async resolveComandaSessionContext(
-    auth: AuthContext,
-    workspaceOwnerUserId: string,
-    operationalBusinessDate: Date,
-    actorEmployee: { id: string } | null,
-    dto: OpenComandaDto,
-  ): Promise<{ currentEmployeeId: string | null; cashSessionId: string | null; businessDate: Date }> {
-    if (auth.role === 'STAFF') {
-      return this.resolveStaffSessionContext(workspaceOwnerUserId, operationalBusinessDate, actorEmployee)
-    }
-    return this.resolveOwnerSessionContext(workspaceOwnerUserId, operationalBusinessDate, dto)
-  }
-
-  private async resolveStaffSessionContext(
-    workspaceOwnerUserId: string,
-    operationalBusinessDate: Date,
-    actorEmployee: { id: string } | null,
-  ) {
-    if (!actorEmployee) {
-      throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
-    }
-
-    const openSession = await this.prisma.cashSession.findFirst({
-      where: {
-        companyOwnerId: workspaceOwnerUserId,
-        employeeId: actorEmployee.id,
-        businessDate: operationalBusinessDate,
-        status: CashSessionStatus.OPEN,
-      },
-      orderBy: { openedAt: 'desc' },
-    })
-
-    if (!openSession) {
-      throw new ConflictException('Abra o caixa do funcionario antes de criar comandas.')
-    }
-
-    return {
-      currentEmployeeId: actorEmployee.id,
-      cashSessionId: openSession.id,
-      businessDate: openSession.businessDate,
-    }
-  }
-
-  private async resolveOwnerSessionContext(
-    workspaceOwnerUserId: string,
-    operationalBusinessDate: Date,
-    dto: OpenComandaDto,
-  ) {
-    let currentEmployeeId: string | null = null
-    let cashSessionId: string | null = dto.cashSessionId ?? null
-
-    if (dto.employeeId) {
-      const assignedEmployee = await this.helpers.requireOwnedEmployee(
-        this.prisma,
-        workspaceOwnerUserId,
-        dto.employeeId,
-      )
-      const employeeOpenSession = await this.prisma.cashSession.findFirst({
-        where: {
-          companyOwnerId: workspaceOwnerUserId,
-          employeeId: assignedEmployee.id,
-          businessDate: operationalBusinessDate,
-          status: CashSessionStatus.OPEN,
-        },
-        orderBy: { openedAt: 'desc' },
-      })
-
-      if (!employeeOpenSession) {
-        throw new ConflictException('O funcionario precisa abrir o proprio caixa antes de receber uma mesa.')
-      }
-
-      currentEmployeeId = assignedEmployee.id
-      cashSessionId = cashSessionId ?? employeeOpenSession.id
-    }
-
-    const businessDate = cashSessionId
-      ? (await this.helpers.requireOwnedCashSession(this.prisma, workspaceOwnerUserId, cashSessionId)).businessDate
-      : operationalBusinessDate
-
-    return { currentEmployeeId, cashSessionId, businessDate }
   }
 
   async addComandaItem(
