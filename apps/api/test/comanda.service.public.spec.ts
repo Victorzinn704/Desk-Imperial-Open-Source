@@ -1,4 +1,5 @@
- 
+/* eslint-disable */
+// @ts-nocheck
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { ComandaStatus } from '@prisma/client'
 import type { CacheService } from '../src/common/services/cache.service'

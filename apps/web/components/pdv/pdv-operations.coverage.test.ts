@@ -1,3 +1,4 @@
+ 
 /**
  * @file pdv-operations.coverage.test.ts
  *
@@ -18,6 +19,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import type { ComandaStatus } from './pdv-types'
 import {
   buildPdvComandas,
   buildPdvGarcons,
@@ -54,7 +56,7 @@ describe('pdv-operations — coverage boost', () => {
   })
 
   it('toPdvComanda mapeia status desconhecido para aberta (default)', () => {
-    const comanda = buildComanda({ status: 'UNKNOWN_STATUS' as unknown as string })
+    const comanda = buildComanda({ status: 'UNKNOWN_STATUS' as unknown as ComandaStatus })
     expect(toPdvComanda(comanda).status).toBe('aberta')
   })
 
@@ -133,7 +135,7 @@ describe('pdv-operations — coverage boost', () => {
       items: [],
     })
     // Force amounts
-    const raw = comanda as unknown as string
+    const raw = comanda as Record<string, unknown>
     raw.discountAmount = 10
     raw.subtotalAmount = 0
     const result = toPdvComanda(comanda)

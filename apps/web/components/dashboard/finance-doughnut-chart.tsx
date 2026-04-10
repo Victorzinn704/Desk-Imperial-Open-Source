@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { ChartSkeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency } from '@/lib/currency'
@@ -16,12 +16,12 @@ const LazyPieChartInner = dynamic(
         colors,
         displayCurrency,
         formatFn,
-      }: {
+      }: Readonly<{
         data: Array<{ name: string; value: number }>
         colors: string[]
         displayCurrency: string
-        formatFn: (value: number, currency: string) => string
-      }) {
+        formatFn: (value: number, currency: CurrencyCode) => string
+      }>) {
         return (
           <PieChart>
             <Pie
@@ -39,7 +39,7 @@ const LazyPieChartInner = dynamic(
               ))}
             </Pie>
             <Tooltip
-              formatter={(value, name) => [formatFn(Number(value), displayCurrency), name]}
+              formatter={(value, name) => [formatFn(Number(value), displayCurrency as CurrencyCode), name]}
               contentStyle={{
                 background: 'rgba(18,24,20,0.97)',
                 border: '1px solid rgba(52,242,127,0.18)',

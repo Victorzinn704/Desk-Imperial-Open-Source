@@ -463,7 +463,7 @@ export function DashboardShell({
         activeNavigationLabel: activeNavigation.label,
         activeSection,
         companyName: currentUser?.companyName || 'Workspace',
-        displayCurrency,
+        displayCurrency: displayCurrency ?? 'BRL',
         finance,
         isStaffUser,
         legalAcceptancesCount: legalAcceptances.length,

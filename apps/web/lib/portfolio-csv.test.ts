@@ -1,11 +1,5 @@
+ 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-
-// We need to test the internal functions. Since buildCsv, escapeCsvCell, and
-// neutralizeCsvFormula are private, we test them indirectly through the exported
-// functions. However, downloadPortfolioCsv and downloadProductTemplateCsv call
-// downloadCsvFile which needs DOM. We can spy on the DOM to verify behavior.
-
-// Import the module under test
 import { downloadProductTemplateCsv, downloadPortfolioCsv } from './portfolio-csv'
 
 describe('portfolio-csv', () => {

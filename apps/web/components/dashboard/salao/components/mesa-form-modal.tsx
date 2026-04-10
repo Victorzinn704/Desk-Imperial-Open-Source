@@ -35,7 +35,7 @@ export const Modal = memo(function Modal({ title, children, onClose }: ModalProp
 interface CreateMesaModalProps {
   form: CreateForm
   onChange: React.Dispatch<React.SetStateAction<CreateForm>>
-  onSubmit: (e: React.FormEvent) => void
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   onClose: () => void
   isPending: boolean
   error: string | null
@@ -193,7 +193,7 @@ interface EditMesaModalProps {
   mesaLabel: string
   form: EditForm
   onChange: React.Dispatch<React.SetStateAction<EditForm>>
-  onSubmit: (e: React.FormEvent) => void
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   onClose: () => void
   isPending: boolean
   error: string | null

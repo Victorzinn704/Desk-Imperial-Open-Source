@@ -44,7 +44,11 @@ const emptyValues: ProductFormInputValues = {
 function applyPackagingPreset(
   presetKey: string,
   currentPackagingClass: string,
-  setValue: (name: string, value: unknown, opts?: { shouldDirty?: boolean; shouldValidate?: boolean }) => void,
+  setValue: (
+    name: keyof ProductFormInputValues,
+    value: unknown,
+    opts?: { shouldDirty?: boolean; shouldValidate?: boolean },
+  ) => void,
   setMeasurementMode: (mode: string) => void,
 ) {
   if (!presetKey) {

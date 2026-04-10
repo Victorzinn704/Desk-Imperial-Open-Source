@@ -1,7 +1,7 @@
 'use client'
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { Skeleton } from '@/components/shared/skeleton'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
@@ -18,12 +18,12 @@ const LazyPerformanceChart = dynamic(
         displayCurrency,
         formatCompactFn,
         tooltipContent,
-      }: {
+      }: Readonly<{
         timeline: Array<Record<string, unknown>>
         displayCurrency: string
-        formatCompactFn: (v: number, c: string) => string
+        formatCompactFn: (v: number, c: CurrencyCode) => string
         tooltipContent: React.ReactElement
-      }) {
+      }>) {
         return (
           <ComposedChart data={timeline} margin={{ top: 4, right: 4, left: -14, bottom: 0 }}>
             <defs>
@@ -37,7 +37,7 @@ const LazyPerformanceChart = dynamic(
             <YAxis
               axisLine={false}
               tick={{ fill: '#6b7a8d', fontSize: 11 }}
-              tickFormatter={(v: number) => formatCompactFn(v, displayCurrency)}
+              tickFormatter={(v: number) => formatCompactFn(v, displayCurrency as CurrencyCode)}
               tickLine={false}
               width={68}
             />
