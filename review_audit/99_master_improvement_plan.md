@@ -1,319 +1,362 @@
-# Plano de Melhorias — Desk Imperial
+# Plano Mestre de Melhoria — Desk Imperial
 
-**Data:** 2026-04-09
-**Baseado em:** Auditoria tecnica completa (Fases 1-5)
+**Data:** 2026-04-10  
+**Base:** inventário revalidado + 6 relatórios especializados + execução técnica local
 
 ---
 
 ## 1. Resumo Executivo
 
-### Estado Geral do Projeto
+### Estado geral
 
-Desk Imperial e uma plataforma SaaS B2B de gestao comercial para micro/pequenos comerciantes brasileiros. O projeto demonstra maturidade tecnica acima da media para seu porte: CI pipeline com 7 jobs (incluindo k6 latency gate), stack de observabilidade enterprise (Grafana+Loki+Tempo+Prometheus), 122 arquivos de teste, schema Prisma bem modelado, e seguranca robusta (Argon2, JWT HTTP-only, CSRF, rate limiting, audit log, LGPD).
+O projeto já tem densidade técnica real: monorepo coerente, domínios claros, observabilidade implantada, migrations versionadas e uma pipeline que tenta cobrir qualidade, segurança e latência. O problema atual não é “falta de base”; é **desalinhamento entre runtime real, pipeline, documentação e pontos críticos de domínio**.
 
-**Score medio: 3.5/5** — Bom+, com pontos de elite em observabilidade e CI.
+### Pontos fortes
 
-### Pontos Fortes
+1. Stack atual e consistente: Next.js 16, React 19, NestJS 11, Prisma, Redis, Socket.IO.
+2. Observabilidade de verdade no código: OTel no backend e Faro no frontend.
+3. Domínio de produto claro, com valor concreto para operação de salão/PDV/financeiro.
+4. Migrations Prisma versionadas e health endpoints implementados.
+5. Boa quantidade de testes e presença de gates de segurança/performance na CI.
 
-1. Observabilidade de nivel enterprise (5/5)
-2. CI pipeline com gates de qualidade, seguranca e performance (4/5)
-3. Schema Prisma bem modelado com indices compostos
-4. Seguranca robusta em auth (Argon2, JWT HTTP-only, CSRF, rate limiting)
-5. 122 arquivos de teste com E2E e load testing
-6. Documentacao extensa em `docs/` (9 subdiretorios)
-7. `.env.example` extremamente bem documentado (80+ variaveis)
-8. Migrations versionadas no repo
+### Pontos fracos
 
-### Pontos Fracos
+1. O frontend está com **build quebrado** no estado atual do branch.
+2. Segredos operacionais permanecem em texto puro no workspace e em runbooks.
+3. Há falhas reais de integridade/autorização no backend:
+   cancelamento concorrente de pedido, sessão de staff arquivado e caches monetários inconsistentes.
+4. Rollback, backup/DR e verificação de host SSH ainda não estão em nível aceitável.
+5. A documentação principal contém drift suficiente para induzir decisão técnica errada.
 
-1. **God services/files** — auth.service.ts (2433 linhas), operations-helpers (1451), api.ts (1315), use-operations-realtime.ts (1258)
-2. **Deploy manual** — `railway up` antes de `git push` sem automatizacao CI
-3. **15+ arquivos frontend > 500 linhas**
-4. **NPM_CONFIG_AUDIT desabilitado** no CI
-5. **Credenciais em texto puro** em `.secrets/ops-credentials.txt` (nao versionado, mas existe)
+### Riscos críticos
 
-### Riscos Criticos
+| ID | Risco | Tipo |
+| --- | --- | --- |
+| `AUD-001` | `next build` quebrado | Release blocker |
+| `AUD-003` | cancelamento de pedido pode restaurar estoque duas vezes | Integridade de dados |
+| `AUD-004` | segredos operacionais em plaintext | Segurança operacional |
 
-1. Auth service com 2433 linhas — bug em auth = breach total
-2. Operations helper com 1451 linhas — logica de caixa/comanda com risco de erro
-3. Deploy sem rastreabilidade git — dificuldade de rollback
-4. api.ts com 1315 linhas — erro em chamada de API = UX quebrada
+### Nível geral de maturidade
+
+**2.8/5**.  
+Leitura prática: o projeto já passou da fase de protótipo, mas ainda não está em nível de excelência operacional. O próximo salto de maturidade depende menos de novas features e mais de **fechar o ciclo entre código, pipeline, docs e operação real**.
 
 ---
 
 ## 2. Scorecard de Maturidade
 
-| Dimensao        | Score | Trend                                     |
-| --------------- | ----- | ----------------------------------------- |
-| Arquitetura     | 3/5   | Estavel                                   |
-| Backend         | 3/5   | Precisa refatorar god services            |
-| Frontend        | 3/5   | Precisa decompor componentes grandes      |
-| Seguranca       | 4/5   | Forte, mas precisa rotacionar credenciais |
-| DevOps          | 4/5   | Excelente CI, deploy manual e gap         |
-| Observabilidade | 5/5   | Elite                                     |
-| Testes          | 4/5   | Forte cobertura                           |
-| Documentacao    | 4/5   | Extensa e organizada                      |
-| DX              | 4/5   | Bom setup                                 |
-| UX/UI           | 3/5   | Nao auditado em profundidade              |
-| Performance     | 4/5   | k6 gate no CI                             |
-| Governanca      | 4/5   | Boa, exceto deploy manual                 |
-| Produto         | 3/5   | Escopo coerente                           |
+| Dimensão | Score |
+| --- | ---: |
+| Arquitetura | 2.5/5 |
+| Backend | 3.0/5 |
+| Frontend | 2.5/5 |
+| Segurança | 2.5/5 |
+| DevOps | 2.5/5 |
+| Observabilidade | 3.5/5 |
+| Testes | 2.5/5 |
+| Documentação | 2.5/5 |
+| DX | 3.0/5 |
+| UX/UI | 3.0/5 |
+| Performance | 3.0/5 |
+| Governança técnica | 2.5/5 |
+| Produto | 3.5/5 |
+
+Referência detalhada: [05_maturity_scorecard.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/05_maturity_scorecard.md).
 
 ---
 
 ## 3. Mapa do Sistema
 
-### Arquitetura
+### Macroarquitetura
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Railway (Web)                      │
-│  Next.js 16 (Turbopack) → React 19 → Tailwind       │
-│  Faro OTel → Grafana Cloud                          │
-└──────────────────────┬──────────────────────────────┘
-                       │ HTTPS
-┌──────────────────────▼──────────────────────────────┐
-│              Oracle Cloud VM (API)                    │
-│  NestJS → Prisma → Neon PostgreSQL                  │
-│  ioredis → Redis (cache + rate limit + Socket.IO)   │
-│  OpenTelemetry → Alloy → Loki/Tempo/Prometheus      │
-└─────────────────────────────────────────────────────┘
+```text
+apps/api      -> NestJS, Prisma, Redis, Socket.IO, OTel
+apps/web      -> Next.js App Router, React Query, Faro
+packages/types-> contratos compartilhados
+infra/        -> compose local, observability OSS, runtime Oracle, scripts de deploy
 ```
 
-### Dominios Criticos
+### Fluxos críticos
 
-| Dominio            | Arquivo Principal               | Linhas | Risco   |
-| ------------------ | ------------------------------- | ------ | ------- |
-| Auth               | `auth.service.ts`               | 2433   | Critico |
-| Comanda/Operacoes  | `comanda.service.ts`            | 1607   | Alto    |
-| Operations Helpers | `operations-helpers.service.ts` | 1451   | Critico |
-| API Client         | `lib/api.ts`                    | 1315   | Critico |
-| Realtime Hook      | `use-operations-realtime.ts`    | 1258   | Alto    |
-| Produtos           | `products.service.ts`           | 772    | Medio   |
-| Pedidos            | `orders.service.ts`             | 726    | Medio   |
-| Calendario         | `commercial-calendar.tsx`       | 833    | Alto    |
-| Dashboard          | `dashboard-shell.tsx`           | 780    | Alto    |
-| PDV                | `pdv-salao-unified.tsx`         | 763    | Alto    |
+1. Registro → consentimento → geocoding → verificação de email
+2. Login → sessão por cookie → CSRF → autorização por role
+3. Operação ao vivo → caixa/comanda/cozinha/mesa → realtime → invalidação de cache
+4. Pedido → baixa de estoque → financeiro → cancelamento/reversão
+5. Dashboard financeiro → summary + pillars + export CSV
 
----
+### Hotspots técnicos
 
-## 4. Achados Detalhados por Dominio
+- `apps/web/app/page.tsx`
+- `apps/web/components/dashboard/dashboard-shell.tsx`
+- `apps/web/components/operations/use-operations-realtime.ts`
+- `apps/api/src/modules/auth/auth.service.ts`
+- `apps/api/src/modules/operations/comanda.service.ts`
+- `apps/api/src/modules/operations/operations-helpers.service.ts`
 
-Ver `03_findings_log.md` para lista completa com 24 achados classificados.
-
-### Resumo por Severidade
-
-| Severidade      | Count | Top Items                                                       |
-| --------------- | ----- | --------------------------------------------------------------- |
-| P0 Critico      | 6     | God services, credenciais, api.ts, realtime hook                |
-| P1 Alto         | 6     | Arquivos >500 linhas, senhas docker, audit CI, shell components |
-| P2 Medio        | 5     | Contracts.ts, faro.ts, deploy manual, migrations, prototype     |
-| P3 Evolutivo    | 4     | Observability cost, SonarQube local, design lab                 |
-| P4 Oportunidade | 4     | CI excelente, Faro, k6 gate, schema Prisma                      |
+Referência detalhada: [01_repo_map.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/01_repo_map.md).
 
 ---
 
-## 5. Bugs, Quebras e Riscos Provaveis
+## 4. Achados Mais Importantes por Domínio
 
-### Confirmados
+### Release / CI
 
-| ID  | Bug/Risco                             | Arquivo                        | Impacto                                          |
-| --- | ------------------------------------- | ------------------------------ | ------------------------------------------------ |
-| B01 | Credenciais em texto puro             | `.secrets/ops-credentials.txt` | Se vazado, acesso total a Grafana, SonarQube, CI |
-| B02 | Senha default fraca no docker-compose | `docker-compose.yml:9`         | Banco local com senha `desk_imperial_change_me`  |
-| B03 | NPM_CONFIG_AUDIT desabilitado         | `.github/workflows/ci.yml:19`  | Vulnerabilidades de dependencia silenciosas      |
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-001` | build do web quebrado | Crítico | execução `npm run build` + [apps/web/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/page.tsx:3) |
+| `AUD-008` | backend E2E fora da CI | Alto | [apps/api/package.json](C:/Users/Desktop/Documents/desk-imperial/apps/api/package.json:17) + [ci.yml](C:/Users/Desktop/Documents/desk-imperial/.github/workflows/ci.yml:73) |
 
-### Altamente Provaveis
+### Backend / Dados
 
-| ID  | Risco                             | Arquivo              | Impacto                           |
-| --- | --------------------------------- | -------------------- | --------------------------------- |
-| R01 | N+1 queries em Prisma             | Varios services      | Performance degradada sob carga   |
-| R02 | Race condition em comanda         | `comanda.service.ts` | Dados corrompidos em concorrencia |
-| R03 | God service auth — bug silencioso | `auth.service.ts`    | Brecha de autenticacao            |
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-003` | cancelamento com corrida de estoque | Crítico | [orders.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/orders.service.ts:494) |
+| `AUD-005` | sessão de staff arquivado continua válida | Alto | [auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1508) |
+| `AUD-016` | mudança de moeda não invalida caches monetários | Médio | [auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1438) |
+| `AUD-017` | KPI semanal começa no domingo | Médio | [pillars.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/finance/pillars.service.ts:198) |
 
-### Potenciais Regressoes
+### Segurança
 
-| ID   | Risco                                                        | Causa                           |
-| ---- | ------------------------------------------------------------ | ------------------------------- |
-| RG01 | Refatorar auth.service pode quebrar sessoes existentes       | Tokens, cookies, CSRF           |
-| RG02 | Decompor operations-helpers pode quebrar fechamento de caixa | Logica financeira sensivel      |
-| RG03 | Separar api.ts pode quebrar imports no frontend              | 30+ arquivos importam de api.ts |
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-004` | segredos operacionais em plaintext | Crítico | [.env](C:/Users/Desktop/Documents/desk-imperial/.env:11) |
+| `AUD-006` | dependências de runtime vulneráveis | Alto | `npm audit --omit=dev --json` |
+| `AUD-013` | dados sensíveis vazam em logs | Alto | [app.module.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/app.module.ts:79), [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:50) |
+| `AUD-018` | CSRF por `Referer` usa prefixo | Médio | [csrf.guard.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/guards/csrf.guard.ts:50) |
 
----
+### Infra / Operação
 
-## 6. Lista de Refatoracoes
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-010` | rollback fraco por migration no boot | Alto | [oracle-builder-deploy.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-builder-deploy.ps1:264) |
+| `AUD-011` | backup/DR ausente | Alto | [infra/oracle/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/README.md:29) |
+| `AUD-012` | SSH sem verificação de host | Alto | [oracle-ops-tunnel.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-ops-tunnel.ps1:16) |
 
-### Alto Impacto / Baixo Risco (Quick Wins)
+### Frontend / UX
 
-| Refatoracao                              | Arquivo                        | Esforco  | Impacto |
-| ---------------------------------------- | ------------------------------ | -------- | ------- |
-| Rotacionar credenciais                   | `.secrets/ops-credentials.txt` | 2h       | Critico |
-| Habilitar npm audit no CI                | `.github/workflows/ci.yml`     | 30min    | Alto    |
-| Remover senha default do docker-compose  | `docker-compose.yml`           | 15min    | Medio   |
-| Adicionar `.secrets/` ao pre-commit hook | `.husky/`                      | 1h       | Alto    |
-| Extrair funcoes utilitarias de `api.ts`  | `lib/api.ts`                   | 1-2 dias | Alto    |
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-007` | CSV export vulnerável a formula injection | Alto | [finance-orders-table.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/finance-orders-table.tsx:44) |
+| `AUD-019` | rotas `/app` resolvidas no cliente | Médio | [apps/web/app/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/page.tsx:1) |
+| `AUD-022` | shell/realtime centralizados demais | P3 | [dashboard-shell.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/dashboard-shell.tsx) |
 
-### Medio Prazo (1-2 semanas)
+### Arquitetura / Governança
 
-| Refatoracao                              | Arquivo(s)                                   | Esforco  | Impacto |
-| ---------------------------------------- | -------------------------------------------- | -------- | ------- |
-| Decompor `auth.service.ts`               | `auth.service.ts` → 5 servicos               | 3-5 dias | Critico |
-| Decompor `operations-helpers.service.ts` | `operations-helpers.service.ts` → 3 servicos | 3-5 dias | Critico |
-| Separar `api.ts` por dominio             | `lib/api.ts` → 6 arquivos                    | 2-3 dias | Alto    |
-| Decompor `use-operations-realtime.ts`    | Hook → 4 hooks menores                       | 3-5 dias | Alto    |
+| ID | Título | Severidade | Evidência principal |
+| --- | --- | --- | --- |
+| `AUD-014` | ciclo `auth`/`consent`/`geocoding` | Alto | [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md) |
+| `AUD-015` | corredor acoplado `operations`/`products`/`finance` | Alto | [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md) |
+| `AUD-021` | documentação principal em drift | Médio | [README.md](C:/Users/Desktop/Documents/desk-imperial/README.md:200) |
 
-### Simplificacao Estrutural (2-4 semanas)
-
-| Refatoracao                                | Arquivo(s)                                        | Esforco  | Impacto |
-| ------------------------------------------ | ------------------------------------------------- | -------- | ------- |
-| Decompor `comanda.service.ts`              | `comanda.service.ts` → kitchen, assignments, core | 5-7 dias | Alto    |
-| Decompor componentes frontend > 500 linhas | 15 arquivos                                       | 5-7 dias | Medio   |
-| Automatizar deploy Railway via CI          | `.github/workflows/deploy.yml`                    | 2-3 dias | Alto    |
-| Separar `contracts.ts` por dominio         | `packages/types/src/`                             | 1-2 dias | Medio   |
+Referência detalhada: [03_findings_log.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/03_findings_log.md).
 
 ---
 
-## 7. Plano de Acao Sequenciado
+## 5. Bugs, Quebras e Riscos Prováveis
 
-### Quick Wins (1-7 dias)
+### Confirmados por execução
 
-| Dia | Acao                                                              | Owner    | Metrica de Sucesso              |
-| --- | ----------------------------------------------------------------- | -------- | ------------------------------- |
-| 1   | Rotacionar TODAS as credenciais de `.secrets/ops-credentials.txt` | Security | Credenciais antigas invalidadas |
-| 1   | Adotar password manager (Bitwarden/1Password)                     | Security | Credenciais removidas do disco  |
-| 1   | Habilitar `NPM_CONFIG_AUDIT` no CI                                | DevOps   | Audit rodando no CI             |
-| 1   | Remover senha default do docker-compose                           | DevOps   | Compose falha sem .env          |
-| 2   | Extrair funcoes de auth para servicos menores                     | Backend  | `auth.service.ts` < 800 linhas  |
-| 3   | Separar `api.ts` por dominio                                      | Frontend | Nenhum arquivo > 400 linhas     |
-| 5   | Adicionar hook pre-commit para bloquear `.secrets/`               | DevOps   | Push de secrets bloqueado       |
-| 7   | Rodar SonarQube scan e zerar criticals                            | QA       | 0 critical violations           |
+1. `next build` falha no web por `ssr: false` em Server Component.
+2. `test:e2e:critical` do web falha porque o web server não sobe com esse mesmo erro.
+3. `repo:scan-public` acusa referências sensíveis em `infra/oracle/.env.example`.
+4. `security:audit-runtime` acusa vulnerabilidades `high/critical` fora do allowlist.
+5. `npm audit --omit=dev` confirma 8 vulnerabilidades em dependências de produção.
 
-### Plano de 30 Dias
+### Altamente prováveis por leitura de código
 
-| Semana | Acao                                       | Metrica de Sucesso                     |
-| ------ | ------------------------------------------ | -------------------------------------- |
-| 1-2    | Decompor `operations-helpers.service.ts`   | Arquivo < 500 linhas, testes passando  |
-| 2-3    | Decompor `use-operations-realtime.ts`      | 4 hooks < 350 linhas cada              |
-| 3-4    | Decompor componentes frontend > 500 linhas | Nenhum componente > 400 linhas         |
-| 4      | Automatizar deploy Railway via CI          | `railway up` substituido por CI deploy |
+1. cancelamento concorrente de pedido pode inflar estoque
+2. sessão de staff arquivado pode sobreviver ao cache
+3. CSV export pode disparar fórmula em planilha
+4. troca de moeda pode servir dados cacheados na moeda errada
+5. weekly KPI pode refletir semana começando no domingo
 
-### Plano de 60 Dias
+### Potenciais regressões
 
-| Semana | Acao                                       | Metrica de Sucesso             |
-| ------ | ------------------------------------------ | ------------------------------ |
-| 5-6    | Decompor `comanda.service.ts`              | Arquivo < 500 linhas           |
-| 6-7    | Estabelecer limite de 400 linhas no ESLint | `max-lines` rule ativa         |
-| 8      | Load test de regressao com k6              | P95 < 500ms em fluxos criticos |
-
-### Plano de 90 Dias
-
-| Semana | Acao                                                 | Metrica de Sucesso                    |
-| ------ | ---------------------------------------------------- | ------------------------------------- |
-| 9-10   | Migrar observabilidade para Grafana Cloud (opcional) | Custo operacional reduzido            |
-| 11-12  | Auditoria de seguranca externa / pentest             | 0 vulnerabilidades criticas           |
-| 12     | Review de arquitetura completo                       | Scorecard > 4/5 em todas as dimensoes |
+1. qualquer refactor em `auth.service.ts` sem suíte de regressão adequada
+2. reorganização de `DashboardShell` e `use-operations-realtime`
+3. endurecimento de deploy/migration sem plano de rollout/rollback
 
 ---
 
-## 8. Modelo de Acao Recomendado
+## 6. Lista de Refatorações Prioritárias
+
+### Alto impacto / baixo risco
+
+1. Corrigir a home pública para voltar a compilar no `next build`.
+2. Adicionar gate de build na CI.
+3. Redigir `buyerDocument` e remover OTP de logs.
+4. Endurecer encoder CSV.
+5. Bloquear `EMAIL_PROVIDER=log` em produção.
+
+### Alto impacto / médio risco
+
+1. Tornar cancelamento de pedido idempotente e concorrência-seguro.
+2. Revogar cache/sessões ao arquivar `STAFF`.
+3. Separar migração do boot da aplicação.
+4. Introduzir API E2E na pipeline.
+5. Reorganizar invalidação entre `operations`/`products`/`finance`.
+
+### Estruturais de médio prazo
+
+1. Quebrar o ciclo `auth`/`consent`/`geocoding`.
+2. Decompor `DashboardShell` e `use-operations-realtime`.
+3. Particionar `packages/types` por subdomínio.
+4. Formalizar observabilidade com correlação e alertas de segurança/SLO.
+
+---
+
+## 7. Plano Sequenciado
+
+### Quick wins — 1 a 7 dias
+
+| Ação | Owner sugerido | Métrica de sucesso |
+| --- | --- | --- |
+| Corrigir `apps/web/app/page.tsx` para `next build` passar | Frontend | `npm run build` verde |
+| Adicionar gate de build do web à CI | DevOps | PR falha quando `next build` falha |
+| Rotacionar segredos e remover plaintext local | Security / Infra | nenhum segredo real em `.env`/`.secrets` |
+| Redigir `buyerDocument` e retirar OTP dos logs | Backend / Security | logs sem CPF/CNPJ/OTP |
+| Corrigir encoder de CSV | Frontend | export seguro e coberto por teste |
+| Ajustar `getWeekStart` para semana ISO | Backend | KPI semanal coerente |
+
+### Plano de 30 dias
+
+1. Colocar API E2E real na CI.
+2. Tornar cancelamento de pedido idempotente.
+3. Revogar sessões/caches quando `STAFF` for arquivado.
+4. Invalidar caches monetários ao trocar `preferredCurrency`.
+5. Endurecer SSH operacional com `known_hosts`.
+6. Remover defaults inseguros de Redis/Grafana local.
+
+### Plano de 60 dias
+
+1. Separar migration de boot e criar rollback por imagem/tag.
+2. Definir e testar backup/restore.
+3. Aumentar E2E web em fluxos owner/staff/PDV/operations.
+4. Revisar estratégia de cobertura do web.
+5. Reduzir acoplamento entre `operations`, `products` e `finance`.
+
+### Plano de 90 dias
+
+1. Quebrar ciclo `auth`/`consent`/`geocoding`.
+2. Repartir `DashboardShell` e `use-operations-realtime`.
+3. Formalizar correlação browser → API → audit log.
+4. Criar SLOs e alertas de produto/segurança.
+5. Revisar e alinhar documentação canônica do repositório inteiro.
+
+### Iniciativas estruturais de médio/longo prazo
+
+1. bounded contexts explícitos no backend
+2. pipeline de release realmente promotável/reversível
+3. governança de contratos compartilhados por domínio
+4. baseline permanente de segurança operacional e supply chain
+
+---
+
+## 8. Modelo de Ação Recomendado
 
 ### Como atacar o backlog
 
-1. **Fase 1 (Semana 1):** Seguranca primeiro — rotacionar credenciais, habilitar audit, proteger secrets
-2. **Fase 2 (Semanas 2-4):** Decomposicao de god services — auth, operations-helpers, api.ts, realtime hook
-3. **Fase 3 (Semanas 5-8):** Decomposicao de componentes frontend e automatizacao de deploy
-4. **Fase 4 (Semanas 9-12):** Refinamento — comanda service, ESLint rules, load tests, pentest
+1. Primeiro corrigir o **blocker de release** (`AUD-001`).
+2. Em paralelo, resolver **segurança operacional imediata** (`AUD-004`, `AUD-013`).
+3. Depois atacar **integridade do domínio** (`AUD-003`, `AUD-005`, `AUD-016`, `AUD-017`).
+4. Só então abrir frentes estruturais maiores (`AUD-014`, `AUD-015`, `AUD-022`, `AUD-023`).
 
-### Como reduzir risco de regressao
+### Como reduzir regressão
 
-- **Testes antes de refatorar:** Rodar suite completa antes de cada refatoracao
-- **Refatoracao incremental:** Extrair metodos pequenos, nao reescrever
-- **Feature flags:** Usar para mudancas de comportamento
-- **Deploy canary:** Validar em staging antes de producao
+- Toda correção de bug crítico deve vir com teste que falha antes e passa depois.
+- Qualquer mudança em auth, orders, operations ou finance precisa de:
+  - unit/integration da área
+  - `test:critical`
+  - build do web
+  - smoke de health
 
 ### Como organizar frentes paralelas
 
-| Frente                              | Owner    | Independente de |
-| ----------------------------------- | -------- | --------------- |
-| Seguranca (credenciais, audit)      | Security | Nenhuma         |
-| Backend (decomposicao services)     | Backend  | Seguranca       |
-| Frontend (decomposicao componentes) | Frontend | Nenhuma         |
-| DevOps (deploy automatizado)        | DevOps   | Backend         |
+- Frente 1: release safety e CI
+- Frente 2: security/infra
+- Frente 3: backend data integrity
+- Frente 4: QA/reliability
+- Frente 5: architecture cleanup
 
-### Como validar melhorias
+### Métricas de avanço
 
-- SonarQube scan apos cada refatoracao
-- CI pipeline deve passar sem regressao
-- k6 latency gate deve manter ou melhorar P95
-- Testes devem manter ou aumentar cobertura
-
-### Como medir avanc
-
-| Metrica                   | Atual       | Meta 30d      | Meta 90d           |
-| ------------------------- | ----------- | ------------- | ------------------ |
-| Maior arquivo backend     | 2433 linhas | < 1000 linhas | < 500 linhas       |
-| Maior arquivo frontend    | 1315 linhas | < 600 linhas  | < 400 linhas       |
-| Critical violations Sonar | Verificar   | 0             | 0                  |
-| Coverage                  | Verificar   | > 70%         | > 80%              |
-| Deploy automatizado       | Manual      | CI trigger    | CI + rollback auto |
+1. `npm run build` estável em todas as PRs
+2. zero segredo real em workspace local
+3. zero vulnerabilidade high em dependências de produção
+4. API E2E rodando na CI
+5. ao menos 1 E2E por fluxo operacional crítico
+6. rollback documentado e backup/restore testado
 
 ---
 
-## 9. Governanca Recomendada para Claude Code
+## 9. Governança Recomendada para o Claude Code
 
-### `CLAUDE.md` Ideal
+### `CLAUDE.md` ideal
 
-O atual ja e excelente. Sugerimos adicionar:
+Deve conter apenas:
 
-- Regra de max-lines por arquivo (400 linhas)
-- Checklist pre-commit: testes, lint, typecheck
-- Procedimento de rotacao de credenciais
-- Fluxo de deploy automatizado (quando implementado)
+1. identidade do produto
+2. stack e entrypoints reais
+3. regras de negócio críticas
+4. comandos oficiais de validação
+5. regras de deploy vigentes
+6. links para `review_audit/03_findings_log.md` e docs canônicas
 
-### `.claude/rules/` Sugerido
+Não deve conter:
 
-```
+1. achados de auditoria antigos como se fossem permanentes
+2. claims operacionais não revalidadas
+3. instruções contraditórias com CI/runtime atuais
+
+### Estrutura sugerida de `.claude/rules/`
+
+```text
 .claude/rules/
-├── backend.md          # Regras para NestJS services
-├── frontend.md         # Regras para componentes React
-├── security.md         # Regras de seguranca (nunca commitar secrets)
-├── testing.md          # Regras de testes (cobertura minima)
-└── deploy.md           # Regras de deploy e CI/CD
+├── backend.md
+├── frontend.md
+├── security.md
+├── infra-devops.md
+├── testing.md
+├── observability.md
+├── docs-governance.md
+└── product-flows.md
 ```
 
-### Subagentes Permanentes Sugeridos
+### Subagentes permanentes úteis
 
-| Agente              | Funcao                                   | Trigger                          |
-| ------------------- | ---------------------------------------- | -------------------------------- |
-| `sonarqube-scanner` | Rodar scan e reportar issues             | Apos mudancas em .ts/.tsx        |
-| `test-runner`       | Rodar testes afetados                    | Apos mudancas em codigo          |
-| `security-auditor`  | Verificar secrets e vulnerabilidades     | Apos mudancas em config          |
-| `refactoring-guru`  | Sugerir decomposicao de arquivos grandes | Ao detectar arquivo > 400 linhas |
+1. `backend-reviewer`
+2. `frontend-reviewer`
+3. `security-reviewer`
+4. `infra-devops-reviewer`
+5. `qa-test-reviewer`
+6. `architecture-reviewer`
+7. `observability-sre-reviewer`
+8. `documentation-dx-reviewer`
 
-### `REVIEW.md` Ideal
+### `REVIEW.md` ideal para revisões futuras
 
-Template para revisoes futuras:
+Deve exigir, por padrão:
 
-```markdown
-# Review — [Data]
+1. leitura de `review_audit/00_master_index.md`
+2. consulta prévia a `review_audit/03_findings_log.md`
+3. distinção explícita entre:
+   fato confirmado, inferência forte, hipótese e risco potencial
+4. registro de comandos executados e resultado
+5. revisão por domínio, não por arquivo isolado
+6. atualização obrigatória dos artefatos de `review_audit/`
 
-## Mudancas
+---
 
-- [Lista de arquivos modificados]
+## 10. Conclusão
 
-## Testes
+O projeto não precisa de reescrita. Precisa de **sequenciamento técnico rigoroso**.
 
-- [ ] Testes afetados rodaram
-- [ ] Coverage nao regrediu
-- [ ] SonarQube scan passou
+A ordem correta é:
 
-## Seguranca
+1. restaurar segurança de release;
+2. remover exposição operacional óbvia;
+3. corrigir integridade do domínio;
+4. fortalecer testes/gates;
+5. só então refatorar arquitetura e documentação de forma ampla.
 
-- [ ] Nenhum secret commitado
-- [ ] Credenciais nao expostas
-
-## Performance
-
-- [ ] k6 latency gate passou
-- [ ] Nenhum arquivo > 400 linhas adicionado
-```
+Se essa ordem for respeitada, o Desk Imperial consegue subir de um estado “bom, porém vulnerável em operação” para um estado realmente confiável sem perder velocidade de evolução.

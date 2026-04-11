@@ -5,13 +5,26 @@ param(
   [string] $Transport = 'registry',
   [string] $KeyPath = (Join-Path $env:TEMP 'desk_oci_key.pem'),
   [string] $SourceKeyPath = 'C:\Users\Desktop\.oci\oci_api_key_new.pem',
-  [string] $BuilderHost = 'ubuntu@147.15.60.224',
-  [string] $BuilderPrivateHost = '10.10.1.166',
-  [string] $ProductionHost = 'ubuntu@163.176.171.242',
+  [string] $BuilderHost = $env:DESK_BUILDER_HOST,
+  [string] $BuilderPrivateHost = $env:DESK_BUILDER_PRIVATE_HOST,
+  [string] $ProductionHost = $env:DESK_PRODUCTION_HOST,
+  [string] $KnownHostsPath = (Join-Path $env:USERPROFILE '.ssh\known_hosts'),
   [int] $RegistryTunnelPort = 55000
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $BuilderHost) {
+  throw 'Defina o host do builder via parâmetro -BuilderHost ou variável DESK_BUILDER_HOST.'
+}
+
+if (-not $BuilderPrivateHost) {
+  throw 'Defina o host privado do builder via parâmetro -BuilderPrivateHost ou variável DESK_BUILDER_PRIVATE_HOST.'
+}
+
+if (-not $ProductionHost) {
+  throw 'Defina o host de produção via parâmetro -ProductionHost ou variável DESK_PRODUCTION_HOST.'
+}
 
 function Invoke-Remote {
   param(
@@ -22,7 +35,7 @@ function Invoke-Remote {
   $NormalizedCommand = $Command -replace "`r`n", "`n"
   $NormalizedCommand = $NormalizedCommand -replace "`r", "`n"
 
-  ssh -i $KeyPath -o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=60 $HostName $NormalizedCommand
+  ssh -i $KeyPath -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$KnownHostsPath -o ServerAliveInterval=20 -o ServerAliveCountMax=60 $HostName $NormalizedCommand
   if ($LASTEXITCODE -ne 0) {
     throw "Comando remoto falhou em ${HostName} com exit code $LASTEXITCODE."
   }
@@ -68,7 +81,8 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $archive)) {
 Write-Host "==> Enviando fonte para builder: $BuilderHost"
 Invoke-Scp -Description 'Envio da fonte para builder' -Arguments @(
   '-i', $KeyPath,
-  '-o', 'StrictHostKeyChecking=no',
+  '-o', 'StrictHostKeyChecking=accept-new',
+  '-o', "UserKnownHostsFile=$KnownHostsPath",
   $archive,
   "${BuilderHost}:$remoteArchive"
 )
@@ -174,7 +188,8 @@ if ($Transport -eq 'archive') {
   }
   Invoke-Scp -Description 'Download das imagens do builder' -Arguments @(
     '-i', $KeyPath,
-    '-o', 'StrictHostKeyChecking=no',
+    '-o', 'StrictHostKeyChecking=accept-new',
+    '-o', "UserKnownHostsFile=$KnownHostsPath",
     "${BuilderHost}:$remoteImageArchive",
     $imageArchive
   )
@@ -186,7 +201,8 @@ if ($Transport -eq 'archive') {
 Write-Host "==> Enviando fonte para produção"
 Invoke-Scp -Description 'Envio da fonte para produção' -Arguments @(
   '-i', $KeyPath,
-  '-o', 'StrictHostKeyChecking=no',
+  '-o', 'StrictHostKeyChecking=accept-new',
+  '-o', "UserKnownHostsFile=$KnownHostsPath",
   $archive,
   "${ProductionHost}:$remoteArchive"
 )
@@ -195,7 +211,8 @@ if ($Transport -eq 'archive') {
   Write-Host "==> Enviando pacote de imagens para produção"
   Invoke-Scp -Description 'Envio das imagens para produção' -Arguments @(
     '-i', $KeyPath,
-    '-o', 'StrictHostKeyChecking=no',
+    '-o', 'StrictHostKeyChecking=accept-new',
+    '-o', "UserKnownHostsFile=$KnownHostsPath",
     $imageArchive,
     "${ProductionHost}:$remoteImageArchive"
   )
@@ -226,7 +243,7 @@ if [ "`$transport" = "registry" ]; then
     sleep 1
   fi
   ssh -i ~/.ssh/desk_registry_tunnel_ed25519 \
-    -o StrictHostKeyChecking=no \
+    -o StrictHostKeyChecking=accept-new \
     -o ExitOnForwardFailure=yes \
     -M -S "`$control" \
     -fnNT \

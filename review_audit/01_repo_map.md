@@ -1,275 +1,300 @@
-# Mapa do Repositorio — Desk Imperial
+# Mapa do Repositório — Desk Imperial
 
-**Data:** 2026-04-09
-**Caminho:** `C:\Users\Desktop\Documents\desk-imperial`
-**Branch:** master (PRs → main)
-**Total:** ~54k linhas TS/TSX, ~69k arquivos totais (incluindo node_modules, dist, cache)
+**Data:** 2026-04-10  
+**Escopo revalidado:** código atual + configs + docs canônicas + execução técnica local
 
 ---
 
-## 1. Estrutura Macro
+## 1. Leitura Executiva
 
-```
+O `desk-imperial` é um monorepo full-stack voltado a operação comercial de pequenos e médios comerciantes brasileiros. A forma geral do sistema é consistente: `apps/api` concentra a regra de negócio, `apps/web` concentra as superfícies de produto, `packages/types` compartilha contratos, e `infra/` materializa runtime local e operacional.
+
+O principal problema estrutural não é falta de módulos; é responsabilidade demais concentrada em poucos arquivos e poucos corredores de integração:
+
+- backend: `auth.service.ts`, `comanda.service.ts`, `operations-helpers.service.ts`
+- frontend: `DashboardShell`, `use-operations-realtime`, landing pública
+- plataforma: deploy/rollback, segredos locais e lacunas entre CI/documentação/runtime real
+
+---
+
+## 2. Inventário Técnico Revalidado
+
+### Stack principal
+
+| Camada | Tecnologia | Evidência |
+| --- | --- | --- |
+| Frontend | Next.js 16.1.7 + React 19 + TypeScript | `apps/web/package.json` |
+| Backend | NestJS 11 + TypeScript | `apps/api/package.json` |
+| ORM / Banco | Prisma 6.19.3 + PostgreSQL | `apps/api/package.json`, `apps/api/prisma/schema.prisma` |
+| Cache / rate limit | Redis + `ioredis` | `apps/api/package.json`, `apps/api/src/common/services/cache.service.ts` |
+| Realtime | Socket.IO + Redis adapter | `apps/api/package.json`, `apps/api/src/modules/operations-realtime.gateway.ts` |
+| Observabilidade API | OpenTelemetry OTLP + Pino/NestJS-Pino | `apps/api/src/common/utils/otel.util.ts`, `apps/api/src/app.module.ts` |
+| Observabilidade Web | Grafana Faro | `apps/web/lib/observability/faro.ts` |
+| Testes backend | Jest | `apps/api/package.json` |
+| Testes frontend | Vitest + Playwright | `apps/web/package.json` |
+| Testes de carga | k6 | `package.json`, `tests/load/k6/` |
+| Monorepo | npm workspaces + Turborepo | `package.json`, `turbo.json` |
+
+### Medição de superfície
+
+- `495` arquivos `ts/tsx` dentro de `apps/`, `packages/`, `infra/`, `scripts/` e `tests/`
+- `76.384` linhas nesses arquivos
+- `24` diretórios de migration Prisma versionados em `apps/api/prisma/migrations/`
+
+---
+
+## 3. Estrutura Macro do Repositório
+
+```text
 desk-imperial/
 ├── apps/
-│   ├── api/                    # NestJS backend (@partner/api)
-│   │   ├── src/
-│   │   │   ├── common/         # Utils, guards, interceptors, services compartilhados
-│   │   │   ├── database/       # Prisma service
-│   │   │   └── modules/        # Feature modules
-│   │   │       ├── admin-pin/
-│   │   │       ├── auth/       # 2433 linhas — modulo de autenticacao
-│   │   │       ├── consent/
-│   │   │       ├── employees/
-│   │   │       ├── finance/
-│   │   │       ├── geocoding/
-│   │   │       ├── mailer/
-│   │   │       ├── monitoring/ # Audit log
-│   │   │       ├── operations/ # Comanda, cash session, mesa
-│   │   │       ├── operations-realtime/
-│   │   │       ├── orders/
-│   │   │       └── products/
-│   │   ├── prisma/
-│   │   │   └── schema.prisma   # 598 linhas — 15 models
-│   │   ├── test/               # Testes backend
-│   │   ├── scripts/
-│   │   └── dist/               # Build output
-│   └── web/                    # Next.js 16 frontend (@partner/web)
-│       ├── app/                # App Router
-│       ├── components/         # Por dominio: auth, dashboard, marketing, pdv, operations, etc.
-│       ├── hooks/
-│       ├── lib/                # api.ts (1315 linhas), validation, utils
-│       ├── providers/
-│       ├── public/
-│       ├── scripts/
-│       ├── test/
-│       └── e2e/                # Playwright E2E
+│   ├── api/                    # NestJS backend
+│   └── web/                    # Next.js App Router
 ├── packages/
-│   └── types/
-│       └── src/
-│           └── contracts.ts    # 465 linhas — contratos compartilhados
+│   └── types/                  # contratos compartilhados
 ├── infra/
-│   ├── docker/
-│   │   ├── docker-compose.yml  # Postgres 16 + Redis 7
-│   │   ├── docker-compose.observability.yml
-│   │   └── observability/      # Grafana, Loki, Tempo, Prometheus, Alertmanager, Alloy, Blackbox
-│   ├── oracle/                 # Deploy Oracle Cloud
-│   │   ├── docker/
-│   │   ├── nginx/
-│   │   └── ops/
-│   └── scripts/
-├── tests/
-│   └── load/k6/               # Load tests com k6
-├── docs/                       # Documentacao extensa
-│   ├── agents/
-│   ├── architecture/
-│   ├── case-studies/
-│   ├── email/
-│   ├── frontend/
-│   ├── operations/
-│   ├── product/
-│   ├── release/
-│   ├── security/
-│   └── testing/
-├── scripts/                    # Scripts de automacao do repo
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml              # CI completa: lint, typecheck, tests, E2E, security, k6 latency gate
-│   │   ├── sonarqube.yml       # SonarQube scan
-│   │   └── ci-release-proposal.yml
-│   └── actions/setup-node-workspace/
-├── .local-tools/sonarqube-26.3.0.120487/  # SonarQube local
-├── .secrets/
-├── logs/
-└── .interface-design/
+│   ├── docker/                 # compose local + observability OSS
+│   ├── oracle/                 # runtime/orquestração Oracle
+│   └── scripts/                # automações de deploy/túnel
+├── docs/                       # arquitetura, produto, operação, segurança, release
+├── tests/load/k6/              # carga/latência
+├── scripts/                    # automações do monorepo
+└── review_audit/               # artefatos desta auditoria
 ```
 
----
+### Observação importante de drift documental
 
-## 2. Stack Tecnolog
-
-| Camada        | Tecnologia                                                 | Versao      |
-| ------------- | ---------------------------------------------------------- | ----------- |
-| Frontend      | Next.js 16 (Turbopack) + React 19 + TypeScript             | 5.9.3       |
-| Backend       | NestJS + TypeScript                                        | 5.9.3       |
-| Database      | Neon PostgreSQL (serverless)                               | Prisma ORM  |
-| Cache         | Redis (ioredis)                                            | 7-alpine    |
-| Realtime      | Socket.IO + Redis adapter                                  | -           |
-| Auth          | JWT + cookies HTTP-only + CSRF sessionStorage              | Argon2      |
-| Monorepo      | Turborepo + npm workspaces                                 | turbo 2.5.6 |
-| Styles        | Tailwind CSS + Framer Motion v12                           | -           |
-| Tests         | Jest (backend) + Vitest/Playwright (frontend)              | -           |
-| Load          | k6                                                         | -           |
-| CI            | GitHub Actions                                             | Node 22     |
-| Deploy        | Railway (web)                                              | -           |
-| Observability | Grafana + Loki + Tempo + Prometheus + Alertmanager + Alloy | -           |
-| Quality       | SonarQube 26.3.0                                           | -           |
-| Lint          | ESLint 9 + Prettier 3                                      | -           |
-| Hooks         | Husky + lint-staged                                        | -           |
+O código atual só confirma `packages/types` como pacote compartilhado ativo. O [README](C:/Users/Desktop/Documents/desk-imperial/README.md) ainda descreve `packages/config` e `packages/ui`, que não existem no estado atual do repositório.
 
 ---
 
-## 3. Modulos do Sistema
+## 4. Backend — Entry Points e Domínios
 
-| Modulo              | Caminho                                     | Linhas               | Descricao                                                                      |
-| ------------------- | ------------------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
-| Auth                | `apps/api/src/modules/auth/`                | 2433 (service)       | Login, registro, JWT, refresh, email verification, password reset, demo access |
-| Operations          | `apps/api/src/modules/operations/`          | 1607+1451 (services) | Comanda, mesa, cash session, kitchen                                           |
-| Products            | `apps/api/src/modules/products/`            | 772                  | CRUD produtos, combos, import                                                  |
-| Orders              | `apps/api/src/modules/orders/`              | 726                  | Pedidos, historico                                                             |
-| Finance             | `apps/api/src/modules/finance/`             | 540+558              | KPIs, relatorios, analytics                                                    |
-| Employees           | `apps/api/src/modules/employees/`           | -                    | Folha, ranking, metas                                                          |
-| Admin PIN           | `apps/api/src/modules/admin-pin/`           | -                    | PIN 4 digitos, rate limit                                                      |
-| Monitoring          | `apps/api/src/modules/monitoring/`          | -                    | Audit log                                                                      |
-| Mailer              | `apps/api/src/modules/mailer/`              | -                    | Templates de email                                                             |
-| Geocoding           | `apps/api/src/modules/geocoding/`           | -                    | Endereco, coordenadas                                                          |
-| Consent             | `apps/api/src/modules/consent/`             | -                    | LGPD, cookies                                                                  |
-| Operations Realtime | `apps/api/src/modules/operations-realtime/` | -                    | Socket.IO events                                                               |
+### Boot e composição
 
----
+- Entry point: [apps/api/src/main.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/main.ts)
+- Módulo raiz: [apps/api/src/app.module.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/app.module.ts)
+- Prefixo global HTTP: `/api`
+- Health endpoints:
+  - `/api/health`
+  - `/api/health/ready`
+  - `/api/health/live`
 
-## 4. Arquivos Mais Criticos (por tamanho)
+### Módulos carregados
 
-### Backend (>500 linhas)
+| Módulo | Evidência |
+| --- | --- |
+| `auth` | `apps/api/src/modules/auth/` |
+| `admin-pin` | `apps/api/src/modules/admin-pin/` |
+| `consent` | `apps/api/src/modules/consent/` |
+| `currency` | `apps/api/src/modules/currency/` |
+| `employees` | `apps/api/src/modules/employees/` |
+| `finance` | `apps/api/src/modules/finance/` |
+| `geocoding` | `apps/api/src/modules/geocoding/` |
+| `health` | `apps/api/src/modules/health/` |
+| `mailer` | `apps/api/src/modules/mailer/` |
+| `market-intelligence` | `apps/api/src/modules/market-intelligence/` |
+| `monitoring` | `apps/api/src/modules/monitoring/` |
+| `operations` | `apps/api/src/modules/operations/` |
+| `operations-realtime` | `apps/api/src/modules/operations-realtime/` |
+| `orders` | `apps/api/src/modules/orders/` |
+| `products` | `apps/api/src/modules/products/` |
 
-| Arquivo                         | Linhas | Risco                             |
-| ------------------------------- | ------ | --------------------------------- |
-| `auth.service.ts`               | 2433   | **CRITICO** — God service         |
-| `comanda.service.ts`            | 1607   | **ALTO** — Complexidade cognitiva |
-| `operations-helpers.service.ts` | 1451   | **ALTO** — God helper             |
-| `products.service.ts`           | 772    | Medio                             |
-| `orders.service.ts`             | 726    | Medio                             |
-| `finance-analytics.util.ts`     | 558    | Medio                             |
-| `finance.service.ts`            | 540    | Medio                             |
-| `cash-session.service.ts`       | 495    | Medio                             |
+### Endpoints HTTP confirmados
 
-### Frontend (>500 linhas)
+Principais controllers confirmados por decorators:
 
-| Arquivo                             | Linhas | Risco    |
-| ----------------------------------- | ------ | -------- |
-| `commercial-calendar.tsx`           | 833    | **ALTO** |
-| `salao-environment.tsx`             | 797    | **ALTO** |
-| `dashboard-shell.tsx`               | 780    | **ALTO** |
-| `pdv-salao-unified.tsx`             | 763    | **ALTO** |
-| `staff-mobile-shell.tsx`            | 740    | Medio    |
-| `owner-mobile-shell.tsx`            | 740    | Medio    |
-| `desk-command-center-prototype.tsx` | 730    | Medio    |
-| `landing-page.tsx`                  | 722    | Medio    |
-| `pdv-comanda-modal.tsx`             | 639    | Medio    |
-| `caixa-panel.tsx`                   | 585    | Medio    |
-| `product-form.tsx`                  | 579    | Medio    |
-| `pdv-board.tsx`                     | 570    | Medio    |
-| `mobile-comanda-list.tsx`           | 563    | Medio    |
-| `register-form.tsx`                 | 541    | Medio    |
-| `order-form.tsx`                    | 528    | Medio    |
+- `auth/*`
+- `admin/*`
+- `employees/*`
+- `products/*`
+- `orders/*`
+- `operations/*`
+- `finance/*`
+- `market-intelligence/insights`
+- `consent/*`
+- `geocoding/postal-code/lookup`
+- `health`, `health/ready`, `health/live`
 
-### Testes
+### Fluxos críticos de negócio confirmados no backend
 
-| Arquivo                                     | Linhas | Tipo               |
-| ------------------------------------------- | ------ | ------------------ |
-| `use-operations-realtime.test.ts`           | 2048   | Frontend hook test |
-| `products.service.spec.ts`                  | 1251   | Backend unit       |
-| `auth.service.coverage-boost.spec.ts`       | 988    | Backend unit       |
-| `finance.service.spec.ts`                   | 912    | Backend unit       |
-| `validation.test.ts`                        | 802    | Frontend util      |
-| `operations-helpers.branches.spec.ts`       | 786    | Backend branch     |
-| `orders.service.spec.ts`                    | 738    | Backend unit       |
-| `auth.service.session-and-recovery.spec.ts` | 677    | Backend session    |
-| `auth.service.spec.ts`                      | 662    | Backend unit       |
-
-**Total de arquivos de teste (source): 122**
+1. Registro + consentimento + geocoding + verificação de email
+2. Login + sessão por cookie + CSRF + rate limit
+3. Operação ao vivo: caixa, comandas, cozinha, mesas, fechamento
+4. Pedidos: criação, baixa de estoque, cancelamento e reversão
+5. Financeiro: resumo executivo e indicadores (`summary` + `pillars`)
+6. Produto/portfólio: CRUD e importação
+7. Insight IA: `market-intelligence`
 
 ---
 
-## 5. Schema do Banco (15 Models)
+## 5. Frontend — Superfícies, Rotas e Composição
 
-| Model              | Campos Chave                                            | Relacionamentos                                          |
-| ------------------ | ------------------------------------------------------- | -------------------------------------------------------- |
-| User               | id, email, passwordHash, adminPinHash, role             | Workspace members, sessions, products, orders, employees |
-| Session            | id, tokenHash, expiresAt, revokedAt                     | User, Employee, WorkspaceOwner, DemoAccessGrant          |
-| DemoAccessGrant    | id, userId, sessionId, dayKey, expiresAt                | User, Session                                            |
-| PasswordResetToken | id, userId, tokenHash, expiresAt                        | User                                                     |
-| OneTimeCode        | id, userId, email, purpose, codeHash                    | User                                                     |
-| ConsentDocument    | id, key, version, kind, required                        | UserConsents                                             |
-| UserConsent        | id, userId, documentId, acceptedAt                      | User, Document                                           |
-| CookiePreference   | id, userId, analytics, marketing                        | User                                                     |
-| AuditLog           | id, actorUserId, event, resource, severity              | User                                                     |
-| Product            | id, userId, name, category, unitPrice, stock            | User, OrderItems, ComandaItems, Combos                   |
-| ProductComboItem   | id, comboProductId, componentProductId                  | Product (self-ref)                                       |
-| Employee           | id, userId, employeeCode, salarioBase, percentualVendas | User, Orders, CashSessions, Comandas                     |
-| CashSession        | id, companyOwnerId, businessDate, status                | User, Employee, Movements, Comandas                      |
-| CashMovement       | id, cashSessionId, type, amount                         | CashSession, User, Employee                              |
-| CashClosure        | id, companyOwnerId, businessDate, status                | User                                                     |
-| Mesa               | id, companyOwnerId, label, capacity                     | User, Comandas                                           |
-| Comanda            | id, companyOwnerId, status, totalAmount                 | User, CashSession, Mesa, Employee, Items                 |
-| ComandaItem        | id, comandaId, productId, quantity, unitPrice           | Comanda, Product                                         |
-| ComandaAssignment  | id, comandaId, employeeId, assignedByUserId             | User, Comanda, Employee                                  |
-| Order              | id, userId, comandaId, totalRevenue, totalProfit        | User, Comanda, Employee, Items                           |
-| OrderItem          | id, orderId, productId, quantity, unitPrice             | Order, Product                                           |
+### Superfícies principais
 
----
+| Superfície | Rotas | Observação |
+| --- | --- | --- |
+| Marketing | `/` | landing pública |
+| Auth | `/login`, `/cadastro`, `/verificar-email`, `/recuperar-senha`, `/redefinir-senha` | fluxos de identidade |
+| Dashboard | `/dashboard`, `/dashboard/configuracoes` | painel executivo principal |
+| App móvel/operacional | `/app`, `/app/owner`, `/app/staff` | shells mobile owner/staff |
+| IA | `/ai` | superfície dedicada |
+| Design Lab | `/design-lab` | laboratório/protótipo |
+| Rotas utilitárias | `/api/health`, `/api/postal-code/lookup` | rotas do próprio Next |
 
-## 6. Integracoes Externas
+### Entry points relevantes
 
-| Integracao             | Uso                                       | Config                                            |
-| ---------------------- | ----------------------------------------- | ------------------------------------------------- |
-| Neon PostgreSQL        | Database principal                        | DATABASE_URL, DIRECT_URL                          |
-| Redis (local/Oracle)   | Cache + rate limit + Socket.IO            | REDIS_URL                                         |
-| Railway                | Deploy do web                             | `railway up --service imperial-desk-web`          |
-| OpenTelemetry          | Tracing (importado em operations-helpers) | @opentelemetry/api                                |
-| Grafana Faro           | Frontend observability                    | `apps/web/lib/observability/faro.ts` (456 linhas) |
-| MapLibre / OpenFreeMap | Mapa de vendas                            | NEXT_PUBLIC_MAP_STYLE_URL                         |
-| Gemini (Google AI)     | Insights de vendas                        | Cache 900s                                        |
+- Root layout: [apps/web/app/layout.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/layout.tsx)
+- Home pública: [apps/web/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/page.tsx)
+- Dashboard: [apps/web/app/dashboard/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/dashboard/page.tsx)
+- App router mobile: [apps/web/app/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/page.tsx)
+
+### Observações de arquitetura frontend
+
+- há organização por domínio em `components/marketing`, `components/dashboard`, `components/pdv`, `components/operations`, `components/owner-mobile`, `components/staff-mobile`;
+- `DashboardShell` e `use-operations-realtime` seguem como pontos centrais de coordenação;
+- a home pública hoje é um ponto sensível porque depende de `next/dynamic(..., { ssr: false })` na rota raiz.
 
 ---
 
-## 7. CI/CD Pipeline
+## 6. Dados, Contratos e Persistência
 
-### Jobs (ci.yml):
+### Banco e schema
 
-1. **quality** — Lint + Typecheck (10 min)
-2. **backend-tests** — Jest com coverage (15 min)
-3. **frontend-unit** — Vitest unit tests (12 min)
-4. **frontend-e2e** — Playwright Chromium (20 min)
-5. **security** — repo:scan-public + dependency-review + security:audit-runtime (8 min)
-6. **performance-latency-gate** — k6 load test com Postgres+Redis services (20 min)
-7. **build** — Build all workspaces (20 min) — depende de todos os anteriores
+- Schema: [apps/api/prisma/schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma)
+- Migrations: `24` diretórios em `apps/api/prisma/migrations/`
 
-### SonarQube (sonarqube.yml):
+### Entidades/dominios persistidos confirmados
 
-- Trigger: push/PR/main
-- Roda API + web coverage
-- Usa SonarSource/sonarqube-scan-action v7.1.0
+- `User`, `Session`, `OneTimeCode`, `PasswordResetToken`
+- `ConsentDocument`, `UserConsent`, `CookiePreference`
+- `AuditLog`
+- `Product`, `ProductComboItem`
+- `Employee`
+- `CashSession`, `CashMovement`, `CashClosure`
+- `Mesa`, `Comanda`, `ComandaItem`, `ComandaAssignment`
+- `Order`, `OrderItem`
 
----
+### Contratos compartilhados
 
-## 8. Observability Stack
+- pacote único: [packages/types](C:/Users/Desktop/Documents/desk-imperial/packages/types)
+- ponto central: [packages/types/src/contracts.ts](C:/Users/Desktop/Documents/desk-imperial/packages/types/src/contracts.ts)
 
-| Componente   | Path                                       | Funcao                          |
-| ------------ | ------------------------------------------ | ------------------------------- |
-| Grafana      | `infra/docker/observability/grafana/`      | Dashboards                      |
-| Loki         | `infra/docker/observability/loki/`         | Log aggregation                 |
-| Tempo        | `infra/docker/observability/tempo/`        | Distributed tracing             |
-| Prometheus   | `infra/docker/observability/prometheus/`   | Metrics                         |
-| Alertmanager | `infra/docker/observability/alertmanager/` | Alertas                         |
-| Alloy        | `infra/docker/observability/alloy/`        | Coleta de dados (Grafana Alloy) |
-| Blackbox     | `infra/docker/observability/blackbox/`     | Probe externo                   |
+Risco arquitetural: o pacote compartilhado ainda ajuda alinhamento API ↔ web, mas já está largo o suficiente para virar gargalo sem organização por subdomínio.
 
 ---
 
-## 9. Papéis de Usuario
+## 7. Infra, Deploy e Operação
 
-| Role  | Acesso                                           |
-| ----- | ------------------------------------------------ |
-| OWNER | Tudo — todas as secoes, configuracoes, admin PIN |
-| STAFF | Apenas `sales`, `pdv`, `calendario`              |
+### Local
+
+- Banco/Redis: [infra/docker/docker-compose.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/docker-compose.yml)
+- Observabilidade OSS: [infra/docker/docker-compose.observability.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/docker-compose.observability.yml)
+
+### Operação Oracle
+
+- runtime e estratégia: `infra/oracle/`
+- stack operacional/observability: `infra/oracle/ops/`
+- scripts principais:
+  - `infra/scripts/oracle-builder-deploy.ps1`
+  - `infra/scripts/oracle-ops-tunnel.ps1`
+  - `infra/scripts/railway-start.sh`
+
+### CI atual revalidada
+
+Jobs existentes em [ci.yml](C:/Users/Desktop/Documents/desk-imperial/.github/workflows/ci.yml):
+
+1. `Quality (Lint + Typecheck)`
+2. `Backend Tests`
+3. `Frontend Unit Tests`
+4. `Frontend E2E (Chromium Baseline)`
+5. `Security Checks`
+6. `Performance Latency Gate`
+
+### Gap operacional relevante
+
+O workflow atual não tem gate explícito de build full-stack / `next build`. Isso é importante porque a execução local desta auditoria confirmou falha de build no web.
 
 ---
 
-## 10. Regras de Negocio Criticas
+## 8. Hotspots de Churn e Complexidade
 
-1. **Workspace isolation** — toda query filtra por `companyOwnerId`
-2. **Admin PIN** — 4 digitos, rate limit Redis (3 tentativas / 5 min → lock 5 min)
-3. **CPF/CNPJ** — validacao algoritmica real
-4. **Cache invalidation** — mutacoes devem invalidar cache correspondente
-5. **Decimal precision** — `Decimal(10,2)` para monetario, `Decimal(12,2)` para caixa
+### Hotspots por churn git (últimos 180 dias)
+
+| Arquivo | Mudanças |
+| --- | ---: |
+| `apps/web/components/marketing/landing-page.tsx` | 74 |
+| `apps/web/app/globals.css` | 66 |
+| `apps/web/components/dashboard/dashboard-shell.tsx` | 62 |
+| `apps/api/src/modules/auth/auth.service.ts` | 36 |
+| `apps/web/lib/api.ts` | 29 |
+| `apps/web/components/staff-mobile/staff-mobile-shell.tsx` | 28 |
+| `apps/web/components/pdv/pdv-board.tsx` | 27 |
+| `apps/web/components/dashboard/salao-environment.tsx` | 25 |
+| `apps/web/components/owner-mobile/owner-mobile-shell.tsx` | 25 |
+| `apps/web/components/operations/use-operations-realtime.ts` | 22 |
+
+### Hotspots por tamanho de arquivo
+
+| Arquivo | Linhas |
+| --- | ---: |
+| `apps/api/src/modules/auth/auth.service.ts` | 2152 |
+| `apps/api/src/modules/operations/operations-helpers.service.ts` | 1338 |
+| `apps/api/src/modules/operations/comanda.service.ts` | 1160 |
+| `apps/web/components/operations/use-operations-realtime.ts` | 1019 |
+| `apps/web/components/calendar/commercial-calendar.tsx` | 765 |
+| `apps/web/components/dashboard/salao-environment.tsx` | 728 |
+| `apps/web/components/pdv/pdv-salao-unified.tsx` | 715 |
+| `apps/api/src/modules/products/products.service.ts` | 711 |
+| `apps/web/components/dashboard/dashboard-shell.tsx` | 701 |
+| `apps/web/components/owner-mobile/owner-mobile-shell.tsx` | 697 |
+
+### Leitura dos hotspots
+
+- `landing-page.tsx` e `app/page.tsx` merecem atenção imediata porque hoje acumulam churn alto e quebram build/E2E.
+- `auth.service.ts`, `DashboardShell` e `use-operations-realtime.ts` são hotspots simultaneamente por churn e concentração de responsabilidade.
+- `operations-helpers.service.ts` e `comanda.service.ts` seguem como núcleo operacional de alto risco por complexidade e impacto financeiro.
+
+---
+
+## 9. Ferramentas e Comandos Descobertos
+
+### Monorepo
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
+- `npm run test:critical`
+- `npm run build`
+- `npm run repo:scan-public`
+- `npm run security:audit-runtime`
+
+### Backend
+
+- `npm --workspace @partner/api run test`
+- `npm --workspace @partner/api run test:e2e`
+- `npm --workspace @partner/api run prisma:migrate:dev`
+- `npm --workspace @partner/api run prisma:migrate:deploy`
+
+### Frontend
+
+- `npm --workspace @partner/web run test`
+- `npm --workspace @partner/web run test:e2e`
+- `npm --workspace @partner/web run test:e2e:critical`
+
+### Carga
+
+- `npm run test:load:critical`
+- `npm run test:load:ci`
+
+---
+
+## 10. Conclusão do Mapa
+
+O repositório está longe de ser desorganizado. Há domínios claros, setup técnico robusto e infraestrutura observável. O diagnóstico real é mais específico:
+
+1. há boa forma macro;
+2. há drift documental material;
+3. há buracos relevantes entre CI e runtime real;
+4. há concentração excessiva de responsabilidade em poucos arquivos críticos;
+5. os principais riscos hoje estão em build/release safety, segredos/infra, integridade operacional e acoplamento entre domínios centrais.

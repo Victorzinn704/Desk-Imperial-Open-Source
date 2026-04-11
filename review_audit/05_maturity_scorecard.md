@@ -1,48 +1,46 @@
 # Scorecard de Maturidade — Desk Imperial
 
-**Data:** 2026-04-09
-**Escala:** 0 (inexistente) a 5 (excelencia/industria de elite)
+**Data:** 2026-04-10  
+**Escala:** `0` inexistente · `5` excelência
 
 ---
 
-| Dimensao               | Score | Justificativa                                                                                                                                                                                                                 |
-| ---------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Arquitetura**        | 3/5   | Modularizacao por dominio no backend e boa. Mas god services (auth 2433 linhas, operations-helpers 1451) e god files frontend (api.ts 1315 linhas) indicam divida estrutural. Schema Prisma excelente.                        |
-| **Backend**            | 3/5   | NestJS bem organizado por modulos, com guards, interceptors, DTOs, cache com Redis, transacoes Serializable. Mas arquivos gigantes comprometem manutenibilidade. Auth service com 2433 linhas e inaceitavel para longo prazo. |
-| **Frontend**           | 3/5   | Next.js 16 com App Router, componentes por dominio, design system proprio, animacoes Framer Motion. Mas componentes muito grandes (calendar 833, shell 780, pdv 763) e api.ts com 1315 linhas.                                |
-| **Seguranca**          | 4/5   | Argon2 para senhas, JWT com cookies HTTP-only + CSRF, rate limiting via Redis, Admin PIN, input hardening, audit log, LGPD consent. Pontos fortes. Falta apenas auditoria de dependencias no CI.                              |
-| **DevOps**             | 4/5   | CI pipeline excelente (7 jobs, k6 gate, security scan), Docker Compose, observability stack completo. Deploy manual via Railway e o ponto fraco — deveria ser automatizado.                                                   |
-| **Observabilidade**    | 5/5   | Grafana + Loki + Tempo + Prometheus + Alertmanager + Alloy + Blackbox + Faro frontend. Stack de nivel enterprise. Raro em projetos deste porte.                                                                               |
-| **Testes**             | 4/5   | 122 arquivos de teste, cobertura de backend e frontend, E2E com Playwright, load tests com k6, branch coverage. Pontos fortes.                                                                                                |
-| **Documentacao**       | 4/5   | Pasta `docs/` com 9 subdiretorios (architecture, security, product, testing, etc.). CLAUDE.md bem escrito. README nao verificado.                                                                                             |
-| **DX**                 | 4/5   | Turborepo, Husky, lint-staged, scripts bem definidos, SonarQube local, native bindings install. Setup local pode ser complexo para novos devs.                                                                                |
-| **UX/UI**              | 3/5   | Design system proprio, animacoes, dark theme, responsividade. Nao auditei em profundidade ainda. Componentes grandes podem indicar UX complexa demais.                                                                        |
-| **Performance**        | 4/5   | Cache Redis com TTLs definidos, k6 latency gate no CI, dynamic imports, Turbopack. Queries N+1 nao verificadas ainda.                                                                                                         |
-| **Governanca Tecnica** | 4/5   | CI com gates de qualidade, SonarQube, dependency review, lint-staged, Husky. Deploy manual e a maior falha de governanca.                                                                                                     |
-| **Produto**            | 3/5   | PDV, financeiro, calendario, folha, operacoes RT — escopo amplo e coerente para micro-empreendedores. Nao auditei fluxos de usuario em profundidade.                                                                          |
+| Dimensão | Score | Leitura objetiva |
+| --- | ---: | --- |
+| Arquitetura | 2.5/5 | Forma macro boa, mas com ciclos e acoplamento estrutural relevantes |
+| Backend | 3.0/5 | Base sólida em NestJS/Prisma, porém com problemas reais de integridade, cache e autorização |
+| Frontend | 2.5/5 | Design system razoável, mas build quebrado, home client-only e roteamento crítico no cliente |
+| Segurança | 2.5/5 | Fundamentos fortes, mas segredos plaintext, vulns de runtime e vazamentos em logs derrubam a nota |
+| DevOps / Plataforma | 2.5/5 | CI útil e observável, porém rollback, backup/DR e SSH ainda são frágeis |
+| Observabilidade | 3.5/5 | Stack ampla e bem instrumentada, mas correlação e alertas de produto/segurança ainda incompletos |
+| Testes | 2.5/5 | Quantidade alta, mas cobertura/gates desbalanceados e pouca proteção E2E operacional |
+| Documentação | 2.5/5 | Existe bastante material, mas há drift material nas fontes principais |
+| DX | 3.0/5 | Monorepo, scripts e tooling são bons; previsibilidade sofre com docs desalinhadas e cobertura crítica ainda desigual |
+| UX/UI | 3.0/5 | Boa base visual, mas rotas críticas com spinner/redirect client-side e affordances incompletas |
+| Performance | 3.0/5 | Há preocupação com cache, queries escopadas e virtualização, mas ainda existem groupBy sem contenção e hotspots grandes |
+| Governança técnica | 2.5/5 | Há disciplina parcial, porém CI, segredos e documentação canônica ainda não fecham o ciclo |
+| Produto | 3.5/5 | Proposta forte e coerente com o público-alvo; os principais gaps estão na confiabilidade da entrega |
 
 ---
 
-## Resumo
+## Pontos Fortes Reais
 
-| Faixa               | Score Medio                                 | Avaliacao                          |
-| ------------------- | ------------------------------------------- | ---------------------------------- |
-| **Media Geral**     | **3.5/5**                                   | **Bom+**                           |
-| **Melhor dimensao** | Observabilidade (5/5)                       | Nivel elite                        |
-| **Pior dimensao**   | Arquitetura, Backend, Frontend, UX/UI (3/5) | Divida tecnica em arquivos grandes |
+1. Stack full-stack moderna e consistente
+2. Observabilidade implantada de ponta a ponta em código
+3. Pipeline já possui lint, typecheck, testes, audit e latency gate
+4. Domínio de produto claro e com valor operacional concreto
+5. Migrations Prisma versionadas e health endpoints implementados
 
-### Pontos Fortes
+## Fatores que mais derrubam a maturidade
 
-1. Observabilidade de nivel enterprise
-2. CI pipeline com gates de qualidade, seguranca e performance
-3. Schema Prisma bem modelado com indices compostos
-4. Seguranca robusta (Argon2, JWT HTTP-only, CSRF, rate limiting, audit log)
-5. 122 arquivos de teste com E2E e load testing
-6. Documentacao extensa em `docs/`
+1. Build real do web quebrado no estado atual do branch
+2. Segredos plaintext e rollback/DR fracos
+3. Problemas confirmados de integridade e autorização no backend
+4. Estratégia de testes mais ampla do que efetiva nas áreas críticas
+5. Drift documental suficiente para induzir decisão errada
 
-### Pontos Fracos
+## Síntese
 
-1. God services/files (auth 2433 linhas, operations-helpers 1451, api.ts 1315)
-2. Deploy manual via Railway sem automatizacao CI
-3. Arquivos frontend > 500 linhas (15+ arquivos)
-4. NPM_CONFIG_AUDIT desabilitado no CI
+Maturidade geral estimada: **2.8/5**.
+
+Leitura prática: o projeto já passou da fase de protótipo e tem boa densidade técnica, mas ainda não está em nível de excelência operacional. O gargalo principal hoje não é construir novas features; é **fechar o ciclo entre código, pipeline, docs e operação real**.

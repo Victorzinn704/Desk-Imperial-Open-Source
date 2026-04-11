@@ -16,7 +16,7 @@ Esta pasta materializa a camada operacional da `vm-free-02`.
 - A ingestão OTLP do Alloy fica no IP privado da VCN (`OPS_PRIVATE_IP`) para a API enviar telemetria sem expor porta pública.
 - O acesso humano deve ser feito por túnel SSH.
 - O `node-exporter` da produção fica preso em `127.0.0.1` na `vm-free-01`; o Prometheus acessa por um proxy SSH interno no compose da `vm-free-02`.
-- As credenciais reais ficam em `/opt/desk-ops/credentials.txt` na VM e na cópia local ignorada pelo Git em `.secrets/ops-credentials.txt`.
+- As credenciais reais devem ficar fora do repositório, em secret manager ou arquivo local ignorado pelo Git.
 
 ## Portas via túnel
 
@@ -27,7 +27,7 @@ ssh -i $env:TEMP\desk_oci_key.pem `
   -L 9093:127.0.0.1:9093 `
   -L 9000:127.0.0.1:9000 `
   -L 12345:127.0.0.1:12345 `
-  ubuntu@147.15.60.224
+  <OPS_HOST>
 ```
 
 Depois do túnel:
@@ -49,7 +49,7 @@ Atalho do repositório:
 ## Variáveis de produção recomendadas para a API
 
 ```env
-OTEL_EXPORTER_OTLP_ENDPOINT=http://10.10.1.166:4318
+OTEL_EXPORTER_OTLP_ENDPOINT=http://<OPS_PRIVATE_IP>:4318
 OTEL_TRACES_SAMPLE_RATE=0.03
 OTEL_METRICS_EXPORT_INTERVAL_MS=15000
 OTEL_SERVICE_NAME=desk-imperial-api
@@ -92,7 +92,7 @@ Serviços esperados como `up`:
 
 - URL via túnel: `http://localhost:9000`
 - Project key: `desk-imperial`
-- Token de CI: salvo em `.secrets/ops-credentials.txt` e `/opt/desk-ops/credentials.txt`
+- Token de CI: manter somente em secret manager ou arquivo local ignorado pelo Git
 
 Como o SonarQube está privado por segurança, um runner GitHub hospedado pela própria GitHub não enxerga esse endpoint diretamente. Para CI contínuo, use um destes caminhos:
 

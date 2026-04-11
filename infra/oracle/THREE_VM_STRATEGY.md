@@ -33,8 +33,8 @@ Serviços:
 - Loki: `127.0.0.1:3100`
 - Tempo: `127.0.0.1:3200`
 - Alloy UI: `127.0.0.1:12345`
-- Alloy OTLP HTTP privado: `10.10.1.166:4318`
-- Alloy OTLP gRPC privado: `10.10.1.166:4317`
+- Alloy OTLP HTTP privado: `<OPS_PRIVATE_IP>:4318`
+- Alloy OTLP gRPC privado: `<OPS_PRIVATE_IP>:4317`
 
 O acesso humano deve usar túnel SSH:
 

@@ -19,8 +19,8 @@ Fase inicial da migracao para stack OSS com foco em baixo overhead:
 - O frontend ja possui Grafana Faro integrado ao runtime e aos boundaries de erro
 - O stack local provisiona Alloy, Tempo, Loki, Prometheus, Alertmanager, Grafana e Blackbox
 - O receiver Faro local agora esta fechado na Alloy oficial do stack OSS em `http://localhost:12347/collect`; `NEXT_PUBLIC_FARO_COLLECTOR_URL` continua sendo a variavel que aponta para esse endpoint no runtime do frontend
-- Em Oracle Cloud, a stack operacional persistente roda na `vm-free-02` em `/opt/desk-ops`, com UIs presas em `127.0.0.1` e ingestao OTLP exposta apenas no IP privado `10.10.1.166`
-- A API de producao na `vm-free-01` ja aponta para `OTEL_EXPORTER_OTLP_ENDPOINT=http://10.10.1.166:4318`
+- Em Oracle Cloud, a stack operacional persistente roda na `vm-free-02` em `/opt/desk-ops`, com UIs presas em `127.0.0.1` e ingestao OTLP exposta apenas no IP privado configurado em `OPS_PRIVATE_IP`
+- A API de producao na `vm-free-01` deve apontar para `OTEL_EXPORTER_OTLP_ENDPOINT=http://<OPS_PRIVATE_IP>:4318`
 
 ## Variaveis de ambiente
 
@@ -98,8 +98,8 @@ Serviços na `vm-free-02`:
 - Loki: `127.0.0.1:3100`
 - Tempo: `127.0.0.1:3200`
 - Alloy UI: `127.0.0.1:12345`
-- Alloy OTLP HTTP: `10.10.1.166:4318`
-- Alloy OTLP gRPC: `10.10.1.166:4317`
+- Alloy OTLP HTTP: `<OPS_PRIVATE_IP>:4318`
+- Alloy OTLP gRPC: `<OPS_PRIVATE_IP>:4317`
 
 Abrir acesso local:
 

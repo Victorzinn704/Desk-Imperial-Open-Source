@@ -45,13 +45,19 @@ modules/
 
 **Arquivos principais:**
 
-- `auth.service.ts` — lógica de login, registro, logout, verificação de e-mail, reset de senha
-- `auth.controller.ts` — endpoints HTTP de autenticação
-- `auth-rate-limit.service.ts` — controle de taxa por domínio de operação
+- `auth.service.ts` — orquestrador; delega para os 5 serviços especializados
+- `auth-session.service.ts` — sessao, cache, cookies, CSRF, validacao de token
+- `auth-login.service.ts` — login owner/staff, login demo, resolucao de atores
+- `auth-registration.service.ts` — cadastro de usuario, geocodificacao, consentimento
+- `auth-password.service.ts` — solicitacao e execucao de reset de senha
+- `auth-email-verification.service.ts` — emissao e validacao de codigo OTP de email
+- `auth-shared.util.ts` — selects, helpers e utilitarios compartilhados
+- `auth.controller.ts` — endpoints HTTP de autenticacao
+- `auth-rate-limit.service.ts` — controle de taxa por dominio de operacao
 - `demo-access.service.ts` — conta demo com limite de tempo
-- `guards/session.guard.ts` — guard obrigatório em todas as rotas privadas
-- `guards/csrf.guard.ts` — guard obrigatório em todas as mutações autenticadas
-- `decorators/current-auth.decorator.ts` — injeta sessão atual nos controllers
+- `guards/session.guard.ts` — guard obrigatorio em todas as rotas privadas
+- `guards/csrf.guard.ts` — guard obrigatorio em todas as mutacoes autenticadas
+- `decorators/current-auth.decorator.ts` — injeta sessao atual nos controllers
 
 **Endpoints relevantes:**
 

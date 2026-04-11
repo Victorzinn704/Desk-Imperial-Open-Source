@@ -1,548 +1,295 @@
-# Log Cumulativo de Achados — Desk Imperial Audit
+# Log Cumulativo de Achados — Desk Imperial
 
-**Data:** 2026-04-09
-**Projeto:** `C:\Users\Desktop\Documents\desk-imperial`
-
----
-
-## P0 — Critico / Imediato
-
-### ACH-025: Modelo User monolitico no Prisma (50+ campos, 25+ relacoes)
-
-- **Dominio:** Arquitetura / Dados
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/prisma/schema.prisma:88-146` — User contem dados de usuario + empresa + workspace + endereco tudo junto
-- **Impacto:** Impede evoluir entidades independentemente, migrations complexas, acoplamento total
-- **Recomendacao:** Extrair `Company`/`Workspace` como modelos separados com relacao 1:N para User
-- **Esforco:** Alto (5-7 dias, requer migration cuidadosa)
-- **Confianca:** 100%
-
-### ACH-026: `getWeekStart` no PillarsService usa domingo como inicio de semana
-
-- **Dominio:** Backend / Logica de Negocio
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/finance/pillars.service.ts:199-204` — `Date.getDay()` retorna 0 para domingo
-- **Impacto:** Comparacoes week-over-week distorcidas para contexto comercial brasileiro (segunda = inicio)
-- **Recomendacao:** Usar ISO 8601 (segunda = dia 1) ou tornar configuravel
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
-
-### ACH-027: CSRF token derivado deterministicamente do sessionId via HMAC
-
-- **Dominio:** Seguranca
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/auth/auth.service.ts:139` — `createHmac('sha256', secret).update('csrf:${sessionId}')`
-- **Impacto:** Se atacante obter CSRF_SECRET + sessionId valido, pode forjar tokens CSRF para qualquer sessao
-- **Recomendacao:** Usar token aleatorio armazenado em Redis, nao derivado do sessionId
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-028: Cancelamento de order restaura estoque sem protecao de concorrencia
-
-- **Dominio:** Backend / Dados
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/orders/orders.service.ts:515-554` — `updateMany` sem condicao `where` de seguranca
-- **Impacto:** Race condition pode corromper estoque sob concorrencia
-- **Recomendacao:** Usar `updateMany` com condicao `where` ou transacao Serializable
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-029: FinanceService faz queries groupBy sem limite
-
-- **Dominio:** Backend / Performance
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/finance/finance.service.ts:189-257` — 10 queries paralelas sem `take`
-- **Impacto:** Para tenants com milhares de clientes/regiones, queries retornam milhares de linhas, travando memoria
-- **Recomendacao:** Adicionar `take: 50` ou cursor-based pagination
-- **Esforco:** Baixo (2h)
-- **Confianca:** 100%
-
-### ACH-030: CSP desabilitado no Helmet
-
-- **Dominio:** Seguranca
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/main.ts:94-105` — `contentSecurityPolicy: false`
-- **Impacto:** Sem protecao contra XSS via CSP header
-- **Recomendacao:** Habilitar CSP com `default-src: 'none'` como minimo
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
+**Data:** 2026-04-10  
+**Critério:** apenas achados revalidados nesta rodada
 
 ---
 
-## P0 — Critico / Imediato
+## Resumo
 
-### ACH-000: Credenciais de operacao em texto puro no disco
-
-- **Dominio:** Seguranca / Infra
-- **Severidade:** Critico
-- **Evidencia:** `.secrets/ops-credentials.txt` — senhas do Grafana, SonarQube, CI token em texto puro
-- **Impacto:** Qualquer pessoa com acesso ao diretorio do projeto ve credenciais de producao. Se o `.gitignore` falhar ou alguem fizer push acidental, credenciais vazam publicamente.
-- **Status:** Nao versionado pelo git (`.secrets/` no `.gitignore`) — mas arquivo existe em texto puro
-- **Recomendacao:** Usar 1Password, Bitwarden, Vault, ou GitHub Secrets. Destruir arquivo local. Rotacionar todas as credenciais listadas.
-- **Esforco:** Baixo (1 dia para rotacionar + adotar password manager)
-- **Risco:** Baixo (apenas melhora seguranca)
-- **Confianca:** 100% (fato confirmado)
+| Prioridade | Qtde |
+| --- | ---: |
+| `P0` | 3 |
+| `P1` | 8 |
+| `P2` | 6 |
+| `P3` | 2 |
 
 ---
 
-## P0 — Critico / Imediato
+## P0 — Crítico / Imediato
 
-### ACH-001: `auth.service.ts` — God Service (2433 linhas)
+### AUD-001 — Build de produção do web está quebrado
 
-- **Dominio:** Backend / Arquitetura
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/auth/auth.service.ts` — 2433 linhas
-- **Impacto:** Manutenibilidade, testabilidade, onboarding de devs
-- **Recomendacao:** Extrair em servicos menores: `password.service.ts`, `session.service.ts`, `email-verification.service.ts`, `demo-access.service.ts`, `profile.service.ts`
-- **Esforco:** Medio (3-5 dias)
-- **Risco:** Baixo (extracao pura, sem mudanca de comportamento)
-- **Confianca:** 100% (fato confirmado)
+- **Domínio:** Frontend / Release
+- **Severidade:** Crítico
+- **Prioridade:** P0
+- **Classificação:** confirmado por execução
+- **Evidência:** `npm run build` falhou porque [apps/web/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/page.tsx:3) usa `dynamic(..., { ssr: false })` em Server Component; o mesmo erro derrubou `npm --workspace @partner/web run test:e2e:critical`
+- **Impacto:** bloqueia release do frontend
+- **Recomendação:** mover essa carga dinâmica para Client Component intermediário ou devolver a home para SSR
+- **Esforço:** baixo
+- **Confiança:** muito alta
 
-### ACH-002: `comanda.service.ts` — Cognitive Complexity (1607 linhas)
+### AUD-003 — Cancelamento de pedido pode restaurar estoque duas vezes sob concorrência
 
-- **Dominio:** Backend / Code Quality
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/operations/comanda.service.ts` — 1607 linhas
-- **Impacto:** SonarQube S3776, manutenibilidade, risco de bugs
-- **Recomendacao:** Extrair metodos: `buildComandaResponse`, `validateComandaOperation`, `emitComandaEvent`. Extrair sub-services para kitchen, assignments
-- **Esforco:** Medio (3-5 dias)
-- **Confianca:** 100%
+- **Domínio:** Backend / Integridade de dados
+- **Severidade:** Crítico
+- **Prioridade:** P0
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** relatório [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md); fluxo em [apps/api/src/modules/orders/orders.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/orders.service.ts:494) e [apps/api/src/modules/orders/orders.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/orders.service.ts:543)
+- **Impacto:** corrupção de estoque e divergência financeira
+- **Recomendação:** tornar cancelamento idempotente e revalidar status dentro da transação
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-003: `operations-helpers.service.ts` — God Helper (1451 linhas)
+### AUD-004 — Segredos operacionais estão em texto puro no workspace
 
-- **Dominio:** Backend / Code Quality
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/operations/operations-helpers.service.ts` — 1451 linhas
-- **Impacto:** "Helper" nao deveria ter 1451 linhas — indica vazamento de responsabilidade de dominio
-- **Recomendacao:** Renomear e decompor em `kitchen.service.ts`, `cash-calculator.ts`, `operations-reporter.ts`
-- **Esforco:** Medio-Alto (5-7 dias, requer cuidado com dependencias)
-- **Confianca:** 100%
-
-### ACH-004: `api.ts` — God File Frontend (1315 linhas)
-
-- **Dominio:** Frontend / Arquitetura
-- **Severidade:** Critico
-- **Evidencia:** `apps/web/lib/api.ts` — 1315 linhas
-- **Impacto:** Todas as chamadas de API em um unico arquivo, dificil manutencao
-- **Recomendacao:** Separar por dominio: `api/products.ts`, `api/orders.ts`, `api/auth.ts`, `api/finance.ts`, `api/employees.ts`
-- **Esforco:** Baixo-Medio (2-3 dias)
-- **Confianca:** 100%
-
-### ACH-005: `use-operations-realtime.ts` — Hook gigante (1258 linhas)
-
-- **Dominio:** Frontend / Code Quality
-- **Severidade:** Critico
-- **Evidencia:** `apps/web/components/operations/use-operations-realtime.ts` — 1258 linhas
-- **Impacto:** Hook com logica excessiva, dificil de testar e manter
-- **Recomendacao:** Decompor em hooks menores: `useComandaSocket`, `useKitchenState`, `useCashSessionEvents`, `useOperationsTelemetry`
-- **Esforco:** Medio (3-5 dias)
-- **Confianca:** 100%
+- **Domínio:** Segurança / Infra
+- **Severidade:** Crítico
+- **Prioridade:** P0
+- **Classificação:** fato confirmado
+- **Evidência:** [.env](C:/Users/Desktop/Documents/desk-imperial/.env:11), [.env](C:/Users/Desktop/Documents/desk-imperial/.env:12), [infra/oracle/ops/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/ops/README.md:19), [infra/oracle/ops/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/ops/README.md:95)
+- **Impacto:** exposição direta de credenciais de banco, observabilidade, e-mail e tokens
+- **Recomendação:** mover para secret manager, apagar cópias plaintext e rotacionar imediatamente
+- **Esforço:** baixo-médio
+- **Confiança:** muito alta
 
 ---
 
-## P1 — Alto / Prioritario
+## P1 — Alto / Prioritário
 
-### ACH-006: Arquivos > 500 linhas (15+ arquivos)
+### AUD-005 — `STAFF` arquivado pode continuar autenticado por cache de sessão
 
-- **Dominio:** Code Quality
+- **Domínio:** Backend / Autorização
 - **Severidade:** Alto
-- **Evidencia:** 8 arquivos backend + 15 arquivos frontend acima de 500 linhas
-- **Impacto:** Manutenibilidade geral do projeto
-- **Recomendacao:** Estabelecer limite de 400 linhas por arquivo no ESLint (`max-lines`)
-- **Confianca:** 100%
+- **Prioridade:** P1
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md), [apps/api/src/modules/auth/auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1508), [apps/api/src/modules/employees/employees.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/employees/employees.service.ts:211)
+- **Impacto:** conta revogada pode operar por até o TTL do cache
+- **Recomendação:** revogar sessões e limpar `auth:session:*` ao desativar funcionário
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-007: Docker Compose — Senhas default fracas
+### AUD-006 — Dependências de runtime têm 8 vulnerabilidades conhecidas
 
-- **Dominio:** Infra / Seguranca
+- **Domínio:** Segurança / Supply chain
 - **Severidade:** Alto
-- **Evidencia:** `infra/docker/docker-compose.yml:9` — `POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-desk_imperial_change_me}`
-- **Impacto:** Se alguem subir o compose sem .env, banco fica com senha fraca
-- **Recomendacao:** Remover default, exigir `.env` ou falhar no startup
-- **Confianca:** 100%
+- **Prioridade:** P1
+- **Classificação:** confirmado por execução
+- **Evidência:** `npm audit --omit=dev --json` retornou `8` vulnerabilidades de produção (`7 high`, `1 moderate`), incluindo `next`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/swagger`, `@nestjs/config` e `nodemailer`
+- **Impacto:** CVEs conhecidas permanecem em runtime
+- **Recomendação:** atualizar dependências de produção e rerodar build/testes críticos
+- **Esforço:** médio
+- **Confiança:** muito alta
 
-### ACH-008: CI — `NPM_CONFIG_AUDIT: 'false'`
+### AUD-007 — CSV export do financeiro aceita formula injection
 
-- **Dominio:** Seguranca / Supply Chain
+- **Domínio:** Frontend / Segurança funcional
 - **Severidade:** Alto
-- **Evidencia:** `.github/workflows/ci.yml:19` — `NPM_CONFIG_AUDIT: 'false'`
-- **Impacto:** Vulnerabilidades de dependencias nao sao reportadas no CI
-- **Recomendacao:** Habilitar audit no CI, ou rodar `npm audit` como step separado
-- **Confianca:** 100%
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** [apps/web/components/dashboard/finance-orders-table.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/finance-orders-table.tsx:44), [apps/web/components/dashboard/finance-orders-table.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/finance-orders-table.tsx:72), relatório [frontend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/frontend-reviewer.md)
+- **Impacto:** export para Excel/Sheets pode carregar fórmulas executáveis ou corromper dados
+- **Recomendação:** centralizar encoder CSV seguro com escape e prefixo para células de risco
+- **Esforço:** baixo
+- **Confiança:** alta
 
-### ACH-009: `dashboard-shell.tsx` — Componente grande (780 linhas)
+### AUD-008 — Backend E2E existe, mas não entra na CI
 
-- **Dominio:** Frontend / Arquitetura
+- **Domínio:** QA / CI
 - **Severidade:** Alto
-- **Evidencia:** `apps/web/components/dashboard/dashboard-shell.tsx` — 780 linhas
-- **Impacto:** Shell gerencia 5 queries, 12 mutations, 4 ambientes de UI
-- **Recomendacao:** Extrair hooks de dados (`useDashboardData`), separar ambientes em componentes proprios
-- **Confianca:** 100%
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** [apps/api/package.json](C:/Users/Desktop/Documents/desk-imperial/apps/api/package.json:17), [ci.yml](C:/Users/Desktop/Documents/desk-imperial/.github/workflows/ci.yml:73), relatório [qa-test-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/qa-test-reviewer.md)
+- **Impacto:** regressão de integração backend pode passar pelo merge sem gate funcional real
+- **Recomendação:** adicionar job de API E2E contra Postgres/Redis efêmeros
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-010: `pdv-salao-unified.tsx` — 763 linhas
+### AUD-009 — Cobertura do web exclui áreas críticas e usa testes de “coverage boost”
 
-- **Dominio:** Frontend / Code Quality
+- **Domínio:** QA / Governança
 - **Severidade:** Alto
-- **Evidencia:** `apps/web/components/pdv/pdv-salao-unified.tsx` — 763 linhas
-- **Recomendacao:** Separar PDV board, salao view, comanda modal em componentes independentes
-- **Confianca:** 100%
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:19), [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:20), [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:39), [apps/api/test/auth.service.coverage-boost.spec.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/test/auth.service.coverage-boost.spec.ts:4)
+- **Impacto:** cobertura reportada superestima a proteção real
+- **Recomendação:** revisar exclusões, abandonar `all: false` no gate principal ou criar threshold por diretório crítico
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-011: Testes — Cobertura desigual
+### AUD-010 — Rollback é fraco porque migração roda no boot e deploy força recriação
 
-- **Dominio:** QA / Tests
+- **Domínio:** Infra / Release engineering
 - **Severidade:** Alto
-- **Evidencia:** 122 arquivos de teste, mas alguns servicos criticos tem testes enormes (1251 linhas para products.service.spec) indicando que um unico arquivo tenta cobrir tudo
-- **Impacto:** Manutenibilidade dos testes, fragilidade
-- **Recomendacao:** Dividir testes por caso de uso, nao por service file
-- **Confianca:** 80% (inferencia forte)
+- **Prioridade:** P1
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** [infra/scripts/oracle-builder-deploy.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-builder-deploy.ps1:264), [infra/oracle/docker/api.Dockerfile](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/docker/api.Dockerfile:69), [apps/api/package.json](C:/Users/Desktop/Documents/desk-imperial/apps/api/package.json:12), relatório [infra-devops-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/infra-devops-reviewer.md)
+- **Impacto:** migration ruim pode travar boot e tornar reversão lenta/manual
+- **Recomendação:** separar migração do boot e promover release por imagem/tag com rollback explícito
+- **Esforço:** médio-alto
+- **Confiança:** alta
+
+### AUD-011 — Backup/DR não está formalizado
+
+- **Domínio:** Infra / Continuidade
+- **Severidade:** Alto
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** [infra/oracle/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/README.md:29), relatório [infra-devops-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/infra-devops-reviewer.md)
+- **Impacto:** aumenta severamente RTO/RPO
+- **Recomendação:** definir RPO/RTO, automatizar backup e testar restore
+- **Esforço:** médio
+- **Confiança:** alta
+
+### AUD-012 — SSH operacional e de deploy desabilita verificação de host
+
+- **Domínio:** Infra / Segurança
+- **Severidade:** Alto
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** [infra/scripts/oracle-ops-tunnel.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-ops-tunnel.ps1:16), [infra/scripts/oracle-builder-deploy.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-builder-deploy.ps1:25)
+- **Impacto:** enfraquece confiança no alvo do deploy e do túnel operacional
+- **Recomendação:** ativar `StrictHostKeyChecking=yes` e fixar fingerprints
+- **Esforço:** baixo
+- **Confiança:** alta
+
+### AUD-013 — Dados sensíveis ainda vazam em logs
+
+- **Domínio:** Segurança / Privacidade
+- **Severidade:** Alto
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** `buyerDocument` existe no DTO de pedido em [create-order.dto.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/dto/create-order.dto.ts:62), mas a redaction atual não cobre esse alias em [app.module.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/app.module.ts:79); fallback de e-mail loga OTP em [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:50), [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:69) e [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:178)
+- **Impacto:** CPF/CNPJ e OTP podem parar em logs/observabilidade
+- **Recomendação:** redigir `buyerDocument`, proibir `EMAIL_PROVIDER=log` em produção e nunca registrar OTP em texto puro
+- **Esforço:** baixo
+- **Confiança:** alta
+
+### AUD-014 — Há ciclo explícito entre `auth`, `consent` e `geocoding`
+
+- **Domínio:** Arquitetura backend
+- **Severidade:** Alto
+- **Prioridade:** P1
+- **Classificação:** fato confirmado
+- **Evidência:** relatório [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
+- **Impacto:** reduz independência dos contextos de identidade/onboarding
+- **Recomendação:** extrair onboarding e quebrar ciclo por eventos/serviços intermediários
+- **Esforço:** médio-alto
+- **Confiança:** alta
+
+### AUD-015 — `operations`, `products` e `finance` formam corredor de invalidação acoplado
+
+- **Domínio:** Arquitetura / Domínio
+- **Severidade:** Alto
+- **Prioridade:** P1
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** relatório [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
+- **Impacto:** blast radius grande para mudanças operacionais e financeiras
+- **Recomendação:** mover warming/invalidação para handlers de aplicação/eventos e reduzir acoplamento síncrono
+- **Esforço:** médio-alto
+- **Confiança:** alta
 
 ---
 
-## P2 — Importante / Nao Urgente
+## P2 — Importante / Não urgente
 
-### ACH-012: Zero TODO/FIXME/HACK no codigo
+### AUD-016 — Mudança de moeda preferida não invalida caches monetários
 
-- **Dominio:** Code Quality
-- **Severidade:** Baixo (mas interessante)
-- **Evidencia:** `grep -r "TODO|FIXME|HACK" --include="*.ts" --include="*.tsx"` retornou 0 resultados
-- **Impacto:** Pode indicar boa disciplina OU divida tecnica nao documentada
-- **Recomendacao:** Usar markers para divida tecnica conhecida
-- **Confianca:** 100%
+- **Domínio:** Backend / Consistência funcional
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md), [apps/api/src/modules/auth/auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1438), [apps/api/src/common/services/cache.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/services/cache.service.ts:128)
+- **Impacto:** UI pode exibir moeda/totais antigos até expirar TTL
+- **Recomendação:** incluir moeda nas chaves ou invalidar explicitamente todos os caches monetários no update de perfil
+- **Esforço:** baixo-médio
+- **Confiança:** alta
 
-### ACH-013: `contracts.ts` — 465 linhas de contratos
+### AUD-017 — KPI semanal começa no domingo
 
-- **Dominio:** Arquitetura / Dados
-- **Severidade:** Medio
-- **Evidencia:** `packages/types/src/contracts.ts` — 465 linhas
-- **Impacto:** Arquivo unico de contratos pode crescer demais
-- **Recomendacao:** Separar por dominio: `contracts/auth.ts`, `contracts/operations.ts`, `contracts/finance.ts`
-- **Confianca:** 100%
+- **Domínio:** Backend / Analytics
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado
+- **Evidência:** [apps/api/src/modules/finance/pillars.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/finance/pillars.service.ts:72), [apps/api/src/modules/finance/pillars.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/finance/pillars.service.ts:198)
+- **Impacto:** distorce leitura semanal para contexto comercial brasileiro
+- **Recomendação:** adotar semana ISO ou tornar configurável
+- **Esforço:** baixo
+- **Confiança:** alta
 
-### ACH-014: `faro.ts` — 456 linhas de observabilidade frontend
+### AUD-018 — CSRF por `Referer` aceita prefixo em vez de origem exata
 
-- **Dominio:** Frontend / Observabilidade
-- **Severidade:** Medio
-- **Evidencia:** `apps/web/lib/observability/faro.ts` — 456 linhas
-- **Impacto:** Arquivo de observabilidade muito grande para uma lib
-- **Recomendacao:** Separar configuracao, instrumentacao, e utilitarios
-- **Confianca:** 100%
+- **Domínio:** Segurança
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado
+- **Evidência:** [apps/api/src/modules/auth/guards/csrf.guard.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/guards/csrf.guard.ts:50), relatório [security-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/security-reviewer.md)
+- **Impacto:** enfraquece a defesa CSRF quando `Origin` está ausente
+- **Recomendação:** parsear e comparar origem normalizada, não prefixo
+- **Esforço:** baixo
+- **Confiança:** alta
 
-### ACH-015: Deploy — `railway up` antes do `git push`
+### AUD-019 — Rotas `/app` ainda resolvem autenticação e destino no cliente
 
-- **Dominio:** DevOps / Governanca
-- **Severidade:** Medio
-- **Evidencia:** CLAUDE.md — "Sempre `railway up` ANTES do `git push`"
-- **Impacto:** Risco de deploy sem rastreabilidade no git, dificuldade de rollback
-- **Recomendacao:** Automatizar deploy via CI/CD apos merge no main
-- **Confianca:** 100%
+- **Domínio:** Frontend / UX / Performance
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado + inferência forte
+- **Evidência:** [apps/web/app/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/page.tsx:1), [apps/web/app/app/owner/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/owner/page.tsx:1), [apps/web/app/app/staff/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/staff/page.tsx:1)
+- **Impacto:** adiciona spinner/redirect pós-hidratação em superfícies operacionais
+- **Recomendação:** empurrar decisão de rota/autorização para server-side ou reduzir o número de passos client-only
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-016: `commercial-calendar.tsx` — 833 linhas
+### AUD-020 — E2E do web quase não atravessa fluxos operacionais pós-login
 
-- **Dominio:** Frontend / Code Quality
-- **Severidade:** Alto
-- **Evidencia:** `apps/web/components/calendar/commercial-calendar.tsx` — 833 linhas
-- **Recomendacao:** Separar calendario base, eventos, DnD, toolbar em componentes
-- **Confianca:** 100%
+- **Domínio:** QA / Produto
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado
+- **Evidência:** relatório [qa-test-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/qa-test-reviewer.md)
+- **Impacto:** regressões em PDV, operations e mobile podem passar com CI verde
+- **Recomendação:** adicionar ao menos um fluxo E2E owner/staff/PDV/operations
+- **Esforço:** médio
+- **Confiança:** alta
 
----
+### AUD-021 — Documentação principal tem drift material
 
-## P3 — Melhorias Evolutivas
-
-### ACH-017: Observability stack completo mas complexo
-
-- **Dominio:** Infra / Observabilidade
-- **Severidade:** Baixo
-- **Evidencia:** 7 componentes de observabilidade (Grafana, Loki, Tempo, Prometheus, Alertmanager, Alloy, Blackbox)
-- **Impacto:** Custo operacional alto para um projeto em fase inicial
-- **Recomendacao:** Avaliar se todos os componentes sao necessarios agora; considerar hosted solution (Grafana Cloud)
-- **Confianca:** 80%
-
-### ACH-018: SonarQube local no repo (`.local-tools/`)
-
-- **Dominio:** Infra / DX
-- **Severidade:** Baixo
-- **Evidencia:** `.local-tools/sonarqube-26.3.0.120487/` — instalacao local do SonarQube
-- **Impacto:** Peso no repo, dificuldade de atualizacao
-- **Recomendacao:** Usar SonarQube via Docker ou cloud
-- **Confianca:** 100%
-
-### ACH-019: `desk-command-center-prototype.tsx` — 730 linhas de "design lab"
-
-- **Dominio:** Frontend / Code Quality
-- **Severidade:** Baixo
-- **Evidencia:** `apps/web/components/design-lab/desk-command-center-prototype.tsx` — 730 linhas
-- **Impacto:** Parece ser codigo experimental/prototipo
-- **Recomendacao:** Avaliar se deve ir para producao ou ser removido
-- **Confianca:** 70% (hipotese)
-
-### ACH-020: Prisma — Migrations existem e estao versionadas
-
-- **Dominio:** Dados / DevOps
-- **Severidade:** Baixo (resolvido)
-- **Evidencia:** `apps/api/prisma/migrations/` — 19 migrations de 2026-03-14 a 2026-03-26
-- **Status:** Resolvido — migrations estao no repo, bem nomeadas e datadas
+- **Domínio:** Documentação / DX
+- **Severidade:** Médio
+- **Prioridade:** P2
+- **Classificação:** fato confirmado
+- **Evidência:** [README.md](C:/Users/Desktop/Documents/desk-imperial/README.md:200) e [docs/testing/testing-guide.md](C:/Users/Desktop/Documents/desk-imperial/docs/testing/testing-guide.md:84) ainda descrevem build como gate da CI; [docs/product/requirements.md](C:/Users/Desktop/Documents/desk-imperial/docs/product/requirements.md:237) marca “Deploy contínuo via Railway com zero downtime” como implementado; [README.md](C:/Users/Desktop/Documents/desk-imperial/README.md:214) descreve pacotes inexistentes
+- **Impacto:** onboarding e decisão técnica partem de premissas erradas
+- **Recomendação:** alinhar README/docs/CLAUDE ao runtime e à pipeline reais
+- **Esforço:** médio
+- **Confiança:** muito alta
 
 ---
 
-## Novos achados dos subagentes (Fase 2)
+## P3 — Evolutivo
 
-### ACH-025: Modelo User monolitico no Prisma (50+ campos, 25+ relacoes)
+### AUD-022 — `DashboardShell` e `use-operations-realtime` concentram coordenação demais
 
-- **Dominio:** Arquitetura / Dados
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/prisma/schema.prisma:88-146` — User contem dados de usuario + empresa + workspace + endereco tudo junto
-- **Impacto:** Impede evoluir entidades independentemente, migrations complexas, acoplamento total
-- **Recomendacao:** Extrair `Company`/`Workspace` como modelos separados com relacao 1:N para User
-- **Esforco:** Alto (5-7 dias, requer migration cuidadosa)
-- **Confianca:** 100%
+- **Domínio:** Frontend / Arquitetura
+- **Severidade:** Baixo-Médio
+- **Prioridade:** P3
+- **Classificação:** inferência forte
+- **Evidência:** [apps/web/components/dashboard/dashboard-shell.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/dashboard-shell.tsx), [apps/web/components/operations/use-operations-realtime.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/operations/use-operations-realtime.ts), relatórios [frontend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/frontend-reviewer.md) e [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
+- **Impacto:** reduz testabilidade e aumenta custo de mudança
+- **Recomendação:** quebrar shell por responsabilidade e decompor patching de realtime
+- **Esforço:** médio
+- **Confiança:** alta
 
-### ACH-026: `getWeekStart` no PillarsService usa domingo como inicio de semana
+### AUD-023 — Observabilidade existe, mas alertas e correlação ainda são parciais
 
-- **Dominio:** Backend / Logica de Negocio
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/finance/pillars.service.ts:199-204` — `Date.getDay()` retorna 0 para domingo
-- **Impacto:** Comparacoes week-over-week distorcidas para contexto comercial brasileiro (segunda = inicio)
-- **Recomendacao:** Usar ISO 8601 (segunda = dia 1) ou tornar configuravel
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
-
-### ACH-027: CSRF token derivado deterministicamente do sessionId via HMAC
-
-- **Dominio:** Seguranca
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/auth/auth.service.ts:139` — `createHmac('sha256', secret).update('csrf:${sessionId}')`
-- **Impacto:** Se atacante obter CSRF_SECRET + sessionId valido, pode forjar tokens CSRF para qualquer sessao
-- **Recomendacao:** Usar token aleatorio armazenado em Redis, nao derivado do sessionId
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-028: Cancelamento de order restaura estoque sem protecao de concorrencia
-
-- **Dominio:** Backend / Dados
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/orders/orders.service.ts:515-554` — `updateMany` sem condicao `where` de seguranca
-- **Impacto:** Race condition pode corromper estoque sob concorrencia
-- **Recomendacao:** Usar `updateMany` com condicao `where` ou transacao Serializable
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-029: FinanceService faz queries groupBy sem limite
-
-- **Dominio:** Backend / Performance
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/modules/finance/finance.service.ts:189-257` — 10 queries paralelas sem `take`
-- **Impacto:** Para tenants com milhares de clientes/regiones, queries retornam milhares de linhas, travando memoria
-- **Recomendacao:** Adicionar `take: 50` ou cursor-based pagination
-- **Esforco:** Baixo (2h)
-- **Confianca:** 100%
-
-### ACH-030: CSP desabilitado no Helmet
-
-- **Dominio:** Seguranca
-- **Severidade:** Critico
-- **Evidencia:** `apps/api/src/main.ts:94-105` — `contentSecurityPolicy: false`
-- **Impacto:** Sem protecao contra XSS via CSP header
-- **Recomendacao:** Habilitar CSP com `default-src: 'none'` como minimo
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
-
-### ACH-031: Admin PIN rate limiting depende exclusivamente de Redis
-
-- **Dominio:** Seguranca
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/modules/admin-pin/admin-pin.service.ts` — sem fallback se Redis indisponivel
-- **Impacto:** Se Redis cair, PIN rate limiting desabilita silenciosamente
-- **Recomendacao:** Adicionar fallback em memoria ou bloquear operacoes sensíveis sem Redis
-- **Esforco:** Medio (1 dia)
-- **Confianca:** 100%
-
-### ACH-032: PrismaService nao implementa OnModuleDestroy
-
-- **Dominio:** Backend / Infra
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/database/prisma.service.ts` — sem `onModuleDestroy()` para fechar conexoes
-- **Impacto:** Em graceful shutdown, conexoes Prisma podem ficar abertas, causando connection leak
-- **Recomendacao:** Implementar `onModuleDestroy()` chamando `this.$disconnect()`
-- **Esforco:** Baixo (15min)
-- **Confianca:** 100%
-
-### ACH-033: `buyerDocument` no CreateOrderDto valida apenas length, nao algoritmo
-
-- **Dominio:** Backend / Validacao
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/modules/orders/dto/create-order.dto.ts:59-62` — `@MinLength(11)`, `@MaxLength(14)` sem validacao de CPF/CNPJ
-- **Impacto:** Documentos invalidos sao aceitos
-- **Recomendacao:** Custom validator com algoritmo real de CPF/CNPJ
-- **Esforco:** Baixo (2h)
-- **Confianca:** 100%
-
-### ACH-034: MarketIntelligenceService envia dados financeiros completos para Gemini
-
-- **Dominio:** Seguranca / Privacidade
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/modules/market-intelligence/market-intelligence.service.ts:107-133`
-- **Impacto:** Dados financeiros sensíveis enviados para API externa (Google)
-- **Recomendacao:** Anonimizar ou agregar dados antes de enviar para LLM externo
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-035: `.dockerignore` inexistente
-
-- **Dominio:** Infra / Seguranca
-- **Severidade:** Alto
-- **Evidencia:** Nenhum `.dockerignore` encontrado no repo
-- **Impacto:** `COPY . .` envia `.env`, `node_modules`, `.secrets/`, `.claude/` para contexto Docker
-- **Recomendacao:** Criar `.dockerignore` excluindo `.env*`, `node_modules`, `.secrets/`, `.claude/`, `.local-tools/`
-- **Esforco:** Baixo (30min)
-- **Confianca:** 100%
-
-### ACH-036: Prisma migrate deploy no CMD do container
-
-- **Dominio:** Infra / DevOps
-- **Severidade:** Alto
-- **Evidencia:** `infra/oracle/docker/api.Dockerfile:69` — migrations rodando no CMD do container
-- **Impacto:** Race condition em multiplas replicas
-- **Recomendacao:** Separar migrations em initContainer ou job one-off
-- **Esforco:** Medio (1 dia)
-- **Confianca:** 100%
-
-### ACH-037: Sem health check endpoint na API
-
-- **Dominio:** Infra / DevOps
-- **Severidade:** Alto
-- **Evidencia:** Nenhum endpoint `/health`, `/healthz`, `/ready` encontrado
-- **Impacto:** Railway nao consegue determinar saude da API, sem rolling restarts adequados
-- **Recomendacao:** Implementar `/health` com checks de DB, Redis, e disco
-- **Esforco:** Baixo (2h)
-- **Confianca:** 100%
-
-### ACH-038: OperationsService como facade puro (90% delegacao)
-
-- **Dominio:** Arquitetura
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/modules/operations/operations.service.ts:75-185` — metodos apenas delegam para CashSessionService e ComandaService
-- **Impacto:** Camada desnecessaria de indirecao, acoplamento extra
-- **Recomendacao:** Controller injeta servicos diretamente, eliminar OperationsService facade
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-039: `common/utils/workspace-access.util.ts` importa de `modules/auth/auth.types`
-
-- **Dominio:** Arquitetura
-- **Severidade:** Alto
-- **Evidencia:** `apps/api/src/common/utils/workspace-access.util.ts:2` — `common` depende de `modules/auth`
-- **Impacto:** Viola hierarquia de camadas — `common` deveria ser a camada mais baixa
-- **Recomendacao:** Mover `AuthContext` para `common/types/` ou `packages/types/`
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
-
-### ACH-040: `is-kitchen-category` duplicado frontend/backend
-
-- **Dominio:** Code Quality
-- **Severidade:** Medio
-- **Evidencia:** `apps/api/src/common/utils/is-kitchen-category.util.ts` vs `apps/web/lib/is-kitchen-category.ts`
-- **Impacto:** Duplicacao de logica, risco de divergencia
-- **Recomendacao:** Mover para `packages/types/src/`
-- **Esforco:** Baixo (30min)
-- **Confianca:** 100%
-
-### ACH-041: Sem versionamento de API (nenhum prefixo `/v1/`)
-
-- **Dominio:** Arquitetura / API
-- **Severidade:** Medio
-- **Evidencia:** Nenhum prefixo de versao nos routes do NestJS
-- **Impacto:** Breaking changes futuras sem caminho de migracao
-- **Recomendacao:** Adicionar prefixo `/v1/` em todos os endpoints
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-042: `LazyMotionDiv`, `LazyAnimatePresence` nao usados (codigo morto)
-
-- **Dominio:** Frontend / Code Quality
-- **Severidade:** Medio
-- **Evidencia:** `apps/web/components/shared/lazy-components.tsx` — exports nao importados em nenhum lugar
-- **Impacto:** Bundle size desnecessario
-- **Recomendacao:** Remover exports nao usados ou deletar arquivo
-- **Esforco:** Baixo (15min)
-- **Confianca:** 100%
-
-### ACH-043: `--accent` token discrepancy
-
-- **Dominio:** Frontend / Design System
-- **Severidade:** Medio
-- **Evidencia:** CLAUDE.md diz `--accent: #9b8460` (dourado), CSS tem `--accent: #008cff` (azul)
-- **Impacto:** Inconsistencia visual entre documentacao e implementacao
-- **Recomendacao:** Alinhar documentacao com implementacao ou vice-versa
-- **Esforco:** Baixo (15min)
-- **Confianca:** 100%
-
-### ACH-044: `finance-categories-sidebar.tsx` usa cores hard-coded inline
-
-- **Dominio:** Frontend / Design System
-- **Severidade:** Medio
-- **Evidencia:** `apps/web/components/dashboard/finance-categories-sidebar.tsx:24-30` — `#36f57c`, `#C9A84C`, `#f04438` inline
-- **Impacto:** Sistema dual de cores (CSS tokens + inline), dificil manutencao
-- **Recomendacao:** Usar CSS custom properties ou Tailwind tokens
-- **Esforco:** Baixo (1h)
-- **Confianca:** 100%
-
-### ACH-045: Acessibilidade — aria-labels quase inexistentes
-
-- **Dominio:** Frontend / Acessibilidade
-- **Severidade:** Alto
-- **Evidencia:** Apenas 1 `aria-label` encontrado em todo o frontend (`sales-map-canvas.tsx:134`)
-- **Impacto:** Leitores de tela nao conseguem navegar pelo dashboard
-- **Recomendacao:** Adicionar `aria-label`, `role`, `aria-live` em componentes interativos
-- **Esforco:** Medio (2-3 dias)
-- **Confianca:** 100%
-
-### ACH-046: Portugues sem acentos no copy
-
-- **Dominio:** Frontend / UX
-- **Severidade:** Medio
-- **Evidencia:** Todo copy usa portugues sem acentos: "formulario", "disponivel", "operacao"
-- **Impacto:** Profissionalismo reduzido, acessibilidade de leitores de tela comprometida
-- **Recomendacao:** Usar portugues com acentos corretos
-- **Esforco:** Medio (1-2 dias)
-- **Confianca:** 100%
-
-### ACH-047: Textos abaixo do minimo recomendado (10px)
-
-- **Dominio:** Frontend / Acessibilidade
-- **Severidade:** Medio
-- **Evidencia:** `finance-categories-sidebar.tsx:95, 132, 260` — `text-[10px]`
-- **Impacto:** Ilegivel em alguns dispositivos, abaixo do minimo WCAG
-- **Recomendacao:** Elevar para minimo 12px
-- **Esforco:** Baixo (30min)
-- **Confianca:** 100%
-
----
-
-## P4 — Oportunidades
-
-### ACH-021: CI pipeline excelente
-
-- **Dominio:** DevOps
-- **Severidade:** Oportunidade
-- **Evidencia:** `.github/workflows/ci.yml` — 7 jobs com dependencias, k6 latency gate, security scan
-- **Nota:** Pipeline muito madura para projeto deste porte. Ponto forte.
-
-### ACH-022: Observabilidade frontend com Grafana Faro
-
-- **Dominio:** Frontend / Observabilidade
-- **Severidade:** Oportunidade
-- **Evidencia:** `apps/web/lib/observability/faro.ts` — 456 linhas
-- **Nota:** Raro ver observabilidade frontend em projetos deste porte. Ponto forte.
-
-### ACH-023: Load testing com k6 integrado no CI
-
-- **Dominio:** QA / Performance
-- **Severidade:** Oportunidade
-- **Evidencia:** `tests/load/k6/critical-flows.js`, job `performance-latency-gate` no CI
-- **Nota:** Gate de latencia no CI e pratica de elite. Ponto forte.
-
-### ACH-024: Schema Prisma bem modelado
-
-- **Dominio:** Dados / Arquitetura
-- **Severidade:** Oportunidade
-- **Evidencia:** 15 models com indices compostos, relacoes bem definidas, enums tipados
-- **Nota:** Schema demonstra maturidade de modelagem. Indices em campos de busca frequente.
+- **Domínio:** Observabilidade / SRE
+- **Severidade:** Baixo-Médio
+- **Prioridade:** P3
+- **Classificação:** fato confirmado + risco potencial
+- **Evidência:** [infra/docker/docker-compose.observability.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/docker-compose.observability.yml), [infra/docker/observability/prometheus/alert.rules.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/observability/prometheus/alert.rules.yml), [apps/web/lib/observability/faro.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/lib/observability/faro.ts), [apps/api/src/common/utils/otel.util.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/utils/otel.util.ts)
+- **Impacto:** boa detecção de indisponibilidade, mas cobertura incompleta para incidentes de produto/segurança
+- **Recomendação:** definir fluxo oficial browser → API → logs → audit log e ampliar alertas para SLO/security/business
+- **Esforço:** médio
+- **Confiança:** média-alta
