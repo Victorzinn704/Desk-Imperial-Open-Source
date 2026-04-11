@@ -29,6 +29,10 @@ import {
   buildProductConsumptionMap,
   calculateEffectiveUnitCost,
 } from '../products/product-combo-consumption.util'
+import { resolveOrderSeller } from './orders-seller.utils'
+import { assertRequestedStockAvailability } from './orders-stock.utils'
+import { resolveBuyerLocation } from './orders-location.utils'
+import { assertDiscountAuthorization } from './orders-discount.utils'
 
 const orderProductInventoryInclude = {
   comboComponents: {
@@ -45,8 +49,6 @@ const orderProductInventoryInclude = {
     },
   },
 } as const
-
-const MAX_STAFF_DISCOUNT_PERCENT = 15
 
 const orderItemSelect = {
   id: true,
@@ -256,7 +258,7 @@ export class OrdersService {
     }
 
     const requestedStockByProduct = buildProductConsumptionMap(requestedItems, productsById)
-    this.assertRequestedStockAvailability(buildInventoryProductsById(products), requestedStockByProduct)
+    assertRequestedStockAvailability(buildInventoryProductsById(products), requestedStockByProduct)
 
     const customerName = sanitizePlainText(dto.customerName, 'Comprador', {
       allowEmpty: false,
@@ -299,9 +301,9 @@ export class OrdersService {
       throw new BadRequestException('Informe um CNPJ valido para a compra em nome de empresa.')
     }
 
-    const seller = await this.resolveOrderSeller(auth, workspaceUserId, dto.sellerEmployeeId)
+    const seller = await resolveOrderSeller(this.prisma, auth, workspaceUserId, dto.sellerEmployeeId)
 
-    const geocodedLocation = await this.resolveBuyerLocation({
+    const geocodedLocation = await resolveBuyerLocation(this.prisma, this.geocodingService, {
       userId: workspaceUserId,
       district: buyerDistrict,
       city: buyerCity,
@@ -347,12 +349,7 @@ export class OrdersService {
         lineProfit,
       }
     })
-    const discountAuthorization = await this.assertDiscountAuthorization({
-      workspaceUserId,
-      auth,
-      preparedItems,
-      request,
-    })
+    const discountAuthorization = await assertDiscountAuthorization(this.adminPinService, auth, workspaceUserId, request, preparedItems)
     const totalRevenue = roundCurrency(preparedItems.reduce((total, item) => total + item.lineRevenue, 0))
     const totalCost = roundCurrency(preparedItems.reduce((total, item) => total + item.lineCost, 0))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
@@ -477,29 +474,6 @@ export class OrdersService {
         snapshot,
       }),
     }
-  }
-
-  private async resolveOrderSeller(auth: AuthContext, workspaceUserId: string, sellerEmployeeId?: string) {
-    const employeeId = auth.role === 'STAFF' ? auth.employeeId : sellerEmployeeId
-    if (!employeeId) {
-      return null
-    }
-
-    const seller = await this.prisma.employee.findFirst({
-      where: { id: employeeId, userId: workspaceUserId, active: true },
-    })
-
-    if (auth.role === 'STAFF' && !seller) {
-      throw new ForbiddenException(
-        'Seu acesso de funcionario precisa estar vinculado a um colaborador ativo para registrar vendas.',
-      )
-    }
-
-    if (auth.role !== 'STAFF' && sellerEmployeeId && !seller) {
-      throw new BadRequestException('Selecione um funcionario ativo para registrar esta venda.')
-    }
-
-    return seller
   }
 
   async cancelForUser(auth: AuthContext, orderId: string, context: RequestContext) {
@@ -647,134 +621,6 @@ export class OrdersService {
         currencyService: this.currencyService,
         snapshot,
       }),
-    }
-  }
-
-  private assertRequestedStockAvailability(
-    productsById: Map<string, { name: string; stock: number }>,
-    requestedStockByProduct: Map<string, number>,
-  ) {
-    for (const [productId, requestedQuantity] of requestedStockByProduct.entries()) {
-      const product = productsById.get(productId)
-
-      if (!product) {
-        continue
-      }
-
-      if (product.stock < requestedQuantity) {
-        throw new BadRequestException(
-          `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock} und. Solicitado: ${requestedQuantity} und.`,
-        )
-      }
-    }
-  }
-
-  private async resolveBuyerLocation(input: {
-    userId: string
-    district: string | null
-    city: string
-    state: string | null
-    country: string
-  }) {
-    const existingOrder = await this.prisma.order.findFirst({
-      where: {
-        userId: input.userId,
-        buyerDistrict: input.district,
-        buyerCity: input.city,
-        buyerState: input.state,
-        buyerCountry: input.country,
-        buyerLatitude: {
-          not: null,
-        },
-        buyerLongitude: {
-          not: null,
-        },
-      },
-      select: {
-        buyerDistrict: true,
-        buyerCity: true,
-        buyerState: true,
-        buyerCountry: true,
-        buyerLatitude: true,
-        buyerLongitude: true,
-      },
-    })
-
-    if (existingOrder?.buyerLatitude != null && existingOrder?.buyerLongitude != null) {
-      return {
-        district: existingOrder.buyerDistrict,
-        city: existingOrder.buyerCity,
-        state: existingOrder.buyerState,
-        country: existingOrder.buyerCountry,
-        latitude: existingOrder.buyerLatitude,
-        longitude: existingOrder.buyerLongitude,
-        label: [
-          existingOrder.buyerDistrict,
-          existingOrder.buyerCity,
-          existingOrder.buyerState,
-          existingOrder.buyerCountry,
-        ]
-          .filter(Boolean)
-          .join(', '),
-      }
-    }
-
-    return this.geocodingService.geocodeCityLocation(input)
-  }
-
-  private async assertDiscountAuthorization(params: {
-    workspaceUserId: string
-    auth: AuthContext
-    request: Request
-    preparedItems: Array<{
-      product: {
-        id: string
-        name: string
-      }
-      quantity: number
-      defaultUnitPrice: number
-      unitPrice: number
-      discounted: boolean
-      discountPercent: number
-    }>
-  }) {
-    const discountedItems = params.preparedItems.filter((item) => item.discounted)
-
-    if (!discountedItems.length) {
-      return {
-        discountedItems,
-        maxDiscountPercent: 0,
-        adminPinValidated: false,
-      }
-    }
-
-    const maxDiscountPercent = discountedItems.reduce((current, item) => Math.max(current, item.discountPercent), 0)
-
-    if (params.auth.role !== 'OWNER' && maxDiscountPercent > MAX_STAFF_DISCOUNT_PERCENT) {
-      throw new ForbiddenException('Descontos acima de 15% so podem ser autorizados pelo dono da empresa.')
-    }
-
-    const ownerHasPin = await this.adminPinService.hasPinConfigured(params.workspaceUserId)
-
-    if (!ownerHasPin) {
-      return {
-        discountedItems,
-        maxDiscountPercent,
-        adminPinValidated: false,
-      }
-    }
-
-    const proof = this.adminPinService.extractVerificationProof(params.request)
-    const valid = await this.adminPinService.validateVerificationProof(params.auth, proof)
-
-    if (!valid) {
-      throw new ForbiddenException('Confirme o PIN do dono para aplicar desconto nesta venda.')
-    }
-
-    return {
-      discountedItems,
-      maxDiscountPercent,
-      adminPinValidated: true,
     }
   }
 }
