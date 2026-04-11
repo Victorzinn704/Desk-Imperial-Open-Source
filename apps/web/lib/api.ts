@@ -36,13 +36,29 @@ export { fetchFinanceSummary, fetchPillars, fetchMarketInsight } from './api-fin
 
 export {
   fetchOperationsLive,
+  fetchOperationsKitchen,
+  fetchOperationsSummary,
   fetchComandaDetails,
+  openComanda,
+  addComandaItem,
+  addComandaItems,
+  replaceComanda,
+  assignComanda,
+  updateComandaStatus,
+  cancelComanda,
+  closeComanda,
   openCashSession,
   closeCashClosure,
+  createCashMovement,
+  closeCashSession,
   updateKitchenItemStatus,
   fetchMesas,
   createMesa,
   updateMesa,
+  type OpenComandaPayload,
+  type ReplaceComandaPayload,
+  type CreateMesaInput,
+  type UpdateMesaInput,
 } from './api-operations'
 
 export {
@@ -56,14 +72,17 @@ export {
 export {
   lookupPostalCode,
   fetchConsentDocuments,
+  fetchConsentOverview,
   fetchOrders,
   createOrder,
   cancelOrder,
   updateCookiePreferences,
   fetchActivityFeed,
+  fetchLastLogins,
 } from './api-misc'
 
 // Re-export types from their source modules
-export type { AuthUser } from './api-auth'
+export type { AuthUser, AuthResponse, LoginPayload } from './api-auth'
 export type { EmployeeRecord } from './api-employees'
-export type { ActivityFeedEntry, CookiePreferencePayload, CookiePreferences } from './api-misc'
+export type { ActivityFeedEntry, CookiePreferencePayload } from './api-misc'
+export type { CookiePreferences } from './api-core'
