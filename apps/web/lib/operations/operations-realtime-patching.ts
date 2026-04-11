@@ -2,7 +2,6 @@ import type { QueryClient } from '@tanstack/react-query'
 import type {
   CashClosureStatus,
   CashSessionRecord,
-  ComandaItemRecord,
   ComandaRecord,
   ComandaStatus,
   KitchenItemStatus,

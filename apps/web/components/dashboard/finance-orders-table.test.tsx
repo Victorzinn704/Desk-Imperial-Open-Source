@@ -9,7 +9,6 @@ type RecentOrder = FinanceSummaryResponse['recentOrders'][number]
 describe('FinanceOrdersTable', () => {
   let createObjectURLMock: ReturnType<typeof vi.fn>
   let revokeObjectURLMock: ReturnType<typeof vi.fn>
-  let appendMock: ReturnType<typeof vi.fn>
   let removeMock: ReturnType<typeof vi.fn>
   let clickMock: ReturnType<typeof vi.fn>
 
