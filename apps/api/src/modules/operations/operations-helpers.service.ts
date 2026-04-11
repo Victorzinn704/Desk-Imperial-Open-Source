@@ -62,147 +62,18 @@ const OPERATIONS_KITCHEN_CACHE_TTL_SECONDS = 20
 const OPERATIONS_SUMMARY_CACHE_TTL_SECONDS = 20
 const DEFAULT_OWNER_OPERATOR_LABEL = 'Operacao de balcao'
 
-const employeeSnapshotSelect = {
-  id: true,
-  employeeCode: true,
-  displayName: true,
-  active: true,
-} as const
-
-const cashMovementSnapshotSelect = {
-  id: true,
-  cashSessionId: true,
-  employeeId: true,
-  type: true,
-  amount: true,
-  note: true,
-  createdAt: true,
-} as const
-
-const cashSessionSnapshotSelect = {
-  id: true,
-  companyOwnerId: true,
-  employeeId: true,
-  status: true,
-  businessDate: true,
-  openingCashAmount: true,
-  countedCashAmount: true,
-  expectedCashAmount: true,
-  differenceAmount: true,
-  grossRevenueAmount: true,
-  realizedProfitAmount: true,
-  notes: true,
-  openedAt: true,
-  closedAt: true,
-  movements: {
-    select: cashMovementSnapshotSelect,
-    orderBy: {
-      createdAt: 'asc' as const,
-    },
-  },
-} as const
-
-const cashSessionSnapshotWithoutMovementsSelect = {
-  id: true,
-  companyOwnerId: true,
-  employeeId: true,
-  status: true,
-  businessDate: true,
-  openingCashAmount: true,
-  countedCashAmount: true,
-  expectedCashAmount: true,
-  differenceAmount: true,
-  grossRevenueAmount: true,
-  realizedProfitAmount: true,
-  notes: true,
-  openedAt: true,
-  closedAt: true,
-} as const
-
-const cashSessionCompactRefSelect = {
-  id: true,
-} as const
-
-const comandaItemSnapshotSelect = {
-  id: true,
-  productId: true,
-  productName: true,
-  quantity: true,
-  unitPrice: true,
-  totalAmount: true,
-  notes: true,
-  kitchenStatus: true,
-  kitchenQueuedAt: true,
-  kitchenReadyAt: true,
-} as const
-
-const comandaSnapshotSelect = {
-  id: true,
-  companyOwnerId: true,
-  cashSessionId: true,
-  mesaId: true,
-  currentEmployeeId: true,
-  tableLabel: true,
-  customerName: true,
-  customerDocument: true,
-  participantCount: true,
-  status: true,
-  subtotalAmount: true,
-  discountAmount: true,
-  serviceFeeAmount: true,
-  totalAmount: true,
-  notes: true,
-  openedAt: true,
-  closedAt: true,
-  items: {
-    select: comandaItemSnapshotSelect,
-    orderBy: {
-      createdAt: 'asc' as const,
-    },
-  },
-} as const
-
-const comandaSnapshotCompactSelect = {
-  id: true,
-  companyOwnerId: true,
-  cashSessionId: true,
-  mesaId: true,
-  currentEmployeeId: true,
-  tableLabel: true,
-  customerName: true,
-  customerDocument: true,
-  participantCount: true,
-  status: true,
-  subtotalAmount: true,
-  discountAmount: true,
-  serviceFeeAmount: true,
-  totalAmount: true,
-  notes: true,
-  openedAt: true,
-  closedAt: true,
-} as const
-
-const cashClosureSnapshotSelect = {
-  status: true,
-  expectedCashAmount: true,
-  countedCashAmount: true,
-  differenceAmount: true,
-  grossRevenueAmount: true,
-  realizedProfitAmount: true,
-  openSessionsCount: true,
-  openComandasCount: true,
-} as const
-
-const mesaSnapshotSelect = {
-  id: true,
-  label: true,
-  capacity: true,
-  section: true,
-  positionX: true,
-  positionY: true,
-  active: true,
-  reservedUntil: true,
-} as const
+import {
+  cashClosureSnapshotSelect,
+  cashMovementSnapshotSelect,
+  cashSessionCompactRefSelect,
+  cashSessionSnapshotSelect,
+  cashSessionSnapshotWithoutMovementsSelect,
+  comandaItemSnapshotSelect,
+  comandaSnapshotCompactSelect,
+  comandaSnapshotSelect,
+  employeeSnapshotSelect,
+  mesaSnapshotSelect,
+} from './operations-snapshot-selects'
 
 function resolveCashSessionSelect(compactMode: boolean, includeCashMovements: boolean) {
   if (compactMode) {
