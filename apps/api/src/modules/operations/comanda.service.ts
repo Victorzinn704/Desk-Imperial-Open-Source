@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
@@ -41,10 +41,7 @@ import {
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import {
   buildCashClosurePayload,
-  buildOptionalOperationsSnapshot,
-  invalidateOperationsLiveCache,
   isOpenComandaStatus,
-  OPEN_COMANDA_STATUSES,
   resolveBusinessDate,
   toNumberOrZero,
 } from './operations-domain.utils'

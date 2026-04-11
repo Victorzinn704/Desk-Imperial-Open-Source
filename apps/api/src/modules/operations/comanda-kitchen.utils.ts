@@ -1,10 +1,9 @@
-import { ComandaStatus, KitchenItemStatus } from '@prisma/client'
+import { ComandaStatus, KitchenItemStatus, type Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import { toNumberOrZero } from './operations-domain.utils'
-import { isOpenComandaStatus } from './operations-domain.utils'
+import { isOpenComandaStatus, toNumberOrZero } from './operations-domain.utils'
 
 export async function propagateKitchenStatusToComanda(
-  tx: any,
+  tx: Prisma.TransactionClient,
   comanda: { id: string; status: ComandaStatus; cashSessionId: string | null; openedAt: Date },
   deriveComandaStatusFromKitchen: (
     kitchenItems: Array<{ kitchenStatus: KitchenItemStatus | null }>,
