@@ -39,7 +39,9 @@ export function isKitchenCategory(category: string): boolean {
     'kombucha',
     'smoothie',
   ]
-  if (DRINK_KEYWORDS.some((kw) => c.includes(kw))) return false
+  if (DRINK_KEYWORDS.some((kw) => c.includes(kw))) {
+    return false
+  }
 
   const FOOD_KEYWORDS = [
     'comida',

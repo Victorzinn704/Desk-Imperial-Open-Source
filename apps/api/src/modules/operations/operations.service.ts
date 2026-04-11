@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -22,10 +22,9 @@ import type { OperationsResponseOptionsDto } from './dto/operations-response-opt
 import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
 import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
 import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import { toMesaRecord, type MesaRecord } from './operations.types'
+import { type MesaRecord, toMesaRecord } from './operations.types'
 import type { CreateMesaDto } from './dto/create-mesa.dto'
 import type { UpdateMesaDto } from './dto/update-mesa.dto'
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { resolveBusinessDate } from './operations-domain.utils'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
@@ -213,7 +212,9 @@ export class OperationsService {
     const existing = await this.prisma.mesa.findUnique({
       where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label } },
     })
-    if (existing) throw new ConflictException(`Já existe uma mesa com o label "${label}".`)
+    if (existing) {
+      throw new ConflictException(`Já existe uma mesa com o label "${label}".`)
+    }
     const mesa = await this.prisma.mesa.create({
       data: {
         companyOwnerId: workspaceOwnerUserId,
@@ -252,7 +253,9 @@ export class OperationsService {
     assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
-    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) throw new NotFoundException('Mesa não encontrada.')
+    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) {
+      throw new NotFoundException('Mesa não encontrada.')
+    }
     await this.assertMesaLabelAvailable(workspaceOwnerUserId, mesa.label, dto.label)
     const reservedUntil = this.parseReservedUntil(dto.reservedUntil)
 
@@ -304,17 +307,25 @@ export class OperationsService {
   }
 
   private async assertMesaLabelAvailable(workspaceOwnerUserId: string, currentLabel: string, newLabel?: string) {
-    if (!newLabel || newLabel === currentLabel) return
+    if (!newLabel || newLabel === currentLabel) {
+      return
+    }
 
     const conflict = await this.prisma.mesa.findUnique({
       where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: newLabel } },
     })
-    if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${newLabel}".`)
+    if (conflict) {
+      throw new ConflictException(`Já existe uma mesa com o label "${newLabel}".`)
+    }
   }
 
   private parseReservedUntil(value: string | null | undefined): Date | null | undefined {
-    if (value === undefined) return undefined
-    if (!value) return null
+    if (value === undefined) {
+      return undefined
+    }
+    if (!value) {
+      return null
+    }
 
     const parsed = new Date(value)
     if (Number.isNaN(parsed.getTime())) {

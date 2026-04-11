@@ -38,24 +38,40 @@ export type ActivityFeedEntry = {
 }
 
 function parseUserAgent(ua: string | null): { browser: string; os: string } {
-  if (!ua) return { browser: 'Navegador desconhecido', os: 'Sistema desconhecido' }
+  if (!ua) {
+    return { browser: 'Navegador desconhecido', os: 'Sistema desconhecido' }
+  }
 
   let browser = 'Navegador'
   let os = 'Sistema desconhecido'
 
-  if (ua.includes('Edg/')) browser = 'Edge'
-  else if (ua.includes('OPR/') || ua.includes('Opera/')) browser = 'Opera'
-  else if (ua.includes('Chrome/') && !ua.includes('Chromium/')) browser = 'Chrome'
-  else if (ua.includes('Chromium/')) browser = 'Chromium'
-  else if (ua.includes('Firefox/')) browser = 'Firefox'
-  else if (ua.includes('Safari/') && ua.includes('Version/')) browser = 'Safari'
+  if (ua.includes('Edg/')) {
+    browser = 'Edge'
+  } else if (ua.includes('OPR/') || ua.includes('Opera/')) {
+    browser = 'Opera'
+  } else if (ua.includes('Chrome/') && !ua.includes('Chromium/')) {
+    browser = 'Chrome'
+  } else if (ua.includes('Chromium/')) {
+    browser = 'Chromium'
+  } else if (ua.includes('Firefox/')) {
+    browser = 'Firefox'
+  } else if (ua.includes('Safari/') && ua.includes('Version/')) {
+    browser = 'Safari'
+  }
 
-  if (ua.includes('Windows NT')) os = 'Windows'
-  else if (ua.includes('iPhone')) os = 'iPhone'
-  else if (ua.includes('iPad')) os = 'iPad'
-  else if (ua.includes('Android')) os = 'Android'
-  else if (ua.includes('Mac OS X')) os = 'macOS'
-  else if (ua.includes('Linux')) os = 'Linux'
+  if (ua.includes('Windows NT')) {
+    os = 'Windows'
+  } else if (ua.includes('iPhone')) {
+    os = 'iPhone'
+  } else if (ua.includes('iPad')) {
+    os = 'iPad'
+  } else if (ua.includes('Android')) {
+    os = 'Android'
+  } else if (ua.includes('Mac OS X')) {
+    os = 'macOS'
+  } else if (ua.includes('Linux')) {
+    os = 'Linux'
+  }
 
   return { browser, os }
 }

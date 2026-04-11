@@ -87,8 +87,12 @@ describe('ComandaService - openComanda realtime', () => {
         }),
         findMany: jest.fn(async ({ where }: any) => {
           return queuedItems.filter((item) => {
-            if (where?.comandaId && item.comandaId !== where.comandaId) return false
-            if (where?.kitchenStatus?.not !== undefined && item.kitchenStatus === null) return false
+            if (where?.comandaId && item.comandaId !== where.comandaId) {
+              return false
+            }
+            if (where?.kitchenStatus?.not !== undefined && item.kitchenStatus === null) {
+              return false
+            }
             return true
           })
         }),

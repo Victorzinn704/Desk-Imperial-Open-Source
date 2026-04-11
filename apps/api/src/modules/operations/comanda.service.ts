@@ -23,21 +23,21 @@ import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { FinanceService } from '../finance/finance.service'
-import { calculateDraftItemsSubtotal, assertMonetaryAdjustmentsWithinSubtotal } from './comanda-validation.utils'
+import { assertMonetaryAdjustmentsWithinSubtotal, calculateDraftItemsSubtotal } from './comanda-validation.utils'
 import {
+  publishComandaClosed,
   publishComandaOpened,
   publishComandaUpdated,
   publishKitchenItemQueued,
   publishKitchenItemUpdated,
-  publishComandaClosed,
 } from './comanda-realtime-publish.utils'
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import {
-  buildOptionalOperationsSnapshot,
   buildCashClosurePayload,
+  buildOptionalOperationsSnapshot,
   invalidateOperationsLiveCache,
-  OPEN_COMANDA_STATUSES,
   isOpenComandaStatus,
+  OPEN_COMANDA_STATUSES,
   resolveBusinessDate,
   toNumberOrZero,
 } from './operations-domain.utils'
@@ -967,16 +967,24 @@ export class ComandaService {
     kitchenItems: Array<{ kitchenStatus: KitchenItemStatus | null }>,
     currentStatus: ComandaStatus,
   ): ComandaStatus | null {
-    if (kitchenItems.length === 0) return null
-    if (!isOpenComandaStatus(currentStatus)) return null
+    if (kitchenItems.length === 0) {
+      return null
+    }
+    if (!isOpenComandaStatus(currentStatus)) {
+      return null
+    }
 
     const allReady = kitchenItems.every(
       (i) => i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
     )
-    if (allReady) return ComandaStatus.READY
+    if (allReady) {
+      return ComandaStatus.READY
+    }
 
     const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
-    if (anyInPrep && currentStatus === ComandaStatus.OPEN) return ComandaStatus.IN_PREPARATION
+    if (anyInPrep && currentStatus === ComandaStatus.OPEN) {
+      return ComandaStatus.IN_PREPARATION
+    }
 
     return null
   }
@@ -1099,7 +1107,9 @@ export class ComandaService {
     items: Array<{ productId: string | null; productName: string }>,
   ) {
     const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[]
-    if (!productIds.length) return
+    if (!productIds.length) {
+      return
+    }
 
     const products =
       (await this.prisma.product.findMany({

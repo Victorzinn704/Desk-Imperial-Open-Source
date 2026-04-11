@@ -55,6 +55,7 @@ describe('MailerService', () => {
 
     expect(result.mode).toBe('log')
     expect(loggerWarnSpy).toHaveBeenCalledTimes(1)
+    expect(loggerWarnSpy.mock.calls[0][0]).not.toContain('12345678')
     expect((global as any).fetch).not.toHaveBeenCalled()
   })
 
@@ -68,6 +69,7 @@ describe('MailerService', () => {
 
     expect(result.mode).toBe('log')
     expect(loggerWarnSpy).toHaveBeenCalledTimes(1)
+    expect(loggerWarnSpy.mock.calls[0][0]).not.toContain('87654321')
   })
 
   it('falha em producao sem API key da Brevo', async () => {

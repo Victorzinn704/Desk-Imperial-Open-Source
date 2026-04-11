@@ -1,13 +1,13 @@
 import type { CashClosure, CashMovement, CashSession, Comanda, ComandaItem, Employee, Mesa } from '@prisma/client'
 
 import type {
-  KitchenItemStatus,
   CashMovementRecord,
   CashSessionRecord,
   ComandaItemRecord,
-  MesaRecord,
   ComandaRecord,
   EmployeeOperationsRecord,
+  KitchenItemStatus,
+  MesaRecord,
   OperationsLiveResponse,
 } from '@contracts/contracts'
 

@@ -47,11 +47,19 @@ export class GetOperationsLiveQueryDto {
   })
   @IsOptional()
   @Transform(({ value }) => {
-    if (value === undefined || value === null || value === '') return undefined
-    if (typeof value === 'boolean') return value
+    if (value === undefined || value === null || value === '') {
+      return undefined
+    }
+    if (typeof value === 'boolean') {
+      return value
+    }
     const normalized = String(value).trim().toLowerCase()
-    if (normalized === 'true') return true
-    if (normalized === 'false') return false
+    if (normalized === 'true') {
+      return true
+    }
+    if (normalized === 'false') {
+      return false
+    }
     return value
   })
   @IsBoolean()

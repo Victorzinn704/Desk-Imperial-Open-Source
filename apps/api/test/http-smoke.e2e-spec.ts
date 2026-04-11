@@ -1,6 +1,4 @@
-import { ValidationPipe } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
-import type { INestApplication } from '@nestjs/common'
+import { type INestApplication, Test, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import { AppController } from '../src/app.controller'
 import { AppService } from '../src/app.service'

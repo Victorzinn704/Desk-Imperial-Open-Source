@@ -25,7 +25,7 @@ import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
-import { toAuthUser, normalizeComparableValue } from './auth-shared.util'
+import { normalizeComparableValue, toAuthUser } from './auth-shared.util'
 
 @Injectable()
 export class AuthService {
@@ -217,15 +217,21 @@ export class AuthService {
   }
 
   private shouldUseSecureCookies() {
-    if (this.isProduction()) return true
+    if (this.isProduction()) {
+      return true
+    }
     return parseBoolean(this.configService.get<string>('COOKIE_SECURE'))
   }
 
   private getCookieSameSitePolicy(): 'lax' | 'strict' | 'none' {
     const configuredPolicy = this.configService.get<string>('COOKIE_SAME_SITE')?.trim().toLowerCase()
-    if (configuredPolicy === 'strict') return configuredPolicy
+    if (configuredPolicy === 'strict') {
+      return configuredPolicy
+    }
     if (configuredPolicy === 'none') {
-      if (!this.shouldUseSecureCookies()) return 'lax'
+      if (!this.shouldUseSecureCookies()) {
+        return 'lax'
+      }
       return configuredPolicy
     }
     return 'lax'
@@ -244,7 +250,9 @@ export class AuthService {
     context: RequestContext,
     currentSessionId: string,
   ) {
-    if (!parseBoolean(this.configService.get<string>('LOGIN_ALERT_EMAILS_ENABLED'))) return
+    if (!parseBoolean(this.configService.get<string>('LOGIN_ALERT_EMAILS_ENABLED'))) {
+      return
+    }
 
     const previousSessions = await this.prisma.session.findMany({
       where: { userId: user.id, id: { not: currentSessionId } },
@@ -253,7 +261,9 @@ export class AuthService {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (previousSessions.length === 0) return
+    if (previousSessions.length === 0) {
+      return
+    }
 
     const isKnownDevice = previousSessions.some(
       (session) =>
@@ -261,7 +271,9 @@ export class AuthService {
         normalizeComparableValue(session.userAgent) === normalizeComparableValue(context.userAgent),
     )
 
-    if (isKnownDevice) return
+    if (isKnownDevice) {
+      return
+    }
 
     try {
       const delivery = await this.mailerService.sendLoginAlertEmail({
@@ -297,6 +309,8 @@ export class AuthService {
 }
 
 function parseBoolean(value: string | undefined) {
-  if (value == null) return false
+  if (value == null) {
+    return false
+  }
   return value === 'true'
 }

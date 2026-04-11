@@ -1,9 +1,9 @@
 import {
-  toMesaRecord,
-  toComandaRecord,
-  toCashMovementRecord,
   buildEmployeeOperationsRecord,
+  toCashMovementRecord,
   toClosureRecord,
+  toComandaRecord,
+  toMesaRecord,
 } from '../src/modules/operations/operations.types'
 
 // ── Record builders ──────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ describe('buildEmployeeOperationsRecord', () => {
 
     const record = buildEmployeeOperationsRecord({ employee, cashSession: null, comandas: comandas as any })
     expect(record.comandas.length).toBe(4)
-    expect(record.comandas.filter(c => c.status === 'OPEN').length).toBe(1)
+    expect(record.comandas.filter((c) => c.status === 'OPEN').length).toBe(1)
   })
 
   it('uses default name when no employee', () => {

@@ -105,7 +105,9 @@ function createSetup(options: SetupOptions = {}) {
         where: { id: sessionId },
         select: { tokenHash: true },
       })
-      if (!dbSession) return
+      if (!dbSession) {
+        return
+      }
       await cache.del(expect.any(String))
       await cache.del(expect.any(String))
     }),
@@ -129,23 +131,33 @@ function createSetup(options: SetupOptions = {}) {
     getSessionCookieBaseOptions: jest.fn(() => ({})),
     getCsrfCookieBaseOptions: jest.fn(() => ({})),
     shouldUseSecureCookies: jest.fn(function (this: any) {
-      if (config.get('NODE_ENV') === 'production') return true
+      if (config.get('NODE_ENV') === 'production') {
+        return true
+      }
       return config.get('COOKIE_SECURE') === 'true'
     }),
     getCookieSameSitePolicy: jest.fn(function (this: any) {
       const policy = config.get('COOKIE_SAME_SITE')?.trim().toLowerCase()
-      if (policy === 'strict') return policy
+      if (policy === 'strict') {
+        return policy
+      }
       if (policy === 'none') {
-        if (!this.shouldUseSecureCookies()) return 'lax'
+        if (!this.shouldUseSecureCookies()) {
+          return 'lax'
+        }
         return policy
       }
       return 'lax'
     }),
     getCsrfSecret: jest.fn(function () {
       const csrfSecret = config.get('CSRF_SECRET')?.trim()
-      if (csrfSecret && csrfSecret.toLowerCase() !== 'change-me') return csrfSecret
+      if (csrfSecret && csrfSecret.toLowerCase() !== 'change-me') {
+        return csrfSecret
+      }
       const cookieSecret = config.get('COOKIE_SECRET')?.trim()
-      if (cookieSecret && cookieSecret.toLowerCase() !== 'change-me') return cookieSecret
+      if (cookieSecret && cookieSecret.toLowerCase() !== 'change-me') {
+        return cookieSecret
+      }
       throw new Error('Configuracao insegura: defina CSRF_SECRET (ou COOKIE_SECRET valido) para emissao de token CSRF.')
     }),
     cache,
@@ -165,12 +177,16 @@ function createSetup(options: SetupOptions = {}) {
     })),
     getRegistrationGeocodingTimeoutMs: jest.fn(function () {
       const configuredTimeout = Number(config.get('REGISTRATION_GEOCODING_TIMEOUT_MS') ?? 1800)
-      if (!Number.isFinite(configuredTimeout)) return 1800
+      if (!Number.isFinite(configuredTimeout)) {
+        return 1800
+      }
       return Math.min(Math.max(configuredTimeout, 300), 5000)
     }),
     getRegistrationVerificationDispatchTimeoutMs: jest.fn(function () {
       const configuredTimeout = Number(config.get('REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS') ?? 2500)
-      if (!Number.isFinite(configuredTimeout)) return 2500
+      if (!Number.isFinite(configuredTimeout)) {
+        return 2500
+      }
       return Math.min(Math.max(configuredTimeout, 400), 7000)
     }),
     isRegistrationGeocodingStrict: jest.fn(function () {
@@ -183,20 +199,30 @@ function createSetup(options: SetupOptions = {}) {
     loginDemo: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
     pickMostRestrictiveRateLimitState: jest.fn(function (states: any[]) {
       const [initialState, ...remainingStates] = states
-      if (!initialState) return { count: 0, firstAttemptAt: 0, lockedUntil: null }
+      if (!initialState) {
+        return { count: 0, firstAttemptAt: 0, lockedUntil: null }
+      }
       return remainingStates.reduce((current, candidate) => {
         const currentLockedUntil = current.lockedUntil ?? 0
         const candidateLockedUntil = candidate.lockedUntil ?? 0
-        if (candidateLockedUntil > currentLockedUntil) return candidate
-        if (candidateLockedUntil === currentLockedUntil && candidate.count > current.count) return candidate
+        if (candidateLockedUntil > currentLockedUntil) {
+          return candidate
+        }
+        if (candidateLockedUntil === currentLockedUntil && candidate.count > current.count) {
+          return candidate
+        }
         return current
       }, initialState)
     }),
     sendFailedLoginAlertIfEnabled: jest.fn(async function (user: any, context: any, failedAttempts: number) {
       const enabled = config.get('FAILED_LOGIN_ALERTS_ENABLED') === 'true'
-      if (!enabled) return
+      if (!enabled) {
+        return
+      }
       const threshold = Math.max(Number(config.get('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3), 1)
-      if (failedAttempts < threshold || failedAttempts > threshold) return
+      if (failedAttempts < threshold || failedAttempts > threshold) {
+        return
+      }
       await mailer.sendFailedLoginAlertEmail({
         to: user.email,
         fullName: user.fullName,

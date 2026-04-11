@@ -1,7 +1,7 @@
 import { roundCurrency, roundPercent } from '../src/common/utils/number-rounding.util'
 import { sanitizePlainText } from '../src/common/utils/input-hardening.util'
-import { sanitizeDocument, isValidCpf, isValidCnpj } from '../src/common/utils/document-validation.util'
-import { resolveWorkspaceOwnerUserId, assertOwnerRole } from '../src/common/utils/workspace-access.util'
+import { isValidCnpj, isValidCpf, sanitizeDocument } from '../src/common/utils/document-validation.util'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../src/common/utils/workspace-access.util'
 import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
 describe('roundCurrency', () => {

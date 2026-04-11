@@ -1,11 +1,11 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, expect, it } from '@jest/globals'
 import {
-  buildPasswordResetEmailContent,
   buildEmailVerificationContent,
-  buildPasswordChangedEmailContent,
-  buildLoginAlertEmailContent,
   buildFailedLoginAlertEmailContent,
   buildFeedbackReceiptEmailContent,
+  buildLoginAlertEmailContent,
+  buildPasswordChangedEmailContent,
+  buildPasswordResetEmailContent,
 } from '../src/modules/mailer/mailer.templates'
 
 const baseParams = {

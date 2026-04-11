@@ -4,7 +4,7 @@ import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { resolveWorkspaceOwnerUserId, assertOwnerRole } from '../../common/utils/workspace-access.util'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
@@ -22,12 +22,12 @@ import {
   toRealtimeCashSessionRecord,
 } from './operations.types'
 import {
-  buildOptionalOperationsSnapshot,
-  OPEN_COMANDA_STATUSES,
   buildCashClosurePayload,
   buildCashUpdatedPayload,
+  buildOptionalOperationsSnapshot,
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
+  OPEN_COMANDA_STATUSES,
   resolveBusinessDate,
   toNumberOrZero,
 } from './operations-domain.utils'

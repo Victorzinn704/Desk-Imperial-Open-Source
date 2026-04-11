@@ -1,13 +1,12 @@
 import 'reflect-metadata'
 import { context, trace } from '@opentelemetry/api'
-import { Logger, ValidationPipe } from '@nestjs/common'
+import { type INestApplication, Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import type { NextFunction, Request, Response } from 'express'
 import helmet from 'helmet'
-import type { INestApplication } from '@nestjs/common'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { initializeApiOpenTelemetry, shutdownApiOpenTelemetry } from './common/utils/otel.util'
@@ -168,7 +167,9 @@ function assertBootstrapSecrets(
   cookieSecret: string | undefined,
   csrfSecret: string | undefined,
 ) {
-  if (isTestEnvironment) return
+  if (isTestEnvironment) {
+    return
+  }
   if (!isConfiguredSecret(cookieSecret, 16) || !isConfiguredSecret(csrfSecret, 32)) {
     throw new Error(
       'Defina COOKIE_SECRET (>=16 chars) e CSRF_SECRET (>=32 chars) com valores fortes e sem placeholder change-me antes de iniciar a API.',
@@ -198,7 +199,9 @@ function assertSwaggerSafety(isProduction: boolean, swaggerEnabled: boolean, swa
 }
 
 function configureSwagger(app: INestApplication, swaggerEnabled: boolean) {
-  if (!swaggerEnabled) return
+  if (!swaggerEnabled) {
+    return
+  }
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('DESK IMPERIAL API')

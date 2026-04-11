@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Type, Transform } from 'class-transformer'
+import { Transform, Type } from 'class-transformer'
 import { IsArray, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator'
 import { ComandaDraftItemDto } from './comanda-draft-item.dto'
 

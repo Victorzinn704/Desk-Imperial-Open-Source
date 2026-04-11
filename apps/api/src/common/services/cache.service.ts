@@ -60,11 +60,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    if (!this.enabled || !this.client) return null
+    if (!this.enabled || !this.client) {
+      return null
+    }
     try {
       const raw = await this.client.get(key)
       this.failureCount = 0
-      if (!raw) return null
+      if (!raw) {
+        return null
+      }
       return JSON.parse(raw) as T
     } catch {
       this.handleFailure('get')
@@ -73,7 +77,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds)
       this.failureCount = 0
@@ -83,7 +89,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async del(key: string): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       await this.client.del(key)
       this.failureCount = 0
@@ -93,7 +101,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async delByPrefix(prefix: string): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       let cursor = '0'
       do {
@@ -114,7 +124,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async ping(): Promise<boolean> {
-    if (!this.enabled || !this.client) return false
+    if (!this.enabled || !this.client) {
+      return false
+    }
     try {
       const result = await this.client.ping()
       return result === 'PONG' || result === 'pong'

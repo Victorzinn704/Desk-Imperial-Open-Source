@@ -47,7 +47,7 @@ export class MailerService {
       text: content.text,
       html: content.html,
       tags: content.tags,
-      fallbackLogMessage: `Email nao configurado. Codigo de redefinicao para ${params.to}: ${params.code}`,
+      fallbackLogMessage: `Email nao configurado. Codigo de redefinicao emitido para ${params.to}.`,
     })
   }
 
@@ -66,7 +66,7 @@ export class MailerService {
       text: content.text,
       html: content.html,
       tags: content.tags,
-      fallbackLogMessage: `Email nao configurado. Codigo de verificacao para ${params.to}: ${params.code}`,
+      fallbackLogMessage: `Email nao configurado. Codigo de verificacao emitido para ${params.to}.`,
     })
   }
 

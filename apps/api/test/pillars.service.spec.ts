@@ -81,23 +81,23 @@ describe('PillarsService', () => {
     })
 
     prisma.order.findMany
-      .mockResolvedValueOnce([currentWeekOrderEvent, currentWeekOrderNormal])
-      .mockResolvedValueOnce([previousWeekOrder])
+      .mockResolvedValueOnce([currentWeekOrderNormal])
+      .mockResolvedValueOnce([previousWeekOrder, currentWeekOrderEvent])
       .mockResolvedValueOnce([currentWeekOrderEvent, currentWeekOrderNormal])
       .mockResolvedValueOnce([previousMonthOrder])
 
     const result = await service.getPillarsForUser(makeOwnerAuthContext({ preferredCurrency: CurrencyCode.BRL }))
 
-    expect(result.weeklyRevenue.value).toBe(300)
-    expect(result.weeklyRevenue.previousValue).toBe(150)
-    expect(result.weeklyRevenue.changePercent).toBe(100)
+    expect(result.weeklyRevenue.value).toBe(200)
+    expect(result.weeklyRevenue.previousValue).toBe(250)
+    expect(result.weeklyRevenue.changePercent).toBe(-20)
 
     expect(result.monthlyRevenue.value).toBe(300)
     expect(result.monthlyRevenue.previousValue).toBe(80)
     expect(result.monthlyRevenue.changePercent).toBe(275)
 
-    expect(result.profit.value).toBe(100)
-    expect(result.eventRevenue.value).toBe(100)
+    expect(result.profit.value).toBe(70)
+    expect(result.eventRevenue.value).toBe(0)
     expect(result.normalRevenue.value).toBe(200)
 
     expect(result.weeklyRevenue.trend).toHaveLength(7)
@@ -109,6 +109,38 @@ describe('PillarsService', () => {
     expect(currencyService.getSnapshot).toHaveBeenCalledTimes(1)
     expect(currencyService.convert).toHaveBeenCalled()
     expect(now.getFullYear()).toBe(2026)
+  })
+
+  it('considera a segunda-feira como inicio da semana e inclui ordens do dia inteiro', async () => {
+    prisma.order.findMany
+      .mockResolvedValueOnce([
+        makeOrder({
+          createdAt: new Date(2026, 2, 30, 0, 30, 0),
+          revenue: 90,
+          profit: 30,
+        }),
+      ])
+      .mockResolvedValueOnce([
+        makeOrder({
+          createdAt: new Date(2026, 2, 23, 14, 0, 0),
+          revenue: 50,
+          profit: 10,
+        }),
+      ])
+      .mockResolvedValueOnce([
+        makeOrder({
+          createdAt: new Date(2026, 2, 30, 0, 30, 0),
+          revenue: 90,
+          profit: 30,
+        }),
+      ])
+      .mockResolvedValueOnce([])
+
+    const result = await service.getPillarsForUser(makeOwnerAuthContext())
+
+    expect(result.weeklyRevenue.value).toBe(90)
+    expect(result.weeklyRevenue.previousValue).toBe(50)
+    expect(result.profit.value).toBe(30)
   })
 
   it('mantem changePercent zero quando periodo anterior e vazio', async () => {

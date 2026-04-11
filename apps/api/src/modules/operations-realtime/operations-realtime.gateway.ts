@@ -1,6 +1,11 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common'
-import type { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets'
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
+import {
+  type OnGatewayConnection,
+  type OnGatewayDisconnect,
+  type OnGatewayInit,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets'
 import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'

@@ -96,12 +96,16 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
       description: row.description || null,
       unitCost: (() => {
         const v = Number.parseFloat(row.unitcost)
-        if (!Number.isFinite(v) || v < 0) throw new Error(`Linha ${index + 2}: "unitcost" deve ser um numero valido e positivo.`)
+        if (!Number.isFinite(v) || v < 0) {
+          throw new Error(`Linha ${index + 2}: "unitcost" deve ser um numero valido e positivo.`)
+        }
         return v
       })(),
       unitPrice: (() => {
         const v = Number.parseFloat(row.unitprice)
-        if (!Number.isFinite(v) || v < 0) throw new Error(`Linha ${index + 2}: "unitprice" deve ser um numero valido e positivo.`)
+        if (!Number.isFinite(v) || v < 0) {
+          throw new Error(`Linha ${index + 2}: "unitprice" deve ser um numero valido e positivo.`)
+        }
         return v
       })(),
       currency: (row.currency || 'BRL').toUpperCase(),

@@ -6,6 +6,7 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { AuthService } from '../auth/auth.service'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { CacheService } from '../../common/services/cache.service'
@@ -19,6 +20,7 @@ export class EmployeesService {
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
     private readonly cache: CacheService,
+    private readonly authService: AuthService,
   ) {}
 
   async listForUser(auth: AuthContext) {
@@ -30,7 +32,9 @@ export class EmployeesService {
       totals: { totalEmployees: number; activeEmployees: number }
     }
     const cached = await this.cache.get<ListResult>(CacheService.employeesKey(workspaceUserId))
-    if (cached) return cached
+    if (cached) {
+      return cached
+    }
 
     const items = await this.prisma.employee.findMany({
       where: {
@@ -144,6 +148,12 @@ export class EmployeesService {
         userAgent: context.userAgent,
       })
 
+      if (dto.active === false) {
+        await this.authService.revokeEmployeeSessions(employee.id)
+      } else if (sanitizedDisplayName !== undefined || dto.active !== undefined) {
+        await this.authService.refreshEmployeeSessionCaches(employee.id)
+      }
+
       void this.invalidateEmployeesCache(workspaceUserId)
 
       return {
@@ -167,7 +177,9 @@ export class EmployeesService {
     existingEmployee: { id: string; loginUserId: string | null },
     temporaryPassword?: string,
   ) {
-    if (!temporaryPassword) return
+    if (!temporaryPassword) {
+      return
+    }
 
     const nextPasswordHash = await argon2.hash(temporaryPassword, { type: argon2.argon2id })
 
@@ -190,8 +202,12 @@ export class EmployeesService {
     sanitizedDisplayName: string | undefined,
     active: boolean | undefined,
   ) {
-    if (!existingEmployee.loginUserId) return
-    if (sanitizedDisplayName === undefined && active === undefined) return
+    if (!existingEmployee.loginUserId) {
+      return
+    }
+    if (sanitizedDisplayName === undefined && active === undefined) {
+      return
+    }
 
     await transaction.user.update({
       where: { id: existingEmployee.loginUserId },
@@ -234,6 +250,10 @@ export class EmployeesService {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
+
+    if (!active) {
+      await this.authService.revokeEmployeeSessions(employee.id)
+    }
 
     void this.invalidateEmployeesCache(workspaceUserId)
 

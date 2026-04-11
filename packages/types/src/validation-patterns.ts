@@ -138,7 +138,5 @@ export function validateDocument(raw: string): { valid: boolean; type: DocumentT
     return validateCpf(digits) ? { valid: true, type: 'cpf' } : { valid: false, type: 'cpf', message: 'CPF inválido' }
   }
   if (digits.length < 14) return { valid: false, type: 'unknown', message: 'CNPJ incompleto (14 dígitos)' }
-  return validateCnpj(digits)
-    ? { valid: true, type: 'cnpj' }
-    : { valid: false, type: 'cnpj', message: 'CNPJ inválido' }
+  return validateCnpj(digits) ? { valid: true, type: 'cnpj' } : { valid: false, type: 'cnpj', message: 'CNPJ inválido' }
 }

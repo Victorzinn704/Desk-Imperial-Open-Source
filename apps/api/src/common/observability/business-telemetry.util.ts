@@ -1,4 +1,4 @@
-import { metrics, type Attributes } from '@opentelemetry/api'
+import { type Attributes, metrics } from '@opentelemetry/api'
 
 const meter = metrics.getMeter('desk-imperial-api')
 

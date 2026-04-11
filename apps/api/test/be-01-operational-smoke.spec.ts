@@ -27,7 +27,9 @@ type RealtimePayload = {
 async function waitFor(condition: () => boolean | Promise<boolean>, timeoutMs = 10_000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
-    if (await condition()) return
+    if (await condition()) {
+      return
+    }
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
@@ -35,7 +37,7 @@ async function waitFor(condition: () => boolean | Promise<boolean>, timeoutMs = 
 }
 
 async function waitForSocketEvent<T>(socket: SocketClientLike, eventName: string): Promise<T> {
-  return await new Promise<T>((resolve) => {
+  return new Promise<T>((resolve) => {
     socket.once(eventName, (...args: unknown[]) => {
       resolve(args[0] as T)
     })
@@ -75,8 +77,16 @@ async function createRealtimeNode(redisUrl: string) {
     subClient,
     port: address.port,
     async close() {
-      await new Promise<void>((resolve) => io.close(() => resolve()))
-      await new Promise<void>((resolve) => httpServer.close(() => resolve()))
+      await new Promise<void>((resolve) => {
+        io.close(() => {
+          resolve()
+        })
+      })
+      await new Promise<void>((resolve) => {
+        httpServer.close(() => {
+          resolve()
+        })
+      })
       await Promise.allSettled([pubClient.quit(), subClient.quit()])
     },
   }
@@ -160,8 +170,8 @@ describe('BE-01 operational smoke', () => {
       clientOnNodeB.disconnect()
       await realtimeNodeA.close()
       await realtimeNodeB.close()
-      await cacheNodeA.onModuleDestroy()
-      await cacheNodeB.onModuleDestroy()
+      cacheNodeA.onModuleDestroy()
+      cacheNodeB.onModuleDestroy()
     }
   })
 })

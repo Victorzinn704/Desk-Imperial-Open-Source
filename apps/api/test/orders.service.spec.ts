@@ -45,6 +45,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    updateMany: jest.fn(),
     aggregate: jest.fn(),
     count: jest.fn(),
     groupBy: jest.fn(),
@@ -215,7 +216,11 @@ beforeEach(() => {
   mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
       product: mockPrisma.product,
-      order: mockPrisma.order,
+      order: {
+        create: mockPrisma.order.create,
+        findFirst: mockPrisma.order.findFirst,
+        updateMany: mockPrisma.order.updateMany,
+      },
     }),
   )
 })
@@ -591,11 +596,23 @@ describe('OrdersService', () => {
         items: [makeOrderItem({ productId: 'product-1', quantity: 2, lineRevenue: 40, lineCost: 20, lineProfit: 20 })],
       })
       mockPrisma.order.findFirst.mockResolvedValue(order)
-      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 1 })
       mockPrisma.product.findMany.mockResolvedValue([makeProduct({ id: 'product-1', stock: 10 })])
 
       const result = await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 
+      expect(mockPrisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'order-1',
+            userId: 'user-1',
+            status: OrderStatus.COMPLETED,
+          }),
+          data: expect.objectContaining({
+            status: OrderStatus.CANCELLED,
+          }),
+        }),
+      )
       expect(mockPrisma.product.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -609,14 +626,17 @@ describe('OrdersService', () => {
       expect(result.order.status).toBe(OrderStatus.CANCELLED)
     })
 
-    it('deve rejeitar cancelamento de pedido já cancelado', async () => {
+    it('deve tratar cancelamento repetido como idempotente', async () => {
       const order = makeOrder({ status: OrderStatus.CANCELLED })
       mockPrisma.order.findFirst.mockResolvedValue(order)
 
-      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow(
-        BadRequestException,
-      )
-      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow('ja foi cancelado')
+      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).resolves.toMatchObject({
+        order: expect.objectContaining({
+          status: OrderStatus.CANCELLED,
+        }),
+      })
+      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled()
+      expect(mockPrisma.product.updateMany).not.toHaveBeenCalled()
     })
 
     it('deve devolver componentes quando cancela uma venda de combo', async () => {
@@ -625,7 +645,7 @@ describe('OrdersService', () => {
         items: [makeOrderItem({ productId: 'combo-1', quantity: 2 })],
       })
       mockPrisma.order.findFirst.mockResolvedValue(order)
-      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 1 })
       mockPrisma.product.findMany.mockResolvedValue([
         makeProduct({
           id: 'combo-1',
@@ -660,6 +680,32 @@ describe('OrdersService', () => {
       )
     })
 
+    it('deve evitar restaurar estoque duas vezes sob concorrencia', async () => {
+      const completedOrder = makeOrder({
+        status: OrderStatus.COMPLETED,
+        items: [makeOrderItem({ productId: 'product-1', quantity: 2 })],
+      })
+      const cancelledOrder = makeOrder({
+        status: OrderStatus.CANCELLED,
+        cancelledAt: new Date('2026-01-02T00:00:00Z'),
+        items: [makeOrderItem({ productId: 'product-1', quantity: 2 })],
+      })
+
+      mockPrisma.product.findMany.mockResolvedValue([makeProduct({ id: 'product-1', stock: 10 })])
+      mockPrisma.order.findFirst
+        .mockResolvedValueOnce(completedOrder)
+        .mockResolvedValueOnce(completedOrder)
+        .mockResolvedValueOnce(cancelledOrder)
+      mockPrisma.order.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 })
+
+      await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
+      const secondResult = await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
+
+      expect(secondResult.order.status).toBe(OrderStatus.CANCELLED)
+      expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(1)
+      expect(mockAuditLogService.record).toHaveBeenCalledTimes(1)
+    })
+
     it('deve rejeitar cancelamento de pedido inexistente', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null)
 
@@ -683,7 +729,7 @@ describe('OrdersService', () => {
         ],
       })
       mockPrisma.order.findFirst.mockResolvedValue(order)
-      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 1 })
       mockPrisma.product.findMany.mockResolvedValue([makeProduct({ id: 'product-1', stock: 10 })])
 
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
@@ -694,7 +740,7 @@ describe('OrdersService', () => {
     it('deve registrar audit log de cancelamento', async () => {
       const order = makeOrder({ status: OrderStatus.COMPLETED })
       mockPrisma.order.findFirst.mockResolvedValue(order)
-      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 1 })
 
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 
@@ -709,7 +755,7 @@ describe('OrdersService', () => {
     it('deve invalidar cache após cancelamento', async () => {
       const order = makeOrder({ status: OrderStatus.COMPLETED })
       mockPrisma.order.findFirst.mockResolvedValue(order)
-      mockPrisma.order.update.mockResolvedValue({ ...order, status: OrderStatus.CANCELLED })
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 1 })
 
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 

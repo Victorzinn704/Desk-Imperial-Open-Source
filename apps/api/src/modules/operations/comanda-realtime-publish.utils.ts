@@ -2,12 +2,12 @@ import type { KitchenItemStatus } from '@prisma/client'
 import type { AuthContext } from '../auth/auth.types'
 import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import {
+  buildCashClosurePayload,
+  buildCashUpdatedPayload,
   formatBusinessDateKey,
   toNumberOrZero,
-  buildCashUpdatedPayload,
-  buildCashClosurePayload,
 } from './operations-domain.utils'
-import { toRealtimeStatus, toRealtimeOpenStatus } from './comanda-realtime-status.utils'
+import { toRealtimeOpenStatus, toRealtimeStatus } from './comanda-realtime-status.utils'
 
 type ComandaLike = {
   id: string

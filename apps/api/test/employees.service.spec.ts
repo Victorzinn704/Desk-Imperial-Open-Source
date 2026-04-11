@@ -15,6 +15,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Prisma, UserRole, UserStatus } from '@prisma/client'
 import { EmployeesService } from '../src/modules/employees/employees.service'
+import type { AuthService } from '../src/modules/auth/auth.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import type { CacheService } from '../src/common/services/cache.service'
@@ -47,6 +48,11 @@ const mockPrisma = {
 
 const mockAuditLogService = {
   record: jest.fn(),
+}
+
+const mockAuthService = {
+  refreshEmployeeSessionCaches: jest.fn(),
+  revokeEmployeeSessions: jest.fn(),
 }
 
 const mockCache = {
@@ -91,6 +97,7 @@ beforeEach(() => {
     mockPrisma as unknown as PrismaService,
     mockAuditLogService as unknown as AuditLogService,
     mockCache as unknown as CacheService,
+    mockAuthService as unknown as AuthService,
   )
 
   mockAuthContext = makeAuthContext()
@@ -326,6 +333,7 @@ describe('EmployeesService', () => {
         }),
       )
       expect(result.employee.displayName).toBe('Nome Atualizado')
+      expect(mockAuthService.refreshEmployeeSessionCaches).toHaveBeenCalledWith('employee-1')
     })
 
     it('deve atualizar apenas campos fornecidos', async () => {
@@ -357,6 +365,7 @@ describe('EmployeesService', () => {
           }),
         }),
       )
+      expect(mockAuthService.revokeEmployeeSessions).toHaveBeenCalledWith('employee-1')
     })
 
     it('deve lançar NotFoundException se funcionário não existir', async () => {

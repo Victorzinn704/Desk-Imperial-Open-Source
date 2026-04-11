@@ -1,6 +1,6 @@
 import {
-  BadRequestException,
   BadGatewayException,
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -189,7 +189,9 @@ export class MarketIntelligenceService {
 
   private async assertRequestAllowed(redisKey: string): Promise<void> {
     const entry = await this.cache.get<RateLimitEntry>(redisKey)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     const now = Date.now()
 
@@ -400,12 +402,16 @@ function normalizeInsightPayload(rawText: string) {
 }
 
 function normalizeString(value: unknown) {
-  if (typeof value !== 'string') return ''
+  if (typeof value !== 'string') {
+    return ''
+  }
   return value.replace(/\s+/g, ' ').trim()
 }
 
 function normalizeStringArray(value: unknown, maxItems: number) {
-  if (!Array.isArray(value)) return []
+  if (!Array.isArray(value)) {
+    return []
+  }
   return value
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.replace(/\s+/g, ' ').trim())

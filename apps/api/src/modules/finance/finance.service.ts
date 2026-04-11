@@ -11,17 +11,17 @@ import { CacheService } from '../../common/services/cache.service'
 import { PillarsService } from './pillars.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import {
-  type FinanceProductAnalyticsRecord,
   buildCategoryCollections,
   buildRecentOrders,
   buildRevenueTimeline,
   buildSalesByChannel,
   buildSalesMap,
-  buildTopProducts,
   buildTopCustomers,
   buildTopEmployees,
+  buildTopProducts,
   buildTopRegions,
   calculateGrowthPercent,
+  type FinanceProductAnalyticsRecord,
 } from './finance-analytics.util'
 
 const FINANCE_SUMMARY_FRESH_TTL_SECONDS = 120
@@ -452,7 +452,9 @@ type FinanceSummaryCacheEntry = {
 function unwrapFinanceSummaryCache(
   entry: FinanceSummaryCacheEntry | FinanceSummaryResponse | null,
 ): FinanceSummaryResponse | null {
-  if (!entry) return null
+  if (!entry) {
+    return null
+  }
 
   if (isFinanceSummaryCacheEntry(entry)) {
     return entry.payload

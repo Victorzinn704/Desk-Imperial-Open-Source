@@ -58,7 +58,9 @@ export class PillarsService {
     const cacheKey = PillarsService.pillarsKey(workspaceUserId)
 
     const cached = await this.cache.get<PillarsResponse>(cacheKey)
-    if (cached) return cached
+    if (cached) {
+      return cached
+    }
 
     const result = await this.buildPillars(workspaceUserId, auth.preferredCurrency || CurrencyCode.BRL)
 
@@ -198,8 +200,10 @@ export class PillarsService {
   private getWeekStart(date: Date): Date {
     const d = new Date(date)
     const day = d.getDay()
-    const diff = d.getDate() - day
-    return new Date(d.setDate(diff))
+    const mondayIndex = day === 0 ? -6 : 1 - day
+    d.setDate(d.getDate() + mondayIndex)
+    d.setHours(0, 0, 0, 0)
+    return d
   }
 
   private isEventHour(timestamp: Date): boolean {
@@ -218,7 +222,9 @@ export class PillarsService {
    */
   private bucketByDay(orders: PillarsOrder[], now: Date): Map<number, PillarsOrder[]> {
     const buckets = new Map<number, PillarsOrder[]>()
-    for (let i = 0; i < 7; i++) buckets.set(i, [])
+    for (let i = 0; i < 7; i++) {
+      buckets.set(i, [])
+    }
 
     const todayStart = new Date(now)
     todayStart.setHours(0, 0, 0, 0)
@@ -227,7 +233,9 @@ export class PillarsService {
 
     for (const order of orders) {
       const orderDate = new Date(order.createdAt)
-      if (orderDate < sevenDaysAgoStart) continue
+      if (orderDate < sevenDaysAgoStart) {
+        continue
+      }
 
       const diffMs = orderDate.getTime() - sevenDaysAgoStart.getTime()
       const dayIndex = Math.min(Math.floor(diffMs / 86_400_000), 6)

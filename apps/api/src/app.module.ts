@@ -108,6 +108,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
             'req.body.token',
             'req.body.code',
             'req.body.customerDocument',
+            'req.body.buyerDocument',
             'req.body.document',
             'req.body.cpf',
             'req.body.cnpj',

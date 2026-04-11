@@ -7,16 +7,16 @@ import {
   Optional,
 } from '@nestjs/common'
 import { trace } from '@opentelemetry/api'
-import type { Prisma } from '@prisma/client'
 import {
   CashClosureStatus,
   CashMovementType,
   CashSessionStatus,
   ComandaStatus,
   CurrencyCode,
+  type Employee,
   KitchenItemStatus,
   OrderStatus,
-  type Employee,
+  type Prisma,
 } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
@@ -26,9 +26,9 @@ import type { AuthContext } from '../auth/auth.types'
 import type { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import {
   buildEmployeeOperationsRecord,
+  type OperationsLiveResponse,
   toClosureRecord,
   toMesaRecord,
-  type OperationsLiveResponse,
 } from './operations.types'
 import type {
   OperationsExecutiveKpis,
@@ -39,9 +39,9 @@ import type {
   OperationsTopProductEntry,
 } from '@contracts/contracts'
 import {
-  OPEN_COMANDA_STATUSES,
   buildBusinessDateWindow,
   formatBusinessDateKey,
+  OPEN_COMANDA_STATUSES,
   resolveBuyerTypeFromDocument,
   toNumberOrZero,
 } from './operations-domain.utils'
@@ -50,9 +50,9 @@ import {
   recordOperationsLiveTelemetry,
 } from '../../common/observability/business-telemetry.util'
 import {
+  buildProductConsumptionMap,
   calculateEffectiveUnitCost,
   calculateRawEffectiveUnitCost,
-  buildProductConsumptionMap,
 } from '../products/product-combo-consumption.util'
 import { CurrencyService } from '../currency/currency.service'
 
@@ -212,8 +212,12 @@ const mesaSnapshotSelect = {
 } as const
 
 function resolveCashSessionSelect(compactMode: boolean, includeCashMovements: boolean) {
-  if (compactMode) return cashSessionCompactRefSelect
-  if (includeCashMovements) return cashSessionSnapshotSelect
+  if (compactMode) {
+    return cashSessionCompactRefSelect
+  }
+  if (includeCashMovements) {
+    return cashSessionSnapshotSelect
+  }
   return cashSessionSnapshotWithoutMovementsSelect
 }
 
@@ -254,7 +258,9 @@ export class OperationsHelpersService {
         includeCashMovements,
         scopedEmployeeId,
       )
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
     }
 
     const comandaSelect = compactMode ? comandaSnapshotCompactSelect : comandaSnapshotSelect
@@ -343,7 +349,9 @@ export class OperationsHelpersService {
     const openComandas = mesaOccupancyComandas.filter((comanda) => OPEN_COMANDA_STATUSES.includes(comanda.status))
     const openComandaByMesa = new Map<string, (typeof openComandas)[number]>()
     for (const comanda of openComandas) {
-      if (comanda.mesaId) openComandaByMesa.set(comanda.mesaId, comanda)
+      if (comanda.mesaId) {
+        openComandaByMesa.set(comanda.mesaId, comanda)
+      }
     }
 
     const snapshot = {
@@ -412,7 +420,9 @@ export class OperationsHelpersService {
     scopedEmployeeId?: string | null,
   ): Promise<OperationsLiveResponse | null> {
     const cached = await this.cache.get<OperationsLiveResponse>(cacheKey)
-    if (!cached) return null
+    if (!cached) {
+      return null
+    }
 
     const totalComandas =
       cached.unassigned.comandas.length +
@@ -439,7 +449,9 @@ export class OperationsHelpersService {
   private buildSessionSnapshotByEmployee(sessions: Record<string, unknown>[]) {
     const map = new Map<string | null, EmployeeSessionSnapshot>()
     for (const session of sessions) {
-      if (!('employeeId' in session)) continue
+      if (!('employeeId' in session)) {
+        continue
+      }
       const employeeId = typeof session.employeeId === 'string' ? session.employeeId : null
       map.set(employeeId, {
         ...session,
@@ -1227,7 +1239,9 @@ export class OperationsHelpersService {
     productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
   ) {
     const product = productById.get(item.productId!)
-    if (!product) throw new NotFoundException('Produto nao encontrado para esta conta.')
+    if (!product) {
+      throw new NotFoundException('Produto nao encontrado para esta conta.')
+    }
     return {
       productId: product.id as string | null,
       productName: product.name,

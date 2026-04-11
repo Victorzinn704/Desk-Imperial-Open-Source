@@ -1,11 +1,11 @@
 import { BadRequestException } from '@nestjs/common'
 import {
   BuyerType,
+  type CashClosure,
   CashClosureStatus,
   CashMovementType,
   CashSessionStatus,
   ComandaStatus,
-  type CashClosure,
 } from '@prisma/client'
 import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'

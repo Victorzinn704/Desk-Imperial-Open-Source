@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
-import { AuditSeverity, type CurrencyCode } from '@prisma/client'
-import { Prisma } from '@prisma/client'
+import { AuditSeverity, type CurrencyCode, Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { CurrencyService } from '../currency/currency.service'
-import type { ExchangeRatesSnapshot } from '../currency/currency.service'
+import { CurrencyService, type ExchangeRatesSnapshot } from '../currency/currency.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { parseProductImportCsv } from './products-import.util'
 import type { CreateProductDto } from './dto/create-product.dto'
@@ -66,7 +64,9 @@ export class ProductsService {
 
     if (cacheKey) {
       const cached = await this.cache.get<ReturnType<typeof buildProductsResponse>>(cacheKey)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
     }
 
     const items = await this.prisma.product.findMany({
@@ -429,8 +429,11 @@ export class ProductsService {
       try {
         this.validateImportRow(row)
         const result = await this.upsertImportRow(workspaceUserId, row)
-        if (result === 'updated') updatedCount += 1
-        else createdCount += 1
+        if (result === 'updated') {
+          updatedCount += 1
+        } else {
+          createdCount += 1
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Falha inesperada ao importar a linha.'
         errors.push({ line: row.line, message })
@@ -486,20 +489,36 @@ export class ProductsService {
     stock: number
     currency: string
   }) {
-    if (!row.name || row.name.length < 2) throw new Error('Informe um nome valido para o produto.')
-    if (!row.category || row.category.length < 2) throw new Error('Informe uma categoria valida.')
-    if (!row.packagingClass || row.packagingClass.length < 2) throw new Error('Informe uma classe de cadastro valida.')
-    if (!row.measurementUnit || row.measurementUnit.length < 1) throw new Error('Informe uma unidade de medida valida.')
-    if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0)
+    if (!row.name || row.name.length < 2) {
+      throw new Error('Informe um nome valido para o produto.')
+    }
+    if (!row.category || row.category.length < 2) {
+      throw new Error('Informe uma categoria valida.')
+    }
+    if (!row.packagingClass || row.packagingClass.length < 2) {
+      throw new Error('Informe uma classe de cadastro valida.')
+    }
+    if (!row.measurementUnit || row.measurementUnit.length < 1) {
+      throw new Error('Informe uma unidade de medida valida.')
+    }
+    if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0) {
       throw new Error('A medida por item precisa ser numerica e maior que zero.')
-    if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1)
+    }
+    if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1) {
       throw new Error('A quantidade por caixa/fardo precisa ser um inteiro maior que zero.')
-    if (Number.isNaN(row.unitCost) || row.unitCost < 0)
+    }
+    if (Number.isNaN(row.unitCost) || row.unitCost < 0) {
       throw new Error('O custo unitario precisa ser numerico e nao negativo.')
-    if (Number.isNaN(row.unitPrice) || row.unitPrice < 0)
+    }
+    if (Number.isNaN(row.unitPrice) || row.unitPrice < 0) {
       throw new Error('O preco unitario precisa ser numerico e nao negativo.')
-    if (Number.isNaN(row.stock) || row.stock < 0) throw new Error('O estoque precisa ser um inteiro nao negativo.')
-    if (!isSupportedCurrency(row.currency)) throw new Error('Use BRL, USD ou EUR na coluna de moeda.')
+    }
+    if (Number.isNaN(row.stock) || row.stock < 0) {
+      throw new Error('O estoque precisa ser um inteiro nao negativo.')
+    }
+    if (!isSupportedCurrency(row.currency)) {
+      throw new Error('Use BRL, USD ou EUR na coluna de moeda.')
+    }
   }
 
   private sanitizeImportRow(row: {

@@ -1,4 +1,11 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import type { Request } from 'express'
 import { isValidCnpj, isValidCpf, sanitizeDocument } from '../../common/utils/document-validation.util'
@@ -117,7 +124,9 @@ export class OrdersService {
         soldUnits: number
       }
     }>(cacheKey)
-    if (cached) return cached
+    if (cached) {
+      return cached
+    }
 
     const snapshot = await this.currencyService.getSnapshot()
     const where = {
@@ -472,7 +481,9 @@ export class OrdersService {
 
   private async resolveOrderSeller(auth: AuthContext, workspaceUserId: string, sellerEmployeeId?: string) {
     const employeeId = auth.role === 'STAFF' ? auth.employeeId : sellerEmployeeId
-    if (!employeeId) return null
+    if (!employeeId) {
+      return null
+    }
 
     const seller = await this.prisma.employee.findFirst({
       where: { id: employeeId, userId: workspaceUserId, active: true },
@@ -494,101 +505,144 @@ export class OrdersService {
   async cancelForUser(auth: AuthContext, orderId: string, context: RequestContext) {
     assertOwnerRole(auth, 'Apenas o dono pode cancelar vendas ja registradas.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
-    const order = await this.prisma.order.findFirst({
-      where: {
-        id: orderId,
-        userId: workspaceUserId,
-      },
-      include: {
-        items: true,
-      },
-    })
+    const cancelledAt = new Date()
 
-    if (!order) {
-      throw new NotFoundException('Pedido nao encontrado para esta conta.')
-    }
+    const cancellationResult = await this.prisma.$transaction(
+      async (transaction) => {
+        const order = await transaction.order.findFirst({
+          where: {
+            id: orderId,
+            userId: workspaceUserId,
+          },
+          include: {
+            items: true,
+          },
+        })
 
-    if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('Este pedido ja foi cancelado.')
-    }
+        if (!order) {
+          throw new NotFoundException('Pedido nao encontrado para esta conta.')
+        }
 
-    const cancelledOrder = await this.prisma.$transaction(async (transaction) => {
-      if (!order.comandaId) {
-        const productIds = [
-          ...new Set(
-            order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId)),
-          ),
-        ]
-        const products = productIds.length
-          ? await transaction.product.findMany({
-              where: {
-                id: { in: productIds },
-                userId: workspaceUserId,
-              },
-              include: orderProductInventoryInclude,
-            })
-          : []
-        const productsById = new Map(products.map((product) => [product.id, product]))
-        const stockToRestore = buildProductConsumptionMap(
-          order.items
-            .filter((item) => Boolean(item.productId))
-            .map((item) => ({
-              productId: item.productId!,
-              quantity: item.quantity,
-            })),
-          productsById,
-        )
+        if (order.status === OrderStatus.CANCELLED) {
+          return {
+            order,
+            cancelledNow: false,
+          }
+        }
 
-        for (const [productId, quantity] of stockToRestore.entries()) {
-          await transaction.product.updateMany({
+        const updated = await transaction.order.updateMany({
+          where: {
+            id: order.id,
+            userId: workspaceUserId,
+            status: OrderStatus.COMPLETED,
+          },
+          data: {
+            status: OrderStatus.CANCELLED,
+            cancelledAt,
+          },
+        })
+
+        if (updated.count !== 1) {
+          const currentOrder = await transaction.order.findFirst({
             where: {
-              id: productId,
+              id: order.id,
               userId: workspaceUserId,
             },
-            data: {
-              stock: {
-                increment: quantity,
-              },
+            include: {
+              items: true,
             },
           })
+
+          if (currentOrder?.status === OrderStatus.CANCELLED) {
+            return {
+              order: currentOrder,
+              cancelledNow: false,
+            }
+          }
+
+          throw new ConflictException('Nao foi possivel cancelar este pedido agora. Tente novamente.')
         }
-      }
 
-      return transaction.order.update({
-        where: {
-          id: order.id,
-        },
-        data: {
-          status: OrderStatus.CANCELLED,
-          cancelledAt: new Date(),
-        },
-        include: {
-          items: true,
-        },
-      })
-    })
+        if (!order.comandaId) {
+          const productIds = [
+            ...new Set(
+              order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId)),
+            ),
+          ]
+          const products = productIds.length
+            ? await transaction.product.findMany({
+                where: {
+                  id: { in: productIds },
+                  userId: workspaceUserId,
+                },
+                include: orderProductInventoryInclude,
+              })
+            : []
+          const productsById = new Map(products.map((product) => [product.id, product]))
+          const stockToRestore = buildProductConsumptionMap(
+            order.items
+              .filter((item) => Boolean(item.productId))
+              .map((item) => ({
+                productId: item.productId!,
+                quantity: item.quantity,
+              })),
+            productsById,
+          )
 
-    await this.auditLogService.record({
-      actorUserId: auth.userId,
-      event: 'order.cancelled',
-      resource: 'order',
-      resourceId: cancelledOrder.id,
-      severity: AuditSeverity.WARN,
-      metadata: {
-        totalItems: cancelledOrder.totalItems,
-        totalRevenue: Number(cancelledOrder.totalRevenue),
+          for (const [productId, quantity] of stockToRestore.entries()) {
+            await transaction.product.updateMany({
+              where: {
+                id: productId,
+                userId: workspaceUserId,
+              },
+              data: {
+                stock: {
+                  increment: quantity,
+                },
+              },
+            })
+          }
+        }
+
+        return {
+          order: {
+            ...order,
+            status: OrderStatus.CANCELLED,
+            cancelledAt,
+          },
+          cancelledNow: true,
+        }
       },
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-    })
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    )
+
+    if (cancellationResult.cancelledNow) {
+      await this.auditLogService.record({
+        actorUserId: auth.userId,
+        event: 'order.cancelled',
+        resource: 'order',
+        resourceId: cancellationResult.order.id,
+        severity: AuditSeverity.WARN,
+        metadata: {
+          totalItems: cancellationResult.order.totalItems,
+          totalRevenue: Number(cancellationResult.order.totalRevenue),
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+    }
 
     const snapshot = await this.currencyService.getSnapshot()
 
-    this.refreshFinanceSummary(workspaceUserId)
-    void this.invalidateOrdersCache(workspaceUserId)
+    if (cancellationResult.cancelledNow) {
+      this.refreshFinanceSummary(workspaceUserId)
+      void this.invalidateOrdersCache(workspaceUserId)
+    }
 
     return {
-      order: toOrderRecord(cancelledOrder, {
+      order: toOrderRecord(cancellationResult.order, {
         displayCurrency: auth.preferredCurrency,
         currencyService: this.currencyService,
         snapshot,

@@ -27,8 +27,8 @@ import {
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
   isOpenComandaStatus,
-  resolveBuyerTypeFromDocument,
   resolveBusinessDate,
+  resolveBuyerTypeFromDocument,
   toNumberOrZero,
 } from '../src/modules/operations/operations-domain.utils'
 
