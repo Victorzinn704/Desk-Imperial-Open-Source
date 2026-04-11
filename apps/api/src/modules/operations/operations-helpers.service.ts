@@ -64,11 +64,9 @@ const DEFAULT_OWNER_OPERATOR_LABEL = 'Operacao de balcao'
 
 import {
   cashClosureSnapshotSelect,
-  cashMovementSnapshotSelect,
   cashSessionCompactRefSelect,
   cashSessionSnapshotSelect,
   cashSessionSnapshotWithoutMovementsSelect,
-  comandaItemSnapshotSelect,
   comandaSnapshotCompactSelect,
   comandaSnapshotSelect,
   employeeSnapshotSelect,
