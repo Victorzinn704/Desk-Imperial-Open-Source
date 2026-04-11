@@ -4,11 +4,14 @@ import { CacheService } from '../../common/services/cache.service'
 import { PrismaService } from '../../database/prisma.service'
 import {
   buildEmployeeOperationsRecord,
+  type CashClosureLike,
+  type ComandaLike,
   type OperationsLiveResponse,
   toClosureRecord,
   toMesaRecord,
 } from './operations.types'
 import { buildBusinessDateWindow, formatBusinessDateKey, OPEN_COMANDA_STATUSES } from './operations-domain.utils'
+import { ComandaStatus } from '@prisma/client'
 import { recordOperationsLiveTelemetry } from '../../common/observability/business-telemetry.util'
 import { CurrencyService } from '../currency/currency.service'
 
@@ -358,7 +361,7 @@ export class OperationsLiveSnapshotService {
       status: string
     }>,
   ) {
-    const openComandas = mesaOccupancyComandas.filter((c) => OPEN_COMANDA_STATUSES.includes(c.status))
+    const openComandas = mesaOccupancyComandas.filter((c) => OPEN_COMANDA_STATUSES.includes(c.status as ComandaStatus))
     const map = new Map<string, (typeof openComandas)[number]>()
     for (const comanda of openComandas) {
       if (comanda.mesaId) {
@@ -371,26 +374,17 @@ export class OperationsLiveSnapshotService {
   private buildSnapshotRecord(params: {
     businessDate: Date
     workspaceOwnerUserId: string
-    closure: {
-      status?: unknown
-      expectedCashAmount?: unknown
-      countedCashAmount?: unknown
-      differenceAmount?: unknown
-      grossRevenueAmount?: unknown
-      realizedProfitAmount?: unknown
-      openSessionsCount?: number
-      openComandasCount?: number
-    } | null
+    closure: CashClosureLike | null
     employees: Array<{ id: string; employeeCode: string; displayName: string; active: boolean }>
-    comandasByEmployee: Map<string | null, unknown[]>
+    comandasByEmployee: Map<string | null, Array<Record<string, unknown>>>
     sessionSnapshotByEmployee: Map<string | null, EmployeeSessionSnapshot>
     mesas: Array<{
       id: string
       label: string
       capacity: number
-      section: string
-      positionX: number
-      positionY: number
+      section: string | null
+      positionX: number | null
+      positionY: number | null
       active: boolean
       reservedUntil: Date | null
     }>
@@ -420,13 +414,13 @@ export class OperationsLiveSnapshotService {
         buildEmployeeOperationsRecord({
           employee,
           cashSession: compactMode ? null : (sessionSnapshotByEmployee.get(employee.id) ?? null),
-          comandas: comandasByEmployee.get(employee.id) ?? [],
+          comandas: (comandasByEmployee.get(employee.id) ?? []) as ComandaLike[],
         }),
       ),
       unassigned: buildEmployeeOperationsRecord({
         employee: null,
         cashSession: compactMode ? null : (sessionSnapshotByEmployee.get(null) ?? null),
-        comandas: comandasByEmployee.get(null) ?? [],
+        comandas: (comandasByEmployee.get(null) ?? []) as ComandaLike[],
         fallbackDisplayName: DEFAULT_OWNER_OPERATOR_LABEL,
       }),
       mesas: mesas.map((mesa) => {

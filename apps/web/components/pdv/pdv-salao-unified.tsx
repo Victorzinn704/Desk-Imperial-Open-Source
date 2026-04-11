@@ -7,7 +7,7 @@ import { calcTotal, type Comanda, type Garcom, type Mesa, type MesaStatus } from
 import { formatCurrency } from '@/lib/currency'
 
 // Imports from extracted modules
-import { FilterChip, type FilterStatus, GarcomAvatar, garcomCor, initials, MesaCard, MesaCompact, resolveMesaComanda, type SalaoView, useUrgencyTick, ViewBtn } from './salao'
+import { FilterChip, type FilterStatus, GarcomAvatar, garcomCor, initials, MesaCard, MesaCompact, resolveMesaComanda, type SalaoView, urgencyLevel, useUrgencyTick, ViewBtn } from './salao'
 
 function matchesMesaFilter(mesa: Mesa, comanda: Comanda | undefined, filter: FilterStatus, now: number): boolean {
   if (filter === 'todos') {return true}

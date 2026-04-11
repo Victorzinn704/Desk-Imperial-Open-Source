@@ -25,9 +25,9 @@ describe('FinanceOrdersTable', () => {
       revokeObjectURL: revokeObjectURLMock,
     })
 
-    vi.spyOn(document.body, 'append').mockImplementation(appendMock as () => void)
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clickMock)
-    vi.spyOn(Element.prototype, 'remove').mockImplementation(removeMock)
+    vi.spyOn(document.body, 'append').mockImplementation(() => {})
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    vi.spyOn(Element.prototype, 'remove').mockImplementation(() => {})
   })
 
   afterEach(() => {

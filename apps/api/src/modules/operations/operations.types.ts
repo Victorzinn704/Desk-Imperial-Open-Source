@@ -74,7 +74,7 @@ type MesaLike = Pick<
   'id' | 'label' | 'capacity' | 'section' | 'positionX' | 'positionY' | 'active' | 'reservedUntil'
 >
 
-type ComandaLike = Pick<
+export type ComandaLike = Pick<
   Comanda,
   | 'id'
   | 'companyOwnerId'
@@ -99,7 +99,7 @@ type ComandaLike = Pick<
 
 type EmployeeLike = Pick<Employee, 'id' | 'employeeCode' | 'displayName' | 'active'>
 
-type CashClosureLike = Pick<
+export type CashClosureLike = Pick<
   CashClosure,
   | 'status'
   | 'expectedCashAmount'
