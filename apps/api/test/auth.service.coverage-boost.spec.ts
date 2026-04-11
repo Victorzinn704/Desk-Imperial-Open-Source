@@ -26,8 +26,13 @@ import { BadRequestException, ForbiddenException, HttpException, HttpStatus } fr
 import type { ConfigService } from '@nestjs/config'
 import { CurrencyCode, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 import { AuthService } from '../src/modules/auth/auth.service'
+import { AuthSessionService } from '../src/modules/auth/auth-session.service'
+import { AuthLoginService } from '../src/modules/auth/auth-login.service'
+import { AuthRegistrationService } from '../src/modules/auth/auth-registration.service'
+import { AuthPasswordService } from '../src/modules/auth/auth-password.service'
+import { AuthEmailVerificationService } from '../src/modules/auth/auth-email-verification.service'
 import { LoginModeDto } from '../src/modules/auth/dto/login.dto'
 import { makeRequestContext } from './helpers/request-context.factory'
 
@@ -197,16 +202,65 @@ function createSetup(options: SetupOptions = {}) {
     del: jest.fn(async () => {}),
   }
 
-  const service = new AuthService(
+  const audit = _audit
+  const rateLimit = _rateLimit
+
+  const sessionService = new AuthSessionService(
     prisma as any,
     config as unknown as ConfigService,
-    consent as any,
-    geocoding as any,
+    demo as any,
+    cache as any,
+  )
+  const emailVerificationService = new AuthEmailVerificationService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+  )
+  const consentSvc = consent
+  const geocodingSvc = geocoding
+  const registrationService = new AuthRegistrationService(
+    prisma as any,
+    config as unknown as ConfigService,
+    consentSvc as any,
+    geocodingSvc as any,
+    mailer as any,
+    audit as any,
+    emailVerificationService,
+  )
+  const passwordService = new AuthPasswordService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+    sessionService,
+    demo as any,
+  )
+  const loginService = new AuthLoginService(
+    prisma as any,
+    config as unknown as ConfigService,
     mailer as any,
     audit as any,
     rateLimit as any,
     demo as any,
-    cache as any,
+    sessionService,
+    emailVerificationService,
+  )
+
+  const service = new AuthService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+    demo as any,
+    sessionService,
+    registrationService,
+    loginService,
+    passwordService,
+    emailVerificationService,
   )
 
   return {
@@ -218,6 +272,9 @@ function createSetup(options: SetupOptions = {}) {
     rateLimit,
     demo,
     cache,
+    sessionService,
+    passwordService,
+    emailVerificationService,
   }
 }
 
@@ -451,7 +508,7 @@ describe('AuthService coverage boost', () => {
   })
 
   it('requestEmailVerification retorna mensagem generica para usuario inativo', async () => {
-    const { service, prisma, audit: _audit } = createSetup()
+    const { service, prisma, audit } = createSetup()
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-disabled',
       fullName: 'Disabled User',
@@ -485,7 +542,7 @@ describe('AuthService coverage boost', () => {
   })
 
   it('requestPasswordReset retorna mensagem generica para usuario inativo', async () => {
-    const { service, prisma, audit: _audit } = createSetup()
+    const { service, prisma, audit } = createSetup()
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-disabled',
       fullName: 'Disabled',
@@ -893,10 +950,10 @@ describe('AuthService coverage boost', () => {
   // ── sessionTokenCacheKey / sessionIdCacheKey ─────────────────────
 
   it('gera cache keys com prefixos corretos', () => {
-    const { service } = createSetup()
+    const { sessionService } = createSetup()
 
-    expect((service as any).sessionTokenCacheKey('abc')).toBe('auth:session:token:abc')
-    expect((service as any).sessionIdCacheKey('xyz')).toBe('auth:session:id:xyz')
+    expect((sessionService as any).sessionTokenCacheKey('abc')).toBe('auth:session:token:abc')
+    expect((sessionService as any).sessionIdCacheKey('xyz')).toBe('auth:session:id:xyz')
   })
 
   // ── handleFailedLogin — sends alert when actorUserId + actorFullName present ──

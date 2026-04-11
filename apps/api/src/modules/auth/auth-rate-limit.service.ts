@@ -112,7 +112,9 @@ export class AuthRateLimitService {
     const redisKey = CacheService.ratelimitKey('auth', key)
     const entry = await this.cache.get<AttemptEntry>(redisKey)
 
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     const now = Date.now()
 

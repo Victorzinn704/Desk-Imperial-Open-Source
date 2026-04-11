@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { AuthModule } from '../auth/auth.module'
 import { MonitoringModule } from '../monitoring/monitoring.module'
 import { ConsentBootstrap } from './consent.bootstrap'

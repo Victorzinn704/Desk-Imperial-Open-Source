@@ -1,8 +1,7 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common'
+import { type ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common'
 import { CsrfGuard } from '../src/modules/auth/guards/csrf.guard'
 import type { AuthService } from '../src/modules/auth/auth.service'
 import type { ConfigService } from '@nestjs/config'
-import type { ExecutionContext } from '@nestjs/common'
 import { makeAuthContext } from './helpers/auth-context.factory'
 
 describe('CsrfGuard', () => {
@@ -13,9 +12,15 @@ describe('CsrfGuard', () => {
 
   const configService = {
     get: jest.fn((key: string) => {
-      if (key === 'APP_URL') return 'http://localhost:3000'
-      if (key === 'NEXT_PUBLIC_APP_URL') return 'http://localhost:3000'
-      if (key === 'NODE_ENV') return 'development'
+      if (key === 'APP_URL') {
+        return 'http://localhost:3000'
+      }
+      if (key === 'NEXT_PUBLIC_APP_URL') {
+        return 'http://localhost:3000'
+      }
+      if (key === 'NODE_ENV') {
+        return 'development'
+      }
       return undefined
     }),
   }
@@ -40,7 +45,9 @@ describe('CsrfGuard', () => {
       cookies: { partner_csrf: 'csrf-token-123' },
       headers: { 'x-csrf-token': 'csrf-token-123' },
       get: (header: string) => {
-        if (header === 'origin') return 'http://localhost:3000'
+        if (header === 'origin') {
+          return 'http://localhost:3000'
+        }
         return undefined
       },
     }
@@ -68,7 +75,9 @@ describe('CsrfGuard', () => {
       cookies: {},
       headers: {},
       get: (header: string) => {
-        if (header === 'origin') return 'http://localhost:3000'
+        if (header === 'origin') {
+          return 'http://localhost:3000'
+        }
         return undefined
       },
     }
@@ -82,7 +91,9 @@ describe('CsrfGuard', () => {
       cookies: { partner_csrf: 'csrf-token-123' },
       headers: { 'x-csrf-token': 'csrf-token-123' },
       get: (header: string) => {
-        if (header === 'origin') return 'https://malicious.example.com'
+        if (header === 'origin') {
+          return 'https://malicious.example.com'
+        }
         return undefined
       },
     }
@@ -96,8 +107,12 @@ describe('CsrfGuard', () => {
       cookies: { partner_csrf: 'csrf-token-123' },
       headers: { 'x-csrf-token': 'csrf-token-123' },
       get: (header: string) => {
-        if (header === 'origin') return undefined
-        if (header === 'referer') return 'http://localhost:3000/dashboard'
+        if (header === 'origin') {
+          return undefined
+        }
+        if (header === 'referer') {
+          return 'http://localhost:3000/dashboard'
+        }
         return undefined
       },
     }
@@ -107,13 +122,68 @@ describe('CsrfGuard', () => {
     expect(result).toBe(true)
   })
 
+  it('bloqueia referer que apenas compartilha prefixo textual com a origem permitida', () => {
+    const strictConfig = {
+      get: jest.fn((key: string) => {
+        if (key === 'APP_URL') {
+          return 'https://example.com'
+        }
+        if (key === 'NEXT_PUBLIC_APP_URL') {
+          return 'https://example.com'
+        }
+        if (key === 'NODE_ENV') {
+          return 'production'
+        }
+        return undefined
+      }),
+    }
+    const strictGuard = new CsrfGuard(authService as unknown as AuthService, strictConfig as unknown as ConfigService)
+    const request = {
+      auth: makeAuthContext({ sessionId: 'session-1' }),
+      cookies: { partner_csrf: 'csrf-token-123' },
+      headers: { 'x-csrf-token': 'csrf-token-123' },
+      get: (header: string) => {
+        if (header === 'origin') {
+          return undefined
+        }
+        if (header === 'referer') {
+          return 'https://example.com.evil.test/path'
+        }
+        return undefined
+      },
+    }
+
+    expect(() => strictGuard.canActivate(makeContext(request))).toThrow(ForbiddenException)
+  })
+
+  it('bloqueia referer invalido ou malformado', () => {
+    const request = {
+      auth: makeAuthContext({ sessionId: 'session-1' }),
+      cookies: { partner_csrf: 'csrf-token-123' },
+      headers: { 'x-csrf-token': 'csrf-token-123' },
+      get: (header: string) => {
+        if (header === 'origin') {
+          return undefined
+        }
+        if (header === 'referer') {
+          return 'not-a-url'
+        }
+        return undefined
+      },
+    }
+
+    expect(() => guard.canActivate(makeContext(request))).toThrow(ForbiddenException)
+  })
+
   it('bloqueia quando header CSRF nao confere com cookie', () => {
     const request = {
       auth: makeAuthContext({ sessionId: 'session-1' }),
       cookies: { partner_csrf: 'csrf-token-123' },
       headers: { 'x-csrf-token': 'csrf-token-999' },
       get: (header: string) => {
-        if (header === 'origin') return 'http://localhost:3000'
+        if (header === 'origin') {
+          return 'http://localhost:3000'
+        }
         return undefined
       },
     }
