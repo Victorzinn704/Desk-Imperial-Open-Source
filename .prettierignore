@@ -8,3 +8,6 @@ package-lock.json
 apps/api/prisma/migrations/
 *.min.js
 *.min.css
+.dual-graph/
+*.log
+CHANGELOG.md

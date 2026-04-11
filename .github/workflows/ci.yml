@@ -81,6 +81,25 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  backend-e2e:
+    name: Backend E2E Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
+
+      - name: Run API e2e smoke
+        run: npm --workspace @partner/api run test:e2e
+
   frontend-unit:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
@@ -269,7 +288,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [quality, backend-tests, frontend-unit, frontend-e2e, security, performance-latency-gate]
+    needs: [quality, backend-tests, backend-e2e, frontend-unit, frontend-e2e, security, performance-latency-gate]
 
     steps:
       - name: Checkout
