@@ -5,10 +5,8 @@ export {
   CANVAS_H,
   CARD_W,
   CARD_H,
-  GRID_SPACING_X,
-  GRID_SPACING_Y,
-  GRID_COLS,
-  CANVAS_PADDING,
+
+CANVAS_PADDING,
   STATUS_LABEL,
   fmtBRL,
   defaultCreateForm,
