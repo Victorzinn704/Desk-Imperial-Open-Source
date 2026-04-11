@@ -53,8 +53,8 @@ describe('MobileOrderBuilder', () => {
           makeProduct({ id: '2', category: 'Água', name: 'Á item' }),
           makeProduct({ id: '3', category: 'Bebidas', name: 'B item' }),
         ]}
-        onSubmit={vi.fn()}
         onCancel={vi.fn()}
+        onSubmit={vi.fn()}
       />,
     )
 
@@ -74,8 +74,8 @@ describe('MobileOrderBuilder', () => {
           makeProduct({ id: '1', category: 'Água', name: 'Suco do dia' }),
           makeProduct({ id: '2', category: 'Água', name: 'Açaí especial' }),
         ]}
-        onSubmit={vi.fn()}
         onCancel={vi.fn()}
+        onSubmit={vi.fn()}
       />,
     )
 
@@ -124,8 +124,8 @@ describe('MobileOrderBuilder', () => {
           makeProduct({ id: '3', category: 'Sobremesas', name: 'Pudim' }),
           makeProduct({ id: '4', category: 'Oculto', name: 'Inativo', active: false }),
         ]}
-        onSubmit={onSubmit}
         onCancel={vi.fn()}
+        onSubmit={onSubmit}
       />,
     )
 
@@ -169,12 +169,12 @@ describe('MobileOrderBuilder', () => {
 
     const { rerender } = render(
       <MobileOrderBuilder
+        busy
         mesaLabel="11"
         mode="new"
-        busy
         produtos={[makeProduct({ id: 'inactive-1', active: false, category: 'Ocultos', name: 'Fora de linha' })]}
-        onSubmit={onSubmit}
         onCancel={onCancel}
+        onSubmit={onSubmit}
       />,
     )
 
@@ -189,8 +189,8 @@ describe('MobileOrderBuilder', () => {
         mesaLabel="11"
         mode="new"
         produtos={[makeProduct({ id: 'pet-1', category: 'Petiscos', name: 'Pastel' })]}
-        onSubmit={onSubmit}
         onCancel={onCancel}
+        onSubmit={onSubmit}
       />,
     )
 
@@ -213,8 +213,8 @@ describe('MobileOrderBuilder', () => {
           makeProduct({ id: 'combo-1', category: 'Combo', name: 'Combo da Casa' }),
           makeProduct({ id: 'pizza-1', category: 'Pizza', name: 'Margherita' }),
         ]}
-        onSubmit={vi.fn()}
         onCancel={vi.fn()}
+        onSubmit={vi.fn()}
       />,
     )
 

@@ -20,7 +20,7 @@ export function useEvaluationCountdown(evaluationAccess: EvaluationAccess, onExp
   })
 
   useEffect(() => {
-    if (!evaluationAccess) return
+    if (!evaluationAccess) {return}
 
     const expirationTime = new Date(evaluationAccess.sessionExpiresAt).getTime()
 

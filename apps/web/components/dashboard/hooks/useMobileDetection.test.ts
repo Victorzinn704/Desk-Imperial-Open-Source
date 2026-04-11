@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import { useMobileDetection, DEFAULT_MOBILE_BREAKPOINT, COMPACT_DESKTOP_BREAKPOINT } from './useMobileDetection'
+import { act, renderHook } from '@testing-library/react'
+import { COMPACT_DESKTOP_BREAKPOINT, DEFAULT_MOBILE_BREAKPOINT, useMobileDetection } from './useMobileDetection'
 
 describe('useMobileDetection', () => {
   let listeners: Map<string, Set<EventListener>>
@@ -8,7 +8,7 @@ describe('useMobileDetection', () => {
   beforeEach(() => {
     listeners = new Map()
     vi.spyOn(window, 'addEventListener').mockImplementation((event, handler) => {
-      if (!listeners.has(event)) listeners.set(event, new Set())
+      if (!listeners.has(event)) {listeners.set(event, new Set())}
       listeners.get(event)!.add(handler as EventListener)
     })
     vi.spyOn(window, 'removeEventListener').mockImplementation((event, handler) => {

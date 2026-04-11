@@ -1,11 +1,11 @@
 import {
-  gotoWithConsent,
-  test,
   expect,
   fillOwnerLogin,
+  gotoWithConsent,
   ownerEmailInput,
   passwordInput,
   passwordToggleButton,
+  test,
 } from './fixtures/auth-fixtures'
 
 test.describe('Auth E2E - Chromium Smoke', () => {

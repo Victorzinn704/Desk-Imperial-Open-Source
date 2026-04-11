@@ -1,25 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { type MouseEvent as ReactMouseEvent, useEffect, useState } from 'react'
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import {
-  Menu,
-  X,
   BadgeDollarSign,
   CalendarDays,
   ChartColumn,
+  Crown,
   FileDown,
   Globe2,
   KeyRound,
   Landmark,
+  type LucideIcon,
+  Menu,
   Radar,
-  Crown,
   Tags,
   Users,
   Waypoints,
+  X,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { LetterCard } from '@/components/marketing/letter-card'
 import { FounderContactCard } from '@/components/marketing/founder-contact-card'
 import { FounderPortraitCard } from '@/components/marketing/founder-portrait-card'
@@ -276,9 +276,9 @@ export function LandingPage() {
                 { label: 'Páginas', href: '#rodape' },
               ].map(({ label, href }) => (
                 <Link
-                  key={label}
                   className="rounded-lg px-3 py-1.5 text-sm text-[var(--text-soft)] transition-all hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)]"
                   href={href}
+                  key={label}
                 >
                   {label}
                 </Link>
@@ -301,10 +301,10 @@ export function LandingPage() {
             </Link>
             {/* Hamburger — mobile only */}
             <button
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              className="flex size-10 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors active:bg-[rgba(255,255,255,0.1)] sm:hidden"
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="flex size-10 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors active:bg-[rgba(255,255,255,0.1)] sm:hidden"
-              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
             >
               {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
@@ -315,12 +315,12 @@ export function LandingPage() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              key="mobile-menu"
-              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
               className="border-t border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.95)] px-6 pb-6 pt-4 sm:hidden"
+              exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -8 }}
+              key="mobile-menu"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
             >
               <nav className="mb-5 flex flex-col gap-1">
                 {[
@@ -329,10 +329,10 @@ export function LandingPage() {
                   { label: 'Páginas', href: '#rodape' },
                 ].map(({ label, href }) => (
                   <Link
-                    key={label}
-                    href={href}
-                    onClick={() => setMobileMenuOpen(false)}
                     className="rounded-xl px-4 py-3 text-sm font-medium text-[var(--text-soft)] transition-colors active:bg-[rgba(255,255,255,0.06)] active:text-[var(--text-primary)]"
+                    href={href}
+                    key={label}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     {label}
                   </Link>
@@ -340,16 +340,16 @@ export function LandingPage() {
               </nav>
               <div className="flex flex-col gap-3">
                 <Link
+                  className="w-full rounded-xl border border-[var(--border-strong)] py-3 text-center text-sm font-semibold text-[var(--text-primary)] transition-all active:border-[var(--accent)]"
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full rounded-xl border border-[var(--border-strong)] py-3 text-center text-sm font-semibold text-[var(--text-primary)] transition-all active:border-[var(--accent)]"
                 >
                   Entrar
                 </Link>
                 <Link
+                  className="rainbow-hover hero-entry-button w-full justify-center"
                   href="/cadastro"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rainbow-hover hero-entry-button w-full justify-center"
                 >
                   <span className="sp">Cadastrar-se</span>
                 </Link>
@@ -372,8 +372,6 @@ export function LandingPage() {
               className="mt-8 space-y-0.5 sm:space-y-1.5"
               initial="hidden"
               style={{ rotateX, rotateY, transformPerspective: 1200 }}
-              onMouseLeave={handleHeroPointerLeave}
-              onMouseMove={handleHeroPointerMove}
               variants={{
                 hidden: {},
                 visible: {
@@ -383,17 +381,14 @@ export function LandingPage() {
                   },
                 },
               }}
+              onMouseLeave={handleHeroPointerLeave}
+              onMouseMove={handleHeroPointerMove}
             >
               {heroLines.map((line, index) => (
                 <motion.span
                   className="block origin-left whitespace-nowrap text-[clamp(1.95rem,5.2vw,5.1rem)] font-semibold leading-[0.95] tracking-tight"
                   key={line}
                   style={{ x: lineShifts[index] ?? lineShifts[lineShifts.length - 1] }}
-                  whileHover={{
-                    scale: 1.015,
-                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
-                    filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
-                  }}
                   variants={{
                     hidden: { opacity: 0, filter: 'blur(28px)', scale: 0.82 },
                     visible: {
@@ -402,6 +397,11 @@ export function LandingPage() {
                       scale: 1,
                       transition: { duration: 1.6, ease: [0.22, 1, 0.36, 1] },
                     },
+                  }}
+                  whileHover={{
+                    scale: 1.015,
+                    x: index === 0 ? 10 : index === 1 ? 8 : 6,
+                    filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.22))',
                   }}
                 >
                   <span className="text-flag-brazil">{line}</span>
@@ -415,7 +415,7 @@ export function LandingPage() {
               initial={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.45, ease: 'easeOut', delay: 0.45 }}
             >
-              <span className="text-lg" aria-hidden="true">
+              <span aria-hidden="true" className="text-lg">
                 🇧🇷
               </span>
               <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-primary)] sm:text-[0.8rem]">
@@ -498,18 +498,18 @@ export function LandingPage() {
             <motion.p
               className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]"
               initial={{ opacity: 0, scale: 0.6, filter: 'blur(18px)' }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
               viewport={{ once: false, amount: 0.3 }}
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
             >
               O que você vai usar
             </motion.p>
             <motion.h2
               className="mt-1 max-w-2xl text-center text-4xl font-semibold leading-tight text-white sm:text-5xl"
               initial={{ opacity: 0, scale: 0.72, filter: 'blur(28px)', y: 10 }}
+              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
               viewport={{ once: false, amount: 0.3 }}
               whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
-              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             >
               Tudo que está aqui existe de verdade e já funciona.
             </motion.h2>
@@ -569,14 +569,14 @@ export function LandingPage() {
           },
         ].map(({ side, tag, title, body, stat, icon: Icon }, i) => (
           <motion.div
-            key={tag}
             className="s-feature-card"
             data-side={side}
             initial={{ scaleX: 0, opacity: 0 }}
-            viewport={{ once: false, amount: 0.15 }}
-            whileInView={{ scaleX: 1, opacity: 1 }}
+            key={tag}
             style={{ transformOrigin: side === 'left' ? 'left center' : 'right center' }}
             transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.2 }}
+            viewport={{ once: false, amount: 0.15 }}
+            whileInView={{ scaleX: 1, opacity: 1 }}
           >
             <div className={`s-feature-card__inner ${side === 'right' ? 's-feature-card__inner--right' : ''}`}>
               <div className="s-feature-card__text">
@@ -601,9 +601,9 @@ export function LandingPage() {
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
           <motion.div
             initial={{ opacity: 0, filter: 'blur(24px)', scale: 0.88 }}
-            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
-            viewport={{ once: false, amount: 0.12 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: false, amount: 0.12 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
           >
             <div className="glass-card p-8 lg:p-10">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -661,9 +661,9 @@ export function LandingPage() {
 
           <motion.div
             initial={{ opacity: 0, filter: 'blur(24px)', scale: 0.88 }}
-            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
-            viewport={{ once: false, amount: 0.12 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
+            viewport={{ once: false, amount: 0.12 }}
+            whileInView={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
           >
             <InteractionFlowCard />
           </motion.div>

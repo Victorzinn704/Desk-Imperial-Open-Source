@@ -1,12 +1,11 @@
 'use client'
 
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingDown, TrendingUp } from 'lucide-react'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
-import { Skeleton } from '@/components/shared/skeleton'
+import { ChartSkeleton, Skeleton } from '@/components/shared/skeleton'
 import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency, formatCurrency } from '@/lib/currency'
 import dynamic from 'next/dynamic'
-import { ChartSkeleton } from '@/components/shared/skeleton'
 
 const LazyPerformanceChart = dynamic(
   () =>
@@ -141,9 +140,9 @@ export function SalesPerformanceCard({
           ) : timeline.length > 0 ? (
             <ChartResponsiveContainer>
               <LazyPerformanceChart
-                timeline={timeline}
                 displayCurrency={displayCurrency}
                 formatCompactFn={formatCompactCurrency}
+                timeline={timeline}
                 tooltipContent={<PerformanceTooltip displayCurrency={displayCurrency} />}
               />
             </ChartResponsiveContainer>
@@ -224,7 +223,7 @@ function PerformanceTooltip({
   label?: string
   payload?: Array<{ name?: string; value?: number; color?: string }>
 }) {
-  if (!active || !payload?.length) return null
+  if (!active || !payload?.length) {return null}
 
   return (
     <div className="min-w-[180px] rounded-[16px] border border-[var(--border-strong)] bg-[rgba(12,15,19,0.96)] p-3.5 shadow-[var(--shadow-panel)]">

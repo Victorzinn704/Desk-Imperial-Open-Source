@@ -1,9 +1,8 @@
 'use client'
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
-import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
-import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
-import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
+import { calcSubtotal, calcTotal, type Comanda, type ComandaStatus, formatElapsed } from '@/components/pdv/pdv-types'
+import { ChevronDown, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { useQuery } from '@tanstack/react-query'
@@ -94,8 +93,8 @@ export function MobileComandaList({
     }
 
     return [...active].sort((a, b) => {
-      if (a.id === focusedId) return -1
-      if (b.id === focusedId) return 1
+      if (a.id === focusedId) {return -1}
+      if (b.id === focusedId) {return 1}
       return b.abertaEm.getTime() - a.abertaEm.getTime()
     })
   }, [active, focusedId])
@@ -105,21 +104,21 @@ export function MobileComandaList({
   if (active.length === 0 && fechadas.length === 0) {
     return (
       <OperationEmptyState
-        title="Nenhuma comanda ativa"
-        description="Crie um pedido em uma mesa para começar."
         Icon={Plus}
         action={
           onNewComanda ? (
             <button
+              className="flex items-center gap-2 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
               type="button"
               onClick={onNewComanda}
-              className="flex items-center gap-2 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
             >
               <Plus className="size-4" />
               Nova comanda
             </button>
           ) : null
         }
+        description="Crie um pedido em uma mesa para começar."
+        title="Nenhuma comanda ativa"
       />
     )
   }
@@ -133,9 +132,9 @@ export function MobileComandaList({
         </p>
         {onNewComanda && (
           <button
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.2)]"
             type="button"
             onClick={onNewComanda}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.2)]"
           >
             <Plus className="size-3.5" />
             Nova
@@ -149,15 +148,15 @@ export function MobileComandaList({
 
           return (
             <ComandaCard
-              key={comanda.id}
               comanda={comanda}
               isFocused={isFocused}
+              key={comanda.id}
               ref={isFocused ? focusedRef : undefined}
-              onFocus={onFocus}
               onAddItems={onAddItems}
-              onUpdateStatus={onUpdateStatus}
               onCancelComanda={onCancelComanda}
               onCloseComanda={onCloseComanda}
+              onFocus={onFocus}
+              onUpdateStatus={onUpdateStatus}
             />
           )
         })}
@@ -171,7 +170,7 @@ export function MobileComandaList({
           </p>
           <ul className="space-y-2">
             {fechadas.map((comanda) => (
-              <ExtratoCard key={comanda.id} comanda={comanda} />
+              <ExtratoCard comanda={comanda} key={comanda.id} />
             ))}
           </ul>
         </div>
@@ -216,8 +215,8 @@ const ComandaCard = memo(
 
     return (
       <li
-        ref={ref}
         className="group relative overflow-hidden rounded-[20px] transition-all duration-300"
+        ref={ref}
         style={{
           background: isFocused ? 'var(--surface-muted)' : 'var(--surface)',
           border: `1px solid ${isFocused ? `${config.chipColor}55` : 'var(--border)'}`,
@@ -229,9 +228,9 @@ const ComandaCard = memo(
           <button
             aria-label={`Abrir detalhes da ${activeComanda.mesa ?? 'comanda'}`}
             className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
             type="button"
             onClick={() => onFocus(comanda.id)}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
           />
         )}
 
@@ -280,9 +279,9 @@ const ComandaCard = memo(
               </span>
               {isFocused && (
                 <button
+                  className="mt-2 text-[10px] text-[var(--text-soft)] underline underline-offset-2"
                   type="button"
                   onClick={() => onFocus?.(null)}
-                  className="mt-2 text-[10px] text-[var(--text-soft)] underline underline-offset-2"
                 >
                   Recolher
                 </button>
@@ -295,10 +294,10 @@ const ComandaCard = memo(
               <div className="mb-5 flex gap-2">
                 {onAddItems && canAddItems && (
                   <button
-                    type="button"
-                    onClick={() => onAddItems(activeComanda)}
                     className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-all active:scale-95"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
+                    type="button"
+                    onClick={() => onAddItems(activeComanda)}
                   >
                     <Edit2 className="size-4" />
                     Itens
@@ -307,15 +306,15 @@ const ComandaCard = memo(
 
                 {onCancelComanda && (
                   <button
+                    aria-label="Cancelar comanda"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                     type="button"
                     onClick={() => {
                       if (window.confirm('Tem certeza que deseja cancelar esta comanda inteira?')) {
                         onCancelComanda(activeComanda.id)
                       }
                     }}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95"
-                    aria-label="Cancelar comanda"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
                     <Trash2 className="size-4.5" />
                   </button>
@@ -331,7 +330,7 @@ const ComandaCard = memo(
                   <div className="mb-5 rounded-[14px] bg-[var(--surface-muted)] p-3 border border-[var(--border)]">
                     <ul className="space-y-2.5">
                       {activeComanda.itens.map((item, idx) => (
-                        <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
+                        <li className="flex items-center justify-between text-[13px]" key={`${item.produtoId}-${idx}`}>
                           <div className="flex gap-2.5 items-start">
                             <span className="font-bold text-[var(--accent,#008cff)] w-4 text-center">
                               {item.quantidade}x
@@ -359,12 +358,12 @@ const ComandaCard = memo(
                     Desconto %
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                     max={100}
+                    min={0}
+                    type="number"
                     value={discountPercent}
                     onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                   />
                 </div>
                 <div>
@@ -372,12 +371,12 @@ const ComandaCard = memo(
                     Acréscimo %
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                     max={100}
+                    min={0}
+                    type="number"
                     value={surchargePercent}
                     onChange={(e) => setSurchargePercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
                   />
                 </div>
               </div>
@@ -399,6 +398,12 @@ const ComandaCard = memo(
               <div className="flex flex-col gap-2.5">
                 {config.nextStatus && (
                   <button
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg"
+                    style={{
+                      backgroundColor: config.nextBg,
+                      border: `1px solid ${config.chipColor}44`,
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
                     type="button"
                     onClick={() => {
                       if (config.nextStatus === 'fechada' && onCloseComanda) {
@@ -408,12 +413,6 @@ const ComandaCard = memo(
 
                       onUpdateStatus(comanda.id, config.nextStatus!)
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg"
-                    style={{
-                      backgroundColor: config.nextBg,
-                      border: `1px solid ${config.chipColor}44`,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
                   >
                     {config.nextLabel}
                     <ChevronRight className="size-4 opacity-70" />
@@ -422,13 +421,13 @@ const ComandaCard = memo(
 
                 {showDirectClose && onCloseComanda && (
                   <button
-                    type="button"
-                    onClick={() => {
-                      onCloseComanda(comanda.id, discountPercent, surchargePercent)
-                    }}
                     className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
+                    }}
+                    type="button"
+                    onClick={() => {
+                      onCloseComanda(comanda.id, discountPercent, surchargePercent)
                     }}
                   >
                     Fechar
@@ -437,13 +436,13 @@ const ComandaCard = memo(
 
                 {showDirectClose && !onCloseComanda && (
                   <button
-                    type="button"
-                    onClick={() => {
-                      onUpdateStatus(comanda.id, 'fechada')
-                    }}
                     className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
+                    }}
+                    type="button"
+                    onClick={() => {
+                      onUpdateStatus(comanda.id, 'fechada')
                     }}
                   >
                     Pagar
@@ -478,9 +477,9 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
     <li className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
       {/* Header — clicável */}
       <button
-        type="button"
         className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
+        type="button"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="text-left">
@@ -519,8 +518,8 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
           <ul className="mb-4 space-y-2">
             {comanda.itens.map((item, idx) => (
               <li
-                key={idx}
                 className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
+                key={idx}
               >
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-xs font-semibold text-[var(--text-primary)]">

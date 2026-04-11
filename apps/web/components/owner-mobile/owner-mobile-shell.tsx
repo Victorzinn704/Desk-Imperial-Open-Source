@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import type { Mesa, ComandaItem } from '@/components/pdv/pdv-types'
+import type { ComandaItem, Mesa } from '@/components/pdv/pdv-types'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3,
@@ -41,18 +41,18 @@ import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import {
-  fetchOperationsLive,
+  addComandaItem,
+  addComandaItems,
+  closeComanda,
   fetchOperationsKitchen,
+  fetchOperationsLive,
   fetchOperationsSummary,
   fetchOrders,
   fetchProducts,
-  closeComanda,
   logout,
-  openComanda,
   openCashSession,
+  openComanda,
   updateComandaStatus,
-  addComandaItem,
-  addComandaItems,
 } from '@/lib/api'
 import {
   buildOperationsExecutiveKpis,
@@ -281,7 +281,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     closeComandaMutation.isPending
 
   async function handleSubmit(items: ComandaItem[]) {
-    if (!pendingAction) return
+    if (!pendingAction) {return}
     setScreenError(null)
 
     try {
@@ -356,8 +356,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       {/* Header */}
       {/* Header Minimalista */}
       <header
-        data-testid="owner-header"
         className="relative z-50 flex shrink-0 items-center justify-between bg-[var(--bg)] px-4 pb-2.5 sm:px-5 sm:pb-3"
+        data-testid="owner-header"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-3">
@@ -379,35 +379,35 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               />
             </div>
-            <span data-testid="user-display-name" className="text-xs font-medium text-[var(--text-primary)] sm:text-sm">
+            <span className="text-xs font-medium text-[var(--text-primary)] sm:text-sm" data-testid="user-display-name">
               {displayName.split(' ')[0]}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
+            aria-label="Configurações"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
             type="button"
             onClick={() => router.push('/dashboard?view=settings&panel=account')}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
-            aria-label="Configurações"
           >
             <Cog className="size-4" />
           </button>
           <button
+            aria-label="Abrir painel completo"
+            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
-            aria-label="Abrir painel completo"
           >
             <Building2 className="size-4" />
           </button>
           <button
-            type="button"
-            data-testid="logout-button"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
             aria-label="Encerrar sessão"
+            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
+            data-testid="logout-button"
+            disabled={logoutMutation.isPending}
+            type="button"
+            onClick={() => logoutMutation.mutate()}
           >
             <LogOut className="size-4" />
           </button>
@@ -420,8 +420,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         <div className="border-b border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#fca5a5]">
           {screenError}
           <button
-            type="button"
             className="ml-3 text-xs font-semibold underline opacity-70"
+            type="button"
             onClick={() => setScreenError(null)}
           >
             OK
@@ -430,12 +430,12 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       ) : null}
 
       {/* Main content */}
-      <main ref={pullRef} className="flex-1 overflow-y-auto relative">
-        <PullIndicator style={pullIndicatorStyle} isRefreshing={isRefreshing} progress={pullProgress} />
+      <main className="flex-1 overflow-y-auto relative" ref={pullRef}>
+        <PullIndicator isRefreshing={isRefreshing} progress={pullProgress} style={pullIndicatorStyle} />
         {activeTab === 'mesas' ? (
           <MobileTableGrid
-            mesas={mesas}
             isLoading={operationsQuery.isLoading && !operationsQuery.data}
+            mesas={mesas}
             onSelectMesa={(mesa: Mesa) => {
               if (mesa.status === 'ocupada' && mesa.comandaId) {
                 setFocusedComandaId(mesa.comandaId)
@@ -452,15 +452,15 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         {activeTab === 'pedido' ? (
           pendingAction ? (
             <MobileOrderBuilder
+              busy={isBusy}
               mesaLabel={mesaLabel}
               mode={orderMode}
               produtos={productsQuery.data?.items ?? []}
-              busy={isBusy}
-              onSubmit={handleSubmit}
               onCancel={() => {
                 setPendingAction(null)
                 setActiveTab('mesas')
               }}
+              onSubmit={handleSubmit}
             />
           ) : null
         ) : null}
@@ -481,18 +481,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
         {activeTab === 'resumo' ? (
           <OwnerResumoTab
-            todayRevenue={executiveKpis.receitaRealizada}
-            ticketMedio={ticketMedio}
-            todayOrderCount={todayOrders.length}
             activeComandas={executiveKpis.openComandasCount}
-            mesasLivres={mesasLivres}
-            mesasOcupadas={mesasOcupadas}
-            kitchenBadge={kitchenBadge}
             garconRanking={garconRanking}
-            topProdutos={topProdutos}
             isLoading={
               ordersQuery.isLoading || operationsQuery.isLoading || kitchenQuery.isLoading || summaryQuery.isLoading
             }
+            kitchenBadge={kitchenBadge}
+            mesasLivres={mesasLivres}
+            mesasOcupadas={mesasOcupadas}
+            ticketMedio={ticketMedio}
+            todayOrderCount={todayOrders.length}
+            todayRevenue={executiveKpis.receitaRealizada}
+            topProdutos={topProdutos}
             onOpenFullDashboard={() => router.push('/dashboard')}
           />
         ) : null}
@@ -515,15 +515,15 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             const isActive = activeTab === id
             return (
               <button
+                className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
+                data-testid={`nav-${id}`}
                 key={id}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
                 type="button"
                 onClick={() => {
                   setActiveTab(id)
-                  if (id !== 'comandas') setFocusedComandaId(null)
+                  if (id !== 'comandas') {setFocusedComandaId(null)}
                 }}
-                data-testid={`nav-${id}`}
-                className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isActive && (
                   <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(0,140,255,0.15)] pointer-events-none" />
@@ -531,8 +531,8 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 <div className="relative z-10">
                   <Icon
                     className="size-[22px]"
-                    style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                     strokeWidth={isActive ? 2.5 : 2}
+                    style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                   />
                   {badge > 0 && (
                     <span className="absolute -right-2.5 -top-2 flex size-[18px] items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-white ring-2 ring-[var(--bg)]">
@@ -619,9 +619,9 @@ function OwnerResumoTab({
             },
           ].map(({ label, value, sub, color, Icon }) => (
             <div
-              key={label}
-              data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
               className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5"
+              data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+              key={label}
             >
               <div className="mb-1 flex items-center gap-1.5">
                 <Icon className="size-3.5" style={{ color }} />
@@ -671,8 +671,8 @@ function OwnerResumoTab({
           <ul className="space-y-2">
             {garconRanking.map((g, i) => (
               <li
-                key={g.nome}
                 className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
+                key={g.nome}
               >
                 <div className="flex items-center gap-2.5">
                   <span
@@ -707,7 +707,7 @@ function OwnerResumoTab({
               const maxValor = topProdutos[0]?.valor ?? 1
               const pct = Math.round((p.valor / maxValor) * 100)
               return (
-                <li key={p.nome} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+                <li className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5" key={p.nome}>
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[65%]">{p.nome}</p>
                     <div className="text-right">
@@ -729,9 +729,9 @@ function OwnerResumoTab({
       </div>
 
       <button
+        className="w-full rounded-2xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
         type="button"
         onClick={onOpenFullDashboard}
-        className="w-full rounded-2xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
       >
         Painel completo →
       </button>

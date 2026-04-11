@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { LockKeyhole, ShieldAlert, X } from 'lucide-react'
 import { rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
 
@@ -32,7 +32,7 @@ export function AdminPinDialog({
 
   // Countdown interval when blocked by server (423)
   useEffect(() => {
-    if (!isBlocked || secondsLeft <= 0) return
+    if (!isBlocked || secondsLeft <= 0) {return}
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1
@@ -163,14 +163,14 @@ export function AdminPinDialog({
             <div className="flex justify-center gap-3 px-6 pb-2">
               {digits.map((digit, idx) => (
                 <input
-                  key={pinInputIds[idx]}
-                  id={pinInputIds[idx]}
-                  ref={refs[idx]}
                   className="size-14 rounded-[16px] border text-center text-xl font-bold text-white outline-none transition-all"
                   disabled={isLoading}
+                  id={pinInputIds[idx]}
                   inputMode="numeric"
+                  key={pinInputIds[idx]}
                   maxLength={1}
                   pattern="[0-9]"
+                  ref={refs[idx]}
                   style={{
                     background: digit ? 'rgba(52,242,127,0.08)' : 'rgba(255,255,255,0.03)',
                     borderColor: error

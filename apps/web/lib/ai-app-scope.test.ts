@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAppScopedAiFocus, APP_SCOPED_AI_MESSAGE } from './ai-app-scope'
+import { APP_SCOPED_AI_MESSAGE, isAppScopedAiFocus } from './ai-app-scope'
 
 describe('ai-app-scope', () => {
   describe('APP_SCOPED_AI_MESSAGE', () => {

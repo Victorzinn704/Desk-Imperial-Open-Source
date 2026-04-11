@@ -98,8 +98,8 @@ export function ProductImportCard({
                 { col: 'stock', note: 'Total em unidades — legado', required: false },
               ].map(({ col, note, required }) => (
                 <div
-                  key={col}
                   className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 py-2"
+                  key={col}
                 >
                   <code className="shrink-0 rounded-md bg-[rgba(143,183,255,0.1)] px-2 py-0.5 text-xs font-bold text-[var(--info)]">
                     {col}
@@ -130,11 +130,11 @@ export function ProductImportCard({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Button fullWidth onClick={onDownloadTemplate} type="button" variant="secondary">
+        <Button fullWidth type="button" variant="secondary" onClick={onDownloadTemplate}>
           <Download className="size-4" />
           Baixar modelo CSV
         </Button>
-        <Button disabled={!hasProducts} fullWidth onClick={onDownloadPortfolio} type="button" variant="ghost">
+        <Button fullWidth disabled={!hasProducts} type="button" variant="ghost" onClick={onDownloadPortfolio}>
           <Download className="size-4" />
           Exportar portfólio atual
         </Button>
@@ -151,8 +151,8 @@ export function ProductImportCard({
         <input
           accept=".csv,text/csv"
           className="hidden"
-          onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
           type="file"
+          onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
         />
       </label>
 
@@ -160,10 +160,12 @@ export function ProductImportCard({
       {error ? <p className="mt-4 text-sm text-[var(--danger)]">{error}</p> : null}
 
       <Button
+        fullWidth
         className="mt-5"
         disabled={!selectedFile}
-        fullWidth
         loading={loading}
+        size="lg"
+        type="button"
         onClick={() => {
           if (!selectedFile) {
             return
@@ -172,8 +174,6 @@ export function ProductImportCard({
           onImport(selectedFile)
           setSelectedFile(null)
         }}
-        size="lg"
-        type="button"
       >
         Importar produtos
       </Button>

@@ -1,4 +1,4 @@
-import { gotoWithConsent, test, expect } from './fixtures/auth-fixtures'
+import { expect, gotoWithConsent, test } from './fixtures/auth-fixtures'
 
 const protectedRoutes = ['/app', '/app/owner', '/app/staff']
 

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { PortfolioEnvironment } from './portfolio-environment'

@@ -5,11 +5,13 @@ import {
   DEFAULT_THERMAL_PROVIDER,
   getPreferredThermalProvider,
   listThermalPrinters,
+  type PrintableComanda,
   printThermalComanda,
   resolvePreferredPrinterName,
   setPreferredThermalPrinter,
+  type ThermalPrinter,
+  type ThermalPrinterConnectionState,
 } from '@/lib/printing'
-import type { PrintableComanda, ThermalPrinter, ThermalPrinterConnectionState } from '@/lib/printing'
 
 export function useThermalPrinting() {
   const [provider] = useState(() => getPreferredThermalProvider())

@@ -1,9 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import { Users, ShoppingBag, Clock } from 'lucide-react'
-import type { Mesa, Comanda } from './pdv-types'
-import { calcTotal, formatElapsed } from './pdv-types'
+import { Clock, ShoppingBag, Users } from 'lucide-react'
+import { calcTotal, type Comanda, formatElapsed, type Mesa } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
 const STATUS_CONFIG = {
@@ -70,12 +69,12 @@ export const PdvMesaCard = memo(function PdvMesaCard({
       {/* Delete button */}
       <button
         className="absolute right-3 top-3 z-20 flex size-6 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition hover:text-[var(--text-primary)] group-hover:opacity-100 hover:opacity-100 hover:bg-[rgba(255,255,255,0.06)]"
+        title="Remover mesa"
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           onDelete(mesa.id)
         }}
-        title="Remover mesa"
       >
         ×
       </button>

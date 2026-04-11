@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  readCookieConsentChoice,
-  persistCookieConsent,
-  CONSENT_STORAGE_KEY,
   CONSENT_COOKIE_NAME,
+  CONSENT_STORAGE_KEY,
   CONSENT_VERSION,
+  persistCookieConsent,
+  readCookieConsentChoice,
 } from './cookie-consent'
 
 // JSDOM on some Node versions breaks native localStorage — provide a working polyfill

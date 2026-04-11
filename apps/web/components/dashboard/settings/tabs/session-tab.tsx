@@ -192,7 +192,7 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
           </div>
 
           <div className="mt-8">
-            <Button fullWidth loading={logoutBusy} onClick={onLogout} type="button">
+            <Button fullWidth loading={logoutBusy} type="button" onClick={onLogout}>
               <LogOut className="size-4" />
               Encerrar sessão
             </Button>

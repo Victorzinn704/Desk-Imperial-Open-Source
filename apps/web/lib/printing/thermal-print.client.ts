@@ -2,7 +2,7 @@
 
 import { buildThermalComandaTicket } from './comanda-thermal'
 import { listQzTrayPrinters, printRawQzTrayJob } from './qz-tray.client'
-import type { PrintableComanda, ThermalPrintProvider, ThermalPrinter } from './thermal-print.types'
+import type { PrintableComanda, ThermalPrinter, ThermalPrintProvider } from './thermal-print.types'
 
 export const DEFAULT_THERMAL_PROVIDER: ThermalPrintProvider = 'QZ_TRAY'
 

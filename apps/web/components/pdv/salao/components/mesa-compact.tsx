@@ -3,7 +3,7 @@
 import { memo, useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { UserPlus } from 'lucide-react'
-import type { Mesa, Garcom } from '../../pdv-types'
+import type { Garcom, Mesa } from '../../pdv-types'
 import { GarcomAvatar } from './garcom-avatar'
 import { GarcomSelector } from './garcom-selector'
 
@@ -39,7 +39,7 @@ export const MesaCompact = memo(
                 className="absolute inset-0 rounded-[12px] border-0 bg-transparent p-0"
                 type="button"
                 onClick={() => {
-                  if (!showGarcomSel) onClickLivre(mesa)
+                  if (!showGarcomSel) {onClickLivre(mesa)}
                 }}
               />
 
@@ -60,8 +60,8 @@ export const MesaCompact = memo(
                   </button>
                   {showGarcomSel && (
                     <GarcomSelector
-                      mesa={mesa}
                       garcons={garcons}
+                      mesa={mesa}
                       onAssign={(gid) => onAssign(mesa.id, gid)}
                       onClose={() => setShowGarcomSel(false)}
                     />

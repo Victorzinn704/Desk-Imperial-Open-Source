@@ -42,24 +42,24 @@ export function FinanceChannelsPanel({ finance, isLoading }: Props) {
 
         <div className="flex flex-wrap gap-2">
           <Tab
-            label="Todos"
             active={activeChannel === ALL_TAB}
             count={recentOrders.length}
+            label="Todos"
             onClick={() => setActiveChannel(ALL_TAB)}
           />
           {channels.map((channel) => (
             <Tab
-              key={channel}
-              label={channel}
               active={activeChannel === channel}
               count={recentOrders.filter((o) => o.channel === channel).length}
+              key={channel}
+              label={channel}
               onClick={() => setActiveChannel(channel)}
             />
           ))}
         </div>
       </div>
 
-      <FinanceOrdersTable orders={filteredOrders} displayCurrency={displayCurrency} />
+      <FinanceOrdersTable displayCurrency={displayCurrency} orders={filteredOrders} />
     </div>
   )
 }
@@ -77,13 +77,13 @@ function Tab({
 }) {
   return (
     <button
-      onClick={onClick}
       className={cn(
         'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition-colors duration-200',
         active
           ? 'border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.12)] text-[#36f57c]'
           : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]',
       )}
+      onClick={onClick}
     >
       {label}
       <span

@@ -18,9 +18,7 @@ export async function invalidateOperationsWorkspace(
   operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_QUERY_PREFIX,
   options?: InvalidateOperationsWorkspaceOptions,
 ) {
-  const tasks = [
-    queryClient.invalidateQueries({ queryKey: operationsQueryKey }),
-  ]
+  const tasks = [queryClient.invalidateQueries({ queryKey: operationsQueryKey })]
 
   if (options?.includeKitchen !== false) {
     tasks.push(queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }))

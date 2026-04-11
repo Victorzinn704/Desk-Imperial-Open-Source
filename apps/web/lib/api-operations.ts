@@ -8,8 +8,7 @@ import type {
   OperationsSummaryResponse,
 } from '@contracts/contracts'
 
-import { apiFetch, withOperationsOptions } from './api-core'
-import type { ApiBody, JsonBody } from './api-core'
+import { type ApiBody, apiFetch, type JsonBody, withOperationsOptions } from './api-core'
 
 export type OperationsLiveOptions = {
   businessDate?: string

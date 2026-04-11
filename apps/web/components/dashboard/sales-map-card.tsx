@@ -1,8 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { LucideIcon } from 'lucide-react'
-import { Globe2, MapPinned } from 'lucide-react'
+import { Globe2, type LucideIcon, MapPinned } from 'lucide-react'
 import { ChartSkeleton } from '@/components/shared/skeleton'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'

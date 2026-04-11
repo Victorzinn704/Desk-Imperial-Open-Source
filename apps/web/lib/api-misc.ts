@@ -1,8 +1,6 @@
 import type { OrderRecord, OrdersResponse } from '@contracts/contracts'
 
-import { apiFetch, POSTAL_LOOKUP_TIMEOUT_MS } from './api-core'
-import type { ApiBody } from './api-core'
-import { ApiError } from './api-core'
+import { type ApiBody, ApiError, apiFetch, POSTAL_LOOKUP_TIMEOUT_MS } from './api-core'
 
 export type PostalCodeLookupResponse = {
   postalCode: string

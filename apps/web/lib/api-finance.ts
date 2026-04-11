@@ -1,7 +1,6 @@
 import type { FinanceSummaryResponse, MarketInsightResponse } from '@contracts/contracts'
 
-import { apiFetch } from './api-core'
-import type { ApiBody } from './api-core'
+import { type ApiBody, apiFetch } from './api-core'
 
 export async function fetchFinanceSummary() {
   return apiFetch<FinanceSummaryResponse>('/finance/summary', {

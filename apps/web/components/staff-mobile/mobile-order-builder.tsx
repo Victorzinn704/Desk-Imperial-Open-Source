@@ -1,22 +1,22 @@
 'use client'
 
-import { useState, useMemo, useCallback, memo, useDeferredValue, startTransition, useRef } from 'react'
+import { memo, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import {
-  ShoppingCart,
-  Plus,
-  Minus,
-  Search,
-  PlusCircle,
+  Beer,
   ChevronLeft,
   Coffee,
-  Pizza,
-  Beer,
+  Minus,
   Package,
+  Pizza,
+  Plus,
+  PlusCircle,
+  Search,
+  ShoppingCart,
   UtensilsCrossed,
   Wine,
 } from 'lucide-react'
@@ -76,10 +76,10 @@ const ProductItem = memo(function ProductItem({
         {qty > 0 && (
           <>
             <button
-              type="button"
-              onClick={onRemove}
               aria-label={`Remover ${produto.name}`}
               className="flex size-11 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft,#7a8896)] transition-colors active:bg-[var(--surface-soft)] btn-haptic"
+              type="button"
+              onClick={onRemove}
             >
               <Minus className="size-4" />
             </button>
@@ -87,10 +87,10 @@ const ProductItem = memo(function ProductItem({
           </>
         )}
         <button
-          type="button"
-          onClick={onAdd}
           aria-label={`Adicionar ${produto.name}`}
           className="flex size-11 items-center justify-center rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.25)] btn-haptic"
+          type="button"
+          onClick={onAdd}
         >
           <Plus className="size-4" />
         </button>
@@ -103,15 +103,15 @@ const ProductItem = memo(function ProductItem({
 function getCategoryIcon(cat: string) {
   const low = cat.toLowerCase()
   if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-    return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    {return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
   if (low.includes('vinho'))
-    return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    {return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
   if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-    return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    {return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
   if (low.includes('combo') || low.includes('kit'))
-    return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    {return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
   if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-    return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+    {return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
@@ -207,9 +207,9 @@ function MobileOrderHeader({
           <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
         </div>
         <button
+          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
           type="button"
           onClick={onCancel}
-          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
         >
           Cancelar
         </button>
@@ -219,11 +219,11 @@ function MobileOrderHeader({
         <div className="relative mt-3">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
           <input
-            type="text"
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-3 pl-9 pr-4 text-base text-[var(--text-primary)] placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(0,140,255,0.45)]"
             placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
+            type="text"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-3 pl-9 pr-4 text-base text-[var(--text-primary)] placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(0,140,255,0.45)]"
           />
         </div>
       ) : categories.length > 0 ? (
@@ -251,19 +251,19 @@ function CategorySelectionScreen({
       </p>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         <button
+          className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
           type="button"
           onClick={onSelectAll}
-          className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
         >
           <Search className="mb-1 size-5 opacity-80 transition-opacity group-hover:opacity-100" />
           <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
         </button>
         {categories.map((category) => (
           <button
+            className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
             key={category}
             type="button"
             onClick={() => onSelectCategory(category)}
-            className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
           >
             {getCategoryIcon(category)}
             <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">{category}</span>
@@ -307,10 +307,10 @@ function CartSummaryBar({
           ) : null}
         </div>
         <button
+          className="min-h-[48px] rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+          disabled={totalItems === 0 || busy}
           type="button"
           onClick={onSubmit}
-          disabled={totalItems === 0 || busy}
-          className="min-h-[48px] rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
         >
           {busy ? 'Enviando...' : submitLabel}
         </button>
@@ -371,7 +371,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   const virtualItems = rowVirtualizer.getVirtualItems()
 
   const handleSubmit = useCallback(async () => {
-    if (cart.length === 0 || busy) return
+    if (cart.length === 0 || busy) {return}
     const items: ComandaItem[] = cart.map(({ _key: _k, ...rest }) => rest)
     await onSubmit(items)
   }, [cart, busy, onSubmit])
@@ -407,14 +407,14 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
         categories={categories}
         mesaLabel={mesaLabel}
         mode={mode}
-        onCancel={onCancel}
-        onSearchChange={handleSearchChange}
         screen={screen}
         search={search}
         selectedCategory={selectedCategory}
+        onCancel={onCancel}
+        onSearchChange={handleSearchChange}
       />
 
-      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar">
+      <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar" ref={parentRef}>
         {!showItemsScreen && categories.length > 0 ? (
           <CategorySelectionScreen
             categories={categories}
@@ -436,9 +436,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                   <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">{filtered.length} produtos disponíveis</p>
                 </div>
                 <button
+                  className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
                   type="button"
                   onClick={returnToCategories}
-                  className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
                 >
                   <ChevronLeft className="size-3.5" />
                   Categorias
@@ -458,8 +458,8 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                     const qty = getQty(produto.id)
                     return (
                       <div
-                        key={produto.id}
                         className="border-b border-[var(--border)]"
+                        key={produto.id}
                         ref={rowVirtualizer.measureElement}
                         style={{
                           position: 'absolute',
@@ -481,7 +481,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                 : filtered.slice(0, 12).map((produto) => {
                     const qty = getQty(produto.id)
                     return (
-                      <div key={produto.id} className="border-b border-[var(--border)]">
+                      <div className="border-b border-[var(--border)]" key={produto.id}>
                         <ProductItem
                           produto={produto}
                           qty={qty}
@@ -498,10 +498,10 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
       <CartSummaryBar
         busy={busy}
-        onSubmit={() => void handleSubmit()}
         submitLabel={submitLabel}
         totalItems={totalItems}
         totalValue={totalValue}
+        onSubmit={() => void handleSubmit()}
       />
     </div>
   )

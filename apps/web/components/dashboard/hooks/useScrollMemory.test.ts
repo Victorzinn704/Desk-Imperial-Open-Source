@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { useScrollMemory } from './useScrollMemory'
 import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
 

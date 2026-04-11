@@ -3,8 +3,7 @@
 import { memo, useMemo } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Clock, Package, Percent, User } from 'lucide-react'
-import type { Comanda, KanbanColumn } from './pdv-types'
-import { calcTotal, formatElapsed } from './pdv-types'
+import { calcTotal, type Comanda, formatElapsed, type KanbanColumn } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
 type PdvComandaCardProps = Readonly<{

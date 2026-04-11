@@ -10,7 +10,7 @@ import { AdminPinDialog } from '@/components/admin-pin/admin-pin-dialog'
 import { useAdminPin } from '@/components/admin-pin/use-admin-pin'
 import { currencyOptions, formatCurrency } from '@/lib/currency'
 import { formatStockBreakdown } from '@/lib/product-packaging'
-import { orderSchema, type OrderFormInputValues, type OrderFormValues } from '@/lib/validation'
+import { type OrderFormInputValues, type OrderFormValues, orderSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 import { SelectField } from '@/components/shared/select-field'
@@ -285,29 +285,29 @@ export function OrderForm({
           <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.35fr)_150px_180px_auto] 2xl:items-end">
             <SelectField
               label="Produto"
-              onChange={(event) => setDraftProductId(event.currentTarget.value)}
               options={productOptions}
               value={resolvedDraftProductId}
+              onChange={(event) => setDraftProductId(event.currentTarget.value)}
             />
             <InputField
               hint="Sempre em und."
               label="Quantidade"
               min="1"
-              onChange={(event) => setDraftQuantity(event.currentTarget.value)}
               step="1"
               type="number"
               value={draftQuantity}
+              onChange={(event) => setDraftQuantity(event.currentTarget.value)}
             />
             <InputField
               hint="Opcional"
               label="Valor unitário"
-              onChange={(event) => setDraftUnitPrice(event.currentTarget.value)}
               placeholder="42.90"
               step="0.01"
               type="number"
               value={draftUnitPrice}
+              onChange={(event) => setDraftUnitPrice(event.currentTarget.value)}
             />
-            <Button className="2xl:mb-[2px]" disabled={!products.length} onClick={handleAddItem} type="button">
+            <Button className="2xl:mb-[2px]" disabled={!products.length} type="button" onClick={handleAddItem}>
               <Plus className="size-4" />
               Adicionar ao pedido
             </Button>
@@ -351,7 +351,7 @@ export function OrderForm({
                             ? `Preço manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
                             : 'Preço do cadastro'}
                         </div>
-                        <Button onClick={() => remove(index)} size="sm" type="button" variant="ghost">
+                        <Button size="sm" type="button" variant="ghost" onClick={() => remove(index)}>
                           <Trash2 className="size-4" />
                           Remover
                         </Button>
@@ -501,7 +501,7 @@ export function OrderForm({
           </div>
         </section>
 
-        <Button disabled={!products.length} fullWidth loading={loading} size="lg" type="submit">
+        <Button fullWidth disabled={!products.length} loading={loading} size="lg" type="submit">
           Registrar pedido
         </Button>
       </form>

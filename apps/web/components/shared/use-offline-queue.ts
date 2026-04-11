@@ -101,7 +101,7 @@ async function idbDelete(id: string): Promise<void> {
 // ─── Background Sync registration ───────────────────────────────────────────
 
 async function registerSync(): Promise<void> {
-  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {return}
   try {
     const reg = await navigator.serviceWorker.ready
     // A Background Sync API pode não estar disponível em todos os browsers

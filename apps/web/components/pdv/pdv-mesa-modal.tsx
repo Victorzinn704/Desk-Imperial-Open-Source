@@ -20,7 +20,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
   const [status, setStatus] = useState<MesaStatus>('livre')
 
   function handleSave() {
-    if (!numero.trim()) return
+    if (!numero.trim()) {return}
     onSave({ numero: numero.trim(), capacidade, status })
     onClose()
   }
@@ -88,14 +88,14 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
             <div className="flex gap-2">
               {STATUS_OPTIONS.map((opt) => (
                 <button
-                  key={opt.value}
-                  type="button"
                   className="flex-1 rounded-[10px] border py-2 text-xs font-semibold transition-all"
+                  key={opt.value}
                   style={{
                     borderColor: status === opt.value ? opt.color : 'rgba(255,255,255,0.08)',
                     background: status === opt.value ? `${opt.color}18` : 'rgba(255,255,255,0.03)',
                     color: status === opt.value ? opt.color : 'var(--text-soft)',
                   }}
+                  type="button"
                   onClick={() => setStatus(opt.value)}
                 >
                   {opt.label}
@@ -115,8 +115,8 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
           </button>
           <button
             className="flex-1 rounded-[12px] bg-[rgba(52,242,127,0.12)] py-2.5 text-sm font-semibold text-[#36f57c] transition hover:bg-[rgba(52,242,127,0.2)] disabled:opacity-40"
-            type="button"
             disabled={!numero.trim()}
+            type="button"
             onClick={handleSave}
           >
             Criar mesa

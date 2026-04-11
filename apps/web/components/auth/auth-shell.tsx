@@ -81,7 +81,7 @@ export function AuthShell({
           <div className="relative">
             <div className="flex items-center gap-5">
               {trustMetrics.map((metric, index) => (
-                <div key={metric.label} className="flex items-center gap-5">
+                <div className="flex items-center gap-5" key={metric.label}>
                   {index > 0 ? <span className="inline-block h-5 w-px bg-white/10" /> : null}
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/22">

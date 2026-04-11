@@ -29,7 +29,7 @@ function TableSkeleton() {
     <div className="w-full bg-[var(--surface,#0d1014)] animate-pulse rounded-xl p-4">
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-10 bg-[var(--surface-soft,#161b20)] rounded" />
+          <div className="h-10 bg-[var(--surface-soft,#161b20)] rounded" key={i} />
         ))}
       </div>
     </div>
@@ -41,7 +41,7 @@ function CalendarSkeleton() {
     <div className="w-full bg-[var(--surface,#0d1014)] animate-pulse rounded-xl p-4 min-h-[400px]">
       <div className="grid grid-cols-7 gap-2">
         {[...Array(35)].map((_, i) => (
-          <div key={i} className="h-12 bg-[var(--surface-soft,#161b20)] rounded" />
+          <div className="h-12 bg-[var(--surface-soft,#161b20)] rounded" key={i} />
         ))}
       </div>
     </div>

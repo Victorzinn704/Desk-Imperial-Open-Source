@@ -29,7 +29,7 @@ export function OverviewEnvironment() {
   const profitTrend = finance?.revenueTimeline.map((t) => t.profit) ?? []
   const ordersTrend = finance?.revenueTimeline.map((t) => t.orders) ?? []
 
-  if (!user) return null
+  if (!user) {return null}
 
   return (
     <section className="space-y-6">

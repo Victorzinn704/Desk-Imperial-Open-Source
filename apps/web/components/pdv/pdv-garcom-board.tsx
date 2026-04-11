@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Plus, Users, X } from 'lucide-react'
-import type { Mesa, Comanda, Garcom } from './pdv-types'
-import { calcTotal, formatElapsed } from './pdv-types'
+import { calcTotal, type Comanda, formatElapsed, type Garcom, type Mesa } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
 type Props = Readonly<{
@@ -33,17 +32,17 @@ function resolveMesaComanda(mesa: Mesa, comandaById: ReadonlyMap<string, Comanda
 // Bonequinho SVG estilizado
 function StickFigure({ color }: { color: string }) {
   return (
-    <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg fill="none" height="54" viewBox="0 0 38 54" width="38" xmlns="http://www.w3.org/2000/svg">
       {/* cabeça */}
       <circle cx="19" cy="9" r="7" stroke={color} strokeWidth="2.2" />
       {/* corpo */}
-      <line x1="19" y1="16" x2="19" y2="34" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line stroke={color} strokeLinecap="round" strokeWidth="2.2" x1="19" x2="19" y1="16" y2="34" />
       {/* braços */}
-      <line x1="8" y1="22" x2="30" y2="22" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line stroke={color} strokeLinecap="round" strokeWidth="2.2" x1="8" x2="30" y1="22" y2="22" />
       {/* perna esquerda */}
-      <line x1="19" y1="34" x2="11" y2="50" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line stroke={color} strokeLinecap="round" strokeWidth="2.2" x1="19" x2="11" y1="34" y2="50" />
       {/* perna direita */}
-      <line x1="19" y1="34" x2="27" y2="50" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line stroke={color} strokeLinecap="round" strokeWidth="2.2" x1="19" x2="27" y1="34" y2="50" />
     </svg>
   )
 }
@@ -69,10 +68,10 @@ function MesaChip({
     >
       {/* Unassign button */}
       <button
-        type="button"
-        title="Remover mesa"
-        onClick={onUnassign}
         className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
+        title="Remover mesa"
+        type="button"
+        onClick={onUnassign}
       >
         <X className="size-3" />
       </button>
@@ -187,18 +186,18 @@ function AssignModal({
 
         <div className="flex gap-3 mt-5">
           <button
+            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]"
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]"
           >
             Cancelar
           </button>
           <button
+            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black transition-all disabled:opacity-40"
+            disabled={!selectedMesa || !selectedGarcom}
+            style={{ background: 'var(--accent)' }}
             type="button"
             onClick={handleSave}
-            disabled={!selectedMesa || !selectedGarcom}
-            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black transition-all disabled:opacity-40"
-            style={{ background: 'var(--accent)' }}
           >
             Atribuir
           </button>
@@ -220,9 +219,9 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
         <h3 className="text-base font-bold text-[var(--text-primary)] mb-4">Novo Garçom</h3>
         <input
           autoFocus
-          type="text"
-          placeholder="Nome do garçom"
           className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]"
+          placeholder="Nome do garçom"
+          type="text"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           onKeyDown={(e) => {
@@ -234,21 +233,21 @@ function AddGarcomModal({ onSave, onClose }: { onSave: (nome: string) => void; o
         />
         <div className="flex gap-3 mt-4">
           <button
+            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]"
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.1)] py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)]"
           >
             Cancelar
           </button>
           <button
-            type="button"
+            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black transition-all disabled:opacity-40"
             disabled={!nome.trim()}
+            style={{ background: 'var(--accent)' }}
+            type="button"
             onClick={() => {
               onSave(nome.trim())
               onClose()
             }}
-            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-black transition-all disabled:opacity-40"
-            style={{ background: 'var(--accent)' }}
           >
             Adicionar
           </button>
@@ -283,15 +282,15 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
           <p className="mt-1 text-xs text-[var(--text-muted)]">Adicione garçons para distribuir as mesas</p>
         </div>
         <button
+          className="flex items-center gap-2 rounded-[14px] border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.1)] px-5 py-2.5 text-sm font-semibold text-[var(--accent)] transition-all hover:bg-[rgba(155,132,96,0.18)]"
           type="button"
           onClick={() => setShowAddGarcom(true)}
-          className="flex items-center gap-2 rounded-[14px] border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.1)] px-5 py-2.5 text-sm font-semibold text-[var(--accent)] transition-all hover:bg-[rgba(155,132,96,0.18)]"
         >
           <Plus className="size-4" />
           Adicionar Garçom
         </button>
 
-        {showAddGarcom && <AddGarcomModal onSave={onAddGarcom} onClose={() => setShowAddGarcom(false)} />}
+        {showAddGarcom && <AddGarcomModal onClose={() => setShowAddGarcom(false)} onSave={onAddGarcom} />}
       </div>
     )
   }
@@ -305,17 +304,17 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
         </p>
         <div className="flex items-center gap-2">
           <button
+            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] disabled:opacity-40"
+            disabled={mesasParaAtribuir.length === 0}
             type="button"
             onClick={() => setShowAssign(true)}
-            disabled={mesasParaAtribuir.length === 0}
-            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] disabled:opacity-40"
           >
             Atribuir Mesa
           </button>
           <button
+            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(155,132,96,0.16)]"
             type="button"
             onClick={() => setShowAddGarcom(true)}
-            className="flex items-center gap-1.5 rounded-[12px] border border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[rgba(155,132,96,0.16)]"
           >
             <Plus className="size-3.5" />
             Garçom
@@ -335,8 +334,8 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
 
           return (
             <div
-              key={garcom.id}
               className="flex-shrink-0 rounded-2xl border flex flex-col"
+              key={garcom.id}
               style={{
                 width: 220,
                 borderColor: `${cor}28`,
@@ -350,10 +349,10 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
               >
                 {/* Remover */}
                 <button
-                  type="button"
-                  title="Remover garçom"
-                  onClick={() => onRemoveGarcom(garcom.id)}
                   className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 hover:opacity-100 transition-opacity hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)]"
+                  title="Remover garçom"
+                  type="button"
+                  onClick={() => onRemoveGarcom(garcom.id)}
                 >
                   <X className="size-3" />
                 </button>
@@ -384,10 +383,10 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
                 )}
                 {garcomMesas.map((mesa) => (
                   <MesaChip
-                    key={mesa.id}
-                    mesa={mesa}
                     comanda={resolveMesaComanda(mesa, comandaById)}
                     garcomCor={cor}
+                    key={mesa.id}
+                    mesa={mesa}
                     onUnassign={() => onAssign(mesa.id, undefined)}
                   />
                 ))}
@@ -398,17 +397,17 @@ export function PdvGarcomBoard({ garcons, mesas, comandas, onAssign, onAddGarcom
 
         {/* Add garçom inline */}
         <button
-          type="button"
-          onClick={() => setShowAddGarcom(true)}
           className="flex-shrink-0 w-14 rounded-2xl border border-dashed border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[var(--text-muted)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-soft)]"
           title="Adicionar garçom"
+          type="button"
+          onClick={() => setShowAddGarcom(true)}
         >
           <Plus className="size-5" />
         </button>
       </div>
 
       {/* Modais */}
-      {showAddGarcom && <AddGarcomModal onSave={onAddGarcom} onClose={() => setShowAddGarcom(false)} />}
+      {showAddGarcom && <AddGarcomModal onClose={() => setShowAddGarcom(false)} onSave={onAddGarcom} />}
 
       {showAssign && (
         <AssignModal

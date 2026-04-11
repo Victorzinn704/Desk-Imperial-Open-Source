@@ -42,8 +42,8 @@ export const MobileTableGrid = memo(function MobileTableGrid({
         <div className="grid grid-cols-3 gap-3">
           {Array.from({ length: 6 }, (_, index) => (
             <div
-              key={index}
               className="min-h-[96px] rounded-[18px] border border-[var(--border)] bg-[var(--surface)] animate-pulse"
+              key={index}
             />
           ))}
         </div>
@@ -71,15 +71,15 @@ export const MobileTableGrid = memo(function MobileTableGrid({
           <div className="mb-7 grid grid-cols-3 gap-3">
             {livres.map((mesa) => (
               <button
-                key={mesa.id}
-                type="button"
-                onClick={() => onSelectMesa(mesa)}
                 className="group relative flex min-h-[96px] flex-col items-center justify-center gap-1.5 rounded-[18px] border transition-all active:scale-95 overflow-hidden"
+                key={mesa.id}
                 style={{
                   borderColor: 'rgba(54,245,124,0.3)',
                   backgroundColor: 'rgba(54,245,124,0.06)',
                   WebkitTapHighlightColor: 'transparent',
                 }}
+                type="button"
+                onClick={() => onSelectMesa(mesa)}
               >
                 <div className="absolute -inset-2 rounded-full bg-[rgba(54,245,124,0.15)] opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
                 <span className="relative z-10 text-[26px] font-extrabold text-[#36f57c] tracking-tighter">
@@ -114,10 +114,8 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                 : undefined
               return (
                 <button
-                  key={mesa.id}
-                  type="button"
-                  onClick={() => onSelectMesa(mesa)}
                   className="relative flex min-h-[110px] flex-col items-center justify-center gap-1 rounded-[18px] border p-2 transition-all active:scale-95 overflow-hidden"
+                  key={mesa.id}
                   style={{
                     borderColor: isOcupada ? 'rgba(248,113,113,0.45)' : `${color}44`,
                     backgroundColor: isOcupada ? 'rgba(248,113,113,0.1)' : `${color}08`,
@@ -127,6 +125,8 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                     backdropFilter: 'blur(12px)',
                     WebkitTapHighlightColor: 'transparent',
                   }}
+                  type="button"
+                  onClick={() => onSelectMesa(mesa)}
                 >
                   {/* Glow vermelho pulsante para mesas ocupadas */}
                   {isOcupada && (

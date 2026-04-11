@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import type { Mesa, Garcom } from '../../pdv-types'
+import type { Garcom, Mesa } from '../../pdv-types'
 import { GarcomAvatar } from './garcom-avatar'
 
 export interface GarcomSelectorProps {
@@ -17,19 +17,20 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
     >
       {mesa.garcomId && (
         <button
+          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-[#f87171] hover:bg-[rgba(248,113,113,0.08)] transition-colors"
           type="button"
           onClick={(event) => {
             event.stopPropagation()
             onAssign(undefined)
             onClose()
           }}
-          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-[#f87171] hover:bg-[rgba(248,113,113,0.08)] transition-colors"
         >
           <X className="size-3" /> Remover garçom
         </button>
       )}
       {garcons.map((g) => (
         <button
+          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
           key={g.id}
           type="button"
           onClick={(event) => {
@@ -37,7 +38,6 @@ export function GarcomSelector({ mesa, garcons, onAssign, onClose }: GarcomSelec
             onAssign(g.id)
             onClose()
           }}
-          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-xs text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
         >
           <GarcomAvatar garcom={g} size={18} />
           {g.nome}

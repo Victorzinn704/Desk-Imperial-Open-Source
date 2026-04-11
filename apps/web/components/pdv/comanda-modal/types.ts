@@ -1,4 +1,4 @@
-import type { ComandaItem, Comanda } from '../pdv-types'
+import type { Comanda, ComandaItem } from '../pdv-types'
 
 export type SimpleProduct = {
   id: string

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { WifiOff, Wifi } from 'lucide-react'
+import { Wifi, WifiOff } from 'lucide-react'
 import type { RealtimeStatus } from '@/components/operations/use-operations-realtime'
 
 interface ConnectionBannerProps {
@@ -31,13 +31,13 @@ export function ConnectionBanner({ status }: ConnectionBannerProps) {
     if (status === 'connected' && wasDisconnected) {
       // Reconectou — mostra mensagem de sucesso brevemente
       setShowBanner(false) // eslint-disable-line react-hooks/set-state-in-effect
-      setShowReconnected(true)  
-      setWasDisconnected(false)  
+      setShowReconnected(true)
+      setWasDisconnected(false)
       const timer = setTimeout(() => setShowReconnected(false), 2_500)
       return () => clearTimeout(timer)
     }
 
-    setShowBanner(false)  
+    setShowBanner(false)
   }, [status, wasDisconnected])
 
   if (showReconnected) {
@@ -52,7 +52,7 @@ export function ConnectionBanner({ status }: ConnectionBannerProps) {
     )
   }
 
-  if (!showBanner) return null
+  if (!showBanner) {return null}
 
   return (
     <div

@@ -76,7 +76,7 @@ export const OrderCard = memo(function OrderCard({
         </div>
 
         {order.status === 'COMPLETED' && canCancel ? (
-          <Button disabled={busy} onClick={() => onCancel(order.id)} size="sm" variant="ghost">
+          <Button disabled={busy} size="sm" variant="ghost" onClick={() => onCancel(order.id)}>
             <Ban className="size-4" />
             Cancelar
           </Button>

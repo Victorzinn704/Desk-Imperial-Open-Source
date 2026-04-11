@@ -85,7 +85,7 @@ export function getMesaPositionStatic(
   autoIndex: number,
   dragOverrides: Record<string, { x: number; y: number }>,
 ): { x: number; y: number } {
-  if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
-  if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
+  if (dragOverrides[mesa.id]) {return dragOverrides[mesa.id]}
+  if (mesa.positionX !== null && mesa.positionY !== null) {return { x: mesa.positionX, y: mesa.positionY }}
   return getAutoPosition(autoIndex)
 }

@@ -201,11 +201,11 @@ function createQueryClientMock(
     getQueryData: vi.fn((queryKey: readonly unknown[]) => {
       if (currentKitchenSnapshot && queryKey.length === OPERATIONS_KITCHEN_QUERY_KEY.length) {
         const matchesKitchen = queryKey.every((value, index) => value === OPERATIONS_KITCHEN_QUERY_KEY[index])
-        if (matchesKitchen) return currentKitchenSnapshot
+        if (matchesKitchen) {return currentKitchenSnapshot}
       }
       if (currentSummarySnapshot && queryKey.length === OPERATIONS_SUMMARY_QUERY_KEY.length) {
         const matchesSummary = queryKey.every((value, index) => value === OPERATIONS_SUMMARY_QUERY_KEY[index])
-        if (matchesSummary) return currentSummarySnapshot
+        if (matchesSummary) {return currentSummarySnapshot}
       }
       return null
     }),

@@ -1,7 +1,6 @@
-import type { CurrencyCode, ProductRecord, ProductsResponse, ProductImportResponse } from '@contracts/contracts'
+import type { CurrencyCode, ProductImportResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
 
-import { apiFetch } from './api-core'
-import type { ApiBody } from './api-core'
+import { type ApiBody, apiFetch } from './api-core'
 
 export type ProductPayload = {
   name: string

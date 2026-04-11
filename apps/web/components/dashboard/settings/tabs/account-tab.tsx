@@ -53,7 +53,7 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
         </div>
       </article>
 
-      <AccountProfileCard error={profileError} loading={profileLoading} onSubmit={onProfileSubmit} user={user} />
+      <AccountProfileCard error={profileError} loading={profileLoading} user={user} onSubmit={onProfileSubmit} />
     </>
   )
 }

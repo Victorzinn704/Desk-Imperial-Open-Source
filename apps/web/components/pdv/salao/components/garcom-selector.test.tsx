@@ -31,8 +31,8 @@ describe('GarcomSelector', () => {
 
     render(
       <GarcomSelector
-        mesa={makeMesa({ garcomId: 'garcom-2' })}
         garcons={[makeGarcom(), makeGarcom({ id: 'garcom-2', nome: 'Marina Rocha' })]}
+        mesa={makeMesa({ garcomId: 'garcom-2' })}
         onAssign={onAssign}
         onClose={onClose}
       />,

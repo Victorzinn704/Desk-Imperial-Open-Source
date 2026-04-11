@@ -14,8 +14,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
-import type { EmployeeRecord } from '@/lib/api'
-import { updateEmployee } from '@/lib/api'
+import { type EmployeeRecord, updateEmployee } from '@/lib/api'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
@@ -99,20 +98,20 @@ export function PayrollEnvironment({
     if (selectedMonth === 0) {
       setSelectedMonth(11)
       setSelectedYear((y) => y - 1)
-    } else setSelectedMonth((m) => m - 1)
+    } else {setSelectedMonth((m) => m - 1)}
   }
   function nextMonth() {
     if (selectedMonth === 11) {
       setSelectedMonth(0)
       setSelectedYear((y) => y + 1)
-    } else setSelectedMonth((m) => m + 1)
+    } else {setSelectedMonth((m) => m + 1)}
   }
 
   function togglePaid(id: string) {
     setPaidIds((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(id)) {next.delete(id)}
+      else {next.add(id)}
       return next
     })
   }
@@ -259,7 +258,7 @@ export function PayrollEnvironment({
             const isOpen = expanded === emp.id
             const isPaid = paidIds.has(emp.id)
             return (
-              <div key={emp.id} className="imperial-card-soft overflow-hidden">
+              <div className="imperial-card-soft overflow-hidden" key={emp.id}>
                 {/* Row header */}
                 <div className="flex w-full items-center gap-3 px-4 py-4">
                   <button
@@ -321,9 +320,9 @@ export function PayrollEnvironment({
                         </label>
                         {/* defaultValue in reais; onBlur converts back to centavos for storage */}
                         <input
-                          key={`${emp.id}-salario-${config.salarioBase}`}
                           className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                           defaultValue={salarioBaseReais}
+                          key={`${emp.id}-salario-${config.salarioBase}`}
                           min="0"
                           step="10"
                           type="number"
@@ -336,9 +335,9 @@ export function PayrollEnvironment({
                           <Percent className="size-3" />% sobre vendas
                         </label>
                         <input
-                          key={`${emp.id}-pct-${config.percentualVendas}`}
                           className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                           defaultValue={config.percentualVendas}
+                          key={`${emp.id}-pct-${config.percentualVendas}`}
                           max="30"
                           min="0"
                           step="0.5"

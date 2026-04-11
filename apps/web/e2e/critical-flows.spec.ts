@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { gotoWithConsent, test, expect, fillOwnerLogin } from './fixtures/auth-fixtures'
+import { expect, fillOwnerLogin, gotoWithConsent, test } from './fixtures/auth-fixtures'
 
 type E2EWindow = Window & {
   __E2E_UNHANDLED_REJECTIONS__?: string[]

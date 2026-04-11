@@ -1,6 +1,6 @@
 'use client'
 
-import { Award, BadgeDollarSign, Target, Trophy, UserRoundCog, type LucideIcon } from 'lucide-react'
+import { Award, BadgeDollarSign, type LucideIcon, Target, Trophy, UserRoundCog } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { CardRowSkeleton } from '@/components/shared/skeleton'
 import { formatCurrency } from '@/lib/currency'

@@ -1,23 +1,23 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  LazyMotionDiv as MotionDiv,
   LazyAnimatePresence as AnimatePresence,
+  LazyMotionDiv as MotionDiv,
   LazyMotionLi as MotionLi,
 } from '@/components/shared/lazy-components'
 import {
-  BrainCircuit,
+  Activity,
+  AlertTriangle,
   ArrowLeft,
+  BrainCircuit,
+  ChevronRight,
+  Lightbulb,
   RefreshCcw,
   Sparkles,
-  TrendingUp,
-  AlertTriangle,
-  Lightbulb,
-  ChevronRight,
-  Activity,
   Target,
+  TrendingUp,
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -47,7 +47,7 @@ function ThinkingIndicator() {
         <p className="text-sm font-semibold text-[var(--text-primary)]">Processando análise...</p>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
-            <span key={i} className="ai-dot size-2 rounded-full bg-[var(--accent)]" />
+            <span className="ai-dot size-2 rounded-full bg-[var(--accent)]" key={i} />
           ))}
         </div>
       </div>
@@ -66,10 +66,10 @@ type AnalysisSectionProps = {
 function AnalysisSection({ title, color, icon: Icon, delay = 0, children }: AnalysisSectionProps) {
   return (
     <MotionDiv
-      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.38, delay, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-3"
+      initial={{ opacity: 0, y: 14 }}
+      transition={{ duration: 0.38, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex items-center gap-2.5">
         <span
@@ -102,14 +102,14 @@ type FocusButtonProps = {
 function FocusButton({ label, icon: Icon, active, onClick }: FocusButtonProps) {
   return (
     <button
-      type="button"
-      onClick={onClick}
       className={cn(
         'group flex w-full items-center gap-3 rounded-[14px] border px-3.5 py-2.5 text-left text-sm transition-all duration-200',
         active
           ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[0_6px_20px_rgba(37,99,235,0.14)]'
           : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
       )}
+      type="button"
+      onClick={onClick}
     >
       <span
         className={cn(
@@ -146,7 +146,7 @@ export default function AIConsultantPage() {
 
   const handleApplyFocus = useCallback(() => {
     const trimmed = draftFocus.trim()
-    if (!trimmed) return
+    if (!trimmed) {return}
     if (!isAppScopedAiFocus(trimmed)) {
       setScopeError(APP_SCOPED_AI_MESSAGE)
       return
@@ -166,7 +166,7 @@ export default function AIConsultantPage() {
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="ghost" size="sm">
+              <Button size="sm" variant="ghost">
                 <ArrowLeft className="size-4" />
                 Dashboard
               </Button>
@@ -219,10 +219,10 @@ export default function AIConsultantPage() {
               <div className="space-y-1.5">
                 {quickFocuses.map((focus) => (
                   <FocusButton
+                    active={activeFocus === focus.label}
+                    icon={focus.icon}
                     key={focus.id}
                     label={focus.label}
-                    icon={focus.icon}
-                    active={activeFocus === focus.label}
                     onClick={() => {
                       setScopeError(null)
                       setActiveFocus(focus.label)
@@ -245,7 +245,7 @@ export default function AIConsultantPage() {
                   'Pergunte sobre tendências ou previsões',
                   'Considere fatores sazonais externos',
                 ].map((tip) => (
-                  <li key={tip} className="flex items-start gap-2 text-xs leading-5 text-[var(--text-soft)]">
+                  <li className="flex items-start gap-2 text-xs leading-5 text-[var(--text-soft)]" key={tip}>
                     <span className="mt-1 size-1 shrink-0 rounded-full bg-[var(--accent)] opacity-60" />
                     {tip}
                   </li>
@@ -279,7 +279,7 @@ export default function AIConsultantPage() {
                 value={draftFocus}
                 onChange={(e) => setDraftFocus(e.currentTarget.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleApplyFocus()
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {handleApplyFocus()}
                 }}
               />
             </div>
@@ -287,17 +287,17 @@ export default function AIConsultantPage() {
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 {/* Character ring */}
-                <svg className="size-5 -rotate-90" viewBox="0 0 20 20" aria-hidden>
-                  <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="2.5" />
+                <svg aria-hidden className="size-5 -rotate-90" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" fill="none" r="8" stroke="rgba(255,255,255,0.07)" strokeWidth="2.5" />
                   <circle
                     cx="10"
                     cy="10"
-                    r="8"
                     fill="none"
+                    r="8"
                     stroke={charPercent > 80 ? 'var(--danger)' : 'var(--accent)'}
-                    strokeWidth="2.5"
                     strokeDasharray={`${(50.27 * charPercent) / 100} 50.27`}
                     strokeLinecap="round"
+                    strokeWidth="2.5"
                     style={{ transition: 'stroke-dasharray 0.2s ease' }}
                   />
                 </svg>
@@ -309,7 +309,7 @@ export default function AIConsultantPage() {
                 </span>
               </div>
 
-              <Button size="md" type="button" disabled={!draftFocus.trim()} onClick={handleApplyFocus}>
+              <Button disabled={!draftFocus.trim()} size="md" type="button" onClick={handleApplyFocus}>
                 <Sparkles className="size-4" />
                 Gerar consultoria
               </Button>
@@ -352,9 +352,9 @@ export default function AIConsultantPage() {
               {/* Error state */}
               {insightQuery.error && !insightQuery.isLoading && (
                 <MotionDiv
-                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-start gap-3 rounded-2xl border border-[rgba(212,115,115,0.25)] bg-[rgba(212,115,115,0.08)] p-5"
+                  initial={{ opacity: 0, y: 8 }}
                 >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[var(--danger)]" />
                   <div>
@@ -381,34 +381,34 @@ export default function AIConsultantPage() {
               <AnimatePresence mode="wait">
                 {insightQuery.data && !insightQuery.isLoading && (
                   <MotionDiv
-                    key={activeFocus}
-                    initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
                     className="space-y-7"
+                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    key={activeFocus}
+                    transition={{ duration: 0.25 }}
                   >
                     {/* Summary */}
-                    <AnalysisSection title="Resumo Executivo" color="#2563eb" icon={Activity} delay={0}>
+                    <AnalysisSection color="#2563eb" delay={0} icon={Activity} title="Resumo Executivo">
                       <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.summary}</p>
                     </AnalysisSection>
 
                     {/* Forecast */}
-                    <AnalysisSection title="Previsão" color="#5a95c4" icon={TrendingUp} delay={0.06}>
+                    <AnalysisSection color="#5a95c4" delay={0.06} icon={TrendingUp} title="Previsão">
                       <p className="text-sm leading-7 text-[var(--text-primary)]">{insightQuery.data.forecast}</p>
                     </AnalysisSection>
 
                     {/* Opportunities */}
                     {insightQuery.data.opportunities.length > 0 && (
-                      <AnalysisSection title="Oportunidades" color="#639371" icon={Lightbulb} delay={0.12}>
+                      <AnalysisSection color="#639371" delay={0.12} icon={Lightbulb} title="Oportunidades">
                         <ul className="space-y-2.5">
                           {insightQuery.data.opportunities.map((item, i) => (
                             <MotionLi
-                              key={i}
-                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.12 + i * 0.05 }}
                               className="flex items-start gap-2.5 text-sm leading-6 text-[var(--text-primary)]"
+                              initial={{ opacity: 0, x: -8 }}
+                              key={i}
+                              transition={{ delay: 0.12 + i * 0.05 }}
                             >
                               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#639371]" />
                               {item}
@@ -420,15 +420,15 @@ export default function AIConsultantPage() {
 
                     {/* Risks */}
                     {insightQuery.data.risks.length > 0 && (
-                      <AnalysisSection title="Riscos" color="#d47373" icon={AlertTriangle} delay={0.18}>
+                      <AnalysisSection color="#d47373" delay={0.18} icon={AlertTriangle} title="Riscos">
                         <ul className="space-y-2.5">
                           {insightQuery.data.risks.map((item, i) => (
                             <MotionLi
-                              key={i}
-                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.18 + i * 0.05 }}
                               className="flex items-start gap-2.5 text-sm leading-6 text-[var(--text-primary)]"
+                              initial={{ opacity: 0, x: -8 }}
+                              key={i}
+                              transition={{ delay: 0.18 + i * 0.05 }}
                             >
                               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#d47373]" />
                               {item}
@@ -440,15 +440,15 @@ export default function AIConsultantPage() {
 
                     {/* Next actions */}
                     {insightQuery.data.nextActions.length > 0 && (
-                      <AnalysisSection title="Próximos Passos" color="#8fb7ff" icon={Target} delay={0.24}>
+                      <AnalysisSection color="#8fb7ff" delay={0.24} icon={Target} title="Próximos Passos">
                         <ol className="space-y-2.5">
                           {insightQuery.data.nextActions.map((item, i) => (
                             <MotionLi
-                              key={i}
-                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.24 + i * 0.05 }}
                               className="flex items-start gap-2.5 text-sm leading-6 text-[var(--text-primary)]"
+                              initial={{ opacity: 0, x: -8 }}
+                              key={i}
+                              transition={{ delay: 0.24 + i * 0.05 }}
                             >
                               <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-[rgba(143,183,255,0.25)] bg-[rgba(143,183,255,0.1)] text-[10px] font-bold text-[#8fb7ff]">
                                 {i + 1}
@@ -471,10 +471,10 @@ export default function AIConsultantPage() {
             <div className="grid gap-1.5 sm:grid-cols-2">
               {quickFocuses.map((focus) => (
                 <FocusButton
+                  active={activeFocus === focus.label}
+                  icon={focus.icon}
                   key={focus.id}
                   label={focus.label}
-                  icon={focus.icon}
-                  active={activeFocus === focus.label}
                   onClick={() => {
                     setScopeError(null)
                     setActiveFocus(focus.label)

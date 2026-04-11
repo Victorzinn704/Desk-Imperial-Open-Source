@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChefHat, CheckCircle2, Clock, Flame } from 'lucide-react'
+import { CheckCircle2, ChefHat, Clock, Flame } from 'lucide-react'
 import { memo, useMemo, useState } from 'react'
 import type { OperationsKitchenItemRecord, OperationsKitchenResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
@@ -51,11 +51,11 @@ const STATUS_CONFIG: Record<
 }
 
 function elapsedLabel(isoDate: string | null): string {
-  if (!isoDate) return ''
+  if (!isoDate) {return ''}
   const diffMs = Date.now() - new Date(isoDate).getTime()
   const mins = Math.floor(diffMs / 60_000)
-  if (mins < 1) return 'agora'
-  if (mins === 1) return '1 min'
+  if (mins < 1) {return 'agora'}
+  if (mins === 1) {return '1 min'}
   return `${mins} min`
 }
 
@@ -88,14 +88,14 @@ function KitchenCard({
           {item.notes && <p className="mt-1 text-xs text-[var(--text-soft)] italic">{`"${item.notes}"`}</p>}
         </div>
         <button
-          type="button"
-          disabled={isBusy}
-          onClick={() => onAdvance(item.itemId, config.nextStatus)}
           className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition-opacity active:opacity-70 disabled:opacity-40"
+          disabled={isBusy}
           style={{
             background: `rgba(${config.color === '#fbbf24' ? '251,191,36' : config.color === '#fb923c' ? '251,146,60' : '52,211,153'}, 0.2)`,
             color: config.color,
           }}
+          type="button"
+          onClick={() => onAdvance(item.itemId, config.nextStatus)}
         >
           {config.nextLabel}
         </button>
@@ -197,15 +197,15 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
           const count = counts[tab]
           return (
             <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
               className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
+              key={tab}
               style={{
                 background: isActive ? config.bg : 'var(--surface)',
                 color: isActive ? config.color : 'var(--text-soft, #7a8896)',
                 border: `1px solid ${isActive ? `${config.color}40` : 'var(--border)'}`,
               }}
+              type="button"
+              onClick={() => setActiveTab(tab)}
             >
               {config.label}
               {count > 0 && (
@@ -225,8 +225,8 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
         <div className="mx-4 mb-3 rounded-xl bg-[rgba(248,113,113,0.08)] px-4 py-2 text-sm text-[#fca5a5] border border-[rgba(248,113,113,0.2)]">
           {error}
           <button
-            type="button"
             className="ml-3 text-xs font-semibold underline opacity-70"
+            type="button"
             onClick={() => setError(null)}
           >
             OK
@@ -240,7 +240,7 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
             <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <ChefHat className="size-7 text-[var(--text-soft)]" />
             </div>
-            <p data-testid="kitchen-view-empty" className="text-sm font-medium text-[var(--text-primary)]">
+            <p className="text-sm font-medium text-[var(--text-primary)]" data-testid="kitchen-view-empty">
               Cozinha livre
             </p>
             <p className="mt-1 text-xs text-[var(--text-soft)]">Nenhum pedido aguardando preparo</p>
@@ -255,10 +255,10 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
           <div className="flex flex-col gap-3">
             {tabItems.map((item) => (
               <MemoKitchenCard
-                key={item.itemId}
-                item={item}
-                onAdvance={(itemId, status) => advanceMutation.mutate({ itemId, status })}
                 isBusy={advanceMutation.isPending}
+                item={item}
+                key={item.itemId}
+                onAdvance={(itemId, status) => advanceMutation.mutate({ itemId, status })}
               />
             ))}
           </div>

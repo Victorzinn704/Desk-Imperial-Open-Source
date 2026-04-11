@@ -52,12 +52,12 @@ describe('Salão mesa cards', () => {
 
     render(
       <MesaCard
-        mesa={makeMesa()}
+        assigningGarcomId={null}
         garcons={[]}
         index={0}
-        view="equipe"
+        mesa={makeMesa()}
         now={Date.now()}
-        assigningGarcomId={null}
+        view="equipe"
         onAssign={vi.fn()}
         onClickLivre={onClickLivre}
         onClickOcupada={vi.fn()}
@@ -76,9 +76,9 @@ describe('Salão mesa cards', () => {
 
     renderWithDnd(
       <MesaCompact
-        mesa={makeMesa({ garcomId: 'garcom-1' })}
         garcons={[makeGarcom()]}
         index={0}
+        mesa={makeMesa({ garcomId: 'garcom-1' })}
         onAssign={onAssign}
         onClickLivre={onClickLivre}
       />,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { SelectField } from './select-field'
 
 const options = [
@@ -32,23 +32,23 @@ describe('SelectField', () => {
   })
 
   it('displays error message when error prop is provided', () => {
-    render(<SelectField label="Cat" options={options} error="Required" />)
+    render(<SelectField error="Required" label="Cat" options={options} />)
     expect(screen.getByText('Required')).toBeDefined()
   })
 
   it('applies error styling to select when error is present', () => {
-    render(<SelectField label="Cat" options={options} error="Required" />)
+    render(<SelectField error="Required" label="Cat" options={options} />)
     const select = screen.getByRole('combobox')
     expect(select.className).toContain('border-[var(--danger)]')
   })
 
   it('displays hint when no error is present', () => {
-    render(<SelectField label="Cat" options={options} hint="Choose one" />)
+    render(<SelectField hint="Choose one" label="Cat" options={options} />)
     expect(screen.getByText('Choose one')).toBeDefined()
   })
 
   it('does not display hint when error is present', () => {
-    render(<SelectField label="Cat" options={options} hint="Choose one" error="Required" />)
+    render(<SelectField error="Required" hint="Choose one" label="Cat" options={options} />)
     expect(screen.queryByText('Choose one')).toBeNull()
     expect(screen.getByText('Required')).toBeDefined()
   })
@@ -67,7 +67,7 @@ describe('SelectField', () => {
   })
 
   it('passes through HTML select attributes', () => {
-    render(<SelectField label="Cat" options={options} data-testid="my-select" disabled />)
+    render(<SelectField disabled data-testid="my-select" label="Cat" options={options} />)
     const select = screen.getByTestId('my-select')
     expect(select).toBeDisabled()
   })

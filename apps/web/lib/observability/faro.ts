@@ -1,5 +1,4 @@
-import { FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
-import type { Faro } from '@grafana/faro-web-sdk'
+import { type Faro, FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
 
 type ApiClientErrorTelemetryContext = {
   path: string

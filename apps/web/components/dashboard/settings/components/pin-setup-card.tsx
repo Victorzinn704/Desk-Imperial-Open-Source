@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react'
-import { ApiError, type ActivityFeedEntry } from '@/lib/api'
+import { type ActivityFeedEntry, ApiError } from '@/lib/api'
 import { removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/shared/button'
@@ -159,7 +159,7 @@ function PinSetupForm({
         </div>
       </fieldset>
       {pinSaveError ? <p className="text-xs text-[#fca5a5]">{pinSaveError}</p> : null}
-      <Button disabled={pinDigits.join('').length !== 4} loading={pinSaving} onClick={onSave} type="button">
+      <Button disabled={pinDigits.join('').length !== 4} loading={pinSaving} type="button" onClick={onSave}>
         {pinSaved ? 'PIN ativado' : 'Ativar PIN'}
       </Button>
     </div>
@@ -175,7 +175,7 @@ async function savePinAction(
   setPinDigits: (v: string[]) => void,
 ) {
   const pin = pinDigits.join('')
-  if (pin.length !== 4) return
+  if (pin.length !== 4) {return}
 
   setPinSaving(true)
   setPinSaveError('')
@@ -321,11 +321,11 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
           {!pinActive ? (
             <PinSetupForm
               pinDigits={pinDigits}
-              setPinDigits={setPinDigits}
-              pinSaving={pinSaving}
               pinSaveError={pinSaveError}
-              setPinSaveError={setPinSaveError}
               pinSaved={pinSaved}
+              pinSaving={pinSaving}
+              setPinDigits={setPinDigits}
+              setPinSaveError={setPinSaveError}
               onSave={() => void handleSavePin()}
             />
           ) : (

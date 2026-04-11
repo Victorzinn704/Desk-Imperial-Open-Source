@@ -177,14 +177,12 @@ describe('api client', () => {
   it('retries owner login on transient network error', async () => {
     vi.useFakeTimers()
 
-    fetchMock
-      .mockRejectedValueOnce(new Error('network unavailable'))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          user: { userId: 'u-3' },
-          session: { expiresAt: '2026-04-03T01:00:00.000Z' },
-        }),
-      )
+    fetchMock.mockRejectedValueOnce(new Error('network unavailable')).mockResolvedValueOnce(
+      jsonResponse({
+        user: { userId: 'u-3' },
+        session: { expiresAt: '2026-04-03T01:00:00.000Z' },
+      }),
+    )
 
     const promise = api.login(
       {
@@ -228,9 +226,9 @@ describe('api client', () => {
     )
 
     const request = api.fetchProducts()
-      const assertion = expect(request).rejects.toMatchObject({ status: 504 })
+    const assertion = expect(request).rejects.toMatchObject({ status: 504 })
     await vi.advanceTimersByTimeAsync(20_000)
-      await assertion
+    await assertion
   })
 
   it('throws fallback message for non-json backend errors', async () => {

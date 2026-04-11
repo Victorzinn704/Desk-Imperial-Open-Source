@@ -332,8 +332,8 @@ export function DashboardWorkspaceHeader({
                 <button
                   className={`workspace-quick-action flex-1 ${compact ? 'sm:min-w-[130px]' : 'sm:min-w-[150px]'}`}
                   key={action.id}
-                  onClick={() => handleQuickAction(action)}
                   type="button"
+                  onClick={() => handleQuickAction(action)}
                 >
                   <span className="workspace-quick-action__icon text-[var(--text-primary)]">
                     <Icon className="size-4" />
@@ -491,7 +491,7 @@ export function DashboardShell({
   const handleQuickAction = (action: DashboardQuickAction) => {
     navigateToSection(action.target)
 
-    if (typeof document === 'undefined') return
+    if (typeof document === 'undefined') {return}
 
     globalThis.setTimeout(() => {
       const targetElement = action.anchorId
@@ -542,31 +542,31 @@ export function DashboardShell({
       >
         <DashboardSidebar
           activeSection={activeSection}
+          compact={isCompactDesktop}
           companyName={user.companyName}
           email={user.email}
-          compact={isCompactDesktop}
           groups={navigationGroups}
-          onCollapseChange={setSidebarCollapsed}
           quickActions={quickActions}
+          role={user.role}
+          status={user.status}
+          userName={user.fullName}
+          onCollapseChange={setSidebarCollapsed}
           onNavigate={navigateToSection}
           onOpenSettings={navigateToSettings}
           onQuickAction={handleQuickAction}
           onSignOut={logout}
-          role={user.role}
-          status={user.status}
-          userName={user.fullName}
         />
 
         <div
-          ref={scrollRef}
           className="workspace-shell__main relative flex flex-col h-screen overflow-hidden overflow-y-auto"
+          ref={scrollRef}
           onScroll={onScroll}
         >
           <DashboardTopbar
-            isMobileOpen={!sidebarCollapsed}
-            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             compact={isCompactDesktop}
+            isMobileOpen={!sidebarCollapsed}
             user={user}
+            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
 
           <div
@@ -575,8 +575,8 @@ export function DashboardShell({
             <DashboardWorkspaceHeader
               activeHero={activeHero}
               activeNavigationLabel={activeNavigation.label}
-              handleQuickAction={handleQuickAction}
               compact={isCompactDesktop}
+              handleQuickAction={handleQuickAction}
               isLoggingOut={isLoggingOut}
               isTimelineOpen={isTimelineOpen}
               logout={logout}
@@ -692,7 +692,7 @@ const EvaluationModeBannerConnected = memo(function EvaluationModeBannerConnecte
 }>) {
   const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, onExpire)
 
-  if (!isEvaluation) return null
+  if (!isEvaluation) {return null}
 
   const minutes = Math.floor(Math.max(0, remainingSeconds) / 60)
   const seconds = Math.max(0, remainingSeconds) % 60

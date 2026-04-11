@@ -9,13 +9,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import {
   ApiError,
+  type AuthResponse,
   fetchCurrentUser,
   fetchFinanceSummary,
   fetchOrders,
   fetchProducts,
   login,
   loginDemo,
-  type AuthResponse,
   type LoginPayload,
 } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
@@ -278,9 +278,9 @@ export function LoginForm() {
         <input type="hidden" {...registerField('loginMode')} />
 
         {isStaffMode ? (
-          <StaffIdentityFields registerField={registerField} errors={errors} />
+          <StaffIdentityFields errors={errors} registerField={registerField} />
         ) : (
-          <OwnerIdentityField registerField={registerField} errors={errors} />
+          <OwnerIdentityField errors={errors} registerField={registerField} />
         )}
 
         <div className="space-y-2">

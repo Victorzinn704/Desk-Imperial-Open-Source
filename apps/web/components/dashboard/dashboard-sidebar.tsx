@@ -78,7 +78,7 @@ export function DashboardSidebar({
   compact?: boolean
 }>) {
   const [manualCollapsed, setManualCollapsed] = useState<boolean | null>(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') {return false}
     const stored = globalThis.localStorage.getItem(COLLAPSE_KEY)
     if (stored === 'true' || stored === 'false') {
       return stored === 'true'
@@ -88,7 +88,7 @@ export function DashboardSidebar({
   const collapsed = manualCollapsed ?? compact
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {return}
     if (manualCollapsed !== null) {
       globalThis.localStorage.setItem(COLLAPSE_KEY, String(manualCollapsed))
     }
@@ -121,8 +121,8 @@ export function DashboardSidebar({
               <button
                 className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/24 hover:bg-accent/[0.06]"
                 key={action.id}
-                onClick={() => onQuickAction(action)}
                 type="button"
+                onClick={() => onQuickAction(action)}
               >
                 <div className="flex items-center gap-2">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
@@ -160,8 +160,8 @@ export function DashboardSidebar({
                           : 'border-[var(--border)] bg-[var(--surface)] text-muted-foreground hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]',
                       )}
                       key={item.id}
-                      onClick={() => onNavigate(item.id)}
                       type="button"
+                      onClick={() => onNavigate(item.id)}
                     >
                       <span
                         className={cn(
@@ -213,8 +213,8 @@ export function DashboardSidebar({
               </span>
             )}
             <button
-              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-muted-foreground transition-colors duration-200 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               aria-expanded={!collapsed}
+              className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-muted-foreground transition-colors duration-200 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               type="button"
               onClick={() => {
@@ -249,8 +249,8 @@ export function DashboardSidebar({
                     <button
                       className="workspace-quick-action workspace-quick-action--compact"
                       key={action.id}
-                      onClick={() => onQuickAction(action)}
                       type="button"
+                      onClick={() => onQuickAction(action)}
                     >
                       <span className="workspace-quick-action__icon">
                         <Icon className="size-4" />
@@ -287,6 +287,7 @@ export function DashboardSidebar({
                     if (collapsed) {
                       return (
                         <button
+                          aria-current={isActive ? 'page' : undefined}
                           className={cn(
                             'flex w-full cursor-pointer items-center justify-center rounded-[18px] border p-2.5 transition-colors duration-200',
                             isActive
@@ -294,10 +295,9 @@ export function DashboardSidebar({
                               : 'border-transparent text-muted-foreground hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]',
                           )}
                           key={item.id}
-                          onClick={() => onNavigate(item.id)}
                           title={item.label}
                           type="button"
-                          aria-current={isActive ? 'page' : undefined}
+                          onClick={() => onNavigate(item.id)}
                         >
                           <Icon className="size-5" />
                         </button>
@@ -306,11 +306,11 @@ export function DashboardSidebar({
 
                     return (
                       <button
+                        aria-current={isActive ? 'page' : undefined}
                         className={cn('workspace-nav-item group', isActive && 'workspace-nav-item--active')}
                         key={item.id}
-                        onClick={() => onNavigate(item.id)}
                         type="button"
-                        aria-current={isActive ? 'page' : undefined}
+                        onClick={() => onNavigate(item.id)}
                       >
                         <span className="workspace-nav-item__icon">
                           <Icon className="size-4" />
@@ -346,7 +346,7 @@ export function DashboardSidebar({
                 </button>
               </div>
             ) : (
-              <DesktopSidebarFooter onOpenSettings={onOpenSettings} onSignOut={onSignOut} compact={compact} />
+              <DesktopSidebarFooter compact={compact} onOpenSettings={onOpenSettings} onSignOut={onSignOut} />
             )}
           </div>
         </div>
@@ -368,21 +368,21 @@ function DesktopSidebarFooter({
     <div className="flex items-center gap-1.5">
       <div className={cn('grid flex-1 gap-1.5', compact ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr)_auto]')}>
         <button
+          className="flex items-center justify-center gap-1.5 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex items-center justify-center gap-1.5 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
         </button>
         <button
-          type="button"
-          onClick={onSignOut}
           className={cn(
             'flex items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400',
             compact ? 'w-full gap-1.5 px-3 py-2.5 text-xs font-semibold' : 'size-[38px] shrink-0',
           )}
           title="Encerrar sessão"
+          type="button"
+          onClick={onSignOut}
         >
           <LogOut className="size-3.5" />
           {compact ? 'Sair' : null}
@@ -429,18 +429,18 @@ function MobileAccountDock({
       </div>
       <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--border)] pt-3">
         <button
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
           type="button"
           onClick={() => onOpenSettings('account')}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.05] hover:text-[var(--text-primary)]"
         >
           <Settings className="size-3.5" />
           Configurações
         </button>
         <button
-          type="button"
-          onClick={onSignOut}
           className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors duration-200 hover:border-red-500/25 hover:bg-red-500/[0.07] hover:text-red-400"
           title="Encerrar sessão"
+          type="button"
+          onClick={onSignOut}
         >
           <LogOut className="size-3.5" />
         </button>

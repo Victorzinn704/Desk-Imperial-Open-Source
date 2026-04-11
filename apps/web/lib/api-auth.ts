@@ -1,14 +1,14 @@
 import type { CurrencyCode } from '@contracts/contracts'
 
 import {
+  type ApiBody,
+  ApiError,
   apiFetch,
+  AUTH_API_TIMEOUT_MS,
   clearPersistedAdminPinHint,
   clearPersistedCsrfToken,
-  AUTH_API_TIMEOUT_MS,
-  ApiError,
   isLegacyOwnerLoginContractError,
 } from './api-core'
-import type { ApiBody } from './api-core'
 
 export type CookiePreferences = {
   necessary: boolean

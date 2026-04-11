@@ -6,10 +6,10 @@ import {
   dashboardDefaultSettingsSection,
   dashboardNavigationGroups,
   dashboardQuickActions,
-  parseDashboardSectionParam,
-  parseDashboardSettingsSectionParam,
   type DashboardSectionId,
   type DashboardSettingsSectionId,
+  parseDashboardSectionParam,
+  parseDashboardSettingsSectionParam,
 } from '@/components/dashboard/dashboard-navigation'
 
 type UseDashboardNavigationOptions = {
@@ -20,8 +20,8 @@ type UseDashboardNavigationOptions = {
 
 function buildDashboardUrl(sectionId: DashboardSectionId, settingsSectionId: DashboardSettingsSectionId) {
   const params = new URLSearchParams()
-  if (sectionId !== dashboardDefaultSection) params.set('view', sectionId)
-  if (sectionId === 'settings') params.set('panel', settingsSectionId)
+  if (sectionId !== dashboardDefaultSection) {params.set('view', sectionId)}
+  if (sectionId === 'settings') {params.set('panel', settingsSectionId)}
   const qs = params.toString()
   return qs ? `/dashboard?${qs}` : '/dashboard'
 }
@@ -70,7 +70,7 @@ export function useDashboardNavigation({
 
   // Sync from URL on mount and on browser back/forward
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {return}
 
     const syncFromLocation = () => {
       const params = new URLSearchParams(globalThis.location.search)

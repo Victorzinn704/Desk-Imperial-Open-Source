@@ -2,11 +2,10 @@
 
 import { memo, useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
-import { Users, Clock, AlertCircle, ChevronDown, UserPlus } from 'lucide-react'
-import type { Mesa, Comanda, Garcom } from '../../pdv-types'
-import { calcTotal, formatElapsed } from '../../pdv-types'
+import { AlertCircle, ChevronDown, Clock, UserPlus, Users } from 'lucide-react'
+import { calcTotal, type Comanda, formatElapsed, type Garcom, type Mesa } from '../../pdv-types'
 import { formatCurrency } from '@/lib/currency'
-import { STATUS_CONFIG, urgencyLevel, urgencyBorderColor, urgencyShadow, type SalaoView } from '../constants'
+import { type SalaoView, STATUS_CONFIG, urgencyBorderColor, urgencyLevel, urgencyShadow } from '../constants'
 import { GarcomAvatar } from './garcom-avatar'
 import { GarcomSelector } from './garcom-selector'
 import { ItemsTooltip } from './items-tooltip'
@@ -132,20 +131,20 @@ export const MesaCard = memo(
                 </p>
                 <div className="flex gap-2">
                   <button
+                    className="rounded-[8px] border border-[rgba(255,255,255,0.1)] px-3 py-1 text-[11px] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]"
                     type="button"
                     onClick={() => setShowConfirm(false)}
-                    className="rounded-[8px] border border-[rgba(255,255,255,0.1)] px-3 py-1 text-[11px] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]"
                   >
                     Cancelar
                   </button>
                   <button
+                    className="rounded-[8px] px-3 py-1 text-[11px] font-bold text-black transition-opacity hover:opacity-90"
+                    style={{ background: novoGarcom?.cor ?? '#36f57c' }}
                     type="button"
                     onClick={() => {
                       onAssign(mesa.id, assigningGarcomId!)
                       setShowConfirm(false)
                     }}
-                    className="rounded-[8px] px-3 py-1 text-[11px] font-bold text-black transition-opacity hover:opacity-90"
-                    style={{ background: novoGarcom?.cor ?? '#36f57c' }}
                   >
                     Substituir
                   </button>
@@ -183,6 +182,7 @@ export const MesaCard = memo(
         {/* Garçom row */}
         <div className="relative z-20 px-3 py-2">
           <button
+            className="flex w-full items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-left transition-colors hover:bg-[rgba(255,255,255,0.05)]"
             type="button"
             onClick={(e) => {
               e.stopPropagation()
@@ -196,7 +196,6 @@ export const MesaCard = memo(
               }
               setShowGarcomSel((v) => !v)
             }}
-            className="flex w-full items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-left transition-colors hover:bg-[rgba(255,255,255,0.05)]"
           >
             {garcom ? (
               <>
@@ -217,8 +216,8 @@ export const MesaCard = memo(
           </button>
           {showGarcomSel && (
             <GarcomSelector
-              mesa={mesa}
               garcons={garcons}
+              mesa={mesa}
               onAssign={(gid) => onAssign(mesa.id, gid)}
               onClose={() => setShowGarcomSel(false)}
             />
@@ -261,7 +260,7 @@ export const MesaCard = memo(
       </div>
     )
 
-    if (view === 'equipe') return card
+    if (view === 'equipe') {return card}
     return (
       <Draggable draggableId={mesa.id} index={index} isDragDisabled={dragDisabled}>
         {(provided, snapshot) => (

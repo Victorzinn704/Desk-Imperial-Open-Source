@@ -4,8 +4,7 @@ import dynamic from 'next/dynamic'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ShoppingCart, Store, Tags, TrendingUp, UserRound, Wallet } from 'lucide-react'
 import type { OrderRecord } from '@contracts/contracts'
-import type { AuthUser } from '@/lib/api'
-import { ApiError, fetchOrders } from '@/lib/api'
+import { ApiError, type AuthUser, fetchOrders } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { useDashboardQueries } from '../hooks/useDashboardQueries'
 import { useDashboardMutations } from '../hooks/useDashboardMutations'
@@ -76,40 +75,40 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
+          icon={Wallet}
           label="Receita realizada"
-          value={formatCurrency(ordersTotals?.realizedRevenue ?? 0, displayCurrency)}
           trend={
             ordersTotals?.realizedRevenue
               ? [ordersTotals.realizedRevenue * 0.85, ordersTotals.realizedRevenue]
               : undefined
           }
-          icon={Wallet}
+          value={formatCurrency(ordersTotals?.realizedRevenue ?? 0, displayCurrency)}
         />
         <MetricCard
+          icon={TrendingUp}
           label="Lucro realizado"
-          value={formatCurrency(ordersTotals?.realizedProfit ?? 0, displayCurrency)}
           trend={
             ordersTotals?.realizedProfit ? [ordersTotals.realizedProfit * 0.9, ordersTotals.realizedProfit] : undefined
           }
-          icon={TrendingUp}
+          value={formatCurrency(ordersTotals?.realizedProfit ?? 0, displayCurrency)}
         />
         <MetricCard
-          label="Ticket médio"
-          value={formatCurrency(averageTicket, displayCurrency)}
-          trend={averageTicket ? [averageTicket * 1.05, averageTicket] : undefined}
           icon={Store}
+          label="Ticket médio"
+          trend={averageTicket ? [averageTicket * 1.05, averageTicket] : undefined}
+          value={formatCurrency(averageTicket, displayCurrency)}
         />
         <MetricCard
+          icon={user.role === 'OWNER' ? UserRound : Tags}
           label={user.role === 'OWNER' ? 'Equipe ativa' : 'Itens vendidos'}
-          value={
-            user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : String(ordersTotals?.soldUnits ?? 0)
-          }
           trend={
             user.role === 'OWNER' && employeesTotals?.activeEmployees
               ? [employeesTotals.activeEmployees - 1, employeesTotals.activeEmployees]
               : undefined
           }
-          icon={user.role === 'OWNER' ? UserRound : Tags}
+          value={
+            user.role === 'OWNER' ? String(employeesTotals?.activeEmployees ?? 0) : String(ordersTotals?.soldUnits ?? 0)
+          }
         />
       </div>
 
@@ -118,9 +117,9 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
           <OrderForm
             employees={employees}
             loading={createOrderMutation.isPending}
-            onSubmit={createOrderMutation.mutate}
             products={products.filter((product) => product.active)}
             userRole={user.role}
+            onSubmit={createOrderMutation.mutate}
           />
 
           <OperationRecentOrdersPanel
@@ -128,8 +127,8 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
             currency={displayCurrency}
             emptyMessage="Nenhuma venda registrada ainda. Quando os pedidos entrarem, o trilho operacional aparece aqui em ordem cronológica."
             errorMessage={orderMutationError?.message ?? ordersError}
-            onCancel={user.role === 'OWNER' ? cancelOrderMutation.mutate : undefined}
             orders={orders}
+            onCancel={user.role === 'OWNER' ? cancelOrderMutation.mutate : undefined}
           />
         </div>
 
@@ -146,10 +145,10 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
               employees={employees}
               error={employeeMutationError?.message ?? employeesError}
               loading={createEmployeeMutation.isPending}
+              totals={employeesTotals}
               onArchive={archiveEmployeeMutation.mutate}
               onCreate={createEmployeeMutation.mutate}
               onRestore={restoreEmployeeMutation.mutate}
-              totals={employeesTotals}
             />
           ) : (
             <article className="imperial-card p-6">
@@ -276,8 +275,8 @@ function OperationRecentOrdersPanel({
                   <button
                     className="rounded-[14px] border border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-600 dark:text-red-400 transition hover:opacity-80 disabled:opacity-50"
                     disabled={busy}
-                    onClick={() => onCancel(order.id)}
                     type="button"
+                    onClick={() => onCancel(order.id)}
                   >
                     Cancelar
                   </button>
@@ -301,8 +300,8 @@ function formatRelativeSalesTime(value: string) {
   const diffMinutes = Math.floor(diffMs / 60_000)
   const diffHours = Math.floor(diffMs / 3_600_000)
 
-  if (diffMinutes < 1) return 'agora mesmo'
-  if (diffMinutes < 60) return `há ${diffMinutes} min`
-  if (diffHours < 24) return `há ${diffHours} h`
+  if (diffMinutes < 1) {return 'agora mesmo'}
+  if (diffMinutes < 60) {return `há ${diffMinutes} min`}
+  if (diffHours < 24) {return `há ${diffHours} h`}
   return date.toLocaleDateString('pt-BR')
 }

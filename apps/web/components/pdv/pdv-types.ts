@@ -123,7 +123,7 @@ export function calcTotal(comanda: Comanda): number {
 export function formatElapsed(abertaEm: Date): string {
   const ms = Date.now() - abertaEm.getTime()
   const min = Math.floor(ms / 60000)
-  if (min < 60) return `${min}min`
+  if (min < 60) {return `${min}min`}
   const h = Math.floor(min / 60)
   const m = min % 60
   return `${h}h${m > 0 ? ` ${m}min` : ''}`

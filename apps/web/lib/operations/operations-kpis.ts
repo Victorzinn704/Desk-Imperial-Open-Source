@@ -106,7 +106,7 @@ export function buildKitchenQueueCount(snapshot: OperationsLiveResponse | null |
   let count = 0
   for (const group of [...snapshot.employees, snapshot.unassigned]) {
     for (const comanda of group.comandas) {
-      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
+      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') {continue}
       for (const item of comanda.items) {
         if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') {
           count += 1
@@ -132,7 +132,7 @@ export function buildPerformerRanking(
 
   const map = new Map<string, OperationsPerformerRankingEntry>()
   for (const employee of snapshot.employees) {
-    if (!employee.employeeId) continue
+    if (!employee.employeeId) {continue}
 
     let valor = 0
     let comandas = 0

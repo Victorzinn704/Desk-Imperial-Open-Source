@@ -15,11 +15,11 @@ export function ThemeToggleButton() {
 
   return (
     <button
-      onClick={() => setTheme(nextTheme)}
-      className="inline-flex h-10 items-center gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 pr-3 text-left text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-panel)] transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-panel-strong)]"
-      aria-pressed={resolvedTheme === 'dark'}
       aria-label={`Alternar para tema ${nextTheme === 'light' ? 'claro' : 'escuro'}`}
+      aria-pressed={resolvedTheme === 'dark'}
+      className="inline-flex h-10 items-center gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 pr-3 text-left text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-panel)] transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-panel-strong)]"
       type="button"
+      onClick={() => setTheme(nextTheme)}
     >
       <span className="relative flex size-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--accent)] shadow-sm">
         <span

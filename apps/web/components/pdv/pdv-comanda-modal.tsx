@@ -1,24 +1,23 @@
 'use client'
 
-import { useMemo, useState, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { LoaderCircle, Printer, Search, X } from 'lucide-react'
 import type { PrintableComanda } from '@/lib/printing'
 import { formatCurrency } from '@/lib/currency'
 import { maskDocument, validateDocument } from '@/lib/document-validation'
 import { AdminPinDialog } from '@/components/admin-pin/admin-pin-dialog'
-import type { Comanda, ComandaItem } from './pdv-types'
-import { calcTotal } from './pdv-types'
+import { calcTotal, type Comanda, type ComandaItem } from './pdv-types'
 import { useThermalPrinting } from './use-thermal-printing'
 import { normalizeTableLabel } from './normalize-table-label'
 import {
-  type SimpleProduct,
-  type SaveComandaPayload,
-  useProductFilter,
-  ProductCard,
   CategoryGrid,
   ComandaItemRow,
   PrinterSection,
+  ProductCard,
+  type SaveComandaPayload,
+  type SimpleProduct,
   StatusButtons,
+  useProductFilter,
 } from './comanda-modal'
 
 type PdvComandaModalProps = Readonly<{
@@ -70,8 +69,8 @@ function ModalHeader({
       </div>
       <button
         className="flex size-9 items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--text-primary)]"
-        onClick={onClose}
         type="button"
+        onClick={onClose}
       >
         <X className="size-4" />
       </button>
@@ -80,7 +79,7 @@ function ModalHeader({
 }
 
 function DocumentBorderColor(doc: string, valid: boolean): string {
-  if (!doc) return 'rgba(255,255,255,0.08)'
+  if (!doc) {return 'rgba(255,255,255,0.08)'}
   return valid ? 'rgba(52,242,127,0.35)' : 'rgba(239,68,68,0.35)'
 }
 
@@ -143,7 +142,7 @@ function ComandaLivePreview({
           e.preventDefault()
           const id = e.dataTransfer.getData('productId')
           const product = products.find((p) => p.id === id)
-          if (product) addItem(product)
+          if (product) {addItem(product)}
         }}
       >
         {itens.length === 0 ? (
@@ -156,7 +155,7 @@ function ComandaLivePreview({
         ) : (
           <div className="space-y-3">
             {itens.map((item) => (
-              <ComandaItemRow key={item.produtoId} item={item} onChangeQty={changeQty} setItens={setItens} />
+              <ComandaItemRow item={item} key={item.produtoId} setItens={setItens} onChangeQty={changeQty} />
             ))}
           </div>
         )}
@@ -333,8 +332,8 @@ export function PdvComandaModal({
     pinDescriptionFn: (v: number) => string,
   ) {
     const needsPin = newValue > 0 && newValue !== currentValue
-    if (needsPin) requirePin(() => setter(newValue), pinTitle, pinDescriptionFn(newValue))
-    else setter(newValue)
+    if (needsPin) {requirePin(() => setter(newValue), pinTitle, pinDescriptionFn(newValue))}
+    else {setter(newValue)}
   }
 
   const bruto = useMemo(() => itens.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0), [itens])
@@ -354,7 +353,7 @@ export function PdvComandaModal({
   const isBusy = busy || isSubmitting
 
   async function handleSave(options?: { printAfterSave?: boolean }) {
-    if (itens.length === 0 || isBusy) return
+    if (itens.length === 0 || isBusy) {return}
 
     setSaveError(null)
     setIsSubmitting(true)
@@ -387,7 +386,7 @@ export function PdvComandaModal({
       />
 
       <div className="imperial-card relative z-10 flex h-full w-full max-w-6xl flex-col gap-0 overflow-hidden rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-[24px]">
-        <ModalHeader isEditing={isEditing} comanda={comanda} onClose={onClose} />
+        <ModalHeader comanda={comanda} isEditing={isEditing} onClose={onClose} />
 
         <div className="grid min-h-0 flex-1 overflow-y-auto xl:overflow-hidden xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)_minmax(320px,0.7fr)]">
           <div className="flex min-h-0 flex-col border-b border-[rgba(255,255,255,0.06)] xl:border-b-0 xl:border-r">
@@ -405,8 +404,8 @@ export function PdvComandaModal({
               <CategoryGrid
                 categories={categories}
                 selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
                 showAllOption={showProducts}
+                onSelectCategory={setSelectedCategory}
               />
             </div>
 
@@ -430,12 +429,12 @@ export function PdvComandaModal({
                       </p>
                     </div>
                     <button
+                      className="rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
                       type="button"
                       onClick={() => {
                         setSelectedCategory(null)
                         setSearch('')
                       }}
-                      className="rounded-[10px] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
                     >
                       Ver categorias
                     </button>
@@ -446,9 +445,9 @@ export function PdvComandaModal({
                       const inCart = itens.find((item) => item.produtoId === product.id)
                       return (
                         <ProductCard
+                          inCartQty={inCart?.quantidade ?? 0}
                           key={product.id}
                           product={product}
-                          inCartQty={inCart?.quantidade ?? 0}
                           onAdd={() => addItem(product)}
                           onDragStart={(e) => e.dataTransfer.setData('productId', product.id)}
                         />
@@ -587,19 +586,19 @@ export function PdvComandaModal({
               <StatusButtons
                 comanda={comanda}
                 isBusy={isBusy}
-                onStatusChange={onStatusChange}
-                onClose={onClose}
                 requirePin={requirePin}
+                onClose={onClose}
+                onStatusChange={onStatusChange}
               />
             ) : null}
 
             <div className="border-t border-[rgba(255,255,255,0.06)] p-4">
               <PrinterSection
+                connectionState={connectionState}
+                isBusy={isBusy}
                 printers={printers}
                 selectedPrinterName={selectedPrinterName}
-                connectionState={connectionState}
                 statusMessage={statusMessage}
-                isBusy={isBusy}
                 onChoosePrinter={choosePrinter}
                 onRefreshPrinters={() => refreshPrinters()}
               />
@@ -607,10 +606,10 @@ export function PdvComandaModal({
               {saveError ? <p className="mt-3 text-xs text-[#fca5a5]">{saveError}</p> : null}
 
               <SaveButtons
-                isEditing={isEditing}
-                isBusy={isBusy}
-                hasItems={itens.length > 0}
                 connectionState={connectionState}
+                hasItems={itens.length > 0}
+                isBusy={isBusy}
+                isEditing={isEditing}
                 onSave={() => void handleSave()}
                 onSaveAndPrint={() => void handleSave({ printAfterSave: true })}
               />
@@ -618,28 +617,28 @@ export function PdvComandaModal({
           </div>
 
           <ComandaLivePreview
-            mesa={mesa}
-            clienteNome={clienteNome}
-            status={draftComanda.status}
-            itens={itens}
-            products={products}
-            bruto={bruto}
-            desconto={desconto}
             acrescimo={acrescimo}
-            total={total}
             addItem={addItem}
+            bruto={bruto}
             changeQty={changeQty}
+            clienteNome={clienteNome}
+            desconto={desconto}
+            itens={itens}
+            mesa={mesa}
+            products={products}
             setItens={setItens}
+            status={draftComanda.status}
+            total={total}
           />
         </div>
       </div>
 
       {isPinDialogOpen && (
         <AdminPinDialog
-          title={pinDialogTitle}
           description={pinDialogDescription}
-          onConfirm={handlePinConfirm}
+          title={pinDialogTitle}
           onCancel={handlePinCancel}
+          onConfirm={handlePinConfirm}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { gotoWithConsent, test, expect, ownerEmailInput, passwordInput } from './fixtures/auth-fixtures'
+import { expect, gotoWithConsent, ownerEmailInput, passwordInput, test } from './fixtures/auth-fixtures'
 
 test.describe('UI UX E2E - Chromium Smoke', () => {
   test('TC-E2E-UI-001: login mantém hierarquia visual principal', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   archiveEmployee,
   archiveProduct,
@@ -11,9 +11,9 @@ import {
   logout,
   restoreEmployee,
   restoreProduct,
-  updateProfile,
   updateCookiePreferences,
   updateProduct,
+  updateProfile,
 } from '@/lib/api'
 import { clearAdminPinVerification } from '@/lib/admin-pin'
 

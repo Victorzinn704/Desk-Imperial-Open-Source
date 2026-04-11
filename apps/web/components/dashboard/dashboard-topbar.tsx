@@ -32,16 +32,16 @@ export function DashboardTopbar({
       >
         <div className="flex w-full items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:gap-4 lg:hidden">
           <button
+            aria-label="Toggle Sidebar"
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
             onClick={onMenuClick}
-            aria-label="Toggle Sidebar"
           >
             {isMobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
 
           <BrandMark />
 
-          <div className="w-10"></div>
+          <div className="w-10" />
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
@@ -50,11 +50,11 @@ export function DashboardTopbar({
               <Search className="size-4 text-[var(--text-muted)]" />
             </span>
             <input
-              type="text"
-              placeholder="Buscar no app..."
               className={`h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-12 pr-4 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:ring-1 focus:ring-accent ${
                 compact ? 'lg:w-[240px] xl:w-[320px] 2xl:w-[380px]' : 'lg:w-[300px] xl:w-[430px]'
               }`}
+              placeholder="Buscar no app..."
+              type="text"
             />
             <button className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)] 2xl:inline-flex">
               <span className="font-sans">⌘</span>

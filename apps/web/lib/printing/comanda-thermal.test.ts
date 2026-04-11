@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { buildThermalComandaTicket } from './comanda-thermal'
 import type { PrintableComanda } from './thermal-print.types'
 

@@ -17,21 +17,18 @@ export function useProductFilter(products: SimpleProduct[]) {
     [products],
   )
 
-  const filtered = useMemo(
-    () => {
-      const normalizedSearch = normalizeTextForSearch(search)
+  const filtered = useMemo(() => {
+    const normalizedSearch = normalizeTextForSearch(search)
 
-      return products.filter((p) => {
-        const matchSearch =
-          normalizedSearch.length === 0 ||
-          normalizeTextForSearch(p.name).includes(normalizedSearch) ||
-          normalizeTextForSearch(p.category).includes(normalizedSearch)
-        const matchCat = selectedCategory ? p.category === selectedCategory : true
-        return matchSearch && matchCat
-      })
-    },
-    [products, search, selectedCategory],
-  )
+    return products.filter((p) => {
+      const matchSearch =
+        normalizedSearch.length === 0 ||
+        normalizeTextForSearch(p.name).includes(normalizedSearch) ||
+        normalizeTextForSearch(p.category).includes(normalizedSearch)
+      const matchCat = selectedCategory ? p.category === selectedCategory : true
+      return matchSearch && matchCat
+    })
+  }, [products, search, selectedCategory])
 
   return {
     search,

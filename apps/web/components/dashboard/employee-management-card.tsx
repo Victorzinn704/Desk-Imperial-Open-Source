@@ -2,9 +2,9 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { BadgeCheck, BadgeMinus, IdCard, ShieldUser, UserPlus, Users, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, BadgeMinus, IdCard, type LucideIcon, ShieldUser, UserPlus, Users } from 'lucide-react'
 import type { EmployeeRecord } from '@/lib/api'
-import { employeeSchema, type EmployeeFormValues } from '@/lib/validation'
+import { type EmployeeFormValues, employeeSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 
@@ -95,11 +95,11 @@ export function EmployeeManagementCard({
           <InputField
             error={errors.temporaryPassword?.message}
             hint="6 dígitos numéricos. Ex: 123456"
+            inputMode="numeric"
             label="PIN de acesso"
+            maxLength={6}
             placeholder="123456"
             type="text"
-            inputMode="numeric"
-            maxLength={6}
             {...register('temporaryPassword')}
           />
         </div>
@@ -146,12 +146,12 @@ export function EmployeeManagementCard({
                 </div>
 
                 {employee.active ? (
-                  <Button disabled={busy} onClick={() => onArchive(employee.id)} size="sm" variant="ghost">
+                  <Button disabled={busy} size="sm" variant="ghost" onClick={() => onArchive(employee.id)}>
                     <BadgeMinus className="size-4" />
                     Arquivar
                   </Button>
                 ) : (
-                  <Button disabled={busy} onClick={() => onRestore(employee.id)} size="sm" variant="secondary">
+                  <Button disabled={busy} size="sm" variant="secondary" onClick={() => onRestore(employee.id)}>
                     <BadgeCheck className="size-4" />
                     Reativar
                   </Button>

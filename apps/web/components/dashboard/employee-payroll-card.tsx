@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { BadgeCheck, ChevronDown, ChevronUp, DollarSign, Percent, TrendingUp, Users, Wallet } from 'lucide-react'
-import type { EmployeeRecord } from '@/lib/api'
-import { updateEmployee } from '@/lib/api'
+import { type EmployeeRecord, updateEmployee } from '@/lib/api'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -116,7 +115,7 @@ export function EmployeePayrollCard({
         {rows.map(({ emp, config, salarioBaseReais, vendasDoMes, comissao, totalAPagar }) => {
           const isOpen = expanded === emp.id
           return (
-            <div key={emp.id} className="imperial-card-soft overflow-hidden">
+            <div className="imperial-card-soft overflow-hidden" key={emp.id}>
               {/* Row header — always visible */}
               <button
                 className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-[rgba(255,255,255,0.02)]"
@@ -162,9 +161,9 @@ export function EmployeePayrollCard({
                         Salário base (R$)
                       </label>
                       <input
-                        key={`${emp.id}-salario-${config.salarioBase}`}
                         className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                         defaultValue={config.salarioBase / 100}
+                        key={`${emp.id}-salario-${config.salarioBase}`}
                         min="0"
                         step="10"
                         type="number"
@@ -178,9 +177,9 @@ export function EmployeePayrollCard({
                         <Percent className="size-3" />% sobre vendas
                       </label>
                       <input
-                        key={`${emp.id}-pct-${config.percentualVendas}`}
                         className="w-full min-w-0 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.3)]"
                         defaultValue={config.percentualVendas}
+                        key={`${emp.id}-pct-${config.percentualVendas}`}
                         max="30"
                         min="0"
                         step="0.5"

@@ -5,16 +5,17 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ProductRecord } from '@contracts/contracts'
 import { currencyOptions } from '@/lib/currency'
-import { buildStockTotalUnits, formatMeasurement } from '@/lib/product-packaging'
 import {
+  buildStockTotalUnits,
   customMeasurementOption,
   findPackagingPresetByLabel,
+  formatMeasurement,
   getMeasurementOption,
   manualPackagingOption,
   measurementUnitOptions,
   productPackagingPresets,
 } from '@/lib/product-packaging'
-import { productSchema, type ProductFormInputValues, type ProductFormValues } from '@/lib/validation'
+import { type ProductFormInputValues, type ProductFormValues, productSchema } from '@/lib/validation'
 import { isKitchenCategory } from '@/lib/is-kitchen-category'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
@@ -64,7 +65,7 @@ function applyPackagingPreset(
   }
 
   const preset = productPackagingPresets.find((entry) => entry.key === presetKey)
-  if (!preset) return
+  if (!preset) {return}
 
   setValue('packagingClass', preset.label, { shouldDirty: true, shouldValidate: true })
   setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
@@ -235,7 +236,7 @@ export function ProductForm({
 
   // Auto-toggle requiresKitchen when category name suggests food/prep
   useEffect(() => {
-    if (!categoryValue) return
+    if (!categoryValue) {return}
     const shouldBeKitchen = isKitchenCategory(categoryValue)
     // Only auto-set to true — never force to false (user override respected)
     if (shouldBeKitchen && !requiresKitchenValue) {
@@ -300,7 +301,7 @@ export function ProductForm({
           </h2>
         </div>
         {product ? (
-          <Button onClick={onCancelEdit} size="sm" type="button" variant="ghost">
+          <Button size="sm" type="button" variant="ghost" onClick={onCancelEdit}>
             Cancelar
           </Button>
         ) : null}
@@ -310,7 +311,7 @@ export function ProductForm({
         className="mt-6 space-y-5"
         onSubmit={handleSubmit((values) => {
           onSubmit(values)
-          if (!product) resetFormToDefaults()
+          if (!product) {resetFormToDefaults()}
         })}
       >
         <div className="grid gap-5 sm:grid-cols-2">
@@ -334,17 +335,17 @@ export function ProductForm({
             error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
             hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
             label="Classe de cadastro"
-            onChange={(event) => handlePresetChange(event.currentTarget.value)}
             options={packagingPresetOptions}
             value={selectedPreset}
+            onChange={(event) => handlePresetChange(event.currentTarget.value)}
           />
         </div>
 
         <PackagingClassField
-          isManual={selectedPresetIsManual}
           error={errors.packagingClass?.message}
-          value={packagingClassValue}
+          isManual={selectedPresetIsManual}
           register={register}
+          value={packagingClassValue}
         />
 
         <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
@@ -352,9 +353,9 @@ export function ProductForm({
             error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
             hint="Use ml, L, kg, g, unidade ou crie outra medida."
             label="Medida"
-            onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
             options={measurementUnitOptions}
             value={measurementMode}
+            onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
           />
           <InputField
             error={errors.measurementValue?.message}
@@ -396,10 +397,10 @@ export function ProductForm({
         </div>
 
         <MeasurementUnitField
-          isManual={manualMeasurementMode}
           error={errors.measurementUnit?.message}
-          value={measurementUnitValue}
+          isManual={manualMeasurementMode}
           register={register}
+          value={measurementUnitValue}
         />
 
         <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
@@ -410,12 +411,12 @@ export function ProductForm({
             </p>
           </div>
           <button
-            type="button"
-            role="switch"
             aria-checked={isComboValue}
-            onClick={() => setValue('isCombo', !isComboValue, { shouldDirty: true, shouldValidate: true })}
             className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
+            role="switch"
             style={{ background: isComboValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
+            type="button"
+            onClick={() => setValue('isCombo', !isComboValue, { shouldDirty: true, shouldValidate: true })}
           >
             <span
               className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
@@ -438,8 +439,8 @@ export function ProductForm({
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-[var(--text-primary)]">Componentes do combo</p>
                 <button
-                  type="button"
                   className="rounded-[10px] border border-[rgba(255,255,255,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[rgba(255,255,255,0.24)]"
+                  type="button"
                   onClick={() =>
                     appendComboItem({
                       productId: '',
@@ -470,8 +471,8 @@ export function ProductForm({
 
                 return (
                   <div
-                    key={field.id}
                     className="space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3"
+                    key={field.id}
                   >
                     <SelectField
                       error={errors.comboItems?.[index]?.productId?.message}
@@ -502,8 +503,8 @@ export function ProductForm({
                           : 'Selecione um produto para calcular o equivalente.'}
                       </p>
                       <button
-                        type="button"
                         className="rounded-[8px] border border-[rgba(248,113,113,0.35)] px-2.5 py-1 text-[11px] font-semibold text-[#f87171] transition hover:bg-[rgba(248,113,113,0.12)]"
+                        type="button"
                         onClick={() => removeComboItem(index)}
                       >
                         Remover
@@ -591,12 +592,12 @@ export function ProductForm({
             </p>
           </div>
           <button
-            type="button"
-            role="switch"
             aria-checked={requiresKitchenValue}
-            onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
             className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
+            role="switch"
             style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
+            type="button"
+            onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
           >
             <span
               className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"

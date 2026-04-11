@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { PdvComandaCard } from './pdv-comanda-card'
 import { PdvMesaCard } from './pdv-mesa-card'
 import { PdvMesasKanban } from './pdv-mesas-kanban'
-import { KANBAN_COLUMNS, type Comanda, type Mesa } from './pdv-types'
+import { type Comanda, KANBAN_COLUMNS, type Mesa } from './pdv-types'
 
 function renderWithDnd(ui: ReactNode) {
   return render(
@@ -56,7 +56,7 @@ describe('PDV cards', () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
 
-    renderWithDnd(<PdvComandaCard comanda={makeComanda()} index={0} column={KANBAN_COLUMNS[0]!} onClick={onClick} />)
+    renderWithDnd(<PdvComandaCard column={KANBAN_COLUMNS[0]!} comanda={makeComanda()} index={0} onClick={onClick} />)
 
     await user.click(getNativeButtonByName(/mesa 10/i))
 
@@ -89,16 +89,16 @@ describe('PDV cards', () => {
 
     render(
       <PdvMesasKanban
+        comandas={[makeComanda({ id: 'comanda-ocupada', mesa: '8', status: 'em_preparo' })]}
         mesas={[
           makeMesa({ id: 'mesa-livre', numero: '1', status: 'livre' }),
           makeMesa({ id: 'mesa-reservada', numero: '5', status: 'reservada' }),
           makeMesa({ id: 'mesa-ocupada', numero: '8', status: 'ocupada', comandaId: 'comanda-ocupada' }),
         ]}
-        comandas={[makeComanda({ id: 'comanda-ocupada', mesa: '8', status: 'em_preparo' })]}
-        onStatusChange={vi.fn()}
+        onAddMesa={onAddMesa}
         onClickLivre={onClickLivre}
         onClickOcupada={onClickOcupada}
-        onAddMesa={onAddMesa}
+        onStatusChange={vi.fn()}
       />,
     )
 

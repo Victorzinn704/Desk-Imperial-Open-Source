@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
-import type { Comanda } from '@/components/pdv/pdv-types'
-import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, type Comanda, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
@@ -26,7 +25,7 @@ interface Props {
 function SummaryCard({ label, value, hint }: Readonly<{ label: string; value: string; hint: string }>) {
   const testId = `summary-card-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
-    <div data-testid={testId} className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+    <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3" data-testid={testId}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
       <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{hint}</p>
@@ -40,9 +39,9 @@ export function MobileHistoricoView({ comandas, summary }: Props) {
   if (sorted.length === 0 && !summary) {
     return (
       <OperationEmptyState
-        title="Nenhum atendimento hoje"
-        description="Os atendimentos do dia aparecerão aqui."
         Icon={ClipboardList}
+        description="Os atendimentos do dia aparecerão aqui."
+        title="Nenhum atendimento hoje"
       />
     )
   }
@@ -52,14 +51,14 @@ export function MobileHistoricoView({ comandas, summary }: Props) {
       {summary ? (
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <SummaryCard
+            hint="Somente vendas já fechadas por você"
             label="Receita realizada"
             value={formatCurrency(summary.receitaRealizada)}
-            hint="Somente vendas já fechadas por você"
           />
           <SummaryCard
+            hint={`${summary.openComandasCount} comanda${summary.openComandasCount !== 1 ? 's' : ''} em aberto no seu atendimento`}
             label="Receita esperada"
             value={formatCurrency(summary.receitaEsperada)}
-            hint={`${summary.openComandasCount} comanda${summary.openComandasCount !== 1 ? 's' : ''} em aberto no seu atendimento`}
           />
         </div>
       ) : null}
@@ -68,7 +67,7 @@ export function MobileHistoricoView({ comandas, summary }: Props) {
       </p>
       <ul className="space-y-2">
         {sorted.map((comanda) => (
-          <ExtratoCard key={comanda.id} comanda={comanda} />
+          <ExtratoCard comanda={comanda} key={comanda.id} />
         ))}
       </ul>
     </div>
@@ -87,9 +86,9 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
   return (
     <li className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
       <button
-        type="button"
         className="flex w-full items-center justify-between gap-3 px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
+        type="button"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="min-w-0 text-left">
@@ -134,8 +133,8 @@ function ExtratoCard({ comanda }: { comanda: Comanda }) {
             <ul className="mb-4 space-y-2">
               {comanda.itens.map((item, idx) => (
                 <li
-                  key={`${item.produtoId}-${idx}`}
                   className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
+                  key={`${item.produtoId}-${idx}`}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-xs font-semibold text-[var(--text-primary)]">

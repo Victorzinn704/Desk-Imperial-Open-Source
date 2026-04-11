@@ -55,17 +55,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={outfit.variable} suppressHydrationWarning>
+    <html suppressHydrationWarning className={outfit.variable} lang="pt-BR">
       <body className={`${outfit.className} bg-[var(--bg)] text-[var(--text-primary)] antialiased transition-colors`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider enableSystem attribute="class" defaultTheme="system">
           <QueryProvider>
             <div id="app-shell">{children}</div>
           </QueryProvider>
         </ThemeProvider>
         <Toaster
-          theme="system"
-          position="top-center"
           richColors
+          position="top-center"
+          theme="system"
           toastOptions={{
             style: {
               background: 'var(--surface)',

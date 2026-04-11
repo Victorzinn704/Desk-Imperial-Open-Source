@@ -29,7 +29,7 @@ export function SettingsEnvironment({
 
   const user = sessionQuery.data?.user
 
-  if (!user) return null
+  if (!user) {return null}
 
   const cookiePreferences = consentQuery.data?.cookiePreferences ?? user.cookiePreferences
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
@@ -62,14 +62,14 @@ export function SettingsEnvironment({
         documentTitles={documentTitles}
         legalAcceptances={legalAcceptances}
         logoutBusy={_logoutMutation.isPending}
-        onLogout={handleLogout}
-        onNavigateSection={onNavigateSection}
-        onProfileSubmit={handleProfileSubmit}
-        onTabChange={onSettingsSectionChange}
         preferenceMutation={preferenceMutation}
         profileError={profileMutationError?.message}
         profileLoading={updateProfileMutation.isPending}
         user={user}
+        onLogout={handleLogout}
+        onNavigateSection={onNavigateSection}
+        onProfileSubmit={handleProfileSubmit}
+        onTabChange={onSettingsSectionChange}
       />
     </section>
   )

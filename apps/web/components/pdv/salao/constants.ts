@@ -1,4 +1,4 @@
-import type { Mesa, Comanda, Garcom, MesaStatus } from '../pdv-types'
+import type { Comanda, Garcom, Mesa, MesaStatus } from '../pdv-types'
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -32,24 +32,24 @@ export function initials(nome: string) {
 
 /** 0=normal · 1=30-59min amber · 2=60-89min amber+glow · 3=90+ red pulsing */
 export function urgencyLevel(mesa: Mesa, comanda: Comanda | undefined, now: number): 0 | 1 | 2 | 3 {
-  if (mesa.status !== 'ocupada' || !comanda) return 0
+  if (mesa.status !== 'ocupada' || !comanda) {return 0}
   const min = Math.floor((now - comanda.abertaEm.getTime()) / 60000)
-  if (min >= 90) return 3
-  if (min >= 60) return 2
-  if (min >= 30) return 1
+  if (min >= 90) {return 3}
+  if (min >= 60) {return 2}
+  if (min >= 30) {return 1}
   return 0
 }
 
 export function urgencyBorderColor(level: 0 | 1 | 2 | 3): string {
-  if (level === 3) return 'rgba(248,113,113,0.65)'
-  if (level === 2) return 'rgba(251,191,36,0.5)'
-  if (level === 1) return 'rgba(251,191,36,0.28)'
+  if (level === 3) {return 'rgba(248,113,113,0.65)'}
+  if (level === 2) {return 'rgba(251,191,36,0.5)'}
+  if (level === 1) {return 'rgba(251,191,36,0.28)'}
   return ''
 }
 
 export function urgencyShadow(level: 0 | 1 | 2 | 3): string | undefined {
-  if (level === 3) return '0 0 18px rgba(248,113,113,0.22)'
-  if (level === 2) return '0 0 10px rgba(251,191,36,0.15)'
+  if (level === 3) {return '0 0 18px rgba(248,113,113,0.22)'}
+  if (level === 2) {return '0 0 10px rgba(251,191,36,0.15)'}
   return undefined
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { MesaRecord } from '@contracts/contracts'
-import { CANVAS_H, CARD_H, CARD_W, clamp, getAutoPosition, type DragState } from '../constants'
+import { CANVAS_H, CARD_H, CARD_W, clamp, type DragState, getAutoPosition } from '../constants'
 
 interface UseMesaDragOptions {
   onPositionSave: (id: string, x: number, y: number) => void
@@ -26,8 +26,8 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
 
   const getMesaPosition = useCallback(
     (mesa: MesaRecord, autoIndex: number): { x: number; y: number } => {
-      if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
-      if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
+      if (dragOverrides[mesa.id]) {return dragOverrides[mesa.id]}
+      if (mesa.positionX !== null && mesa.positionY !== null) {return { x: mesa.positionX, y: mesa.positionY }}
       return getAutoPosition(autoIndex)
     },
     [dragOverrides],
@@ -55,8 +55,8 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
-      if (!dragging) return
-      if (e.pointerId !== dragging.pointerId) return
+      if (!dragging) {return}
+      if (e.pointerId !== dragging.pointerId) {return}
 
       const canvasEl = canvasRef.current
       const canvasW = canvasEl ? canvasEl.offsetWidth : 800
@@ -81,8 +81,8 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
 
   const handlePointerUp = useCallback(
     (e: PointerEvent) => {
-      if (!dragging) return
-      if (e.pointerId !== dragging.pointerId) return
+      if (!dragging) {return}
+      if (e.pointerId !== dragging.pointerId) {return}
 
       const pos = dragPositionRef.current
         ? { x: dragPositionRef.current.x, y: dragPositionRef.current.y }
@@ -103,7 +103,7 @@ export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
   )
 
   useEffect(() => {
-    if (!dragging) return
+    if (!dragging) {return}
     globalThis.addEventListener('pointermove', handlePointerMove, { passive: true })
     globalThis.addEventListener('pointerup', handlePointerUp)
     globalThis.addEventListener('pointercancel', handlePointerUp)

@@ -3,8 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
-import type { Comanda } from '@/components/pdv/pdv-types'
-import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, type Comanda, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { toPdvComanda } from '@/components/pdv/pdv-operations'
 import { formatBRL as formatCurrency } from '@/lib/currency'
@@ -35,8 +34,8 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
   const filtered = useMemo(
     () =>
       comandas.filter((c) => {
-        if (filtro === 'abertas') return c.status !== 'fechada'
-        if (filtro === 'fechadas') return c.status === 'fechada'
+        if (filtro === 'abertas') {return c.status !== 'fechada'}
+        if (filtro === 'fechadas') {return c.status === 'fechada'}
         return true
       }),
     [comandas, filtro],
@@ -44,11 +43,11 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
 
   const sorted = useMemo(() => {
     const ordered = [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime())
-    if (!focusedId) return ordered
+    if (!focusedId) {return ordered}
 
     return ordered.sort((a, b) => {
-      if (a.id === focusedId) return -1
-      if (b.id === focusedId) return 1
+      if (a.id === focusedId) {return -1}
+      if (b.id === focusedId) {return 1}
       return 0
     })
   }, [filtered, focusedId])
@@ -68,15 +67,15 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
           ] as const
         ).map(({ id, label }) => (
           <button
-            key={id}
-            type="button"
-            onClick={() => setFiltro(id)}
             className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+            key={id}
             style={{
               background: filtro === id ? 'rgba(0,140,255,0.2)' : 'var(--surface)',
               color: filtro === id ? '#008cff' : 'var(--text-soft, #7a8896)',
               border: `1px solid ${filtro === id ? 'rgba(0,140,255,0.4)' : 'var(--border)'}`,
             }}
+            type="button"
+            onClick={() => setFiltro(id)}
           >
             {label}
           </button>
@@ -85,17 +84,17 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
 
       {sorted.length === 0 ? (
         <OperationEmptyState
-          title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
-          description="Nenhum registro encontrado para este filtro."
           Icon={ClipboardList}
+          description="Nenhum registro encontrado para este filtro."
+          title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
         />
       ) : (
         <ul className="space-y-2">
           {sorted.map((comanda) => (
             <ComandaCard
-              key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
               comanda={comanda}
               defaultOpen={comanda.id === focusedId}
+              key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
               onCloseComanda={onCloseComanda}
             />
           ))}
@@ -149,9 +148,9 @@ function ComandaCard({
       data-testid={`owner-comanda-card-${comanda.id}`}
     >
       <button
-        type="button"
         className="flex w-full items-start justify-between gap-3 px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
+        type="button"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="min-w-0 flex-1 text-left">
@@ -213,8 +212,8 @@ function ComandaCard({
 
           {canClose && onCloseComanda ? (
             <button
-              type="button"
               className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98]"
+              type="button"
               onClick={() => {
                 onCloseComanda(activeComanda.id, descontoVal, acrescimoVal)
               }}
@@ -235,8 +234,8 @@ function ComandaCard({
             <ul className="mb-4 space-y-2" data-testid={`owner-comanda-items-${comanda.id}`}>
               {activeComanda.itens.map((item, idx) => (
                 <li
-                  key={`${item.produtoId}-${idx}`}
                   className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3"
+                  key={`${item.produtoId}-${idx}`}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-semibold text-[var(--text-primary)]">

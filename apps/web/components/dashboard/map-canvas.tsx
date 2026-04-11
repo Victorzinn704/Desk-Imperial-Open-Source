@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Map as LeafletMap, LayerGroup } from 'leaflet'
+import type { LayerGroup, Map as LeafletMap } from 'leaflet'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 
@@ -27,9 +27,9 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
     let active = true
 
     async function initMap() {
-      if (!containerRef.current || mapRef.current) return
+      if (!containerRef.current || mapRef.current) {return}
       const L = (await import('leaflet')).default
-      if (!active || !containerRef.current) return
+      if (!active || !containerRef.current) {return}
 
       const map = L.map(containerRef.current, {
         center: DEFAULT_CENTER,
@@ -81,7 +81,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       setTimeout(() => {
         map.invalidateSize()
       }, 300)
-      if (active) setMapReady(true)
+      if (active) {setMapReady(true)}
     }
 
     initMap()
@@ -101,9 +101,9 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
     let active = true
 
     async function updateMarkers() {
-      if (!mapRef.current || !layerGroupRef.current) return
+      if (!mapRef.current || !layerGroupRef.current) {return}
       const L = (await import('leaflet')).default
-      if (!active) return
+      if (!active) {return}
 
       layerGroupRef.current.clearLayers()
 

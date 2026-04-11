@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Calendar, dateFnsLocalizer, type View } from 'react-big-calendar'
 import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
+import { format, getDay, parse, startOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarDays, Plus, Radio, Trophy, X } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -235,7 +235,7 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
   const [endStr, setEndStr] = useState(toInput(activity?.end ?? new Date(defaultDate.getTime() + 2 * 60 * 60 * 1000)))
 
   function handleSave() {
-    if (!title.trim()) return
+    if (!title.trim()) {return}
     onSave({
       title: title.trim(),
       type,
@@ -264,8 +264,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
           </h2>
           <button
             className="flex size-8 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:text-white"
-            onClick={onClose}
             type="button"
+            onClick={onClose}
           >
             <X className="size-4" />
           </button>
@@ -281,8 +281,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
             </label>
             <input
               autoFocus
-              id={titleInputId}
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
+              id={titleInputId}
               placeholder="Ex: Happy Hour, Jogo do Flamengo..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -297,8 +297,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                 const c = ACTIVITY_COLORS[t]
                 return (
                   <button
-                    key={t}
                     className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all"
+                    key={t}
                     style={{
                       background: isActive ? c.bg : 'rgba(255,255,255,0.04)',
                       border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.08)'}`,
@@ -328,8 +328,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                   const isActive = footballCompetition === competition
                   return (
                     <button
-                      key={competition}
                       className="rounded-[12px] border px-3 py-2 text-left text-xs font-semibold transition-all"
+                      key={competition}
                       style={{
                         background: isActive ? 'rgba(234,179,8,0.12)' : 'rgba(255,255,255,0.03)',
                         borderColor: isActive ? 'rgba(234,179,8,0.45)' : 'rgba(255,255,255,0.08)',
@@ -358,8 +358,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                 Início
               </label>
               <input
-                id={startInputId}
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
+                id={startInputId}
                 type="datetime-local"
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
@@ -373,8 +373,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                 Fim
               </label>
               <input
-                id={endInputId}
                 className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
+                id={endInputId}
                 type="datetime-local"
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
@@ -390,8 +390,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
               Descrição (opcional)
             </label>
             <textarea
-              id={descriptionInputId}
               className="w-full resize-none rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
+              id={descriptionInputId}
               placeholder="Detalhes da atividade..."
               rows={2}
               value={descricao}
@@ -407,8 +407,8 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
               Impacto esperado em vendas %
             </label>
             <input
-              id={impactInputId}
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
+              id={impactInputId}
               max="200"
               min="0"
               placeholder="Ex: 30"
@@ -459,7 +459,7 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 4)
 
-  if (upcoming.length === 0) return null
+  if (upcoming.length === 0) {return null}
 
   return (
     <div className="imperial-card-soft rounded-[20px] p-4">
@@ -468,7 +468,7 @@ function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
         {upcoming.map((a) => {
           const c = ACTIVITY_COLORS[a.type]
           return (
-            <div key={a.id} className="flex items-center gap-3">
+            <div className="flex items-center gap-3" key={a.id}>
               <span className="size-2 shrink-0 rounded-full" style={{ background: c.dot }} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">{a.title}</p>
@@ -494,7 +494,7 @@ function FootballGamesWidget({ activities }: { activities: CommercialActivity[] 
 
   const upcomingGames = footballGames.filter((activity) => activity.start >= new Date()).slice(0, 5)
 
-  if (footballGames.length === 0) return null
+  if (footballGames.length === 0) {return null}
 
   return (
     <div className="imperial-card-soft rounded-[20px] p-4">
@@ -519,8 +519,8 @@ function FootballGamesWidget({ activities }: { activities: CommercialActivity[] 
           const count = footballGames.filter((activity) => activity.footballCompetition === competition).length
           return (
             <div
-              key={competition}
               className="rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] px-3 py-2"
+              key={competition}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#fde047]">
@@ -540,7 +540,7 @@ function FootballGamesWidget({ activities }: { activities: CommercialActivity[] 
 
       <div className="mt-4 space-y-2 border-t border-[rgba(255,255,255,0.06)] pt-4">
         {upcomingGames.map((game) => (
-          <div key={game.id} className="rounded-[14px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5">
+          <div className="rounded-[14px] bg-[rgba(255,255,255,0.03)] px-3 py-2.5" key={game.id}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{game.title}</p>
@@ -642,7 +642,7 @@ export function CommercialCalendar() {
               const c = ACTIVITY_COLORS[t]
               const count = activities.filter((a) => a.type === t).length
               return (
-                <span key={t} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: c.text }}>
+                <span className="flex items-center gap-1.5 text-xs font-medium" key={t} style={{ color: c.text }}>
                   <span className="size-2.5 rounded-full" style={{ background: c.dot }} />
                   {ACTIVITY_LABELS[t]}
                   {count > 0 && (
@@ -743,6 +743,8 @@ export function CommercialCalendar() {
           `}</style>
 
           <DnDCalendar
+            resizable
+            selectable
             culture="pt-BR"
             date={date}
             defaultView="month"
@@ -750,8 +752,6 @@ export function CommercialCalendar() {
             events={activities}
             localizer={localizer}
             messages={messages}
-            resizable
-            selectable
             style={{ height: 620 }}
             view={view}
             onEventDrop={onEventDrop}
@@ -777,9 +777,9 @@ export function CommercialCalendar() {
               const impact = activities
                 .filter((a) => a.type === t && a.impactoEsperado)
                 .reduce((sum, a) => sum + (a.impactoEsperado ?? 0), 0)
-              if (count === 0) return null
+              if (count === 0) {return null}
               return (
-                <div key={t} className="flex items-center justify-between">
+                <div className="flex items-center justify-between" key={t}>
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full" style={{ background: c.dot }} />
                     <span className="text-sm text-white">{ACTIVITY_LABELS[t]}</span>

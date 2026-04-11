@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
-import { downloadProductTemplateCsv, downloadPortfolioCsv } from './portfolio-csv'
+import { downloadPortfolioCsv, downloadProductTemplateCsv } from './portfolio-csv'
 
 describe('portfolio-csv', () => {
   let createObjectURLMock: ReturnType<typeof vi.fn>

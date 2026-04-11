@@ -2,10 +2,10 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
-  invalidateOperationsWorkspace,
   patchComandaInSnapshot,
   patchOperationsSnapshot,
 } from './operations-query'

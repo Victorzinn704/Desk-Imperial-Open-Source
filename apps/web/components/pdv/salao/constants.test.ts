@@ -12,15 +12,15 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  GARCOM_CORES,
   garcomCor,
   initials,
-  urgencyLevel,
-  urgencyBorderColor,
-  urgencyShadow,
   resolveMesaComanda,
-  GARCOM_CORES,
+  urgencyBorderColor,
+  urgencyLevel,
+  urgencyShadow,
 } from './constants'
-import type { Mesa, Comanda, Garcom } from '../pdv-types'
+import type { Comanda, Garcom, Mesa } from '../pdv-types'
 
 function makeMesa(overrides: Partial<Mesa> = {}): Mesa {
   return {

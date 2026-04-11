@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { Button } from './button'
 
 describe('Button', () => {
@@ -99,7 +99,7 @@ describe('Button', () => {
 
   it('passes through additional HTML attributes', () => {
     render(
-      <Button type="submit" data-testid="submit-btn">
+      <Button data-testid="submit-btn" type="submit">
         Submit
       </Button>,
     )

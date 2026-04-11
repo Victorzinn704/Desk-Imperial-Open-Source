@@ -9,13 +9,13 @@ export function LetterCard() {
   return (
     <div className="flex w-full items-center justify-center py-4">
       <div
-        className={`group relative mx-auto flex w-full max-w-[900px] cursor-pointer items-center justify-center overflow-visible transition-all duration-700 ${isOpen ? 'aspect-[16/5]' : 'aspect-[16/8]'}`}
-        onClick={() => setIsOpen((v) => !v)}
-        role="button"
         aria-label={isOpen ? 'Fechar carta' : 'Abrir carta'}
+        className={`group relative mx-auto flex w-full max-w-[900px] cursor-pointer items-center justify-center overflow-visible transition-all duration-700 ${isOpen ? 'aspect-[16/5]' : 'aspect-[16/8]'}`}
+        role="button"
         tabIndex={0}
+        onClick={() => setIsOpen((v) => !v)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') setIsOpen((v) => !v)
+          if (e.key === 'Enter' || e.key === ' ') {setIsOpen((v) => !v)}
         }}
       >
         {/* ── Carta interna (abre ao hover/click) ─────────────────────── */}

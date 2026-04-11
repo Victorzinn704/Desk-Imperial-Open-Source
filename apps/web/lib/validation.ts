@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import {
   PASSWORD_MIN_LENGTH,
-  STRONG_PASSWORD_REGEX,
   sanitizeDocument,
-  validateCpf,
+  STRONG_PASSWORD_REGEX,
   validateCnpj,
+  validateCpf,
 } from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
@@ -354,10 +354,10 @@ export type OrderFormValues = z.output<typeof orderSchema>
 export function getPasswordStrength(password: string) {
   let score = 0
 
-  if (password.length >= 8) score += 1
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
-  if (/\d/.test(password)) score += 1
-  if (/[^A-Za-z\d]/.test(password)) score += 1
+  if (password.length >= 8) {score += 1}
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {score += 1}
+  if (/\d/.test(password)) {score += 1}
+  if (/[^A-Za-z\d]/.test(password)) {score += 1}
 
   if (score <= 1) {
     return { score: 1, label: 'Fraca' }

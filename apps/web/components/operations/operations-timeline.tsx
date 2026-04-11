@@ -5,7 +5,7 @@ import { Calendar, dateFnsLocalizer, type EventProps, type ResourceHeaderProps, 
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import { format, getDay, parse, startOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarRange, Clock3, Layers3, ShieldCheck, UserRound, type LucideIcon } from 'lucide-react'
+import { CalendarRange, Clock3, Layers3, type LucideIcon, ShieldCheck, UserRound } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import type { OperationTimelineItem, OperationTimelineResource } from '@/lib/operations/operations-types'
@@ -97,7 +97,7 @@ export function OperationsTimeline({
 
         {resources.length ? (
           <div className="operations-rbc overflow-hidden rounded-[24px] border border-white/6">
-            <style jsx global>{`
+            <style global jsx>{`
               .operations-rbc .rbc-calendar {
                 background: transparent !important;
                 color: #e2ddd6;
@@ -251,6 +251,11 @@ export function OperationsTimeline({
             `}</style>
 
             <DnDCalendar
+              popup
+              components={{
+                event: OperationEventCard,
+                resourceHeader: OperationResourceHeader,
+              }}
               culture="pt-BR"
               date={date}
               dayLayoutAlgorithm="no-overlap"
@@ -271,7 +276,6 @@ export function OperationsTimeline({
               events={calendarEvents}
               localizer={localizer}
               max={buildTimeBoundary(date, 23, 0)}
-              min={buildTimeBoundary(date, 8, 0)}
               messages={{
                 agenda: 'Agenda',
                 day: 'Dia',
@@ -284,6 +288,16 @@ export function OperationsTimeline({
                 week: 'Semana',
                 work_week: 'Semana útil',
               }}
+              min={buildTimeBoundary(date, 8, 0)}
+              resizable={Boolean(onEventResize)}
+              resourceIdAccessor="id"
+              resourceTitleAccessor="title"
+              resources={resources}
+              selectable="ignoreEvents"
+              step={30}
+              timeslots={2}
+              view={view}
+              views={['day', 'week', 'agenda']}
               onEventDrop={({ event, start, end, resourceId }) => {
                 onEventDrop?.({
                   id: event.id,
@@ -301,20 +315,6 @@ export function OperationsTimeline({
               }}
               onNavigate={(nextDate) => setDate(nextDate)}
               onView={(nextView) => setView(nextView)}
-              popup
-              resizable={Boolean(onEventResize)}
-              resourceIdAccessor="id"
-              resourceTitleAccessor="title"
-              resources={resources}
-              selectable="ignoreEvents"
-              step={30}
-              timeslots={2}
-              view={view}
-              views={['day', 'week', 'agenda']}
-              components={{
-                event: OperationEventCard,
-                resourceHeader: OperationResourceHeader,
-              }}
             />
           </div>
         ) : (

@@ -14,7 +14,7 @@ export function MapEnvironment() {
   const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
   const ordersTotals = ordersQuery.data?.totals
 
-  if (!user) return null
+  if (!user) {return null}
 
   const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
 

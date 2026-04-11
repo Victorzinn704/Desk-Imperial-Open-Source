@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { CurrencyCode, FinanceSummaryResponse, OrdersResponse } from '@contracts/contracts'
-import { BarChart3, Building2, TrendingUp, UsersRound, PieChartIcon } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { BarChart3, Building2, type LucideIcon, PieChartIcon, TrendingUp, UsersRound } from 'lucide-react'
 import { Skeleton } from '@/components/shared/skeleton'
 import { formatCompactCurrency } from '@/lib/currency'
 import { formatBuyerType, maskBuyerDocument } from '@/lib/dashboard-format'
@@ -113,8 +112,8 @@ export function FinanceChart({
                     : 'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
                 )}
                 key={view.id}
-                onClick={() => setActiveView(view.id)}
                 type="button"
+                onClick={() => setActiveView(view.id)}
               >
                 <Icon className="size-4" />
                 {view.label}
@@ -191,7 +190,7 @@ function buildTimelineChart(ctx: ChartContext) {
     { name: 'Receita', data: ctx.timelineData.map((d) => d.revenue) },
     { name: 'Lucro', data: ctx.timelineData.map((d) => d.profit) },
   ]
-  return <ReactApexChart options={options} series={series} type="area" height="100%" />
+  return <ReactApexChart height="100%" options={options} series={series} type="area" />
 }
 
 function buildGrowthChart(ctx: ChartContext) {
@@ -218,7 +217,7 @@ function buildGrowthChart(ctx: ChartContext) {
     { name: 'Ticket Médio', data: ctx.timelineData.map((d) => +(d.revenue / (d.orders || 1)).toFixed(2)) },
     { name: 'Lucro Total', data: ctx.timelineData.map((d) => d.profit) },
   ]
-  return <ReactApexChart options={options} series={series} type="bar" height="100%" />
+  return <ReactApexChart height="100%" options={options} series={series} type="bar" />
 }
 
 function buildChannelsChart(ctx: ChartContext) {
@@ -239,7 +238,7 @@ function buildChannelsChart(ctx: ChartContext) {
     theme: { mode: ctx.isDark ? 'dark' : 'light' },
   }
   const series = [{ name: 'Receita', data: ctx.channelData.map((d) => d.revenue) }]
-  return <ReactApexChart options={options} series={series} type="bar" height="100%" />
+  return <ReactApexChart height="100%" options={options} series={series} type="bar" />
 }
 
 function buildCustomersChart(ctx: ChartContext) {
@@ -258,7 +257,7 @@ function buildCustomersChart(ctx: ChartContext) {
     },
   }
   const series = [{ name: 'Receita', data: ctx.customerData.map((d) => d.revenue) }]
-  return <ReactApexChart options={options} series={series} type="radar" height="100%" />
+  return <ReactApexChart height="100%" options={options} series={series} type="radar" />
 }
 
 function buildCategoriesChart(ctx: ChartContext) {
@@ -287,7 +286,7 @@ function buildCategoriesChart(ctx: ChartContext) {
     legend: { position: 'right', labels: { colors: ctx.textColor } },
   }
   const series = ctx.categoryData.map((d) => d.potentialProfit)
-  return <ReactApexChart options={options} series={series} type="donut" height="100%" />
+  return <ReactApexChart height="100%" options={options} series={series} type="donut" />
 }
 
 const chartBuilders: Record<ChartView, (ctx: ChartContext) => React.ReactNode> = {
@@ -319,8 +318,8 @@ function renderChart({
   displayCurrency: CurrencyCode
   isDark: boolean
 }) {
-  if (isLoading) return <Skeleton className="h-full w-full rounded-xl" />
-  if (error) return <div className="text-red-500 p-6">{error}</div>
+  if (isLoading) {return <Skeleton className="h-full w-full rounded-xl" />}
+  if (error) {return <div className="text-red-500 p-6">{error}</div>}
 
   const ctx: ChartContext = {
     textColor: isDark ? '#9ca3af' : '#6b7280',

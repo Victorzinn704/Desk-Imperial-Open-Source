@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * Hook para monitoramento de Web Vitals em mobile
@@ -29,8 +29,8 @@ const THRESHOLDS = {
 
 function getRating(name: keyof typeof THRESHOLDS, value: number): WebVitalsMetric['rating'] {
   const threshold = THRESHOLDS[name]
-  if (value <= threshold.good) return 'good'
-  if (value <= threshold.poor) return 'needs-improvement'
+  if (value <= threshold.good) {return 'good'}
+  if (value <= threshold.poor) {return 'needs-improvement'}
   return 'poor'
 }
 
@@ -45,7 +45,7 @@ function getRating(name: keyof typeof THRESHOLDS, value: number): WebVitalsMetri
  */
 export function useWebVitals(onMetric?: VitalsCallback) {
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {return}
 
     const reportMetric = (metric: WebVitalsMetric) => {
       // Log em development
@@ -222,7 +222,7 @@ export function useWebVitals(onMetric?: VitalsCallback) {
  * Detecta se o dispositivo é de baixa performance (função pura, sem hooks)
  */
 function detectLowPerformance(): boolean {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined') {return false}
 
   const nav = navigator as Navigator & {
     deviceMemory?: number

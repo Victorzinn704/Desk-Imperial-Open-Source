@@ -58,7 +58,7 @@ export const PdvColumn = memo(function PdvColumn({ column, comandas, onCardClick
             )}
 
             {comandas.map((comanda, idx) => (
-              <PdvComandaCard key={comanda.id} column={column} comanda={comanda} index={idx} onClick={onCardClick} />
+              <PdvComandaCard column={column} comanda={comanda} index={idx} key={comanda.id} onClick={onCardClick} />
             ))}
 
             {provided.placeholder}

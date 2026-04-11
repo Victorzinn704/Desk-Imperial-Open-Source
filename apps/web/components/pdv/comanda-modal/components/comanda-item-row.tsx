@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, type Dispatch, type SetStateAction } from 'react'
+import { type Dispatch, memo, type SetStateAction } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { formatCurrency } from '@/lib/currency'
 import type { ComandaItem } from '../../pdv-types'
@@ -36,9 +36,9 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
             <Minus className="size-3.5" />
           </button>
           <input
-            type="number"
-            min={1}
             className="w-10 bg-transparent text-center text-sm font-semibold text-[var(--text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            min={1}
+            type="number"
             value={item.quantidade}
             onChange={(e) => {
               const v = Math.max(1, Math.floor(Number(e.target.value) || 1))

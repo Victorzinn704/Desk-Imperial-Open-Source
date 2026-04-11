@@ -17,7 +17,7 @@ vi.mock('@/components/shared/lazy-components', () => ({
         const label = String(row.employeeName ?? row.tableLabel ?? row.reason ?? row.id ?? 'linha')
         const key = String(row.employeeId ?? row.tableLabel ?? row.id ?? label)
         return (
-          <button key={key} onClick={() => onRowClicked?.({ data: row })} type="button">
+          <button key={key} type="button" onClick={() => onRowClicked?.({ data: row })}>
             {label}
           </button>
         )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
@@ -52,14 +52,39 @@ function exportOrdersCsv(orders: RecentOrder[], currency: string) {
     o.status,
     new Date(o.createdAt).toLocaleString('pt-BR'),
   ])
-  const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `pedidos_${currency}_${new Date().toISOString().slice(0, 10)}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  const csv = [header, ...rows].map((r) => r.map(escapeCsvCell).join(',')).join('\r\n')
+  downloadCsvFile(`pedidos_${currency}_${new Date().toISOString().slice(0, 10)}.csv`, csv)
+}
+
+function escapeCsvCell(value: string) {
+  const normalized = neutralizeCsvFormula(value).replaceAll('"', '""')
+  return `"${normalized}"`
+}
+
+function neutralizeCsvFormula(value: string) {
+  const trimmed = value.trimStart()
+  if (!trimmed) {
+    return value
+  }
+
+  return ['=', '+', '-', '@'].includes(trimmed[0]) ? `'${value}` : value
+}
+
+function downloadCsvFile(filename: string, content: string) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' })
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.rel = 'noopener'
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  window.URL.revokeObjectURL(url)
 }
 
 export function FinanceOrdersTable({ orders, displayCurrency }: Readonly<Props>) {
@@ -125,11 +150,11 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Readonly<Props>)
               const isCompleted = order.status === 'COMPLETED'
               return (
                 <tr
-                  key={order.id}
                   className={cn(
                     'border-b border-[rgba(255,255,255,0.04)] transition-colors hover:bg-[rgba(255,255,255,0.02)]',
                     i % 2 === 0 ? 'bg-transparent' : 'bg-[rgba(255,255,255,0.01)]',
                   )}
+                  key={order.id}
                 >
                   <td className="max-w-[180px] px-4 py-3">
                     <p className="truncate font-semibold text-[var(--text-primary)]">
@@ -168,9 +193,9 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Readonly<Props>)
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
               className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -178,9 +203,9 @@ export function FinanceOrdersTable({ orders, displayCurrency }: Readonly<Props>)
               {page} / {totalPages}
             </span>
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
               className="flex size-7 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] transition-colors hover:border-[rgba(52,242,127,0.3)] hover:text-[var(--text-primary)] disabled:opacity-30"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
               <ChevronRight className="size-4" />
             </button>

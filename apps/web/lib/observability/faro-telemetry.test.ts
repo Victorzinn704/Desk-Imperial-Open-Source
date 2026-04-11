@@ -204,11 +204,7 @@ describe('faro telemetry behavior', () => {
     })
 
     expect(faroApiMock.pushMeasurement).toHaveBeenCalledTimes(1)
-    expect(faroApiMock.pushEvent).not.toHaveBeenCalledWith(
-      'api_slow_request',
-      expect.anything(),
-      'desk-imperial-web',
-    )
+    expect(faroApiMock.pushEvent).not.toHaveBeenCalledWith('api_slow_request', expect.anything(), 'desk-imperial-web')
 
     randomSpy.mockRestore()
   })

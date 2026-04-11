@@ -10,32 +10,32 @@ import { Button } from '@/components/shared/button'
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function calcMarginPct(unitPrice: number, unitCost: number): number | null {
-  if (unitPrice <= 0) return null
+  if (unitPrice <= 0) {return null}
   return ((unitPrice - unitCost) / unitPrice) * 100
 }
 
 function marginTone(pct: number) {
   if (pct >= 50)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#34f27f]',
       borderClass: 'border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)]',
       accentColor: '#34f27f',
-    }
+    }}
   if (pct >= 30)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[var(--accent)]',
       borderClass: 'border-accent/25 bg-accent/[0.07]',
       accentColor: 'var(--accent)',
-    }
+    }}
   if (pct >= 15)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#fbbf24]',
       borderClass: 'border-[rgba(251,191,36,0.22)] bg-[rgba(251,191,36,0.07)]',
       accentColor: '#fbbf24',
-    }
+    }}
   return {
     label: `${pct.toFixed(0)}%`,
     textClass: 'text-[#f87171]',
@@ -45,8 +45,8 @@ function marginTone(pct: number) {
 }
 
 function stockTone(stock: number) {
-  if (stock === 0) return { dot: '#f87171', label: 'Sem estoque' }
-  if (stock < 10) return { dot: '#fbbf24', label: 'Estoque baixo' }
+  if (stock === 0) {return { dot: '#f87171', label: 'Sem estoque' }}
+  if (stock < 10) {return { dot: '#fbbf24', label: 'Estoque baixo' }}
   return { dot: '#34f27f', label: 'Em estoque' }
 }
 
@@ -168,7 +168,7 @@ export const ProductCard = memo(function ProductCard({
             ) : null}
           </div>
 
-          <ProductChips product={product} measurementLabel={measurementLabel} />
+          <ProductChips measurementLabel={measurementLabel} product={product} />
 
           <ProductDescriptions product={product} />
         </div>
@@ -178,30 +178,30 @@ export const ProductCard = memo(function ProductCard({
           <Button
             aria-label={`Editar ${product.name}`}
             disabled={busy}
-            onClick={() => onEdit(product)}
             size="sm"
             variant="secondary"
+            onClick={() => onEdit(product)}
           >
             <PencilLine className="size-3.5" />
             Editar
           </Button>
           {product.active ? (
-            <Button disabled={busy} onClick={() => onArchive(product.id)} size="sm" variant="ghost">
+            <Button disabled={busy} size="sm" variant="ghost" onClick={() => onArchive(product.id)}>
               <Archive className="size-3.5" />
               Arquivar
             </Button>
           ) : (
             <>
-              <Button disabled={busy} onClick={() => onRestore(product.id)} size="sm" variant="ghost">
+              <Button disabled={busy} size="sm" variant="ghost" onClick={() => onRestore(product.id)}>
                 <RotateCcw className="size-3.5" />
                 Reativar
               </Button>
               <Button
                 className="border-[rgba(248,113,113,0.18)] text-[#fca5a5] hover:border-[rgba(248,113,113,0.3)] hover:bg-[rgba(248,113,113,0.08)] hover:text-[#fecaca]"
                 disabled={busy}
-                onClick={() => onDelete(product.id)}
                 size="sm"
                 variant="ghost"
+                onClick={() => onDelete(product.id)}
               >
                 <Trash2 className="size-3.5" />
                 Excluir
@@ -216,17 +216,17 @@ export const ProductCard = memo(function ProductCard({
         <StatTile label="Custo" primary={costValue.primary} secondary={costValue.secondary} />
         <StatTile label="Preço de venda" primary={priceValue.primary} secondary={priceValue.secondary} />
         <StatTile
+          dot={stock.dot}
+          dotLabel={stock.label}
           label="Estoque"
           primary={stockBreakdown}
           secondary={`${product.stock} und · ${packageHelper}`}
-          dot={stock.dot}
-          dotLabel={stock.label}
         />
         <StatTile
+          accent={margin?.accentColor}
           label="Lucro potencial"
           primary={profitValue.primary}
           secondary={profitValue.secondary}
-          accent={margin?.accentColor}
         />
       </div>
     </article>

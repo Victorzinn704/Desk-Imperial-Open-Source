@@ -21,9 +21,9 @@ export function CustomCursor() {
     }
 
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) {return}
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {return}
 
     let w = (canvas.width = globalThis.innerWidth)
     let h = (canvas.height = globalThis.innerHeight)
@@ -56,7 +56,7 @@ export function CustomCursor() {
 
       // Shift trail
       trail.unshift({ x: cursor.x, y: cursor.y, alpha: 1, r: 4.5 })
-      if (trail.length > TRAIL_LEN) trail.pop()
+      if (trail.length > TRAIL_LEN) {trail.pop()}
 
       // Draw trail dots (fading, shrinking) — use solid circles + globalAlpha
       // instead of createRadialGradient per dot to reduce GPU cost
@@ -127,7 +127,7 @@ export function CustomCursor() {
       ctx.fillStyle = '#ffffff'
       ctx.fill()
 
-      if (running) raf = requestAnimationFrame(tick)
+      if (running) {raf = requestAnimationFrame(tick)}
     }
 
     // Visibility change: pause rAF when tab is hidden
@@ -153,5 +153,5 @@ export function CustomCursor() {
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-[999]" />
+  return <canvas className="pointer-events-none fixed inset-0 z-[999]" ref={canvasRef} />
 }

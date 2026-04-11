@@ -18,8 +18,8 @@ export const Modal = memo(function Modal({ title, children, onClose }: ModalProp
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
           <button
-            onClick={onClose}
             className="rounded-lg p-1.5 text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
+            onClick={onClose}
           >
             <X className="size-4" />
           </button>
@@ -51,18 +51,18 @@ export const CreateMesaModal = memo(function CreateMesaModal({
 }: CreateMesaModalProps) {
   return (
     <Modal title="Nova Mesa" onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form className="space-y-4" onSubmit={onSubmit}>
         <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
           {(['single', 'bulk'] as const).map((mode) => (
             <button
-              key={mode}
-              type="button"
-              onClick={() => onChange((f) => ({ ...f, mode }))}
               className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${
                 form.mode === mode
                   ? 'bg-[var(--accent)] text-black'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
               }`}
+              key={mode}
+              type="button"
+              onClick={() => onChange((f) => ({ ...f, mode }))}
             >
               {mode === 'single' ? 'Mesa única' : 'Criar várias de uma vez'}
             </button>
@@ -73,20 +73,20 @@ export const CreateMesaModal = memo(function CreateMesaModal({
           <>
             <Field label="Nome da mesa *">
               <input
+                autoFocus
                 className="imperial-input w-full"
+                maxLength={40}
                 placeholder="Ex: Mesa 1, VIP, Varanda"
                 value={form.label}
                 onChange={(e) => onChange((f) => ({ ...f, label: e.target.value }))}
-                maxLength={40}
-                autoFocus
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Capacidade">
                 <input
-                  type="number"
-                  min={1}
                   className="imperial-input w-full"
+                  min={1}
+                  type="number"
                   value={form.capacity}
                   onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
                 />
@@ -114,18 +114,18 @@ export const CreateMesaModal = memo(function CreateMesaModal({
               </Field>
               <Field label="De">
                 <input
-                  type="number"
-                  min={1}
                   className="imperial-input w-full"
+                  min={1}
+                  type="number"
                   value={form.bulkFrom}
                   onChange={(e) => onChange((f) => ({ ...f, bulkFrom: e.target.value }))}
                 />
               </Field>
               <Field label="Até">
                 <input
-                  type="number"
-                  min={1}
                   className="imperial-input w-full"
+                  min={1}
+                  type="number"
                   value={form.bulkTo}
                   onChange={(e) => onChange((f) => ({ ...f, bulkTo: e.target.value }))}
                 />
@@ -145,9 +145,9 @@ export const CreateMesaModal = memo(function CreateMesaModal({
             <div className="grid grid-cols-2 gap-3">
               <Field label="Capacidade padrão">
                 <input
-                  type="number"
-                  min={1}
                   className="imperial-input w-full"
+                  min={1}
+                  type="number"
                   value={form.capacity}
                   onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
                 />
@@ -168,16 +168,16 @@ export const CreateMesaModal = memo(function CreateMesaModal({
 
         <div className="flex justify-end gap-2 pt-2">
           <button
+            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>
           <button
-            type="submit"
-            disabled={isPending}
             className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
+            disabled={isPending}
+            type="submit"
           >
             {isPending ? 'Criando…' : 'Criar'}
           </button>
@@ -210,22 +210,22 @@ export const EditMesaModal = memo(function EditMesaModal({
 }: EditMesaModalProps) {
   return (
     <Modal title={`Editar — ${mesaLabel}`} onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form className="space-y-4" onSubmit={onSubmit}>
         <Field label="Nome da mesa *">
           <input
+            autoFocus
             className="imperial-input w-full"
+            maxLength={40}
             value={form.label}
             onChange={(e) => onChange((f) => ({ ...f, label: e.target.value }))}
-            maxLength={40}
-            autoFocus
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Capacidade">
             <input
-              type="number"
-              min={1}
               className="imperial-input w-full"
+              min={1}
+              type="number"
               value={form.capacity}
               onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
             />
@@ -244,16 +244,16 @@ export const EditMesaModal = memo(function EditMesaModal({
 
         <div className="flex justify-end gap-2 pt-2">
           <button
+            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>
           <button
-            type="submit"
-            disabled={isPending}
             className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
+            disabled={isPending}
+            type="submit"
           >
             {isPending ? 'Salvando…' : 'Salvar'}
           </button>

@@ -1,4 +1,3 @@
-import type { LucideIcon } from 'lucide-react'
 import {
   Armchair,
   Boxes,
@@ -7,8 +6,9 @@ import {
   History,
   LayoutDashboard,
   Lock,
-  SlidersHorizontal,
+  type LucideIcon,
   ShoppingCart,
+  SlidersHorizontal,
   Tags,
   UserRound,
   Wallet,

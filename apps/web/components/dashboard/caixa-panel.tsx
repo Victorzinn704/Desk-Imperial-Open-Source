@@ -132,27 +132,27 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             <h2 className="mt-1.5 text-xl font-semibold text-[var(--text-primary)]">Abrir caixa</h2>
           </div>
           <button
+            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
             type="button"
             onClick={onClose}
-            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X className="size-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
               Valor inicial no caixa (R$)
             </label>
             <input
-              type="text"
+              autoFocus
+              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
               inputMode="decimal"
               placeholder="0,00"
+              type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              autoFocus
             />
             <p className="mt-1.5 text-[11px] text-[var(--text-soft)]">
               Dinheiro físico presente no caixa ao iniciar o turno. Pode ser R$ 0,00.
@@ -164,11 +164,11 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               Observações (opcional)
             </label>
             <textarea
-              rows={2}
+              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
               placeholder="Troco separado, conferência inicial…"
+              rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
             />
           </div>
 
@@ -180,16 +180,16 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
           <div className="flex gap-3 pt-1">
             <button
+              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
             >
               Cancelar
             </button>
             <button
-              type="submit"
-              disabled={mutation.isPending}
               className="flex-1 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+              disabled={mutation.isPending}
+              type="submit"
             >
               {mutation.isPending ? 'Abrindo…' : 'Abrir caixa'}
             </button>
@@ -265,9 +265,9 @@ function FecharCaixaModal({
             <h2 className="mt-1.5 text-xl font-semibold text-[var(--text-primary)]">Fechar caixa</h2>
           </div>
           <button
+            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
             type="button"
             onClick={onClose}
-            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X className="size-4" />
           </button>
@@ -288,10 +288,10 @@ function FecharCaixaModal({
             </p>
             <label className="mt-3 flex items-center gap-2.5 cursor-pointer">
               <input
-                type="checkbox"
                 checked={forceClose}
-                onChange={(e) => setForceClose(e.target.checked)}
                 className="size-4 accent-[var(--accent)]"
+                type="checkbox"
+                onChange={(e) => setForceClose(e.target.checked)}
               />
               <span className="text-xs font-semibold text-[#fbbf24]">Fechar mesmo com comandas abertas</span>
             </label>
@@ -303,19 +303,19 @@ function FecharCaixaModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
               Valor contado no caixa (R$)
             </label>
             <input
-              type="text"
+              autoFocus
+              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
               inputMode="decimal"
               placeholder="0,00"
+              type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              autoFocus
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--text-soft)]">
               <span>Esperado: {fmtBRL(expectedCashAmount)}</span>
@@ -333,11 +333,11 @@ function FecharCaixaModal({
               Observações (opcional)
             </label>
             <textarea
-              rows={2}
+              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
               placeholder="Quebra de caixa, sangria, ajuste…"
+              rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
             />
           </div>
 
@@ -349,16 +349,16 @@ function FecharCaixaModal({
 
           <div className="flex gap-3 pt-1">
             <button
+              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
             >
               Cancelar
             </button>
             <button
-              type="submit"
-              disabled={mutation.isPending || !canSubmit}
               className="flex-1 rounded-[14px] bg-[#f87171]/90 px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 disabled:opacity-40 transition-opacity"
+              disabled={mutation.isPending || !canSubmit}
+              type="submit"
             >
               {mutation.isPending ? 'Fechando…' : 'Fechar caixa'}
             </button>
@@ -388,9 +388,9 @@ function CaixaHeaderActions({
           Aberto
         </span>
         <button
+          className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
           type="button"
           onClick={onCloseModal}
-          className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
         >
           <Lock className="size-3.5" />
           Fechar caixa
@@ -401,9 +401,9 @@ function CaixaHeaderActions({
 
   return (
     <button
+      className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
       type="button"
       onClick={onOpenModal}
-      className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
     >
       <Unlock className="size-3.5" />
       Abrir caixa
@@ -412,7 +412,7 @@ function CaixaHeaderActions({
 }
 
 function formatCaixaSubtitle(caixaAberto: boolean, openSessionsCount: number, openComandasCount: number): string {
-  if (!caixaAberto) return 'Nenhuma sessão de caixa ativa no momento.'
+  if (!caixaAberto) {return 'Nenhuma sessão de caixa ativa no momento.'}
   const comandaLabel = openComandasCount === 1 ? '' : 's'
   return `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${comandaLabel} em aberto`
 }
@@ -451,9 +451,9 @@ function CaixaEmptyState({ onOpenModal }: { onOpenModal: () => void }) {
         Clique em &ldquo;Abrir caixa&rdquo; para iniciar o turno e liberar o PDV para os funcionários.
       </p>
       <button
+        className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
         type="button"
         onClick={onOpenModal}
-        className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
       >
         <Unlock className="size-3.5" />
         Abrir caixa agora
@@ -496,8 +496,8 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           <div className="flex shrink-0 items-center gap-2.5">
             <CaixaHeaderActions
               caixaAberto={caixaAberto}
-              onOpenModal={() => setShowAbrirModal(true)}
               onCloseModal={() => setShowFecharModal(true)}
+              onOpenModal={() => setShowAbrirModal(true)}
             />
           </div>
         </header>
@@ -518,32 +518,32 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
         {/* KPIs */}
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <KpiCard
+            highlight={positiveOrNeutral(receitaRealizada)}
+            hint="Comandas fechadas hoje"
             icon={CircleDollarSign}
             label="Receita realizada"
             value={fmtBRL(receitaRealizada)}
-            hint="Comandas fechadas hoje"
-            highlight={positiveOrNeutral(receitaRealizada)}
           />
           <KpiCard
+            highlight={positiveOrNeutral(lucroRealizado)}
+            hint="Resultado líquido estimado"
             icon={TrendingUp}
             label="Lucro realizado"
             value={fmtBRL(lucroRealizado)}
-            hint="Resultado líquido estimado"
-            highlight={positiveOrNeutral(lucroRealizado)}
           />
           <KpiCard
+            highlight={faturamentoAberto > 0 ? 'accent' : 'neutral'}
+            hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
             icon={ChevronDown}
             label="Em aberto"
             value={fmtBRL(faturamentoAberto)}
-            hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
-            highlight={faturamentoAberto > 0 ? 'accent' : 'neutral'}
           />
           <KpiCard
+            highlight={projecaoTotal > 0 ? 'accent' : 'neutral'}
+            hint="Realizado + em aberto"
             icon={Banknote}
             label="Projeção total"
             value={fmtBRL(projecaoTotal)}
-            hint="Realizado + em aberto"
-            highlight={projecaoTotal > 0 ? 'accent' : 'neutral'}
           />
         </div>
 
@@ -573,8 +573,8 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
 
       {showFecharModal ? (
         <FecharCaixaModal
-          openComandasCount={openComandasCount}
           expectedCashAmount={caixaEsperado}
+          openComandasCount={openComandasCount}
           onClose={() => setShowFecharModal(false)}
           onSuccess={() => setSuccessMsg('Caixa fechado. Bom trabalho hoje!')}
         />

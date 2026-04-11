@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BrainCircuit, Bot, RefreshCcw, Sparkles, TrendingUp } from 'lucide-react'
+import { Bot, BrainCircuit, RefreshCcw, Sparkles, TrendingUp } from 'lucide-react'
 import { ApiError, fetchMarketInsight } from '@/lib/api'
 import { APP_SCOPED_AI_MESSAGE, isAppScopedAiFocus } from '@/lib/ai-app-scope'
 import { Button } from '@/components/shared/button'

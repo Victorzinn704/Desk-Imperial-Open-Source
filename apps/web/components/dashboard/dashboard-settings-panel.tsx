@@ -3,11 +3,11 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ProfileFormValues } from '@/lib/validation'
-import { fetchActivityFeed, type AuthUser, type CookiePreferencePayload, type CookiePreferences } from '@/lib/api'
+import { type AuthUser, type CookiePreferencePayload, type CookiePreferences, fetchActivityFeed } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
-  dashboardSettingsNav,
   type DashboardSectionId,
+  dashboardSettingsNav,
   type DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 
@@ -92,13 +92,13 @@ export function DashboardSettingsPanel({
             const isActive = tab.id === activeTab
             return (
               <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
                 className={cn(
                   'relative shrink-0 px-5 py-3.5 text-sm font-semibold transition-colors duration-150',
                   isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]',
                 )}
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
               >
                 {tab.label}
                 {isActive && (

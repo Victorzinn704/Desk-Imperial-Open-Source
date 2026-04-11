@@ -1,5 +1,5 @@
-import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
-import { calcSubtotal, type Mesa, type Comanda, type Garcom } from './pdv-types'
+import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
+import { calcSubtotal, type Comanda, type Garcom, type Mesa } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
@@ -66,10 +66,10 @@ function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
   const empMap = new Map<string, string>()
   const comandaOwnerName = new Map<string, string>()
 
-  if (!snapshot) return { empMap, comandaOwnerName }
+  if (!snapshot) {return { empMap, comandaOwnerName }}
 
   for (const emp of snapshot.employees) {
-    if (emp.employeeId) empMap.set(emp.employeeId, emp.displayName)
+    if (emp.employeeId) {empMap.set(emp.employeeId, emp.displayName)}
     if ((emp as Record<string, unknown>).userId) {
       empMap.set((emp as Record<string, unknown>).userId as string, emp.displayName)
     }
@@ -88,7 +88,7 @@ function resolveGarcomNome(
   comanda?: { id: string },
 ) {
   const fromMap = gId ? empMap.get(gId) : undefined
-  if (fromMap) return fromMap
+  if (fromMap) {return fromMap}
   return comanda ? comandaOwnerName.get(comanda.id) : undefined
 }
 
@@ -124,7 +124,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
   const comandaByTable = new Map<string, (typeof activeComandas)[0]>()
   for (const c of activeComandas) {
-    if (c.tableLabel) comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
+    if (c.tableLabel) {comandaByTable.set(normalizeTableLabel(c.tableLabel), c)}
   }
 
   return snapshot.mesas

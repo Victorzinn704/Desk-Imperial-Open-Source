@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingDown, TrendingUp } from 'lucide-react'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
 import { CardSkeleton } from '@/components/shared/skeleton'
@@ -34,7 +34,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
 
     rafRef.current = requestAnimationFrame(tick)
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+      if (rafRef.current !== null) {cancelAnimationFrame(rafRef.current)}
     }
   }, [value])
 
@@ -63,7 +63,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
           Receita realizada total
         </p>
 
-        <AnimatedValue value={totals.realizedRevenue} currency={displayCurrency} />
+        <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-1.5">

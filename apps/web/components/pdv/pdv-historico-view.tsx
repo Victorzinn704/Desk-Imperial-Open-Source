@@ -58,19 +58,19 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
   const sorted = useMemo(() => {
     const buscaNormalizada = busca.trim().toLowerCase()
     const matchesFiltro = (comanda: Comanda) => {
-      if (filtro === 'abertas') return comanda.status !== 'fechada'
-      if (filtro === 'fechadas') return comanda.status === 'fechada'
+      if (filtro === 'abertas') {return comanda.status !== 'fechada'}
+      if (filtro === 'fechadas') {return comanda.status === 'fechada'}
       return true
     }
 
     return comandas
       .filter((comanda) => {
-        if (!matchesFiltro(comanda)) return false
+        if (!matchesFiltro(comanda)) {return false}
 
         const nomeResponsavel = comanda.garcomNome?.trim() || 'Operação do balcão/empresa'
-        if (responsavel !== 'todos' && nomeResponsavel !== responsavel) return false
+        if (responsavel !== 'todos' && nomeResponsavel !== responsavel) {return false}
 
-        if (!buscaNormalizada) return true
+        if (!buscaNormalizada) {return true}
 
         const campos = [
           comanda.mesa ?? '',
@@ -106,20 +106,20 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft)]" />
               <input
+                aria-label="Buscar comandas"
+                className="w-full rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] py-3 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-soft)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+                placeholder="Buscar por mesa, cliente, documento, item ou responsável"
                 type="text"
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar por mesa, cliente, documento, item ou responsável"
-                aria-label="Buscar comandas"
-                className="w-full rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] py-3 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-soft)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
               />
             </label>
 
             <select
-              value={responsavel}
-              onChange={(event) => setResponsavel(event.target.value)}
               aria-label="Filtrar por responsável"
               className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+              value={responsavel}
+              onChange={(event) => setResponsavel(event.target.value)}
             >
               {responsaveis.map((item) => (
                 <option className="bg-[#11161d] text-[var(--text-primary)]" key={item} value={item}>
@@ -129,10 +129,10 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
             </select>
 
             <select
-              value={ordenacao}
-              onChange={(event) => setOrdenacao(event.target.value as Ordenacao)}
               aria-label="Ordenar comandas"
               className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[rgba(52,242,127,0.35)] focus:outline-none"
+              value={ordenacao}
+              onChange={(event) => setOrdenacao(event.target.value as Ordenacao)}
             >
               <option className="bg-[#11161d] text-[var(--text-primary)]" value="recentes">
                 Mais recentes
@@ -152,15 +152,15 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
               ] as const
             ).map(({ id, label }) => (
               <button
-                key={id}
-                type="button"
-                onClick={() => setFiltro(id)}
                 className="rounded-[10px] px-4 py-2 text-sm font-medium transition-all"
+                key={id}
                 style={{
                   background: filtro === id ? 'rgba(52,242,127,0.1)' : 'transparent',
                   color: filtro === id ? '#36f57c' : 'var(--text-soft)',
                   border: filtro === id ? '1px solid rgba(52,242,127,0.25)' : '1px solid transparent',
                 }}
+                type="button"
+                onClick={() => setFiltro(id)}
               >
                 {label}
               </button>
@@ -172,9 +172,9 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
       {sorted.length === 0 ? (
         <div className="rounded-[22px] border border-dashed border-white/8 px-6">
           <OperationEmptyState
-            title="Nenhuma comanda encontrada"
-            description="Ajuste os filtros, refine a busca ou aguarde novas movimentações no salão."
             Icon={Search}
+            description="Ajuste os filtros, refine a busca ou aguarde novas movimentações no salão."
+            title="Nenhuma comanda encontrada"
           />
         </div>
       ) : (
@@ -201,8 +201,8 @@ function HistoricoCard({ comanda }: Readonly<{ comanda: Comanda }>) {
     <li className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)]">
       <button
         className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-[rgba(255,255,255,0.03)]"
-        onClick={() => setOpen((value) => !value)}
         type="button"
+        onClick={() => setOpen((value) => !value)}
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

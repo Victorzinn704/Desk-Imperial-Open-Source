@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Cookie, ShieldCheck } from 'lucide-react'
 import { updateCookiePreferences } from '@/lib/api'
-import { persistCookieConsent, readCookieConsentChoice, type CookieConsentChoice } from '@/lib/cookie-consent'
+import { type CookieConsentChoice, persistCookieConsent, readCookieConsentChoice } from '@/lib/cookie-consent'
 import { Button } from '@/components/shared/button'
 
 const DEFAULT_COOKIE_PREFERENCES: CookieConsentChoice = {
@@ -139,24 +139,24 @@ export function CookieConsentBanner() {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Button
               loading={isSubmitting}
-              onClick={() => void handleDecision({ analytics: false, marketing: false })}
               size="md"
               variant="secondary"
+              onClick={() => void handleDecision({ analytics: false, marketing: false })}
             >
               Usar apenas essenciais
             </Button>
             <Button
               loading={isSubmitting}
-              onClick={() => void handleDecision(preferences)}
               size="md"
               variant="secondary"
+              onClick={() => void handleDecision(preferences)}
             >
               Salvar escolhas
             </Button>
             <Button
               loading={isSubmitting}
-              onClick={() => void handleDecision({ analytics: true, marketing: true })}
               size="md"
+              onClick={() => void handleDecision({ analytics: true, marketing: true })}
             >
               Aceitar tudo
             </Button>

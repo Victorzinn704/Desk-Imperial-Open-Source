@@ -1,5 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react'
 import { MetricCardSkeleton } from '@/components/shared/skeleton'
 
 export function MetricCard({
@@ -19,7 +18,7 @@ export function MetricCard({
   loading?: boolean
   trend?: number[]
 }>) {
-  if (loading) return <MetricCardSkeleton />
+  if (loading) {return <MetricCardSkeleton />}
 
   const hasTrend = trend && trend.length >= 2
   let trendPercent = 0

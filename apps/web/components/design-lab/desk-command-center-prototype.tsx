@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { ApexOptions } from 'apexcharts'
-import type { LucideIcon } from 'lucide-react'
 import {
   Banknote,
   Bell,
@@ -12,6 +11,7 @@ import {
   CircleDollarSign,
   Clock3,
   Grid3X3,
+  type LucideIcon,
   MapPin,
   Menu,
   Moon,
@@ -267,15 +267,15 @@ export function DeskCommandCenterPrototype() {
             <Panel className="col-span-12 px-5 pt-5 xl:col-span-8">
               <PanelHeader subtitle="Criação e finalização por horário" title="Fluxo de pedidos" />
               <div className="h-[318px] w-full">
-                <Chart key={`line-${mode}`} height="100%" options={line} series={lineSeries} type="area" width="100%" />
+                <Chart height="100%" key={`line-${mode}`} options={line} series={lineSeries} type="area" width="100%" />
               </div>
             </Panel>
             <Panel className="col-span-12 p-5 xl:col-span-4">
               <PanelHeader compact subtitle="Salão, balcão e delivery" title="Canais do turno" />
               <div className="mt-4 h-[220px] w-full">
                 <Chart
-                  key={`donut-${mode}`}
                   height="100%"
+                  key={`donut-${mode}`}
                   options={donut}
                   series={donutSeries}
                   type="donut"
@@ -295,14 +295,14 @@ export function DeskCommandCenterPrototype() {
               <PanelHeader compact subtitle="Leitura no estilo logistics" title="Etapas em movimento" />
               <div className="mt-5 space-y-4">
                 {stages.map((stage, index) => (
-                  <RouteStage key={stage.label} index={index + 1} {...stage} />
+                  <RouteStage index={index + 1} key={stage.label} {...stage} />
                 ))}
               </div>
             </Panel>
             <Panel className="col-span-12 px-5 pt-5 xl:col-span-4">
               <PanelHeader subtitle="Distribuição operacional" title="Pedidos por canal" />
               <div className="h-[250px] w-full">
-                <Chart key={`bar-${mode}`} height="100%" options={bar} series={barSeries} type="bar" width="100%" />
+                <Chart height="100%" key={`bar-${mode}`} options={bar} series={barSeries} type="bar" width="100%" />
               </div>
             </Panel>
             <Panel className="col-span-12 p-5 xl:col-span-4">
@@ -440,8 +440,8 @@ function Topbar({
         <button
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
           className="hidden size-9 shrink-0 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-control)] text-[var(--lab-muted)] transition hover:border-[var(--lab-blue)] hover:bg-[var(--lab-blue-soft)] hover:text-[var(--lab-blue-strong)] lg:flex"
-          onClick={onToggleSidebar}
           type="button"
+          onClick={onToggleSidebar}
         >
           {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
         </button>
@@ -481,8 +481,8 @@ function Topbar({
           </button>
           <button
             className="flex h-9 items-center gap-2 rounded-xl border border-[var(--lab-border)] bg-[var(--lab-control)] px-3 text-sm font-medium text-[var(--lab-soft-text)]"
-            onClick={onToggleTheme}
             type="button"
+            onClick={onToggleTheme}
           >
             {mode === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
             <span className="hidden sm:inline">{mode === 'dark' ? 'Claro' : 'Escuro'}</span>
@@ -632,7 +632,7 @@ function ActivityTable() {
           <thead className="border-b border-[var(--lab-border)] text-xs uppercase text-[var(--lab-faint)]">
             <tr>
               {['Pedido', 'Origem', 'Produto', 'Canal', 'Valor', 'Status'].map((title) => (
-                <th key={title} className="px-5 py-3 font-medium">
+                <th className="px-5 py-3 font-medium" key={title}>
                   {title}
                 </th>
               ))}
@@ -640,7 +640,7 @@ function ActivityTable() {
           </thead>
           <tbody className="divide-y divide-[var(--lab-border-soft)]">
             {orders.map((order) => (
-              <tr key={order.id} className="text-[var(--lab-muted)]">
+              <tr className="text-[var(--lab-muted)]" key={order.id}>
                 <td className="px-5 py-4 font-semibold text-[var(--lab-text)]">{order.id}</td>
                 <td className="px-5 py-4">{order.origin}</td>
                 <td className="px-5 py-4">{order.product}</td>

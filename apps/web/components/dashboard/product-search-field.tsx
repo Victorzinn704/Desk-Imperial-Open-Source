@@ -29,18 +29,18 @@ export function ProductSearchField({
           <input
             className="mt-1 h-9 w-full border-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[rgba(255,255,255,0.38)]"
             id="portfolio-search"
-            onChange={(event) => onChange(event.currentTarget.value)}
             placeholder="Digite nome, inicial, marca ou classe"
             type="search"
             value={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
           />
         </div>
 
         {value ? (
           <button
             className="inline-flex size-11 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(52,242,127,0.28)] hover:text-[var(--text-primary)]"
-            onClick={onClear}
             type="button"
+            onClick={onClear}
           >
             <X className="size-4" />
             <span className="sr-only">Limpar busca</span>

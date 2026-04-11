@@ -1,7 +1,6 @@
 import type { EmployeeRecord, EmployeesResponse } from '@contracts/contracts'
 
-import { apiFetch } from './api-core'
-import type { ApiBody } from './api-core'
+import { type ApiBody, apiFetch } from './api-core'
 
 export type { EmployeeRecord, EmployeesResponse } from '@contracts/contracts'
 

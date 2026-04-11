@@ -10,7 +10,7 @@
  */
 export function normalizeTableLabel(raw: string): string {
   const trimmed = raw.trim()
-  if (!trimmed) return trimmed
+  if (!trimmed) {return trimmed}
 
   // Remove prefixos comuns: "mesa", "ms", "m", "nº", "n", "#", "-", espaços
   const cleaned = trimmed

@@ -4,15 +4,18 @@ import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Clock3, LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
-import type { CreateMesaInput, OpenComandaPayload, ReplaceComandaPayload, UpdateMesaInput } from '@/lib/api'
 import {
   assignComanda,
   closeComanda,
   createMesa,
+  type CreateMesaInput,
   openComanda,
+  type OpenComandaPayload,
   replaceComanda,
+  type ReplaceComandaPayload,
   updateComandaStatus,
   updateMesa,
+  type UpdateMesaInput,
 } from '@/lib/api'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { formatCurrency } from '@/lib/currency'
@@ -27,7 +30,7 @@ import {
   toOperationsStatus,
   toPdvComanda,
 } from './pdv-operations'
-import { type Comanda, type ComandaItem, type ComandaStatus, type Mesa, KANBAN_COLUMNS, calcTotal } from './pdv-types'
+import { calcTotal, type Comanda, type ComandaItem, type ComandaStatus, KANBAN_COLUMNS, type Mesa } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 import { SalaoUnificado } from './pdv-salao-unified'
 import { PdvHistoricoView } from './pdv-historico-view'
@@ -252,10 +255,10 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
 
   async function onDragEnd(result: DropResult) {
     const { source, destination, draggableId } = result
-    if (!destination || source.droppableId === destination.droppableId) return
+    if (!destination || source.droppableId === destination.droppableId) {return}
 
     const comanda = comandasById.get(draggableId)
-    if (!comanda) return
+    if (!comanda) {return}
 
     await transitionComanda(comanda, destination.droppableId as ComandaStatus)
   }
@@ -336,14 +339,14 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <button
-            key={id}
-            type="button"
             className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-medium transition-all"
+            key={id}
             style={{
               background: activeTab === id ? 'rgba(52,242,127,0.1)' : 'transparent',
               color: activeTab === id ? '#36f57c' : 'var(--text-soft)',
               border: activeTab === id ? '1px solid rgba(52,242,127,0.25)' : '1px solid transparent',
             }}
+            type="button"
             onClick={() => setActiveTab(id)}
           >
             <Icon className="size-4" />
@@ -374,9 +377,9 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
             <div className="flex gap-4 overflow-x-auto pb-4">
               {KANBAN_COLUMNS.map((column) => (
                 <PdvColumn
-                  key={column.id}
                   column={column}
                   comandas={comandasByStatus[column.id]}
+                  key={column.id}
                   onCardClick={(comanda) => setEditingComandaId(comanda.id)}
                 />
               ))}
@@ -386,12 +389,27 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       ) : activeTab === 'salao' ? (
         <>
           <SalaoUnificado
-            mesas={mesas}
-            garcons={garcons}
             comandas={comandas}
+            garcons={garcons}
+            mesas={mesas}
+            onAddGarcom={() => setActionError('Cadastre funcionários pela área de Vendas para adicioná-los ao turno.')}
+            onAddMesa={() => setAddMesaForm({ label: '', capacity: '4' })}
+            onAssignGarcom={(mesaId, garcomId) => {
+              void handleAssignGarcom(mesaId, garcomId)
+            }}
+            onClickLivre={handleClickMesaLivre}
+            onClickOcupada={handleClickMesaOcupada}
+            onRemoveGarcom={(employeeId) => {
+              const mesa = mesas.find((item) => item.garcomId === employeeId && item.comandaId)
+              if (mesa?.comandaId) {
+                void handleAssignGarcom(mesa.id, undefined)
+                return
+              }
+              setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
+            }}
             onStatusChange={(mesaId, newStatus) => {
               const mesa = mesasById.get(mesaId)
-              if (!mesa) return
+              if (!mesa) {return}
               // Arrastar para ocupada = abrir comanda (status é derivado da comanda)
               if (newStatus === 'ocupada' && mesa.status === 'livre') {
                 handleClickMesaLivre(mesa)
@@ -417,28 +435,14 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
                 setActionError('Feche a comanda para liberar esta mesa.')
               }
             }}
-            onAssignGarcom={(mesaId, garcomId) => {
-              void handleAssignGarcom(mesaId, garcomId)
-            }}
-            onAddGarcom={() => setActionError('Cadastre funcionários pela área de Vendas para adicioná-los ao turno.')}
-            onRemoveGarcom={(employeeId) => {
-              const mesa = mesas.find((item) => item.garcomId === employeeId && item.comandaId)
-              if (mesa?.comandaId) {
-                void handleAssignGarcom(mesa.id, undefined)
-                return
-              }
-              setActionError('Nenhuma mesa ativa vinculada a este funcionário para remover agora.')
-            }}
-            onAddMesa={() => setAddMesaForm({ label: '', capacity: '4' })}
-            onClickLivre={handleClickMesaLivre}
-            onClickOcupada={handleClickMesaOcupada}
           />
           {addMesaForm !== null ? (
             <AddMesaModal
-              form={addMesaForm}
               busy={createMesaMutation.isPending}
               error={createMesaMutation.error instanceof Error ? createMesaMutation.error.message : null}
+              form={addMesaForm}
               onChange={setAddMesaForm}
+              onClose={() => setAddMesaForm(null)}
               onConfirm={() => {
                 const label = addMesaForm.label.trim()
                 const capacity = Number.parseInt(addMesaForm.capacity, 10)
@@ -458,7 +462,6 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
                   },
                 )
               }}
-              onClose={() => setAddMesaForm(null)}
             />
           ) : null}
         </>
@@ -469,8 +472,8 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       {showNewModal ? (
         <PdvComandaModal
           busy={mutationBusy}
-          products={products}
           initialMesa={mesaPreSelected?.numero}
+          products={products}
           onClose={() => {
             setShowNewModal(false)
             setMesaPreSelected(null)
@@ -526,7 +529,7 @@ function AddMesaModal({
               value={form.label}
               onChange={(e) => onChange({ ...form, label: e.target.value })}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') onConfirm()
+                if (e.key === 'Enter') {onConfirm()}
               }}
             />
           </div>
@@ -535,10 +538,10 @@ function AddMesaModal({
               Capacidade (lugares)
             </label>
             <input
-              type="number"
-              min={1}
-              max={50}
               className="mt-2 w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(52,242,127,0.5)]"
+              max={50}
+              min={1}
+              type="number"
               value={form.capacity}
               onChange={(e) => onChange({ ...form, capacity: e.target.value })}
             />
@@ -549,17 +552,17 @@ function AddMesaModal({
 
         <div className="mt-5 flex justify-end gap-3">
           <button
+            className="rounded-[10px] border border-[rgba(255,255,255,0.1)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
-            className="rounded-[10px] border border-[rgba(255,255,255,0.1)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>
           <button
-            type="button"
-            disabled={busy || !form.label.trim()}
-            onClick={onConfirm}
             className="rounded-[10px] bg-[rgba(52,242,127,0.12)] px-4 py-2 text-sm font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(52,242,127,0.22)] disabled:opacity-40"
+            disabled={busy || !form.label.trim()}
+            type="button"
+            onClick={onConfirm}
           >
             {busy ? 'Criando...' : 'Criar mesa'}
           </button>

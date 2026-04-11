@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { InputField } from './input-field'
 
 describe('InputField', () => {
@@ -16,23 +16,23 @@ describe('InputField', () => {
   })
 
   it('displays error message when error prop is provided', () => {
-    render(<InputField label="Email" error="Invalid email" />)
+    render(<InputField error="Invalid email" label="Email" />)
     expect(screen.getByText('Invalid email')).toBeDefined()
   })
 
   it('applies error styling to input when error is present', () => {
-    const { container } = render(<InputField label="Email" error="Invalid" />)
+    const { container } = render(<InputField error="Invalid" label="Email" />)
     const input = container.querySelector('input')
     expect(input?.className).toContain('border-[var(--danger)]')
   })
 
   it('displays hint when no error is present', () => {
-    render(<InputField label="Email" hint="We will not share your email" />)
+    render(<InputField hint="We will not share your email" label="Email" />)
     expect(screen.getByText('We will not share your email')).toBeDefined()
   })
 
   it('does not display hint when error is present', () => {
-    render(<InputField label="Email" hint="Helpful hint" error="Error msg" />)
+    render(<InputField error="Error msg" hint="Helpful hint" label="Email" />)
     expect(screen.queryByText('Helpful hint')).toBeNull()
     expect(screen.getByText('Error msg')).toBeDefined()
   })
@@ -52,7 +52,7 @@ describe('InputField', () => {
   })
 
   it('passes through HTML input attributes', () => {
-    render(<InputField label="Password" type="password" maxLength={20} />)
+    render(<InputField label="Password" maxLength={20} type="password" />)
     const input = screen.getByLabelText('Password')
     expect(input.getAttribute('type')).toBe('password')
     expect(input.getAttribute('maxlength')).toBe('20')

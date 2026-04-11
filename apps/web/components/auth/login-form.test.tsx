@@ -97,9 +97,6 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /funcionário/i }))
     await user.click(screen.getByRole('button', { name: /acessar sessão demo funcionário/i }))
 
-    expect(loginDemo).toHaveBeenCalledWith(
-      { loginMode: 'STAFF', employeeCode: 'VD-001' },
-      expect.anything(),
-    )
+    expect(loginDemo).toHaveBeenCalledWith({ loginMode: 'STAFF', employeeCode: 'VD-001' }, expect.anything())
   })
 })

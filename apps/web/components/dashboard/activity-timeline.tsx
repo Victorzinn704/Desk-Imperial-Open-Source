@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { CardRowSkeleton } from '@/components/shared/skeleton'
-import { fetchActivityFeed, type ActivityFeedEntry } from '@/lib/api'
+import { type ActivityFeedEntry, fetchActivityFeed } from '@/lib/api'
 
 const getRelativeTime = (date: Date) => {
   const now = new Date()
@@ -24,10 +24,10 @@ const getRelativeTime = (date: Date) => {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
-  if (minutes < 1) return 'agora mesmo'
-  if (minutes < 60) return `há ${minutes}m`
-  if (hours < 24) return `há ${hours}h`
-  if (days < 7) return `há ${days}d`
+  if (minutes < 1) {return 'agora mesmo'}
+  if (minutes < 60) {return `há ${minutes}m`}
+  if (hours < 24) {return `há ${hours}h`}
+  if (days < 7) {return `há ${days}d`}
   return date.toLocaleDateString('pt-BR')
 }
 
@@ -101,8 +101,8 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
               return (
                 <div
-                  key={activity.id}
                   className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3"
+                  key={activity.id}
                 >
                   <div className="flex gap-3">
                     <div

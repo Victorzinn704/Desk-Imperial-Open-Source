@@ -26,8 +26,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             {error.digest && <p className="text-xs text-[var(--text-soft)] opacity-50">Código: {error.digest}</p>}
           </div>
           <button
-            onClick={reset}
             className="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
+            onClick={reset}
           >
             Tentar novamente
           </button>

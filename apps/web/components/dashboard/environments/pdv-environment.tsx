@@ -60,7 +60,7 @@ export function PdvEnvironment() {
   const operationsView = buildOperationsViewModel(operations)
   const showExecutiveOperations = user?.role === 'OWNER'
 
-  if (!user) return null
+  if (!user) {return null}
 
   return (
     <section className="space-y-6">
@@ -102,7 +102,7 @@ function OperationsPanelSkeleton({ lines }: { lines: number }) {
   return (
     <div className="imperial-card space-y-3 p-5">
       {Array.from({ length: lines }).map((_, index) => (
-        <div key={index} className="h-10 animate-pulse rounded-xl bg-[rgba(255,255,255,0.05)]" />
+        <div className="h-10 animate-pulse rounded-xl bg-[rgba(255,255,255,0.05)]" key={index} />
       ))}
     </div>
   )

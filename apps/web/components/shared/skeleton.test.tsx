@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
-import { Skeleton, MetricCardSkeleton, CardSkeleton, CardRowSkeleton, ChartSkeleton, TableSkeleton } from './skeleton'
+import { CardRowSkeleton, CardSkeleton, ChartSkeleton, MetricCardSkeleton, Skeleton, TableSkeleton } from './skeleton'
 
 describe('Skeleton', () => {
   it('renders a div with aria-hidden', () => {

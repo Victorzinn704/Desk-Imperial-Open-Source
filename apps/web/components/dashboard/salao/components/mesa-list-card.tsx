@@ -16,17 +16,17 @@ export const MesaListCard = memo(function MesaListCard({ mesa, onEdit, onToggle,
         <span className="truncate font-semibold text-[var(--text-primary)]">{mesa.label}</span>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
-            onClick={onEdit}
-            title="Editar"
             className="rounded-lg p-1 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
+            title="Editar"
+            onClick={onEdit}
           >
             <Pencil className="size-3.5 text-[var(--text-soft)]" />
           </button>
           <button
-            onClick={onToggle}
+            className="rounded-lg p-1 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
             disabled={isPending}
             title={mesa.active ? 'Desativar' : 'Reativar'}
-            className="rounded-lg p-1 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
+            onClick={onToggle}
           >
             <Power className={`size-3.5 ${mesa.active ? 'text-[var(--text-soft)]' : 'text-emerald-400'}`} />
           </button>

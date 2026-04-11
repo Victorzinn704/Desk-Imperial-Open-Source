@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { getPinRateStatus, recordPinFailure, recordPinSuccess, resetPinAttempts } from './pin-rate-limiter'
 
 describe('pin-rate-limiter (deprecated no-ops)', () => {

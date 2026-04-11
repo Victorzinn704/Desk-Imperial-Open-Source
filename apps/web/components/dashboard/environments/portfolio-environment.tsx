@@ -103,7 +103,7 @@ function SummaryPill({
 
 function calcAvgMargin(products: ProductRecord[]): string {
   const active = products.filter((p) => p.active && p.unitPrice > 0)
-  if (!active.length) return '—'
+  if (!active.length) {return '—'}
   const avg = active.reduce((sum, p) => sum + ((p.unitPrice - p.unitCost) / p.unitPrice) * 100, 0) / active.length
   return `${avg.toFixed(0)}%`
 }
@@ -174,14 +174,14 @@ function PortfolioSummaryStrip({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <SummaryPill
-        icon={Package}
         helper={productsTotals ? `${productsTotals.inactiveProducts} arquivado(s)` : undefined}
+        icon={Package}
         label="SKUs ativos"
         value={productsTotals ? String(productsTotals.activeProducts) : '—'}
       />
       <SummaryPill
-        icon={Boxes}
         helper={productsTotals ? `${productsTotals.stockBaseUnits} unidades base` : undefined}
+        icon={Boxes}
         label="Capital em estoque"
         value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, displayCurrency as never) : '—'}
       />
@@ -230,14 +230,14 @@ function PortfolioCategoryPanel({
         {categoryBreakdown.length ? (
           categoryBreakdown.map((item) => (
             <CategoryCard
-              key={item.category}
               category={item.category}
-              products={item.products}
-              inventoryCostValue={item.inventoryCostValue}
-              potentialProfit={item.potentialProfit}
-              inventorySalesValue={item.inventorySalesValue}
               displayCurrency={displayCurrency}
+              inventoryCostValue={item.inventoryCostValue}
+              inventorySalesValue={item.inventorySalesValue}
+              key={item.category}
               maxProfit={maxCategoryProfit}
+              potentialProfit={item.potentialProfit}
+              products={item.products}
             />
           ))
         ) : (
@@ -289,7 +289,7 @@ function PortfolioProductList({
           </p>
         </div>
         <div className="sm:w-72">
-          <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
+          <ProductSearchField value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
         </div>
       </div>
 
@@ -310,11 +310,11 @@ function PortfolioProductList({
             <ProductCard
               busy={busy}
               key={product.id}
+              product={product}
               onArchive={onArchive}
               onDelete={onDelete}
               onEdit={onEdit}
               onRestore={onRestore}
-              product={product}
             />
           ))
         ) : (
@@ -424,7 +424,7 @@ export function PortfolioEnvironment() {
 
     globalThis.requestAnimationFrame(() => {
       const formElement = productFormRef.current
-      if (!formElement) return
+      if (!formElement) {return}
 
       if (typeof formElement.scrollIntoView === 'function') {
         formElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -453,13 +453,13 @@ export function PortfolioEnvironment() {
 
       {/* form + import + category */}
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
-        <div ref={productFormRef} className="scroll-mt-24 space-y-4 outline-none" tabIndex={-1}>
+        <div className="scroll-mt-24 space-y-4 outline-none" ref={productFormRef} tabIndex={-1}>
           <ProductForm
             availableProducts={products}
             loading={_createProductMutation.isPending || updateProductMutation.isPending}
+            product={editingProduct}
             onCancelEdit={() => setEditingProduct(null)}
             onSubmit={handleProductSubmit}
-            product={editingProduct}
           />
         </div>
 
@@ -475,14 +475,14 @@ export function PortfolioEnvironment() {
         busy={productBusy}
         filteredProducts={filteredProducts}
         mutationError={productMutationError}
-        onArchive={archiveProductMutation.mutate}
-        onDelete={handleDeleteProduct}
-        onEdit={handleEditProduct}
-        onRestore={restoreProductMutation.mutate}
         products={products}
         productsError={productsError}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onArchive={archiveProductMutation.mutate}
+        onDelete={handleDeleteProduct}
+        onEdit={handleEditProduct}
+        onRestore={restoreProductMutation.mutate}
       />
     </section>
   )

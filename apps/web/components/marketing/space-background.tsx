@@ -48,9 +48,9 @@ export function SpaceBackground() {
   // ── Background layer — distant slow stars ──────────────────────────
   useEffect(() => {
     const canvas = bgRef.current
-    if (!canvas) return
+    if (!canvas) {return}
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {return}
 
     // Respect prefers-reduced-motion: render one static frame, no animation
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -160,7 +160,7 @@ export function SpaceBackground() {
         ctx.fill()
       }
 
-      if (running) raf = requestAnimationFrame(tick)
+      if (running) {raf = requestAnimationFrame(tick)}
     }
 
     // Visibility change: pause rAF when tab is hidden
@@ -188,9 +188,9 @@ export function SpaceBackground() {
   // ── Foreground layer — close glowing particles with heavy parallax ──
   useEffect(() => {
     const canvas = fgRef.current
-    if (!canvas) return
+    if (!canvas) {return}
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {return}
 
     // Respect prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -283,8 +283,8 @@ export function SpaceBackground() {
           p.oy = h + p.r
           p.ox = Math.random() * w
         }
-        if (p.ox < -p.r * 3) p.ox = w + p.r
-        if (p.ox > w + p.r * 3) p.ox = -p.r
+        if (p.ox < -p.r * 3) {p.ox = w + p.r}
+        if (p.ox > w + p.r * 3) {p.ox = -p.r}
 
         // Parallax: foreground moves much more with mouse
         p.x = p.ox + mx
@@ -323,7 +323,7 @@ export function SpaceBackground() {
 
       ctx.globalAlpha = 1
 
-      if (running) raf = requestAnimationFrame(tick)
+      if (running) {raf = requestAnimationFrame(tick)}
     }
 
     // Visibility change: pause rAF when tab is hidden
@@ -350,10 +350,10 @@ export function SpaceBackground() {
 
   return (
     <>
-      <canvas ref={bgRef} className="pointer-events-none fixed inset-0 z-0" style={{ opacity: 0.92 }} />
+      <canvas className="pointer-events-none fixed inset-0 z-0" ref={bgRef} style={{ opacity: 0.92 }} />
       <canvas
-        ref={fgRef}
         className="pointer-events-none fixed inset-0 z-[60]"
+        ref={fgRef}
         style={{ opacity: 1, mixBlendMode: 'screen' }}
       />
     </>

@@ -1,11 +1,10 @@
 'use client'
 
 import { memo, useMemo } from 'react'
-import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
-import { Users, Plus } from 'lucide-react'
-import type { Mesa, Comanda, MesaStatus } from './pdv-types'
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd'
+import { Plus, Users } from 'lucide-react'
+import { calcTotal, type Comanda, formatElapsed, type Mesa, type MesaStatus } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
-import { calcTotal, formatElapsed } from './pdv-types'
 
 type Props = Readonly<{
   mesas: Mesa[]
@@ -53,8 +52,8 @@ const MesaSquare = memo(function MesaSquare({
   onClickOcupada: (c: Comanda) => void
 }) {
   function handleClick() {
-    if (mesa.status === 'livre' || mesa.status === 'reservada') onClickLivre(mesa)
-    else if (mesa.status === 'ocupada' && comanda) onClickOcupada(comanda)
+    if (mesa.status === 'livre' || mesa.status === 'reservada') {onClickLivre(mesa)}
+    else if (mesa.status === 'ocupada' && comanda) {onClickOcupada(comanda)}
   }
 
   return (
@@ -110,8 +109,8 @@ const MesaRectCard = memo(function MesaRectCard({
   onClickOcupada: (c: Comanda) => void
 }) {
   function handleClick() {
-    if (mesa.status === 'livre' || mesa.status === 'reservada') onClickLivre(mesa)
-    else if (mesa.status === 'ocupada' && comanda) onClickOcupada(comanda)
+    if (mesa.status === 'livre' || mesa.status === 'reservada') {onClickLivre(mesa)}
+    else if (mesa.status === 'ocupada' && comanda) {onClickOcupada(comanda)}
   }
 
   return (
@@ -204,10 +203,10 @@ export function PdvMesasKanban({
 
   function handleDragEnd(result: DropResult) {
     const { draggableId, destination } = result
-    if (!destination) return
+    if (!destination) {return}
     const newStatus = destination.droppableId as MesaStatus
     const mesa = mesaById.get(draggableId)
-    if (!mesa || mesa.status === newStatus) return
+    if (!mesa || mesa.status === newStatus) {return}
     onStatusChange(draggableId, newStatus)
   }
 
@@ -232,16 +231,16 @@ export function PdvMesasKanban({
               <span className="text-xs text-[var(--text-muted)]">— arraste para ocupar ou reservar</span>
             </div>
             <button
+              className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.14)]"
               type="button"
               onClick={onAddMesa}
-              className="flex items-center gap-1.5 rounded-[10px] border border-[rgba(54,245,124,0.3)] bg-[rgba(54,245,124,0.07)] px-3 py-1.5 text-xs font-semibold text-[#36f57c] transition-colors hover:bg-[rgba(54,245,124,0.14)]"
             >
               <Plus className="size-3" />
               Nova Mesa
             </button>
           </div>
 
-          <Droppable droppableId="livre" direction="horizontal">
+          <Droppable direction="horizontal" droppableId="livre">
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
@@ -259,9 +258,9 @@ export function PdvMesasKanban({
                 )}
                 {livres.map((mesa, i) => (
                   <MesaSquare
+                    index={i}
                     key={mesa.id}
                     mesa={mesa}
-                    index={i}
                     onClickLivre={onClickLivre}
                     onClickOcupada={onClickOcupada}
                   />
@@ -277,7 +276,7 @@ export function PdvMesasKanban({
           {COLUMNS.map((col) => {
             const colMesas = mesasByStatus[col.id]
             return (
-              <div key={col.id} className="rounded-2xl border" style={{ borderColor: col.border, background: col.bg }}>
+              <div className="rounded-2xl border" key={col.id} style={{ borderColor: col.border, background: col.bg }}>
                 {/* Column header */}
                 <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: col.border }}>
                   <span
@@ -311,11 +310,11 @@ export function PdvMesasKanban({
                       )}
                       {colMesas.map((mesa, i) => (
                         <MesaRectCard
-                          key={mesa.id}
-                          mesa={mesa}
+                          colColor={col.color}
                           comanda={resolveMesaComanda(mesa, comandaById)}
                           index={i}
-                          colColor={col.color}
+                          key={mesa.id}
+                          mesa={mesa}
                           onClickLivre={onClickLivre}
                           onClickOcupada={onClickOcupada}
                         />

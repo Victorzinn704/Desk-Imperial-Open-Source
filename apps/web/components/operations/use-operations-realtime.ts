@@ -9,8 +9,8 @@ import type {
   ComandaStatus,
   KitchenItemStatus,
   MesaRecord,
-  OperationsLiveResponse,
   OperationsKitchenItemRecord,
+  OperationsLiveResponse,
   OperationsSummaryResponse,
 } from '@contracts/contracts'
 import {
@@ -18,8 +18,7 @@ import {
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations/operations-query'
-import { useOperationsSocket, OPERATIONS_EVENTS } from './hooks/use-operations-socket'
-import type { RealtimeStatus, OperationsRealtimeEnvelope } from './hooks/use-operations-socket'
+import { OPERATIONS_EVENTS, type OperationsRealtimeEnvelope, type RealtimeStatus, useOperationsSocket } from './hooks/use-operations-socket'
 
 // Debounce para operações (200ms) e comercial (500ms para coalescer múltiplos closes)
 const OPERATIONS_DEBOUNCE_MS = 200
@@ -35,7 +34,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const queueOperationsRefresh = useCallback(() => {
-    if (operationsTimerRef.current) clearTimeout(operationsTimerRef.current)
+    if (operationsTimerRef.current) {clearTimeout(operationsTimerRef.current)}
     operationsTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX })
       queryClient.invalidateQueries({ queryKey: ['mesas'] })
@@ -43,7 +42,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
   }, [queryClient])
 
   const queueCommercialRefresh = useCallback(() => {
-    if (commercialTimerRef.current) clearTimeout(commercialTimerRef.current)
+    if (commercialTimerRef.current) {clearTimeout(commercialTimerRef.current)}
     commercialTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
@@ -51,14 +50,14 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
   }, [queryClient])
 
   const queueKitchenRefresh = useCallback(() => {
-    if (kitchenTimerRef.current) clearTimeout(kitchenTimerRef.current)
+    if (kitchenTimerRef.current) {clearTimeout(kitchenTimerRef.current)}
     kitchenTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY })
     }, OPERATIONS_DEBOUNCE_MS)
   }, [queryClient])
 
   const queueSummaryRefresh = useCallback(() => {
-    if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current)
+    if (summaryTimerRef.current) {clearTimeout(summaryTimerRef.current)}
     summaryTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY })
     }, OPERATIONS_DEBOUNCE_MS)
@@ -179,7 +178,7 @@ function applyLivePatches(
   })
 
   for (const [queryKey, current] of liveQueries) {
-    if (!current) continue
+    if (!current) {continue}
 
     const next = patchOperationsSnapshot(current, envelope)
     if (!next) {
@@ -200,11 +199,11 @@ function applyKitchenPatch(
   result: OperationsRealtimePatchResult,
 ) {
   const kitchenSnapshot = queryClient.getQueryData<OperationsKitchenSnapshot>(OPERATIONS_KITCHEN_QUERY_KEY)
-  if (!kitchenSnapshot) return
+  if (!kitchenSnapshot) {return}
 
   const nextKitchenSnapshot = patchKitchenSnapshot(kitchenSnapshot, envelope)
   if (!nextKitchenSnapshot) {
-    if (isKitchenEvent(envelope.event)) result.kitchenNeedsRefresh = true
+    if (isKitchenEvent(envelope.event)) {result.kitchenNeedsRefresh = true}
     return
   }
 
@@ -220,11 +219,11 @@ function applySummaryPatch(
   result: OperationsRealtimePatchResult,
 ) {
   const summarySnapshot = queryClient.getQueryData<OperationsSummaryResponse>(OPERATIONS_SUMMARY_QUERY_KEY)
-  if (!summarySnapshot) return
+  if (!summarySnapshot) {return}
 
   const nextSummarySnapshot = patchSummarySnapshot(summarySnapshot, envelope)
   if (!nextSummarySnapshot) {
-    if (envelope.event === 'cash.closure.updated') result.summaryNeedsRefresh = true
+    if (envelope.event === 'cash.closure.updated') {result.summaryNeedsRefresh = true}
     return
   }
 

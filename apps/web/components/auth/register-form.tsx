@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState, useTransition, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { LucideIcon } from 'lucide-react'
-import { ArrowLeft, Building2, Eye, EyeOff, Globe2, Hash, LockKeyhole, Mail, MapPin, User, Users } from 'lucide-react'
+import { ArrowLeft, Building2, Eye, EyeOff, Globe2, Hash, LockKeyhole, type LucideIcon, Mail, MapPin, User, Users } from 'lucide-react'
 import { ApiError, fetchConsentDocuments, lookupPostalCode, register } from '@/lib/api'
 import { readCookieConsentChoice } from '@/lib/cookie-consent'
 import {
@@ -427,8 +426,8 @@ export function RegisterForm() {
               if (doc.key === 'terms-of-use') {
                 return (
                   <label
-                    key={doc.key}
                     className="flex items-start gap-2 rounded-md px-0.5 py-0.5 text-[12px] text-white/72"
+                    key={doc.key}
                   >
                     <input
                       className="mt-0.5 size-3.5 shrink-0 accent-white"
@@ -445,8 +444,8 @@ export function RegisterForm() {
               if (doc.key === 'privacy-policy') {
                 return (
                   <label
-                    key={doc.key}
                     className="flex items-start gap-2 rounded-md px-0.5 py-0.5 text-[12px] text-white/72"
+                    key={doc.key}
                   >
                     <input
                       className="mt-0.5 size-3.5 shrink-0 accent-white"

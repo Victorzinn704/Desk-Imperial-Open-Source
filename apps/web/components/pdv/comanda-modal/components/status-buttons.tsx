@@ -23,15 +23,15 @@ export const StatusButtons = memo(function StatusButtons({
     <div className="grid grid-cols-2 gap-2 px-4 pb-3">
       {STATUS_OPTIONS.filter((option) => option.value !== comanda.status).map((option) => (
         <button
-          key={option.value}
           className="rounded-[12px] border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
+          disabled={isBusy}
+          key={option.value}
           style={{
             borderColor: `${option.color}44`,
             background: `${option.color}11`,
             color: option.color,
           }}
           type="button"
-          disabled={isBusy}
           onClick={() => {
             const requiresPinCheck = option.value === 'fechada'
             if (requiresPinCheck) {

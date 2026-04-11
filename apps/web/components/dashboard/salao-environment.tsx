@@ -7,28 +7,28 @@ import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
-import { calcTotal, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
+import { calcTotal, type Comanda, type Mesa } from '@/components/pdv/pdv-types'
 
 // Imports from extracted salao module
 import {
-  QUERY_KEY,
-  LIVE_QUERY_KEY,
   CANVAS_H,
-  CARD_W,
   CARD_H,
-  STATUS_LABEL,
-  fmtBRL,
-  defaultCreateForm,
-  useMesaDrag,
-  KpiCard,
-  ModernOperacionalCard,
-  MesaListCard,
-  MesaFloorCard,
-  CreateMesaModal,
-  EditMesaModal,
-  type View,
+  CARD_W,
   type CreateForm,
+  CreateMesaModal,
+  defaultCreateForm,
   type EditForm,
+  EditMesaModal,
+  fmtBRL,
+  KpiCard,
+  LIVE_QUERY_KEY,
+  MesaFloorCard,
+  MesaListCard,
+  ModernOperacionalCard,
+  QUERY_KEY,
+  STATUS_LABEL,
+  useMesaDrag,
+  type View,
 } from './salao'
 
 // ── main component ─────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export function SalaoEnvironment() {
 
   // garçom display name by employeeId
   const garcomNames = useMemo(() => {
-    if (!liveData) return {} as Record<string, string>
+    if (!liveData) {return {} as Record<string, string>}
     return Object.fromEntries(liveData.employees.filter((e) => e.employeeId).map((e) => [e.employeeId!, e.displayName]))
   }, [liveData])
 
@@ -136,7 +136,7 @@ export function SalaoEnvironment() {
     e.preventDefault()
     setFormError(null)
     if (createForm.mode === 'single') {
-      if (!createForm.label.trim()) return setFormError('Nome é obrigatório')
+      if (!createForm.label.trim()) {return setFormError('Nome é obrigatório')}
       const cap = Number.parseInt(createForm.capacity, 10)
       createMutation.mutate({
         label: createForm.label.trim(),
@@ -165,9 +165,9 @@ export function SalaoEnvironment() {
 
   function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!editingMesa) return
+    if (!editingMesa) {return}
     setFormError(null)
-    if (!editForm.label.trim()) return setFormError('Nome é obrigatório')
+    if (!editForm.label.trim()) {return setFormError('Nome é obrigatório')}
     const cap = Number.parseInt(editForm.capacity, 10)
     updateMutation.mutate({
       id: editingMesa.id,
@@ -206,10 +206,10 @@ export function SalaoEnvironment() {
   return (
     <div className="space-y-6">
       <DashboardSectionHeading
+        description="Acompanhe o status das mesas em tempo real, gerencie o cadastro e posicione na planta baixa."
         eyebrow="Gestão do salão"
         icon={Armchair}
         title="Salão"
-        description="Acompanhe o status das mesas em tempo real, gerencie o cadastro e posicione na planta baixa."
       />
 
       {/* tab bar */}
@@ -217,13 +217,13 @@ export function SalaoEnvironment() {
         <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
           {TABS.map(({ id, label, Icon }) => (
             <button
-              key={id}
-              onClick={() => setView(id)}
               className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 view === id
                   ? 'bg-[var(--accent)] text-black'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
               }`}
+              key={id}
+              onClick={() => setView(id)}
             >
               <Icon className="size-4" />
               {label}
@@ -233,12 +233,12 @@ export function SalaoEnvironment() {
 
         {view === 'configuracao' && (
           <button
+            className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
             onClick={() => {
               setCreateForm(defaultCreateForm())
               setFormError(null)
               setShowCreate(true)
             }}
-            className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
           >
             <Plus className="size-4" /> Nova Mesa
           </button>
@@ -248,10 +248,10 @@ export function SalaoEnvironment() {
       {/* ── OPERACIONAL ── */}
       {view === 'operacional' && (
         <OperacionalView
-          liveMesas={liveMesas}
-          liveComandas={liveComandas}
           garcomNames={garcomNames}
           isLoading={liveLoading}
+          liveComandas={liveComandas}
+          liveMesas={liveMesas}
         />
       )}
 
@@ -268,11 +268,11 @@ export function SalaoEnvironment() {
               <span className="text-5xl">🪑</span>
               <p className="text-sm text-[var(--text-soft)]">Nenhuma mesa cadastrada ainda.</p>
               <button
+                className="mt-1 text-sm font-medium text-[var(--accent)] hover:underline"
                 onClick={() => {
                   setCreateForm(defaultCreateForm())
                   setShowCreate(true)
                 }}
-                className="mt-1 text-sm font-medium text-[var(--accent)] hover:underline"
               >
                 Criar primeira mesa
               </button>
@@ -287,11 +287,11 @@ export function SalaoEnvironment() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {activeMesas.map((mesa) => (
                   <MesaListCard
+                    isPending={updateMutation.isPending}
                     key={mesa.id}
                     mesa={mesa}
                     onEdit={() => openEdit(mesa)}
                     onToggle={() => toggleActive(mesa)}
-                    isPending={updateMutation.isPending}
                   />
                 ))}
               </div>
@@ -306,11 +306,11 @@ export function SalaoEnvironment() {
               <div className="grid grid-cols-2 gap-3 opacity-50 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {inactiveMesas.map((mesa) => (
                   <MesaListCard
+                    isPending={updateMutation.isPending}
                     key={mesa.id}
                     mesa={mesa}
                     onEdit={() => openEdit(mesa)}
                     onToggle={() => toggleActive(mesa)}
-                    isPending={updateMutation.isPending}
                   />
                 ))}
               </div>
@@ -323,8 +323,8 @@ export function SalaoEnvironment() {
       {view === 'planta' && (
         <div className="imperial-card-soft overflow-hidden rounded-2xl p-2">
           <div
-            ref={canvasRef}
             className="relative w-full rounded-xl"
+            ref={canvasRef}
             style={{
               height: CANVAS_H,
               backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)',
@@ -354,12 +354,12 @@ export function SalaoEnvironment() {
                 isDraggingThis && dragPosition ? { x: dragPosition.x, y: dragPosition.y } : basePosition
               return (
                 <FloorMesaNode
+                  index={index}
+                  isDragging={isDraggingThis}
                   key={mesa.id}
                   mesa={mesa}
-                  index={index}
                   x={currentPosition.x}
                   y={currentPosition.y}
-                  isDragging={isDraggingThis}
                   onPointerDown={handlePointerDown}
                 />
               )
@@ -374,31 +374,31 @@ export function SalaoEnvironment() {
       {/* ── MODAL CRIAR ── */}
       {showCreate && (
         <CreateMesaModal
+          error={formError}
           form={createForm}
+          isPending={createMutation.isPending}
           onChange={setCreateForm}
-          onSubmit={(e) => void handleCreateSubmit(e)}
           onClose={() => {
             setShowCreate(false)
             setFormError(null)
           }}
-          isPending={createMutation.isPending}
-          error={formError}
+          onSubmit={(e) => void handleCreateSubmit(e)}
         />
       )}
 
       {/* ── MODAL EDITAR ── */}
       {editingMesa && (
         <EditMesaModal
-          mesaLabel={editingMesa.label}
+          error={formError}
           form={editForm}
+          isPending={updateMutation.isPending}
+          mesaLabel={editingMesa.label}
           onChange={setEditForm}
-          onSubmit={handleEditSubmit}
           onClose={() => {
             setEditingMesa(null)
             setFormError(null)
           }}
-          isPending={updateMutation.isPending}
-          error={formError}
+          onSubmit={handleEditSubmit}
         />
       )}
     </div>
@@ -422,7 +422,6 @@ const FloorMesaNode = memo(function FloorMesaNode({
 }) {
   return (
     <div
-      onPointerDown={(event) => onPointerDown(event, mesa, index)}
       style={{
         position: 'absolute',
         left: x,
@@ -436,8 +435,9 @@ const FloorMesaNode = memo(function FloorMesaNode({
         willChange: isDragging ? 'transform,left,top' : undefined,
         touchAction: 'none',
       }}
+      onPointerDown={(event) => onPointerDown(event, mesa, index)}
     >
-      <MesaFloorCard mesa={mesa} isDragging={isDragging} />
+      <MesaFloorCard isDragging={isDragging} mesa={mesa} />
     </div>
   )
 })
@@ -477,7 +477,7 @@ function OperacionalView({
       const key = mesa.section?.trim() || 'Sem seção'
       const current = grouped.get(key) ?? { total: 0, occupied: 0 }
       current.total += 1
-      if (mesa.status === 'ocupada') current.occupied += 1
+      if (mesa.status === 'ocupada') {current.occupied += 1}
       grouped.set(key, current)
     }
 
@@ -500,8 +500,8 @@ function OperacionalView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {Array.from({ length: 12 }).map((_, i) => (
           <div
-            key={i}
             className="h-32 animate-pulse rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
+            key={i}
           />
         ))}
       </div>
@@ -529,11 +529,11 @@ function OperacionalView({
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Premium Summary Strip */}
       <div className="grid grid-cols-2 gap-3 rounded-3xl border border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] p-2 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 xl:grid-cols-5">
-        <KpiCard label="Receita Circulante" value={fmtBRL(receitaAberta)} color="var(--accent)" isHighlight />
-        <KpiCard label="Ticket Aberto" value={fmtBRL(ticketMedioAberto)} color="#fbbf24" />
-        <KpiCard label="Equipe em giro" value={garconsAtivos} color="#60a5fa" />
-        <KpiCard label="Ocupação" value={`${occupiedRate}%`} color="#f87171" />
-        <KpiCard label="Livres" value={livres.length} color="#36f57c" total={liveMesas.length} />
+        <KpiCard isHighlight color="var(--accent)" label="Receita Circulante" value={fmtBRL(receitaAberta)} />
+        <KpiCard color="#fbbf24" label="Ticket Aberto" value={fmtBRL(ticketMedioAberto)} />
+        <KpiCard color="#60a5fa" label="Equipe em giro" value={garconsAtivos} />
+        <KpiCard color="#f87171" label="Ocupação" value={`${occupiedRate}%`} />
+        <KpiCard color="#36f57c" label="Livres" total={liveMesas.length} value={livres.length} />
       </div>
 
       <div className="rounded-[26px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
@@ -558,13 +558,13 @@ function OperacionalView({
 
         <div className="mt-4 flex flex-wrap gap-2.5">
           <button
-            type="button"
-            onClick={() => setSectionFilter('all')}
             className={`rounded-full border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
               sectionFilter === 'all'
                 ? 'border-[rgba(0,140,255,0.32)] bg-[rgba(0,140,255,0.12)] text-[#f4d78b]'
                 : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
+            type="button"
+            onClick={() => setSectionFilter('all')}
           >
             Salão inteiro · {liveMesas.length}
           </button>
@@ -592,15 +592,15 @@ function OperacionalView({
 
             return (
               <button
-                key={section.label}
-                type="button"
-                onClick={() => setSectionFilter(section.label)}
                 className="rounded-full border px-3.5 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em] transition-colors"
+                key={section.label}
                 style={{
                   color: tone.text,
                   borderColor: isActive ? tone.border : 'rgba(255,255,255,0.08)',
                   background: isActive ? tone.bg : 'rgba(255,255,255,0.03)',
                 }}
+                type="button"
+                onClick={() => setSectionFilter(section.label)}
               >
                 {section.label} · {section.occupied}/{section.total}
               </button>
@@ -623,10 +623,10 @@ function OperacionalView({
 
           return (
             <ModernOperacionalCard
-              key={mesa.id}
-              mesa={mesa}
               comanda={comanda}
               garcomName={garcomName}
+              key={mesa.id}
+              mesa={mesa}
               urgency={urgency}
             />
           )
@@ -654,8 +654,8 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const filtered = comandas.filter((c) => {
-    if (filtro === 'abertas') return c.status !== 'fechada'
-    if (filtro === 'fechadas') return c.status === 'fechada'
+    if (filtro === 'abertas') {return c.status !== 'fechada'}
+    if (filtro === 'fechadas') {return c.status === 'fechada'}
     return true
   })
   const sorted = [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime())
@@ -668,8 +668,8 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
       <div className="space-y-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
-            key={i}
             className="h-14 animate-pulse rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
+            key={i}
           />
         ))}
       </div>
@@ -686,13 +686,13 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
           { id: 'fechadas' as const, label: `Fechadas (${countFechadas})` },
         ].map(({ id, label }) => (
           <button
-            key={id}
-            onClick={() => setFiltro(id)}
             className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
               filtro === id
                 ? 'bg-[var(--accent)] text-black'
                 : 'bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] hover:text-[var(--text-primary)]'
             }`}
+            key={id}
+            onClick={() => setFiltro(id)}
           >
             {label}
           </button>
@@ -728,9 +728,9 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
             return (
               <div key={comanda.id}>
                 <button
+                  className="grid w-full grid-cols-[1fr_120px_1fr_130px_80px_110px] gap-2 items-center border-b border-[rgba(255,255,255,0.04)] px-4 py-3 text-left transition-colors hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.05)]"
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : comanda.id)}
-                  className="grid w-full grid-cols-[1fr_120px_1fr_130px_80px_110px] gap-2 items-center border-b border-[rgba(255,255,255,0.04)] px-4 py-3 text-left transition-colors hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.05)]"
                 >
                   <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                     {comanda.mesa ?? '—'}
@@ -772,7 +772,7 @@ function ComandasTableView({ comandas, isLoading }: { comandas: Comanda[]; isLoa
                           Valor
                         </span>
                         {comanda.itens.map((item, idx) => (
-                          <div key={idx} className="contents">
+                          <div className="contents" key={idx}>
                             <span className="text-[var(--text-primary)] truncate py-0.5">{item.nome}</span>
                             <span className="text-[var(--text-soft)] text-center py-0.5">{item.quantidade}</span>
                             <span className="text-[var(--text-primary)] text-right py-0.5">

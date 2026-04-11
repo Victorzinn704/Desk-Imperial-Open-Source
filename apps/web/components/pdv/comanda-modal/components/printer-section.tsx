@@ -38,8 +38,8 @@ export const PrinterSection = memo(function PrinterSection({
 
         <button
           className="flex items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:text-[var(--text-primary)]"
-          type="button"
           disabled={isBusy}
+          type="button"
           onClick={onRefreshPrinters}
         >
           <RefreshCw className={`size-3.5 ${connectionState === 'discovering' ? 'animate-spin' : ''}`} />

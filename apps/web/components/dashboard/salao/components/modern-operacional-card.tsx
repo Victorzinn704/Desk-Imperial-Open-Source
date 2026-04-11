@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Armchair, Clock } from 'lucide-react'
-import { calcTotal, formatElapsed, type Mesa, type Comanda } from '@/components/pdv/pdv-types'
+import { calcTotal, type Comanda, formatElapsed, type Mesa } from '@/components/pdv/pdv-types'
 import { fmtBRL } from '../constants'
 
 interface ModernOperacionalCardProps {
@@ -58,8 +58,8 @@ function resolveUrgencyStyles(status: string, isCritical: boolean, isWarning: bo
 }
 
 function resolveElapsedColor(isCritical: boolean, isWarning: boolean): string {
-  if (isCritical) return '#f87171'
-  if (isWarning) return '#fbbf24'
+  if (isCritical) {return '#f87171'}
+  if (isWarning) {return '#fbbf24'}
   return '#fb923c'
 }
 

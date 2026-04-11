@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
+  currencyCodeSchema,
+  employeeSchema,
+  fallbackConsentDocuments,
+  forgotPasswordSchema,
   getPasswordStrength,
   loginSchema,
-  forgotPasswordSchema,
-  verifyEmailSchema,
-  registerSchema,
-  resetPasswordSchema,
-  productSchema,
-  profileSchema,
-  employeeSchema,
   orderItemSchema,
   orderSchema,
-  currencyCodeSchema,
-  fallbackConsentDocuments,
+  productSchema,
+  profileSchema,
+  registerSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
 } from './validation'
 
 // ---------------------------------------------------------------------------

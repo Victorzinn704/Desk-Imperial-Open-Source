@@ -25,21 +25,20 @@ const LazyPieChartInner = dynamic(
         return (
           <PieChart>
             <Pie
-              data={data}
               cx="50%"
               cy="50%"
+              data={data}
+              dataKey="value"
               innerRadius={36}
               outerRadius={56}
               paddingAngle={2}
-              dataKey="value"
               strokeWidth={0}
             >
               {data.map((_, index) => (
-                <Cell key={index} fill={colors[index % colors.length]} />
+                <Cell fill={colors[index % colors.length]} key={index} />
               ))}
             </Pie>
             <Tooltip
-              formatter={(value, name) => [formatFn(Number(value), displayCurrency as CurrencyCode), name]}
               contentStyle={{
                 background: 'rgba(18,24,20,0.97)',
                 border: '1px solid rgba(52,242,127,0.18)',
@@ -47,6 +46,7 @@ const LazyPieChartInner = dynamic(
                 color: '#fff',
                 fontSize: '12px',
               }}
+              formatter={(value, name) => [formatFn(Number(value), displayCurrency as CurrencyCode), name]}
             />
           </PieChart>
         )
@@ -86,8 +86,8 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
     <div className="size-[120px] shrink-0">
       <ChartResponsiveContainer>
         <LazyPieChartInner
-          data={data}
           colors={COLORS}
+          data={data}
           displayCurrency={displayCurrency}
           formatFn={formatCompactCurrency}
         />

@@ -90,9 +90,9 @@ describe('MobileComandaList', () => {
             },
           ]}
           focusedId="c-1"
-          onUpdateStatus={vi.fn()}
           onCloseComanda={onCloseComanda}
           onFocus={vi.fn()}
+          onUpdateStatus={vi.fn()}
         />
       </QueryClientProvider>,
     )

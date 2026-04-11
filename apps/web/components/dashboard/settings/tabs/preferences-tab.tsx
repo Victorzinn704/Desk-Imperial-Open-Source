@@ -4,7 +4,7 @@ import type { DashboardSectionId } from '@/components/dashboard/dashboard-naviga
 import { CheckboxField } from '@/components/shared/checkbox-field'
 import { SelectField } from '@/components/shared/select-field'
 import { Button } from '@/components/shared/button'
-import { type WorkspacePreferences, periodOptions } from '@/components/dashboard/settings/constants'
+import { periodOptions, type WorkspacePreferences } from '@/components/dashboard/settings/constants'
 import { SettingsInfoCard } from '@/components/dashboard/settings/components/settings-info-card'
 
 type PreferencesTabProps = Readonly<{

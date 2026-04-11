@@ -12,8 +12,6 @@ export interface FilterChipProps {
 export function FilterChip({ label, count, active, color, icon, onClick }: FilterChipProps) {
   return (
     <button
-      type="button"
-      onClick={onClick}
       className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150"
       style={{
         background: active ? `${color}18` : 'rgba(255,255,255,0.03)',
@@ -21,6 +19,8 @@ export function FilterChip({ label, count, active, color, icon, onClick }: Filte
         color: active ? color : 'var(--text-soft)',
         transform: active ? 'scale(1.04)' : 'scale(1)',
       }}
+      type="button"
+      onClick={onClick}
     >
       {icon}
       {label}

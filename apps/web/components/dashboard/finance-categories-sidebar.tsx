@@ -62,8 +62,8 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
-            onClick={handleBack}
             className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
+            onClick={handleBack}
           >
             <ArrowLeft className="size-4" />
           </button>
@@ -84,14 +84,14 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
         <div className="flex gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
           {(['products', 'metrics'] as Tab[]).map((id) => (
             <button
-              key={id}
-              onClick={() => setActiveTab(id)}
               className={cn(
                 'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors duration-200',
                 activeTab === id
                   ? 'bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]',
               )}
+              key={id}
+              onClick={() => setActiveTab(id)}
             >
               {id === 'products' ? 'Produtos' : 'Métricas'}
             </button>
@@ -108,8 +108,8 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
             ) : (
               categoryProducts.map((product) => (
                 <div
-                  key={product.id}
                   className="space-y-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3"
+                  key={product.id}
                 >
                   <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
 
@@ -218,13 +218,13 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
 
             return (
               <button
-                key={cat.category}
-                onClick={() => handleSelectCategory(cat.category)}
                 className={cn(
                   'w-full cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200',
                   color.bg,
                   'border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)]',
                 )}
+                key={cat.category}
+                onClick={() => handleSelectCategory(cat.category)}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -266,8 +266,8 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
           <div className="space-y-2">
             {topProducts.slice(0, 5).map((product, i) => (
               <div
-                key={product.id}
                 className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.04)] p-3 transition-colors hover:border-[rgba(255,255,255,0.08)]"
+                key={product.id}
               >
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-xs font-bold text-[var(--text-soft)]">
                   {i + 1}

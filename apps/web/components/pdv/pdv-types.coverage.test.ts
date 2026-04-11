@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { calcSubtotal, calcTotal, formatElapsed, type Comanda } from './pdv-types'
+import { calcSubtotal, calcTotal, type Comanda, formatElapsed } from './pdv-types'
 
 function makeComanda(overrides: Partial<Comanda> = {}): Comanda {
   return {

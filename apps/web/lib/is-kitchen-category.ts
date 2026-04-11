@@ -40,7 +40,7 @@ export function isKitchenCategory(category: string): boolean {
     'kombucha',
     'smoothie',
   ]
-  if (IS_DRINK.some((kw) => c.includes(kw))) return false
+  if (IS_DRINK.some((kw) => c.includes(kw))) {return false}
 
   // Comidas / preparos — vão para cozinha
   const IS_FOOD = [
