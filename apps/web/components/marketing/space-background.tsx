@@ -1,5 +1,7 @@
 'use client'
 
+/* eslint-disable max-lines-per-function */
+
 import { useEffect, useRef } from 'react'
 
 interface Star {
@@ -48,13 +50,13 @@ export function SpaceBackground() {
   // ── Background layer — distant slow stars ──────────────────────────
   useEffect(() => {
     const canvas = bgRef.current
-    if (!canvas) {return}
+    if (!canvas) {
+      return
+    }
     const ctx = canvas.getContext('2d')
-    if (!ctx) {return}
-
-    // Respect prefers-reduced-motion: render one static frame, no animation
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const isMobile = window.innerWidth < 768
+    if (!ctx) {
+      return
+    }
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
@@ -64,8 +66,7 @@ export function SpaceBackground() {
     }
     window.addEventListener('resize', onResize)
 
-    const starCount = isMobile ? 120 : 320
-    const stars: Star[] = Array.from({ length: starCount }, () => {
+    const stars: Star[] = Array.from({ length: 320 }, () => {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
@@ -81,8 +82,7 @@ export function SpaceBackground() {
       }
     })
 
-    const goldStarCount = isMobile ? 6 : 16
-    const goldStars: Star[] = Array.from({ length: goldStarCount }, () => {
+    const goldStars: Star[] = Array.from({ length: 16 }, () => {
       const x = Math.random() * w
       const y = Math.random() * h
       return {
@@ -98,27 +98,7 @@ export function SpaceBackground() {
       }
     })
 
-    // Static render for reduced-motion: draw once and stop
-    if (prefersReducedMotion) {
-      ctx.clearRect(0, 0, w, h)
-      for (const s of stars) {
-        ctx.beginPath()
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,255,255,${s.alpha * 0.7})`
-        ctx.fill()
-      }
-      for (const s of goldStars) {
-        ctx.beginPath()
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(195,164,111,${s.alpha * 0.7})`
-        ctx.fill()
-      }
-      return () => window.removeEventListener('resize', onResize)
-    }
-
     let raf: number
-    let running = true
-
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
 
@@ -160,41 +140,26 @@ export function SpaceBackground() {
         ctx.fill()
       }
 
-      if (running) {raf = requestAnimationFrame(tick)}
+      raf = requestAnimationFrame(tick)
     }
-
-    // Visibility change: pause rAF when tab is hidden
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        running = false
-        cancelAnimationFrame(raf)
-      } else {
-        running = true
-        raf = requestAnimationFrame(tick)
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibility)
-
     tick()
 
     return () => {
-      running = false
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
-      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
   // ── Foreground layer — close glowing particles with heavy parallax ──
   useEffect(() => {
     const canvas = fgRef.current
-    if (!canvas) {return}
+    if (!canvas) {
+      return
+    }
     const ctx = canvas.getContext('2d')
-    if (!ctx) {return}
-
-    // Respect prefers-reduced-motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const isMobile = window.innerWidth < 768
+    if (!ctx) {
+      return
+    }
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
@@ -204,8 +169,7 @@ export function SpaceBackground() {
     }
     window.addEventListener('resize', onResize)
 
-    const particleCount = isMobile ? 12 : 28
-    const particles: FgParticle[] = Array.from({ length: particleCount }, () => {
+    const particles: FgParticle[] = Array.from({ length: 28 }, () => {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
@@ -223,8 +187,7 @@ export function SpaceBackground() {
       }
     })
 
-    const orbCount = isMobile ? 2 : 5
-    const orbs: FgParticle[] = Array.from({ length: orbCount }, () => {
+    const orbs: FgParticle[] = Array.from({ length: 5 }, () => {
       const ox = Math.random() * w
       const oy = Math.random() * h
       return {
@@ -242,32 +205,7 @@ export function SpaceBackground() {
       }
     })
 
-    // Pre-concatenate particles + orbs once (avoid spread each frame)
-    const allParticles = particles.concat(orbs)
-
-    // Static render for reduced-motion
-    if (prefersReducedMotion) {
-      ctx.clearRect(0, 0, w, h)
-      for (const p of allParticles) {
-        const a = p.alpha * 0.7
-        // Use solid colors with globalAlpha instead of gradient for static
-        ctx.globalAlpha = a
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r + p.glow * 0.3, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(195,164,111,0.5)'
-        ctx.fill()
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,255,255,0.8)'
-        ctx.fill()
-      }
-      ctx.globalAlpha = 1
-      return () => window.removeEventListener('resize', onResize)
-    }
-
     let raf: number
-    let running = true
-
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
 
@@ -275,7 +213,7 @@ export function SpaceBackground() {
       const mx = (mouseRef.current.x - 0.5) * 60
       const my = (mouseRef.current.y - 0.5) * 40
 
-      for (const p of allParticles) {
+      for (const p of [...particles, ...orbs]) {
         p.t += p.ts
         p.oy += p.speedY
         p.ox += p.speedX
@@ -283,8 +221,12 @@ export function SpaceBackground() {
           p.oy = h + p.r
           p.ox = Math.random() * w
         }
-        if (p.ox < -p.r * 3) {p.ox = w + p.r}
-        if (p.ox > w + p.r * 3) {p.ox = -p.r}
+        if (p.ox < -p.r * 3) {
+          p.ox = w + p.r
+        }
+        if (p.ox > w + p.r * 3) {
+          p.ox = -p.r
+        }
 
         // Parallax: foreground moves much more with mouse
         p.x = p.ox + mx
@@ -292,59 +234,29 @@ export function SpaceBackground() {
 
         const a = p.alpha * (0.55 + 0.45 * Math.sin(p.t))
 
-        // Use solid colors + globalAlpha to simulate glow without createRadialGradient
-        // This avoids ~33 createRadialGradient calls per frame (~1980/min)
-        const outerR = p.r + p.glow
-        ctx.globalAlpha = a * 0.35
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r + p.glow)
+        grad.addColorStop(0, `rgba(255,255,255,${a})`)
+        grad.addColorStop(0.4, `rgba(195,164,111,${a * 0.5})`)
+        grad.addColorStop(1, `rgba(92,110,200,0)`)
+
         ctx.beginPath()
-        ctx.arc(p.x, p.y, outerR, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(92,110,200,0.6)'
+        ctx.arc(p.x, p.y, p.r + p.glow, 0, Math.PI * 2)
+        ctx.fillStyle = grad
         ctx.fill()
 
-        ctx.globalAlpha = a * 0.5
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, outerR * 0.55, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(195,164,111,0.7)'
-        ctx.fill()
-
-        ctx.globalAlpha = a
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,255,255,0.9)'
-        ctx.fill()
-
-        // Bright core
-        ctx.globalAlpha = Math.min(a * 2.2, 0.85)
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2)
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = `rgba(255,255,255,${Math.min(a * 2.2, 0.85)})`
         ctx.fill()
       }
 
-      ctx.globalAlpha = 1
-
-      if (running) {raf = requestAnimationFrame(tick)}
+      raf = requestAnimationFrame(tick)
     }
-
-    // Visibility change: pause rAF when tab is hidden
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        running = false
-        cancelAnimationFrame(raf)
-      } else {
-        running = true
-        raf = requestAnimationFrame(tick)
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibility)
-
     tick()
 
     return () => {
-      running = false
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
-      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 

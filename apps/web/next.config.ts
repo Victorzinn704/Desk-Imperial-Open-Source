@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next'
 
 const localApiOrigin = 'http://localhost:4000'
+const isProduction = process.env.NODE_ENV === 'production'
 const faroCollectorOrigin = resolveCollectorOrigin(process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL)
 const observabilityConnectOrigins = [faroCollectorOrigin].filter(Boolean).join(' ')
+const developmentScriptSources = isProduction ? '' : " 'unsafe-eval'"
 
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
@@ -18,7 +20,7 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      `script-src 'self' 'unsafe-inline'${developmentScriptSources} https://static.cloudflareinsights.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://*.basemaps.cartocdn.com",

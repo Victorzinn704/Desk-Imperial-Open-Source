@@ -1,5 +1,7 @@
 'use client'
 
+/* eslint-disable max-lines, max-lines-per-function, no-nested-ternary */
+
 import Link from 'next/link'
 import { type MouseEvent as ReactMouseEvent, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
@@ -162,7 +164,7 @@ const footerColumns = [
 
 async function fireConfetti(x: number, y: number) {
   const confetti = (await import('canvas-confetti')).default
-  const origin = { x: x / globalThis.innerWidth, y: y / globalThis.innerHeight }
+  const origin = { x: x / window.innerWidth, y: y / window.innerHeight }
   confetti({
     particleCount: 90,
     spread: 80,
