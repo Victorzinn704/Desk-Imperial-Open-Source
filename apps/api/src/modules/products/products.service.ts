@@ -12,11 +12,13 @@ import { parseProductImportCsv } from './products-import.util'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { ListProductsQueryDto } from './dto/list-products.query'
 import type { UpdateProductDto } from './dto/update-product.dto'
-import type { ProductComboItemDto } from './dto/product-combo-item.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { FinanceService } from '../finance/finance.service'
+import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayload } from './products-combo.utils'
+import { validateImportRow, sanitizeImportRow, upsertImportRow } from './products-import.utils'
+import { buildProductUpdateData } from './products-update.utils'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -134,7 +136,7 @@ export class ProductsService {
     assertOwnerRole(auth, 'Apenas o dono pode cadastrar produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const isCombo = dto.isCombo ?? false
-    const normalizedComboItems = this.normalizeComboItemsInput(dto.comboItems)
+    const normalizedComboItems = normalizeComboItemsInput(dto.comboItems)
 
     if (isCombo && normalizedComboItems.length === 0) {
       throw new BadRequestException('Produtos do tipo combo precisam informar pelo menos um componente.')
@@ -191,7 +193,7 @@ export class ProductsService {
         })
 
         if (isCombo) {
-          const comboItemsPayload = await this.buildComboItemsPayload(
+          const comboItemsPayload = await buildComboItemsPayload(
             transaction,
             workspaceUserId,
             createdProduct.id,
@@ -251,16 +253,16 @@ export class ProductsService {
     assertOwnerRole(auth, 'Apenas o dono pode editar produtos.')
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingProduct = await this.requireOwnedProduct(workspaceUserId, productId)
-    const normalizedComboItems = dto.comboItems ? this.normalizeComboItemsInput(dto.comboItems) : null
+    const normalizedComboItems = dto.comboItems ? normalizeComboItemsInput(dto.comboItems) : null
     const nextIsCombo = dto.isCombo ?? existingProduct.isCombo
 
-    this.assertComboUpdateRules(nextIsCombo, dto, normalizedComboItems, existingProduct.isCombo)
+    assertComboUpdateRules(nextIsCombo, dto, normalizedComboItems, existingProduct.isCombo)
 
     try {
       const product = await this.prisma.$transaction(async (transaction) => {
         const updatedProduct = await transaction.product.update({
           where: { id: existingProduct.id },
-          data: this.buildProductUpdateData(dto, nextIsCombo),
+          data: buildProductUpdateData(dto, nextIsCombo),
         })
 
         if (!nextIsCombo) {
@@ -270,7 +272,7 @@ export class ProductsService {
             },
           })
         } else if (normalizedComboItems) {
-          const comboItemsPayload = await this.buildComboItemsPayload(
+          const comboItemsPayload = await buildComboItemsPayload(
             transaction,
             workspaceUserId,
             updatedProduct.id,
@@ -320,25 +322,6 @@ export class ProductsService {
       }
     } catch (error) {
       handleProductConflict(error)
-    }
-  }
-
-  private assertComboUpdateRules(
-    nextIsCombo: boolean,
-    dto: UpdateProductDto,
-    normalizedComboItems: any[] | null,
-    wasCombo: boolean,
-  ) {
-    if (!nextIsCombo && normalizedComboItems && normalizedComboItems.length > 0) {
-      throw new BadRequestException('Remova os componentes ou marque o produto como combo antes de salvar.')
-    }
-
-    if (nextIsCombo && dto.comboItems !== undefined && normalizedComboItems && normalizedComboItems.length === 0) {
-      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
-    }
-
-    if (dto.isCombo === true && !wasCombo && dto.comboItems === undefined) {
-      throw new BadRequestException('Ao ativar um combo, informe os itens de composição.')
     }
   }
 
@@ -427,8 +410,8 @@ export class ProductsService {
 
     for (const row of parsedRows) {
       try {
-        this.validateImportRow(row)
-        const result = await this.upsertImportRow(workspaceUserId, row)
+        validateImportRow(row)
+        const result = await upsertImportRow(this.prisma, workspaceUserId, row)
         if (result === 'updated') {
           updatedCount += 1
         } else {
@@ -467,131 +450,6 @@ export class ProductsService {
       },
       errors,
     }
-  }
-
-  private parseImportCsvOrThrow(file: UploadedCsvFile) {
-    try {
-      return parseProductImportCsv(file.buffer.toString('utf-8'))
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Nao foi possivel ler o CSV enviado.')
-    }
-  }
-
-  private validateImportRow(row: {
-    name: string
-    category: string
-    packagingClass: string
-    measurementUnit: string
-    measurementValue: number
-    unitsPerPackage: number
-    unitCost: number
-    unitPrice: number
-    stock: number
-    currency: string
-  }) {
-    if (!row.name || row.name.length < 2) {
-      throw new Error('Informe um nome valido para o produto.')
-    }
-    if (!row.category || row.category.length < 2) {
-      throw new Error('Informe uma categoria valida.')
-    }
-    if (!row.packagingClass || row.packagingClass.length < 2) {
-      throw new Error('Informe uma classe de cadastro valida.')
-    }
-    if (!row.measurementUnit || row.measurementUnit.length < 1) {
-      throw new Error('Informe uma unidade de medida valida.')
-    }
-    if (Number.isNaN(row.measurementValue) || row.measurementValue <= 0) {
-      throw new Error('A medida por item precisa ser numerica e maior que zero.')
-    }
-    if (Number.isNaN(row.unitsPerPackage) || row.unitsPerPackage < 1) {
-      throw new Error('A quantidade por caixa/fardo precisa ser um inteiro maior que zero.')
-    }
-    if (Number.isNaN(row.unitCost) || row.unitCost < 0) {
-      throw new Error('O custo unitario precisa ser numerico e nao negativo.')
-    }
-    if (Number.isNaN(row.unitPrice) || row.unitPrice < 0) {
-      throw new Error('O preco unitario precisa ser numerico e nao negativo.')
-    }
-    if (Number.isNaN(row.stock) || row.stock < 0) {
-      throw new Error('O estoque precisa ser um inteiro nao negativo.')
-    }
-    if (!isSupportedCurrency(row.currency)) {
-      throw new Error('Use BRL, USD ou EUR na coluna de moeda.')
-    }
-  }
-
-  private sanitizeImportRow(row: {
-    name: string
-    category: string
-    brand: string
-    packagingClass: string
-    measurementUnit: string
-    description: string
-  }) {
-    return {
-      safeName: sanitizePlainText(row.name, 'Nome do produto', { allowEmpty: false, rejectFormula: true })!,
-      safeCategory: sanitizePlainText(row.category, 'Categoria', { allowEmpty: false, rejectFormula: true })!,
-      safeBrand: sanitizePlainText(row.brand, 'Marca', { allowEmpty: true, rejectFormula: true }),
-      safePackagingClass: sanitizePlainText(row.packagingClass, 'Classe de cadastro', {
-        allowEmpty: false,
-        rejectFormula: true,
-      })!,
-      safeMeasurementUnit: sanitizePlainText(row.measurementUnit, 'Unidade de medida', {
-        allowEmpty: false,
-        rejectFormula: true,
-      })!,
-      safeDescription: sanitizePlainText(row.description, 'Descricao', { allowEmpty: true, rejectFormula: true }),
-    }
-  }
-
-  private async upsertImportRow(workspaceUserId: string, row: any): Promise<'created' | 'updated'> {
-    const { safeName, safeCategory, safeBrand, safePackagingClass, safeMeasurementUnit, safeDescription } =
-      this.sanitizeImportRow(row)
-
-    const existing = await this.prisma.product.findUnique({
-      where: { userId_name: { userId: workspaceUserId, name: safeName } },
-    })
-
-    await this.prisma.product.upsert({
-      where: { userId_name: { userId: workspaceUserId, name: safeName } },
-      create: {
-        userId: workspaceUserId,
-        name: safeName,
-        brand: safeBrand,
-        category: safeCategory,
-        packagingClass: safePackagingClass,
-        measurementUnit: safeMeasurementUnit,
-        measurementValue: row.measurementValue,
-        unitsPerPackage: row.unitsPerPackage,
-        description: safeDescription,
-        unitCost: row.unitCost,
-        unitPrice: row.unitPrice,
-        currency: row.currency as CurrencyCode,
-        stock: row.stock,
-        requiresKitchen: isKitchenCategory(safeCategory),
-        active: true,
-      },
-      update: {
-        brand: safeBrand,
-        category: safeCategory,
-        packagingClass: safePackagingClass,
-        measurementUnit: safeMeasurementUnit,
-        measurementValue: row.measurementValue,
-        unitsPerPackage: row.unitsPerPackage,
-        description: safeDescription,
-        unitCost: row.unitCost,
-        unitPrice: row.unitPrice,
-        currency: row.currency as CurrencyCode,
-        stock: row.stock,
-        // On update via CSV, only override requiresKitchen if it
-        // was explicitly false (i.e. not yet set) — preserve manual config
-        requiresKitchen: isKitchenCategory(safeCategory) ? true : undefined,
-        active: true,
-      },
-    })
-
-    return existing ? 'updated' : 'created'
   }
 
   private async toggleActiveState(auth: AuthContext, productId: string, active: boolean, context: RequestContext) {
@@ -636,12 +494,27 @@ export class ProductsService {
     }
   }
 
+  private parseImportCsvOrThrow(file: UploadedCsvFile) {
+    try {
+      return parseProductImportCsv(file.buffer.toString('utf-8'))
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : 'Nao foi possivel ler o CSV enviado.')
+    }
+  }
+
+  private async resolveProductsSnapshot(
+    items: Array<{ currency: CurrencyCode }>,
+    displayCurrency: CurrencyCode,
+  ): Promise<ExchangeRatesSnapshot> {
+    if (items.length === 0 || items.every((item) => item.currency === displayCurrency)) {
+      return { updatedAt: null, source: 'live', notice: null, rates: {} }
+    }
+    return this.currencyService.getSnapshot()
+  }
+
   private async requireOwnedProduct(userId: string, productId: string) {
     const product = await this.prisma.product.findFirst({
-      where: {
-        id: productId,
-        userId,
-      },
+      where: { id: productId, userId },
     })
 
     if (!product) {
@@ -650,163 +523,6 @@ export class ProductsService {
 
     return product
   }
-
-  private normalizeComboItemsInput(items: ProductComboItemDto[] | undefined) {
-    if (!items?.length) {
-      return []
-    }
-
-    const groupedByProduct = new Map<
-      string,
-      {
-        productId: string
-        quantityPackages: number
-        quantityUnits: number
-      }
-    >()
-
-    for (const item of items) {
-      const productId = item.productId.trim()
-      if (!productId) {
-        throw new BadRequestException('Cada componente do combo precisa informar um produto válido.')
-      }
-
-      const quantityPackages = Math.max(0, item.quantityPackages ?? 0)
-      const quantityUnits = Math.max(0, item.quantityUnits ?? 0)
-
-      if (quantityPackages === 0 && quantityUnits === 0) {
-        throw new BadRequestException('Cada componente do combo precisa de quantidade em caixa ou unidade.')
-      }
-
-      const existing = groupedByProduct.get(productId)
-      if (existing) {
-        existing.quantityPackages += quantityPackages
-        existing.quantityUnits += quantityUnits
-        continue
-      }
-
-      groupedByProduct.set(productId, {
-        productId,
-        quantityPackages,
-        quantityUnits,
-      })
-    }
-
-    return Array.from(groupedByProduct.values())
-  }
-
-  private buildProductUpdateData(dto: UpdateProductDto, nextIsCombo: boolean) {
-    const optionalText = (field: string | undefined, label: string, allowEmpty: boolean) =>
-      field !== undefined ? { [label]: sanitizePlainText(field, label, { allowEmpty, rejectFormula: true }) } : {}
-
-    return {
-      ...optionalText(dto.name, 'name', false),
-      ...optionalText(dto.brand, 'brand', true),
-      ...optionalText(dto.category, 'category', false),
-      ...optionalText(dto.packagingClass, 'packagingClass', false),
-      ...optionalText(dto.measurementUnit, 'measurementUnit', false),
-      ...(dto.measurementValue !== undefined ? { measurementValue: dto.measurementValue } : {}),
-      ...(dto.unitsPerPackage !== undefined ? { unitsPerPackage: dto.unitsPerPackage } : {}),
-      ...optionalText(dto.description, 'description', true),
-      ...(dto.isCombo !== undefined ? { isCombo: dto.isCombo } : {}),
-      ...(nextIsCombo ? optionalText(dto.comboDescription, 'comboDescription', true) : { comboDescription: null }),
-      ...(dto.unitCost !== undefined ? { unitCost: dto.unitCost } : {}),
-      ...(dto.unitPrice !== undefined ? { unitPrice: dto.unitPrice } : {}),
-      ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
-      ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
-      ...(dto.active !== undefined ? { active: dto.active } : {}),
-      ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
-    }
-  }
-
-  private async buildComboItemsPayload(
-    transaction: Prisma.TransactionClient,
-    workspaceUserId: string,
-    comboProductId: string,
-    normalizedItems: Array<{
-      productId: string
-      quantityPackages: number
-      quantityUnits: number
-    }>,
-  ) {
-    if (!normalizedItems.length) {
-      throw new BadRequestException('Produtos do tipo combo precisam de pelo menos um componente.')
-    }
-
-    const products = await transaction.product.findMany({
-      where: {
-        userId: workspaceUserId,
-        id: {
-          in: normalizedItems.map((item) => item.productId),
-        },
-      },
-      select: {
-        id: true,
-        unitsPerPackage: true,
-      },
-    })
-    const productsById = new Map(products.map((product) => [product.id, product]))
-
-    for (const item of normalizedItems) {
-      if (item.productId === comboProductId) {
-        throw new BadRequestException('Um combo não pode conter ele mesmo como componente.')
-      }
-
-      if (!productsById.has(item.productId)) {
-        throw new NotFoundException('Um ou mais componentes do combo não foram encontrados nesta conta.')
-      }
-    }
-
-    return normalizedItems.map((item) => {
-      const component = productsById.get(item.productId)!
-      const safeUnitsPerPackage = Math.max(1, component.unitsPerPackage)
-      const totalUnits = item.quantityPackages * safeUnitsPerPackage + item.quantityUnits
-
-      if (totalUnits <= 0) {
-        throw new BadRequestException('A composição do combo precisa resultar em pelo menos uma unidade.')
-      }
-
-      if (safeUnitsPerPackage <= 1) {
-        return {
-          comboProductId,
-          componentProductId: item.productId,
-          quantityPackages: 0,
-          quantityUnits: totalUnits,
-          totalUnits,
-        }
-      }
-
-      return {
-        comboProductId,
-        componentProductId: item.productId,
-        quantityPackages: Math.floor(totalUnits / safeUnitsPerPackage),
-        quantityUnits: totalUnits % safeUnitsPerPackage,
-        totalUnits,
-      }
-    })
-  }
-
-  private async resolveProductsSnapshot(
-    items: Array<{
-      currency: CurrencyCode
-    }>,
-    displayCurrency: CurrencyCode,
-  ): Promise<ExchangeRatesSnapshot> {
-    if (items.length === 0 || items.every((item) => item.currency === displayCurrency)) {
-      return {
-        updatedAt: null,
-        source: 'live',
-        notice: null,
-        rates: {},
-      }
-    }
-
-    return this.currencyService.getSnapshot()
-  }
-}
-
-function isSupportedCurrency(value: string) {
-  return value === 'BRL' || value === 'USD' || value === 'EUR'
 }
 
 function handleProductConflict(error: unknown): never {
