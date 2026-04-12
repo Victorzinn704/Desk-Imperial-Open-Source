@@ -985,8 +985,14 @@ function mapClosureStatus(status: string | null): CashClosureStatus | null {
   if (!status) {
     return null
   }
-  const validStatuses: CashClosureStatus[] = ['OPEN', 'PENDING_EMPLOYEE_CLOSE', 'CLOSED', 'FORCE_CLOSED']
-  return validStatuses.includes(status as CashClosureStatus) ? (status as CashClosureStatus) : null
+  const statusMap: Record<string, CashClosureStatus> = {
+    OPEN: 'OPEN',
+    PENDING: 'PENDING_EMPLOYEE_CLOSE',
+    PENDING_EMPLOYEE_CLOSE: 'PENDING_EMPLOYEE_CLOSE',
+    CLOSED: 'CLOSED',
+    FORCE_CLOSED: 'FORCE_CLOSED',
+  }
+  return statusMap[status] ?? null
 }
 
 function mapMesaStatus(status: string | null): MesaRecord['status'] | null {
