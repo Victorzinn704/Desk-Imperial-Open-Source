@@ -19,12 +19,9 @@ import { AuditLogService } from '../monitoring/audit-log.service'
 import { AuthRateLimitService } from './auth-rate-limit.service'
 import {
   authSessionUserSelect,
-  authSessionWorkspaceOwnerSelect,
   hashToken,
   isServiceUnavailable,
-  normalizeComparableValue,
   normalizeEmail,
-  parseBoolean,
   sanitizeEmployeeCodeForLogin,
   toAuthUser,
 } from './auth-shared.util'
@@ -33,6 +30,20 @@ import { type LoginDto, LoginModeDto } from './dto/login.dto'
 import { DemoAccessService } from './demo-access.service'
 import { AuthSessionService } from './auth-session.service'
 import type { AuthEmailVerificationService } from './auth-email-verification.service'
+import {
+  resolveLoginActor,
+  resolveDemoOwnerActor,
+  resolveDemoStaffActor,
+  findActiveEmployeeLoginActor,
+  resolveEmployeePasswordHash,
+} from './auth-login-actor.utils'
+import { sendLoginAlertIfEnabled, sendFailedLoginAlertIfEnabled } from './auth-login-alerts.utils'
+import {
+  assertAllowedForKeys,
+  recordAttemptsForKeys,
+  clearRateLimitKeys,
+  pickMostRestrictiveRateLimitState,
+} from './auth-login-rate-limit.utils'
 
 type RateLimitState = Awaited<ReturnType<AuthRateLimitService['recordFailure']>>
 
@@ -62,7 +73,7 @@ export class AuthLoginService {
     ]
 
     try {
-      await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
+      await assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
     } catch (error) {
       await this.auditLogService.record({
         event: 'auth.login.blocked',
@@ -75,7 +86,7 @@ export class AuthLoginService {
       throw error
     }
 
-    const actor = await this.resolveLoginActor(dto)
+    const actor = await resolveLoginActor(this.prisma, dto)
 
     if (!actor || actor.status !== UserStatus.ACTIVE) {
       await this.handleFailedLogin({
@@ -102,12 +113,12 @@ export class AuthLoginService {
     }
 
     if (!activeActor.emailVerifiedAt) {
-      await this.clearRateLimitKeys(rateLimitKeys)
+      await clearRateLimitKeys(rateLimitKeys, this.authRateLimitService)
       const verificationMessage = await this.handleUnverifiedLogin(activeActor.ownerUser, context)
       throw new ForbiddenException(verificationMessage)
     }
 
-    await this.clearRateLimitKeys(rateLimitKeys)
+    await clearRateLimitKeys(rateLimitKeys, this.authRateLimitService)
 
     let session: Awaited<ReturnType<AuthSessionService['createSession']>>
 
@@ -164,7 +175,7 @@ export class AuthLoginService {
       userAgent: context.userAgent,
     })
 
-    void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
+    void sendLoginAlertIfEnabled(this.configService, this.prisma, this.mailerService, this.auditLogService, activeActor.ownerUser, context, session.sessionId)
 
     return {
       user: authUser,
@@ -190,7 +201,7 @@ export class AuthLoginService {
     ]
 
     try {
-      await this.assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
+      await assertAllowedForKeys(rateLimitKeys, (key) => this.authRateLimitService.assertLoginAllowed(key))
     } catch (error) {
       await this.auditLogService.record({
         event: 'auth.login.blocked',
@@ -205,8 +216,8 @@ export class AuthLoginService {
 
     const actor =
       dto.loginMode === LoginModeDto.STAFF
-        ? await this.resolveDemoStaffActor(demoEmail, dto.employeeCode)
-        : await this.resolveDemoOwnerActor(demoEmail)
+        ? await resolveDemoStaffActor(this.prisma, demoEmail, dto.employeeCode)
+        : await resolveDemoOwnerActor(this.prisma, demoEmail)
 
     if (!actor || actor.status !== UserStatus.ACTIVE) {
       await this.handleFailedLogin({
@@ -221,12 +232,12 @@ export class AuthLoginService {
     const activeActor = actor!
 
     if (!activeActor.emailVerifiedAt) {
-      await this.clearRateLimitKeys(rateLimitKeys)
+      await clearRateLimitKeys(rateLimitKeys, this.authRateLimitService)
       const verificationMessage = await this.handleUnverifiedLogin(activeActor.ownerUser, context)
       throw new ForbiddenException(verificationMessage)
     }
 
-    await this.clearRateLimitKeys(rateLimitKeys)
+    await clearRateLimitKeys(rateLimitKeys, this.authRateLimitService)
 
     const session = await this.sessionService.createSession(
       {
@@ -263,182 +274,13 @@ export class AuthLoginService {
       userAgent: context.userAgent,
     })
 
-    void this.sendLoginAlertIfEnabled(activeActor.ownerUser, context, session.sessionId)
+    void sendLoginAlertIfEnabled(this.configService, this.prisma, this.mailerService, this.auditLogService, activeActor.ownerUser, context, session.sessionId)
 
     return {
       user: authUser,
       csrfToken: this.sessionService.buildCsrfToken(session.sessionId),
       session: { expiresAt: session.expiresAt },
     }
-  }
-
-  private async resolveDemoOwnerActor(demoEmail: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: demoEmail },
-      select: { ...authSessionUserSelect, passwordHash: true, role: true },
-    })
-
-    if (!user || user.role !== UserRole.OWNER || user.companyOwnerId) {
-      return null
-    }
-
-    return {
-      actorUserId: user.id,
-      sessionUserId: user.id,
-      workspaceOwnerUserId: user.id,
-      employeeId: user.employeeAccount?.id ?? null,
-      employeeCode: user.employeeAccount?.employeeCode ?? null,
-      passwordHash: user.passwordHash,
-      status: user.status,
-      emailVerifiedAt: user.emailVerifiedAt,
-      fullName: user.fullName,
-      cookiePreference: user.cookiePreference,
-      ownerUser: user,
-      authUser: user,
-    }
-  }
-
-  private async resolveDemoStaffActor(demoEmail: string, employeeCode?: string) {
-    const owner = await this.prisma.user.findFirst({
-      where: { email: demoEmail, companyOwnerId: null, role: UserRole.OWNER },
-      select: { id: true },
-    })
-
-    if (!owner) {
-      return null
-    }
-
-    const safeEmployeeCode = sanitizeEmployeeCodeForLogin(employeeCode ?? 'VD-001')
-    const employee = await this.findActiveEmployeeLoginActor(owner.id, safeEmployeeCode)
-
-    if (!employee) {
-      return null
-    }
-
-    const ownerUser = employee.user
-    const legacyLoginUser = employee.loginUser
-
-    if (ownerUser.status !== UserStatus.ACTIVE) {
-      return null
-    }
-
-    return {
-      actorUserId: legacyLoginUser?.id ?? ownerUser.id,
-      sessionUserId: legacyLoginUser?.id ?? null,
-      workspaceOwnerUserId: ownerUser.id,
-      employeeId: employee.id,
-      employeeCode: employee.employeeCode,
-      passwordHash: hashToken(`demo-session:${ownerUser.id}:${employee.id}:${employee.employeeCode}`),
-      status: employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
-      emailVerifiedAt: ownerUser.emailVerifiedAt,
-      fullName: employee.displayName,
-      cookiePreference: ownerUser.cookiePreference,
-      ownerUser,
-      authUser: {
-        ...ownerUser,
-        fullName: employee.displayName,
-        role: UserRole.STAFF,
-        companyOwnerId: ownerUser.id,
-        email: ownerUser.email,
-      },
-    }
-  }
-
-  private async resolveLoginActor(dto: LoginDto) {
-    if (dto.loginMode === LoginModeDto.STAFF) {
-      const companyEmail = normalizeEmail(dto.companyEmail ?? '')
-      const employeeCode = sanitizeEmployeeCodeForLogin(dto.employeeCode ?? '')
-
-      const owner = await this.prisma.user.findFirst({
-        where: { email: companyEmail, companyOwnerId: null, role: UserRole.OWNER },
-        select: { id: true },
-      })
-
-      if (!owner) {
-        return null
-      }
-
-      const employee = await this.findActiveEmployeeLoginActor(owner.id, employeeCode)
-
-      if (!employee) {
-        return null
-      }
-
-      const ownerUser = employee.user
-      const legacyLoginUser = employee.loginUser
-      const passwordHash = this.resolveEmployeePasswordHash(employee)
-
-      if (!passwordHash || ownerUser.status !== UserStatus.ACTIVE) {
-        return null
-      }
-
-      return {
-        actorUserId: legacyLoginUser?.id ?? ownerUser.id,
-        sessionUserId: legacyLoginUser?.id ?? null,
-        workspaceOwnerUserId: ownerUser.id,
-        employeeId: employee.id,
-        employeeCode: employee.employeeCode,
-        passwordHash,
-        status: employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
-        emailVerifiedAt: ownerUser.emailVerifiedAt,
-        fullName: employee.displayName,
-        cookiePreference: ownerUser.cookiePreference,
-        ownerUser,
-        authUser: {
-          ...ownerUser,
-          fullName: employee.displayName,
-          role: UserRole.STAFF,
-          companyOwnerId: ownerUser.id,
-          email: ownerUser.email,
-        },
-      }
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { email: normalizeEmail(dto.email ?? '') },
-      select: { ...authSessionUserSelect, passwordHash: true, role: true },
-    })
-
-    if (!user) {
-      return null
-    }
-
-    return {
-      actorUserId: user.id,
-      sessionUserId: user.id,
-      workspaceOwnerUserId: user.id,
-      employeeId: user.employeeAccount?.id ?? null,
-      employeeCode: user.employeeAccount?.employeeCode ?? null,
-      passwordHash: user.passwordHash,
-      status: user.status,
-      emailVerifiedAt: user.emailVerifiedAt,
-      fullName: user.fullName,
-      cookiePreference: user.cookiePreference,
-      ownerUser: user,
-      authUser: user,
-    }
-  }
-
-  private findActiveEmployeeLoginActor(ownerUserId: string, employeeCode: string) {
-    return this.prisma.employee.findFirst({
-      where: { userId: ownerUserId, employeeCode, active: true },
-      select: {
-        id: true,
-        active: true,
-        employeeCode: true,
-        displayName: true,
-        passwordHash: true,
-        user: { select: authSessionWorkspaceOwnerSelect },
-        loginUser: { select: { id: true, passwordHash: true } },
-      },
-    })
-  }
-
-  private resolveEmployeePasswordHash(employee: {
-    passwordHash: string | null
-    loginUser: { passwordHash: string } | null
-  }) {
-    return employee.passwordHash ?? employee.loginUser?.passwordHash ?? null
   }
 
   private async handleFailedLogin(params: {
@@ -449,8 +291,8 @@ export class AuthLoginService {
     rateLimitKeys: string[]
     context: RequestContext
   }): Promise<never> {
-    const rateLimitState = this.pickMostRestrictiveRateLimitState(
-      await this.recordAttemptsForKeys(params.rateLimitKeys, (key) => this.authRateLimitService.recordFailure(key)),
+    const rateLimitState = pickMostRestrictiveRateLimitState(
+      await recordAttemptsForKeys(params.rateLimitKeys, (key) => this.authRateLimitService.recordFailure(key)),
     )
 
     await this.auditLogService.record({
@@ -469,7 +311,10 @@ export class AuthLoginService {
     })
 
     if (params.actorUserId && params.actorFullName) {
-      void this.sendFailedLoginAlertIfEnabled(
+      void sendFailedLoginAlertIfEnabled(
+        this.configService,
+        this.mailerService,
+        this.auditLogService,
         { id: params.actorUserId, email: params.email, fullName: params.actorFullName },
         params.context,
         rateLimitState.count,
@@ -513,131 +358,5 @@ export class AuthLoginService {
 
       throw error
     }
-  }
-
-  private async sendLoginAlertIfEnabled(
-    user: { id: string; email: string; fullName: string },
-    context: RequestContext,
-    currentSessionId: string,
-  ) {
-    if (!parseBoolean(this.configService.get<string>('LOGIN_ALERT_EMAILS_ENABLED'))) {
-      return
-    }
-
-    const previousSessions = await this.prisma.session.findMany({
-      where: { userId: user.id, id: { not: currentSessionId } },
-      select: { id: true, ipAddress: true, userAgent: true },
-      take: 12,
-      orderBy: { createdAt: 'desc' },
-    })
-
-    if (previousSessions.length === 0) {
-      return
-    }
-
-    const isKnownDevice = previousSessions.some(
-      (session) =>
-        normalizeComparableValue(session.ipAddress) === normalizeComparableValue(context.ipAddress) &&
-        normalizeComparableValue(session.userAgent) === normalizeComparableValue(context.userAgent),
-    )
-
-    if (isKnownDevice) {
-      return
-    }
-
-    try {
-      const delivery = await this.mailerService.sendLoginAlertEmail({
-        to: user.email,
-        fullName: user.fullName,
-        occurredAt: new Date(),
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-      })
-
-      await this.auditLogService.record({
-        actorUserId: user.id,
-        event: 'auth.login.notification_sent',
-        resource: 'session',
-        metadata: { email: user.email, deliveryMode: delivery.mode },
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-      })
-    } catch (error) {
-      this.logger.warn(
-        `Falha ao enviar alerta de login para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
-      )
-    }
-  }
-
-  private async sendFailedLoginAlertIfEnabled(
-    user: { id: string; email: string; fullName: string },
-    context: RequestContext,
-    failedAttempts: number,
-  ) {
-    if (!parseBoolean(this.configService.get<string>('FAILED_LOGIN_ALERTS_ENABLED'))) {
-      return
-    }
-
-    const threshold = Math.max(Number(this.configService.get<string>('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3), 1)
-
-    if (failedAttempts < threshold || failedAttempts > threshold) {
-      return
-    }
-
-    try {
-      const delivery = await this.mailerService.sendFailedLoginAlertEmail({
-        to: user.email,
-        fullName: user.fullName,
-        occurredAt: new Date(),
-        attemptCount: failedAttempts,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        locationSummary: context.ipAddress ? 'Local aproximado indisponivel no momento' : null,
-      })
-
-      await this.auditLogService.record({
-        actorUserId: user.id,
-        event: 'auth.login.failed_notification_sent',
-        resource: 'session',
-        metadata: { email: user.email, failedAttempts, deliveryMode: delivery.mode },
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-      })
-    } catch (error) {
-      this.logger.warn(
-        `Falha ao enviar alerta de tentativas suspeitas para ${user.email}: ${error instanceof Error ? error.message : 'unknown'}`,
-      )
-    }
-  }
-
-  private async assertAllowedForKeys(keys: string[], assertion: (key: string) => Promise<void>) {
-    await Promise.all(keys.map((key) => assertion(key)))
-  }
-
-  private async recordAttemptsForKeys(keys: string[], recorder: (key: string) => Promise<RateLimitState>) {
-    return Promise.all(keys.map((key) => recorder(key)))
-  }
-
-  private async clearRateLimitKeys(keys: string[]) {
-    await Promise.all(keys.map((key) => this.authRateLimitService.clear(key)))
-  }
-
-  private pickMostRestrictiveRateLimitState(states: RateLimitState[]): RateLimitState {
-    const [initialState, ...remainingStates] = states
-    if (!initialState) {
-      return { count: 0, firstAttemptAt: 0, lockedUntil: null }
-    }
-
-    return remainingStates.reduce((current, candidate) => {
-      const currentLockedUntil = current.lockedUntil ?? 0
-      const candidateLockedUntil = candidate.lockedUntil ?? 0
-      if (candidateLockedUntil > currentLockedUntil) {
-        return candidate
-      }
-      if (candidateLockedUntil === currentLockedUntil && candidate.count > current.count) {
-        return candidate
-      }
-      return current
-    }, initialState)
   }
 }
