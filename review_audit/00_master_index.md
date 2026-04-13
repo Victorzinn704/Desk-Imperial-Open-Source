@@ -29,6 +29,7 @@ Os artefatos anteriores de `review_audit/` foram substituídos quando continham 
 | Matriz de risco | CONCLUÍDO | `04_risk_matrix.md` |
 | Scorecard | CONCLUÍDO | `05_maturity_scorecard.md` |
 | Plano mestre | CONCLUÍDO | `99_master_improvement_plan.md` |
+| Gate antes de novas features | ATIVO | `100_pre_feature_stabilization_plan.md` |
 | Backend | CONCLUÍDO | `agents/backend-reviewer.md` |
 | Frontend | CONCLUÍDO | `agents/frontend-reviewer.md` |
 | Segurança | CONCLUÍDO | `agents/security-reviewer.md` |
