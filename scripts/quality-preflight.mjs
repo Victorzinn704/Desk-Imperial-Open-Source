@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 
 const full = process.argv.includes('--full')
 const npm = 'npm'
 const node = process.execPath
 const windowsShell = process.env.ComSpec || 'cmd.exe'
+const initialWorktreeStatus = readWorktreeStatus()
 
 const steps = [
   step('worktree scope', node, ['scripts/check-worktree-scope.mjs']),
@@ -53,6 +54,16 @@ for (const { label, command, args, shell } of steps) {
   }
 }
 
+const finalWorktreeStatus = readWorktreeStatus()
+if (finalWorktreeStatus !== initialWorktreeStatus) {
+  console.error('\n[FAIL] Quality preflight changed the worktree.')
+  console.error('\nBefore:')
+  console.error(initialWorktreeStatus.trim() || '- clean')
+  console.error('\nAfter:')
+  console.error(finalWorktreeStatus.trim() || '- clean')
+  process.exit(1)
+}
+
 console.log(full ? '\n[PASS] Full quality preflight passed.' : '\n[PASS] Quality preflight passed.')
 
 function step(label, command, args) {
@@ -79,4 +90,8 @@ function quoteWindowsArg(value) {
   }
 
   return `"${text.replaceAll('"', '\\"')}"`
+}
+
+function readWorktreeStatus() {
+  return execFileSync('git', ['status', '--porcelain=v1'], { encoding: 'utf8' }).replaceAll('\r\n', '\n')
 }
