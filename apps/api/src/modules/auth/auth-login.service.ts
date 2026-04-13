@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { AuditSeverity, UserRole, UserStatus } from '@prisma/client'
+import { AuditSeverity, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import type { Response } from 'express'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -18,7 +18,6 @@ import { MailerService } from '../mailer/mailer.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { AuthRateLimitService } from './auth-rate-limit.service'
 import {
-  authSessionUserSelect,
   hashToken,
   isServiceUnavailable,
   normalizeEmail,
@@ -34,8 +33,6 @@ import {
   resolveLoginActor,
   resolveDemoOwnerActor,
   resolveDemoStaffActor,
-  findActiveEmployeeLoginActor,
-  resolveEmployeePasswordHash,
 } from './auth-login-actor.utils'
 import { sendLoginAlertIfEnabled, sendFailedLoginAlertIfEnabled } from './auth-login-alerts.utils'
 import {
@@ -44,8 +41,6 @@ import {
   clearRateLimitKeys,
   pickMostRestrictiveRateLimitState,
 } from './auth-login-rate-limit.utils'
-
-type RateLimitState = Awaited<ReturnType<AuthRateLimitService['recordFailure']>>
 
 @Injectable()
 export class AuthLoginService {

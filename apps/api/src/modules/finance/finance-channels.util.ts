@@ -52,6 +52,8 @@ export function buildSalesByChannel(
 }
 
 function toNumber(value: { toNumber(): number } | number | null | undefined) {
-  if (value == null) return 0
+  if (value == null) {
+    return 0
+  }
   return typeof value === 'number' ? value : value.toNumber()
 }

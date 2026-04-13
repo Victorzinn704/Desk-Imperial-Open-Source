@@ -57,7 +57,9 @@ export function buildTopEmployees(
   >()
 
   for (const group of orders) {
-    if (!group.employeeId && !group.sellerCode && !group.sellerName) continue
+    if (!group.employeeId && !group.sellerCode && !group.sellerName) {
+      continue
+    }
     const employeeName = group.sellerName?.trim() || 'Funcionario nao identificado'
     const employeeKey = group.employeeId ?? group.sellerCode ?? employeeName
     const current = employees.get(employeeKey) ?? {
@@ -98,7 +100,9 @@ export function buildTopRegions(
   >()
 
   for (const group of orders) {
-    if (!group.buyerCity && !group.buyerState && !group.buyerCountry) continue
+    if (!group.buyerCity && !group.buyerState && !group.buyerCountry) {
+      continue
+    }
     const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
     const current = regions.get(label) ?? {
       label, city: group.buyerCity, state: group.buyerState, country: group.buyerCountry,
@@ -137,7 +141,9 @@ export function buildSalesMap(
   >()
 
   for (const group of orders) {
-    if (group.buyerLatitude == null || group.buyerLongitude == null) continue
+    if (group.buyerLatitude == null || group.buyerLongitude == null) {
+      continue
+    }
     const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
     const key = `${label}:${group.buyerLatitude.toFixed(4)}:${group.buyerLongitude.toFixed(4)}`
     const current = points.get(key) ?? {
@@ -159,7 +165,9 @@ export function buildSalesMap(
 }
 
 function toNumber(value: { toNumber(): number } | number | null | undefined) {
-  if (value == null) return 0
+  if (value == null) {
+    return 0
+  }
   return typeof value === 'number' ? value : value.toNumber()
 }
 

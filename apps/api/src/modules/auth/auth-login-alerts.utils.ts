@@ -3,7 +3,6 @@ import type { RequestContext } from '../../common/utils/request-context.util'
 import type { PrismaService } from '../../database/prisma.service'
 import type { MailerService } from '../mailer/mailer.service'
 import type { AuditLogService } from '../monitoring/audit-log.service'
-import { AuditSeverity } from '@prisma/client'
 import { normalizeComparableValue, parseBoolean } from './auth-shared.util'
 
 export async function sendLoginAlertIfEnabled(

@@ -17,7 +17,7 @@ import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { FinanceService } from '../finance/finance.service'
 import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayload } from './products-combo.utils'
-import { validateImportRow, sanitizeImportRow, upsertImportRow } from './products-import.utils'
+import { validateImportRow, upsertImportRow } from './products-import.utils'
 import { buildProductUpdateData } from './products-update.utils'
 
 type UploadedCsvFile = {

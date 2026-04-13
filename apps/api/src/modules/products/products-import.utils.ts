@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common'
 import type { CurrencyCode } from '@prisma/client'
 import type { PrismaService } from '../../database/prisma.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'

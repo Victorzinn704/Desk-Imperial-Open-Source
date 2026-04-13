@@ -16,7 +16,6 @@ import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import {
-  toCashMovementRecord,
   toCashSessionRecord,
   toClosureRecord,
 } from './operations.types'
