@@ -1,11 +1,11 @@
 import { AuditSeverity } from '@prisma/client'
 import type { PrismaService } from '../../database/prisma.service'
-import { CacheService } from '../../common/services/cache.service'
+import type { CacheService } from '../../common/services/cache.service'
 import type { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsHelpersService } from './operations-helpers.service'
 import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { toComandaRecord } from './operations.types'
-import { buildOptionalOperationsSnapshot } from './operations-domain.utils'
+import { buildOptionalOperationsSnapshot, invalidateOperationsLiveCache } from './operations-domain.utils'
 
 export async function buildComandaResponse(
   helpers: OperationsHelpersService,
@@ -65,6 +65,5 @@ export function invalidateLiveSnapshotCache(
   workspaceOwnerUserId: string,
   businessDate: Date,
 ) {
-  const cacheKey = CacheService.operationsLiveKey(workspaceOwnerUserId, businessDate.toISOString(), false)
-  void cache.del(cacheKey)
+  invalidateOperationsLiveCache(cache, workspaceOwnerUserId, businessDate)
 }

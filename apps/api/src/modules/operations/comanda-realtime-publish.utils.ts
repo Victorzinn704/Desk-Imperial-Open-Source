@@ -209,3 +209,23 @@ export function buildKitchenItemRealtimeDelta(
     businessDate: formatBusinessDateKey(businessDate),
   } as const
 }
+
+export function buildKitchenItemRealtimeDeltas(
+  comanda: ComandaLike,
+  businessDate: Date,
+) {
+  return (comanda.items ?? [])
+    .filter(
+      (
+        item,
+      ): item is ComandaLike['items'][number] & {
+        id: string
+        productName: string
+        notes: string | null
+        kitchenStatus: KitchenItemStatus
+        kitchenQueuedAt: Date | string | null
+        kitchenReadyAt: Date | string | null
+      } => 'id' in item && 'productName' in item && 'kitchenStatus' in item && item.kitchenStatus != null,
+    )
+    .map((item) => buildKitchenItemRealtimeDelta(comanda, item, businessDate))
+}

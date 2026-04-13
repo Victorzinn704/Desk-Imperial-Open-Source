@@ -10,6 +10,8 @@ export async function resolveMesaSelection(
   tableLabel: string,
   mesaId?: string | null,
   currentComandaId?: string,
+  assertAvailability: (mesaId: string, currentComandaId?: string) => Promise<void> = (id, currentId) =>
+    assertMesaAvailability(prisma, id, currentId),
 ) {
   if (mesaId) {
     const mesa = await prisma.mesa.findUnique({
@@ -27,7 +29,7 @@ export async function resolveMesaSelection(
     }
 
     await helpers.assertOpenTableAvailability(prisma, workspaceOwnerUserId, mesa.label, currentComandaId)
-    await assertMesaAvailability(prisma, mesa.id, currentComandaId)
+    await assertAvailability(mesa.id, currentComandaId)
 
     return {
       mesaId: mesa.id,
@@ -60,7 +62,7 @@ export async function resolveMesaSelection(
   )
 
   if (resolvedMesaId) {
-    await assertMesaAvailability(prisma, resolvedMesaId, currentComandaId)
+    await assertAvailability(resolvedMesaId, currentComandaId)
   }
 
   return {
@@ -69,7 +71,7 @@ export async function resolveMesaSelection(
   }
 }
 
-async function assertMesaAvailability(prisma: PrismaService, mesaId: string, currentComandaId?: string) {
+export async function assertMesaAvailability(prisma: PrismaService, mesaId: string, currentComandaId?: string) {
   const occupiedComanda = await prisma.comanda.findFirst({
     where: {
       mesaId,

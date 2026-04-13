@@ -535,7 +535,7 @@ describe('OwnerMobileShell', () => {
 
     await user.click(screen.getByTestId('nav-comandas'))
     await user.click(await screen.findByText('Mesa 2'))
-    await user.click(await screen.findByRole('button', { name: /fechar pedido/i }))
+    await user.click(await screen.findByRole('button', { name: /^fechar$/i }))
 
     await waitFor(() => {
       expect(api.closeComanda).toHaveBeenCalledWith(

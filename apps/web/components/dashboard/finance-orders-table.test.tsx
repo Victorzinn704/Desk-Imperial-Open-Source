@@ -9,8 +9,9 @@ type RecentOrder = FinanceSummaryResponse['recentOrders'][number]
 describe('FinanceOrdersTable', () => {
   let createObjectURLMock: ReturnType<typeof vi.fn>
   let revokeObjectURLMock: ReturnType<typeof vi.fn>
-  let removeMock: ReturnType<typeof vi.fn>
-  let clickMock: ReturnType<typeof vi.fn>
+  let appendMock: ReturnType<typeof vi.fn<(...nodes: (string | Node)[]) => void>>
+  let removeMock: ReturnType<typeof vi.fn<() => void>>
+  let clickMock: ReturnType<typeof vi.fn<() => void>>
 
   beforeEach(() => {
     createObjectURLMock = vi.fn().mockReturnValue('blob:finance-orders')
@@ -24,9 +25,9 @@ describe('FinanceOrdersTable', () => {
       revokeObjectURL: revokeObjectURLMock,
     })
 
-    vi.spyOn(document.body, 'append').mockImplementation(() => {})
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
-    vi.spyOn(Element.prototype, 'remove').mockImplementation(() => {})
+    vi.spyOn(document.body, 'append').mockImplementation(appendMock)
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clickMock)
+    vi.spyOn(Element.prototype, 'remove').mockImplementation(removeMock)
   })
 
   afterEach(() => {
@@ -69,6 +70,7 @@ describe('FinanceOrdersTable', () => {
 
     expect(clickMock).toHaveBeenCalledTimes(1)
     expect(removeMock).toHaveBeenCalledTimes(1)
+    expect(appendMock).toHaveBeenCalledTimes(1)
     expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:finance-orders')
   })
 })

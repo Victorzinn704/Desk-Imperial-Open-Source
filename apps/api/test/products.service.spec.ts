@@ -28,6 +28,7 @@ import type { FinanceService } from '../src/modules/finance/finance.service'
 import type { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
 import type { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
 import type { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
+import { buildComboItemsPayload } from '../src/modules/products/products-combo.utils'
 import * as productsImportUtil from '../src/modules/products/products-import.util'
 import { makeAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
@@ -1199,37 +1200,17 @@ describe('ProductsService', () => {
   })
 
   describe('combo internals', () => {
-    type ComboPayloadInput = {
-      productId: string
-      quantityPackages: number
-      quantityUnits: number
-    }
-
-    const getBuildComboItemsPayload = () => {
-      const internals = productsService as unknown as {
-        buildComboItemsPayload: (
-          transaction: unknown,
-          workspaceUserId: string,
-          comboProductId: string,
-          normalizedItems: ComboPayloadInput[],
-        ) => Promise<unknown>
-      }
-
-      return internals.buildComboItemsPayload
-    }
-
     it('deve rejeitar payload interno de combo vazio', async () => {
-      const buildComboItemsPayload = getBuildComboItemsPayload()
-
-      await expect(buildComboItemsPayload(mockPrisma, 'user-1', 'combo-1', [])).rejects.toThrow(BadRequestException)
+      await expect(buildComboItemsPayload(mockPrisma as never, 'user-1', 'combo-1', [])).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('deve rejeitar payload interno com total de unidades <= 0', async () => {
-      const buildComboItemsPayload = getBuildComboItemsPayload()
       mockPrisma.product.findMany.mockResolvedValue([{ id: 'component-1', unitsPerPackage: 6 }])
 
       await expect(
-        buildComboItemsPayload(mockPrisma, 'user-1', 'combo-1', [
+        buildComboItemsPayload(mockPrisma as never, 'user-1', 'combo-1', [
           {
             productId: 'component-1',
             quantityPackages: 0,

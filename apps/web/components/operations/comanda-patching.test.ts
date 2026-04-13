@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { applyRealtimeEnvelope } from './use-operations-realtime'
 import {
   comanda, comandaItem, kitchenItem, kitchenSnapshot, liveSnapshot,
-  createQueryClientMock, qc, type QC,
+  createQueryClientMock, qc,
 } from './__fixtures__/operations-realtime.fixtures'
 
 // ---------------------------------------------------------------------------

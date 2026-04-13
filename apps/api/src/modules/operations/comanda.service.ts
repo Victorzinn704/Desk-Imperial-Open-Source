@@ -29,9 +29,10 @@ import {
   propagateKitchenStatusToComanda,
   takeMatchingKitchenState,
 } from './comanda-kitchen.utils'
-import { resolveMesaSelection } from './comanda-mesa.utils'
 import { buildComandaResponse, checkLowStockAfterClose, invalidateLiveSnapshotCache } from './comanda-response.utils'
 import {
+  buildKitchenItemRealtimeDelta,
+  buildKitchenItemRealtimeDeltas,
   publishComandaClosed,
   publishComandaOpened,
   publishComandaUpdated,
@@ -39,6 +40,7 @@ import {
   publishKitchenItemUpdated,
 } from './comanda-realtime-publish.utils'
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
+import { assertMesaAvailability, resolveMesaSelection } from './comanda-mesa.utils'
 import {
   buildCashClosurePayload,
   isOpenComandaStatus,
@@ -58,6 +60,85 @@ export class ComandaService {
     @Inject(OperationsHelpersService) private readonly helpers: OperationsHelpersService,
     @Optional() private readonly financeService?: FinanceService,
   ) {}
+
+  private resolveMesaSelection(
+    workspaceOwnerUserId: string,
+    tableLabel: string,
+    mesaId?: string | null,
+    currentComandaId?: string,
+  ) {
+    return resolveMesaSelection(
+      this.prisma,
+      this.helpers,
+      workspaceOwnerUserId,
+      tableLabel,
+      mesaId,
+      currentComandaId,
+      (resolvedMesaId, resolvedCurrentComandaId) =>
+        this.assertMesaAvailability(resolvedMesaId, resolvedCurrentComandaId),
+    )
+  }
+
+  private assertMesaAvailability(mesaId: string, currentComandaId?: string) {
+    return assertMesaAvailability(this.prisma, mesaId, currentComandaId)
+  }
+
+  private takeMatchingKitchenState(...args: Parameters<typeof takeMatchingKitchenState>) {
+    return takeMatchingKitchenState(...args)
+  }
+
+  private buildKitchenItemRealtimeDelta(...args: Parameters<typeof buildKitchenItemRealtimeDelta>) {
+    return buildKitchenItemRealtimeDelta(...args)
+  }
+
+  private buildKitchenItemRealtimeDeltas(...args: Parameters<typeof buildKitchenItemRealtimeDeltas>) {
+    return buildKitchenItemRealtimeDeltas(...args)
+  }
+
+  private publishComandaOpenedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaOpened>[2],
+    businessDate: Date,
+  ) {
+    publishComandaOpened(this.operationsRealtimeService, auth, comanda, businessDate)
+  }
+
+  private publishComandaUpdatedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaUpdated>[2],
+    businessDate: Date,
+    options?: Parameters<typeof publishComandaUpdated>[4],
+  ) {
+    publishComandaUpdated(this.operationsRealtimeService, auth, comanda, businessDate, options)
+  }
+
+  private publishComandaCloseRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaClosed>[2],
+    refreshedSession: Parameters<typeof publishComandaClosed>[3],
+    closure: Parameters<typeof publishComandaClosed>[4],
+    businessDate: Date,
+  ) {
+    publishComandaClosed(this.operationsRealtimeService, auth, comanda, refreshedSession, closure, businessDate)
+  }
+
+  private publishKitchenItemQueuedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishKitchenItemQueued>[2],
+    item: Parameters<typeof publishKitchenItemQueued>[3],
+    businessDate: Date,
+  ) {
+    publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, item, businessDate)
+  }
+
+  private publishKitchenItemUpdatedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishKitchenItemUpdated>[2],
+    item: Parameters<typeof publishKitchenItemUpdated>[3],
+    businessDate: Date,
+  ) {
+    publishKitchenItemUpdated(this.operationsRealtimeService, auth, comanda, item, businessDate)
+  }
 
   private refreshFinanceSummary(workspaceOwnerUserId: string) {
     if (this.financeService) {
@@ -137,7 +218,7 @@ export class ComandaService {
     )
     const { currentEmployeeId, cashSessionId, businessDate } = sessionContext
 
-    const mesaSelection = await resolveMesaSelection(this.prisma, this.helpers, workspaceOwnerUserId, tableLabel, dto.mesaId)
+    const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId)
     const resolvedMesaId = mesaSelection.mesaId
     const resolvedTableLabel = mesaSelection.tableLabel
 
@@ -260,11 +341,11 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaOpened(this.operationsRealtimeService, auth, comanda, businessDate)
+    this.publishComandaOpenedRealtime(auth, comanda, businessDate)
 
     for (const kitchenItem of kitchenItems) {
       if (kitchenItem.kitchenStatus === KitchenItemStatus.QUEUED && kitchenItem.kitchenQueuedAt) {
-        publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, kitchenItem, businessDate)
+        this.publishKitchenItemQueuedRealtime(auth, comanda, kitchenItem, businessDate)
       }
     }
 
@@ -384,10 +465,10 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
 
     if (requiresKitchen && kitchenQueuedAt) {
-      publishKitchenItemQueued(this.operationsRealtimeService, auth, refreshedComanda, item, businessDate)
+      this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
     }
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
@@ -522,14 +603,14 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate, {
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
-      kitchenItems: [],
+      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
 
     for (const item of createdItems) {
       if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
-        publishKitchenItemQueued(this.operationsRealtimeService, auth, refreshedComanda, item, businessDate)
+        this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
       }
     }
 
@@ -583,7 +664,7 @@ export class ComandaService {
       throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
     }
 
-    const mesaSelection = await resolveMesaSelection(this.prisma, this.helpers, workspaceOwnerUserId, tableLabel, dto.mesaId, comanda.id)
+    const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId, comanda.id)
     const resolvedMesaId = mesaSelection.mesaId
     const resolvedTableLabel = mesaSelection.tableLabel
 
@@ -621,7 +702,7 @@ export class ComandaService {
           data: draftItems.map((item) => {
             const product = item.productId ? productMap.get(item.productId) : undefined
             const needsKitchen = product ? product.requiresKitchen || isKitchenCategory(product.category) : false
-            const preservedKitchenState = takeMatchingKitchenState(remainingExistingItems, item, needsKitchen, now)
+            const preservedKitchenState = this.takeMatchingKitchenState(remainingExistingItems, item, needsKitchen, now)
             return {
               comandaId: comanda.id,
               productId: item.productId,
@@ -665,9 +746,9 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate, {
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
-      kitchenItems: [],
+      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
     })
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
@@ -763,7 +844,7 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
@@ -844,7 +925,7 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     if (closure) {
       this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     }
@@ -932,8 +1013,8 @@ export class ComandaService {
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
 
     if (refreshedComanda) {
-      publishKitchenItemUpdated(this.operationsRealtimeService, auth, refreshedComanda, updatedItem, businessDate)
-      publishComandaUpdated(this.operationsRealtimeService, auth, refreshedComanda, businessDate)
+      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
+      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
     }
 
     return { itemId, status: dto.status }
@@ -1036,8 +1117,7 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishComandaClosed(
-      this.operationsRealtimeService,
+    this.publishComandaCloseRealtime(
       auth,
       refreshedComanda,
       refreshedSession,

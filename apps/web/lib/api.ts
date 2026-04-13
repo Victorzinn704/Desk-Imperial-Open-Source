@@ -22,6 +22,21 @@ export {
   updateProfile,
 } from './api-auth'
 
+export type {
+  AuthResponse,
+  AuthUser,
+  CookiePreferences,
+  DemoLoginPayload,
+  EvaluationAccess,
+  ForgotPasswordPayload,
+  LoginPayload,
+  ProfilePayload,
+  RegisterPayload,
+  ResetPasswordPayload,
+  SimpleMessageResponse,
+  VerificationChallengeResponse,
+} from './api-auth'
+
 export {
   fetchProducts,
   createProduct,
@@ -31,6 +46,8 @@ export {
   deleteProductPermanently,
   importProducts,
 } from './api-products'
+
+export type { ProductPayload } from './api-products'
 
 export { fetchFinanceSummary, fetchPillars, fetchMarketInsight } from './api-finance'
 
@@ -61,6 +78,17 @@ export {
   type UpdateMesaInput,
 } from './api-operations'
 
+export type {
+  AddComandaItemPayload,
+  CloseCashClosurePayload,
+  CloseCashSessionPayload,
+  CloseComandaPayload,
+  ComandaDraftItemPayload,
+  CreateCashMovementPayload,
+  OpenCashSessionPayload,
+  OperationsLiveOptions,
+} from './api-operations'
+
 export {
   fetchEmployees,
   createEmployee,
@@ -68,6 +96,8 @@ export {
   archiveEmployee,
   restoreEmployee,
 } from './api-employees'
+
+export type { EmployeePayload, EmployeeRecord, EmployeesResponse, UpdateEmployeePayload } from './api-employees'
 
 export {
   lookupPostalCode,
@@ -81,8 +111,13 @@ export {
   fetchLastLogins,
 } from './api-misc'
 
-// Re-export types from their source modules
-export type { AuthUser, AuthResponse, LoginPayload } from './api-auth'
-export type { EmployeeRecord } from './api-employees'
-export type { ActivityFeedEntry, CookiePreferencePayload } from './api-misc'
-export type { CookiePreferences } from './api-core'
+export type {
+  ActivityFeedEntry,
+  ConsentDocument,
+  ConsentOverview,
+  CookiePreferencePayload,
+  FetchOrdersOptions,
+  LastLoginEntry,
+  OrderPayload,
+  PostalCodeLookupResponse,
+} from './api-misc'

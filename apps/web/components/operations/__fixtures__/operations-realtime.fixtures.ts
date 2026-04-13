@@ -105,8 +105,12 @@ export function createQueryClientMock(
     getKitchenSnapshot: () => curKitchen,
     getSummarySnapshot: () => curSummary,
     getQueryData: vi.fn((qk: readonly unknown[]) => {
-      if (curKitchen && qk.length === OPERATIONS_KITCHEN_QUERY_KEY.length && qk.every((v, i) => v === OPERATIONS_KITCHEN_QUERY_KEY[i])) return curKitchen
-      if (curSummary && qk.length === OPERATIONS_SUMMARY_QUERY_KEY.length && qk.every((v, i) => v === OPERATIONS_SUMMARY_QUERY_KEY[i])) return curSummary
+      if (curKitchen && qk.length === OPERATIONS_KITCHEN_QUERY_KEY.length && qk.every((v, i) => v === OPERATIONS_KITCHEN_QUERY_KEY[i])) {
+        return curKitchen
+      }
+      if (curSummary && qk.length === OPERATIONS_SUMMARY_QUERY_KEY.length && qk.every((v, i) => v === OPERATIONS_SUMMARY_QUERY_KEY[i])) {
+        return curSummary
+      }
       return null
     }),
     setQueryData: vi.fn((qk: readonly unknown[], updater: unknown) => {

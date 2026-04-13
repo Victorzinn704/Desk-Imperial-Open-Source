@@ -410,7 +410,7 @@ describe('StaffMobileShell', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/Comandas ativas/i)).toBeInTheDocument()
+      expect(screen.getByText(/Ativas/i)).toBeInTheDocument()
     })
   })
 

@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common'
+import { ForbiddenException, Injectable, Optional } from '@nestjs/common'
 import { trace } from '@opentelemetry/api'
 import { $Enums, CashSessionStatus, KitchenItemStatus, type Prisma } from '@prisma/client'
 import { CacheService } from '../../common/services/cache.service'
@@ -28,14 +28,13 @@ import {
   recordOperationsLiveTelemetry,
 } from '../../common/observability/business-telemetry.util'
 import { CurrencyService } from '../currency/currency.service'
+import type { AuthContext } from '../auth/auth.types'
 import {
   recalculateCashSession,
   recalculateComanda,
   syncCashClosure,
 } from './operations-cash.utils'
 import {
-  requireAuthorizedCashSession,
-  requireAuthorizedComanda,
   requireOwnedCashSession,
   requireOwnedComanda,
   requireOwnedEmployee,
@@ -167,19 +166,64 @@ export class OperationsHelpersService {
   recalculateCashSession = recalculateCashSession
   recalculateComanda = recalculateComanda
   syncCashClosure = syncCashClosure
-  requireAuthorizedCashSession = requireAuthorizedCashSession
   requireOwnedCashSession = requireOwnedCashSession
-  requireAuthorizedComanda = requireAuthorizedComanda
   requireOwnedComanda = requireOwnedComanda
   requireOwnedEmployee = requireOwnedEmployee
   resolveEmployeeForStaff = resolveEmployeeForStaff
   resolveComandaBusinessDate = resolveComandaBusinessDate
   resolveComandaDraftItems = resolveComandaDraftItems
   assertOpenTableAvailability = assertOpenTableAvailability
+  buildOperationsComandaWhere = buildOperationsComandaWhere
+  buildKitchenItemWhere = buildKitchenItemWhere
   assertBusinessDayOpen = (workspaceOwnerUserId: string, businessDate: Date) =>
     assertBusinessDayOpen(this.prisma, workspaceOwnerUserId, businessDate)
   ensureOrderForClosedComanda = (transaction: TransactionClient, workspaceOwnerUserId: string, comandaId: string) =>
     ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, comandaId, this.currencyService ?? null)
+
+  async requireAuthorizedCashSession(
+    transaction: PrismaService | TransactionClient,
+    workspaceOwnerUserId: string,
+    auth: AuthContext,
+    cashSessionId: string,
+  ) {
+    const session = await this.requireOwnedCashSession(transaction, workspaceOwnerUserId, cashSessionId, {
+      includeMovements: true,
+    })
+
+    if (auth.role === 'OWNER') {
+      return session
+    }
+
+    const employee = await this.resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth)
+
+    if (!employee || session.employeeId !== employee.id) {
+      throw new ForbiddenException('Seu acesso nao pode operar o caixa de outro funcionario.')
+    }
+
+    return session
+  }
+
+  async requireAuthorizedComanda(
+    transaction: PrismaService | TransactionClient,
+    workspaceOwnerUserId: string,
+    auth: AuthContext,
+    comandaId: string,
+    actorEmployee?: { id: string } | null,
+  ) {
+    const comanda = await this.requireOwnedComanda(transaction, workspaceOwnerUserId, comandaId)
+
+    if (auth.role === 'OWNER') {
+      return comanda
+    }
+
+    const employee = actorEmployee ?? (await this.resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth))
+
+    if (!employee || comanda.currentEmployeeId !== employee.id) {
+      throw new ForbiddenException('Seu acesso so pode operar mesas vinculadas ao seu atendimento.')
+    }
+
+    return comanda
+  }
 
   // ── Snapshot builders (need this.cache / this.prisma) ──
 
