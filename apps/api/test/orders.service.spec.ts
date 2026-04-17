@@ -18,7 +18,7 @@
  *   ✅ Admin PIN para descontos maiores
  */
 
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { BuyerType, CurrencyCode, OrderStatus } from '@prisma/client'
 import type { Request } from 'express'
 import { OrdersService } from '../src/modules/orders/orders.service'
@@ -714,7 +714,7 @@ describe('OrdersService', () => {
       )
     })
 
-    it('deve pular produtos sem productId ou com comandaId', async () => {
+    it('deve pular itens sem productId ao restaurar estoque', async () => {
       const order = makeOrder({
         status: OrderStatus.COMPLETED,
         items: [
@@ -735,6 +735,21 @@ describe('OrdersService', () => {
       await ordersService.cancelForUser(mockContext, 'order-1', mockRequest)
 
       expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(1)
+    })
+
+    it('deve bloquear cancelamento de pedido gerado por comanda', async () => {
+      const order = makeOrder({
+        status: OrderStatus.COMPLETED,
+        comandaId: 'comanda-1',
+      })
+      mockPrisma.order.findFirst.mockResolvedValue(order)
+
+      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow(ConflictException)
+      await expect(ordersService.cancelForUser(mockContext, 'order-1', mockRequest)).rejects.toThrow(
+        'Vendas geradas por comanda devem ser canceladas pelo fluxo de comanda.',
+      )
+      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled()
+      expect(mockPrisma.product.updateMany).not.toHaveBeenCalled()
     })
 
     it('deve registrar audit log de cancelamento', async () => {

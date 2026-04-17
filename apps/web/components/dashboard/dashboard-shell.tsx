@@ -351,13 +351,14 @@ export function DashboardWorkspaceHeader({
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/">
-              <Button size="lg" variant="ghost">
+            <Link className="w-full sm:w-auto" href="/">
+              <Button className="w-full sm:w-auto" size="lg" variant="ghost">
                 Ver site
                 <ArrowUpRight className="size-4" />
               </Button>
             </Link>
             <Button
+              className="w-full sm:w-auto"
               size="lg"
               variant={isTimelineOpen ? 'primary' : 'ghost'}
               onClick={() => setIsTimelineOpen(!isTimelineOpen)}
@@ -365,7 +366,7 @@ export function DashboardWorkspaceHeader({
               <Clock className="size-4" />
               Atividades
             </Button>
-            <SpotlightButton loading={isLoggingOut} onClick={logout}>
+            <SpotlightButton className="w-full sm:w-auto" loading={isLoggingOut} onClick={logout}>
               <LogOut className="size-4" />
               Encerrar sessão
             </SpotlightButton>
@@ -535,10 +536,10 @@ export function DashboardShell({
   // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
-    <main className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
       <div
-        className="workspace-shell lg:grid lg:h-full transition-all duration-300"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '64px minmax(0,1fr)' : '224px minmax(0,1fr)' }}
+        className="workspace-shell transition-all duration-300 lg:grid lg:h-full"
+        style={{ gridTemplateColumns: sidebarCollapsed ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
       >
         <DashboardSidebar
           activeSection={activeSection}
@@ -558,7 +559,7 @@ export function DashboardShell({
         />
 
         <div
-          className="workspace-shell__main relative flex flex-col h-screen overflow-hidden overflow-y-auto"
+          className="workspace-shell__main relative flex min-w-0 flex-col lg:h-[100svh] lg:min-h-0 lg:overflow-y-auto"
           ref={scrollRef}
           onScroll={onScroll}
         >
@@ -617,12 +618,12 @@ function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
 
 function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
       <div
         className="workspace-shell lg:grid lg:h-full"
-        style={{ gridTemplateColumns: compact ? '64px minmax(0,1fr)' : '224px minmax(0,1fr)' }}
+        style={{ gridTemplateColumns: compact ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
       >
-        <aside className="hidden lg:block lg:h-screen lg:overflow-hidden">
+        <aside className="hidden lg:block lg:h-[100svh] lg:overflow-hidden">
           <div className={`workspace-sidebar flex h-full flex-col gap-4 ${compact ? 'px-3 py-4' : 'px-4 py-5'}`}>
             <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
             <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
@@ -635,7 +636,7 @@ function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
           </div>
         </aside>
 
-        <div className="workspace-shell__main lg:h-screen lg:overflow-y-auto">
+        <div className="workspace-shell__main lg:h-[100svh] lg:overflow-y-auto">
           <div
             className={`mx-auto flex w-full max-w-[1720px] flex-col ${compact ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-6 xl:py-5' : 'gap-6 px-4 py-6 sm:px-6 lg:px-6 lg:py-6 xl:px-8 xl:py-8'}`}
           >

@@ -108,3 +108,33 @@ groups:
         annotations:
           summary: Possível estagnação de scrape no Prometheus
           description: Não houve coleta de samples nos últimos 10 minutos; revisar collectors/targets.
+
+      - alert: FinanceSummaryLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_finance_summary_duration.*_bucket"}[10m]))) > 1500
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta no resumo financeiro
+          description: O p95 do resumo financeiro ficou acima de 1500 ms por 15 minutos.
+
+      - alert: OperationsLiveLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_live_duration.*_bucket"}[10m]))) > 1200
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta na visao operacional ao vivo
+          description: O p95 do snapshot operacional ficou acima de 1200 ms por 15 minutos.
+
+      - alert: OperationsKitchenLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_kitchen_duration.*_bucket"}[10m]))) > 1000
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta na visao de cozinha
+          description: O p95 da visao de cozinha ficou acima de 1000 ms por 15 minutos.

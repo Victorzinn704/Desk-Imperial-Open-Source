@@ -20,6 +20,8 @@ const STORE_NAME = 'offline-actions'
 const SYNC_TAG = 'desk-imperial-drain'
 const TTL_MS = 10 * 60 * 1000 // 10 minutos
 
+let fallbackOfflineIdCounter = 0
+
 export type OfflineAction = {
   id: string
   type: string
@@ -115,13 +117,22 @@ async function registerSync(): Promise<void> {
   }
 }
 
+function generateOfflineActionId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `offline-${crypto.randomUUID()}`
+  }
+
+  fallbackOfflineIdCounter += 1
+  return `offline-${Date.now().toString(36)}-${fallbackOfflineIdCounter.toString(36)}`
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useOfflineQueue() {
   const enqueue = useCallback(async (action: Omit<OfflineAction, 'id' | 'enqueuedAt'>) => {
     const entry: OfflineAction = {
       ...action,
-      id: `offline-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: generateOfflineActionId(),
       enqueuedAt: Date.now(),
     }
     await idbPut(entry)

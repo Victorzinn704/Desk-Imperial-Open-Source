@@ -3,15 +3,38 @@
 import { useTheme } from 'next-themes'
 import { Moon, Sun } from 'lucide-react'
 
-export function ThemeToggleButton() {
+export function ThemeToggleButton({ compact = false }: Readonly<{ compact?: boolean }>) {
   const { resolvedTheme, setTheme } = useTheme()
 
   if (!resolvedTheme) {
-    return <div className="h-10 w-[132px] rounded-full border border-[var(--border)] bg-[var(--surface)]" />
+    return (
+      <div
+        className={
+          compact
+            ? 'size-10 rounded-xl border border-[var(--border)] bg-[var(--surface)]'
+            : 'h-10 w-[132px] rounded-full border border-[var(--border)] bg-[var(--surface)]'
+        }
+      />
+    )
   }
 
   const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
   const label = resolvedTheme === 'dark' ? 'Escuro' : 'Claro'
+
+  if (compact) {
+    return (
+      <button
+        aria-label={`Alternar para tema ${nextTheme === 'light' ? 'claro' : 'escuro'}`}
+        aria-pressed={resolvedTheme === 'dark'}
+        className="inline-flex size-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] shadow-[var(--shadow-panel)] transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-panel-strong)]"
+        title={`Tema ${label}`}
+        type="button"
+        onClick={() => setTheme(nextTheme)}
+      >
+        {resolvedTheme === 'dark' ? <Moon className="size-4" /> : <Sun className="size-4" />}
+      </button>
+    )
+  }
 
   return (
     <button

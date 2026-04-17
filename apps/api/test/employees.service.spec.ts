@@ -40,6 +40,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
   },
   user: {
+    upsert: jest.fn(),
     update: jest.fn(),
     findUnique: jest.fn(),
   },
@@ -105,6 +106,31 @@ beforeEach(() => {
   // Defaults
   mockCache.employeesKey.mockReturnValue('employees:list:owner-1')
   ;(argon2.hash as jest.Mock).mockResolvedValue('$argon2id$hashed')
+  mockPrisma.user.findUnique.mockResolvedValue({
+    id: 'owner-1',
+    companyName: 'Empresa Imperial',
+    companyStreetLine1: 'Rua A',
+    companyStreetNumber: '100',
+    companyAddressComplement: null,
+    companyDistrict: 'Centro',
+    companyCity: 'Sao Paulo',
+    companyState: 'SP',
+    companyPostalCode: '01000-000',
+    companyCountry: 'Brasil',
+    companyLatitude: -23.55,
+    companyLongitude: -46.63,
+    hasEmployees: true,
+    employeeCount: 1,
+    email: 'owner@empresa.com',
+    emailVerifiedAt: new Date('2026-01-01T00:00:00.000Z'),
+    preferredCurrency: 'BRL',
+    status: UserStatus.ACTIVE,
+    cookiePreference: { analytics: false, marketing: false },
+  })
+  mockPrisma.user.upsert.mockResolvedValue({
+    id: 'user-employee-1',
+    passwordHash: '$argon2id$hashed',
+  })
   mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
       user: mockPrisma.user,
@@ -179,7 +205,12 @@ describe('EmployeesService', () => {
     const mockContext = makeRequestContext()
 
     it('deve criar funcionário com credencial operacional no employee', async () => {
-      const createdEmployee = makeEmployee()
+      const createdEmployee = makeEmployee({
+        loginUserId: null,
+        loginUser: null,
+        employeeCode: '002',
+        displayName: 'Maria Funcionária',
+      })
 
       mockPrisma.employee.create.mockResolvedValue(createdEmployee)
 
@@ -205,6 +236,22 @@ describe('EmployeesService', () => {
           }),
         }),
       )
+      expect(mockPrisma.user.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            email: 'staff-employee-1@desk-imperial.local',
+          },
+          create: expect.objectContaining({
+            companyOwnerId: 'owner-1',
+            fullName: 'Maria Funcionária',
+            role: UserRole.STAFF,
+          }),
+        }),
+      )
+      expect(mockPrisma.employee.update).toHaveBeenCalledWith({
+        where: { id: 'employee-1' },
+        data: { loginUserId: 'user-employee-1' },
+      })
       expect(result.employee).toBeDefined()
     })
 

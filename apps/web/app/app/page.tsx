@@ -3,7 +3,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { fetchCurrentUser } from '@/lib/api'
+import { ApiError, fetchCurrentUser } from '@/lib/api'
+import { AuthShell } from '@/components/auth/auth-shell'
+import { VerifyEmailForm } from '@/components/auth/verify-email-form'
+import { Button } from '@/components/shared/button'
 
 /**
  * Página raiz /app — redireciona automaticamente para /app/staff ou /app/owner
@@ -21,16 +24,52 @@ export default function AppEntryPage() {
   })
 
   const user = sessionQuery.data?.user
+  const authError = sessionQuery.error instanceof ApiError ? sessionQuery.error : null
+  const isUnauthorized = authError?.status === 401
+  const hasSessionError = Boolean(authError && !isUnauthorized)
+  const isVerified = Boolean(user?.emailVerified)
+  const isStaff = user?.role === 'STAFF'
 
   useEffect(() => {
-    if (sessionQuery.isError) {
+    if (isUnauthorized) {
       router.replace('/login')
       return
     }
-    if (user) {
-      router.replace(user.role === 'STAFF' ? '/app/staff' : '/app/owner')
+    if (!hasSessionError && user && isVerified) {
+      router.replace(isStaff ? '/app/staff' : '/app/owner')
     }
-  }, [sessionQuery.isError, user, router])
+  }, [hasSessionError, isStaff, isUnauthorized, isVerified, router, user])
+
+  if (user && !isVerified) {
+    return (
+      <AuthShell
+        description="Precisamos confirmar o email da conta antes de liberar a navegação do portal."
+        eyebrow="Confirmação"
+        title="Valide seu acesso"
+      >
+        <VerifyEmailForm email={user.email} successRedirectTo="/app" />
+      </AuthShell>
+    )
+  }
+
+  if (hasSessionError && (!user || isVerified)) {
+    return (
+      <AuthShell
+        description="Houve uma falha temporária ao validar sua sessão. Tente novamente quando a conexão ou o serviço voltarem."
+        eyebrow="Sessão"
+        title="Não conseguimos carregar seu acesso"
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[rgba(212,115,115,0.22)] bg-[rgba(212,115,115,0.08)] px-4 py-3 text-sm leading-6 text-white/72">
+            {authError?.message ?? 'Erro inesperado ao carregar a sessão.'}
+          </div>
+          <Button fullWidth size="lg" type="button" variant="secondary" onClick={() => void sessionQuery.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </AuthShell>
+    )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">

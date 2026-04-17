@@ -6,6 +6,7 @@ import {
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
+  invalidateOperationsWorkspace,
 } from '@/lib/operations/operations-query'
 import { OPERATIONS_EVENTS, type OperationsRealtimeEnvelope, type RealtimeStatus, useOperationsSocket } from './hooks/use-operations-socket'
 import { applyRealtimeEnvelope, requiresKitchenRefresh, requiresSummaryRefresh } from '@/lib/operations/operations-realtime-patching'
@@ -23,6 +24,14 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
   const kitchenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const refreshBaseline = useCallback(() => {
+    void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeOrders: true,
+      includeFinance: true,
+    })
+    void queryClient.invalidateQueries({ queryKey: ['mesas'] })
+  }, [queryClient])
 
   const queueOperationsRefresh = useCallback(() => {
     if (operationsTimerRef.current) {clearTimeout(operationsTimerRef.current)}
@@ -88,7 +97,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
     [queryClient, queueCommercialRefresh, queueKitchenRefresh, queueOperationsRefresh, queueSummaryRefresh],
   )
 
-  const { status } = useOperationsSocket(enabled, handleEvent)
+  const { status } = useOperationsSocket(enabled, handleEvent, refreshBaseline)
 
   return { status }
 }

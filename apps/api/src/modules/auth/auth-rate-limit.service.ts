@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { CacheService } from '../../common/services/cache.service'
 
@@ -109,6 +109,8 @@ export class AuthRateLimitService {
   }
 
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
+    await this.ensureCacheReady()
+
     const redisKey = CacheService.ratelimitKey('auth', key)
     const entry = await this.cache.get<AttemptEntry>(redisKey)
 
@@ -132,6 +134,8 @@ export class AuthRateLimitService {
   }
 
   private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
+    await this.ensureCacheReady()
+
     const redisKey = CacheService.ratelimitKey('auth', key)
     const now = Date.now()
 
@@ -154,6 +158,22 @@ export class AuthRateLimitService {
 
     await this.cache.set(redisKey, updated, Math.max(ttlSeconds, 1))
     return updated
+  }
+
+  private async ensureCacheReady(): Promise<void> {
+    const isReady = this.cache.isReady
+
+    if (typeof isReady !== 'function') {
+      return
+    }
+
+    const ready = await isReady.call(this.cache)
+
+    if (ready) {
+      return
+    }
+
+    throw new ServiceUnavailableException('Serviço de cache indisponível para controle de tentativas. Tente novamente em instantes.')
   }
 
   private getLoginPolicy(): AttemptPolicy {

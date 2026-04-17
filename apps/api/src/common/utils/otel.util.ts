@@ -133,7 +133,7 @@ function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' 
     return ''
   }
 
-  const trimmed = raw.replace(/\/+$/, '')
+  const trimmed = trimTrailingSlashes(raw)
   const suffix = `/v1/${signal}`
 
   if (trimmed.endsWith(suffix)) {
@@ -141,6 +141,15 @@ function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' 
   }
 
   return `${trimmed}${suffix}`
+}
+
+function trimTrailingSlashes(value: string) {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '/') {
+    end -= 1
+  }
+
+  return end === value.length ? value : value.slice(0, end)
 }
 
 function parseOtlpHeaders(headers: string | undefined) {

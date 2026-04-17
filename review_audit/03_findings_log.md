@@ -1,295 +1,191 @@
-# Log Cumulativo de Achados — Desk Imperial
+# Log Cumulativo de Achados - Desk Imperial
 
-**Data:** 2026-04-10  
-**Critério:** apenas achados revalidados nesta rodada
+**Data:** 2026-04-14
+**Criterio:** somente achados revalidados no estado atual do repositorio, com separacao entre ativo, mitigado e risco estrutural
 
 ---
 
-## Resumo
+## Resumo por Prioridade Ativa
 
-| Prioridade | Qtde |
+| Prioridade | Qtde ativa |
 | --- | ---: |
-| `P0` | 3 |
+| `P0` | 0 |
 | `P1` | 8 |
-| `P2` | 6 |
-| `P3` | 2 |
+| `P2` | 4 |
 
 ---
 
-## P0 — Crítico / Imediato
+## Mitigados Nesta Rodada
 
-### AUD-001 — Build de produção do web está quebrado
+### AUD-302 - Hardening de Alertmanager no codigo versionado
 
-- **Domínio:** Frontend / Release
-- **Severidade:** Crítico
-- **Prioridade:** P0
-- **Classificação:** confirmado por execução
-- **Evidência:** `npm run build` falhou porque [apps/web/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/page.tsx:3) usa `dynamic(..., { ssr: false })` em Server Component; o mesmo erro derrubou `npm --workspace @partner/web run test:e2e:critical`
-- **Impacto:** bloqueia release do frontend
-- **Recomendação:** mover essa carga dinâmica para Client Component intermediário ou devolver a home para SSR
-- **Esforço:** baixo
-- **Confiança:** muito alta
+- **Status:** mitigado no repo; validacao sintetica de producao ainda pendente
+- **Evidencia:** `infra/oracle/ops/alertmanager/render-config.sh`, `infra/docker/observability/alertmanager/render-config.sh`, `infra/oracle/ops/compose.yaml`
+- **Leitura:** `ALERTMANAGER_ENV=production` agora exige `ALERTMANAGER_WEBHOOK_URL`
 
-### AUD-003 — Cancelamento de pedido pode restaurar estoque duas vezes sob concorrência
+### AUD-316 - `PATCH /auth/profile` blindado contra `STAFF`
 
-- **Domínio:** Backend / Integridade de dados
-- **Severidade:** Crítico
-- **Prioridade:** P0
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** relatório [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md); fluxo em [apps/api/src/modules/orders/orders.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/orders.service.ts:494) e [apps/api/src/modules/orders/orders.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/orders.service.ts:543)
-- **Impacto:** corrupção de estoque e divergência financeira
-- **Recomendação:** tornar cancelamento idempotente e revalidar status dentro da transação
-- **Esforço:** médio
-- **Confiança:** alta
+- **Status:** resolvido
+- **Evidencia:** `apps/api/src/modules/auth/auth.service.ts`, `apps/api/test/auth.service.session-and-recovery.spec.ts`
+- **Leitura:** `updateProfile()` passou a chamar `assertOwnerRole()`
 
-### AUD-004 — Segredos operacionais estão em texto puro no workspace
+### AUD-317 - Auditoria passou a distinguir ator real do owner
 
-- **Domínio:** Segurança / Infra
-- **Severidade:** Crítico
-- **Prioridade:** P0
-- **Classificação:** fato confirmado
-- **Evidência:** [.env](C:/Users/Desktop/Documents/desk-imperial/.env:11), [.env](C:/Users/Desktop/Documents/desk-imperial/.env:12), [infra/oracle/ops/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/ops/README.md:19), [infra/oracle/ops/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/ops/README.md:95)
-- **Impacto:** exposição direta de credenciais de banco, observabilidade, e-mail e tokens
-- **Recomendação:** mover para secret manager, apagar cópias plaintext e rotacionar imediatamente
-- **Esforço:** baixo-médio
-- **Confiança:** muito alta
+- **Status:** resolvido
+- **Evidencia:** `apps/api/src/modules/auth/auth-session.service.ts`, `apps/api/src/modules/auth/auth-shared.util.ts`, `apps/api/src/modules/monitoring/audit-log.service.ts`, `apps/api/test/audit-log.service.spec.ts`
+- **Leitura:** `actorUserId` agora flui pelo contexto de sessao e feed de atividade
 
----
+### AUD-319 - Cancelamento com comanda volta a restaurar estoque
 
-## P1 — Alto / Prioritário
+- **Status:** resolvido
+- **Evidencia:** `apps/api/src/modules/orders/orders.service.ts`, `apps/api/test/orders.service.spec.ts`
+- **Leitura:** restauracao de inventario deixou de depender de `order.comandaId` ser nulo
 
-### AUD-005 — `STAFF` arquivado pode continuar autenticado por cache de sessão
+### AUD-311 - Update de perfil/moeda invalida caches derivados
 
-- **Domínio:** Backend / Autorização
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md), [apps/api/src/modules/auth/auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1508), [apps/api/src/modules/employees/employees.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/employees/employees.service.ts:211)
-- **Impacto:** conta revogada pode operar por até o TTL do cache
-- **Recomendação:** revogar sessões e limpar `auth:session:*` ao desativar funcionário
-- **Esforço:** médio
-- **Confiança:** alta
+- **Status:** resolvido
+- **Evidencia:** `apps/api/src/modules/auth/auth.service.ts`, `apps/api/src/modules/auth/auth-session.service.ts`, `apps/web/components/dashboard/hooks/useDashboardMutations.ts`, `apps/api/test/auth.service.session-and-recovery.spec.ts`
+- **Leitura:** backend invalida caches do workspace e frontend invalida queries afetadas
 
-### AUD-006 — Dependências de runtime têm 8 vulnerabilidades conhecidas
+### AUD-321 - Persistencia offline do staff agora e aguardada
 
-- **Domínio:** Segurança / Supply chain
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** confirmado por execução
-- **Evidência:** `npm audit --omit=dev --json` retornou `8` vulnerabilidades de produção (`7 high`, `1 moderate`), incluindo `next`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/swagger`, `@nestjs/config` e `nodemailer`
-- **Impacto:** CVEs conhecidas permanecem em runtime
-- **Recomendação:** atualizar dependências de produção e rerodar build/testes críticos
-- **Esforço:** médio
-- **Confiança:** muito alta
+- **Status:** resolvido
+- **Evidencia:** `apps/web/components/staff-mobile/staff-mobile-shell.tsx`
+- **Leitura:** `enqueueOfflineItems()` passou a aguardar `enqueue()` antes de confirmar sucesso
 
-### AUD-007 — CSV export do financeiro aceita formula injection
+### AUD-323 - Reconnect agora forca baseline refresh
 
-- **Domínio:** Frontend / Segurança funcional
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** [apps/web/components/dashboard/finance-orders-table.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/finance-orders-table.tsx:44), [apps/web/components/dashboard/finance-orders-table.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/finance-orders-table.tsx:72), relatório [frontend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/frontend-reviewer.md)
-- **Impacto:** export para Excel/Sheets pode carregar fórmulas executáveis ou corromper dados
-- **Recomendação:** centralizar encoder CSV seguro com escape e prefixo para células de risco
-- **Esforço:** baixo
-- **Confiança:** alta
+- **Status:** resolvido
+- **Evidencia:** `apps/web/components/operations/hooks/use-operations-socket.ts`, `apps/web/components/operations/use-operations-realtime.ts`, `apps/web/components/staff-mobile/staff-mobile-shell.test.tsx`
+- **Leitura:** reconexao passou a invalidar estado de workspace antes de confiar no snapshot
 
-### AUD-008 — Backend E2E existe, mas não entra na CI
+### AUD-324 - Estados mobile deixaram de mascarar falha como vazio
 
-- **Domínio:** QA / CI
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** [apps/api/package.json](C:/Users/Desktop/Documents/desk-imperial/apps/api/package.json:17), [ci.yml](C:/Users/Desktop/Documents/desk-imperial/.github/workflows/ci.yml:73), relatório [qa-test-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/qa-test-reviewer.md)
-- **Impacto:** regressão de integração backend pode passar pelo merge sem gate funcional real
-- **Recomendação:** adicionar job de API E2E contra Postgres/Redis efêmeros
-- **Esforço:** médio
-- **Confiança:** alta
+- **Status:** resolvido
+- **Evidencia:** `apps/web/components/staff-mobile/mobile-table-grid.tsx`, `apps/web/components/staff-mobile/kitchen-orders-view.tsx`, `apps/web/components/staff-mobile/mobile-comanda-list.tsx`, `apps/web/components/owner-mobile/owner-comandas-view.tsx`
+- **Leitura:** loading/error/offline ganharam tratamento explicito
 
-### AUD-009 — Cobertura do web exclui áreas críticas e usa testes de “coverage boost”
+### AUD-318 / AUD-326 / AUD-327 - Mitigacoes secundarias aplicadas
 
-- **Domínio:** QA / Governança
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:19), [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:20), [apps/web/vitest.config.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/vitest.config.ts:39), [apps/api/test/auth.service.coverage-boost.spec.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/test/auth.service.coverage-boost.spec.ts:4)
-- **Impacto:** cobertura reportada superestima a proteção real
-- **Recomendação:** revisar exclusões, abandonar `all: false` no gate principal ou criar threshold por diretório crítico
-- **Esforço:** médio
-- **Confiança:** alta
-
-### AUD-010 — Rollback é fraco porque migração roda no boot e deploy força recriação
-
-- **Domínio:** Infra / Release engineering
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** [infra/scripts/oracle-builder-deploy.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-builder-deploy.ps1:264), [infra/oracle/docker/api.Dockerfile](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/docker/api.Dockerfile:69), [apps/api/package.json](C:/Users/Desktop/Documents/desk-imperial/apps/api/package.json:12), relatório [infra-devops-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/infra-devops-reviewer.md)
-- **Impacto:** migration ruim pode travar boot e tornar reversão lenta/manual
-- **Recomendação:** separar migração do boot e promover release por imagem/tag com rollback explícito
-- **Esforço:** médio-alto
-- **Confiança:** alta
-
-### AUD-011 — Backup/DR não está formalizado
-
-- **Domínio:** Infra / Continuidade
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** [infra/oracle/README.md](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/README.md:29), relatório [infra-devops-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/infra-devops-reviewer.md)
-- **Impacto:** aumenta severamente RTO/RPO
-- **Recomendação:** definir RPO/RTO, automatizar backup e testar restore
-- **Esforço:** médio
-- **Confiança:** alta
-
-### AUD-012 — SSH operacional e de deploy desabilita verificação de host
-
-- **Domínio:** Infra / Segurança
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** [infra/scripts/oracle-ops-tunnel.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-ops-tunnel.ps1:16), [infra/scripts/oracle-builder-deploy.ps1](C:/Users/Desktop/Documents/desk-imperial/infra/scripts/oracle-builder-deploy.ps1:25)
-- **Impacto:** enfraquece confiança no alvo do deploy e do túnel operacional
-- **Recomendação:** ativar `StrictHostKeyChecking=yes` e fixar fingerprints
-- **Esforço:** baixo
-- **Confiança:** alta
-
-### AUD-013 — Dados sensíveis ainda vazam em logs
-
-- **Domínio:** Segurança / Privacidade
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** `buyerDocument` existe no DTO de pedido em [create-order.dto.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/orders/dto/create-order.dto.ts:62), mas a redaction atual não cobre esse alias em [app.module.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/app.module.ts:79); fallback de e-mail loga OTP em [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:50), [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:69) e [mailer.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/mailer/mailer.service.ts:178)
-- **Impacto:** CPF/CNPJ e OTP podem parar em logs/observabilidade
-- **Recomendação:** redigir `buyerDocument`, proibir `EMAIL_PROVIDER=log` em produção e nunca registrar OTP em texto puro
-- **Esforço:** baixo
-- **Confiança:** alta
-
-### AUD-014 — Há ciclo explícito entre `auth`, `consent` e `geocoding`
-
-- **Domínio:** Arquitetura backend
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado
-- **Evidência:** relatório [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
-- **Impacto:** reduz independência dos contextos de identidade/onboarding
-- **Recomendação:** extrair onboarding e quebrar ciclo por eventos/serviços intermediários
-- **Esforço:** médio-alto
-- **Confiança:** alta
-
-### AUD-015 — `operations`, `products` e `finance` formam corredor de invalidação acoplado
-
-- **Domínio:** Arquitetura / Domínio
-- **Severidade:** Alto
-- **Prioridade:** P1
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** relatório [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
-- **Impacto:** blast radius grande para mudanças operacionais e financeiras
-- **Recomendação:** mover warming/invalidação para handlers de aplicação/eventos e reduzir acoplamento síncrono
-- **Esforço:** médio-alto
-- **Confiança:** alta
+- **Status:** resolvidos
+- **Evidencia:** `apps/api/src/modules/auth/auth-session.service.ts`, `apps/web/components/staff-mobile/mobile-comanda-list.tsx`, `apps/web/components/owner-mobile/owner-comandas-view.tsx`, `apps/web/lib/operations/operations-realtime-patching.ts`
+- **Leitura:** sessao cache revalida expiracao; `isBusy` protege acoes destrutivas; patch realtime nao subconta `openComandasCount`
 
 ---
 
-## P2 — Importante / Não urgente
+## P1 - Alto / Prioritario
 
-### AUD-016 — Mudança de moeda preferida não invalida caches monetários
+### AUD-301 - Visibilidade Sonar segue bloqueada e a cobertura web continua abaixo do gate
 
-- **Domínio:** Backend / Consistência funcional
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** [backend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/backend-reviewer.md), [apps/api/src/modules/auth/auth.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth.service.ts:1438), [apps/api/src/common/services/cache.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/services/cache.service.ts:128)
-- **Impacto:** UI pode exibir moeda/totais antigos até expirar TTL
-- **Recomendação:** incluir moeda nas chaves ou invalidar explicitamente todos os caches monetários no update de perfil
-- **Esforço:** baixo-médio
-- **Confiança:** alta
+- **Dominio:** Qualidade / Entrega
+- **Status:** ativo
+- **Classificacao:** fato confirmado + bloqueio de evidencia
+- **Evidencia:** `review_audit/102_quality_warning_map.md`, `apps/web/coverage/coverage-summary.json`, `npm run quality:warnings`, `Invoke-WebRequest http://localhost:9000/api/system/status`
+- **Detalhe objetivo:** Sonar local respondeu `fetch failed`; cobertura web atual ficou em `69.11%`; `npm run test:coverage` ainda falha no backend sem Redis real
+- **Impacto:** regressao pode voltar a entrar por superficies pouco cobertas e hotspots longos
+- **Recomendacao:** restaurar conectividade com o Sonar e atacar uncovered lines dominantes em `staff-mobile`, `owner-mobile`, `dashboard` e `operations`
+- **Confianca:** muito alta
 
-### AUD-017 — KPI semanal começa no domingo
+### AUD-304 - Metricas de negocio nao entram em dashboards provisionados
 
-- **Domínio:** Backend / Analytics
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado
-- **Evidência:** [apps/api/src/modules/finance/pillars.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/finance/pillars.service.ts:72), [apps/api/src/modules/finance/pillars.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/finance/pillars.service.ts:198)
-- **Impacto:** distorce leitura semanal para contexto comercial brasileiro
-- **Recomendação:** adotar semana ISO ou tornar configurável
-- **Esforço:** baixo
-- **Confiança:** alta
+- **Dominio:** Observabilidade de produto
+- **Status:** resolvido no repositorio, pendente validacao em ambiente
+- **Classificacao:** fato confirmado
+- **Evidencia:** `apps/api/src/common/observability/business-telemetry.util.ts`, `infra/docker/observability/grafana/dashboards/business-observability-overview.json`, `infra/oracle/ops/grafana/dashboards/business-observability-overview.json`
+- **Impacto:** a opacidade funcional caiu no baseline versionado; a efetividade real ainda depende de provisionamento no Grafana alvo
+- **Recomendacao:** validar o dashboard provisionado em runtime e ligar revisao operacional a ele
+- **Confianca:** alta
 
-### AUD-018 — CSRF por `Referer` aceita prefixo em vez de origem exata
+### AUD-305 - Regras de alerta focam infra, nao SLO funcional
 
-- **Domínio:** Segurança
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado
-- **Evidência:** [apps/api/src/modules/auth/guards/csrf.guard.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/guards/csrf.guard.ts:50), relatório [security-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/security-reviewer.md)
-- **Impacto:** enfraquece a defesa CSRF quando `Origin` está ausente
-- **Recomendação:** parsear e comparar origem normalizada, não prefixo
-- **Esforço:** baixo
-- **Confiança:** alta
+- **Dominio:** SRE / Operacao
+- **Status:** parcialmente mitigado
+- **Classificacao:** fato confirmado
+- **Evidencia:** `infra/docker/observability/prometheus/alert.rules.yml`, `infra/oracle/ops/prometheus/alert.rules.yml`, `infra/docker/observability/alertmanager/render-config.sh`, `infra/oracle/ops/alertmanager/render-config.sh`
+- **Impacto:** latencia funcional agora entrou no baseline, mas entrega real e alertas de erro/disponibilidade ainda nao estao validados
+- **Recomendacao:** validar entrega do Alertmanager e complementar a malha com alertas de erro/availability por dominio
+- **Confianca:** alta
 
-### AUD-019 — Rotas `/app` ainda resolvem autenticação e destino no cliente
+### AUD-308 - Cobertura padrao web exclui superficies operacionais criticas
 
-- **Domínio:** Frontend / UX / Performance
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado + inferência forte
-- **Evidência:** [apps/web/app/app/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/page.tsx:1), [apps/web/app/app/owner/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/owner/page.tsx:1), [apps/web/app/app/staff/page.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/app/app/staff/page.tsx:1)
-- **Impacto:** adiciona spinner/redirect pós-hidratação em superfícies operacionais
-- **Recomendação:** empurrar decisão de rota/autorização para server-side ou reduzir o número de passos client-only
-- **Esforço:** médio
-- **Confiança:** alta
+- **Dominio:** QA / Governanca de cobertura
+- **Status:** parcialmente mitigado
+- **Classificacao:** fato confirmado
+- **Evidencia:** `apps/web/vitest.config.ts`, `apps/web/package.json`, `apps/web/components/staff-mobile/staff-mobile-shell.test.tsx`, `apps/web/components/owner-mobile/owner-mobile-shell.test.tsx`, `apps/web/components/dashboard/hooks/useDashboardMutations.test.tsx`, `apps/web/coverage/coverage-summary.json`
+- **Impacto:** owner-mobile e realtime voltaram para a superficie medida, mas o total web ainda nao protege a operacao de forma suficiente
+- **Recomendacao:** subir a cobertura dos hotspots lideres de uncovered lines antes de endurecer o gate
+- **Confianca:** alta
 
-### AUD-020 — E2E do web quase não atravessa fluxos operacionais pós-login
+### AUD-309 - Criterio de release em docs segue desalinhado do pipeline real
 
-- **Domínio:** QA / Produto
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado
-- **Evidência:** relatório [qa-test-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/qa-test-reviewer.md)
-- **Impacto:** regressões em PDV, operations e mobile podem passar com CI verde
-- **Recomendação:** adicionar ao menos um fluxo E2E owner/staff/PDV/operations
-- **Esforço:** médio
-- **Confiança:** alta
+- **Dominio:** Governanca / Processo
+- **Status:** resolvido
+- **Classificacao:** fato confirmado
+- **Evidencia:** `docs/release/release-criteria-2026-03-28.md`, `.github/workflows/ci.yml`
+- **Impacto:** o drift documental caiu; o risco residual ficou concentrado em executar o checklist publicado
+- **Recomendacao:** manter este documento como espelho operacional do workflow `CI`
+- **Confianca:** alta
 
-### AUD-021 — Documentação principal tem drift material
+### AUD-310 - Ausencia de runbook formal de staging/incidente
 
-- **Domínio:** Documentação / DX
-- **Severidade:** Médio
-- **Prioridade:** P2
-- **Classificação:** fato confirmado
-- **Evidência:** [README.md](C:/Users/Desktop/Documents/desk-imperial/README.md:200) e [docs/testing/testing-guide.md](C:/Users/Desktop/Documents/desk-imperial/docs/testing/testing-guide.md:84) ainda descrevem build como gate da CI; [docs/product/requirements.md](C:/Users/Desktop/Documents/desk-imperial/docs/product/requirements.md:237) marca “Deploy contínuo via Railway com zero downtime” como implementado; [README.md](C:/Users/Desktop/Documents/desk-imperial/README.md:214) descreve pacotes inexistentes
-- **Impacto:** onboarding e decisão técnica partem de premissas erradas
-- **Recomendação:** alinhar README/docs/CLAUDE ao runtime e à pipeline reais
-- **Esforço:** médio
-- **Confiança:** muito alta
+- **Dominio:** Operacao / Continuidade
+- **Status:** resolvido no baseline documental
+- **Classificacao:** fato confirmado
+- **Evidencia:** `docs/operations/staging-incident-rollback-runbook.md`, `docs/INDEX.md`
+- **Impacto:** a resposta minima deixou de depender so de memoria tacita; backup/restore ainda seguem como backlog proprio
+- **Recomendacao:** exercitar o runbook em staging e complementar com restore testado
+- **Confianca:** alta
+
+### AUD-314 - Ciclo `auth`/`consent`/`geocoding` permanece ativo
+
+- **Dominio:** Arquitetura backend
+- **Classificacao:** fato confirmado
+- **Evidencia:** `apps/api/src/modules/auth/auth.module.ts`, `apps/api/src/modules/consent/consent.module.ts`, `apps/api/src/modules/geocoding/geocoding.module.ts`
+- **Impacto:** onboarding continua com boundary fragil e alto custo de mudanca
+- **Recomendacao:** extrair workflow de onboarding e zerar `forwardRef` cruzado
+- **Confianca:** alta
+
+### AUD-315 - Modelo de outbox offline segue inconsistente entre owner e staff
+
+- **Dominio:** Frontend / Confiabilidade operacional
+- **Classificacao:** fato confirmado + inferencia forte
+- **Evidencia:** `apps/web/components/owner-mobile/owner-mobile-shell.tsx`, `apps/web/components/shared/use-offline-queue.ts`, `apps/web/components/staff-mobile/staff-mobile-shell.tsx`
+- **Impacto:** owner continua sem um contrato offline equivalente ao staff
+- **Recomendacao:** decidir entre unificar outbox offline para owner e staff ou explicitar que owner nao opera offline
+- **Confianca:** alta
 
 ---
 
-## P3 — Evolutivo
+## P2 - Importante / Nao urgente
 
-### AUD-022 — `DashboardShell` e `use-operations-realtime` concentram coordenação demais
+### AUD-312 - Backup/DR ainda nao esta formalizado no runtime Oracle
 
-- **Domínio:** Frontend / Arquitetura
-- **Severidade:** Baixo-Médio
-- **Prioridade:** P3
-- **Classificação:** inferência forte
-- **Evidência:** [apps/web/components/dashboard/dashboard-shell.tsx](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/dashboard/dashboard-shell.tsx), [apps/web/components/operations/use-operations-realtime.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/components/operations/use-operations-realtime.ts), relatórios [frontend-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/frontend-reviewer.md) e [architecture-reviewer.md](C:/Users/Desktop/Documents/desk-imperial/review_audit/agents/architecture-reviewer.md)
-- **Impacto:** reduz testabilidade e aumenta custo de mudança
-- **Recomendação:** quebrar shell por responsabilidade e decompor patching de realtime
-- **Esforço:** médio
-- **Confiança:** alta
+- **Dominio:** Infra / Resiliencia
+- **Classificacao:** fato confirmado
+- **Evidencia:** `infra/oracle/README.md`
 
-### AUD-023 — Observabilidade existe, mas alertas e correlação ainda são parciais
+### AUD-313 - Baseline de warnings segue alto e concentrado
 
-- **Domínio:** Observabilidade / SRE
-- **Severidade:** Baixo-Médio
-- **Prioridade:** P3
-- **Classificação:** fato confirmado + risco potencial
-- **Evidência:** [infra/docker/docker-compose.observability.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/docker-compose.observability.yml), [infra/docker/observability/prometheus/alert.rules.yml](C:/Users/Desktop/Documents/desk-imperial/infra/docker/observability/prometheus/alert.rules.yml), [apps/web/lib/observability/faro.ts](C:/Users/Desktop/Documents/desk-imperial/apps/web/lib/observability/faro.ts), [apps/api/src/common/utils/otel.util.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/utils/otel.util.ts)
-- **Impacto:** boa detecção de indisponibilidade, mas cobertura incompleta para incidentes de produto/segurança
-- **Recomendação:** definir fluxo oficial browser → API → logs → audit log e ampliar alertas para SLO/security/business
-- **Esforço:** médio
-- **Confiança:** média-alta
+- **Dominio:** Manutenibilidade
+- **Classificacao:** confirmado por execucao
+- **Evidencia:** `review_audit/102_quality_warning_map.md`, saida de `npm run lint`
+
+### AUD-325 - Deteccao de mobile ainda causa fetch duplo e hydration swap
+
+- **Dominio:** Frontend / Performance operacional
+- **Classificacao:** fato confirmado + inferencia forte
+- **Evidencia:** `apps/web/components/dashboard/hooks/useMobileDetection.ts`, `apps/web/components/dashboard/dashboard-shell.tsx`
+
+### AUD-328 - Hotspots estruturais concentram shell, estado e regra
+
+- **Dominio:** Arquitetura / Manutenibilidade
+- **Classificacao:** fato confirmado + inferencia forte
+- **Evidencia:** `apps/api/src/modules/operations/comanda.service.ts`, `apps/web/components/dashboard/dashboard-shell.tsx`, `apps/web/components/staff-mobile/staff-mobile-shell.tsx`, `apps/web/components/owner-mobile/owner-mobile-shell.tsx`
+
+---
+
+## Fechamento
+
+1. o projeto saiu de um estado de risco funcional critico para um estado de debito estrutural e operacional ainda alto, mas controlavel;
+2. os gates locais principais voltaram a refletir um branch executavel;
+3. a proxima onda de melhoria deve atacar coverage real, observabilidade funcional, runbooks e hotspots longos.

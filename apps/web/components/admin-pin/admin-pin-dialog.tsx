@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LockKeyhole, ShieldAlert, X } from 'lucide-react'
 import { rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
+import { getLastDigit, parseRetryAfterSeconds } from '@/lib/pin-input'
 
 type AdminPinDialogProps = Readonly<{
   title?: string
@@ -32,7 +33,9 @@ export function AdminPinDialog({
 
   // Countdown interval when blocked by server (423)
   useEffect(() => {
-    if (!isBlocked || secondsLeft <= 0) {return}
+    if (!isBlocked || secondsLeft <= 0) {
+      return
+    }
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1
@@ -54,7 +57,7 @@ export function AdminPinDialog({
   }, [isBlocked, ref0])
 
   function handleChange(idx: number, value: string) {
-    const digit = value.replaceAll(/\D/g, '').slice(-1)
+    const digit = getLastDigit(value)
     const next = [...digits]
     next[idx] = digit
     setDigits(next)
@@ -88,8 +91,7 @@ export function AdminPinDialog({
         if (err.status === 423) {
           // Rate-limited — server sends retry-after in seconds via message or
           // we fall back to a default of 300 seconds (5 minutes).
-          const match = err.message.match(/(\d+)\s*s/i)
-          const secs = match ? Number(match[1]) : 300
+          const secs = parseRetryAfterSeconds(err.message, 300)
           setIsBlocked(true)
           setSecondsLeft(secs)
           setError('')

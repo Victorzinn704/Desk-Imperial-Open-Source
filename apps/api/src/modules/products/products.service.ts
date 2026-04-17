@@ -5,6 +5,7 @@ import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService, type ExchangeRatesSnapshot } from '../currency/currency.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
@@ -213,7 +214,7 @@ export class ProductsService {
       const snapshot = await this.currencyService.getSnapshot()
 
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'product.created',
         resource: 'product',
         resourceId: product.id,
@@ -297,7 +298,7 @@ export class ProductsService {
       const snapshot = await this.currencyService.getSnapshot()
 
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'product.updated',
         resource: 'product',
         resourceId: product.id,
@@ -370,7 +371,7 @@ export class ProductsService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'product.deleted',
       resource: 'product',
       resourceId: existingProduct.id,
@@ -424,7 +425,7 @@ export class ProductsService {
     }
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'product.imported',
       resource: 'product',
       metadata: {
@@ -468,7 +469,7 @@ export class ProductsService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: active ? 'product.restored' : 'product.archived',
       resource: 'product',
       resourceId: product.id,

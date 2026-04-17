@@ -488,7 +488,7 @@ function closeComandaFromEvent(snapshot: OperationsLiveResponse, payload: Record
     return patchClosureOpenComandasCount(nextSnapshot, -1)
   }
 
-  return existing ? nextSnapshot : patchClosureOpenComandasCount(nextSnapshot, -1)
+  return nextSnapshot
 }
 
 function buildComandaFromPayload(

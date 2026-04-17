@@ -4,6 +4,12 @@ set -eu
 OUTPUT_PATH="${1:-/tmp/alertmanager.generated.yml}"
 WEBHOOK_URL="${ALERTMANAGER_WEBHOOK_URL:-${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-}}"
 ALERTMANAGER_BIN="${ALERTMANAGER_BIN:-/bin/alertmanager}"
+ALERTMANAGER_ENV="${ALERTMANAGER_ENV:-development}"
+
+if [ "$ALERTMANAGER_ENV" = "production" ] && [ -z "$WEBHOOK_URL" ]; then
+  echo "ERROR: ALERTMANAGER_WEBHOOK_URL is required when ALERTMANAGER_ENV=production." >&2
+  exit 1
+fi
 
 ROUTE_RECEIVER="default"
 WEBHOOK_BLOCK=""
@@ -23,7 +29,7 @@ global:
 
 route:
   receiver: $ROUTE_RECEIVER
-  group_by: ['alertname', 'severity']
+  group_by: ['alertname', 'severity', 'domain']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 2h

@@ -1,0 +1,248 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - heading "Salão" [level=1] [ref=e125]
+              - paragraph [ref=e126]: Mapa de mesas em tempo real — 14 mesas
+            - generic [ref=e127]:
+              - button [ref=e128] [cursor=pointer]:
+                - img [ref=e129]
+              - button [ref=e131] [cursor=pointer]:
+                - img [ref=e132]
+              - button "Nova Mesa" [ref=e133] [cursor=pointer]:
+                - img [ref=e134]
+                - text: Nova Mesa
+          - generic [ref=e135]:
+            - button "5 Livre" [ref=e136] [cursor=pointer]:
+              - paragraph [ref=e137]: "5"
+              - paragraph [ref=e138]: Livre
+            - button "6 Ocupada" [ref=e139] [cursor=pointer]:
+              - paragraph [ref=e140]: "6"
+              - paragraph [ref=e141]: Ocupada
+            - button "2 Reservada" [ref=e142] [cursor=pointer]:
+              - paragraph [ref=e143]: "2"
+              - paragraph [ref=e144]: Reservada
+            - button "1 Aguardando" [ref=e145] [cursor=pointer]:
+              - paragraph [ref=e146]: "1"
+              - paragraph [ref=e147]: Aguardando
+          - generic [ref=e148]:
+            - button "Todos" [ref=e149] [cursor=pointer]
+            - button "Salão" [ref=e150] [cursor=pointer]
+            - button "Varanda" [ref=e151] [cursor=pointer]
+            - button "Bar" [ref=e152] [cursor=pointer]
+          - generic [ref=e153]:
+            - generic [ref=e154] [cursor=pointer]:
+              - generic [ref=e155]:
+                - generic [ref=e156]: Mesa 1
+                - generic [ref=e157]: Ocupada
+              - generic [ref=e158]:
+                - img [ref=e159]
+                - generic [ref=e164]: 4 lugares
+                - generic [ref=e165]: Salão
+              - paragraph [ref=e166]: "Garçom: João"
+              - paragraph [ref=e167]: R$ 134,00
+              - paragraph [ref=e168]: ⏱ 38min
+            - generic [ref=e169] [cursor=pointer]:
+              - generic [ref=e170]:
+                - generic [ref=e171]: Mesa 2
+                - generic [ref=e172]: Livre
+              - generic [ref=e173]:
+                - img [ref=e174]
+                - generic [ref=e179]: 2 lugares
+                - generic [ref=e180]: Salão
+            - generic [ref=e181] [cursor=pointer]:
+              - generic [ref=e182]:
+                - generic [ref=e183]: Mesa 3
+                - generic [ref=e184]: Reservada
+              - generic [ref=e185]:
+                - img [ref=e186]
+                - generic [ref=e191]: 4 lugares
+                - generic [ref=e192]: Salão
+              - paragraph [ref=e193]: "Reserva: 19:00"
+            - generic [ref=e194] [cursor=pointer]:
+              - generic [ref=e195]:
+                - generic [ref=e196]: Mesa 4
+                - generic [ref=e197]: Ocupada
+              - generic [ref=e198]:
+                - img [ref=e199]
+                - generic [ref=e204]: 6 lugares
+                - generic [ref=e205]: Salão
+              - paragraph [ref=e206]: "Garçom: Ana"
+              - paragraph [ref=e207]: R$ 218,50
+              - paragraph [ref=e208]: ⏱ 52min
+            - generic [ref=e209] [cursor=pointer]:
+              - generic [ref=e210]:
+                - generic [ref=e211]: Mesa 5
+                - generic [ref=e212]: Aguardando
+              - generic [ref=e213]:
+                - img [ref=e214]
+                - generic [ref=e219]: 4 lugares
+                - generic [ref=e220]: Salão
+              - paragraph [ref=e221]: "Comanda #1040"
+            - generic [ref=e222] [cursor=pointer]:
+              - generic [ref=e223]:
+                - generic [ref=e224]: Mesa 6
+                - generic [ref=e225]: Livre
+              - generic [ref=e226]:
+                - img [ref=e227]
+                - generic [ref=e232]: 8 lugares
+                - generic [ref=e233]: Salão
+            - generic [ref=e234] [cursor=pointer]:
+              - generic [ref=e235]:
+                - generic [ref=e236]: Mesa 7
+                - generic [ref=e237]: Ocupada
+              - generic [ref=e238]:
+                - img [ref=e239]
+                - generic [ref=e244]: 2 lugares
+                - generic [ref=e245]: Varanda
+              - paragraph [ref=e246]: "Garçom: João"
+              - paragraph [ref=e247]: R$ 67,00
+              - paragraph [ref=e248]: ⏱ 21min
+            - generic [ref=e249] [cursor=pointer]:
+              - generic [ref=e250]:
+                - generic [ref=e251]: Mesa 8
+                - generic [ref=e252]: Livre
+              - generic [ref=e253]:
+                - img [ref=e254]
+                - generic [ref=e259]: 4 lugares
+                - generic [ref=e260]: Varanda
+            - generic [ref=e261] [cursor=pointer]:
+              - generic [ref=e262]:
+                - generic [ref=e263]: Mesa 9
+                - generic [ref=e264]: Ocupada
+              - generic [ref=e265]:
+                - img [ref=e266]
+                - generic [ref=e271]: 4 lugares
+                - generic [ref=e272]: Varanda
+              - paragraph [ref=e273]: "Garçom: Ana"
+              - paragraph [ref=e274]: R$ 43,50
+              - paragraph [ref=e275]: ⏱ 15min
+            - generic [ref=e276] [cursor=pointer]:
+              - generic [ref=e277]:
+                - generic [ref=e278]: Mesa 10
+                - generic [ref=e279]: Reservada
+              - generic [ref=e280]:
+                - img [ref=e281]
+                - generic [ref=e286]: 6 lugares
+                - generic [ref=e287]: Varanda
+              - paragraph [ref=e288]: "Reserva: 20:30"
+            - generic [ref=e289] [cursor=pointer]:
+              - generic [ref=e290]:
+                - generic [ref=e291]: Mesa 11
+                - generic [ref=e292]: Livre
+              - generic [ref=e293]:
+                - img [ref=e294]
+                - generic [ref=e299]: 4 lugares
+                - generic [ref=e300]: Varanda
+            - generic [ref=e301] [cursor=pointer]:
+              - generic [ref=e302]:
+                - generic [ref=e303]: Mesa 12
+                - generic [ref=e304]: Ocupada
+              - generic [ref=e305]:
+                - img [ref=e306]
+                - generic [ref=e311]: 2 lugares
+                - generic [ref=e312]: Bar
+              - paragraph [ref=e313]: "Garçom: Pedro"
+              - paragraph [ref=e314]: R$ 89,00
+              - paragraph [ref=e315]: ⏱ 44min
+            - generic [ref=e316] [cursor=pointer]:
+              - generic [ref=e317]:
+                - generic [ref=e318]: Balcão 1
+                - generic [ref=e319]: Ocupada
+              - generic [ref=e320]:
+                - img [ref=e321]
+                - generic [ref=e326]: 1 lugares
+                - generic [ref=e327]: Bar
+              - paragraph [ref=e328]: "Garçom: Pedro"
+              - paragraph [ref=e329]: R$ 18,00
+              - paragraph [ref=e330]: ⏱ 8min
+            - generic [ref=e331] [cursor=pointer]:
+              - generic [ref=e332]:
+                - generic [ref=e333]: Balcão 2
+                - generic [ref=e334]: Livre
+              - generic [ref=e335]:
+                - img [ref=e336]
+                - generic [ref=e341]: 1 lugares
+                - generic [ref=e342]: Bar
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e348] [cursor=pointer]:
+    - img [ref=e349]

@@ -87,7 +87,15 @@ function createSetup(options: SetupOptions = {}) {
         role: data.role ?? UserRole.OWNER,
         status: UserStatus.ACTIVE,
       })),
-      update: jest.fn(),
+      upsert: jest.fn(async ({ create }: any) => ({
+        id: 'user-staff-1',
+        ...create,
+      })),
+      update: jest.fn(async ({ where, data }: any) => ({
+        id: where?.id ?? 'user-updated',
+        passwordHash: data?.passwordHash ?? '$argon2id$v=19$updated-hash',
+        ...data,
+      })),
     },
     session: {
       findUnique: jest.fn(),
@@ -101,6 +109,7 @@ function createSetup(options: SetupOptions = {}) {
     },
     employee: {
       findFirst: jest.fn(),
+      update: jest.fn(async () => ({})),
     },
     oneTimeCode: {
       updateMany: jest.fn(async () => ({ count: 0 })),
@@ -656,6 +665,18 @@ describe('AuthService coverage boost', () => {
     const result = await service.login(staffDto, response as any, makeRequestContext())
 
     expect(result.user).toEqual(expect.objectContaining({ role: 'STAFF' }))
+    expect(result.user).toEqual(
+      expect.objectContaining({
+        userId: 'user-staff-1',
+        actorUserId: 'user-staff-1',
+        workspaceOwnerUserId: 'owner-1',
+      }),
+    )
+    expect(prisma.user.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { email: 'staff-emp-1@desk-imperial.local' },
+      }),
+    )
     expect(response.cookie).toHaveBeenCalled()
   })
 

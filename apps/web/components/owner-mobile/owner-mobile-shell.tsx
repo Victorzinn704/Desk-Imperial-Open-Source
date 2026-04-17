@@ -80,6 +80,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
+  const isOffline = realtimeStatus === 'disconnected'
 
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
@@ -144,6 +145,17 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   })
+
+  const operationsLoading = operationsQuery.isLoading && !operationsQuery.data
+  const kitchenLoading = kitchenQuery.isLoading && !kitchenQuery.data
+  const productsLoading = productsQuery.isLoading && !productsQuery.data
+  const ordersLoading = ordersQuery.isLoading && !ordersQuery.data
+  const summaryLoading = summaryQuery.isLoading && !summaryQuery.data
+  const operationsErrorMessage = operationsQuery.error instanceof Error ? operationsQuery.error.message : null
+  const kitchenErrorMessage = kitchenQuery.error instanceof Error ? kitchenQuery.error.message : null
+  const productsErrorMessage = productsQuery.error instanceof Error ? productsQuery.error.message : null
+  const ordersErrorMessage = ordersQuery.error instanceof Error ? ordersQuery.error.message : null
+  const summaryErrorMessage = summaryQuery.error instanceof Error ? summaryQuery.error.message : null
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -352,19 +364,19 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const mesasOcupadas = useMemo(() => mesas.filter((m) => m.status === 'ocupada').length, [mesas])
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <div className="flex min-h-screen min-h-[100svh] flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       {/* Header */}
       {/* Header Minimalista */}
       <header
-        className="relative z-50 flex shrink-0 items-center justify-between bg-[var(--bg)] px-4 pb-2.5 sm:px-5 sm:pb-3"
+        className="relative z-50 flex shrink-0 items-center justify-between gap-3 bg-[var(--bg)] px-3 pb-2.5 sm:px-5 sm:pb-3"
         data-testid="owner-header"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
-        <div className="flex items-center gap-3">
-          <BrandMark />
-          <div className="flex flex-col">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <BrandMark size="sm" wordmark="hidden" />
+          <div className="min-w-0 flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)] sm:text-[11px]">
+              <span className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)] sm:text-[11px]">
                 {companyName}
               </span>
               <span
@@ -379,15 +391,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               />
             </div>
-            <span className="text-xs font-medium text-[var(--text-primary)] sm:text-sm" data-testid="user-display-name">
+            <span
+              className="truncate text-xs font-medium text-[var(--text-primary)] sm:text-sm"
+              data-testid="user-display-name"
+            >
               {displayName.split(' ')[0]}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             aria-label="Configurações"
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
+            className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
             type="button"
             onClick={() => router.push('/dashboard?view=settings&panel=account')}
           >
@@ -395,7 +410,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           </button>
           <button
             aria-label="Abrir painel completo"
-            className="flex size-10 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95"
+            className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
             type="button"
             onClick={() => router.push('/dashboard')}
           >
@@ -403,7 +418,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           </button>
           <button
             aria-label="Encerrar sessão"
-            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
+            className="flex size-9 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95 sm:size-10"
             data-testid="logout-button"
             disabled={logoutMutation.isPending}
             type="button"
@@ -430,16 +445,18 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       ) : null}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto relative" ref={pullRef}>
+      <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain" ref={pullRef}>
         <PullIndicator isRefreshing={isRefreshing} progress={pullProgress} style={pullIndicatorStyle} />
         {activeTab === 'mesas' ? (
-          <MobileTableGrid
-            isLoading={operationsQuery.isLoading && !operationsQuery.data}
-            mesas={mesas}
-            onSelectMesa={(mesa: Mesa) => {
-              if (mesa.status === 'ocupada' && mesa.comandaId) {
-                setFocusedComandaId(mesa.comandaId)
-                setActiveTab('comandas')
+        <MobileTableGrid
+          errorMessage={operationsErrorMessage}
+          isLoading={operationsLoading}
+          isOffline={isOffline}
+          mesas={mesas}
+          onSelectMesa={(mesa: Mesa) => {
+            if (mesa.status === 'ocupada' && mesa.comandaId) {
+              setFocusedComandaId(mesa.comandaId)
+              setActiveTab('comandas')
               } else {
                 setPendingAction({ type: 'new', mesa })
                 setFocusedComandaId(null)
@@ -453,8 +470,11 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           pendingAction ? (
             <MobileOrderBuilder
               busy={isBusy}
+              errorMessage={productsErrorMessage}
+              isLoading={productsLoading}
               mesaLabel={mesaLabel}
               mode={orderMode}
+              isOffline={isOffline}
               produtos={productsQuery.data?.items ?? []}
               onCancel={() => {
                 setPendingAction(null)
@@ -466,13 +486,23 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         ) : null}
 
         {activeTab === 'cozinha' ? (
-          <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
+          <KitchenOrdersView
+            data={kitchenQuery.data}
+            errorMessage={kitchenErrorMessage}
+            isLoading={kitchenLoading}
+            isOffline={isOffline}
+            queryKey={OPERATIONS_KITCHEN_QUERY_KEY}
+          />
         ) : null}
 
         {activeTab === 'comandas' ? (
           <OwnerComandasView
+            errorMessage={operationsErrorMessage}
             comandas={comandas}
+            isBusy={isBusy}
+            isLoading={operationsLoading}
             focusedId={focusedComandaId}
+            isOffline={isOffline}
             onCloseComanda={(comandaId, discountAmount, serviceFeeAmount) =>
               closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount })
             }
@@ -483,9 +513,15 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           <OwnerResumoTab
             activeComandas={executiveKpis.openComandasCount}
             garconRanking={garconRanking}
-            isLoading={
-              ordersQuery.isLoading || operationsQuery.isLoading || kitchenQuery.isLoading || summaryQuery.isLoading
+            errorMessage={
+              ordersErrorMessage ??
+              operationsErrorMessage ??
+              kitchenErrorMessage ??
+              summaryErrorMessage ??
+              null
             }
+            isLoading={ordersLoading || operationsLoading || kitchenLoading || summaryLoading}
+            isOffline={isOffline}
             kitchenBadge={kitchenBadge}
             mesasLivres={mesasLivres}
             mesasOcupadas={mesasOcupadas}
@@ -500,10 +536,10 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
       {/* Bottom nav Moderna (iFood style) */}
       <nav
-        className="shrink-0 bg-[var(--bg)] px-1.5 pb-1.5 pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
+        className="shrink-0 bg-[var(--bg)] px-1 pb-1 pt-1 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
+        <div className="relative grid min-h-[4.25rem] grid-cols-4 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Building2, badge: 0 },
@@ -515,7 +551,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             const isActive = activeTab === id
             return (
               <button
-                className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
+                className="relative flex h-full min-h-[3.35rem] flex-col items-center justify-center gap-1 rounded-[1.2rem] px-1 transition-all active:scale-95"
                 data-testid={`nav-${id}`}
                 key={id}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -526,7 +562,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 }}
               >
                 {isActive && (
-                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(0,140,255,0.15)] pointer-events-none" />
+                  <div className="pointer-events-none absolute inset-0 rounded-[1.2rem] bg-[rgba(0,140,255,0.15)]" />
                 )}
                 <div className="relative z-10">
                   <Icon
@@ -541,7 +577,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                   )}
                 </div>
                 <span
-                  className="relative z-10 text-[9px] font-semibold tracking-wide sm:text-[10px]"
+                  className="relative z-10 text-[10px] font-semibold leading-none tracking-wide"
                   style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}
@@ -566,6 +602,8 @@ function OwnerResumoTab({
   garconRanking,
   topProdutos,
   isLoading,
+  isOffline,
+  errorMessage,
   onOpenFullDashboard,
 }: {
   todayRevenue: number
@@ -578,10 +616,22 @@ function OwnerResumoTab({
   garconRanking: { nome: string; valor: number; comandas: number }[]
   topProdutos: { nome: string; qtd: number; valor: number }[]
   isLoading: boolean
+  isOffline: boolean
+  errorMessage: string | null
   onOpenFullDashboard: () => void
 }) {
   return (
     <div className="space-y-4 p-3 pb-6">
+      {errorMessage ? (
+        <div className="rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+          {errorMessage}
+        </div>
+      ) : isOffline ? (
+        <div className="rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+          Você está offline. O resumo pode estar desatualizado até a reconexão.
+        </div>
+      ) : null}
+
       {/* KPIs do dia */}
       <div>
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
@@ -709,7 +759,7 @@ function OwnerResumoTab({
               return (
                 <li className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5" key={p.nome}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[65%]">{p.nome}</p>
+                    <p className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--text-primary)]">{p.nome}</p>
                     <div className="text-right">
                       <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
                       <span className="ml-2 text-[10px] text-[var(--text-soft)]">×{p.qtd}</span>

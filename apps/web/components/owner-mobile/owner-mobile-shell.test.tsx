@@ -19,6 +19,10 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
+const { useOperationsRealtimeMock } = vi.hoisted(() => ({
+  useOperationsRealtimeMock: vi.fn(() => ({ status: 'connected' })),
+}))
+
 // Mock das dependências
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
@@ -44,7 +48,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('../operations/use-operations-realtime', () => ({
-  useOperationsRealtime: vi.fn(() => ({ status: 'connected' })),
+  useOperationsRealtime: useOperationsRealtimeMock,
 }))
 
 // Mock do QueryClient
@@ -68,6 +72,7 @@ describe('OwnerMobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useOperationsRealtimeMock.mockReturnValue({ status: 'connected' })
     testQueryClient = createTestQueryClient()
     const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
     const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
@@ -544,5 +549,15 @@ describe('OwnerMobileShell', () => {
         { includeSnapshot: false },
       )
     })
+  })
+
+  it('expõe aviso offline na visão de mesas do owner quando a conexão cai', async () => {
+    useOperationsRealtimeMock.mockReturnValue({ status: 'disconnected' })
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+
+    expect(
+      await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i),
+    ).toBeInTheDocument()
   })
 })

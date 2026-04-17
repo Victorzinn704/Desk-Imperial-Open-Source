@@ -4,6 +4,7 @@ import { memo, startTransition, useCallback, useDeferredValue, useMemo, useRef, 
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
+import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import {
@@ -25,6 +26,9 @@ interface MobileOrderBuilderProps {
   mesaLabel: string
   mode: 'new' | 'add'
   busy?: boolean
+  isLoading?: boolean
+  isOffline?: boolean
+  errorMessage?: string | null
   produtos: ProductRecord[]
   onSubmit: (items: ComandaItem[]) => Promise<void> | void
   onCancel: () => void
@@ -36,11 +40,13 @@ type CartEntry = ComandaItem & { _key: string }
 const ProductItem = memo(function ProductItem({
   produto,
   qty,
+  busy,
   onAdd,
   onRemove,
 }: Readonly<{
   produto: ProductRecord
   qty: number
+  busy?: boolean
   onAdd: () => void
   onRemove: () => void
 }>) {
@@ -78,6 +84,7 @@ const ProductItem = memo(function ProductItem({
             <button
               aria-label={`Remover ${produto.name}`}
               className="flex size-11 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft,#7a8896)] transition-colors active:bg-[var(--surface-soft)] btn-haptic"
+              disabled={busy}
               type="button"
               onClick={onRemove}
             >
@@ -89,6 +96,7 @@ const ProductItem = memo(function ProductItem({
         <button
           aria-label={`Adicionar ${produto.name}`}
           className="flex size-11 items-center justify-center rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.25)] btn-haptic"
+          disabled={busy}
           type="button"
           onClick={onAdd}
         >
@@ -195,9 +203,9 @@ function MobileOrderHeader({
   const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
 
   return (
-    <div className="border-b border-[var(--border)] px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="border-b border-[var(--border)] px-3.5 py-3 sm:px-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#008cff)]" /> : null}
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
@@ -207,7 +215,7 @@ function MobileOrderHeader({
           <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
         </div>
         <button
-          className="min-h-[44px] rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
+          className="min-h-[44px] shrink-0 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
           type="button"
           onClick={onCancel}
         >
@@ -245,11 +253,11 @@ function CategorySelectionScreen({
   onSelectCategory: (category: string) => void
 }>) {
   return (
-    <div className="p-4">
+    <div className="p-3.5 sm:p-4">
       <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
         Escolha uma categoria
       </p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:grid-cols-4">
         <button
           className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
           type="button"
@@ -289,7 +297,7 @@ function CartSummaryBar({
 }>) {
   return (
     <div className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[var(--surface)] px-4 py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
         <div className="relative">
           <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
           {totalItems > 0 && (
@@ -307,7 +315,7 @@ function CartSummaryBar({
           ) : null}
         </div>
         <button
-          className="min-h-[48px] rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+          className="min-h-[48px] w-full rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic sm:w-auto"
           disabled={totalItems === 0 || busy}
           type="button"
           onClick={onSubmit}
@@ -323,6 +331,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   mesaLabel,
   mode,
   busy,
+  isLoading = false,
+  isOffline = false,
+  errorMessage = null,
   produtos,
   onSubmit,
   onCancel,
@@ -402,7 +413,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
       <MobileOrderHeader
         categories={categories}
         mesaLabel={mesaLabel}
@@ -415,7 +426,27 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar" ref={parentRef}>
-        {!showItemsScreen && categories.length > 0 ? (
+        {isLoading && activeProdutos.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 size-10 animate-spin rounded-full border-2 border-[var(--accent,#008cff)] border-t-transparent" />
+            <p className="text-sm font-medium text-[var(--text-primary)]">Carregando produtos...</p>
+            <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">
+              Aguarde o catálogo terminar de sincronizar.
+            </p>
+          </div>
+        ) : errorMessage && activeProdutos.length === 0 ? (
+          <div className="px-4 py-6">
+            <OperationEmptyState
+              Icon={ShoppingCart}
+              description={
+                isOffline
+                  ? 'Sem conexão para carregar o catálogo agora.'
+                  : errorMessage || 'Não foi possível carregar os produtos agora.'
+              }
+              title={isOffline ? 'Sem conexão' : 'Falha ao carregar produtos'}
+            />
+          </div>
+        ) : !showItemsScreen && categories.length > 0 ? (
           <CategorySelectionScreen
             categories={categories}
             onSelectAll={showAllProducts}
@@ -472,6 +503,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                         <ProductItem
                           produto={produto}
                           qty={qty}
+                          busy={busy}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}
                         />
@@ -485,6 +517,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                         <ProductItem
                           produto={produto}
                           qty={qty}
+                          busy={busy}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}
                         />

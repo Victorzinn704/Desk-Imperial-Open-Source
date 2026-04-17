@@ -107,6 +107,7 @@ services:
     image: prom/alertmanager:v0.28.1
     container_name: desk-ops-alertmanager
     environment:
+      ALERTMANAGER_ENV: ${ALERTMANAGER_ENV:-development}
       ALERTMANAGER_WEBHOOK_URL: ${ALERTMANAGER_WEBHOOK_URL:-}
     entrypoint:
       - '/bin/sh'

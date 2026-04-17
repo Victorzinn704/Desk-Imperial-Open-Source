@@ -1,14 +1,18 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, ChefHat, Clock, Flame } from 'lucide-react'
+import { CheckCircle2, ChefHat, Clock, Flame, LoaderCircle, TriangleAlert, WifiOff } from 'lucide-react'
 import { memo, useMemo, useState } from 'react'
 import type { OperationsKitchenItemRecord, OperationsKitchenResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
+import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 interface KitchenOrdersViewProps {
   data: OperationsKitchenResponse | undefined
   queryKey: readonly unknown[]
+  isLoading?: boolean
+  isOffline?: boolean
+  errorMessage?: string | null
 }
 
 type KitchenTab = 'QUEUED' | 'IN_PREPARATION' | 'READY'
@@ -125,7 +129,13 @@ function buildStatusCounts(items: OperationsKitchenItemRecord[]) {
   )
 }
 
-export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
+export function KitchenOrdersView({
+  data,
+  queryKey,
+  isLoading = false,
+  isOffline = false,
+  errorMessage = null,
+}: KitchenOrdersViewProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<KitchenTab>('QUEUED')
   const [error, setError] = useState<string | null>(null)
@@ -190,6 +200,16 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {errorMessage ? (
+        <div className="mx-4 mt-4 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+          {errorMessage}
+        </div>
+      ) : isOffline ? (
+        <div className="mx-4 mt-4 rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+          Você está offline. A fila da cozinha pode estar desatualizada até a reconexão.
+        </div>
+      ) : null}
+
       {/* Tab bar */}
       <div className="flex shrink-0 gap-1 px-4 pt-4 pb-3">
         {(Object.entries(STATUS_CONFIG) as [KitchenTab, (typeof STATUS_CONFIG)[KitchenTab]][]).map(([tab, config]) => {
@@ -235,7 +255,25 @@ export function KitchenOrdersView({ data, queryKey }: KitchenOrdersViewProps) {
       )}
 
       <div className="flex-1 overflow-y-auto px-4 pb-6">
-        {!hasItems ? (
+        {isLoading && !hasItems ? (
+          <OperationEmptyState
+            Icon={LoaderCircle}
+            description="Buscando itens em preparo e pendências."
+            title="Carregando fila da cozinha"
+          />
+        ) : errorMessage && !hasItems ? (
+          <OperationEmptyState
+            Icon={TriangleAlert}
+            description={errorMessage}
+            title="Não foi possível carregar a cozinha"
+          />
+        ) : isOffline && !hasItems ? (
+          <OperationEmptyState
+            Icon={WifiOff}
+            description="Reconecte para sincronizar os pedidos da cozinha."
+            title="Sem conexão para listar a cozinha"
+          />
+        ) : !hasItems ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <ChefHat className="size-7 text-[var(--text-soft)]" />

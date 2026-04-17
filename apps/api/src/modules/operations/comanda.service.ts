@@ -7,6 +7,7 @@ import type { RequestContext } from '../../common/utils/request-context.util'
 import { CacheService } from '../../common/services/cache.service'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
@@ -327,7 +328,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.opened',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -449,7 +450,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda_item.created',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -590,7 +591,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda_items.batch_created',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -731,7 +732,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.replaced',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -831,7 +832,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.assigned',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -913,7 +914,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.status_updated',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -1001,7 +1002,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.kitchen_item.status_updated',
       resource: 'comanda_item',
       resourceId: itemId,
@@ -1103,7 +1104,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.closed',
       resource: 'comanda',
       resourceId: comanda.id,

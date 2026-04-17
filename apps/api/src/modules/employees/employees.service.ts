@@ -6,7 +6,10 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { AuthService } from '../auth/auth.service'
+import { authSessionWorkspaceOwnerSelect } from '../auth/auth-shared.util'
+import { ensureEmployeeLoginUser } from '../auth/auth-login-actor.utils'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { CacheService } from '../../common/services/cache.service'
@@ -71,18 +74,48 @@ export class EmployeesService {
     const passwordHash = await argon2.hash(dto.temporaryPassword, { type: argon2.argon2id })
 
     try {
-      const employee = await this.prisma.employee.create({
-        data: {
-          userId: workspaceUserId,
-          passwordHash,
-          employeeCode,
-          displayName,
-          active: true,
-        },
+      const employee = await this.prisma.$transaction(async (transaction) => {
+        const ownerUser = await transaction.user.findUnique({
+          where: {
+            id: workspaceUserId,
+          },
+          select: authSessionWorkspaceOwnerSelect,
+        })
+
+        if (!ownerUser) {
+          throw new NotFoundException('Conta principal nao encontrada para este workspace.')
+        }
+
+        const createdEmployee = await transaction.employee.create({
+          data: {
+            userId: workspaceUserId,
+            passwordHash,
+            employeeCode,
+            displayName,
+            active: true,
+          },
+        })
+
+        const loginUser = await ensureEmployeeLoginUser(transaction, {
+          employee: {
+            id: createdEmployee.id,
+            active: createdEmployee.active,
+            displayName: createdEmployee.displayName,
+            passwordHash: createdEmployee.passwordHash,
+            loginUser: null,
+          },
+          ownerUser,
+          fallbackPasswordHash: createdEmployee.passwordHash,
+        })
+
+        return {
+          ...createdEmployee,
+          loginUserId: loginUser.id,
+        }
       })
 
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'employee.created',
         resource: 'employee',
         resourceId: employee.id,
@@ -137,7 +170,7 @@ export class EmployeesService {
       })
 
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'employee.updated',
         resource: 'employee',
         resourceId: employee.id,
@@ -239,7 +272,7 @@ export class EmployeesService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: active ? 'employee.restored' : 'employee.archived',
       resource: 'employee',
       resourceId: employee.id,

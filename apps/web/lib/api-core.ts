@@ -128,19 +128,19 @@ export async function apiFetch<T>(
 }
 
 export function clearPersistedCsrfToken() {
-  if (typeof window === 'undefined') {
+  if (typeof globalThis.window === 'undefined') {
     return
   }
 
-  window.sessionStorage.removeItem(CSRF_STORAGE_KEY)
+  globalThis.sessionStorage.removeItem(CSRF_STORAGE_KEY)
 }
 
 export function clearPersistedAdminPinHint() {
-  if (typeof window === 'undefined') {
+  if (typeof globalThis.window === 'undefined') {
     return
   }
 
-  window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+  globalThis.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
 }
 
 export function resolveApiTimeoutMs(path: string) {
@@ -263,19 +263,19 @@ function readCsrfToken() {
 }
 
 function persistCsrfToken(value: string) {
-  if (typeof window === 'undefined' || !value) {
+  if (typeof globalThis.window === 'undefined' || !value) {
     return
   }
 
-  window.sessionStorage.setItem(CSRF_STORAGE_KEY, value)
+  globalThis.sessionStorage.setItem(CSRF_STORAGE_KEY, value)
 }
 
 function readPersistedCsrfToken() {
-  if (typeof window === 'undefined') {
+  if (typeof globalThis.window === 'undefined') {
     return null
   }
 
-  return window.sessionStorage.getItem(CSRF_STORAGE_KEY)
+  return globalThis.sessionStorage.getItem(CSRF_STORAGE_KEY)
 }
 
 function hasCsrfToken(value: unknown): value is { csrfToken: string } {
@@ -286,6 +286,8 @@ function hasCsrfToken(value: unknown): value is { csrfToken: string } {
     typeof (value as { csrfToken?: unknown }).csrfToken === 'string'
   )
 }
+
+let fallbackRequestIdCounter = 0
 
 export function isLegacyOwnerLoginContractError(error: ApiError) {
   if (error.status !== 400) {
@@ -326,7 +328,8 @@ function generateRequestId() {
     return crypto.randomUUID()
   }
 
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  fallbackRequestIdCounter += 1
+  return `${Date.now().toString(36)}-${fallbackRequestIdCounter.toString(36).padStart(4, '0')}`
 }
 
 function getCurrentTimeMs() {

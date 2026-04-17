@@ -278,6 +278,13 @@ export async function ensureOrderForClosedComanda(
     .map((item) => item.product)
     .filter((product): product is NonNullable<(typeof comanda.items)[number]['product']> => Boolean(product))
   const comboAwareProductsById = new Map(comboAwareProducts.map((product) => [product.id, product]))
+  const inventoryProductsById = new Map(
+    comboAwareProducts.flatMap((product) =>
+      product.isCombo
+        ? product.comboComponents.map((component) => component.componentProduct)
+        : [product],
+    ).map((product) => [product.id, product]),
+  )
   const stockByProduct = buildProductConsumptionMap(
     comanda.items
       .filter((item) => Boolean(item.productId))
@@ -289,7 +296,7 @@ export async function ensureOrderForClosedComanda(
   )
 
   for (const [productId, qty] of stockByProduct.entries()) {
-    await transaction.product.updateMany({
+    const stockUpdate = await transaction.product.updateMany({
       where: {
         id: productId,
         userId: workspaceOwnerUserId,
@@ -298,14 +305,12 @@ export async function ensureOrderForClosedComanda(
       data: { stock: { decrement: qty } },
     })
 
-    await transaction.product.updateMany({
-      where: {
-        id: productId,
-        userId: workspaceOwnerUserId,
-        stock: { lt: qty },
-      },
-      data: { stock: 0 },
-    })
+    if (stockUpdate.count !== 1) {
+      const product = inventoryProductsById.get(productId)
+      throw new BadRequestException(
+        `Estoque insuficiente para ${product?.name ?? 'o produto selecionado'}. Revise a comanda e tente novamente.`,
+      )
+    }
   }
 
   return transaction.order.create({

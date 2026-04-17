@@ -25,13 +25,16 @@ export const OPERATIONS_EVENTS = [
 export function useOperationsSocket(
   enabled: boolean,
   onEvent: (envelope?: OperationsRealtimeEnvelope) => void,
+  onReconnect?: () => void,
 ): { status: RealtimeStatus } {
   const [status, setStatus] = useState<RealtimeStatus>(() => (enabled ? 'connecting' : 'disconnected'))
   const socketRef = useRef<Socket | null>(null)
+  const shouldRefreshBaselineRef = useRef(false)
 
   useEffect(() => {
     if (!enabled) {
       setStatus('disconnected') // eslint-disable-line react-hooks/set-state-in-effect -- sync with prop
+      shouldRefreshBaselineRef.current = false
       return
     }
 
@@ -44,10 +47,20 @@ export function useOperationsSocket(
     })
     socketRef.current = socket
 
-    const onConnect = () => setStatus('connected')
-    const onDisconnect = () => setStatus('disconnected')
-    const onConnectError = () => {
+    const onConnect = () => {
+      setStatus('connected')
+
+      if (shouldRefreshBaselineRef.current) {
+        shouldRefreshBaselineRef.current = false
+        onReconnect?.()
+      }
+    }
+    const onDisconnect = () => {
       setStatus('disconnected')
+      shouldRefreshBaselineRef.current = true
+    }
+    const onConnectError = () => {
+      onDisconnect()
       onEvent()
     }
 
@@ -69,8 +82,9 @@ export function useOperationsSocket(
       socket.off('connect_error', onConnectError)
       socket.disconnect()
       socketRef.current = null
+      shouldRefreshBaselineRef.current = false
     }
-  }, [enabled, onEvent])
+  }, [enabled, onEvent, onReconnect])
 
   return { status }
 }

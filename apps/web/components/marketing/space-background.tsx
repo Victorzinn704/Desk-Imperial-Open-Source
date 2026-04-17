@@ -30,6 +30,14 @@ interface FgParticle {
   ts: number
 }
 
+const UINT32_RANGE = 0x100000000
+
+function randomUnit() {
+  const values = new Uint32Array(1)
+  globalThis.crypto.getRandomValues(values)
+  return values[0] / UINT32_RANGE
+}
+
 export function SpaceBackground() {
   const bgRef = useRef<HTMLCanvasElement>(null)
   const fgRef = useRef<HTMLCanvasElement>(null)
@@ -39,12 +47,12 @@ export function SpaceBackground() {
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       mouseRef.current = {
-        x: e.clientX / window.innerWidth,
-        y: e.clientY / window.innerHeight,
+        x: e.clientX / globalThis.innerWidth,
+        y: e.clientY / globalThis.innerHeight,
       }
     }
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
+    globalThis.addEventListener('mousemove', onMove)
+    return () => globalThis.removeEventListener('mousemove', onMove)
   }, [])
 
   // ── Background layer — distant slow stars ──────────────────────────
@@ -58,43 +66,43 @@ export function SpaceBackground() {
       return
     }
 
-    let w = (canvas.width = window.innerWidth)
-    let h = (canvas.height = window.innerHeight)
+    let w = (canvas.width = globalThis.innerWidth)
+    let h = (canvas.height = globalThis.innerHeight)
     const onResize = () => {
-      w = canvas.width = window.innerWidth
-      h = canvas.height = window.innerHeight
+      w = canvas.width = globalThis.innerWidth
+      h = canvas.height = globalThis.innerHeight
     }
-    window.addEventListener('resize', onResize)
+    globalThis.addEventListener('resize', onResize)
 
     const stars: Star[] = Array.from({ length: 320 }, () => {
-      const x = Math.random() * w
-      const y = Math.random() * h
+      const x = randomUnit() * w
+      const y = randomUnit() * h
       return {
         x,
         y,
         ox: x,
         oy: y,
-        r: Math.random() * 1.2 + 0.1,
-        alpha: Math.random() * 0.55 + 0.12,
-        speed: Math.random() * 0.035 + 0.006, // very slow drift up
-        t: Math.random() * Math.PI * 2,
-        ts: Math.random() * 0.008 + 0.002, // slow twinkle
+        r: randomUnit() * 1.2 + 0.1,
+        alpha: randomUnit() * 0.55 + 0.12,
+        speed: randomUnit() * 0.035 + 0.006, // very slow drift up
+        t: randomUnit() * Math.PI * 2,
+        ts: randomUnit() * 0.008 + 0.002, // slow twinkle
       }
     })
 
     const goldStars: Star[] = Array.from({ length: 16 }, () => {
-      const x = Math.random() * w
-      const y = Math.random() * h
+      const x = randomUnit() * w
+      const y = randomUnit() * h
       return {
         x,
         y,
         ox: x,
         oy: y,
-        r: Math.random() * 1.6 + 0.6,
-        alpha: Math.random() * 0.4 + 0.18,
-        speed: Math.random() * 0.022 + 0.004,
-        t: Math.random() * Math.PI * 2,
-        ts: Math.random() * 0.006 + 0.0015,
+        r: randomUnit() * 1.6 + 0.6,
+        alpha: randomUnit() * 0.4 + 0.18,
+        speed: randomUnit() * 0.022 + 0.004,
+        t: randomUnit() * Math.PI * 2,
+        ts: randomUnit() * 0.006 + 0.0015,
       }
     })
 
@@ -111,7 +119,7 @@ export function SpaceBackground() {
         s.oy -= s.speed
         if (s.oy < -2) {
           s.oy = h + 2
-          s.ox = Math.random() * w
+          s.ox = randomUnit() * w
         }
         s.y = s.oy + my * 0.15
         s.x = s.ox + mx * 0.15
@@ -128,7 +136,7 @@ export function SpaceBackground() {
         s.oy -= s.speed
         if (s.oy < -2) {
           s.oy = h + 2
-          s.ox = Math.random() * w
+          s.ox = randomUnit() * w
         }
         s.y = s.oy + my * 0.12
         s.x = s.ox + mx * 0.12
@@ -146,7 +154,7 @@ export function SpaceBackground() {
 
     return () => {
       cancelAnimationFrame(raf)
-      window.removeEventListener('resize', onResize)
+      globalThis.removeEventListener('resize', onResize)
     }
   }, [])
 
@@ -161,47 +169,47 @@ export function SpaceBackground() {
       return
     }
 
-    let w = (canvas.width = window.innerWidth)
-    let h = (canvas.height = window.innerHeight)
+    let w = (canvas.width = globalThis.innerWidth)
+    let h = (canvas.height = globalThis.innerHeight)
     const onResize = () => {
-      w = canvas.width = window.innerWidth
-      h = canvas.height = window.innerHeight
+      w = canvas.width = globalThis.innerWidth
+      h = canvas.height = globalThis.innerHeight
     }
-    window.addEventListener('resize', onResize)
+    globalThis.addEventListener('resize', onResize)
 
     const particles: FgParticle[] = Array.from({ length: 28 }, () => {
-      const ox = Math.random() * w
-      const oy = Math.random() * h
+      const ox = randomUnit() * w
+      const oy = randomUnit() * h
       return {
         x: ox,
         y: oy,
         ox,
         oy,
-        r: Math.random() * 2.8 + 1.0,
-        alpha: Math.random() * 0.22 + 0.06,
-        speedY: -(Math.random() * 0.18 + 0.05), // much slower
-        speedX: (Math.random() - 0.5) * 0.12,
-        glow: Math.random() * 10 + 6,
-        t: Math.random() * Math.PI * 2,
-        ts: Math.random() * 0.007 + 0.002,
+        r: randomUnit() * 2.8 + 1,
+        alpha: randomUnit() * 0.22 + 0.06,
+        speedY: -(randomUnit() * 0.18 + 0.05), // much slower
+        speedX: (randomUnit() - 0.5) * 0.12,
+        glow: randomUnit() * 10 + 6,
+        t: randomUnit() * Math.PI * 2,
+        ts: randomUnit() * 0.007 + 0.002,
       }
     })
 
     const orbs: FgParticle[] = Array.from({ length: 5 }, () => {
-      const ox = Math.random() * w
-      const oy = Math.random() * h
+      const ox = randomUnit() * w
+      const oy = randomUnit() * h
       return {
         x: ox,
         y: oy,
         ox,
         oy,
-        r: Math.random() * 4 + 2.5,
-        alpha: Math.random() * 0.1 + 0.03,
-        speedY: -(Math.random() * 0.1 + 0.025),
-        speedX: (Math.random() - 0.5) * 0.06,
-        glow: Math.random() * 22 + 14,
-        t: Math.random() * Math.PI * 2,
-        ts: Math.random() * 0.004 + 0.001,
+        r: randomUnit() * 4 + 2.5,
+        alpha: randomUnit() * 0.1 + 0.03,
+        speedY: -(randomUnit() * 0.1 + 0.025),
+        speedX: (randomUnit() - 0.5) * 0.06,
+        glow: randomUnit() * 22 + 14,
+        t: randomUnit() * Math.PI * 2,
+        ts: randomUnit() * 0.004 + 0.001,
       }
     })
 
@@ -219,7 +227,7 @@ export function SpaceBackground() {
         p.ox += p.speedX
         if (p.oy < -p.r * 3) {
           p.oy = h + p.r
-          p.ox = Math.random() * w
+          p.ox = randomUnit() * w
         }
         if (p.ox < -p.r * 3) {
           p.ox = w + p.r
@@ -256,7 +264,7 @@ export function SpaceBackground() {
 
     return () => {
       cancelAnimationFrame(raf)
-      window.removeEventListener('resize', onResize)
+      globalThis.removeEventListener('resize', onResize)
     }
   }, [])
 

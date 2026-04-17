@@ -105,7 +105,7 @@ export function DashboardSidebar({
         style={{ backdropFilter: 'blur(16px)' }}
       >
         <div className="min-w-0">
-          <BrandMark />
+          <BrandMark size="sm" wordmark="responsive" />
           <p className="mt-1.5 text-xs text-muted-foreground">
             {companyName || 'Painel corporativo'}
             <span className="mx-1.5 text-[var(--text-primary)]/20">·</span>
@@ -197,10 +197,10 @@ export function DashboardSidebar({
       {/* ═══════════════════════════════════════════
           SIDEBAR DESKTOP — visível em lg+
           ═══════════════════════════════════════════ */}
-      <aside className="hidden lg:flex lg:h-screen lg:overflow-hidden">
+      <aside className="hidden lg:flex lg:h-[100svh] lg:overflow-hidden">
         <div
           className={cn(
-            'workspace-sidebar flex h-full flex-col overflow-hidden transition-[padding] duration-300',
+            'workspace-sidebar flex h-full min-h-0 flex-col overflow-hidden transition-[padding] duration-300',
             compact || collapsed ? 'px-3 py-4' : 'px-4 py-5',
           )}
         >

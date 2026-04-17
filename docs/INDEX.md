@@ -41,24 +41,6 @@ Navegação central de toda a documentação do projeto.
 
 ---
 
-## Agentes de IA
-
-| Documento                                                                              | O que cobre                                                                 |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [agents/README.md](./agents/README.md)                                                 | Sistema de agentes, fronteiras, papéis e fluxo de uso                       |
-| [agents/32-frontend-product-lead-agent.md](./agents/32-frontend-product-lead-agent.md) | Padrão sênior para frontend, UX/UI, SaaS dashboards e maturidade de produto |
-
----
-
-## Frontend e UI
-
-| Documento                                                                                  | O que cobre                                                                     |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| [frontend/ui-guidelines.md](./frontend/ui-guidelines.md)                                   | Diretrizes atuais de UI, componentes e padrões de interação                     |
-| [frontend/visual-reform-audit-2026-04-06.md](./frontend/visual-reform-audit-2026-04-06.md) | Auditoria comparativa e plano de reforma visual inspirado nos repositórios-base |
-
----
-
 ## Segurança
 
 | Documento                                                                                                | O que cobre                                                      |
@@ -79,38 +61,35 @@ Navegação central de toda a documentação do projeto.
 | [operations/flows.md](./operations/flows.md)                                       | Fluxos operacionais do sistema       |
 | [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)         | Mapeamento de KPIs em tempo real     |
 | [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
-| [../infra/oracle/ops/README.md](../infra/oracle/ops/README.md)                     | Runbook da stack Oracle Ops          |
-| [../infra/oracle/THREE_VM_STRATEGY.md](../infra/oracle/THREE_VM_STRATEGY.md)       | Estratégia operacional das 3 VMs     |
+| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback |
 
 ---
 
 ## Testes
 
-| Documento                                                                                                    | O que cobre                                               |
-| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| [testing/testing-guide.md](./testing/testing-guide.md)                                                       | Guia completo de testes do projeto                        |
-| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md)                         | Snapshot de cobertura atual por area e global             |
-| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md)           | Relatorio detalhado da sessao de upgrade para metas 90/85 |
-| [testing/load-testing.md](./testing/load-testing.md)                                                         | Estratégia e comandos de testes de carga                  |
-| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)                               | Auditoria completa da cobertura de testes                 |
-| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint         |
-| [release/oracle-cloud-runtime-plan-2026-04-04.md](./release/oracle-cloud-runtime-plan-2026-04-04.md)         | Plano de runtime alvo em Oracle Cloud mantendo Neon       |
+| Documento                                                                            | O que cobre                                   |
+| ------------------------------------------------------------------------------------ | --------------------------------------------- |
+| [testing/testing-guide.md](./testing/testing-guide.md)                               | Guia completo de testes do projeto            |
+| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md) | Snapshot de cobertura atual por area e global |
+| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md) | Relatorio detalhado da sessao de upgrade para metas 90/85 |
+| [testing/load-testing.md](./testing/load-testing.md)                                 | Estratégia e comandos de testes de carga      |
+| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)       | Auditoria completa da cobertura de testes     |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint |
 
 ---
 
 ## Release e diagnóstico
 
-| Documento                                                                                                    | O que cobre                                                 |
-| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                               | Gaps e riscos identificados pré-release                     |
-| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)                           | Critérios de release                                        |
-| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)                 | Parecer técnico final                                       |
-| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md)             | Plano de lapidação para release                             |
-| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints                            |
-| [../README_PROFILE.md](../README_PROFILE.md)                                                                 | Template de perfil técnico com cards de stack e ferramentas |
-| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json)               | Resumo bruto do primeiro scan local                         |
-| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json)           | Export completo das issues do scan                          |
-| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json)       | Export completo dos security hotspots                       |
+| Documento                                                                                        | O que cobre                             |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                   | Gaps e riscos identificados pré-release |
+| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)               | Critérios de release                    |
+| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)     | Parecer técnico final                   |
+| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md) | Plano de lapidação para release         |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints        |
+| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json) | Resumo bruto do primeiro scan local     |
+| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json) | Export completo das issues do scan      |
+| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json) | Export completo dos security hotspots   |
 
 ---
 
@@ -156,7 +135,8 @@ docs/
 ├── operations/
 │   ├── flows.md
 │   ├── kpi-realtime-mapping.md
-│   └── observability-oss-phase1.md
+│   ├── observability-oss-phase1.md
+│   └── staging-incident-rollback-runbook.md
 ├── testing/
 │   ├── testing-guide.md
 │   └── AUDITORIA_TESTES_COMPLETA.md

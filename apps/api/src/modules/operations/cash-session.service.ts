@@ -6,6 +6,7 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
@@ -113,7 +114,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_session.opened',
       resource: 'cash_session',
       resourceId: session.id,
@@ -186,7 +187,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_movement.created',
       resource: 'cash_session',
       resourceId: session.id,
@@ -282,7 +283,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_session.closed',
       resource: 'cash_session',
       resourceId: session.id,
@@ -359,7 +360,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: forceClose ? 'operations.cash_closure.force_closed' : 'operations.cash_closure.closed',
       resource: 'cash_closure',
       resourceId: closure.id,

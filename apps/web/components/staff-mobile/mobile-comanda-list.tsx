@@ -2,7 +2,7 @@
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
 import { calcSubtotal, calcTotal, type Comanda, type ComandaStatus, formatElapsed } from '@/components/pdv/pdv-types'
-import { ChevronDown, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardList, Edit2, LoaderCircle, Plus, Trash2, TriangleAlert, WifiOff } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { useQuery } from '@tanstack/react-query'
@@ -18,6 +18,10 @@ interface MobileComandaListProps {
   onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
   focusedId?: string | null
   onFocus?: (id: string | null) => void
+  isLoading?: boolean
+  isOffline?: boolean
+  errorMessage?: string | null
+  isBusy?: boolean
 }
 
 type StatusConfig = {
@@ -64,6 +68,7 @@ interface ComandaCardProps {
   onCancelComanda?: (id: string) => Promise<void> | void
   onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
   onFocus?: (id: string | null) => void
+  isBusy?: boolean
 }
 
 export function MobileComandaList({
@@ -75,6 +80,10 @@ export function MobileComandaList({
   onCloseComanda,
   focusedId,
   onFocus,
+  isLoading = false,
+  isOffline = false,
+  errorMessage = null,
+  isBusy = false,
 }: MobileComandaListProps) {
   const active = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
   const focusedRef = useRef<HTMLLIElement | null>(null)
@@ -102,13 +111,44 @@ export function MobileComandaList({
   const fechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada'), [comandas])
 
   if (active.length === 0 && fechadas.length === 0) {
+    if (isLoading) {
+      return (
+        <OperationEmptyState
+          Icon={LoaderCircle}
+          description="Buscando comandas em aberto e comprovantes."
+          title="Carregando comandas"
+        />
+      )
+    }
+
+    if (errorMessage) {
+      return (
+        <OperationEmptyState
+          Icon={TriangleAlert}
+          description={errorMessage}
+          title="Não foi possível carregar as comandas"
+        />
+      )
+    }
+
+    if (isOffline) {
+      return (
+        <OperationEmptyState
+          Icon={WifiOff}
+          description="Reconecte para consultar o estado atual das comandas."
+          title="Sem conexão para listar comandas"
+        />
+      )
+    }
+
     return (
       <OperationEmptyState
-        Icon={Plus}
+        Icon={ClipboardList}
         action={
           onNewComanda ? (
             <button
-              className="flex items-center gap-2 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
+              className="flex items-center gap-2 rounded-xl bg-[rgba(0,140,255,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70 disabled:opacity-50"
+              disabled={isBusy}
               type="button"
               onClick={onNewComanda}
             >
@@ -125,6 +165,16 @@ export function MobileComandaList({
 
   return (
     <div className="p-3 sm:p-4">
+      {errorMessage ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+          {errorMessage}
+        </div>
+      ) : isOffline ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+          Você está offline. As comandas exibidas podem estar desatualizadas até a reconexão.
+        </div>
+      ) : null}
+
       {/* Header */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
@@ -132,7 +182,8 @@ export function MobileComandaList({
         </p>
         {onNewComanda && (
           <button
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.2)]"
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#008cff)] transition-colors active:bg-[rgba(0,140,255,0.2)] disabled:opacity-50"
+            disabled={isBusy}
             type="button"
             onClick={onNewComanda}
           >
@@ -157,6 +208,7 @@ export function MobileComandaList({
               onCloseComanda={onCloseComanda}
               onFocus={onFocus}
               onUpdateStatus={onUpdateStatus}
+              isBusy={isBusy}
             />
           )
         })}
@@ -181,7 +233,7 @@ export function MobileComandaList({
 
 const ComandaCard = memo(
   forwardRef<HTMLLIElement, ComandaCardProps>(function ComandaCard(
-    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus },
+    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus, isBusy = false },
     ref,
   ) {
     const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)
@@ -294,7 +346,8 @@ const ComandaCard = memo(
               <div className="mb-5 flex gap-2">
                 {onAddItems && canAddItems && (
                   <button
-                    className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-all active:scale-95"
+                    className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-all active:scale-95 disabled:opacity-50"
+                    disabled={isBusy}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     type="button"
                     onClick={() => onAddItems(activeComanda)}
@@ -307,7 +360,8 @@ const ComandaCard = memo(
                 {onCancelComanda && (
                   <button
                     aria-label="Cancelar comanda"
-                    className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95 disabled:opacity-50"
+                    disabled={isBusy}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     type="button"
                     onClick={() => {
@@ -359,6 +413,7 @@ const ComandaCard = memo(
                   </label>
                   <input
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
+                    disabled={isBusy}
                     max={100}
                     min={0}
                     type="number"
@@ -372,6 +427,7 @@ const ComandaCard = memo(
                   </label>
                   <input
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.4)]"
+                    disabled={isBusy}
                     max={100}
                     min={0}
                     type="number"
@@ -398,7 +454,8 @@ const ComandaCard = memo(
               <div className="flex flex-col gap-2.5">
                 {config.nextStatus && (
                   <button
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-[var(--text-primary)] transition-all active:scale-[0.98] shadow-lg disabled:opacity-50"
+                    disabled={isBusy}
                     style={{
                       backgroundColor: config.nextBg,
                       border: `1px solid ${config.chipColor}44`,
@@ -421,7 +478,8 @@ const ComandaCard = memo(
 
                 {showDirectClose && onCloseComanda && (
                   <button
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98] disabled:opacity-50"
+                    disabled={isBusy}
                     style={{
                       WebkitTapHighlightColor: 'transparent',
                     }}
@@ -436,7 +494,8 @@ const ComandaCard = memo(
 
                 {showDirectClose && !onCloseComanda && (
                   <button
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98]"
+                    className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--on-accent)] transition-all active:scale-[0.98] disabled:opacity-50"
+                    disabled={isBusy}
                     style={{
                       WebkitTapHighlightColor: 'transparent',
                     }}

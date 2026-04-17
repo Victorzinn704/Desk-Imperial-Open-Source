@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { AuditSeverity, Prisma } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 
 export type AuditLogInput = {
@@ -104,6 +105,7 @@ export class AuditLogService {
 
   async getActivityFeedForAuth(auth: AuthContext, limit = 40): Promise<ActivityFeedEntry[]> {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const actorUserId = resolveAuthActorUserId(auth)
     const logs = await this.prisma.auditLog.findMany({
       where:
         auth.role === 'OWNER'
@@ -118,7 +120,7 @@ export class AuditLogService {
               ],
             }
           : {
-              actorUserId: auth.userId,
+              actorUserId,
             },
       orderBy: { createdAt: 'desc' },
       take: limit,

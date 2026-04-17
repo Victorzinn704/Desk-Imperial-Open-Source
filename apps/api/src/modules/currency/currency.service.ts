@@ -137,7 +137,7 @@ export class CurrencyService {
       return `https://economia.awesomeapi.com.br/last/${DEFAULT_EXCHANGE_PAIRS.join(',')}`
     }
 
-    const normalizedUrl = configuredUrl.trim().replace(/\/+$/, '')
+    const normalizedUrl = trimTrailingSlashes(configuredUrl.trim())
     if (normalizedUrl.endsWith('/last')) {
       return `${normalizedUrl}/${DEFAULT_EXCHANGE_PAIRS.join(',')}`
     }
@@ -258,4 +258,13 @@ function buildPairKey(from: CurrencyCode, to: CurrencyCode) {
 
 function extractErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Erro desconhecido ao consultar cotacoes.'
+}
+
+function trimTrailingSlashes(value: string) {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '/') {
+    end -= 1
+  }
+
+  return end === value.length ? value : value.slice(0, end)
 }

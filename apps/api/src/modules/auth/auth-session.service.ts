@@ -26,6 +26,7 @@ export const SESSION_LAST_SEEN_UPDATE_MS = 15 * 60_000
 
 export type CachedAuthSession = {
   tokenHash: string
+  expiresAt?: string
   auth: AuthContext
 }
 
@@ -122,7 +123,17 @@ export class AuthSessionService {
     const cached = await this.cache.get<CachedAuthSession>(this.sessionTokenCacheKey(tokenHash))
 
     if (cached?.auth) {
-      return cached.auth
+      const cachedExpiresAt = cached.expiresAt ? new Date(cached.expiresAt) : null
+      if (!cachedExpiresAt || Number.isNaN(cachedExpiresAt.getTime()) || cachedExpiresAt.getTime() > Date.now()) {
+        return cached.auth
+      }
+
+      await Promise.all([
+        this.cache.del(this.sessionTokenCacheKey(cached.tokenHash)),
+        this.cache.del(this.sessionIdCacheKey(cached.auth.sessionId)),
+      ])
+
+      return null
     }
 
     const session = await this.prisma.session.findUnique({
@@ -161,29 +172,36 @@ export class AuthSessionService {
     }
 
     const auth = session.employee
-      ? toAuthUser(
-          {
-            ...session.workspaceOwner,
-            fullName: session.employee.displayName,
-            role: UserRole.STAFF,
-            companyOwnerId: session.workspaceOwner.id,
-            email: session.workspaceOwner.email,
-          },
-          {
-            sessionId: session.id,
-            analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
-            marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
-            evaluationAccess: this.demoAccessService.buildEvaluationAccess(
-              session.workspaceOwner.email,
-              session.expiresAt,
-            ),
-            employeeId: session.employee.id,
-            employeeCode: session.employee.employeeCode,
-          },
-        )
+      ? (() => {
+          const actorUserId = session.user?.id ?? session.employee.loginUser?.id ?? session.workspaceOwner.id
+
+          return toAuthUser(
+            {
+              ...session.workspaceOwner,
+              id: actorUserId,
+              fullName: session.employee.displayName,
+              role: UserRole.STAFF,
+              companyOwnerId: session.workspaceOwner.id,
+              email: session.workspaceOwner.email,
+            },
+            {
+              sessionId: session.id,
+              actorUserId,
+              analytics: session.workspaceOwner.cookiePreference?.analytics ?? false,
+              marketing: session.workspaceOwner.cookiePreference?.marketing ?? false,
+              evaluationAccess: this.demoAccessService.buildEvaluationAccess(
+                session.workspaceOwner.email,
+                session.expiresAt,
+              ),
+              employeeId: session.employee.id,
+              employeeCode: session.employee.employeeCode,
+            },
+          )
+        })()
       : session.user
         ? toAuthUser(session.user, {
             sessionId: session.id,
+            actorUserId: session.user.id,
             analytics: session.user.cookiePreference?.analytics ?? false,
             marketing: session.user.cookiePreference?.marketing ?? false,
             evaluationAccess: this.demoAccessService.buildEvaluationAccess(session.user.email, session.expiresAt),
@@ -201,15 +219,20 @@ export class AuthSessionService {
     return auth
   }
 
-  async cacheAuthSession(cacheEntry: CachedAuthSession, expiresAt: Date) {
-    const ttlSeconds = Math.max(
-      5,
-      Math.min(SESSION_CACHE_TTL_SECONDS, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)),
-    )
+  async cacheAuthSession(cacheEntry: Omit<CachedAuthSession, 'expiresAt'>, expiresAt: Date) {
+    const ttlSeconds = Math.min(SESSION_CACHE_TTL_SECONDS, Math.ceil((expiresAt.getTime() - Date.now()) / 1000))
+    if (ttlSeconds <= 0) {
+      return
+    }
+
+    const cachedEntry = {
+      ...cacheEntry,
+      expiresAt: expiresAt.toISOString(),
+    }
 
     await Promise.all([
-      this.cache.set(this.sessionTokenCacheKey(cacheEntry.tokenHash), cacheEntry, ttlSeconds),
-      this.cache.set(this.sessionIdCacheKey(cacheEntry.auth.sessionId), cacheEntry, ttlSeconds),
+      this.cache.set(this.sessionTokenCacheKey(cacheEntry.tokenHash), cachedEntry, ttlSeconds),
+      this.cache.set(this.sessionIdCacheKey(cacheEntry.auth.sessionId), cachedEntry, ttlSeconds),
     ])
   }
 
@@ -257,6 +280,7 @@ export class AuthSessionService {
   async invalidateWorkspaceDerivedCaches(workspaceOwnerUserId: string) {
     await Promise.all([
       this.cache.del(CacheService.financeKey(workspaceOwnerUserId)),
+      this.cache.del(`finance:pillars:${workspaceOwnerUserId}`),
       this.cache.del(CacheService.productsKey(workspaceOwnerUserId, 'active')),
       this.cache.del(CacheService.productsKey(workspaceOwnerUserId, 'all')),
       this.cache.del(CacheService.ordersKey(workspaceOwnerUserId)),

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardList, LoaderCircle, TriangleAlert, WifiOff } from 'lucide-react'
 import { calcSubtotal, calcTotal, type Comanda, formatElapsed } from '@/components/pdv/pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { toPdvComanda } from '@/components/pdv/pdv-operations'
@@ -26,9 +26,21 @@ type Props = Readonly<{
   comandas: Comanda[]
   focusedId?: string | null
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
+  isLoading?: boolean
+  isOffline?: boolean
+  errorMessage?: string | null
+  isBusy?: boolean
 }>
 
-export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props) {
+export function OwnerComandasView({
+  comandas,
+  focusedId,
+  onCloseComanda,
+  isLoading = false,
+  isOffline = false,
+  errorMessage = null,
+  isBusy = false,
+}: Props) {
   const [filtro, setFiltro] = useState<Filtro>('tudo')
 
   const filtered = useMemo(
@@ -57,6 +69,16 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
 
   return (
     <div className="p-3 sm:p-4">
+      {errorMessage ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+          {errorMessage}
+        </div>
+      ) : isOffline ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+          Você está offline. O extrato das comandas pode estar desatualizado até a reconexão.
+        </div>
+      ) : null}
+
       {/* Filtros */}
       <div className="mb-4 flex flex-wrap gap-2">
         {(
@@ -83,11 +105,31 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
       </div>
 
       {sorted.length === 0 ? (
-        <OperationEmptyState
-          Icon={ClipboardList}
-          description="Nenhum registro encontrado para este filtro."
-          title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
-        />
+        isLoading ? (
+          <OperationEmptyState
+            Icon={LoaderCircle}
+            description="Buscando comandas e comprovantes."
+            title="Carregando comandas"
+          />
+        ) : errorMessage ? (
+          <OperationEmptyState
+            Icon={TriangleAlert}
+            description={errorMessage}
+            title="Não foi possível carregar as comandas"
+          />
+        ) : isOffline ? (
+          <OperationEmptyState
+            Icon={WifiOff}
+            description="Reconecte para sincronizar o extrato atual das comandas."
+            title="Sem conexão para listar comandas"
+          />
+        ) : (
+          <OperationEmptyState
+            Icon={ClipboardList}
+            description="Nenhum registro encontrado para este filtro."
+            title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
+          />
+        )
       ) : (
         <ul className="space-y-2">
           {sorted.map((comanda) => (
@@ -95,6 +137,7 @@ export function OwnerComandasView({ comandas, focusedId, onCloseComanda }: Props
               comanda={comanda}
               defaultOpen={comanda.id === focusedId}
               key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
+              isBusy={isBusy}
               onCloseComanda={onCloseComanda}
             />
           ))}
@@ -108,10 +151,12 @@ function ComandaCard({
   comanda,
   defaultOpen = false,
   onCloseComanda,
+  isBusy = false,
 }: {
   comanda: Comanda
   defaultOpen?: boolean
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
+  isBusy?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -212,7 +257,8 @@ function ComandaCard({
 
           {canClose && onCloseComanda ? (
             <button
-              className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98]"
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98] disabled:opacity-50"
+              disabled={isBusy}
               type="button"
               onClick={() => {
                 onCloseComanda(activeComanda.id, descontoVal, acrescimoVal)

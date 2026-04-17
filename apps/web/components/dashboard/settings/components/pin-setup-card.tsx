@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { type ActivityFeedEntry, ApiError } from '@/lib/api'
 import { removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
+import { getLastDigit, parseRetryAfterSeconds } from '@/lib/pin-input'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/shared/button'
 
@@ -121,7 +122,7 @@ function PinSetupForm({
   setPinSaveError,
   pinSaved,
   onSave,
-}: {
+}: Readonly<{
   pinDigits: string[]
   setPinDigits: (v: string[]) => void
   pinSaving: boolean
@@ -129,7 +130,7 @@ function PinSetupForm({
   setPinSaveError: (v: string) => void
   pinSaved: boolean
   onSave: () => void
-}) {
+}>) {
   return (
     <div className="mt-5 space-y-3">
       <fieldset>
@@ -148,7 +149,7 @@ function PinSetupForm({
               type="password"
               value={digit}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, '').slice(-1)
+                const value = getLastDigit(event.target.value)
                 const next = [...pinDigits]
                 next[index] = value
                 setPinDigits(next)
@@ -175,7 +176,9 @@ async function savePinAction(
   setPinDigits: (v: string[]) => void,
 ) {
   const pin = pinDigits.join('')
-  if (pin.length !== 4) {return}
+  if (pin.length !== 4) {
+    return
+  }
 
   setPinSaving(true)
   setPinSaveError('')
@@ -237,9 +240,8 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
   function handleRemoveError(error: unknown) {
     if (error instanceof ApiError) {
       if (error.status === 423) {
-        const match = error.message.match(/(\d+)\s*s/i)
         setRemoveBlocked(true)
-        setRemoveSecondsLeft(match ? Number(match[1]) : 300)
+        setRemoveSecondsLeft(parseRetryAfterSeconds(error.message, 300))
       } else {
         setConfirmRemoveError(error.message || 'PIN incorreto. Tente novamente.')
         globalThis.setTimeout(() => removeInputRefs[0].current?.focus(), 50)
@@ -267,7 +269,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
   }
 
   async function handleConfirmRemoveDigitChange(index: number, rawValue: string) {
-    const value = rawValue.replace(/\D/g, '').slice(-1)
+    const value = getLastDigit(rawValue)
     const next = [...confirmRemoveDigits]
     next[index] = value
     setConfirmRemoveDigits(next)

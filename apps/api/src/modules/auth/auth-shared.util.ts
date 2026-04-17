@@ -58,6 +58,11 @@ export const authSessionEmployeeSelect = {
   active: true,
   employeeCode: true,
   displayName: true,
+  loginUser: {
+    select: {
+      id: true,
+    },
+  },
 } as const
 
 export const publicUserSelect = {
@@ -215,6 +220,7 @@ export function toAuthUser(
   },
   options: {
     sessionId?: string
+    actorUserId?: string | null
     analytics: boolean
     marketing: boolean
     evaluationAccess: AuthContext['evaluationAccess']
@@ -228,6 +234,7 @@ export function toAuthUser(
 
   return {
     userId: user.id,
+    actorUserId: options.actorUserId ?? user.id,
     sessionId: options.sessionId ?? '',
     role: user.role ?? UserRole.OWNER,
     workspaceOwnerUserId,
@@ -264,4 +271,8 @@ export function toAuthUser(
       marketing: options.marketing,
     },
   }
+}
+
+export function resolveAuthActorUserId(auth: Pick<AuthContext, 'userId'> & Partial<Pick<AuthContext, 'actorUserId'>>) {
+  return auth.actorUserId ?? auth.userId
 }

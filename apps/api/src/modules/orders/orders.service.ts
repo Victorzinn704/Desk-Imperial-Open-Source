@@ -13,6 +13,7 @@ import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { AdminPinService } from '../admin-pin/admin-pin.service'
 import { CurrencyService } from '../currency/currency.service'
 import { GeocodingService } from '../geocoding/geocoding.service'
@@ -432,7 +433,7 @@ export class OrdersService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'order.created',
       resource: 'order',
       resourceId: order.id,
@@ -503,6 +504,10 @@ export class OrdersService {
           }
         }
 
+        if (order.comandaId) {
+          throw new ConflictException('Vendas geradas por comanda devem ser canceladas pelo fluxo de comanda.')
+        }
+
         const updated = await transaction.order.updateMany({
           where: {
             id: order.id,
@@ -536,45 +541,41 @@ export class OrdersService {
           throw new ConflictException('Nao foi possivel cancelar este pedido agora. Tente novamente.')
         }
 
-        if (!order.comandaId) {
-          const productIds = [
-            ...new Set(
-              order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId)),
-            ),
-          ]
-          const products = productIds.length
-            ? await transaction.product.findMany({
-                where: {
-                  id: { in: productIds },
-                  userId: workspaceUserId,
-                },
-                include: orderProductInventoryInclude,
-              })
-            : []
-          const productsById = new Map(products.map((product) => [product.id, product]))
-          const stockToRestore = buildProductConsumptionMap(
-            order.items
-              .filter((item) => Boolean(item.productId))
-              .map((item) => ({
-                productId: item.productId!,
-                quantity: item.quantity,
-              })),
-            productsById,
-          )
-
-          for (const [productId, quantity] of stockToRestore.entries()) {
-            await transaction.product.updateMany({
+        const productIds = [
+          ...new Set(order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
+        ]
+        const products = productIds.length
+          ? await transaction.product.findMany({
               where: {
-                id: productId,
+                id: { in: productIds },
                 userId: workspaceUserId,
               },
-              data: {
-                stock: {
-                  increment: quantity,
-                },
-              },
+              include: orderProductInventoryInclude,
             })
-          }
+          : []
+        const productsById = new Map(products.map((product) => [product.id, product]))
+        const stockToRestore = buildProductConsumptionMap(
+          order.items
+            .filter((item) => Boolean(item.productId))
+            .map((item) => ({
+              productId: item.productId!,
+              quantity: item.quantity,
+            })),
+          productsById,
+        )
+
+        for (const [productId, quantity] of stockToRestore.entries()) {
+          await transaction.product.updateMany({
+            where: {
+              id: productId,
+              userId: workspaceUserId,
+            },
+            data: {
+              stock: {
+                increment: quantity,
+              },
+            },
+          })
         }
 
         return {
@@ -593,7 +594,7 @@ export class OrdersService {
 
     if (cancellationResult.cancelledNow) {
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'order.cancelled',
         resource: 'order',
         resourceId: cancellationResult.order.id,

@@ -1,0 +1,258 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - heading "Equipe" [level=1] [ref=e124]
+            - paragraph [ref=e125]: 8 funcionários · 6 ativos hoje
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - img [ref=e129]
+              - generic [ref=e134]:
+                - paragraph [ref=e135]: Total Equipe
+                - paragraph [ref=e136]: "8"
+            - generic [ref=e137]:
+              - img [ref=e139]
+              - generic [ref=e144]:
+                - paragraph [ref=e145]: Ativos Hoje
+                - paragraph [ref=e146]: "6"
+            - generic [ref=e147]:
+              - img [ref=e149]
+              - generic [ref=e152]:
+                - paragraph [ref=e153]: Melhor Vendedor
+                - paragraph [ref=e154]: João S.
+            - generic [ref=e155]:
+              - img [ref=e157]
+              - generic [ref=e160]:
+                - paragraph [ref=e161]: Horas Totais
+                - paragraph [ref=e162]: 312h
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - heading "Ranking de Vendas" [level=2] [ref=e166]
+                - paragraph [ref=e167]: Mês atual — Abril 2026
+              - img [ref=e168]
+            - generic [ref=e171]:
+              - generic [ref=e172]:
+                - generic [ref=e173]: 🥇
+                - generic [ref=e174]: JS
+                - generic [ref=e176]:
+                  - generic [ref=e177]: João SilvaGarçom
+                  - generic [ref=e178]:
+                    - generic [ref=e179]: R$ 12.480
+                    - generic [ref=e180]: 83% da meta
+              - generic [ref=e183]:
+                - generic [ref=e184]: 🥈
+                - generic [ref=e185]: AC
+                - generic [ref=e187]:
+                  - generic [ref=e188]: Ana CostaGarçom
+                  - generic [ref=e189]:
+                    - generic [ref=e190]: R$ 10.920
+                    - generic [ref=e191]: 73% da meta
+              - generic [ref=e194]:
+                - generic [ref=e195]: 🥉
+                - generic [ref=e196]: PA
+                - generic [ref=e198]:
+                  - generic [ref=e199]: Pedro AlvesGarçom
+                  - generic [ref=e200]:
+                    - generic [ref=e201]: R$ 9.840
+                    - generic [ref=e202]: 82% da meta
+              - generic [ref=e205]:
+                - generic [ref=e206]: 4°
+                - generic [ref=e207]: CR
+                - generic [ref=e209]:
+                  - generic [ref=e210]: Camila ReisCaixa
+                  - generic [ref=e211]:
+                    - generic [ref=e212]: R$ 8.640
+                    - generic [ref=e213]: 86% da meta
+              - generic [ref=e216]:
+                - generic [ref=e217]: 5°
+                - generic [ref=e218]: BL
+                - generic [ref=e220]:
+                  - generic [ref=e221]: Bruno LimaGarçom
+                  - generic [ref=e222]:
+                    - generic [ref=e223]: R$ 7.200
+                    - generic [ref=e224]: 60% da meta
+          - generic [ref=e227]:
+            - generic [ref=e229]:
+              - heading "Todos os Funcionários" [level=2] [ref=e230]
+              - paragraph [ref=e231]: Situação atual
+            - table [ref=e232]:
+              - rowgroup [ref=e233]:
+                - row "Funcionário Cargo Status Vendas Comandas Ticket Médio Horas" [ref=e234]:
+                  - columnheader "Funcionário" [ref=e235]
+                  - columnheader "Cargo" [ref=e236]
+                  - columnheader "Status" [ref=e237]
+                  - columnheader "Vendas" [ref=e238]
+                  - columnheader "Comandas" [ref=e239]
+                  - columnheader "Ticket Médio" [ref=e240]
+                  - columnheader "Horas" [ref=e241]
+              - rowgroup [ref=e242]:
+                - row "JS João Silva Garçom Ativo R$ 12.480 182 R$ 68,60 40h" [ref=e243]:
+                  - cell "JS João Silva" [ref=e244]:
+                    - generic [ref=e245]:
+                      - generic [ref=e246]: JS
+                      - generic [ref=e247]: João Silva
+                  - cell "Garçom" [ref=e248]
+                  - cell "Ativo" [ref=e249]
+                  - cell "R$ 12.480" [ref=e250]
+                  - cell "182" [ref=e251]
+                  - cell "R$ 68,60" [ref=e252]
+                  - cell "40h" [ref=e253]
+                - row "AC Ana Costa Garçom Ativo R$ 10.920 164 R$ 66,60 40h" [ref=e254]:
+                  - cell "AC Ana Costa" [ref=e255]:
+                    - generic [ref=e256]:
+                      - generic [ref=e257]: AC
+                      - generic [ref=e258]: Ana Costa
+                  - cell "Garçom" [ref=e259]
+                  - cell "Ativo" [ref=e260]
+                  - cell "R$ 10.920" [ref=e261]
+                  - cell "164" [ref=e262]
+                  - cell "R$ 66,60" [ref=e263]
+                  - cell "40h" [ref=e264]
+                - row "PA Pedro Alves Garçom Ativo R$ 9.840 148 R$ 66,50 36h" [ref=e265]:
+                  - cell "PA Pedro Alves" [ref=e266]:
+                    - generic [ref=e267]:
+                      - generic [ref=e268]: PA
+                      - generic [ref=e269]: Pedro Alves
+                  - cell "Garçom" [ref=e270]
+                  - cell "Ativo" [ref=e271]
+                  - cell "R$ 9.840" [ref=e272]
+                  - cell "148" [ref=e273]
+                  - cell "R$ 66,50" [ref=e274]
+                  - cell "36h" [ref=e275]
+                - row "CR Camila Reis Caixa Ativo R$ 8.640 132 R$ 65,50 40h" [ref=e276]:
+                  - cell "CR Camila Reis" [ref=e277]:
+                    - generic [ref=e278]:
+                      - generic [ref=e279]: CR
+                      - generic [ref=e280]: Camila Reis
+                  - cell "Caixa" [ref=e281]
+                  - cell "Ativo" [ref=e282]
+                  - cell "R$ 8.640" [ref=e283]
+                  - cell "132" [ref=e284]
+                  - cell "R$ 65,50" [ref=e285]
+                  - cell "40h" [ref=e286]
+                - row "BL Bruno Lima Garçom Folga R$ 7.200 110 R$ 65,50 32h" [ref=e287]:
+                  - cell "BL Bruno Lima" [ref=e288]:
+                    - generic [ref=e289]:
+                      - generic [ref=e290]: BL
+                      - generic [ref=e291]: Bruno Lima
+                  - cell "Garçom" [ref=e292]
+                  - cell "Folga" [ref=e293]
+                  - cell "R$ 7.200" [ref=e294]
+                  - cell "110" [ref=e295]
+                  - cell "R$ 65,50" [ref=e296]
+                  - cell "32h" [ref=e297]
+                - row "FG Fernanda Gomes Gerente Ativo — — — 44h" [ref=e298]:
+                  - cell "FG Fernanda Gomes" [ref=e299]:
+                    - generic [ref=e300]:
+                      - generic [ref=e301]: FG
+                      - generic [ref=e302]: Fernanda Gomes
+                  - cell "Gerente" [ref=e303]
+                  - cell "Ativo" [ref=e304]
+                  - cell "—" [ref=e305]
+                  - cell "—" [ref=e306]
+                  - cell "—" [ref=e307]
+                  - cell "44h" [ref=e308]
+                - row "RB Ricardo Barros Cozinheiro Ativo — — — 40h" [ref=e309]:
+                  - cell "RB Ricardo Barros" [ref=e310]:
+                    - generic [ref=e311]:
+                      - generic [ref=e312]: RB
+                      - generic [ref=e313]: Ricardo Barros
+                  - cell "Cozinheiro" [ref=e314]
+                  - cell "Ativo" [ref=e315]
+                  - cell "—" [ref=e316]
+                  - cell "—" [ref=e317]
+                  - cell "—" [ref=e318]
+                  - cell "40h" [ref=e319]
+                - row "SF Sandra Freitas Cozinheiro Férias — — — 40h" [ref=e320]:
+                  - cell "SF Sandra Freitas" [ref=e321]:
+                    - generic [ref=e322]:
+                      - generic [ref=e323]: SF
+                      - generic [ref=e324]: Sandra Freitas
+                  - cell "Cozinheiro" [ref=e325]
+                  - cell "Férias" [ref=e326]
+                  - cell "—" [ref=e327]
+                  - cell "—" [ref=e328]
+                  - cell "—" [ref=e329]
+                  - cell "40h" [ref=e330]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e336] [cursor=pointer]:
+    - img [ref=e337]

@@ -2,12 +2,15 @@
 
 import { memo, useMemo } from 'react'
 import type { Mesa, MesaStatus } from '@/components/pdv/pdv-types'
-import { Plus } from 'lucide-react'
+import { LayoutGrid, Plus, TriangleAlert, WifiOff } from 'lucide-react'
+import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 interface MobileTableGridProps {
   mesas: Mesa[]
   onSelectMesa: (mesa: Mesa) => void
   isLoading?: boolean
+  isOffline?: boolean
+  errorMessage?: string | null
 }
 
 const STATUS_COLOR: Record<MesaStatus, string> = {
@@ -26,6 +29,8 @@ export const MobileTableGrid = memo(function MobileTableGrid({
   mesas,
   onSelectMesa,
   isLoading = false,
+  isOffline = false,
+  errorMessage = null,
 }: MobileTableGridProps) {
   const { livres, ocupadas } = useMemo(
     () => ({
@@ -37,9 +42,9 @@ export const MobileTableGrid = memo(function MobileTableGrid({
 
   if (isLoading && mesas.length === 0) {
     return (
-      <div className="p-4 pb-6">
+      <div className="p-3 pb-6 sm:p-4">
         <div className="mb-3 ml-1 h-3 w-32 animate-pulse rounded bg-[rgba(255,255,255,0.08)]" />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-2.5 min-[420px]:grid-cols-3 min-[420px]:gap-3">
           {Array.from({ length: 6 }, (_, index) => (
             <div
               className="min-h-[96px] rounded-[18px] border border-[var(--border)] bg-[var(--surface)] animate-pulse"
@@ -52,26 +57,57 @@ export const MobileTableGrid = memo(function MobileTableGrid({
   }
 
   if (mesas.length === 0) {
+    if (errorMessage) {
+      return (
+        <OperationEmptyState
+          Icon={TriangleAlert}
+          description={errorMessage}
+          title="Não foi possível carregar as mesas"
+        />
+      )
+    }
+
+    if (isOffline) {
+      return (
+        <OperationEmptyState
+          Icon={WifiOff}
+          description="Reconecte para buscar o mapa atual das mesas."
+          title="Sem conexão para listar mesas"
+        />
+      )
+    }
+
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-        <p className="text-sm font-medium text-[var(--text-primary)]">Nenhuma mesa cadastrada</p>
-        <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">O dono pode adicionar mesas pelo painel web</p>
-      </div>
+      <OperationEmptyState
+        Icon={LayoutGrid}
+        description="O dono pode adicionar mesas pelo painel web."
+        title="Nenhuma mesa cadastrada"
+      />
     )
   }
 
   return (
-    <div className="p-4 pb-6">
+    <div className="p-3 pb-6 sm:p-4">
+      {errorMessage ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+          {errorMessage}
+        </div>
+      ) : isOffline ? (
+        <div className="mb-4 rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+          Você está offline. As mesas podem estar desatualizadas até a reconexão.
+        </div>
+      ) : null}
+
       {/* Mesas livres — principal ação do funcionário */}
       {livres.length > 0 && (
         <>
           <p className="mb-3 ml-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-soft,#7a8896)]">
             Disponíveis — {livres.length}
           </p>
-          <div className="mb-7 grid grid-cols-3 gap-3">
+          <div className="mb-7 grid grid-cols-2 gap-2.5 min-[420px]:grid-cols-3 min-[420px]:gap-3">
             {livres.map((mesa) => (
               <button
-                className="group relative flex min-h-[96px] flex-col items-center justify-center gap-1.5 rounded-[18px] border transition-all active:scale-95 overflow-hidden"
+                className="group relative flex min-h-[92px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[18px] border transition-all active:scale-95 min-[420px]:min-h-[96px]"
                 key={mesa.id}
                 style={{
                   borderColor: 'rgba(54,245,124,0.3)',
@@ -82,7 +118,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                 onClick={() => onSelectMesa(mesa)}
               >
                 <div className="absolute -inset-2 rounded-full bg-[rgba(54,245,124,0.15)] opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
-                <span className="relative z-10 text-[26px] font-extrabold text-[#36f57c] tracking-tighter">
+                <span className="relative z-10 text-[24px] font-extrabold tracking-tighter text-[#36f57c] min-[420px]:text-[26px]">
                   {mesa.numero}
                 </span>
                 <div className="relative z-10 flex flex-col items-center justify-center gap-0.5 mt-0.5">
@@ -103,7 +139,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
           <p className="mb-3 ml-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-soft,#7a8896)]">
             Em uso — {ocupadas.length}
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 min-[420px]:grid-cols-3 min-[420px]:gap-3">
             {ocupadas.map((mesa) => {
               const isOcupada = mesa.status === 'ocupada'
               const color = STATUS_COLOR[mesa.status]
@@ -114,7 +150,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                 : undefined
               return (
                 <button
-                  className="relative flex min-h-[110px] flex-col items-center justify-center gap-1 rounded-[18px] border p-2 transition-all active:scale-95 overflow-hidden"
+                  className="relative flex min-h-[104px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[18px] border p-2 transition-all active:scale-95 min-[420px]:min-h-[110px]"
                   key={mesa.id}
                   style={{
                     borderColor: isOcupada ? 'rgba(248,113,113,0.45)' : `${color}44`,
@@ -136,7 +172,10 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                     />
                   )}
 
-                  <span className="relative z-10 text-[26px] font-extrabold tracking-tighter" style={{ color }}>
+                  <span
+                    className="relative z-10 text-[24px] font-extrabold tracking-tighter min-[420px]:text-[26px]"
+                    style={{ color }}
+                  >
                     {mesa.numero}
                   </span>
 
@@ -157,7 +196,7 @@ export const MobileTableGrid = memo(function MobileTableGrid({
                         >
                           {waiterName.charAt(0).toUpperCase()}
                         </span>
-                        <span className="text-[9px] font-semibold text-[var(--text-primary)]/80 truncate max-w-[60px]">
+                        <span className="max-w-[72px] truncate text-[9px] font-semibold text-[var(--text-primary)]/80">
                           {waiterName.split(' ')[0]}
                         </span>
                       </div>

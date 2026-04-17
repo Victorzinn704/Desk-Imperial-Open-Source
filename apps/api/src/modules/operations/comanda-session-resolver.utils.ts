@@ -59,9 +59,10 @@ async function resolveOwnerSessionContext(
 ) {
   let currentEmployeeId: string | null = null
   let cashSessionId: string | null = dto.cashSessionId ?? null
+  let assignedEmployee: { id: string } | null = null
 
   if (dto.employeeId) {
-    const assignedEmployee = await helpers.requireOwnedEmployee(prisma, workspaceOwnerUserId, dto.employeeId)
+    assignedEmployee = await helpers.requireOwnedEmployee(prisma, workspaceOwnerUserId, dto.employeeId)
     const employeeOpenSession = await prisma.cashSession.findFirst({
       where: {
         companyOwnerId: workspaceOwnerUserId,
@@ -80,9 +81,29 @@ async function resolveOwnerSessionContext(
     cashSessionId = cashSessionId ?? employeeOpenSession.id
   }
 
-  const businessDate = cashSessionId
-    ? (await helpers.requireOwnedCashSession(prisma, workspaceOwnerUserId, cashSessionId)).businessDate
-    : operationalBusinessDate
+  const providedSession = cashSessionId
+    ? await helpers.requireOwnedCashSession(prisma, workspaceOwnerUserId, cashSessionId)
+    : null
+
+  if (providedSession) {
+    if (providedSession.status !== CashSessionStatus.OPEN) {
+      throw new ConflictException('O caixa informado precisa estar aberto para receber comandas.')
+    }
+
+    if (!sameBusinessDate(providedSession.businessDate, operationalBusinessDate)) {
+      throw new ConflictException('O caixa informado pertence a outro dia operacional.')
+    }
+
+    if (assignedEmployee && providedSession.employeeId !== assignedEmployee.id) {
+      throw new ConflictException('O caixa informado pertence a outro funcionario.')
+    }
+  }
+
+  const businessDate = providedSession?.businessDate ?? operationalBusinessDate
 
   return { currentEmployeeId, cashSessionId, businessDate }
+}
+
+function sameBusinessDate(left: Date, right: Date) {
+  return left.getTime() === right.getTime()
 }

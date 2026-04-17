@@ -1,52 +1,55 @@
-# Matriz de Riscos — Desk Imperial
+# Matriz de Riscos - Desk Imperial
 
-**Data:** 2026-04-10  
-**Escala:** impacto `1-5` x probabilidade `1-5`  
-**Esforço:** `Baixo` / `Médio` / `Alto`
+**Data:** 2026-04-14
+**Escala:** impacto `1-5` x probabilidade `1-5`
+**Esforco:** `Baixo` / `Medio` / `Alto`
 
 ---
 
-| ID | Risco | Domínio | Impacto | Prob. | Score | Esforço | Prioridade |
+## Riscos Ativos
+
+| ID | Risco | Dominio | Impacto | Prob. | Score | Esforco | Prioridade |
 | --- | --- | --- | ---: | ---: | ---: | --- | --- |
-| `AUD-001` | Build do web quebrado na rota raiz | Frontend / Release | 5 | 5 | 25 | Baixo | P0 |
-| `AUD-004` | Segredos operacionais em texto puro | Segurança / Infra | 5 | 4 | 20 | Baixo-Médio | P0 |
-| `AUD-003` | Cancelamento de pedido restaura estoque em duplicidade sob concorrência | Backend / Dados | 5 | 4 | 20 | Médio | P0 |
-| `AUD-006` | Dependências de runtime vulneráveis em produção | Segurança / Supply chain | 4 | 4 | 16 | Médio | P1 |
-| `AUD-010` | Rollback fraco por migration no boot + force-recreate | Infra / Release | 5 | 3 | 15 | Médio-Alto | P1 |
-| `AUD-005` | Sessão de staff arquivado continua válida por cache | Backend / AuthZ | 4 | 3 | 12 | Médio | P1 |
-| `AUD-011` | Backup/DR ausente | Infra / Continuidade | 5 | 2 | 10 | Médio | P1 |
-| `AUD-008` | Backend E2E fora da CI | QA / Release safety | 4 | 3 | 12 | Médio | P1 |
-| `AUD-009` | Cobertura do web superestima confiança | QA / Governança | 4 | 3 | 12 | Médio | P1 |
-| `AUD-007` | CSV export vulnerável a formula injection | Frontend / Segurança funcional | 4 | 3 | 12 | Baixo | P1 |
-| `AUD-012` | SSH sem verificação de host | Infra / Segurança | 4 | 3 | 12 | Baixo | P1 |
-| `AUD-015` | Acoplamento `operations`/`products`/`finance` aumenta blast radius | Arquitetura | 4 | 3 | 12 | Alto | P1 |
-| `AUD-014` | Ciclo `auth`/`consent`/`geocoding` | Arquitetura | 4 | 3 | 12 | Alto | P1 |
-| `AUD-016` | Troca de moeda não invalida caches monetários | Backend / Consistência | 3 | 4 | 12 | Baixo-Médio | P2 |
-| `AUD-018` | CSRF por `Referer` aceita prefixo | Segurança | 3 | 3 | 9 | Baixo | P2 |
-| `AUD-019` | Roteamento `/app` depende do cliente | Frontend / UX | 3 | 3 | 9 | Médio | P2 |
-| `AUD-020` | E2E web não cobre fluxos operacionais | QA / Produto | 4 | 2 | 8 | Médio | P2 |
-| `AUD-021` | Documentação principal em drift | DX / Governança | 3 | 4 | 12 | Médio | P2 |
-| `AUD-023` | Alertas e correlação de observabilidade ainda são parciais | SRE / Observabilidade | 3 | 3 | 9 | Médio | P3 |
+| `AUD-301` | Sonar local indisponivel e cobertura web em `69.11%`; lote full ainda depende de Redis real | Qualidade / Entrega | 4 | 5 | 20 | Medio | P1 |
+| `AUD-305` | Latencia funcional entrou em config, mas entrega real e alertas de erro ainda nao foram validados | SRE / Operacao | 4 | 3 | 12 | Medio | P1 |
+| `AUD-315` | Outbox offline inconsistente entre owner e staff | Frontend / Operacao | 4 | 4 | 16 | Medio-Alto | P1 |
+| `AUD-308` | Cobertura web voltou a incluir owner-mobile/realtime, mas o total ainda fica abaixo do gate | QA / Governanca | 4 | 3 | 12 | Medio | P1 |
+| `AUD-314` | Ciclo `auth`/`consent`/`geocoding` | Arquitetura | 3 | 4 | 12 | Medio-Alto | P1 |
+| `AUD-313` | Baseline de warnings segue alto em hotspots | Manutenibilidade | 3 | 4 | 12 | Medio-Alto | P2 |
+| `AUD-325` | Mobile ainda paga fetch duplo e hydration swap | Frontend / Performance | 3 | 4 | 12 | Medio | P2 |
+| `AUD-328` | Hotspots concentram shell, estado e regra em poucos arquivos | Arquitetura / Manutenibilidade | 3 | 4 | 12 | Alto | P2 |
+| `AUD-312` | Backup/DR ausente no runtime Oracle | Infra / Resiliencia | 5 | 2 | 10 | Medio | P2 |
 
 ---
 
-## Top 10 Riscos
+## Riscos Mitigados em 2026-04-14
 
-1. `AUD-001` — build do web quebrado
-2. `AUD-004` — segredos plaintext
-3. `AUD-003` — cancelamento com corrida de estoque
-4. `AUD-006` — dependências vulneráveis em runtime
-5. `AUD-010` — rollback fraco
-6. `AUD-005` — sessão revogada continua válida
-7. `AUD-008` — backend E2E fora da CI
-8. `AUD-009` — cobertura enganosa no web
-9. `AUD-015` — corredor de acoplamento operacional/financeiro
-10. `AUD-021` — documentação principal em drift
+| ID | Mitigacao observada | Evidencia principal |
+| --- | --- | --- |
+| `AUD-302` | webhook passou a ser obrigatorio em producao no codigo versionado | `infra/oracle/ops/alertmanager/render-config.sh` |
+| `AUD-304` | dashboards de negocio passaram a existir nas stacks versionadas | `infra/docker/observability/grafana/dashboards/business-observability-overview.json` |
+| `AUD-309` | release criteria foi alinhado ao workflow `CI` | `docs/release/release-criteria-2026-03-28.md` |
+| `AUD-310` | runbook de staging/incidente/rollback foi publicado | `docs/operations/staging-incident-rollback-runbook.md` |
+| `AUD-316` | `STAFF` nao consegue mais alterar perfil do owner/workspace | `apps/api/src/modules/auth/auth.service.ts` |
+| `AUD-317` | auditoria/feed distinguem ator real do owner | `apps/api/src/modules/monitoring/audit-log.service.ts` |
+| `AUD-319` | cancelamento volta a restaurar estoque para pedidos de comanda | `apps/api/src/modules/orders/orders.service.ts` |
+| `AUD-311` | caches monetarios e derivados sao invalidados apos update de perfil | `apps/api/src/modules/auth/auth.service.ts` |
+| `AUD-318` | cache de sessao revalida expiracao e remove piso artificial de TTL | `apps/api/src/modules/auth/auth-session.service.ts` |
+| `AUD-321` | confirmacao offline do staff agora espera persistencia real | `apps/web/components/staff-mobile/staff-mobile-shell.tsx` |
+| `AUD-323` | reconnect passou a refazer baseline | `apps/web/components/operations/use-operations-realtime.ts` |
+| `AUD-324` | mobile separou `loading/error/offline/empty` | `apps/web/components/staff-mobile/*.tsx`, `apps/web/components/owner-mobile/owner-comandas-view.tsx` |
+| `AUD-326` | `isBusy` agora protege acoes destrutivas relevantes | `apps/web/components/staff-mobile/mobile-comanda-list.tsx`, `apps/web/components/owner-mobile/owner-comandas-view.tsx` |
+| `AUD-327` | patch realtime nao subconta mais `openComandasCount` | `apps/web/lib/operations/operations-realtime-patching.ts` |
 
 ---
 
-## Leitura da Matriz
+## Top 8 Riscos Ativos
 
-- O risco mais urgente é a quebra real de build em `AUD-001`, porque o estado atual do branch não gera artefato válido de frontend.
-- A segunda faixa crítica é operacional: `AUD-004`, `AUD-010`, `AUD-011` e `AUD-012` mostram que a infraestrutura detecta falhas, mas ainda não recupera nem protege segredos de forma madura.
-- O núcleo funcional de maior risco fica em pedidos, sessão e finanças: `AUD-003`, `AUD-005`, `AUD-006`, `AUD-016`.
+1. `AUD-301` - Sonar e coverage seguem fora do alvo e sem baseline local confiavel
+2. `AUD-315` - owner/staff ainda nao compartilham um contrato offline coerente
+3. `AUD-305` - SLO funcional entrou no baseline, mas ainda falta validar entrega real
+4. `AUD-308` - cobertura nao protege adequadamente a superficie operacional mobile
+5. `AUD-314` - onboarding/auth continua com boundary estrutural fragil
+6. `AUD-313` - warning baseline continua alto nos hotspots principais
+7. `AUD-312` - backup/restore segue sem ritual testado
+8. `AUD-328` - hotspots estruturais continuam concentrando shell, estado e regra

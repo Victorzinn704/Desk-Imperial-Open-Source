@@ -1,0 +1,28 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - heading "404" [level=1] [ref=e5]
+    - heading "This page could not be found." [level=2] [ref=e7]
+  - region "Notifications alt+T"
+  - dialog "Este site usa cookies" [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e12]
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - img [ref=e16]
+            - text: Preferências de cookies
+          - heading "Este site usa cookies" [level=2] [ref=e19]
+          - paragraph [ref=e20]: Usamos cookies necessários para segurança e sessão. Você pode escolher separadamente os opcionais de análise e comunicação.
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - checkbox "Cookies de analise (metricas de uso)" [ref=e23]
+              - text: Cookies de analise (metricas de uso)
+            - generic [ref=e24]:
+              - checkbox "Cookies de marketing (comunicacao)" [ref=e25]
+              - text: Cookies de marketing (comunicacao)
+          - paragraph [ref=e26]: Cookies necessarios permanecem ativos para autenticacao e seguranca.
+      - generic [ref=e27]:
+        - button "Usar apenas essenciais" [ref=e28]
+        - button "Salvar escolhas" [ref=e29]
+        - button "Aceitar tudo" [ref=e30]
+  - alert [ref=e31]

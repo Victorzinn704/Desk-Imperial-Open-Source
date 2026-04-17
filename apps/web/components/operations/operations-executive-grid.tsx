@@ -567,12 +567,7 @@ function SummaryCard({
   hint: string
   highlight?: 'neutral' | 'positive' | 'negative'
 }>) {
-  const borderTone =
-    highlight === 'positive'
-      ? 'border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)]'
-      : highlight === 'negative'
-        ? 'border-[rgba(248,113,113,0.14)] bg-[rgba(248,113,113,0.04)]'
-        : 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+  const borderTone = resolveSummaryCardTone(highlight)
 
   return (
     <div className={`rounded-[24px] border px-4 py-4 ${borderTone}`}>
@@ -601,8 +596,7 @@ function SessionReadoutRow({
   value: string
   emphasis?: 'neutral' | 'positive' | 'negative'
 }>) {
-  const valueClassName =
-    emphasis === 'positive' ? 'text-[#8fffb9]' : emphasis === 'negative' ? 'text-[#fca5a5]' : 'text-white'
+  const valueClassName = resolveSessionReadoutTone(emphasis)
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-[16px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-3 py-3">
@@ -648,22 +642,66 @@ function buildSelectedRegisters(row: OperationGridRow) {
     amount: table.totalAmount,
   }))
 
-  const movementRegisters = row.movements.map((movement) => ({
-    id: `movement-${movement.id}`,
-    happenedAt: movement.createdAt,
-    title: formatMovementTypeLabel(movement.type),
-    subtitle: movement.reason,
-    badgeClassName:
-      movement.type === 'withdrawal'
-        ? 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[#fca5a5]'
-        : movement.type === 'supply'
-          ? 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
-          : 'border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]',
-    icon: movement.type === 'withdrawal' ? ArrowUpRight : Banknote,
-    amount: movement.amount,
-  }))
+  const movementRegisters = row.movements.map((movement) => {
+    const visuals = resolveMovementVisuals(movement.type)
+
+    return {
+      id: `movement-${movement.id}`,
+      happenedAt: movement.createdAt,
+      title: formatMovementTypeLabel(movement.type),
+      subtitle: movement.reason,
+      badgeClassName: visuals.badgeClassName,
+      icon: visuals.icon,
+      amount: movement.amount,
+    }
+  })
 
   return [...tableRegisters, ...movementRegisters].sort(
     (left, right) => new Date(right.happenedAt).getTime() - new Date(left.happenedAt).getTime(),
   )
+}
+
+function resolveSummaryCardTone(highlight: 'neutral' | 'positive' | 'negative') {
+  if (highlight === 'positive') {
+    return 'border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)]'
+  }
+
+  if (highlight === 'negative') {
+    return 'border-[rgba(248,113,113,0.14)] bg-[rgba(248,113,113,0.04)]'
+  }
+
+  return 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+}
+
+function resolveSessionReadoutTone(emphasis: 'neutral' | 'positive' | 'negative') {
+  if (emphasis === 'positive') {
+    return 'text-[#8fffb9]'
+  }
+
+  if (emphasis === 'negative') {
+    return 'text-[#fca5a5]'
+  }
+
+  return 'text-white'
+}
+
+function resolveMovementVisuals(type: OperationGridRow['movements'][number]['type']) {
+  if (type === 'withdrawal') {
+    return {
+      badgeClassName: 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[#fca5a5]',
+      icon: ArrowUpRight,
+    }
+  }
+
+  if (type === 'supply') {
+    return {
+      badgeClassName: 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]',
+      icon: Banknote,
+    }
+  }
+
+  return {
+    badgeClassName: 'border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]',
+    icon: Banknote,
+  }
 }

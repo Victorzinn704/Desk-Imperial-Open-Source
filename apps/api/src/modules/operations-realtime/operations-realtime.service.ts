@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { WorkspaceScopedAuthContext } from '../auth/auth.types'
 import {
   buildWorkspaceChannel,
@@ -29,7 +30,7 @@ export class OperationsRealtimeService {
       event,
       workspaceOwnerUserId: workspace.workspaceOwnerUserId,
       workspaceChannel: workspace.workspaceChannel,
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       actorRole: auth.role,
       createdAt: new Date().toISOString(),
       payload,

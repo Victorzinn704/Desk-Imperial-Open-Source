@@ -3,6 +3,11 @@
 Data: 2026-04-01  
 Objetivo: reduzir risco de liberacao sem reescrever o produto
 
+Atualizacao 2026-04-14:
+
+- o item `P0-1` abaixo ficou historico;
+- o pipeline atual ja trata frontend como gate principal de merge/release em [`ci.yml`](../../.github/workflows/ci.yml).
+
 ---
 
 ## 1. Metodo de priorizacao
@@ -25,11 +30,13 @@ Cada item traz:
 
 ## P0-1 - Gate de CI sem cobertura frontend completa
 
-Diagnostico:
+Status em 2026-04-14: resolvido no baseline atual; manter apenas como contexto historico.
+
+Diagnostico historico:
 
 - pipeline principal valida backend, mas ainda nao trata frontend como gate de release equivalente.
 
-Evidencia tecnica:
+Evidencia tecnica historica:
 
 - workflow principal executa lint/typecheck/test/build com foco backend no job de teste.
 - testes web existem (Vitest e Playwright), mas nao estao no gate principal de merge.
@@ -38,7 +45,7 @@ Impacto de produto:
 
 - regressao visual/funcional em fluxo web pode chegar a producao com gate verde.
 
-Recomendacao pratica:
+Recomendacao pratica historica:
 
 - adicionar jobs dedicados para web unit e web e2e baseline no CI principal.
 

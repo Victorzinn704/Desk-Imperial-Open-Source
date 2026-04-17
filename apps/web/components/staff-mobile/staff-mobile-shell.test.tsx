@@ -15,6 +15,10 @@ import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import { StaffMobileShell } from './staff-mobile-shell'
 
+const { useOperationsRealtimeMock } = vi.hoisted(() => ({
+  useOperationsRealtimeMock: vi.fn(() => ({ status: 'connected' })),
+}))
+
 const enqueueMock = vi.fn()
 const drainQueueMock = vi.fn()
 
@@ -41,7 +45,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('../operations/use-operations-realtime', () => ({
-  useOperationsRealtime: vi.fn(() => ({ status: 'connected' })),
+  useOperationsRealtime: useOperationsRealtimeMock,
 }))
 
 vi.mock('@/components/shared/use-offline-queue', () => ({
@@ -71,6 +75,7 @@ describe('StaffMobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useOperationsRealtimeMock.mockReturnValue({ status: 'connected' })
     enqueueMock.mockResolvedValue('offline-1')
     drainQueueMock.mockResolvedValue({
       expiredCount: 0,
@@ -513,5 +518,15 @@ describe('StaffMobileShell', () => {
       expect(api.openCashSession).not.toHaveBeenCalled()
       expect(screen.getByText(/Essa mesa ja possui uma comanda aberta/i)).toBeInTheDocument()
     })
+  })
+
+  it('expõe aviso offline na aba de mesas quando a conexão cai', async () => {
+    useOperationsRealtimeMock.mockReturnValue({ status: 'disconnected' })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    expect(
+      await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i),
+    ).toBeInTheDocument()
   })
 })

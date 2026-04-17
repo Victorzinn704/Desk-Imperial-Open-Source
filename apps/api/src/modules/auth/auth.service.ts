@@ -25,7 +25,8 @@ import type { ResetPasswordDto } from './dto/reset-password.dto'
 import type { UpdateProfileDto } from './dto/update-profile.dto'
 import type { VerifyEmailDto } from './dto/verify-email.dto'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
-import { normalizeComparableValue, toAuthUser } from './auth-shared.util'
+import { normalizeComparableValue, resolveAuthActorUserId, toAuthUser } from './auth-shared.util'
+import { assertOwnerRole } from '../../common/utils/workspace-access.util'
 
 @Injectable()
 export class AuthService {
@@ -96,7 +97,7 @@ export class AuthService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'auth.logout.succeeded',
       resource: 'session',
       resourceId: auth.sessionId,
@@ -126,6 +127,8 @@ export class AuthService {
   }
 
   async updateProfile(auth: AuthContext, dto: UpdateProfileDto, context: RequestContext) {
+    assertOwnerRole(auth, 'Apenas o dono da empresa pode atualizar o perfil.')
+
     const user = await this.prisma.user.update({
       where: { id: auth.userId },
       data: {
@@ -143,7 +146,7 @@ export class AuthService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'auth.profile.updated',
       resource: 'user',
       resourceId: auth.userId,
@@ -156,11 +159,15 @@ export class AuthService {
       userAgent: context.userAgent,
     })
 
-    await this.sessionService.forgetSessionCache(auth.sessionId)
+    await Promise.all([
+      this.sessionService.refreshWorkspaceSessionCaches(auth.workspaceOwnerUserId),
+      this.sessionService.invalidateWorkspaceDerivedCaches(auth.workspaceOwnerUserId),
+    ])
 
     return {
       user: toAuthUser(user, {
         sessionId: auth.sessionId,
+        actorUserId: resolveAuthActorUserId(auth),
         analytics: user.cookiePreference?.analytics ?? false,
         marketing: user.cookiePreference?.marketing ?? false,
         evaluationAccess: auth.evaluationAccess,

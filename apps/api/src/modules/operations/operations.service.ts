@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CashSessionService } from './cash-session.service'
@@ -226,7 +227,7 @@ export class OperationsService {
       },
     })
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.mesa.created',
       resource: 'mesa',
       resourceId: mesa.id,
@@ -288,7 +289,7 @@ export class OperationsService {
       },
     })
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.mesa.updated',
       resource: 'mesa',
       resourceId: mesaId,

@@ -16,6 +16,7 @@ import {
   updateProfile,
 } from '@/lib/api'
 import { clearAdminPinVerification } from '@/lib/admin-pin'
+import { invalidateOperationsWorkspace, OPERATIONS_LIVE_QUERY_PREFIX } from '@/lib/operations'
 
 /**
  * Hook centralizado para todas as mutations do dashboard
@@ -62,6 +63,13 @@ export function useDashboardMutations() {
     onSuccess: (payload) => {
       queryClient.setQueryData(['auth', 'me'], payload)
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['finance'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeOrders: true,
+        includeFinance: true,
+      })
     },
   })
 

@@ -1,0 +1,217 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - heading "Calendário Comercial" [level=1] [ref=e125]
+              - paragraph [ref=e126]: Eventos, promoções e impacto nas vendas
+            - button "Novo Evento" [ref=e127] [cursor=pointer]:
+              - img [ref=e128]
+              - text: Novo Evento
+          - generic [ref=e129]:
+            - generic [ref=e130]: Promoção
+            - generic [ref=e131]: Evento
+            - generic [ref=e132]: Jogo
+            - generic [ref=e133]: Feriado
+            - generic [ref=e134]: Reserva
+          - generic [ref=e135]:
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - button [ref=e138] [cursor=pointer]:
+                  - img [ref=e139]
+                - heading "Abril 2026" [level=2] [ref=e141]
+                - button [ref=e142] [cursor=pointer]:
+                  - img [ref=e143]
+              - generic [ref=e145]:
+                - generic [ref=e146]:
+                  - generic [ref=e147]: Dom
+                  - generic [ref=e148]: Seg
+                  - generic [ref=e149]: Ter
+                  - generic [ref=e150]: Qua
+                  - generic [ref=e151]: Qui
+                  - generic [ref=e152]: Sex
+                  - generic [ref=e153]: Sáb
+                - generic [ref=e154]:
+                  - button [ref=e155]
+                  - button [ref=e156]
+                  - button [ref=e157]
+                  - button "1" [ref=e158] [cursor=pointer]:
+                    - generic [ref=e159]: "1"
+                  - button "2" [ref=e160] [cursor=pointer]:
+                    - generic [ref=e161]: "2"
+                  - button "3" [ref=e162] [cursor=pointer]:
+                    - generic [ref=e163]: "3"
+                  - button "4 Happy Hour 50%" [ref=e164] [cursor=pointer]:
+                    - generic [ref=e165]: "4"
+                    - generic [ref=e167]: Happy Hour 50%
+                  - button "5 Reserva — Empresa XYZ" [ref=e168] [cursor=pointer]:
+                    - generic [ref=e169]: "5"
+                    - generic [ref=e171]: Reserva — Empresa XYZ
+                  - button "6 Flamengo x Palmeiras" [ref=e172] [cursor=pointer]:
+                    - generic [ref=e173]: "6"
+                    - generic [ref=e175]: Flamengo x Palmeiras
+                  - button "7 Dia dos Pais — Especial" [ref=e176] [cursor=pointer]:
+                    - generic [ref=e177]: "7"
+                    - generic [ref=e179]: Dia dos Pais — Especial
+                  - button "8" [ref=e180] [cursor=pointer]:
+                    - generic [ref=e181]: "8"
+                  - button "9" [ref=e182] [cursor=pointer]:
+                    - generic [ref=e183]: "9"
+                  - button "10 Promoção Combo + Suco" [ref=e184] [cursor=pointer]:
+                    - generic [ref=e185]: "10"
+                    - generic [ref=e187]: Promoção Combo + Suco
+                  - button "11 Reserva — Aniversário" [ref=e188] [cursor=pointer]:
+                    - generic [ref=e189]: "11"
+                    - generic [ref=e191]: Reserva — Aniversário
+                  - button "12 Brasil x Argentina" [ref=e192] [cursor=pointer]:
+                    - generic [ref=e193]: "12"
+                    - generic [ref=e195]: Brasil x Argentina
+                  - button "13" [ref=e196] [cursor=pointer]:
+                    - generic [ref=e197]: "13"
+                  - button "14" [ref=e198] [cursor=pointer]:
+                    - generic [ref=e199]: "14"
+                  - button "15" [ref=e200] [cursor=pointer]:
+                    - generic [ref=e201]: "15"
+                  - button "16" [ref=e202] [cursor=pointer]:
+                    - generic [ref=e203]: "16"
+                  - button "17" [ref=e204] [cursor=pointer]:
+                    - generic [ref=e205]: "17"
+                  - button "18" [ref=e206] [cursor=pointer]:
+                    - generic [ref=e207]: "18"
+                  - button "19 Festival de Música" [ref=e208] [cursor=pointer]:
+                    - generic [ref=e209]: "19"
+                    - generic [ref=e211]: Festival de Música
+                  - button "20" [ref=e212] [cursor=pointer]:
+                    - generic [ref=e213]: "20"
+                  - button "21 Tiradentes" [ref=e214] [cursor=pointer]:
+                    - generic [ref=e215]: "21"
+                    - generic [ref=e217]: Tiradentes
+                  - button "22" [ref=e218] [cursor=pointer]:
+                    - generic [ref=e219]: "22"
+                  - button "23" [ref=e220] [cursor=pointer]:
+                    - generic [ref=e221]: "23"
+                  - button "24" [ref=e222] [cursor=pointer]:
+                    - generic [ref=e223]: "24"
+                  - button "25 Promoção Pizza 2×1" [ref=e224] [cursor=pointer]:
+                    - generic [ref=e225]: "25"
+                    - generic [ref=e227]: Promoção Pizza 2×1
+                  - button "26 Reserva — Formatura" [ref=e228] [cursor=pointer]:
+                    - generic [ref=e229]: "26"
+                    - generic [ref=e231]: Reserva — Formatura
+                  - button "27" [ref=e232] [cursor=pointer]:
+                    - generic [ref=e233]: "27"
+                  - button "28 Copa do Estado Final" [ref=e234] [cursor=pointer]:
+                    - generic [ref=e235]: "28"
+                    - generic [ref=e237]: Copa do Estado Final
+                  - button "29" [ref=e238] [cursor=pointer]:
+                    - generic [ref=e239]: "29"
+                  - button "30" [ref=e240] [cursor=pointer]:
+                    - generic [ref=e241]: "30"
+                  - button [ref=e242]
+                  - button [ref=e243]
+            - generic [ref=e244]:
+              - generic [ref=e246]:
+                - heading "7 de Abril" [level=2] [ref=e247]
+                - paragraph [ref=e248]: 1 evento
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - generic [ref=e252]: Evento
+                  - generic [ref=e253]: +45% vendas
+                - paragraph [ref=e254]: Dia dos Pais — Especial
+                - paragraph [ref=e255]: ⏰ dia todo
+              - generic [ref=e256]:
+                - paragraph [ref=e257]: Próximos
+                - generic [ref=e258]:
+                  - generic [ref=e259]:
+                    - paragraph [ref=e261]: Promoção Combo + Suco
+                    - generic [ref=e262]: Dia 10
+                  - generic [ref=e263]:
+                    - paragraph [ref=e265]: Reserva — Aniversário
+                    - generic [ref=e266]: Dia 11
+                  - generic [ref=e267]:
+                    - paragraph [ref=e269]: Brasil x Argentina
+                    - generic [ref=e270]: Dia 12
+                  - generic [ref=e271]:
+                    - paragraph [ref=e273]: Tiradentes
+                    - generic [ref=e274]: Dia 21
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e280] [cursor=pointer]:
+    - img [ref=e281]

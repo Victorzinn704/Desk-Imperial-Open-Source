@@ -1,4 +1,4 @@
-import { UserStatus, UserRole } from '@prisma/client'
+import { Prisma, UserStatus, UserRole } from '@prisma/client'
 import type { PrismaService } from '../../database/prisma.service'
 import {
   authSessionUserSelect,
@@ -44,9 +44,21 @@ export async function resolveLoginActor(
       return null
     }
 
+    const loginUser = await ensureEmployeeLoginUser(prisma, {
+      employee: {
+        id: employee.id,
+        active: employee.active,
+        displayName: employee.displayName,
+        passwordHash: employee.passwordHash,
+        loginUser: legacyLoginUser,
+      },
+      ownerUser,
+      fallbackPasswordHash: passwordHash,
+    })
+
     return {
-      actorUserId: legacyLoginUser?.id ?? ownerUser.id,
-      sessionUserId: legacyLoginUser?.id ?? null,
+      actorUserId: loginUser.id,
+      sessionUserId: loginUser.id,
       workspaceOwnerUserId: ownerUser.id,
       employeeId: employee.id,
       employeeCode: employee.employeeCode,
@@ -58,6 +70,7 @@ export async function resolveLoginActor(
       ownerUser,
       authUser: {
         ...ownerUser,
+        id: loginUser.id,
         fullName: employee.displayName,
         role: UserRole.STAFF,
         companyOwnerId: ownerUser.id,
@@ -141,9 +154,22 @@ export async function resolveDemoStaffActor(prisma: PrismaService, demoEmail: st
     return null
   }
 
+  const loginUser = await ensureEmployeeLoginUser(prisma, {
+    employee: {
+      id: employee.id,
+      active: employee.active,
+      displayName: employee.displayName,
+      passwordHash: employee.passwordHash,
+      loginUser: legacyLoginUser,
+    },
+    ownerUser,
+    fallbackPasswordHash:
+      resolveEmployeePasswordHash(employee) ?? hashToken(`demo-session:${ownerUser.id}:${employee.id}:${employee.employeeCode}`),
+  })
+
   return {
-    actorUserId: legacyLoginUser?.id ?? ownerUser.id,
-    sessionUserId: legacyLoginUser?.id ?? null,
+    actorUserId: loginUser.id,
+    sessionUserId: loginUser.id,
     workspaceOwnerUserId: ownerUser.id,
     employeeId: employee.id,
     employeeCode: employee.employeeCode,
@@ -155,6 +181,7 @@ export async function resolveDemoStaffActor(prisma: PrismaService, demoEmail: st
     ownerUser,
     authUser: {
       ...ownerUser,
+      id: loginUser.id,
       fullName: employee.displayName,
       role: UserRole.STAFF,
       companyOwnerId: ownerUser.id,
@@ -183,4 +210,107 @@ export function resolveEmployeePasswordHash(employee: {
   loginUser: { passwordHash: string } | null
 }) {
   return employee.passwordHash ?? employee.loginUser?.passwordHash ?? null
+}
+
+export function buildSyntheticStaffEmail(employeeId: string) {
+  return `staff-${employeeId}@desk-imperial.local`
+}
+
+type EmployeeLoginActorUser = Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
+  ? T extends { user: infer U }
+    ? U
+    : never
+  : never
+
+type EmployeeLoginActorRecord = Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
+  ? T extends {
+      id: string
+      active: boolean
+      displayName: string
+      passwordHash: string | null
+      loginUser: infer L
+    }
+    ? {
+        id: string
+        active: boolean
+        displayName: string
+        passwordHash: string | null
+        loginUser: L
+      }
+    : never
+  : never
+
+type StaffLoginUserWriter = Pick<PrismaService, 'user' | 'employee'> | Pick<Prisma.TransactionClient, 'user' | 'employee'>
+
+export async function ensureEmployeeLoginUser(
+  prisma: StaffLoginUserWriter,
+  params: {
+    employee: EmployeeLoginActorRecord
+    ownerUser: EmployeeLoginActorUser
+    fallbackPasswordHash?: string | null
+  },
+) {
+  const passwordHash = params.fallbackPasswordHash ?? resolveEmployeePasswordHash(params.employee)
+
+  if (!passwordHash) {
+    throw new Error(`Employee ${params.employee.id} is missing a password hash for STAFF login actor creation.`)
+  }
+
+  const email = buildSyntheticStaffEmail(params.employee.id)
+  const sharedData = {
+    companyOwnerId: params.ownerUser.id,
+    fullName: params.employee.displayName,
+    companyName: params.ownerUser.companyName,
+    companyStreetLine1: params.ownerUser.companyStreetLine1,
+    companyStreetNumber: params.ownerUser.companyStreetNumber,
+    companyAddressComplement: params.ownerUser.companyAddressComplement,
+    companyDistrict: params.ownerUser.companyDistrict,
+    companyCity: params.ownerUser.companyCity,
+    companyState: params.ownerUser.companyState,
+    companyPostalCode: params.ownerUser.companyPostalCode,
+    companyCountry: params.ownerUser.companyCountry,
+    companyLatitude: params.ownerUser.companyLatitude,
+    companyLongitude: params.ownerUser.companyLongitude,
+    hasEmployees: params.ownerUser.hasEmployees,
+    employeeCount: params.ownerUser.employeeCount,
+    role: UserRole.STAFF,
+    passwordHash,
+    status: params.employee.active ? UserStatus.ACTIVE : UserStatus.DISABLED,
+    preferredCurrency: params.ownerUser.preferredCurrency,
+    emailVerifiedAt: params.ownerUser.emailVerifiedAt,
+  }
+
+  const loginUser = params.employee.loginUser?.id
+    ? await prisma.user.update({
+        where: { id: params.employee.loginUser.id },
+        data: {
+          email,
+          ...sharedData,
+        },
+        select: {
+          id: true,
+          passwordHash: true,
+        },
+      })
+    : await prisma.user.upsert({
+        where: { email },
+        update: sharedData,
+        create: {
+          email,
+          ...sharedData,
+        },
+        select: {
+          id: true,
+          passwordHash: true,
+        },
+      })
+
+  if (params.employee.loginUser?.id !== loginUser.id) {
+    await prisma.employee.update({
+      where: { id: params.employee.id },
+      data: { loginUserId: loginUser.id },
+    })
+  }
+
+  return loginUser
 }

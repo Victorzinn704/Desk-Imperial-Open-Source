@@ -149,6 +149,7 @@ export class AuthLoginService {
 
     const authUser = toAuthUser(activeActor.authUser, {
       sessionId: session.sessionId,
+      actorUserId: activeActor.actorUserId,
       analytics: activeActor.cookiePreference?.analytics ?? false,
       marketing: activeActor.cookiePreference?.marketing ?? false,
       evaluationAccess: session.evaluationAccess,
@@ -248,6 +249,7 @@ export class AuthLoginService {
 
     const authUser = toAuthUser(activeActor.authUser, {
       sessionId: session.sessionId,
+      actorUserId: activeActor.actorUserId,
       analytics: activeActor.cookiePreference?.analytics ?? false,
       marketing: activeActor.cookiePreference?.marketing ?? false,
       evaluationAccess: session.evaluationAccess,

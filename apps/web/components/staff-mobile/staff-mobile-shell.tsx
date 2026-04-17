@@ -108,6 +108,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const { enqueue, drainQueue } = useOfflineQueue()
+  const isOffline = realtimeStatus === 'disconnected'
 
   // Executor reutilizado pelos dois canais de drain (SW + fallback)
   const runDrain = useCallback(() => {
@@ -197,6 +198,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
   })
+
+  const operationsLoading = operationsQuery.isLoading && !operationsQuery.data
+  const kitchenLoading = kitchenQuery.isLoading && !kitchenQuery.data
+  const productsLoading = productsQuery.isLoading && !productsQuery.data
+  const operationsErrorMessage = operationsQuery.error instanceof Error ? operationsQuery.error.message : null
+  const kitchenErrorMessage = kitchenQuery.error instanceof Error ? kitchenQuery.error.message : null
+  const productsErrorMessage = productsQuery.error instanceof Error ? productsQuery.error.message : null
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -408,13 +416,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     setActiveTab('mesas')
   }
 
-  function enqueueOfflineItems(items: ComandaItem[]) {
+  async function enqueueOfflineItems(items: ComandaItem[]) {
     if (pendingAction?.type === 'add') {
       for (const item of items) {
-        enqueue({ type: 'add-item', payload: { comandaId: pendingAction.comandaId, payload: toApiItemPayload(item) } })
+        await enqueue({ type: 'add-item', payload: { comandaId: pendingAction.comandaId, payload: toApiItemPayload(item) } })
       }
     } else if (pendingAction?.type === 'new') {
-      enqueue({
+      await enqueue({
         type: 'open-comanda',
         payload: {
           tableLabel: pendingAction.mesa.numero,
@@ -476,7 +484,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       await handleSubmitNewComanda(items, pendingAction.mesa)
     } catch (error) {
       if (isNetworkError(error) && pendingAction) {
-        enqueueOfflineItems(items)
+        await enqueueOfflineItems(items)
         return
       }
       setScreenError(error instanceof Error ? error.message : 'Não foi possível processar o pedido.')
@@ -542,7 +550,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     if (activeTab === 'mesas') {
       return (
         <MobileTableGrid
-          isLoading={operationsQuery.isLoading && !operationsQuery.data}
+          errorMessage={operationsErrorMessage}
+          isLoading={operationsLoading}
+          isOffline={isOffline}
           mesas={mesas}
           onSelectMesa={handleSelectMesa}
         />
@@ -550,15 +560,26 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     }
 
     if (activeTab === 'cozinha') {
-      return <KitchenOrdersView data={kitchenQuery.data} queryKey={OPERATIONS_KITCHEN_QUERY_KEY} />
+      return (
+        <KitchenOrdersView
+          data={kitchenQuery.data}
+          errorMessage={kitchenErrorMessage}
+          isLoading={kitchenLoading}
+          isOffline={isOffline}
+          queryKey={OPERATIONS_KITCHEN_QUERY_KEY}
+        />
+      )
     }
 
     if (activeTab === 'pedido' && pendingAction) {
       return (
         <MobileOrderBuilder
           busy={isBusy}
+          errorMessage={productsErrorMessage}
+          isLoading={productsLoading}
           mesaLabel={mesaLabel}
           mode={orderMode}
+          isOffline={isOffline}
           produtos={productsQuery.data?.items ?? []}
           onCancel={() => {
             setPendingAction(null)
@@ -594,8 +615,12 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     if (activeTab === 'pedidos') {
       return (
         <MobileComandaList
+          errorMessage={operationsErrorMessage}
           comandas={activeComandas}
+          isBusy={isBusy}
+          isLoading={operationsLoading}
           focusedId={focusedComandaId}
+          isOffline={isOffline}
           onAddItems={handleAddItemsToComanda}
           onCancelComanda={handleCancel}
           onCloseComanda={handleCloseWithDiscount}
@@ -623,14 +648,14 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <div className="flex min-h-screen min-h-[100svh] flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <header
-        className="flex shrink-0 items-center justify-between bg-[var(--bg)] px-4 pb-2.5 sm:px-5 sm:pb-3"
+        className="flex shrink-0 items-center justify-between gap-3 bg-[var(--bg)] px-3 pb-2.5 sm:px-5 sm:pb-3"
         style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
       >
-        <div className="flex items-center gap-3">
-          <BrandMark />
-          <div className="flex flex-col">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <BrandMark size="sm" wordmark="hidden" />
+          <div className="min-w-0 flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent,#008cff)] sm:text-[11px]">
                 Operacional
@@ -642,15 +667,15 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 }}
               />
             </div>
-            <span className="text-xs font-medium text-[var(--text-primary)] sm:text-sm">
+            <span className="truncate text-xs font-medium text-[var(--text-primary)] sm:text-sm">
               {displayName.split(' ')[0]}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             aria-label="Encerrar sessão"
-            className="flex size-10 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95"
+            className="flex size-9 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95 sm:size-10"
             disabled={logoutMutation.isPending}
             type="button"
             onClick={() => logoutMutation.mutate()}
@@ -676,7 +701,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       ) : null}
 
       <main
-        className={`relative ${activeTab === 'pedido' && pendingAction ? 'flex flex-col flex-1 overflow-hidden' : 'flex-1 overflow-y-auto'}`}
+        className={`relative min-h-0 flex-1 ${activeTab === 'pedido' && pendingAction ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-y-contain'}`}
         ref={pullRef}
       >
         <PullIndicator isRefreshing={isRefreshing} progress={pullProgress} style={pullIndicatorStyle} />
@@ -684,10 +709,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       </main>
 
       <nav
-        className="shrink-0 bg-[var(--bg)] px-1.5 pb-1.5 pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
+        className="shrink-0 bg-[var(--bg)] px-1 pb-1 pt-1 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="grid h-16 grid-cols-4 gap-0.5 rounded-[2rem] border border-[var(--border)] bg-[var(--surface-muted)] px-0.5 relative">
+        <div className="relative grid min-h-[4.25rem] grid-cols-4 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           {(
             [
               { id: 'mesas', label: 'Mesas', Icon: Grid2x2, badge: 0 },
@@ -699,7 +724,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             const isActive = activeTab === id || (id === 'pedidos' && activeTab === 'pedido')
             return (
               <button
-                className="relative flex h-full flex-col items-center justify-center gap-1 transition-all active:scale-95"
+                className="relative flex h-full min-h-[3.35rem] flex-col items-center justify-center gap-1 rounded-[1.2rem] px-1 transition-all active:scale-95"
                 data-testid={`nav-${id}`}
                 key={id}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -710,7 +735,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 }}
               >
                 {isActive && (
-                  <div className="absolute inset-x-2 inset-y-1 rounded-[1.5rem] bg-[rgba(0,140,255,0.15)] pointer-events-none" />
+                  <div className="pointer-events-none absolute inset-0 rounded-[1.2rem] bg-[rgba(0,140,255,0.15)]" />
                 )}
                 <div className="relative z-10">
                   <Icon
@@ -725,7 +750,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                   )}
                 </div>
                 <span
-                  className="relative z-10 text-[9px] font-semibold tracking-wide sm:text-[10px]"
+                  className="relative z-10 text-[10px] font-semibold leading-none tracking-wide"
                   style={{ color: isActive ? 'var(--accent, #008cff)' : 'var(--text-soft, #7a8896)' }}
                 >
                   {label}

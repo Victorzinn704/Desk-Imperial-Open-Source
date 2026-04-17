@@ -8,7 +8,7 @@ import { AuthLoginService } from '../src/modules/auth/auth-login.service'
 import { AuthRegistrationService } from '../src/modules/auth/auth-registration.service'
 import { AuthPasswordService } from '../src/modules/auth/auth-password.service'
 import { AuthEmailVerificationService } from '../src/modules/auth/auth-email-verification.service'
-import { makeOwnerAuthContext } from './helpers/auth-context.factory'
+import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
 
 jest.mock('argon2', () => ({
@@ -306,7 +306,11 @@ describe('AuthService session and recovery flows', () => {
   it('retorna sessao em cache sem consultar banco', async () => {
     const { service, prisma, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-cached' })
-    cache.get.mockResolvedValue({ tokenHash: 'cached-hash', auth })
+    cache.get.mockResolvedValue({
+      tokenHash: 'cached-hash',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      auth,
+    })
 
     const result = await service.validateSessionToken('raw-token')
 
@@ -393,6 +397,64 @@ describe('AuthService session and recovery flows', () => {
     expect(cache.set).toHaveBeenCalledTimes(2)
   })
 
+  it('reconstroi sessao STAFF usando loginUser vinculado quando session.user esta vazio', async () => {
+    const { service, prisma, cache } = createSetup()
+    cache.get.mockResolvedValue(null)
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-staff-rebuild',
+      tokenHash: 'token-hash-staff-rebuild',
+      expiresAt: new Date(Date.now() + 30 * 60_000),
+      revokedAt: null,
+      lastSeenAt: new Date(Date.now() - 16 * 60_000),
+      user: null,
+      employee: {
+        id: 'emp-1',
+        active: true,
+        employeeCode: 'VD-001',
+        displayName: 'Marina Vendas',
+        loginUser: {
+          id: 'staff-user-1',
+        },
+      },
+      workspaceOwner: {
+        id: 'owner-1',
+        companyOwnerId: null,
+        fullName: 'Owner One',
+        companyName: 'Empresa Imperial',
+        companyStreetLine1: 'Rua A',
+        companyStreetNumber: '123',
+        companyAddressComplement: null,
+        companyDistrict: 'Centro',
+        companyCity: 'Sao Paulo',
+        companyState: 'SP',
+        companyPostalCode: '01000-000',
+        companyCountry: 'Brasil',
+        companyLatitude: -23.55,
+        companyLongitude: -46.63,
+        hasEmployees: true,
+        employeeCount: 5,
+        email: 'owner@empresa.com',
+        emailVerifiedAt: new Date('2026-01-01T00:00:00.000Z'),
+        preferredCurrency: CurrencyCode.BRL,
+        status: UserStatus.ACTIVE,
+        cookiePreference: { analytics: true, marketing: false },
+      },
+    })
+
+    const result = await service.validateSessionToken('staff-session-token')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        role: 'STAFF',
+        userId: 'staff-user-1',
+        actorUserId: 'staff-user-1',
+        workspaceOwnerUserId: 'owner-1',
+        employeeId: 'emp-1',
+        employeeCode: 'VD-001',
+      }),
+    )
+  })
+
   it('logout revoga sessao, limpa cookies e invalida cache', async () => {
     const { service, prisma, demo, audit, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-logout' })
@@ -413,8 +475,8 @@ describe('AuthService session and recovery flows', () => {
     )
     expect(response.clearCookie).toHaveBeenCalledTimes(3)
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.logout.succeeded' }))
-    // invalidateWorkspaceDerivedCaches calls cache.del 4 times (finance, products x2, orders)
-    expect(cache.del).toHaveBeenCalledTimes(4)
+    // invalidateWorkspaceDerivedCaches calls cache.del 5 times (finance, pillars, products x2, orders)
+    expect(cache.del).toHaveBeenCalledTimes(5)
   })
 
   it('getCurrentUser emite csrf cookie e retorna payload de sessao', async () => {
@@ -431,7 +493,7 @@ describe('AuthService session and recovery flows', () => {
     expect(result.csrfToken).toMatch(/^[0-9a-f]{64}$/)
   })
 
-  it('updateProfile persiste dados, audita evento e limpa cache da sessao', async () => {
+  it('updateProfile persiste dados, audita evento e invalida caches do workspace', async () => {
     const { service, prisma, audit, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-profile' })
     const context = makeRequestContext()
@@ -486,9 +548,30 @@ describe('AuthService session and recovery flows', () => {
       }),
     )
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.profile.updated' }))
-    // forgetSessionCache limpa apenas a sessao do usuario logado (2 chaves: token + id)
+    // refreshWorkspaceSessionCaches limpa as sessoes do workspace e o update invalida caches derivados
     expect(cache.del).toHaveBeenCalledWith('auth:session:token:profile-token')
     expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-profile')
+    expect(cache.del).toHaveBeenCalledWith('finance:summary:owner-1')
+    expect(cache.del).toHaveBeenCalledWith('finance:pillars:owner-1')
+  })
+
+  it('updateProfile rejeita sessao STAFF', async () => {
+    const { service, prisma } = createSetup()
+    const auth = makeStaffAuthContext({ sessionId: 'session-staff-profile' })
+
+    await expect(
+      service.updateProfile(
+        auth,
+        {
+          fullName: 'Nome indevido',
+          companyName: 'Empresa indevida',
+          preferredCurrency: CurrencyCode.BRL,
+        },
+        makeRequestContext(),
+      ),
+    ).rejects.toThrow('Apenas o dono da empresa pode atualizar o perfil.')
+
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
   it('revokeEmployeeSessions revoga as sessoes do funcionario e limpa cache', async () => {

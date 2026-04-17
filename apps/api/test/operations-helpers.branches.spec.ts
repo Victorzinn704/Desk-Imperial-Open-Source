@@ -673,11 +673,61 @@ describe('OperationsHelpersService - branches', () => {
     )
 
     const createPayload = transaction.order.create.mock.calls[0][0]
-    expect(transaction.product.updateMany).toHaveBeenCalledTimes(2)
+    expect(transaction.product.updateMany).toHaveBeenCalledTimes(1)
     expect(createPayload.data.items.create).toEqual([
       expect.objectContaining({ category: 'Alimentos', lineCost: 20, lineRevenue: 30, lineProfit: 10 }),
       expect.objectContaining({ category: 'Comanda manual', lineCost: 0, lineRevenue: 20, lineProfit: 20 }),
     ])
+  })
+
+  it('ensureOrderForClosedComanda falha quando a baixa de estoque nao consegue reservar o item', async () => {
+    const transaction = {
+      product: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      order: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+      comanda: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'comanda-estoque',
+          customerName: 'Cliente XPTO',
+          customerDocument: null,
+          currentEmployeeId: null,
+          currentEmployee: null,
+          notes: null,
+          totalAmount: 30,
+          items: [
+            {
+              productId: 'prod-1',
+              productName: 'Pizza',
+              quantity: 2,
+              unitPrice: 15,
+              totalAmount: 30,
+              product: {
+                id: 'prod-1',
+                name: 'Pizza',
+                stock: 1,
+                unitCost: 10,
+                currency: CurrencyCode.BRL,
+                category: 'Alimentos',
+                isCombo: false,
+                comboComponents: [],
+              },
+            },
+          ],
+        }),
+      },
+    }
+
+    await expect(service.ensureOrderForClosedComanda(transaction as any, 'owner-1', 'comanda-estoque')).rejects.toThrow(
+      BadRequestException,
+    )
+    await expect(service.ensureOrderForClosedComanda(transaction as any, 'owner-1', 'comanda-estoque')).rejects.toThrow(
+      'Estoque insuficiente para Pizza',
+    )
+    expect(transaction.order.create).not.toHaveBeenCalled()
   })
 
   it('ensureOrderForClosedComanda consome componentes quando a comanda fecha combo', async () => {

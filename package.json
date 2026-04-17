@@ -29,6 +29,8 @@
     "quality:scope": "node ./scripts/check-worktree-scope.mjs",
     "quality:scope:strict": "node ./scripts/check-worktree-scope.mjs --strict",
     "quality:contracts": "node ./scripts/check-public-contracts.mjs",
+    "quality:warnings": "node ./scripts/quality-warning-map.mjs",
+    "quality:warnings:strict": "node ./scripts/quality-warning-map.mjs --fail-on-alert",
     "quality:preflight": "node ./scripts/quality-preflight.mjs",
     "quality:preflight:full": "node ./scripts/quality-preflight.mjs --full",
     "typecheck": "turbo run typecheck",

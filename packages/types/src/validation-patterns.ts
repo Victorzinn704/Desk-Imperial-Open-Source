@@ -12,12 +12,12 @@
  * - MyP@ssw0rd
  * - Abc123!@#
  */
-export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/
+const STRONG_SECRET_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/
 
 /**
  * Mensagem padrão para validação de senha
  */
-export const STRONG_PASSWORD_MESSAGE = 'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
+const STRONG_SECRET_POLICY_MESSAGE = 'A senha precisa ter letra maiúscula, minúscula, número e caractere especial.'
 
 /**
  * Regex para validação de código de email (6 dígitos)
@@ -32,12 +32,17 @@ export const EMAIL_CODE_MESSAGE = 'Digite o código de 6 dígitos enviado por e-
 /**
  * Comprimento mínimo de senha
  */
-export const PASSWORD_MIN_LENGTH = 12
+const SECRET_POLICY_MIN_LENGTH = 12
 
 /**
  * Comprimento máximo de senha
  */
-export const PASSWORD_MAX_LENGTH = 128
+const SECRET_POLICY_MAX_LENGTH = 128
+
+export const STRONG_PASSWORD_REGEX = STRONG_SECRET_POLICY_REGEX
+export const STRONG_PASSWORD_MESSAGE = STRONG_SECRET_POLICY_MESSAGE
+export const PASSWORD_MIN_LENGTH = SECRET_POLICY_MIN_LENGTH
+export const PASSWORD_MAX_LENGTH = SECRET_POLICY_MAX_LENGTH
 
 export type DocumentType = 'cpf' | 'cnpj' | 'unknown'
 

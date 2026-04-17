@@ -1,0 +1,264 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - heading "Portfólio" [level=1] [ref=e125]
+              - paragraph [ref=e126]: 12 produtos cadastrados
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - img [ref=e129]
+                - textbox "Buscar produto..." [ref=e132]
+              - button "Novo Produto" [ref=e133] [cursor=pointer]:
+                - img [ref=e134]
+                - text: Novo Produto
+          - generic [ref=e135]:
+            - generic [ref=e136]:
+              - img [ref=e138]
+              - generic [ref=e142]:
+                - paragraph [ref=e143]: Total Produtos
+                - paragraph [ref=e144]: "12"
+            - generic [ref=e145]:
+              - img [ref=e147]
+              - generic [ref=e150]:
+                - paragraph [ref=e151]: Mais Vendido
+                - paragraph [ref=e152]: Cerveja LN
+            - generic [ref=e153]:
+              - img [ref=e155]
+              - generic [ref=e157]:
+                - paragraph [ref=e158]: Estoque Baixo
+                - paragraph [ref=e159]: 2 itens
+            - generic [ref=e160]:
+              - img [ref=e162]
+              - generic [ref=e165]:
+                - paragraph [ref=e166]: Margem Média
+                - paragraph [ref=e167]: 62,4%
+          - generic [ref=e168]:
+            - button "Todos" [ref=e169] [cursor=pointer]
+            - button "Lanches" [ref=e170] [cursor=pointer]
+            - button "Pratos" [ref=e171] [cursor=pointer]
+            - button "Pizzas" [ref=e172] [cursor=pointer]
+            - button "Acompanhamentos" [ref=e173] [cursor=pointer]
+            - button "Entradas" [ref=e174] [cursor=pointer]
+            - button "Bebidas" [ref=e175] [cursor=pointer]
+            - button "Sobremesas" [ref=e176] [cursor=pointer]
+          - table [ref=e178]:
+            - rowgroup [ref=e179]:
+              - row "Produto Categoria Un. Preço Custo Margem Estoque Vendidos" [ref=e180]:
+                - columnheader "Produto" [ref=e181]
+                - columnheader "Categoria" [ref=e182]
+                - columnheader "Un." [ref=e183]
+                - columnheader "Preço" [ref=e184]
+                - columnheader "Custo" [ref=e185]
+                - columnheader "Margem" [ref=e186]
+                - columnheader "Estoque" [ref=e187]
+                - columnheader "Vendidos" [ref=e188]
+            - rowgroup [ref=e189]:
+              - row "X-Burguer Especial Lanches un R$ 32,90 R$ 14,50 55.9% — 42×" [ref=e190]:
+                - cell "X-Burguer Especial" [ref=e191]
+                - cell "Lanches" [ref=e192]
+                - cell "un" [ref=e193]
+                - cell "R$ 32,90" [ref=e194]
+                - cell "R$ 14,50" [ref=e195]
+                - cell "55.9%" [ref=e196]:
+                  - generic [ref=e197]: 55.9%
+                - cell "—" [ref=e198]
+                - cell "42×" [ref=e199]
+              - row "Batata Frita G Acompanhamentos un R$ 18,90 R$ 5,20 72.5% — 31×" [ref=e200]:
+                - cell "Batata Frita G" [ref=e201]
+                - cell "Acompanhamentos" [ref=e202]
+                - cell "un" [ref=e203]
+                - cell "R$ 18,90" [ref=e204]
+                - cell "R$ 5,20" [ref=e205]
+                - cell "72.5%" [ref=e206]:
+                  - generic [ref=e207]: 72.5%
+                - cell "—" [ref=e208]
+                - cell "31×" [ref=e209]
+              - row "Refrigerante 600ml Bebidas un R$ 8,00 R$ 3,50 56.3% 48 78×" [ref=e210]:
+                - cell "Refrigerante 600ml" [ref=e211]
+                - cell "Bebidas" [ref=e212]
+                - cell "un" [ref=e213]
+                - cell "R$ 8,00" [ref=e214]
+                - cell "R$ 3,50" [ref=e215]
+                - cell "56.3%" [ref=e216]:
+                  - generic [ref=e217]: 56.3%
+                - cell "48" [ref=e218]:
+                  - generic [ref=e219]: "48"
+                - cell "78×" [ref=e220]
+              - row "Suco de Laranja Bebidas un R$ 12,90 R$ 4,80 62.8% 22 24×" [ref=e221]:
+                - cell "Suco de Laranja" [ref=e222]
+                - cell "Bebidas" [ref=e223]
+                - cell "un" [ref=e224]
+                - cell "R$ 12,90" [ref=e225]
+                - cell "R$ 4,80" [ref=e226]
+                - cell "62.8%" [ref=e227]:
+                  - generic [ref=e228]: 62.8%
+                - cell "22" [ref=e229]:
+                  - generic [ref=e230]: "22"
+                - cell "24×" [ref=e231]
+              - row "Água Mineral 500ml Bebidas un R$ 4,50 R$ 1,20 73.3% 84 56×" [ref=e232]:
+                - cell "Água Mineral 500ml" [ref=e233]
+                - cell "Bebidas" [ref=e234]
+                - cell "un" [ref=e235]
+                - cell "R$ 4,50" [ref=e236]
+                - cell "R$ 1,20" [ref=e237]
+                - cell "73.3%" [ref=e238]:
+                  - generic [ref=e239]: 73.3%
+                - cell "84" [ref=e240]:
+                  - generic [ref=e241]: "84"
+                - cell "56×" [ref=e242]
+              - row "Sobremesa do Dia Sobremesas un R$ 16,90 R$ 7,00 58.6% 8 ⚠ 18×" [ref=e243]:
+                - cell "Sobremesa do Dia" [ref=e244]
+                - cell "Sobremesas" [ref=e245]
+                - cell "un" [ref=e246]
+                - cell "R$ 16,90" [ref=e247]
+                - cell "R$ 7,00" [ref=e248]
+                - cell "58.6%" [ref=e249]:
+                  - generic [ref=e250]: 58.6%
+                - cell "8 ⚠" [ref=e251]:
+                  - generic [ref=e252]: 8 ⚠
+                - cell "18×" [ref=e253]
+              - row "Frango Grelhado Pratos un R$ 42,90 R$ 18,00 58% — 15×" [ref=e254]:
+                - cell "Frango Grelhado" [ref=e255]
+                - cell "Pratos" [ref=e256]
+                - cell "un" [ref=e257]
+                - cell "R$ 42,90" [ref=e258]
+                - cell "R$ 18,00" [ref=e259]
+                - cell "58%" [ref=e260]:
+                  - generic [ref=e261]: 58%
+                - cell "—" [ref=e262]
+                - cell "15×" [ref=e263]
+              - row "Salada Caesar Entradas un R$ 24,90 R$ 9,50 61.8% — 12×" [ref=e264]:
+                - cell "Salada Caesar" [ref=e265]
+                - cell "Entradas" [ref=e266]
+                - cell "un" [ref=e267]
+                - cell "R$ 24,90" [ref=e268]
+                - cell "R$ 9,50" [ref=e269]
+                - cell "61.8%" [ref=e270]:
+                  - generic [ref=e271]: 61.8%
+                - cell "—" [ref=e272]
+                - cell "12×" [ref=e273]
+              - row "Cerveja Long Neck Bebidas un R$ 12,00 R$ 5,80 51.7% 60 94×" [ref=e274]:
+                - cell "Cerveja Long Neck" [ref=e275]
+                - cell "Bebidas" [ref=e276]
+                - cell "un" [ref=e277]
+                - cell "R$ 12,00" [ref=e278]
+                - cell "R$ 5,80" [ref=e279]
+                - cell "51.7%" [ref=e280]:
+                  - generic [ref=e281]: 51.7%
+                - cell "60" [ref=e282]:
+                  - generic [ref=e283]: "60"
+                - cell "94×" [ref=e284]
+              - row "Pizza Margherita Pizzas un R$ 54,90 R$ 22,00 59.9% — 8×" [ref=e285]:
+                - cell "Pizza Margherita" [ref=e286]
+                - cell "Pizzas" [ref=e287]
+                - cell "un" [ref=e288]
+                - cell "R$ 54,90" [ref=e289]
+                - cell "R$ 22,00" [ref=e290]
+                - cell "59.9%" [ref=e291]:
+                  - generic [ref=e292]: 59.9%
+                - cell "—" [ref=e293]
+                - cell "8×" [ref=e294]
+              - row "Café Espresso Bebidas un R$ 6,90 R$ 1,80 73.9% 120 67×" [ref=e295]:
+                - cell "Café Espresso" [ref=e296]
+                - cell "Bebidas" [ref=e297]
+                - cell "un" [ref=e298]
+                - cell "R$ 6,90" [ref=e299]
+                - cell "R$ 1,80" [ref=e300]
+                - cell "73.9%" [ref=e301]:
+                  - generic [ref=e302]: 73.9%
+                - cell "120" [ref=e303]:
+                  - generic [ref=e304]: "120"
+                - cell "67×" [ref=e305]
+              - row "Brigadeiro Sobremesas un R$ 6,90 R$ 2,10 69.6% 24 ⚠ 38×" [ref=e306]:
+                - cell "Brigadeiro" [ref=e307]
+                - cell "Sobremesas" [ref=e308]
+                - cell "un" [ref=e309]
+                - cell "R$ 6,90" [ref=e310]
+                - cell "R$ 2,10" [ref=e311]
+                - cell "69.6%" [ref=e312]:
+                  - generic [ref=e313]: 69.6%
+                - cell "24 ⚠" [ref=e314]:
+                  - generic [ref=e315]: 24 ⚠
+                - cell "38×" [ref=e316]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e322] [cursor=pointer]:
+    - img [ref=e323]

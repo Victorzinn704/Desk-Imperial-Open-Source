@@ -24,11 +24,11 @@ export const CONSENT_VERSION = '2026.03.banner.v4'
 const CONSENT_COOKIE_CUSTOM_PREFIX = 'custom:'
 
 export function readCookieConsentChoice() {
-  if (typeof window === 'undefined') {
+  if (typeof globalThis.window === 'undefined') {
     return null
   }
 
-  const localValue = window.localStorage.getItem(CONSENT_STORAGE_KEY)
+  const localValue = globalThis.localStorage.getItem(CONSENT_STORAGE_KEY)
   if (localValue) {
     try {
       const parsed = JSON.parse(localValue) as Partial<StoredCookieConsent & LegacyStoredCookieConsent>
@@ -44,7 +44,7 @@ export function readCookieConsentChoice() {
         }
       }
 
-      window.localStorage.removeItem(CONSENT_STORAGE_KEY)
+      globalThis.localStorage.removeItem(CONSENT_STORAGE_KEY)
     } catch {
       return null
     }
@@ -65,7 +65,7 @@ export function readCookieConsentChoice() {
 }
 
 export function persistCookieConsent(choice: CookieConsentChoice) {
-  if (typeof window === 'undefined') {
+  if (typeof globalThis.window === 'undefined') {
     return
   }
 
@@ -80,7 +80,7 @@ export function persistCookieConsent(choice: CookieConsentChoice) {
     version: CONSENT_VERSION,
   }
 
-  window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload))
+  globalThis.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload))
   const cookieValue = encodeURIComponent(serializeConsentCookieValue(normalizedChoice))
   document.cookie = `${CONSENT_COOKIE_NAME}=${cookieValue}; Max-Age=31536000; Path=/; SameSite=Lax`
 }

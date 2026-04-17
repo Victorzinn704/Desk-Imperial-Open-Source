@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { FinanceService } from '../finance/finance.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -74,7 +75,7 @@ export class MarketIntelligenceService {
 
     if (cached) {
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'market-intelligence.cached',
         resource: 'market_intelligence',
         metadata: { focus: normalizedFocus, model: cached.model },
@@ -171,7 +172,7 @@ export class MarketIntelligenceService {
     await this.cache.set(insightCacheKey, result, this.getCacheTtlSeconds())
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'market-intelligence.generated',
       resource: 'market_intelligence',
       metadata: {

@@ -30,7 +30,7 @@ function buildUrl(path: string) {
 }
 
 function getCsrfToken(): string | null {
-  if (typeof window === 'undefined') {return null}
+  if (typeof globalThis.window === 'undefined') {return null}
 
   const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
   const cookie = document.cookie
@@ -40,7 +40,7 @@ function getCsrfToken(): string | null {
   const cookieToken = cookie ? (cookie.split('=')[1] ?? null) : null
   if (cookieToken) {return cookieToken}
 
-  const persisted = window.sessionStorage.getItem(CSRF_STORAGE_KEY)
+  const persisted = globalThis.sessionStorage.getItem(CSRF_STORAGE_KEY)
   if (persisted) {return persisted}
 
   return null
@@ -164,7 +164,7 @@ function resolveExpiryDate(verifiedUntil: string | Date | null | undefined): Dat
 }
 
 export function rememberAdminPinVerification(verifiedUntil?: string | Date | null): void {
-  if (typeof window === 'undefined') {return}
+  if (typeof globalThis.window === 'undefined') {return}
   if (__storageLock) {return}
 
   try {
@@ -174,19 +174,19 @@ export function rememberAdminPinVerification(verifiedUntil?: string | Date | nul
       verifiedUntil: resolveExpiryDate(verifiedUntil).toISOString(),
     }
 
-    window.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
+    globalThis.sessionStorage.setItem(ADMIN_PIN_HINT_KEY, JSON.stringify(hint))
   } finally {
     __storageLock = false
   }
 }
 
 export function clearAdminPinVerification(): void {
-  if (typeof window === 'undefined') {return}
+  if (typeof globalThis.window === 'undefined') {return}
   if (__storageLock) {return}
 
   try {
     __storageLock = true
-    window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+    globalThis.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
   } finally {
     __storageLock = false
   }
@@ -199,7 +199,7 @@ function isValidTimestamp(value: string | undefined): number | null {
 }
 
 export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL_MS): boolean {
-  if (typeof window === 'undefined') {return false}
+  if (typeof globalThis.window === 'undefined') {return false}
 
   const rawHint = globalThis.sessionStorage.getItem(ADMIN_PIN_HINT_KEY)
   if (!rawHint) {return false}
@@ -213,7 +213,7 @@ export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL
     const verifiedAt = isValidTimestamp(hint.verifiedAt)
     if (verifiedAt !== null && now - verifiedAt < ttlMs) {return true}
   } catch {
-    window.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
+    globalThis.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
   }
 
   return false
