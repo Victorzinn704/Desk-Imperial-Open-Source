@@ -29,7 +29,23 @@ Concentrar:
 
 - controller fino
 - service com regra de negocio
-- DTO validado
+- validacao de borda via DTO legado ou schema Zod, conforme a wave do modulo
 - logs estruturados
 - exceptions padronizadas
 - auditoria para eventos sensiveis
+
+## Superficie HTTP atual
+
+- prefixo publico: `/api/v1`
+- especificacao: `GET /api/v1/openapi.json`
+- docs interativos: `GET /api/v1/docs`
+
+## Contratos compartilhados
+
+- `packages/types`: contratos Zod compartilhados entre API e Web
+- `packages/api-contract`: `openapi.json` gerado pela API
+
+## Testes com Redis real
+
+- O smoke `test/be-01-operational-smoke.spec.ts` respeita `REDIS_URL`, `REDIS_PRIVATE_URL` e `REDIS_PUBLIC_URL`.
+- Setup executável e comandos exatos: [docs/operational-runbook.md](../../docs/operational-runbook.md#running-tests-locally)
