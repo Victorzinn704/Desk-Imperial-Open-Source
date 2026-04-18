@@ -4,12 +4,17 @@ import { Server as SocketIOServer } from 'socket.io'
 import { io as createSocketClient } from 'socket.io-client'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { CacheService } from '../src/common/services/cache.service'
+import { canPingRedisSync, resolveRedisAvailability } from './helpers/redis-availability'
 
-const REDIS_ENV_KEYS = ['REDIS_URL', 'REDIS_PRIVATE_URL', 'REDIS_PUBLIC_URL'] as const
-const DEFAULT_REDIS_URL =
-  process.env.REDIS_URL ?? process.env.REDIS_PRIVATE_URL ?? process.env.REDIS_PUBLIC_URL ?? 'redis://127.0.0.1:6379'
+const redisAvailability = resolveRedisAvailability()
+const REDIS_ENV_KEYS = redisAvailability.envKeys
+const EFFECTIVE_REDIS_URL = redisAvailability.redisUrl
 const RealtimeRoom = 'workspace:be-01'
 const RealtimeEvent = 'be-01:fanout'
+const describeOperationalSmoke = redisAvailability.shouldSkip ? describe.skip : describe
+const operationalSmokeSuiteName = redisAvailability.shouldSkip
+  ? `BE-01 operational smoke [skip: ${redisAvailability.reason}]`
+  : 'BE-01 operational smoke'
 
 jest.setTimeout(60_000)
 
@@ -92,23 +97,20 @@ async function createRealtimeNode(redisUrl: string) {
   }
 }
 
-describe('BE-01 operational smoke', () => {
+describeOperationalSmoke(operationalSmokeSuiteName, () => {
   const previousEnv = {
     REDIS_URL: process.env.REDIS_URL,
     REDIS_PRIVATE_URL: process.env.REDIS_PRIVATE_URL,
     REDIS_PUBLIC_URL: process.env.REDIS_PUBLIC_URL,
   }
 
-  beforeAll(async () => {
+  beforeAll(() => {
     for (const key of REDIS_ENV_KEYS) {
-      process.env[key] = DEFAULT_REDIS_URL
+      process.env[key] = EFFECTIVE_REDIS_URL
     }
 
-    const probe = new Redis(DEFAULT_REDIS_URL)
-    try {
-      await probe.ping()
-    } finally {
-      await probe.quit().catch(() => undefined)
+    if (!canPingRedisSync(EFFECTIVE_REDIS_URL, 1_000)) {
+      throw new Error(`Redis indisponível para o smoke BE-01 em ${EFFECTIVE_REDIS_URL}.`)
     }
   })
 
@@ -143,8 +145,8 @@ describe('BE-01 operational smoke', () => {
     await cacheNodeA.delByPrefix(`${sharedKeyPrefix}:`)
     expect(await cacheNodeB.get(sharedKey)).toBeNull()
 
-    const realtimeNodeA = await createRealtimeNode(DEFAULT_REDIS_URL)
-    const realtimeNodeB = await createRealtimeNode(DEFAULT_REDIS_URL)
+    const realtimeNodeA = await createRealtimeNode(EFFECTIVE_REDIS_URL)
+    const realtimeNodeB = await createRealtimeNode(EFFECTIVE_REDIS_URL)
     const clientOnNodeB = createSocketClient(`http://127.0.0.1:${realtimeNodeB.port}`, {
       transports: ['websocket'],
       forceNew: true,
