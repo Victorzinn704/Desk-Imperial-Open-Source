@@ -163,7 +163,7 @@ describe('DashboardShell render path', () => {
     expect(screen.getByText(/visão consolidada da empresa/i)).toBeInTheDocument()
     expect(screen.getByText(/r\$ 12.500,00/i)).toBeInTheDocument()
     expect(screen.getByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
-    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('224px')
+    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('232px')
 
     await user.click(screen.getByRole('button', { name: /ir para vendas/i }))
     expect(navigateToSection).toHaveBeenCalledWith('sales')
