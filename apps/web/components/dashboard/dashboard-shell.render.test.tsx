@@ -182,6 +182,6 @@ describe('DashboardShell render path', () => {
 
     expect(screen.getByText(/sidebar desk imperial/i)).toBeInTheDocument()
     expect(screen.queryByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
-    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('64px')
+    expect(container.querySelector('.workspace-shell')?.getAttribute('style')).toContain('68px')
   })
 })
