@@ -107,6 +107,13 @@ export function takeMatchingKitchenState(
   }
 
   const [matchingItem] = existingItems.splice(matchingItemIndex, 1)
+  if (!matchingItem) {
+    return {
+      kitchenStatus: KitchenItemStatus.QUEUED,
+      kitchenQueuedAt: fallbackQueuedAt,
+      kitchenReadyAt: null,
+    }
+  }
 
   return {
     kitchenStatus: matchingItem.kitchenStatus ?? KitchenItemStatus.QUEUED,

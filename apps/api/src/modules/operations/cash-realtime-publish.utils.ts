@@ -18,7 +18,7 @@ export function publishCashRealtime(
 ) {
   operationsRealtimeService.publishCashUpdated(auth, {
     ...buildCashUpdatedPayload(session),
-    businessDate: businessDate ? formatBusinessDateKey(businessDate) : undefined,
+    ...(businessDate ? { businessDate: formatBusinessDateKey(businessDate) } : {}),
     cashSession: toRealtimeCashSessionRecord(session),
   })
   publishCashClosureRealtime(operationsRealtimeService, auth, closure)

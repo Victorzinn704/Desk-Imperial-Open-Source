@@ -115,7 +115,13 @@ export function validateCnpj(raw: string): boolean {
 
   let sum = 0
   for (let index = 0; index < 12; index += 1) {
-    sum += Number(cnpj[index]) * weightsFirst[index]
+    const digit = cnpj[index]
+    const weight = weightsFirst[index]
+    if (digit === undefined || weight === undefined) {
+      return false
+    }
+
+    sum += Number(digit) * weight
   }
 
   let remainder = sum % 11
@@ -126,7 +132,13 @@ export function validateCnpj(raw: string): boolean {
 
   sum = 0
   for (let index = 0; index < 13; index += 1) {
-    sum += Number(cnpj[index]) * weightsSecond[index]
+    const digit = cnpj[index]
+    const weight = weightsSecond[index]
+    if (digit === undefined || weight === undefined) {
+      return false
+    }
+
+    sum += Number(digit) * weight
   }
 
   remainder = sum % 11

@@ -3,11 +3,13 @@ import { context, trace } from '@opentelemetry/api'
 import { type INestApplication, Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
-import type { NextFunction, Request, Response } from 'express'
+import type { Express, NextFunction, Request, Response } from 'express'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
+import { AppService } from './app.service'
+import { generateApiOpenApiDocument } from './common/openapi/document'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { initializeApiOpenTelemetry, shutdownApiOpenTelemetry } from './common/utils/otel.util'
 import { getAllowedOrigins, isAllowedOrigin } from './common/utils/origin.util'
@@ -190,27 +192,41 @@ function assertBootstrapEnvironment(configService: ConfigService, isProduction: 
   }
 }
 
-function assertSwaggerSafety(isProduction: boolean, swaggerEnabled: boolean, swaggerAllowedInProduction: boolean) {
-  if (isProduction && swaggerEnabled && !swaggerAllowedInProduction) {
-    throw new Error(
-      'ENABLE_SWAGGER=true em produção exige SWAGGER_ALLOW_IN_PRODUCTION=true. Desative o Swagger ou libere explicitamente esse uso.',
+function configureApiDocs(app: INestApplication, apiDocsEnabled: boolean, logger: Logger) {
+  if (!apiDocsEnabled) {
+    return
+  }
+
+  try {
+    const document = generateApiOpenApiDocument()
+    const expressApp = app.getHttpAdapter().getInstance() as Express
+
+    expressApp.get('/api/v1/openapi.json', (_request: Request, response: Response) => {
+      response.type('application/json').send(document)
+    })
+
+    SwaggerModule.setup('api/v1/docs', app, document as unknown as Parameters<typeof SwaggerModule.setup>[2], {
+      customSiteTitle: 'Desk Imperial API Docs',
+    })
+  } catch (error) {
+    logger.warn(
+      `API docs desabilitadas neste boot: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
 }
 
-function configureSwagger(app: INestApplication, swaggerEnabled: boolean) {
-  if (!swaggerEnabled) {
-    return
-  }
+function configureLegacyHealthAlias(app: INestApplication) {
+  const expressApp = app.getHttpAdapter().getInstance() as Express
+  const appService = app.get(AppService)
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('DESK IMPERIAL API')
-    .setDescription('API principal do portal empresarial com foco em seguranca, consentimento e observabilidade.')
-    .setVersion('1.0.0')
-    .build()
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup('docs', app, document)
+  expressApp.get('/api/health', async (_request: Request, response: Response, next: NextFunction) => {
+    try {
+      const health = await appService.getHealth()
+      response.status(health.status === 'error' ? 503 : 200).json(health)
+    } catch (error) {
+      next(error)
+    }
+  })
 }
 
 async function bootstrap() {
@@ -225,10 +241,9 @@ async function bootstrap() {
   const csrfSecret = configService.get<string>('CSRF_SECRET')
   const nodeEnv = configService.get<string>('NODE_ENV')
   const isTestEnvironment = nodeEnv === 'test'
-  const isProduction = configService.get<string>('NODE_ENV') === 'production'
+  const isProduction = nodeEnv === 'production'
   const allowedOrigins = getAllowedOrigins(configService)
-  const swaggerEnabled = !isProduction || configService.get<string>('ENABLE_SWAGGER') === 'true'
-  const swaggerAllowedInProduction = configService.get<string>('SWAGGER_ALLOW_IN_PRODUCTION') === 'true'
+  const apiDocsEnabled = !isProduction || configService.get<string>('ENABLE_API_DOCS') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
   const otelEnabled = await initializeApiOpenTelemetry({
     endpoint: configService.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT'),
@@ -258,8 +273,9 @@ async function bootstrap() {
   configureRequestIdMiddleware(app)
   configureTrustProxy(app, trustProxy, isProduction)
   configureCors(app, allowedOrigins)
+  configureLegacyHealthAlias(app)
 
-  app.setGlobalPrefix('api')
+  app.setGlobalPrefix('api/v1')
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalPipes(
     new ValidationPipe({
@@ -271,11 +287,10 @@ async function bootstrap() {
 
   assertBootstrapSecrets(isTestEnvironment, cookieSecret, csrfSecret)
   assertBootstrapEnvironment(configService, isProduction, logger)
-  assertSwaggerSafety(isProduction, swaggerEnabled, swaggerAllowedInProduction)
-  configureSwagger(app, swaggerEnabled)
+  configureApiDocs(app, apiDocsEnabled, logger)
 
   await app.listen(port)
-  logger.log(`API pronta em http://localhost:${port}/api`)
+  logger.log(`API pronta em http://localhost:${port}/api/v1`)
 }
 
 void bootstrap().catch((error: unknown) => {

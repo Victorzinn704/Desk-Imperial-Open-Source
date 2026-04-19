@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException } from '@nestjs/common'
 import { CashSessionStatus } from '@prisma/client'
 import type { PrismaService } from '../../database/prisma.service'
 import type { OperationsHelpersService } from './operations-helpers.service'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
+import type { OpenComandaDto } from './operations.schemas'
 
 export async function resolveComandaSessionContext(
   prisma: PrismaService,

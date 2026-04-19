@@ -2,35 +2,35 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { memo, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useTheme } from 'next-themes'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { ApiError, fetchCurrentUser } from '@/lib/api'
 import { useDashboardMutations } from '@/components/dashboard/hooks'
 import { COMPACT_DESKTOP_BREAKPOINT, useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
 import { useDashboardNavigation } from '@/components/dashboard/hooks/useDashboardNavigation'
 import { useDashboardScopedQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useScrollMemory } from '@/components/dashboard/hooks/useScrollMemory'
-import { useEvaluationCountdown } from '@/components/dashboard/hooks/useEvaluationCountdown'
 import { useDashboardLogout } from '@/components/dashboard/hooks/useDashboardLogout'
-import { formatCurrency } from '@/lib/currency'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { VerifyEmailForm } from '@/components/auth/verify-email-form'
 import { Button } from '@/components/shared/button'
-import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
-import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
-import { DashboardTopbar } from '@/components/dashboard/dashboard-topbar'
 import {
+  buildDashboardHref,
   dashboardDefaultSection,
   dashboardDefaultSettingsSection,
-  type DashboardQuickAction,
+  type DashboardNavigationGroup,
+  type DashboardProductSectionId,
   type DashboardSectionId,
+  type DashboardSectionTab,
   type DashboardSettingsSectionId,
+  type DashboardTabId,
 } from '@/components/dashboard/dashboard-navigation'
-import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
+import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
+import { formatCurrency } from '@/lib/currency'
 
 const StaffMobileShell = dynamic(() => import('@/components/staff-mobile').then((module) => module.StaffMobileShell), {
   ssr: false,
@@ -45,76 +45,113 @@ const OwnerMobileShell = dynamic(
   },
 )
 
-// ── Static hero copy per section ────────────────────────────────────────────────
+// ── Section heading labels ──────────────────────────────────────────────────────
 
-const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string; description: string }> = {
+const sectionLabels: Record<DashboardProductSectionId | 'settings', { title: string; description: string; meta: string }> = {
   overview: {
-    badge: 'Ambiente executivo',
-    title: 'Visão consolidada da empresa em um único ambiente.',
-    description: 'Financeiro, operação e segurança em leitura rápida.',
-  },
-  sales: {
-    badge: 'Ambiente comercial',
-    title: 'Pedidos e vendas em um módulo exclusivo da operação.',
-    description: 'Vendas, pedidos recentes e resultado realizado.',
-  },
-  portfolio: {
-    badge: 'Ambiente de portfólio',
-    title: 'Produtos, estoque e margem organizados em um fluxo próprio.',
-    description: 'Cadastro, margem e estoque que sustentam o caixa.',
+    title: 'Overview',
+    description: 'Visão geral da operação',
+    meta: 'visão geral do negócio',
   },
   pdv: {
-    badge: 'Ponto de venda',
-    title: 'Comandas e atendimento em tempo real.',
-    description: 'Comandas, preparo e fechamento sem ruído.',
-  },
-  calendario: {
-    badge: 'Agenda comercial',
-    title: 'Planeje eventos, promoções e jogos no calendário.',
-    description: 'Eventos, jogos e impacto previsto em vendas.',
-  },
-  payroll: {
-    badge: 'Folha operacional',
-    title: 'Salários, comissões e fechamento da equipe em um único fluxo.',
-    description: 'Base salarial, comissão e fechamento da equipe.',
+    title: 'PDV · Comandas',
+    description: 'Comandas e atendimento em tempo real',
+    meta: 'ponto de venda · cobrança · cozinha',
   },
   salao: {
-    badge: 'Gestão do salão',
-    title: 'Mesas, capacidade e planta baixa.',
-    description: 'Mesas, capacidade e planta do salão.',
+    title: 'Salão',
+    description: 'Mesas, capacidade e planta baixa',
+    meta: 'mapa de mesas · ocupação · padrões',
   },
-  map: {
-    badge: 'Inteligência territorial',
-    title: 'Mapa de vendas — território de guerra.',
-    description: 'Concentração geográfica por cidade e estado.',
+  financeiro: {
+    title: 'Financeiro',
+    description: 'Movimentação, fluxo de caixa e DRE',
+    meta: 'receita · despesa · resultado',
+  },
+  pedidos: {
+    title: 'Pedidos',
+    description: 'Histórico, detalhe e fluxo por status',
+    meta: 'histórico · detalhe · fluxo',
+  },
+  equipe: {
+    title: 'Equipe',
+    description: 'Funcionários, escala e folha de pagamento',
+    meta: 'funcionários · escala · folha',
   },
   settings: {
-    badge: 'Conta e governança',
-    title: 'Configurações, segurança e conformidade em uma única central.',
-    description: 'Conta, preferência, sessão e consentimento.',
+    title: 'Configurações',
+    description: 'Conta, segurança e preferências',
+    meta: 'conta · segurança · sessão',
   },
 }
-
-type DashboardSignal = {
-  label: string
-  value: string
-  helper: string
-}
-
-type DashboardCurrency = Parameters<typeof formatCurrency>[1]
 
 type ActiveNavigationSummary = {
   id: string
   label: string
   description: string
-  icon: typeof Clock
 }
 
 const settingsNavigationFallback: ActiveNavigationSummary = {
   id: 'settings',
   label: 'Conta e preferências',
   description: 'Conta, segurança e conformidade',
-  icon: Clock,
+}
+
+type WireframeIntroFact = {
+  label: string
+  tone: 'accent' | 'success' | 'warning' | 'soft'
+  value: string
+}
+
+function formatIntroPercent(value: number) {
+  return `${new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
+    maximumFractionDigits: 1,
+  }).format(value)}%`
+}
+
+function buildWireframeIntroFacts({
+  activeDisplaySection,
+  employeesCount,
+  finance,
+}: {
+  activeDisplaySection: DashboardProductSectionId | 'settings'
+  employeesCount: number
+  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
+}): WireframeIntroFact[] {
+  const totals = finance?.totals
+  const displayCurrency = finance?.displayCurrency ?? 'BRL'
+
+  switch (activeDisplaySection) {
+    case 'overview':
+      return [
+        {
+          label: 'receita do mês',
+          tone: 'accent',
+          value: formatCurrency(totals?.currentMonthRevenue ?? 0, displayCurrency),
+        },
+        {
+          label: 'pedidos fechados',
+          tone: 'soft',
+          value: String(totals?.completedOrders ?? 0),
+        },
+        {
+          label: 'margem média',
+          tone: (totals?.averageMarginPercent ?? 0) >= 30 ? 'success' : 'warning',
+          value: formatIntroPercent(totals?.averageMarginPercent ?? 0),
+        },
+      ]
+    case 'equipe':
+      return [
+        {
+          label: 'time ativo',
+          tone: 'soft',
+          value: `${employeesCount} pessoas`,
+        },
+      ]
+    default:
+      return []
+  }
 }
 
 export function getSessionErrorMessage(error: unknown) {
@@ -131,269 +168,23 @@ export function resolveActiveNavigation(
   )
 }
 
-function buildStaffDashboardSignals(
-  activeSection: DashboardSectionId,
-  ordersCompleted: number,
-  productsActive: number,
-): DashboardSignal[] {
-  const isSalesSection = activeSection === 'sales'
-  const isPdvSection = activeSection === 'pdv'
-
-  return [
-    {
-      label: isSalesSection ? 'Pedidos' : 'Operação',
-      value: String(ordersCompleted),
-      helper: isSalesSection ? 'operações concluídas no workspace' : 'painel sincronizado com trilha operacional',
-    },
-    {
-      label: isPdvSection ? 'PDV vivo' : 'Portfólio',
-      value: isPdvSection ? 'Ao vivo' : String(productsActive),
-      helper: isPdvSection ? 'comandas e mesas em atualização contínua' : 'produtos ativos para venda',
-    },
-    { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
-  ]
-}
-
-function getAccountSignalValue(
-  activeSection: DashboardSectionId,
-  companyName: string,
-  legalAcceptancesCount: number,
-  requiredDocumentCount: number,
-) {
-  if (activeSection !== 'settings') {
-    return companyName
-  }
-
-  return requiredDocumentCount ? `${legalAcceptancesCount}/${requiredDocumentCount}` : '0/0'
-}
-
-function getAccountSignalHelper(activeSection: DashboardSectionId) {
-  return activeSection === 'settings' ? 'aceites exigidos no sistema' : 'identidade principal do portal'
-}
-
-function buildOwnerDashboardSignals({
-  activeNavigationLabel,
-  activeSection,
-  companyName,
-  displayCurrency,
-  finance,
-  legalAcceptancesCount,
-  requiredDocumentCount,
-}: Readonly<{
-  activeNavigationLabel: string
-  activeSection: DashboardSectionId
-  companyName: string
-  displayCurrency: DashboardCurrency
-  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
-  legalAcceptancesCount: number
-  requiredDocumentCount: number
-}>): DashboardSignal[] {
-  const hasFinance = Boolean(finance)
-  const financeTotals = finance?.totals
-
-  return [
-    {
-      label: hasFinance ? 'Receita do mes' : 'Workspace',
-      value: hasFinance
-        ? formatCurrency(financeTotals?.currentMonthRevenue ?? 0, displayCurrency)
-        : activeNavigationLabel,
-      helper: hasFinance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
-    },
-    {
-      label: hasFinance ? 'Estoque baixo' : 'Status',
-      value: hasFinance ? String(financeTotals?.lowStockItems ?? 0) : 'Ativo',
-      helper: hasFinance ? 'itens para reposição rápida' : 'sessão segura e pronta para operar',
-    },
-    {
-      label: activeSection === 'settings' ? 'Documentos' : 'Conta',
-      value: getAccountSignalValue(activeSection, companyName, legalAcceptancesCount, requiredDocumentCount),
-      helper: getAccountSignalHelper(activeSection),
-    },
-  ]
-}
-
-export function buildDashboardSignals({
-  activeNavigationLabel,
-  activeSection,
-  companyName,
-  displayCurrency,
-  finance,
-  isStaffUser,
-  legalAcceptancesCount,
-  ordersCompleted,
-  productsActive,
-  requiredDocumentCount,
-}: Readonly<{
-  activeNavigationLabel: string
-  activeSection: DashboardSectionId
-  companyName: string
-  displayCurrency: DashboardCurrency
-  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
-  isStaffUser: boolean
-  legalAcceptancesCount: number
-  ordersCompleted: number
-  productsActive: number
-  requiredDocumentCount: number
-}>): DashboardSignal[] {
-  if (isStaffUser) {
-    return buildStaffDashboardSignals(activeSection, ordersCompleted, productsActive)
-  }
-
-  return buildOwnerDashboardSignals({
-    activeNavigationLabel,
-    activeSection,
-    companyName,
-    displayCurrency,
-    finance,
-    legalAcceptancesCount,
-    requiredDocumentCount,
-  })
-}
-
-export function DashboardWorkspaceHeader({
-  activeHero,
-  activeNavigationLabel,
-  handleQuickAction,
-  compact = false,
-  isLoggingOut,
-  isTimelineOpen,
-  logout,
-  quickActions,
-  setIsTimelineOpen,
-  signals,
-}: Readonly<{
-  activeHero: (typeof sectionHeroCopy)[DashboardSectionId]
-  activeNavigationLabel: string
-  handleQuickAction: (action: DashboardQuickAction) => void
-  compact?: boolean
-  isLoggingOut: boolean
-  isTimelineOpen: boolean
-  logout: () => void
-  quickActions: DashboardQuickAction[]
-  setIsTimelineOpen: (value: boolean) => void
-  signals: DashboardSignal[]
-}>) {
-  return (
-    <header
-      className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm dark:shadow-none ${compact ? 'p-3 sm:p-4 xl:p-5' : 'p-4 sm:p-5 xl:p-6'}`}
-      id="workspace-header"
-    >
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            <span className="size-2 rounded-full bg-accent" />
-            {activeHero.badge}
-          </div>
-          <p className={`mt-4 text-[var(--text-muted)] ${compact ? 'text-xs' : 'text-sm'}`}>
-            Início / Painel operacional / {activeNavigationLabel}
-          </p>
-          <h1
-            className={`mt-3 max-w-4xl font-semibold leading-tight text-[var(--text-primary)] ${
-              compact ? 'text-xl sm:text-2xl xl:text-3xl' : 'text-2xl sm:text-3xl xl:text-4xl'
-            }`}
-          >
-            {activeHero.title}
-          </h1>
-          <p
-            className={`mt-3 max-w-3xl leading-6 text-[var(--text-soft)] ${compact ? 'text-xs sm:text-sm sm:leading-7' : 'text-sm sm:text-base sm:leading-7'}`}
-          >
-            {activeHero.description}
-          </p>
-        </div>
-
-        <div className={`flex flex-col gap-4 ${compact ? 'xl:max-w-[460px]' : 'xl:max-w-[520px]'}`}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:divide-x sm:divide-[var(--border)]">
-            {signals.map((signal) => (
-              <div
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:first:pl-0 sm:last:pr-0"
-                key={signal.label}
-              >
-                <p
-                  className={`font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-[11px]'}`}
-                >
-                  {signal.label}
-                </p>
-                <p className={`mt-2 font-semibold text-[var(--text-primary)] ${compact ? 'text-lg' : 'text-xl'}`}>
-                  {signal.value}
-                </p>
-                <p
-                  className={`mt-1 line-clamp-1 leading-5 text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-xs'}`}
-                >
-                  {signal.helper}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            {quickActions.map((action) => {
-              const Icon = action.icon
-              return (
-                <button
-                  className={`workspace-quick-action flex-1 ${compact ? 'sm:min-w-[130px]' : 'sm:min-w-[150px]'}`}
-                  key={action.id}
-                  type="button"
-                  onClick={() => handleQuickAction(action)}
-                >
-                  <span className="workspace-quick-action__icon text-[var(--text-primary)]">
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">
-                    <span
-                      className={`block truncate font-semibold text-[var(--text-primary)] ${compact ? 'text-xs sm:text-sm' : 'text-sm'}`}
-                    >
-                      {action.label}
-                    </span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link className="w-full sm:w-auto" href="/">
-              <Button className="w-full sm:w-auto" size="lg" variant="ghost">
-                Ver site
-                <ArrowUpRight className="size-4" />
-              </Button>
-            </Link>
-            <Button
-              className="w-full sm:w-auto"
-              size="lg"
-              variant={isTimelineOpen ? 'primary' : 'ghost'}
-              onClick={() => setIsTimelineOpen(!isTimelineOpen)}
-            >
-              <Clock className="size-4" />
-              Atividades
-            </Button>
-            <SpotlightButton className="w-full sm:w-auto" loading={isLoggingOut} onClick={logout}>
-              <LogOut className="size-4" />
-              Encerrar sessão
-            </SpotlightButton>
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
-
 // ── Main component ──────────────────────────────────────────────────────────────
 
 type DashboardShellProps = {
   initialSection?: DashboardSectionId
   initialSettingsSection?: DashboardSettingsSectionId
+  initialTab?: DashboardTabId | null
 }
 
 export function DashboardShell({
   initialSection = dashboardDefaultSection,
   initialSettingsSection = dashboardDefaultSettingsSection,
+  initialTab = null,
 }: Readonly<DashboardShellProps>) {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { isMobile } = useMobileDetection()
   const { isMobile: isCompactDesktop } = useMobileDetection(COMPACT_DESKTOP_BREAKPOINT)
-  const [isTimelineOpen, setIsTimelineOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(isCompactDesktop)
+  const [pdvMesaIntent, setPdvMesaIntent] = useState<PdvMesaIntent | null>(null)
 
   // ── Hooks ─────────────────────────────────────────────────────────────────────
 
@@ -411,14 +202,17 @@ export function DashboardShell({
 
   const {
     activeSection,
+    activeDisplaySection,
     activeSettingsSection,
+    activeTab,
     navigationGroups,
-    quickActions,
+    sectionTabs,
     navigateToSection,
     navigateToSettings,
-  } = useDashboardNavigation({ initialSection, initialSettingsSection, isStaffUser })
+    navigateToTab,
+  } = useDashboardNavigation({ initialSection, initialSettingsSection, initialTab, isStaffUser })
 
-  const { consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
+  const { consentQuery: _consentQuery, productsQuery: _productsQuery, ordersQuery: _ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
     userId: currentUser?.userId,
     isOwner: currentUser?.role === 'OWNER',
     section: activeSection,
@@ -426,83 +220,56 @@ export function DashboardShell({
 
   const { scrollRef, onScroll, scrollIntoView } = useScrollMemory(activeSection, isMobile)
 
-  const { logout, isPending: isLoggingOut, startTransition } = useDashboardLogout(rawLogoutMutation)
-
-  const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
-  const onEvaluationExpire = useMemo(
-    () => () => {
-      queryClient.clear()
-      startTransition(() => router.replace('/login'))
-    },
-    [queryClient, router, startTransition],
-  )
+  const { logout, isPending: _isLoggingOut } = useDashboardLogout(rawLogoutMutation)
 
   useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
 
-  useEffect(() => {
-    setSidebarCollapsed(isCompactDesktop)
-  }, [isCompactDesktop])
+  // ── Derived data ──────────────────────────────────────────────────────────────
 
-  // ── Derived data (hooks called unconditionally, before any early return) ─────
-
-  const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const employees = employeesQuery.data?.items ?? []
   const finance = financeQuery.data
-  const displayCurrency = finance?.displayCurrency ?? currentUser?.preferredCurrency
+  const introFacts = buildWireframeIntroFacts({
+    activeDisplaySection,
+    employeesCount: employees.length,
+    finance,
+  })
 
-  const requiredDocumentCount = useMemo(
-    () => consentQuery.data?.documents.filter((document) => document.required).length ?? 0,
-    [consentQuery.data?.documents],
+  const activeLabel = sectionLabels[activeDisplaySection]
+  const activeTabSummary = sectionTabs.find((tab) => tab.id === activeTab) ?? sectionTabs[0]
+  const activeTabLabel = activeTabSummary?.label
+  const activeTabDescription = activeTabSummary?.description
+  const activeTabIndex = Math.max(
+    activeTabSummary ? sectionTabs.findIndex((tab) => tab.id === activeTabSummary.id) : 0,
+    0,
   )
-  const activeNavigation = useMemo(
-    () => resolveActiveNavigation(activeSection, navigationGroups),
-    [activeSection, navigationGroups],
+  const activeTabVersion =
+    sectionTabs.length > 0
+      ? `versão ${String(activeTabIndex + 1).padStart(2, '0')} de ${String(sectionTabs.length).padStart(2, '0')}`
+      : null
+
+  const consumePdvMesaIntent = useCallback(() => {
+    setPdvMesaIntent(null)
+  }, [])
+
+  const openPdvFromMesa = useCallback(
+    (intent: Omit<PdvMesaIntent, 'requestId'>) => {
+      setPdvMesaIntent({
+        ...intent,
+        requestId: Date.now(),
+      })
+      navigateToSection('pdv')
+
+      if (typeof document === 'undefined') {return}
+
+      globalThis.setTimeout(() => {
+        const targetElement = document.getElementById('workspace-header')
+        if (targetElement instanceof HTMLElement) {
+          scrollIntoView(targetElement)
+        }
+      }, 80)
+    },
+    [navigateToSection, scrollIntoView],
   )
-  const signals = useMemo(
-    () =>
-      buildDashboardSignals({
-        activeNavigationLabel: activeNavigation.label,
-        activeSection,
-        companyName: currentUser?.companyName || 'Workspace',
-        displayCurrency: displayCurrency ?? 'BRL',
-        finance,
-        isStaffUser,
-        legalAcceptancesCount: legalAcceptances.length,
-        ordersCompleted: ordersQuery.data?.totals.completedOrders ?? 0,
-        productsActive: productsQuery.data?.totals.activeProducts ?? 0,
-        requiredDocumentCount,
-      }),
-    [
-      activeNavigation.label,
-      activeSection,
-      currentUser?.companyName,
-      displayCurrency,
-      finance,
-      isStaffUser,
-      legalAcceptances.length,
-      ordersQuery.data?.totals.completedOrders,
-      productsQuery.data?.totals.activeProducts,
-      requiredDocumentCount,
-    ],
-  )
-  const activeHero = sectionHeroCopy[activeSection]
-
-  // ── Quick action handler ────────────────────────────────────────────────────
-
-  const handleQuickAction = (action: DashboardQuickAction) => {
-    navigateToSection(action.target)
-
-    if (typeof document === 'undefined') {return}
-
-    globalThis.setTimeout(() => {
-      const targetElement = action.anchorId
-        ? document.getElementById(action.anchorId)
-        : document.getElementById('workspace-header')
-      if (targetElement instanceof HTMLElement) {
-        scrollIntoView(targetElement)
-      }
-    }, 80)
-  }
 
   // ── Early returns (loading, auth, verification) ───────────────────────────────
 
@@ -536,73 +303,240 @@ export function DashboardShell({
   // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
+    <main className="wireframe-dashboard min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
       <div
-        className="workspace-shell transition-all duration-300 lg:grid lg:h-full"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
+        className="workspace-shell__main relative flex min-w-0 flex-col lg:h-[100svh] lg:min-h-0 lg:overflow-y-auto"
+        ref={scrollRef}
+        onScroll={onScroll}
       >
-        <DashboardSidebar
-          activeSection={activeSection}
+        <DashboardWireframeHeader
+          activeDisplaySection={activeDisplaySection}
+          activeSettingsSection={activeSettingsSection}
+          activeTab={activeTab}
           compact={isCompactDesktop}
-          companyName={user.companyName}
-          email={user.email}
-          groups={navigationGroups}
-          quickActions={quickActions}
-          role={user.role}
-          status={user.status}
-          userName={user.fullName}
-          onCollapseChange={setSidebarCollapsed}
+          navigationGroups={navigationGroups}
+          sectionTabs={sectionTabs}
+          user={user}
           onNavigate={navigateToSection}
-          onOpenSettings={navigateToSettings}
-          onQuickAction={handleQuickAction}
+          onNavigateSettings={navigateToSettings}
+          onNavigateTab={navigateToTab}
           onSignOut={logout}
         />
 
         <div
-          className="workspace-shell__main relative flex min-w-0 flex-col lg:h-[100svh] lg:min-h-0 lg:overflow-y-auto"
-          ref={scrollRef}
-          onScroll={onScroll}
+          className={`mx-auto flex w-full max-w-[1880px] flex-col ${isCompactDesktop ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-5 xl:py-5' : 'gap-5 px-3 py-4 sm:px-4 lg:px-4 lg:py-5 xl:px-5 xl:py-6'}`}
         >
-          <DashboardTopbar
-            compact={isCompactDesktop}
-            isMobileOpen={!sidebarCollapsed}
-            user={user}
-            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-
-          <div
-            className={`mx-auto flex w-full max-w-[1720px] flex-col ${isCompactDesktop ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-6 xl:py-5' : 'gap-5 px-3 py-4 sm:px-5 lg:px-5 lg:py-5 xl:px-7 xl:py-6'}`}
-          >
-            <DashboardWorkspaceHeader
-              activeHero={activeHero}
-              activeNavigationLabel={activeNavigation.label}
-              compact={isCompactDesktop}
-              handleQuickAction={handleQuickAction}
-              isLoggingOut={isLoggingOut}
-              isTimelineOpen={isTimelineOpen}
-              logout={logout}
-              quickActions={quickActions}
-              setIsTimelineOpen={setIsTimelineOpen}
-              signals={signals}
-            />
-
-            <EvaluationModeBannerConnected evaluationAccess={evaluationAccess} onExpire={onEvaluationExpire} />
-
-            {renderActiveEnvironment({
-              activeSection,
-              activeSettingsSection,
-              employees,
-              finance,
-              onNavigateSection: navigateToSection,
-              onSettingsSectionChange: navigateToSettings,
-              user,
-            })}
+          <div className="wireframe-page-intro" id="workspace-header">
+            <div className="wireframe-page-copy min-w-0">
+              <h1 className="wireframe-title">{activeLabel.title}</h1>
+              <p className="wireframe-page-lead">{activeTabLabel ?? activeLabel.description}</p>
+              <p className="wireframe-page-note">{activeTabDescription ?? activeLabel.description}</p>
+            </div>
+            {introFacts.length > 0 ? (
+              <div className="wireframe-intro-rail" aria-label="Resumo da seção">
+                {introFacts.map((fact) => (
+                  <div className="wireframe-intro-fact" key={fact.label}>
+                    <span className="wireframe-intro-fact__label">{fact.label}</span>
+                    <span className={`wireframe-intro-fact__value wireframe-intro-fact__value--${fact.tone}`}>{fact.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="wireframe-intro-meta">
+              <span>{activeLabel.meta}</span>
+              {activeTabVersion ? <span>{activeTabVersion}</span> : null}
+            </div>
           </div>
+
+          {renderActiveEnvironment({
+            activeSection,
+            activeSettingsSection,
+            activeTab,
+            employees,
+            finance,
+            onConsumePdvMesaIntent: consumePdvMesaIntent,
+            onOpenPdvFromMesa: openPdvFromMesa,
+            onNavigateSection: navigateToSection,
+            onSettingsSectionChange: navigateToSettings,
+            pdvMesaIntent,
+            user,
+          })}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function DashboardWireframeHeader({
+  activeDisplaySection,
+  activeSettingsSection,
+  activeTab,
+  compact,
+  navigationGroups,
+  onNavigate,
+  onNavigateSettings,
+  onNavigateTab,
+  onSignOut,
+  sectionTabs,
+  user,
+}: Readonly<{
+  activeDisplaySection: DashboardProductSectionId | 'settings'
+  activeSettingsSection: DashboardSettingsSectionId
+  activeTab: DashboardTabId | null
+  compact: boolean
+  navigationGroups: DashboardNavigationGroup[]
+  onNavigate: (sectionId: DashboardSectionId, tabId?: DashboardTabId | null) => void
+  onNavigateSettings: (sectionId: DashboardSettingsSectionId) => void
+  onNavigateTab: (tabId: DashboardTabId) => void
+  onSignOut: () => void
+  sectionTabs: DashboardSectionTab[]
+  user: {
+    companyName: string | null
+    email: string
+    fullName: string
+    role: string
+  }
+}>) {
+  const primaryItems = navigationGroups.flatMap((group) => group.items)
+  const activePrimaryId = activeDisplaySection === 'settings' ? null : activeDisplaySection
+  const initials = getInitials(user.fullName)
+
+  return (
+    <header className="wireframe-header">
+      <div className={`wireframe-header__bar ${compact ? 'wireframe-header__bar--compact' : ''}`}>
+        <Link
+          className="wireframe-brand"
+          href={buildDashboardHref('overview', activeSettingsSection, 'principal')}
+          onClick={(event) => {
+            if (!shouldHandleDashboardNav(event)) {return}
+            event.preventDefault()
+            onNavigate('overview', 'principal')
+          }}
+        >
+          <span aria-hidden="true" className="wireframe-brand__mark wireframe-brand__mark--logo">
+            <img alt="" className="wireframe-brand__logo-image" height="24" src="/favicon.svg" width="24" />
+          </span>
+          <span className="wireframe-brand__name">Desk Imperial</span>
+        </Link>
+
+        <div className="wireframe-header__actions">
+          <WireframeThemeButton />
+          <Link
+            aria-label="Conta e configurações"
+            className="wireframe-account-button"
+            href={buildDashboardHref('settings', 'account')}
+            title={`${user.fullName} · ${user.email}`}
+            onClick={(event) => {
+              if (!shouldHandleDashboardNav(event)) {return}
+              event.preventDefault()
+              onNavigateSettings('account')
+            }}
+          >
+            <span className="wireframe-account-button__avatar">{initials}</span>
+            <span>conta</span>
+          </Link>
+          <button className="wireframe-text-button" title="Sair" type="button" onClick={onSignOut}>
+            sair
+          </button>
         </div>
       </div>
 
-      {isTimelineOpen && <ActivityTimeline onClose={() => setIsTimelineOpen(false)} />}
-    </main>
+      <div className="wireframe-header__nav-row">
+        <nav aria-label="Seções principais" className="wireframe-primary-nav">
+          {primaryItems.map((item) => {
+            const active = activePrimaryId === item.id
+            return (
+              <Link
+                aria-current={active ? 'page' : undefined}
+                className={active ? 'wireframe-primary-nav__item wireframe-primary-nav__item--active' : 'wireframe-primary-nav__item'}
+                href={buildDashboardHref(item.id, activeSettingsSection)}
+                key={item.id}
+                onClick={(event) => {
+                  if (!shouldHandleDashboardNav(event)) {return}
+                  event.preventDefault()
+                  onNavigate(item.id)
+                }}
+              >
+                <span className="wireframe-primary-nav__dot" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="wireframe-period">
+          <span>ter · 07 abr · 14:32</span>
+          <span>{compact ? user.role.slice(0, 1) : initials}</span>
+        </div>
+      </div>
+
+      {sectionTabs.length > 0 ? (
+        <div className="wireframe-subnav" aria-label="Subseções">
+          {sectionTabs.map((tab) => {
+            const active = activeTab === tab.id
+            return (
+              <Link
+                aria-current={active ? 'true' : undefined}
+                className={active ? 'wireframe-subnav__item wireframe-subnav__item--active' : 'wireframe-subnav__item'}
+                href={buildDashboardHref(activeDisplaySection, activeSettingsSection, tab.id)}
+                key={tab.id}
+                title={tab.description}
+                onClick={(event) => {
+                  if (!shouldHandleDashboardNav(event)) {return}
+                  event.preventDefault()
+                  onNavigateTab(tab.id)
+                }}
+              >
+                <span>{tab.code}</span>
+                {tab.emoji ? <strong className="wireframe-subnav__emoji">{tab.emoji}</strong> : null}
+                {tab.label}
+              </Link>
+            )
+          })}
+        </div>
+      ) : null}
+    </header>
+  )
+}
+
+function shouldHandleDashboardNav(event: ReactMouseEvent<HTMLAnchorElement>) {
+  if (event.defaultPrevented) {return false}
+  if (event.button !== 0) {return false}
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {return false}
+  const target = event.currentTarget.getAttribute('target')
+  return !target || target === '_self'
+}
+
+function getInitials(name: string) {
+  return (
+    name
+      ?.split(' ')
+      .map((part) => part[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'U'
+  )
+}
+
+function WireframeThemeButton() {
+  const { resolvedTheme, setTheme } = useTheme()
+
+  if (!resolvedTheme) {
+    return <span aria-hidden="true" className="wireframe-theme-button" />
+  }
+
+  const isDark = resolvedTheme === 'dark'
+
+  return (
+    <button
+      aria-label={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+      className="wireframe-theme-button"
+      title={isDark ? 'Tema escuro ativo' : 'Tema claro ativo'}
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+    >
+      {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+    </button>
   )
 }
 
@@ -618,58 +552,57 @@ function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
 
 function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
-      <div
-        className="workspace-shell lg:grid lg:h-full"
-        style={{ gridTemplateColumns: compact ? '68px minmax(0,1fr)' : '232px minmax(0,1fr)' }}
-      >
-        <aside className="hidden lg:block lg:h-[100svh] lg:overflow-hidden">
-          <div className={`workspace-sidebar flex h-full flex-col gap-4 ${compact ? 'px-3 py-4' : 'px-4 py-5'}`}>
-            <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
-            <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
-            <div className="mt-2 flex-1 space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div className="skeleton-shimmer h-12 rounded-[20px]" key={i} />
-              ))}
-            </div>
-            <div className="skeleton-shimmer h-20 rounded-2xl" />
+    <main className="wireframe-dashboard min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
+      <div className="workspace-shell__main lg:h-[100svh] lg:overflow-y-auto">
+        <div className="wireframe-header">
+          <div className={`wireframe-header__bar ${compact ? 'wireframe-header__bar--compact' : ''}`}>
+            <div className="skeleton-shimmer h-10 w-44 rounded-lg" />
+            <div className="skeleton-shimmer h-9 w-36 rounded-full" />
           </div>
-        </aside>
+          <div className="wireframe-header__nav-row">
+            <div className="skeleton-shimmer h-9 w-full max-w-3xl rounded-lg" />
+            <div className="skeleton-shimmer h-8 w-24 rounded-lg" />
+          </div>
+          <div className="wireframe-subnav">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div className="skeleton-shimmer h-9 w-40 rounded-full" key={index} />
+            ))}
+          </div>
+        </div>
 
-        <div className="workspace-shell__main lg:h-[100svh] lg:overflow-y-auto">
-          <div
-            className={`mx-auto flex w-full max-w-[1720px] flex-col ${compact ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-6 xl:py-5' : 'gap-6 px-4 py-6 sm:px-6 lg:px-6 lg:py-6 xl:px-8 xl:py-8'}`}
-          >
-            <div className="imperial-card p-6 md:p-8">
-              <div className="skeleton-shimmer h-6 w-32 rounded-full" />
-              <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
-              <div className="skeleton-shimmer mt-4 h-12 w-3/4 rounded-2xl" />
-              <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
+        <div
+          className={`mx-auto flex w-full max-w-[1880px] flex-col ${compact ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-5 xl:py-5' : 'gap-6 px-3 py-5 sm:px-4 lg:px-4 lg:py-5 xl:px-5 xl:py-6'}`}
+        >
+          <div className="wireframe-page-intro">
+            <div>
+              <div className="skeleton-shimmer h-8 w-40 rounded-xl" />
+              <div className="skeleton-shimmer mt-2 h-4 w-64 rounded-full" />
             </div>
+            <div className="skeleton-shimmer h-10 w-52 rounded-lg" />
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div className="imperial-card-stat p-5" key={i}>
-                  <div className="skeleton-shimmer size-11 rounded-2xl" />
-                  <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
-                  <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
-                  <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="imperial-card p-6">
-                <div className="skeleton-shimmer h-4 w-32 rounded-full" />
-                <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div className="imperial-card-stat p-5" key={i}>
+                <div className="skeleton-shimmer size-11 rounded-2xl" />
+                <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
+                <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
+                <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
               </div>
-              <div className="imperial-card p-6">
-                <div className="skeleton-shimmer h-4 w-28 rounded-full" />
-                <div className="mt-4 space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
-                  ))}
-                </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-32 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+            </div>
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-28 rounded-full" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
+                ))}
               </div>
             </div>
           </div>
@@ -678,54 +611,6 @@ function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
     </main>
   )
 }
-
-type EvaluationAccessProp = {
-  sessionExpiresAt: string
-  dailyLimitMinutes: number
-} | null
-
-const EvaluationModeBannerConnected = memo(function EvaluationModeBannerConnected({
-  evaluationAccess,
-  onExpire,
-}: Readonly<{
-  evaluationAccess: EvaluationAccessProp
-  onExpire: () => void
-}>) {
-  const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, onExpire)
-
-  if (!isEvaluation) {return null}
-
-  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60)
-  const seconds = Math.max(0, remainingSeconds) % 60
-  const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-
-  return (
-    <section className="imperial-card-soft px-5 py-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.22)] bg-[rgba(37,99,235,0.14)] text-[var(--accent)]">
-            <TimerReset className="size-5" />
-          </span>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sessão temporária</p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
-              Este acesso fica disponivel por ate {evaluationAccess!.dailyLimitMinutes} minutos por dia neste
-              dispositivo.
-            </h2>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Quando o tempo acabar, o portal encerra a sessão e retorna para a tela de login.
-            </p>
-          </div>
-        </div>
-
-        <div className="imperial-card-stat px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tempo restante</p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{formatted}</p>
-        </div>
-      </div>
-    </section>
-  )
-})
 
 function UnauthorizedState({ message }: Readonly<{ message: string }>) {
   return (

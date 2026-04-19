@@ -10,8 +10,8 @@ import {
 import type { CacheService } from '../src/common/services/cache.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { AuthContext } from '../src/modules/auth/auth.types'
-import type { ComandaDraftItemDto } from '../src/modules/operations/dto/comanda-draft-item.dto'
 import { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import type { ComandaDraftItemDto } from '../src/modules/operations/operations.schemas'
 import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
 describe('OperationsHelpersService - branches', () => {

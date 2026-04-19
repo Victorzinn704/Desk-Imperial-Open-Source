@@ -1,41 +1,58 @@
-import { memo } from 'react'
+import { memo, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react'
 import { X } from 'lucide-react'
-import { Field } from './field'
 import type { CreateForm, EditForm } from '../constants'
+import { Field } from './field'
 
-// ── Modal Shell ───────────────────────────────────────────────────────────────
+const inputClassName =
+  'w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]'
 
 interface ModalProps {
   title: string
-  children: React.ReactNode
+  description: string
+  children: ReactNode
   onClose: () => void
 }
 
-export const Modal = memo(function Modal({ title, children, onClose }: ModalProps) {
+export const Modal = memo(function Modal({ title, description, children, onClose }: ModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="imperial-card w-full max-w-md rounded-2xl p-6 shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+      <button
+        aria-label="Fechar modal"
+        className="absolute inset-0 border-0 p-0"
+        style={{ backgroundColor: 'color-mix(in srgb, var(--bg) 70%, transparent)' }}
+        type="button"
+        onClick={onClose}
+      />
+
+      <div
+        className="relative z-[1] w-full max-w-xl rounded-[28px] border border-[var(--border-strong)] bg-[var(--surface)] shadow-[var(--shadow-panel-strong)]"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-5">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">{description}</p>
+          </div>
           <button
-            className="rounded-lg p-1.5 text-[var(--text-soft)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--text-primary)]"
+            className="inline-flex size-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]"
+            type="button"
             onClick={onClose}
           >
             <X className="size-4" />
           </button>
         </div>
-        {children}
+
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">{children}</div>
       </div>
     </div>
   )
 })
 
-// ── Create Mesa Modal ─────────────────────────────────────────────────────────
-
 interface CreateMesaModalProps {
   form: CreateForm
-  onChange: React.Dispatch<React.SetStateAction<CreateForm>>
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  onChange: Dispatch<SetStateAction<CreateForm>>
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void
   onClose: () => void
   isPending: boolean
   error: string | null
@@ -50,21 +67,21 @@ export const CreateMesaModal = memo(function CreateMesaModal({
   error,
 }: CreateMesaModalProps) {
   return (
-    <Modal title="Nova Mesa" onClose={onClose}>
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="flex items-center gap-1 rounded-xl bg-[rgba(255,255,255,0.04)] p-1">
+    <Modal description="Cadastre mesas novas sem sair da leitura operacional." title="Nova mesa" onClose={onClose}>
+      <form className="space-y-5" onSubmit={onSubmit}>
+        <div className="inline-flex rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           {(['single', 'bulk'] as const).map((mode) => (
             <button
-              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
                 form.mode === mode
-                  ? 'bg-[var(--accent)] text-black'
+                  ? 'border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
                   : 'text-[var(--text-soft)] hover:text-[var(--text-primary)]'
               }`}
               key={mode}
               type="button"
-              onClick={() => onChange((f) => ({ ...f, mode }))}
+              onClick={() => onChange((current) => ({ ...current, mode }))}
             >
-              {mode === 'single' ? 'Mesa única' : 'Criar várias de uma vez'}
+              {mode === 'single' ? 'Mesa unica' : 'Criacao em lote'}
             </button>
           ))}
         </div>
@@ -74,112 +91,120 @@ export const CreateMesaModal = memo(function CreateMesaModal({
             <Field label="Nome da mesa *">
               <input
                 autoFocus
-                className="imperial-input w-full"
+                className={inputClassName}
                 maxLength={40}
                 placeholder="Ex: Mesa 1, VIP, Varanda"
                 value={form.label}
-                onChange={(e) => onChange((f) => ({ ...f, label: e.target.value }))}
+                onChange={(event) => onChange((current) => ({ ...current, label: event.target.value }))}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Capacidade">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   min={1}
                   type="number"
                   value={form.capacity}
-                  onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, capacity: event.target.value }))}
                 />
               </Field>
-              <Field label="Seção">
+              <Field label="Secao">
                 <input
-                  className="imperial-input w-full"
-                  placeholder="Salão, Varanda, Bar…"
+                  className={inputClassName}
+                  placeholder="Salao, varanda, bar"
                   value={form.section}
-                  onChange={(e) => onChange((f) => ({ ...f, section: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, section: event.target.value }))}
                 />
               </Field>
             </div>
           </>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Prefixo">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   placeholder="Mesa"
                   value={form.bulkPrefix}
-                  onChange={(e) => onChange((f) => ({ ...f, bulkPrefix: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, bulkPrefix: event.target.value }))}
                 />
               </Field>
               <Field label="De">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   min={1}
                   type="number"
                   value={form.bulkFrom}
-                  onChange={(e) => onChange((f) => ({ ...f, bulkFrom: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, bulkFrom: event.target.value }))}
                 />
               </Field>
-              <Field label="Até">
+              <Field label="Ate">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   min={1}
                   type="number"
                   value={form.bulkTo}
-                  onChange={(e) => onChange((f) => ({ ...f, bulkTo: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, bulkTo: event.target.value }))}
                 />
               </Field>
             </div>
-            <p className="rounded-lg bg-[rgba(195,164,111,0.08)] px-3 py-2 text-xs text-[var(--text-soft)]">
-              Criará:{' '}
-              <strong className="text-[var(--accent)]">
-                {form.bulkPrefix || 'Mesa'} {form.bulkFrom}
-              </strong>{' '}
-              até{' '}
-              <strong className="text-[var(--accent)]">
-                {form.bulkPrefix || 'Mesa'} {form.bulkTo}
-              </strong>{' '}
-              — {Math.max(0, Number.parseInt(form.bulkTo, 10) - Number.parseInt(form.bulkFrom, 10) + 1) || 0} mesas
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Capacidade padrão">
+
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-soft)]">
+              <p className="font-medium text-[var(--text-primary)]">Leitura do lote</p>
+              <p className="mt-1 leading-6">
+                {form.bulkPrefix || 'Mesa'} {form.bulkFrom} ate {form.bulkTo} com capacidade padrao de {form.capacity}{' '}
+                lugares.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Capacidade padrao">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   min={1}
                   type="number"
                   value={form.capacity}
-                  onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, capacity: event.target.value }))}
                 />
               </Field>
-              <Field label="Seção">
+              <Field label="Secao">
                 <input
-                  className="imperial-input w-full"
+                  className={inputClassName}
                   placeholder="Opcional"
                   value={form.section}
-                  onChange={(e) => onChange((f) => ({ ...f, section: e.target.value }))}
+                  onChange={(event) => onChange((current) => ({ ...current, section: event.target.value }))}
                 />
               </Field>
             </div>
           </>
         )}
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error ? (
+          <p
+            className="rounded-2xl border px-3 py-2 text-sm text-[var(--danger)]"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--danger) 30%, var(--border))',
+              backgroundColor: 'color-mix(in srgb, var(--danger) 10%, var(--surface))',
+            }}
+          >
+            {error}
+          </p>
+        ) : null}
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
           <button
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
+            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
           >
             Cancelar
           </button>
           <button
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             type="submit"
           >
-            {isPending ? 'Criando…' : 'Criar'}
+            {isPending ? 'Criando...' : 'Criar mesa'}
           </button>
         </div>
       </form>
@@ -187,13 +212,11 @@ export const CreateMesaModal = memo(function CreateMesaModal({
   )
 })
 
-// ── Edit Mesa Modal ───────────────────────────────────────────────────────────
-
 interface EditMesaModalProps {
   mesaLabel: string
   form: EditForm
-  onChange: React.Dispatch<React.SetStateAction<EditForm>>
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  onChange: Dispatch<SetStateAction<EditForm>>
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void
   onClose: () => void
   isPending: boolean
   error: string | null
@@ -209,53 +232,67 @@ export const EditMesaModal = memo(function EditMesaModal({
   error,
 }: EditMesaModalProps) {
   return (
-    <Modal title={`Editar — ${mesaLabel}`} onClose={onClose}>
-      <form className="space-y-4" onSubmit={onSubmit}>
+    <Modal
+      description="Atualize nome, capacidade e secao sem perder a operacao em curso."
+      title={`Editar ${mesaLabel}`}
+      onClose={onClose}
+    >
+      <form className="space-y-5" onSubmit={onSubmit}>
         <Field label="Nome da mesa *">
           <input
             autoFocus
-            className="imperial-input w-full"
+            className={inputClassName}
             maxLength={40}
             value={form.label}
-            onChange={(e) => onChange((f) => ({ ...f, label: e.target.value }))}
+            onChange={(event) => onChange((current) => ({ ...current, label: event.target.value }))}
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Capacidade">
             <input
-              className="imperial-input w-full"
+              className={inputClassName}
               min={1}
               type="number"
               value={form.capacity}
-              onChange={(e) => onChange((f) => ({ ...f, capacity: e.target.value }))}
+              onChange={(event) => onChange((current) => ({ ...current, capacity: event.target.value }))}
             />
           </Field>
-          <Field label="Seção">
+          <Field label="Secao">
             <input
-              className="imperial-input w-full"
-              placeholder="Salão, Varanda, Bar…"
+              className={inputClassName}
+              placeholder="Salao, varanda, bar"
               value={form.section}
-              onChange={(e) => onChange((f) => ({ ...f, section: e.target.value }))}
+              onChange={(event) => onChange((current) => ({ ...current, section: event.target.value }))}
             />
           </Field>
         </div>
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error ? (
+          <p
+            className="rounded-2xl border px-3 py-2 text-sm text-[var(--danger)]"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--danger) 30%, var(--border))',
+              backgroundColor: 'color-mix(in srgb, var(--danger) 10%, var(--surface))',
+            }}
+          >
+            {error}
+          </p>
+        ) : null}
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
           <button
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
+            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
           >
             Cancelar
           </button>
           <button
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             type="submit"
           >
-            {isPending ? 'Salvando…' : 'Salvar'}
+            {isPending ? 'Salvando...' : 'Salvar ajustes'}
           </button>
         </div>
       </form>

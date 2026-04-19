@@ -57,10 +57,16 @@ export class CurrencyService {
     }
 
     try {
-      const response = await fetch(this.getRatesUrl(), {
-        headers: this.getRequestHeaders(),
+      const requestHeaders = this.getRequestHeaders()
+      const requestOptions: RequestInit = {
         signal: AbortSignal.timeout(10000),
-      })
+      }
+
+      if (requestHeaders) {
+        requestOptions.headers = requestHeaders
+      }
+
+      const response = await fetch(this.getRatesUrl(), requestOptions)
       if (!response.ok) {
         if (response.status === 429) {
           this.retryAfterUntil = now + this.getRateLimitBackoffSeconds() * 1000

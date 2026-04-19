@@ -53,7 +53,7 @@ scrape_configs:
     metrics_path: /probe
     params:
       module: [http_2xx]
-      target: ['https://api.deskimperial.online/api/health']
+      target: ['https://api.deskimperial.online/api/v1/health']
     static_configs:
       - targets: ['blackbox:9115']
     relabel_configs:

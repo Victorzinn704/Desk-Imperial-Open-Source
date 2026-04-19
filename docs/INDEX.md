@@ -32,6 +32,7 @@ Navegação central de toda a documentação do projeto.
 | Documento                                                                    | O que cobre                                               |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [architecture/overview.md](./architecture/overview.md)                       | Visão geral da arquitetura e decisões técnicas            |
+| [architecture/system-map.md](./architecture/system-map.md)                   | Mapa atual do monorepo com diagramas PlantUML             |
 | [architecture/modules.md](./architecture/modules.md)                         | Responsabilidade de cada um dos 16 módulos de domínio     |
 | [architecture/database.md](./architecture/database.md)                       | Schema do banco documentado por entidade e relacionamento |
 | [architecture/realtime.md](./architecture/realtime.md)                       | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
@@ -120,6 +121,7 @@ docs/
 │   └── risks-and-limitations.md
 ├── architecture/
 │   ├── overview.md
+│   ├── system-map.md
 │   ├── modules.md            # 16 módulos de domínio
 │   ├── database.md           # Schema documentado
 │   ├── realtime.md           # Socket.IO

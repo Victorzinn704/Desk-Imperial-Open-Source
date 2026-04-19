@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Clock3, LayoutGrid, ShoppingBag, TrendingUp } from 'lucide-react'
@@ -34,6 +34,7 @@ import { calcTotal, type Comanda, type ComandaItem, type ComandaStatus, KANBAN_C
 import { normalizeTableLabel } from './normalize-table-label'
 import { SalaoUnificado } from './pdv-salao-unified'
 import { PdvHistoricoView } from './pdv-historico-view'
+import type { PdvMesaIntent } from './pdv-navigation-intent'
 
 type SimpleProduct = {
   id: string
@@ -52,6 +53,8 @@ type SimpleProduct = {
 }
 
 type PdvBoardProps = Readonly<{
+  mesaIntent?: PdvMesaIntent | null
+  onConsumeMesaIntent?: () => void
   operations?: OperationsLiveResponse
   products: SimpleProduct[]
 }>
@@ -61,14 +64,16 @@ type ActiveTab = 'comandas' | 'salao' | 'historico'
 type AddMesaForm = { label: string; capacity: string }
 const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 
-export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
+export function PdvBoard({ mesaIntent = null, onConsumeMesaIntent, operations, products }: Readonly<PdvBoardProps>) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ActiveTab>('comandas')
   const [showNewModal, setShowNewModal] = useState(false)
   const [editingComandaId, setEditingComandaId] = useState<string | null>(null)
   const [mesaPreSelected, setMesaPreSelected] = useState<Mesa | null>(null)
+  const [mesaPreSelectedLabel, setMesaPreSelectedLabel] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [addMesaForm, setAddMesaForm] = useState<AddMesaForm | null>(null)
+  const lastHandledIntentRef = useRef<number | null>(null)
 
   const comandas = useMemo(() => buildPdvComandas(operations), [operations])
   const mesas = useMemo(() => buildPdvMesas(operations), [operations])
@@ -88,6 +93,39 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   )
   const abertas = useMemo(() => comandas.filter((comanda) => comanda.status !== 'fechada'), [comandas])
   const editingComanda = (editingComandaId ? comandasById.get(editingComandaId) : null) ?? null
+
+  useEffect(() => {
+    if (!mesaIntent) {return}
+    if (lastHandledIntentRef.current === mesaIntent.requestId) {return}
+
+    const comandaFromIntent = mesaIntent.comandaId ? comandasById.get(mesaIntent.comandaId) ?? null : null
+    const mesaFromIntent =
+      mesasById.get(mesaIntent.mesaId) ??
+      mesas.find((mesa) => normalizeTableLabel(mesa.numero) === normalizeTableLabel(mesaIntent.mesaLabel)) ??
+      null
+
+    // Espera o primeiro snapshot ao abrir direto uma comanda existente.
+    if (mesaIntent.comandaId && !comandaFromIntent && !operations) {return}
+
+    lastHandledIntentRef.current = mesaIntent.requestId
+    setActionError(null)
+    setActiveTab('comandas')
+
+    if (comandaFromIntent) {
+      setShowNewModal(false)
+      setMesaPreSelected(null)
+      setMesaPreSelectedLabel(null)
+      setEditingComandaId(comandaFromIntent.id)
+      onConsumeMesaIntent?.()
+      return
+    }
+
+    setEditingComandaId(null)
+    setMesaPreSelected(mesaFromIntent)
+    setMesaPreSelectedLabel(mesaFromIntent?.numero ?? mesaIntent.mesaLabel)
+    setShowNewModal(true)
+    onConsumeMesaIntent?.()
+  }, [comandasById, mesaIntent, mesas, mesasById, onConsumeMesaIntent, operations])
 
   const openComandaMutation = useMutation({
     mutationFn: (payload: OpenComandaPayload) => openComanda(payload, { includeSnapshot: false }),
@@ -177,7 +215,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       mesas.find((mesa) => normalizeTableLabel(mesa.numero) === normalizeTableLabel(data.mesa)) ?? null
     const payload = {
       tableLabel: normalizeTableLabel(data.mesa),
-      mesaId: editingComanda ? selectedMesa?.id : mesaPreSelected?.id,
+      mesaId: editingComanda ? selectedMesa?.id : mesaPreSelected?.id ?? selectedMesa?.id,
       customerName: data.clienteNome.trim() || undefined,
       customerDocument: data.clienteDocumento.trim() || undefined,
       items: data.itens.map((item) => ({
@@ -204,6 +242,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       const response = await openComandaMutation.mutateAsync(payload satisfies OpenComandaPayload)
       setShowNewModal(false)
       setMesaPreSelected(null)
+      setMesaPreSelectedLabel(null)
       return toPdvComanda(response.comanda)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Nao foi possivel salvar a comanda agora.'
@@ -264,11 +303,17 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
   }
 
   function handleClickMesaLivre(mesa: Mesa) {
+    setActiveTab('comandas')
+    setEditingComandaId(null)
     setMesaPreSelected(mesa)
+    setMesaPreSelectedLabel(mesa.numero)
     setShowNewModal(true)
   }
 
   function handleClickMesaOcupada(comanda: Comanda) {
+    setShowNewModal(false)
+    setMesaPreSelected(null)
+    setMesaPreSelectedLabel(null)
     setEditingComandaId(comanda.id)
     setActiveTab('comandas')
   }
@@ -366,6 +411,7 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
               type="button"
               onClick={() => {
                 setMesaPreSelected(null)
+                setMesaPreSelectedLabel(null)
                 setShowNewModal(true)
               }}
             >
@@ -472,11 +518,12 @@ export function PdvBoard({ operations, products }: Readonly<PdvBoardProps>) {
       {showNewModal ? (
         <PdvComandaModal
           busy={mutationBusy}
-          initialMesa={mesaPreSelected?.numero}
+          initialMesa={mesaPreSelected?.numero ?? mesaPreSelectedLabel ?? undefined}
           products={products}
           onClose={() => {
             setShowNewModal(false)
             setMesaPreSelected(null)
+            setMesaPreSelectedLabel(null)
           }}
           onSave={persistComandaDraft}
         />

@@ -92,11 +92,14 @@ describe('LoginForm', () => {
       email: 'ceo@empresa.com',
       password: '12345678',
     })
-    expect(routerReplace).toHaveBeenCalledWith('/dashboard')
+    expect(routerReplace).toHaveBeenCalledWith('/design-lab/overview')
 
     await user.click(screen.getByRole('button', { name: /funcionário/i }))
     await user.click(screen.getByRole('button', { name: /acessar sessão demo funcionário/i }))
 
-    expect(loginDemo).toHaveBeenCalledWith({ loginMode: 'STAFF', employeeCode: 'VD-001' }, expect.anything())
+    expect(loginDemo).toHaveBeenCalledWith(
+      { loginMode: 'STAFF', employeeCode: 'VD-001' },
+      expect.objectContaining({ client: expect.anything() }),
+    )
   })
 })

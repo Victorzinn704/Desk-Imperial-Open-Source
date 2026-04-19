@@ -20,6 +20,10 @@ import {
 } from '@/lib/api'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
 
+function resolvePostLoginRoute(role: AuthResponse['user']['role']) {
+  return role === 'OWNER' ? '/design-lab/overview' : '/design-lab/pdv'
+}
+
 function prewarmDashboardEntry(queryClient: ReturnType<typeof useQueryClient>, role: AuthResponse['user']['role']) {
   const tasks = [
     queryClient.prefetchQuery({
@@ -145,7 +149,8 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
-    router.prefetch('/dashboard')
+    router.prefetch('/design-lab/overview')
+    router.prefetch('/design-lab/pdv')
     router.prefetch('/app')
   }, [router])
 
@@ -177,7 +182,7 @@ export function LoginForm() {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.replace('/dashboard')
+        router.replace(resolvePostLoginRoute(data.user.role))
       })
     },
     onError: (error, variables) => {
@@ -200,7 +205,7 @@ export function LoginForm() {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.replace('/dashboard')
+        router.replace(resolvePostLoginRoute(data.user.role))
       })
     },
   })

@@ -1,52 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-
-// Mock the dashboard-navigation module
-vi.mock('@/components/dashboard/dashboard-navigation', () => ({
-  dashboardDefaultSection: 'overview' as const,
-  dashboardDefaultSettingsSection: 'account' as const,
-  dashboardNavigationGroups: [
-    {
-      id: 'workspace',
-      label: 'Workspace',
-      items: [{ id: 'overview', label: 'Dashboard', description: 'desc', icon: {} }],
-    },
-    {
-      id: 'commercial',
-      label: 'Operação',
-      items: [
-        { id: 'sales', label: 'Operação', description: 'desc', icon: {} },
-        { id: 'pdv', label: 'PDV', description: 'desc', icon: {} },
-        { id: 'salao', label: 'Salão', description: 'desc', icon: {} },
-        { id: 'calendario', label: 'Calendário', description: 'desc', icon: {} },
-        { id: 'payroll', label: 'Folha', description: 'desc', icon: {} },
-      ],
-    },
-    {
-      id: 'portfolio',
-      label: 'Portfólio',
-      items: [{ id: 'portfolio', label: 'Portfólio', description: 'desc', icon: {} }],
-    },
-  ],
-  dashboardQuickActions: [{ id: 'new-sale', label: 'Nova Venda' }],
-  parseDashboardSectionParam: (value: string | null) => {
-    const valid = ['overview', 'sales', 'portfolio', 'pdv', 'calendario', 'payroll', 'salao', 'settings']
-    return value && valid.includes(value) ? value : null
-  },
-  parseDashboardSettingsSectionParam: (value: string | null) => {
-    const valid = ['account', 'security', 'preferences', 'compliance', 'session']
-    return value && valid.includes(value) ? value : null
-  },
-}))
-
 import { useDashboardNavigation } from './useDashboardNavigation'
 
 describe('useDashboardNavigation', () => {
   let pushStateSpy: ReturnType<typeof vi.spyOn>
+  let replaceStateSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     pushStateSpy = vi.spyOn(window.history, 'pushState').mockImplementation(() => {})
-    // Reset URL
+    replaceStateSpy = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {})
     Object.defineProperty(window, 'location', {
       value: { search: '', href: 'http://localhost/dashboard' },
       writable: true,
@@ -58,56 +20,67 @@ describe('useDashboardNavigation', () => {
     vi.restoreAllMocks()
   })
 
-  describe('non-staff user (owner)', () => {
-    it('returns all navigation groups for owner', () => {
+  describe('owner', () => {
+    it('returns the six product sections with default overview tab', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
-      expect(result.current.navigationGroups).toHaveLength(3)
-      expect(result.current.quickActions).toHaveLength(1)
-    })
 
-    it('defaults to overview section', () => {
-      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
+      const itemIds = result.current.navigationGroups.flatMap((group) => group.items.map((item) => item.id))
+      expect(itemIds).toEqual(['overview', 'pdv', 'salao', 'financeiro', 'pedidos', 'equipe'])
       expect(result.current.activeSection).toBe('overview')
+      expect(result.current.activeDisplaySection).toBe('overview')
+      expect(result.current.activeTab).toBe('principal')
+      expect(result.current.sectionTabs).toHaveLength(5)
+      expect(result.current.quickActions).toHaveLength(0)
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=overview&tab=principal')
     })
 
-    it('uses initialSection when provided', () => {
-      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false, initialSection: 'sales' }))
-      expect(result.current.activeSection).toBe('sales')
-    })
-
-    it('uses initialSettingsSection when provided', () => {
+    it('uses initial section and tab when provided', () => {
       const { result } = renderHook(() =>
-        useDashboardNavigation({
-          isStaffUser: false,
-          initialSettingsSection: 'security',
-        }),
+        useDashboardNavigation({ isStaffUser: false, initialSection: 'financeiro', initialTab: 'dre' }),
       )
-      expect(result.current.activeSettingsSection).toBe('security')
+
+      expect(result.current.activeSection).toBe('financeiro')
+      expect(result.current.activeDisplaySection).toBe('financeiro')
+      expect(result.current.activeTab).toBe('dre')
     })
 
-    it('navigateToSection updates active section and pushes URL', () => {
+    it('navigateToSection updates section, default tab and URL', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
 
       act(() => {
-        result.current.navigateToSection('portfolio')
+        result.current.navigateToSection('pdv')
       })
 
-      expect(result.current.activeSection).toBe('portfolio')
-      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=portfolio')
+      expect(result.current.activeSection).toBe('pdv')
+      expect(result.current.activeTab).toBe('grid')
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=pdv&tab=grid')
     })
 
-    it('navigateToSection omits view param for default section', () => {
-      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false, initialSection: 'sales' }))
+    it('persists explicit tab param for overview subsections', () => {
+      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
 
       act(() => {
-        result.current.navigateToSection('overview')
+        result.current.navigateToSection('overview', 'meta')
       })
 
       expect(result.current.activeSection).toBe('overview')
-      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/dashboard')
+      expect(result.current.activeTab).toBe('meta')
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=overview&tab=meta')
     })
 
-    it('navigateToSettings updates both section and settings section', () => {
+    it('navigateToTab keeps the display section and pushes tab URL', () => {
+      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
+
+      act(() => {
+        result.current.navigateToTab('editorial')
+      })
+
+      expect(result.current.activeSection).toBe('overview')
+      expect(result.current.activeTab).toBe('editorial')
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=overview&tab=editorial')
+    })
+
+    it('navigateToSettings keeps panel compatibility', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
 
       act(() => {
@@ -120,38 +93,28 @@ describe('useDashboardNavigation', () => {
     })
   })
 
-  describe('staff user', () => {
-    it('returns empty quickActions for staff', () => {
+  describe('staff', () => {
+    it('filters navigation to operational sections', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: true }))
+      const itemIds = result.current.navigationGroups.flatMap((group) => group.items.map((item) => item.id))
+
+      expect(itemIds).toEqual(['pdv', 'salao', 'pedidos'])
       expect(result.current.quickActions).toHaveLength(0)
     })
 
-    it('filters navigation to only sales, pdv, calendario', () => {
-      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: true }))
-      const allItemIds = result.current.navigationGroups.flatMap((g) => g.items.map((item) => item.id))
-      expect(allItemIds).toEqual(['sales', 'pdv', 'calendario'])
-    })
-
-    it('removes groups that become empty after filtering', () => {
-      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: true }))
-      // workspace group (only overview) should be removed
-      // portfolio group (only portfolio) should be removed
-      const groupIds = result.current.navigationGroups.map((g) => g.id)
-      expect(groupIds).not.toContain('workspace')
-      expect(groupIds).not.toContain('portfolio')
-    })
-
-    it('resolves to sales when active section is not in allowed set', () => {
+    it('resolves to PDV when active section is not allowed', () => {
       const { result } = renderHook(() =>
         useDashboardNavigation({
           isStaffUser: true,
-          initialSection: 'overview', // not allowed for staff
+          initialSection: 'overview',
         }),
       )
-      expect(result.current.activeSection).toBe('sales')
+
+      expect(result.current.activeSection).toBe('pdv')
+      expect(result.current.activeTab).toBe('grid')
     })
 
-    it('allows settings section even for staff', () => {
+    it('allows settings for staff', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: true }))
 
       act(() => {
@@ -163,7 +126,7 @@ describe('useDashboardNavigation', () => {
   })
 
   describe('URL sync', () => {
-    it('syncs from URL search params on mount', () => {
+    it('maps old portfolio URL to PDV display section while preserving legacy environment id', () => {
       Object.defineProperty(window, 'location', {
         value: { search: '?view=portfolio', href: 'http://localhost/dashboard?view=portfolio' },
         writable: true,
@@ -173,39 +136,53 @@ describe('useDashboardNavigation', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
 
       expect(result.current.activeSection).toBe('portfolio')
+      expect(result.current.activeDisplaySection).toBe('pdv')
+      expect(result.current.activeTab).toBe('grid')
     })
 
-    it('syncs settings panel from URL', () => {
+    it('syncs new view and tab from URL', () => {
       Object.defineProperty(window, 'location', {
-        value: {
-          search: '?view=settings&panel=security',
-          href: 'http://localhost/dashboard?view=settings&panel=security',
-        },
+        value: { search: '?view=equipe&tab=folha', href: 'http://localhost/dashboard?view=equipe&tab=folha' },
         writable: true,
         configurable: true,
       })
 
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
 
-      expect(result.current.activeSection).toBe('settings')
-      expect(result.current.activeSettingsSection).toBe('security')
+      expect(result.current.activeSection).toBe('equipe')
+      expect(result.current.activeDisplaySection).toBe('equipe')
+      expect(result.current.activeTab).toBe('folha')
     })
 
-    it('handles popstate events', () => {
+    it('canonicaliza URLs de seção sem tab explícita', () => {
+      Object.defineProperty(window, 'location', {
+        value: { search: '?view=financeiro', href: 'http://localhost/dashboard?view=financeiro' },
+        writable: true,
+        configurable: true,
+      })
+
+      const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
+
+      expect(result.current.activeSection).toBe('financeiro')
+      expect(result.current.activeTab).toBe('movimentacao')
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, '', '/dashboard?view=financeiro&tab=movimentacao')
+    })
+
+    it('handles popstate events with tab changes', () => {
       const { result } = renderHook(() => useDashboardNavigation({ isStaffUser: false }))
       expect(result.current.activeSection).toBe('overview')
 
-      // Simulate browser back changing the URL
       act(() => {
         Object.defineProperty(window, 'location', {
-          value: { search: '?view=sales', href: 'http://localhost/dashboard?view=sales' },
+          value: { search: '?view=pedidos&tab=kanban', href: 'http://localhost/dashboard?view=pedidos&tab=kanban' },
           writable: true,
           configurable: true,
         })
         window.dispatchEvent(new PopStateEvent('popstate'))
       })
 
-      expect(result.current.activeSection).toBe('sales')
+      expect(result.current.activeSection).toBe('pedidos')
+      expect(result.current.activeTab).toBe('kanban')
     })
   })
 })

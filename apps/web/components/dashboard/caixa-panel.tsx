@@ -17,53 +17,178 @@ import type { OperationsLiveResponse } from '@contracts/contracts'
 import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
 import { buildOperationsExecutiveKpis } from '@/lib/operations'
 import { formatBRL } from '@/lib/currency'
-
-// ── helpers ──────────────────────────────────────────────────────────────────
+import { LabEmptyState, LabModal, LabPanel, LabStatusPill, type LabStatusTone } from '@/components/design-lab/lab-primitives'
+import { cn } from '@/lib/utils'
 
 const fmtBRL = formatBRL
 
 function parseAmount(raw: string): number {
-  // aceita "1.500,50" (pt-BR) ou "1500.50" (en)
   const normalized = raw.replace(/\./g, '').replace(',', '.')
   const n = parseFloat(normalized)
   return isNaN(n) ? 0 : n
 }
 
-// ── sub-components ────────────────────────────────────────────────────────────
+function getToneClasses(tone: LabStatusTone) {
+  switch (tone) {
+    case 'success':
+      return {
+        icon: 'text-[var(--success)]',
+        panel: {
+          borderColor: 'color-mix(in srgb, var(--success) 20%, var(--border))',
+          backgroundColor: 'color-mix(in srgb, var(--success) 8%, var(--surface))',
+        },
+      }
+    case 'danger':
+      return {
+        icon: 'text-[var(--danger)]',
+        panel: {
+          borderColor: 'color-mix(in srgb, var(--danger) 20%, var(--border))',
+          backgroundColor: 'color-mix(in srgb, var(--danger) 8%, var(--surface))',
+        },
+      }
+    case 'warning':
+      return {
+        icon: 'text-[var(--warning)]',
+        panel: {
+          borderColor: 'color-mix(in srgb, var(--warning) 22%, var(--border))',
+          backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+        },
+      }
+    case 'info':
+      return {
+        icon: 'text-[var(--accent)]',
+        panel: {
+          borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--border))',
+          backgroundColor: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
+        },
+      }
+    case 'neutral':
+    default:
+      return {
+        icon: 'text-[var(--text-soft)]',
+        panel: {
+          borderColor: 'var(--border)',
+          backgroundColor: 'color-mix(in srgb, var(--surface-muted) 34%, var(--surface))',
+        },
+      }
+  }
+}
+
+function SurfaceButton({
+  children,
+  className,
+  ...props
+}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+  return (
+    <button
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+function PrimaryButton({
+  children,
+  className,
+  ...props
+}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+  return (
+    <button
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--on-accent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+function DangerButton({
+  children,
+  className,
+  ...props
+}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+  return (
+    <button
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-sm font-semibold text-[var(--danger)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
+      style={{
+        border: '1px solid color-mix(in srgb, var(--danger) 28%, var(--border))',
+        backgroundColor: 'color-mix(in srgb, var(--danger) 10%, var(--surface))',
+      }}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+function FieldLabel({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">{children}</label>
+}
+
+function FieldInput(props: Readonly<React.InputHTMLAttributes<HTMLInputElement>>) {
+  return (
+    <input
+      className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+      {...props}
+    />
+  )
+}
+
+function FieldTextarea(props: Readonly<React.TextareaHTMLAttributes<HTMLTextAreaElement>>) {
+  return (
+    <textarea
+      className="w-full resize-none rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+      {...props}
+    />
+  )
+}
+
+function MessageBox({
+  children,
+  tone,
+}: Readonly<{
+  children: React.ReactNode
+  tone: Exclude<LabStatusTone, 'neutral'>
+}>) {
+  const toneClasses = getToneClasses(tone)
+  return (
+    <div className="rounded-[12px] border px-4 py-3 text-sm" style={toneClasses.panel}>
+      <span className={cn('font-medium', toneClasses.icon)}>{children}</span>
+    </div>
+  )
+}
 
 function KpiCard({
   icon: Icon,
   label,
   value,
   hint,
-  highlight = 'neutral',
+  tone = 'neutral',
 }: {
   icon: React.ElementType
   label: string
   value: string
   hint?: string
-  highlight?: 'neutral' | 'positive' | 'negative' | 'accent'
+  tone?: LabStatusTone
 }) {
-  const borderClassMap: Record<string, string> = {
-    positive: 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)]',
-    negative: 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.05)]',
-    accent: 'border-[rgba(155,132,96,0.35)] bg-[rgba(155,132,96,0.07)]',
-    neutral: 'border-white/6 bg-[rgba(255,255,255,0.02)]',
-  }
-
-  const iconClassMap: Record<string, string> = {
-    positive: 'text-[#34f27f]',
-    negative: 'text-[#f87171]',
-    accent: 'text-[#c9a96e]',
-    neutral: 'text-[var(--text-soft)]',
-  }
-
-  const borderClass = borderClassMap[highlight] ?? borderClassMap.neutral
-  const iconClass = iconClassMap[highlight] ?? iconClassMap.neutral
+  const toneClasses = getToneClasses(tone)
 
   return (
-    <div className={`rounded-[22px] border px-4 py-4 ${borderClass}`}>
-      <Icon className={`size-4 ${iconClass}`} />
+    <div className="rounded-[16px] border px-4 py-4" style={toneClasses.panel}>
+      <div className={cn('inline-flex size-9 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]', toneClasses.icon)}>
+        <Icon className="size-4" />
+      </div>
       <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
       <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
       {hint ? <p className="mt-1.5 text-[11px] leading-5 text-[var(--text-soft)]">{hint}</p> : null}
@@ -71,27 +196,10 @@ function KpiCard({
   )
 }
 
-function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        aria-label="Fechar modal do caixa"
-        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
-        type="button"
-        onClick={onClose}
-      />
-      <div className="relative z-10">{children}</div>
-    </div>
-  )
-}
-
-// ── modal: abrir caixa ────────────────────────────────────────────────────────
-
 function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
-
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
@@ -122,85 +230,48 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   }
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-              Operação financeira
-            </p>
-            <h2 className="mt-1.5 text-xl font-semibold text-[var(--text-primary)]">Abrir caixa</h2>
-          </div>
-          <button
-            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
-            type="button"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </button>
+    <LabModal
+      description="Defina o valor inicial disponivel no caixa para iniciar o turno."
+      closeLabel="Fechar modal do caixa"
+      onClose={onClose}
+      open
+      title="Abrir caixa"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <FieldLabel>Valor inicial no caixa (R$)</FieldLabel>
+          <FieldInput
+            autoFocus
+            inputMode="decimal"
+            placeholder="0,00"
+            type="text"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <p className="mt-1.5 text-[11px] text-[var(--text-soft)]">
+            Dinheiro fisico presente no caixa ao iniciar o turno. Pode ser R$ 0,00.
+          </p>
         </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
-              Valor inicial no caixa (R$)
-            </label>
-            <input
-              autoFocus
-              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              inputMode="decimal"
-              placeholder="0,00"
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <p className="mt-1.5 text-[11px] text-[var(--text-soft)]">
-              Dinheiro físico presente no caixa ao iniciar o turno. Pode ser R$ 0,00.
-            </p>
-          </div>
+        <div>
+          <FieldLabel>Observacoes (opcional)</FieldLabel>
+          <FieldTextarea placeholder="Troco separado, conferencia inicial..." rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
-              Observações (opcional)
-            </label>
-            <textarea
-              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              placeholder="Troco separado, conferência inicial…"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
+        {error ? <MessageBox tone="danger">{error}</MessageBox> : null}
 
-          {error ? (
-            <div className="rounded-[12px] border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#f87171]">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="flex gap-3 pt-1">
-            <button
-              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
-              type="button"
-              onClick={onClose}
-            >
-              Cancelar
-            </button>
-            <button
-              className="flex-1 rounded-[14px] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 disabled:opacity-50 transition-opacity"
-              disabled={mutation.isPending}
-              type="submit"
-            >
-              {mutation.isPending ? 'Abrindo…' : 'Abrir caixa'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </ModalOverlay>
+        <div className="flex gap-3 pt-1">
+          <SurfaceButton className="flex-1" type="button" onClick={onClose}>
+            Cancelar
+          </SurfaceButton>
+          <PrimaryButton className="flex-1" disabled={mutation.isPending} type="submit">
+            {mutation.isPending ? 'Abrindo...' : 'Abrir caixa'}
+          </PrimaryButton>
+        </div>
+      </form>
+    </LabModal>
   )
 }
-
-// ── modal: fechar caixa ───────────────────────────────────────────────────────
 
 function FecharCaixaModal({
   openComandasCount,
@@ -217,7 +288,6 @@ function FecharCaixaModal({
   const [notes, setNotes] = useState('')
   const [forceClose, setForceClose] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
@@ -239,6 +309,8 @@ function FecharCaixaModal({
 
   const hasOpenComandas = openComandasCount > 0
   const canSubmit = !hasOpenComandas || forceClose
+  const delta = parseAmount(amount) - expectedCashAmount
+  const showDelta = amount.trim() !== ''
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -251,125 +323,90 @@ function FecharCaixaModal({
     mutation.mutate()
   }
 
-  const delta = parseAmount(amount) - expectedCashAmount
-  const showDelta = amount.trim() !== '' && parseAmount(amount) > 0
-
   return (
-    <ModalOverlay onClose={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d1117] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-              Encerramento do dia
+    <LabModal
+      description="Confirme o valor contado para encerrar a sessao do caixa."
+      closeLabel="Fechar modal do caixa"
+      onClose={onClose}
+      open
+      title="Fechar caixa"
+    >
+      {hasOpenComandas ? (
+        <div
+          className="mb-5 rounded-[14px] border px-4 py-4"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 22%, var(--border))',
+            backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="size-4 shrink-0 text-[var(--warning)]" />
+            <p className="text-sm font-semibold text-[var(--warning)]">
+              {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta{openComandasCount > 1 ? 's' : ''}
             </p>
-            <h2 className="mt-1.5 text-xl font-semibold text-[var(--text-primary)]">Fechar caixa</h2>
           </div>
-          <button
-            className="mt-0.5 rounded-full p-1.5 text-[var(--text-soft)] hover:text-[var(--text-primary)] transition-colors"
-            type="button"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </button>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">
+            O caixa so pode ser fechado apos todas as comandas serem pagas. Ative o fechamento forcado apenas em caso de emergencia.
+          </p>
+          <label className="mt-3 flex cursor-pointer items-center gap-2.5">
+            <input checked={forceClose} className="size-4 accent-[var(--accent)]" type="checkbox" onChange={(e) => setForceClose(e.target.checked)} />
+            <span className="text-xs font-semibold text-[var(--warning)]">Fechar mesmo com comandas abertas</span>
+          </label>
+        </div>
+      ) : (
+        <div
+          className="mb-5 flex items-center gap-2.5 rounded-[14px] border px-4 py-3"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--success) 20%, var(--border))',
+            backgroundColor: 'color-mix(in srgb, var(--success) 8%, var(--surface))',
+          }}
+        >
+          <CheckCircle2 className="size-4 shrink-0 text-[var(--success)]" />
+          <p className="text-sm font-medium text-[var(--success)]">Todas as comandas estao fechadas.</p>
+        </div>
+      )}
+
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <FieldLabel>Valor contado no caixa (R$)</FieldLabel>
+          <FieldInput
+            autoFocus
+            inputMode="decimal"
+            placeholder="0,00"
+            type="text"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--text-soft)]">
+            <span>Esperado: {fmtBRL(expectedCashAmount)}</span>
+            {showDelta ? (
+              <span className={cn('font-semibold', delta >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]')}>
+                {delta >= 0 ? '+' : ''}
+                {fmtBRL(delta)}
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        {hasOpenComandas ? (
-          <div className="mt-5 rounded-[16px] border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.07)] px-4 py-4">
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="size-4 shrink-0 text-[#fbbf24]" />
-              <p className="text-sm font-semibold text-[#fbbf24]">
-                {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta
-                {openComandasCount > 1 ? 's' : ''}
-              </p>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">
-              O caixa só pode ser fechado após todas as comandas serem pagas. Ative o fechamento forçado apenas em caso
-              de emergência.
-            </p>
-            <label className="mt-3 flex items-center gap-2.5 cursor-pointer">
-              <input
-                checked={forceClose}
-                className="size-4 accent-[var(--accent)]"
-                type="checkbox"
-                onChange={(e) => setForceClose(e.target.checked)}
-              />
-              <span className="text-xs font-semibold text-[#fbbf24]">Fechar mesmo com comandas abertas</span>
-            </label>
-          </div>
-        ) : (
-          <div className="mt-5 rounded-[16px] border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.05)] px-4 py-3 flex items-center gap-2.5">
-            <CheckCircle2 className="size-4 shrink-0 text-[#34f27f]" />
-            <p className="text-sm text-[#34f27f] font-medium">Todas as comandas estão fechadas.</p>
-          </div>
-        )}
+        <div>
+          <FieldLabel>Observacoes (opcional)</FieldLabel>
+          <FieldTextarea placeholder="Quebra de caixa, sangria, ajuste..." rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
-              Valor contado no caixa (R$)
-            </label>
-            <input
-              autoFocus
-              className="w-full rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-lg font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              inputMode="decimal"
-              placeholder="0,00"
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--text-soft)]">
-              <span>Esperado: {fmtBRL(expectedCashAmount)}</span>
-              {showDelta ? (
-                <span className={delta >= 0 ? 'text-[#34f27f] font-semibold' : 'text-[#f87171] font-semibold'}>
-                  {delta >= 0 ? '+' : ''}
-                  {fmtBRL(delta)}
-                </span>
-              ) : null}
-            </div>
-          </div>
+        {error ? <MessageBox tone="danger">{error}</MessageBox> : null}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)] mb-2">
-              Observações (opcional)
-            </label>
-            <textarea
-              className="w-full resize-none rounded-[14px] border border-white/10 bg-white/4 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/25 focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-              placeholder="Quebra de caixa, sangria, ajuste…"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-
-          {error ? (
-            <div className="rounded-[12px] border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-sm text-[#f87171]">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="flex gap-3 pt-1">
-            <button
-              className="flex-1 rounded-[14px] border border-white/10 px-4 py-3 text-sm font-semibold text-[var(--text-soft)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
-              type="button"
-              onClick={onClose}
-            >
-              Cancelar
-            </button>
-            <button
-              className="flex-1 rounded-[14px] bg-[#f87171]/90 px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 disabled:opacity-40 transition-opacity"
-              disabled={mutation.isPending || !canSubmit}
-              type="submit"
-            >
-              {mutation.isPending ? 'Fechando…' : 'Fechar caixa'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </ModalOverlay>
+        <div className="flex gap-3 pt-1">
+          <SurfaceButton className="flex-1" type="button" onClick={onClose}>
+            Cancelar
+          </SurfaceButton>
+          <DangerButton className="flex-1" disabled={mutation.isPending || !canSubmit} type="submit">
+            {mutation.isPending ? 'Fechando...' : 'Fechar caixa'}
+          </DangerButton>
+        </div>
+      </form>
+    </LabModal>
   )
 }
-
-// ── main component ────────────────────────────────────────────────────────────
 
 function CaixaHeaderActions({
   caixaAberto,
@@ -382,59 +419,55 @@ function CaixaHeaderActions({
 }>) {
   if (caixaAberto) {
     return (
-      <>
-        <span className="flex items-center gap-1.5 rounded-full border border-[rgba(52,242,127,0.25)] bg-[rgba(52,242,127,0.08)] px-3 py-1.5 text-xs font-semibold text-[#34f27f]">
-          <span className="size-1.5 rounded-full bg-[#34f27f] animate-pulse" />
+      <div className="flex flex-wrap items-center gap-2">
+        <LabStatusPill icon={<span className="size-1.5 rounded-full bg-[var(--success)]" />} tone="success">
           Aberto
-        </span>
-        <button
-          className="flex items-center gap-2 rounded-[14px] border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] px-4 py-2.5 text-sm font-semibold text-[#f87171] hover:bg-[rgba(248,113,113,0.14)] transition-colors"
-          type="button"
-          onClick={onCloseModal}
-        >
+        </LabStatusPill>
+        <DangerButton type="button" onClick={onCloseModal}>
           <Lock className="size-3.5" />
           Fechar caixa
-        </button>
-      </>
+        </DangerButton>
+      </div>
     )
   }
 
   return (
-    <button
-      className="flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
-      type="button"
-      onClick={onOpenModal}
-    >
+    <PrimaryButton type="button" onClick={onOpenModal}>
       <Unlock className="size-3.5" />
       Abrir caixa
-    </button>
+    </PrimaryButton>
   )
 }
 
 function formatCaixaSubtitle(caixaAberto: boolean, openSessionsCount: number, openComandasCount: number): string {
-  if (!caixaAberto) {return 'Nenhuma sessão de caixa ativa no momento.'}
+  if (!caixaAberto) return 'Nenhuma sessao de caixa ativa no momento.'
   const comandaLabel = openComandasCount === 1 ? '' : 's'
-  return `Caixa aberto · ${openSessionsCount} sessão ativa · ${openComandasCount} comanda${comandaLabel} em aberto`
+  return `Caixa aberto · ${openSessionsCount} sessao ativa · ${openComandasCount} comanda${comandaLabel} em aberto`
 }
 
-function positiveOrNeutral(value: number): 'positive' | 'neutral' {
-  return value > 0 ? 'positive' : 'neutral'
+function positiveOrNeutral(value: number): LabStatusTone {
+  return value > 0 ? 'success' : 'neutral'
 }
 
 function CaixaEsperadoRow({ caixaEsperado, openComandasCount }: { caixaEsperado: number; openComandasCount: number }) {
   return (
-    <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="mt-3 flex flex-col gap-3 rounded-[16px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Caixa esperado</p>
         <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(caixaEsperado)}</p>
         <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
       </div>
       {openComandasCount > 0 ? (
-        <div className="flex items-center gap-2 rounded-[12px] border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3.5 py-2.5 text-xs text-[#fbbf24]">
-          <AlertTriangle className="size-3.5 shrink-0" />
-          <span className="font-semibold">
-            {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
-            {openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
+        <div
+          className="flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xs"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 20%, var(--border))',
+            backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+          }}
+        >
+          <AlertTriangle className="size-3.5 shrink-0 text-[var(--warning)]" />
+          <span className="font-semibold text-[var(--warning)]">
+            {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta{openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
           </span>
         </div>
       ) : null}
@@ -444,21 +477,17 @@ function CaixaEsperadoRow({ caixaEsperado, openComandasCount }: { caixaEsperado:
 
 function CaixaEmptyState({ onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <div className="mt-5 rounded-[22px] border border-dashed border-white/8 px-6 py-10 text-center">
-      <Banknote className="mx-auto size-9 text-[var(--text-soft)]/50" />
-      <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Caixa ainda não foi aberto hoje</p>
-      <p className="mt-1.5 text-xs text-[var(--text-soft)]">
-        Clique em &ldquo;Abrir caixa&rdquo; para iniciar o turno e liberar o PDV para os funcionários.
-      </p>
-      <button
-        className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-90 transition-opacity"
-        type="button"
-        onClick={onOpenModal}
-      >
-        <Unlock className="size-3.5" />
-        Abrir caixa agora
-      </button>
-    </div>
+    <LabEmptyState
+      action={
+        <PrimaryButton type="button" onClick={onOpenModal}>
+          <Unlock className="size-3.5" />
+          Abrir caixa agora
+        </PrimaryButton>
+      }
+      description='Clique em "Abrir caixa" para iniciar o turno e liberar o PDV para os funcionarios.'
+      icon={Banknote}
+      title="Caixa ainda nao foi aberto hoje"
+    />
   )
 }
 
@@ -481,31 +510,23 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
 
   return (
     <>
-      <section className="imperial-card p-6 md:p-7">
-        <header className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-              Financeiro operacional
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">Caixa do dia</h2>
-            <p className="mt-1.5 text-sm leading-6 text-[var(--text-soft)]">
-              {formatCaixaSubtitle(caixaAberto, openSessionsCount, openComandasCount)}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2.5">
-            <CaixaHeaderActions
-              caixaAberto={caixaAberto}
-              onCloseModal={() => setShowFecharModal(true)}
-              onOpenModal={() => setShowAbrirModal(true)}
-            />
-          </div>
-        </header>
-
-        {/* success toast */}
+      <LabPanel
+        action={
+          <CaixaHeaderActions caixaAberto={caixaAberto} onCloseModal={() => setShowFecharModal(true)} onOpenModal={() => setShowAbrirModal(true)} />
+        }
+        padding="md"
+        subtitle={formatCaixaSubtitle(caixaAberto, openSessionsCount, openComandasCount)}
+        title="Caixa do dia"
+      >
         {successMsg ? (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.06)] px-4 py-3">
-            <div className="flex items-center gap-2.5 text-sm text-[#34f27f] font-medium">
+          <div
+            className="mb-4 flex items-center justify-between gap-3 rounded-[14px] border px-4 py-3"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--success) 20%, var(--border))',
+              backgroundColor: 'color-mix(in srgb, var(--success) 8%, var(--surface))',
+            }}
+          >
+            <div className="flex items-center gap-2.5 text-sm font-medium text-[var(--success)]">
               <CheckCircle2 className="size-4 shrink-0" />
               {successMsg}
             </div>
@@ -515,59 +536,34 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           </div>
         ) : null}
 
-        {/* KPIs */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiCard hint="Comandas fechadas hoje" icon={CircleDollarSign} label="Receita realizada" tone={positiveOrNeutral(receitaRealizada)} value={fmtBRL(receitaRealizada)} />
+          <KpiCard hint="Resultado liquido estimado" icon={TrendingUp} label="Lucro realizado" tone={positiveOrNeutral(lucroRealizado)} value={fmtBRL(lucroRealizado)} />
           <KpiCard
-            highlight={positiveOrNeutral(receitaRealizada)}
-            hint="Comandas fechadas hoje"
-            icon={CircleDollarSign}
-            label="Receita realizada"
-            value={fmtBRL(receitaRealizada)}
-          />
-          <KpiCard
-            highlight={positiveOrNeutral(lucroRealizado)}
-            hint="Resultado líquido estimado"
-            icon={TrendingUp}
-            label="Lucro realizado"
-            value={fmtBRL(lucroRealizado)}
-          />
-          <KpiCard
-            highlight={faturamentoAberto > 0 ? 'accent' : 'neutral'}
             hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
             icon={ChevronDown}
             label="Em aberto"
+            tone={faturamentoAberto > 0 ? 'info' : 'neutral'}
             value={fmtBRL(faturamentoAberto)}
           />
-          <KpiCard
-            highlight={projecaoTotal > 0 ? 'accent' : 'neutral'}
-            hint="Realizado + em aberto"
-            icon={Banknote}
-            label="Projeção total"
-            value={fmtBRL(projecaoTotal)}
-          />
+          <KpiCard hint="Realizado + em aberto" icon={Banknote} label="Projecao total" tone={projecaoTotal > 0 ? 'info' : 'neutral'} value={fmtBRL(projecaoTotal)} />
         </div>
 
-        <div className="mt-3 rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-5 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-            Lucro esperado
-          </p>
+        <div className="mt-3 rounded-[16px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro esperado</p>
           <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(lucroEsperado)}</p>
-          <p className="mt-1 text-xs text-[var(--text-soft)]">
-            Leitura provisória: lucro realizado + faturamento em aberto
-          </p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">Leitura provisoria: lucro realizado + faturamento em aberto</p>
         </div>
 
         {caixaAberto ? <CaixaEsperadoRow caixaEsperado={caixaEsperado} openComandasCount={openComandasCount} /> : null}
 
-        {!caixaAberto && receitaRealizada === 0 ? (
-          <CaixaEmptyState onOpenModal={() => setShowAbrirModal(true)} />
-        ) : null}
-      </section>
+        {!caixaAberto && receitaRealizada === 0 ? <div className="mt-5"><CaixaEmptyState onOpenModal={() => setShowAbrirModal(true)} /></div> : null}
+      </LabPanel>
 
       {showAbrirModal ? (
         <AbrirCaixaModal
           onClose={() => setShowAbrirModal(false)}
-          onSuccess={() => setSuccessMsg('Caixa aberto com sucesso. O PDV já está disponível para os funcionários.')}
+          onSuccess={() => setSuccessMsg('Caixa aberto com sucesso. O PDV ja esta disponivel para os funcionarios.')}
         />
       ) : null}
 
@@ -576,7 +572,7 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           expectedCashAmount={caixaEsperado}
           openComandasCount={openComandasCount}
           onClose={() => setShowFecharModal(false)}
-          onSuccess={() => setSuccessMsg('Caixa fechado. Bom trabalho hoje!')}
+          onSuccess={() => setSuccessMsg('Caixa fechado. Bom trabalho hoje.')}
         />
       ) : null}
     </>

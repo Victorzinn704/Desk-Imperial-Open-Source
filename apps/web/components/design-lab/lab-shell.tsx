@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { useTheme } from 'next-themes'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -15,24 +18,32 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Bell,
-  Search,
   LogOut,
-  Building2,
   Moon,
   Sun,
   Menu,
   X,
+  ClipboardList,
+  Landmark,
+  ChefHat,
+  Bot,
 } from 'lucide-react'
+import { fetchCurrentUser } from '@/lib/api'
+import { useDashboardLogout, useDashboardMutations } from '@/components/dashboard/hooks'
 import { cn } from '@/lib/utils'
 
-const NAV = [
+type Role = 'OWNER' | 'STAFF'
+
+const NAV_OWNER = [
   {
     group: 'Operação',
     items: [
       { id: 'overview', label: 'Overview', href: '/design-lab/overview', icon: LayoutDashboard },
       { id: 'pdv', label: 'PDV / Comandas', href: '/design-lab/pdv', icon: ShoppingCart },
       { id: 'salao', label: 'Salão', href: '/design-lab/salao', icon: UtensilsCrossed },
+      { id: 'pedidos', label: 'Pedidos', href: '/design-lab/pedidos', icon: ClipboardList },
+      { id: 'caixa', label: 'Caixa', href: '/design-lab/caixa', icon: Landmark },
+      { id: 'cozinha', label: 'Cozinha (KDS)', href: '/design-lab/cozinha', icon: ChefHat },
     ],
   },
   {
@@ -50,10 +61,33 @@ const NAV = [
       { id: 'payroll', label: 'Folha de Pagamento', href: '/design-lab/payroll', icon: Wallet },
     ],
   },
+  {
+    group: 'Inteligência',
+    items: [{ id: 'ia', label: 'IA', href: '/design-lab/ia', icon: Bot }],
+  },
+  {
+    group: 'Sistema',
+    items: [{ id: 'config', label: 'Config', href: '/design-lab/config', icon: Settings }],
+  },
+]
+
+const NAV_STAFF = [
+  {
+    group: 'Operação',
+    items: [
+      { id: 'salao', label: 'Salão', href: '/design-lab/salao', icon: UtensilsCrossed },
+      { id: 'pdv', label: 'PDV / Comandas', href: '/design-lab/pdv', icon: ShoppingCart },
+      { id: 'caixa', label: 'Caixa', href: '/design-lab/caixa', icon: Landmark },
+      { id: 'cozinha', label: 'Cozinha (KDS)', href: '/design-lab/cozinha', icon: ChefHat },
+    ],
+  },
+  {
+    group: 'Sistema',
+    items: [{ id: 'config', label: 'Config', href: '/design-lab/config', icon: Settings }],
+  },
 ]
 
 const COLLAPSED_KEY = 'lab_sidebar_collapsed'
-const DARK_KEY = 'lab_dark'
 
 function getStoredBoolean(key: string, fallback: boolean) {
   if (typeof window === 'undefined') {
@@ -68,22 +102,77 @@ function getStoredBoolean(key: string, fallback: boolean) {
   return rawValue === 'true'
 }
 
+function getInitials(name?: string | null) {
+  if (!name) {
+    return 'DI'
+  }
+
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+
+  if (parts.length === 0) {
+    return 'DI'
+  }
+
+  return parts.map((part) => part[0]?.toUpperCase() ?? '').join('')
+}
+
 export function LabShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { resolvedTheme, setTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(() => getStoredBoolean(COLLAPSED_KEY, false))
-  const [dark, setDark] = useState(() => getStoredBoolean(DARK_KEY, true))
+  const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const sessionQuery = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: fetchCurrentUser,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
+  const { logoutMutation } = useDashboardMutations()
+  const { logout, isPending: isLoggingOut } = useDashboardLogout(logoutMutation)
+
+  const currentUser = sessionQuery.data?.user ?? null
+  const role: Role = currentUser?.role === 'STAFF' ? 'STAFF' : 'OWNER'
+  const navigation = role === 'STAFF' ? NAV_STAFF : NAV_OWNER
+  const isDark = mounted ? resolvedTheme !== 'light' : true
+
+  const activeNavigation = useMemo(() => {
+    for (const group of navigation) {
+      const activeItem = group.items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+      if (activeItem) {
+        return {
+          groupLabel: group.group,
+          item: activeItem,
+        }
+      }
+    }
+
+    return {
+      groupLabel: 'Desk Imperial',
+      item: navigation[0]?.items[0] ?? null,
+    }
+  }, [navigation, pathname])
+
+  const accountLabel = currentUser?.fullName?.trim() || 'Conta'
+  const accountMeta = currentUser?.role === 'STAFF' ? 'Operação' : 'Administração'
+  const accountInitials = getInitials(currentUser?.fullName)
 
   useEffect(() => {
     localStorage.setItem(COLLAPSED_KEY, String(collapsed))
   }, [collapsed])
 
   useEffect(() => {
-    localStorage.setItem(DARK_KEY, String(dark))
-  }, [dark])
+    setMounted(true)
+  }, [])
 
   return (
-    <div className={cn('lab-root flex h-screen overflow-hidden', dark ? 'lab-dark' : 'lab-light')} data-lab>
+    <div className={cn('lab-root flex h-screen overflow-hidden', isDark ? 'lab-dark' : 'lab-light')} data-lab>
       {/* Mobile overlay */}
       {mobileOpen && (
         <button
@@ -108,7 +197,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
         <div className="lab-sidebar__header">
           <Link href="/design-lab/overview" className="lab-brand">
             <span className="lab-brand__icon">
-              <Building2 className="size-4" />
+              <Image alt="" aria-hidden className="lab-brand__image" height={18} src="/favicon.svg" width={18} />
             </span>
             {!collapsed && <span className="lab-brand__name">Desk Imperial</span>}
           </Link>
@@ -144,7 +233,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="lab-sidebar__nav">
-          {NAV.map((group) => (
+          {navigation.map((group) => (
             <div key={group.group} className="lab-nav-group">
               {!collapsed && <p className="lab-nav-group__label">{group.group}</p>}
               {group.items.map((item) => {
@@ -171,27 +260,15 @@ export function LabShell({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <div className="lab-sidebar__footer">
-          <Link href="/design-lab/overview" className={cn('lab-nav-item', 'mt-auto')}>
-            <span className="lab-nav-item__icon">
-              <Settings className="size-4" />
-            </span>
-            {!collapsed && <span className="lab-nav-item__label">Configurações</span>}
-          </Link>
-
-          <div className={cn('lab-user', collapsed && 'lab-user--compact')}>
-            <span className="lab-user__avatar">VI</span>
+          <Link className={cn('lab-user', collapsed && 'lab-user--compact')} href="/design-lab/config">
+            <span className="lab-user__avatar">{accountInitials}</span>
             {!collapsed && (
               <div className="lab-user__info">
-                <span className="lab-user__name">Victor Imperial</span>
-                <span className="lab-user__role">Admin</span>
+                <span className="lab-user__name">{accountLabel}</span>
+                <span className="lab-user__role">{accountMeta}</span>
               </div>
             )}
-            {!collapsed && (
-              <button className="lab-icon-btn ml-auto" type="button" title="Sair">
-                <LogOut className="size-3.5" />
-              </button>
-            )}
-          </div>
+          </Link>
         </div>
       </aside>
 
@@ -208,27 +285,51 @@ export function LabShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="size-5" />
             </button>
-            <div className="lab-search">
-              <Search className="lab-search__icon" />
-              <input className="lab-search__input" placeholder="Buscar..." readOnly type="text" />
-              <kbd className="lab-search__kbd">⌘K</kbd>
+            <div className="lab-topbar__context">
+              <span className="lab-topbar__eyebrow">{activeNavigation.groupLabel}</span>
+              <span className="lab-topbar__title">{activeNavigation.item?.label ?? 'Desk Imperial'}</span>
             </div>
           </div>
 
           <div className="lab-topbar__right">
             <button
               className="lab-icon-btn"
-              onClick={() => setDark((v) => !v)}
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
               type="button"
-              title={dark ? 'Modo claro' : 'Modo escuro'}
+              title={isDark ? 'Modo claro' : 'Modo escuro'}
             >
-              {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </button>
-            <button className="lab-icon-btn relative" type="button" title="Notificações">
-              <Bell className="size-4" />
-              <span className="lab-badge">3</span>
-            </button>
-            <div className="lab-topbar__avatar">VI</div>
+
+            {currentUser ? (
+              <>
+                <Link className="lab-account-chip" href="/design-lab/config">
+                  <span className="lab-account-chip__avatar">{accountInitials}</span>
+                  <span className="lab-account-chip__text">
+                    <span className="lab-account-chip__name">{accountLabel}</span>
+                    <span className="lab-account-chip__meta">{accountMeta}</span>
+                  </span>
+                </Link>
+                <button
+                  aria-label="Encerrar sessão"
+                  className="lab-icon-btn"
+                  disabled={isLoggingOut}
+                  onClick={logout}
+                  title="Sair"
+                  type="button"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              </>
+            ) : (
+              <Link className="lab-account-chip" href="/login">
+                <span className="lab-account-chip__avatar">DI</span>
+                <span className="lab-account-chip__text">
+                  <span className="lab-account-chip__name">Entrar</span>
+                  <span className="lab-account-chip__meta">Autenticar</span>
+                </span>
+              </Link>
+            )}
           </div>
         </header>
 

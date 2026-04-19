@@ -308,7 +308,7 @@ Write-Host "==> Validando endpoints públicos"
 for ($attempt = 1; $attempt -le 20; $attempt++) {
   try {
     $app = Invoke-WebRequest -UseBasicParsing -Uri 'https://app.deskimperial.online/' -TimeoutSec 30
-    $api = Invoke-WebRequest -UseBasicParsing -Uri 'https://api.deskimperial.online/api/health' -TimeoutSec 30
+    $api = Invoke-WebRequest -UseBasicParsing -Uri 'https://api.deskimperial.online/api/v1/health' -TimeoutSec 30
     break
   } catch {
     if ($attempt -eq 20) {

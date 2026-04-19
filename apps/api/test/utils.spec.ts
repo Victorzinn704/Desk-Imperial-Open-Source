@@ -136,7 +136,6 @@ describe('resolveWorkspaceOwnerUserId', () => {
   it('falls back to userId when companyOwnerUserId is null for STAFF', () => {
     const auth = makeStaffAuthContext({
       userId: 'staff-456',
-      workspaceOwnerUserId: undefined,
       companyOwnerUserId: null,
     })
     expect(resolveWorkspaceOwnerUserId(auth)).toBe('staff-456')

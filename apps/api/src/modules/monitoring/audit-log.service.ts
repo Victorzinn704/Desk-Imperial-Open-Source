@@ -6,14 +6,14 @@ import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 
 export type AuditLogInput = {
-  actorUserId?: string | null
+  actorUserId?: string | null | undefined
   event: string
   resource: string
-  resourceId?: string | null
-  severity?: AuditSeverity
-  metadata?: Prisma.InputJsonValue
-  ipAddress?: string | null
-  userAgent?: string | null
+  resourceId?: string | null | undefined
+  severity?: AuditSeverity | undefined
+  metadata?: Prisma.InputJsonValue | undefined
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }
 
 export type LastLoginEntry = {
@@ -152,17 +152,19 @@ export class AuditLogService {
 
   async record(input: AuditLogInput) {
     try {
+      const data = {
+        event: input.event,
+        resource: input.resource,
+        severity: input.severity ?? AuditSeverity.INFO,
+        ...(input.actorUserId !== undefined ? { actorUserId: input.actorUserId } : {}),
+        ...(input.resourceId !== undefined ? { resourceId: input.resourceId } : {}),
+        ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+        ...(input.ipAddress !== undefined ? { ipAddress: input.ipAddress } : {}),
+        ...(input.userAgent !== undefined ? { userAgent: input.userAgent } : {}),
+      }
+
       await this.prisma.auditLog.create({
-        data: {
-          actorUserId: input.actorUserId,
-          event: input.event,
-          resource: input.resource,
-          resourceId: input.resourceId,
-          severity: input.severity ?? AuditSeverity.INFO,
-          metadata: input.metadata,
-          ipAddress: input.ipAddress,
-          userAgent: input.userAgent,
-        },
+        data,
       })
     } catch (error) {
       this.logger.warn(`Nao foi possivel persistir audit log para o evento ${input.event}.`)

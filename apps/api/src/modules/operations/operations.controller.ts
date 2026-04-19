@@ -1,28 +1,64 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe'
 import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { AssignComandaDto } from './dto/assign-comanda.dto'
-import { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
-import { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import { CloseComandaDto } from './dto/close-comanda.dto'
-import { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import { CreateMesaDto } from './dto/create-mesa.dto'
-import { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import { OpenComandaDto } from './dto/open-comanda.dto'
-import { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import { UpdateMesaDto } from './dto/update-mesa.dto'
 import { OperationsService } from './operations.service'
+import {
+  addComandaItemBodySchema,
+  addComandaItemsBatchBodySchema,
+  assignComandaBodySchema,
+  closeCashClosureBodySchema,
+  closeCashSessionBodySchema,
+  closeComandaBodySchema,
+  createCashMovementBodySchema,
+  createMesaBodySchema,
+  openCashSessionBodySchema,
+  openComandaBodySchema,
+  operationsLiveQuerySchema,
+  operationsResponseOptionsSchema,
+  replaceComandaBodySchema,
+  updateComandaStatusBodySchema,
+  updateKitchenItemStatusBodySchema,
+  updateMesaBodySchema,
+  type AddComandaItemDto,
+  type AddComandaItemsBatchDto,
+  type AssignComandaDto,
+  type CloseCashClosureDto,
+  type CloseCashSessionDto,
+  type CloseComandaDto,
+  type CreateCashMovementDto,
+  type CreateMesaDto,
+  type GetOperationsLiveQueryDto,
+  type OpenCashSessionDto,
+  type OpenComandaDto,
+  type OperationsResponseOptionsDto,
+  type ReplaceComandaDto,
+  type UpdateComandaStatusDto,
+  type UpdateKitchenItemStatusDto,
+  type UpdateMesaDto,
+} from './operations.schemas'
+
+const operationsLiveQueryPipe = new ZodValidationPipe(operationsLiveQuerySchema)
+const operationsResponseOptionsPipe = new ZodValidationPipe(operationsResponseOptionsSchema)
+const openCashSessionBodyPipe = new ZodValidationPipe(openCashSessionBodySchema)
+const createCashMovementBodyPipe = new ZodValidationPipe(createCashMovementBodySchema)
+const closeCashSessionBodyPipe = new ZodValidationPipe(closeCashSessionBodySchema)
+const openComandaBodyPipe = new ZodValidationPipe(openComandaBodySchema)
+const addComandaItemBodyPipe = new ZodValidationPipe(addComandaItemBodySchema)
+const addComandaItemsBatchBodyPipe = new ZodValidationPipe(addComandaItemsBatchBodySchema)
+const replaceComandaBodyPipe = new ZodValidationPipe(replaceComandaBodySchema)
+const assignComandaBodyPipe = new ZodValidationPipe(assignComandaBodySchema)
+const updateComandaStatusBodyPipe = new ZodValidationPipe(updateComandaStatusBodySchema)
+const closeComandaBodyPipe = new ZodValidationPipe(closeComandaBodySchema)
+const closeCashClosureBodyPipe = new ZodValidationPipe(closeCashClosureBodySchema)
+const updateKitchenItemStatusBodyPipe = new ZodValidationPipe(updateKitchenItemStatusBodySchema)
+const createMesaBodyPipe = new ZodValidationPipe(createMesaBodySchema)
+const updateMesaBodyPipe = new ZodValidationPipe(updateMesaBodySchema)
 
 @ApiTags('operations')
 @Controller('operations')
@@ -31,19 +67,19 @@ export class OperationsController {
 
   @UseGuards(SessionGuard)
   @Get('live')
-  getLiveSnapshot(@CurrentAuth() auth: AuthContext, @Query() query: GetOperationsLiveQueryDto) {
+  getLiveSnapshot(@CurrentAuth() auth: AuthContext, @Query(operationsLiveQueryPipe) query: GetOperationsLiveQueryDto) {
     return this.operationsService.getLiveSnapshot(auth, query)
   }
 
   @UseGuards(SessionGuard)
   @Get('kitchen')
-  getKitchenView(@CurrentAuth() auth: AuthContext, @Query() query: GetOperationsLiveQueryDto) {
+  getKitchenView(@CurrentAuth() auth: AuthContext, @Query(operationsLiveQueryPipe) query: GetOperationsLiveQueryDto) {
     return this.operationsService.getKitchenView(auth, query)
   }
 
   @UseGuards(SessionGuard)
   @Get('summary')
-  getSummaryView(@CurrentAuth() auth: AuthContext, @Query() query: GetOperationsLiveQueryDto) {
+  getSummaryView(@CurrentAuth() auth: AuthContext, @Query(operationsLiveQueryPipe) query: GetOperationsLiveQueryDto) {
     return this.operationsService.getSummaryView(auth, query)
   }
 
@@ -51,8 +87,8 @@ export class OperationsController {
   @Post('cash-sessions')
   openCashSession(
     @CurrentAuth() auth: AuthContext,
-    @Body() body: OpenCashSessionDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(openCashSessionBodyPipe) body: OpenCashSessionDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.openCashSession(auth, body, extractRequestContext(request), options)
@@ -63,8 +99,8 @@ export class OperationsController {
   createCashMovement(
     @CurrentAuth() auth: AuthContext,
     @Param('cashSessionId') cashSessionId: string,
-    @Body() body: CreateCashMovementDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(createCashMovementBodyPipe) body: CreateCashMovementDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.createCashMovement(auth, cashSessionId, body, extractRequestContext(request), options)
@@ -75,8 +111,8 @@ export class OperationsController {
   closeCashSession(
     @CurrentAuth() auth: AuthContext,
     @Param('cashSessionId') cashSessionId: string,
-    @Body() body: CloseCashSessionDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(closeCashSessionBodyPipe) body: CloseCashSessionDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.closeCashSession(auth, cashSessionId, body, extractRequestContext(request), options)
@@ -86,8 +122,8 @@ export class OperationsController {
   @Post('comandas')
   openComanda(
     @CurrentAuth() auth: AuthContext,
-    @Body() body: OpenComandaDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(openComandaBodyPipe) body: OpenComandaDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.openComanda(auth, body, extractRequestContext(request), options)
@@ -98,8 +134,8 @@ export class OperationsController {
   addComandaItem(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: AddComandaItemDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(addComandaItemBodyPipe) body: AddComandaItemDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.addComandaItem(auth, comandaId, body, extractRequestContext(request), options)
@@ -110,8 +146,8 @@ export class OperationsController {
   addComandaItems(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: AddComandaItemsBatchDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(addComandaItemsBatchBodyPipe) body: AddComandaItemsBatchDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.addComandaItems(auth, comandaId, body, extractRequestContext(request), options)
@@ -122,8 +158,8 @@ export class OperationsController {
   replaceComanda(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: ReplaceComandaDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(replaceComandaBodyPipe) body: ReplaceComandaDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.replaceComanda(auth, comandaId, body, extractRequestContext(request), options)
@@ -134,8 +170,8 @@ export class OperationsController {
   assignComanda(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: AssignComandaDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(assignComandaBodyPipe) body: AssignComandaDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.assignComanda(auth, comandaId, body, extractRequestContext(request), options)
@@ -146,8 +182,8 @@ export class OperationsController {
   updateComandaStatus(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: UpdateComandaStatusDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(updateComandaStatusBodyPipe) body: UpdateComandaStatusDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.updateComandaStatus(auth, comandaId, body, extractRequestContext(request), options)
@@ -164,8 +200,8 @@ export class OperationsController {
   closeComanda(
     @CurrentAuth() auth: AuthContext,
     @Param('comandaId') comandaId: string,
-    @Body() body: CloseComandaDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(closeComandaBodyPipe) body: CloseComandaDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.closeComanda(auth, comandaId, body, extractRequestContext(request), options)
@@ -175,8 +211,8 @@ export class OperationsController {
   @Post('closures/close')
   closeCashClosure(
     @CurrentAuth() auth: AuthContext,
-    @Body() body: CloseCashClosureDto,
-    @Query() options: OperationsResponseOptionsDto,
+    @Body(closeCashClosureBodyPipe) body: CloseCashClosureDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
     @Req() request: Request,
   ) {
     return this.operationsService.closeCashClosure(auth, body, extractRequestContext(request), options)
@@ -187,7 +223,7 @@ export class OperationsController {
   updateKitchenItemStatus(
     @CurrentAuth() auth: AuthContext,
     @Param('itemId') itemId: string,
-    @Body() body: UpdateKitchenItemStatusDto,
+    @Body(updateKitchenItemStatusBodyPipe) body: UpdateKitchenItemStatusDto,
     @Req() request: Request,
   ) {
     return this.operationsService.updateKitchenItemStatus(auth, itemId, body, extractRequestContext(request))
@@ -203,7 +239,7 @@ export class OperationsController {
 
   @UseGuards(SessionGuard, CsrfGuard)
   @Post('mesas')
-  createMesa(@CurrentAuth() auth: AuthContext, @Body() body: CreateMesaDto, @Req() request: Request) {
+  createMesa(@CurrentAuth() auth: AuthContext, @Body(createMesaBodyPipe) body: CreateMesaDto, @Req() request: Request) {
     return this.operationsService.createMesa(auth, body, extractRequestContext(request))
   }
 
@@ -212,7 +248,7 @@ export class OperationsController {
   updateMesa(
     @CurrentAuth() auth: AuthContext,
     @Param('mesaId') mesaId: string,
-    @Body() body: UpdateMesaDto,
+    @Body(updateMesaBodyPipe) body: UpdateMesaDto,
     @Req() request: Request,
   ) {
     return this.operationsService.updateMesa(auth, mesaId, body, extractRequestContext(request))

@@ -100,8 +100,10 @@ describe('toComandaRecord', () => {
     expect(record.discountAmount).toBe(5)
     expect(record.totalAmount).toBe(45)
     expect(record.items).toHaveLength(1)
-    expect(record.items[0].productName).toBe('Cerveja')
-    expect(record.items[0].quantity).toBe(2)
+    const firstItem = record.items[0]
+    expect(firstItem).toBeDefined()
+    expect(firstItem?.productName).toBe('Cerveja')
+    expect(firstItem?.quantity).toBe(2)
   })
 
   it('handles null numeric values', () => {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Cog } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import type { ProfileFormValues } from '@/lib/validation'
+import { LabPageHeader, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
@@ -15,12 +16,14 @@ type SettingsEnvironmentProps = {
   activeSettingsSection: DashboardSettingsSectionId
   onNavigateSection: (sectionId: DashboardSectionId) => void
   onSettingsSectionChange: (sectionId: DashboardSettingsSectionId) => void
+  presentation?: 'legacy' | 'lab'
 }
 
 export function SettingsEnvironment({
   activeSettingsSection,
   onNavigateSection,
   onSettingsSectionChange,
+  presentation = 'legacy',
 }: Readonly<SettingsEnvironmentProps>) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -46,14 +49,43 @@ export function SettingsEnvironment({
     updateProfileMutation.mutate(values)
   }
 
+  const activeTabLabel =
+    {
+      account: 'Conta',
+      security: 'Segurança',
+      preferences: 'Preferências',
+      compliance: 'Compliance',
+      session: 'Sessão',
+    }[activeSettingsSection] ?? 'Conta'
+
   return (
     <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
-        eyebrow="Conta e governança"
-        icon={Cog}
-        title="Configurações do workspace"
-      />
+      {presentation === 'lab' ? (
+        <LabPageHeader
+          description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
+          eyebrow="Conta e governança"
+          meta={
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">aba ativa</span>
+                <LabStatusPill tone="info">{activeTabLabel}</LabStatusPill>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">perfil</span>
+                <span className="text-sm font-medium text-[var(--lab-fg)]">{user.fullName}</span>
+              </div>
+            </div>
+          }
+          title="Configurações do workspace"
+        />
+      ) : (
+        <DashboardSectionHeading
+          description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
+          eyebrow="Conta e governança"
+          icon={Cog}
+          title="Configurações do workspace"
+        />
+      )}
 
       <DashboardSettingsPanel
         activeTab={activeSettingsSection}

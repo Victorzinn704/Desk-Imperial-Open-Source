@@ -41,12 +41,17 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     return []
   }
 
+  const headerLine = lines[0]
+  if (!headerLine) {
+    return []
+  }
+
   if (lines.length - 1 > MAX_IMPORT_ROWS) {
     throw new Error(`O CSV excede o limite de ${MAX_IMPORT_ROWS} linhas por importacao.`)
   }
 
-  const delimiter = detectDelimiter(lines[0])
-  const headers = splitCsvLine(lines[0], delimiter).map((header) => normalizeHeader(header))
+  const delimiter = detectDelimiter(headerLine)
+  const headers = splitCsvLine(headerLine, delimiter).map((header) => normalizeHeader(header))
 
   if (headers.length > MAX_COLUMNS) {
     throw new Error(`O CSV suporta no maximo ${MAX_COLUMNS} colunas nesta importacao.`)
@@ -78,7 +83,13 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
       }
     }
 
-    const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex]?.trim() ?? '']))
+    const row = Object.fromEntries(
+      headers.map((header, headerIndex) => [header, values[headerIndex]?.trim() ?? '']),
+    ) as Record<string, string>
+    const name = row.name ?? ''
+    const category = row.category ?? ''
+    const unitCost = row.unitcost ?? ''
+    const unitPrice = row.unitprice ?? ''
     const unitsPerPackage = Number.parseInt(row.unitsperpackage || '1', 10)
     const stockPackages = Number.parseInt(row.stockpackages || '0', 10)
     const stockLooseUnits = Number.parseInt(row.stocklooseunits || '0', 10)
@@ -86,23 +97,23 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
 
     return {
       line: index + 2,
-      name: row.name,
+      name,
       brand: row.brand || null,
-      category: row.category,
+      category,
       packagingClass: row.packagingclass || 'UN',
       measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
       measurementValue: Number.parseFloat(row.measurementvalue || '1'),
       unitsPerPackage,
       description: row.description || null,
       unitCost: (() => {
-        const v = Number.parseFloat(row.unitcost)
+        const v = Number.parseFloat(unitCost)
         if (!Number.isFinite(v) || v < 0) {
           throw new Error(`Linha ${index + 2}: "unitcost" deve ser um numero valido e positivo.`)
         }
         return v
       })(),
       unitPrice: (() => {
-        const v = Number.parseFloat(row.unitprice)
+        const v = Number.parseFloat(unitPrice)
         if (!Number.isFinite(v) || v < 0) {
           throw new Error(`Linha ${index + 2}: "unitprice" deve ser um numero valido e positivo.`)
         }

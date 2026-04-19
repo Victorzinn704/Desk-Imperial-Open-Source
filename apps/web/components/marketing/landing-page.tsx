@@ -157,7 +157,7 @@ const footerColumns = [
     title: 'Ambientes',
     links: [
       { label: 'app.deskimperial.online', href: 'https://app.deskimperial.online' },
-      { label: 'api.deskimperial.online', href: 'https://api.deskimperial.online/api/health' },
+      { label: 'api.deskimperial.online', href: 'https://api.deskimperial.online/api/v1/health' },
     ],
   },
 ]
@@ -712,7 +712,7 @@ export function LandingPage() {
               <Link className="transition hover:text-white" href="https://app.deskimperial.online">
                 app.deskimperial.online
               </Link>
-              <Link className="transition hover:text-white" href="https://api.deskimperial.online/api/health">
+              <Link className="transition hover:text-white" href="https://api.deskimperial.online/api/v1/health">
                 api.deskimperial.online
               </Link>
             </div>

@@ -63,6 +63,7 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
+import { buildDesignLabConfigHref, buildDesignLabHref } from '@/components/design-lab/design-lab-navigation'
 
 type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
 
@@ -404,7 +405,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             aria-label="Configurações"
             className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
             type="button"
-            onClick={() => router.push('/dashboard?view=settings&panel=account')}
+            onClick={() => router.push(buildDesignLabConfigHref('account'))}
           >
             <Cog className="size-4" />
           </button>
@@ -412,7 +413,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             aria-label="Abrir painel completo"
             className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(buildDesignLabHref('overview'))}
           >
             <Building2 className="size-4" />
           </button>
@@ -529,7 +530,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             todayOrderCount={todayOrders.length}
             todayRevenue={executiveKpis.receitaRealizada}
             topProdutos={topProdutos}
-            onOpenFullDashboard={() => router.push('/dashboard')}
+            onOpenFullDashboard={() => router.push(buildDesignLabHref('overview'))}
           />
         ) : null}
       </main>

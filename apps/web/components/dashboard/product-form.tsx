@@ -117,11 +117,13 @@ function PackagingClassField({
   error,
   value,
   register,
+  appearance = 'default',
 }: {
   isManual: boolean
   error?: string
   value: string
   register: ReturnType<typeof useForm<ProductFormInputValues>>['register']
+  appearance?: 'default' | 'embedded'
 }) {
   if (isManual) {
     return (
@@ -136,10 +138,17 @@ function PackagingClassField({
   }
   return (
     <>
-      <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-        <p className="font-medium text-[var(--text-primary)]">Classe ativa</p>
-        <p className="mt-2">{value || 'Selecione um dos padrões para preencher automaticamente.'}</p>
-      </div>
+      {appearance === 'embedded' ? (
+        <div className="grid gap-3 border-t border-dashed border-[var(--border)] pt-4 sm:grid-cols-2">
+          <InlineReading label="classe ativa" value={value || 'Selecione um padrão para preencher automaticamente.'} />
+          <InlineReading label="origem" value="perfil pronto de cadastro" />
+        </div>
+      ) : (
+        <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
+          <p className="font-medium text-[var(--text-primary)]">Classe ativa</p>
+          <p className="mt-2">{value || 'Selecione um dos padrões para preencher automaticamente.'}</p>
+        </div>
+      )}
       <input type="hidden" value={value} {...register('packagingClass')} />
     </>
   )
@@ -175,12 +184,14 @@ export function ProductForm({
   onSubmit,
   onCancelEdit,
   loading,
+  appearance = 'default',
 }: Readonly<{
   product: ProductRecord | null
   availableProducts: ProductRecord[]
   onSubmit: (values: ProductFormValues) => void
   onCancelEdit: () => void
   loading?: boolean
+  appearance?: 'default' | 'embedded'
 }>) {
   const [selectedPreset, setSelectedPreset] = useState('')
   const [measurementMode, setMeasurementMode] = useState('UN')
@@ -248,6 +259,7 @@ export function ProductForm({
   const selectedPresetIsManual = selectedPreset === manualPackagingOption
   const manualMeasurementMode = measurementMode === customMeasurementOption
   const calculatedStockTotal = buildStockTotalUnits(stockPackages, stockLooseUnits, unitsPerPackage)
+  const isEmbedded = appearance === 'embedded'
 
   const resetFormToDefaults = useCallback(() => {
     reset(emptyValues)
@@ -290,31 +302,42 @@ export function ProductForm({
   }
 
   return (
-    <div className="imperial-card p-7">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-            {product ? 'Editar produto' : 'Novo produto'}
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
-            {product ? 'Atualize os dados do portfólio.' : 'Cadastre um item para o dashboard.'}
-          </h2>
+    <div className={isEmbedded ? 'min-w-0' : 'imperial-card p-7'}>
+      {isEmbedded ? null : (
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+              {product ? 'Editar produto' : 'Novo produto'}
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
+              {product ? 'Atualize os dados do portfólio.' : 'Cadastre um item para o dashboard.'}
+            </h2>
+          </div>
+          {product ? (
+            <Button size="sm" type="button" variant="ghost" onClick={onCancelEdit}>
+              Cancelar
+            </Button>
+          ) : null}
         </div>
-        {product ? (
-          <Button size="sm" type="button" variant="ghost" onClick={onCancelEdit}>
-            Cancelar
-          </Button>
-        ) : null}
-      </div>
+      )}
 
       <form
-        className="mt-6 space-y-5"
+        className={isEmbedded ? 'space-y-8' : 'mt-6 space-y-5'}
         onSubmit={handleSubmit((values) => {
           onSubmit(values)
           if (!product) {resetFormToDefaults()}
         })}
       >
-        <div className="grid gap-5 sm:grid-cols-2">
+        <section className="space-y-5">
+          {isEmbedded ? (
+            <ProductSectionHeader
+              description="Nome, categoria e classe de cadastro entram primeiro, sem abrir blocos visuais desnecessários."
+              eyebrow="Identidade"
+              title="Base do produto"
+            />
+          ) : null}
+
+          <div className="grid gap-5 sm:grid-cols-2">
           <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
           <InputField
             error={errors.brand?.message}
@@ -322,88 +345,122 @@ export function ProductForm({
             placeholder="Coca-Cola, Brahma, Guarana..."
             {...register('brand')}
           />
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <InputField
-            error={errors.category?.message}
-            label="Categoria"
-            placeholder="Bebidas"
-            {...register('category')}
-          />
-          <SelectField
-            error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
-            hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
-            label="Classe de cadastro"
-            options={packagingPresetOptions}
-            value={selectedPreset}
-            onChange={(event) => handlePresetChange(event.currentTarget.value)}
-          />
-        </div>
-
-        <PackagingClassField
-          error={errors.packagingClass?.message}
-          isManual={selectedPresetIsManual}
-          register={register}
-          value={packagingClassValue}
-        />
-
-        <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
-          <SelectField
-            error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
-            hint="Use ml, L, kg, g, unidade ou crie outra medida."
-            label="Medida"
-            options={measurementUnitOptions}
-            value={measurementMode}
-            onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
-          />
-          <InputField
-            error={errors.measurementValue?.message}
-            hint="Ex.: cada lata tem 350 ml, cada garrafa tem 2 L, cada pacote tem 1 kg."
-            label="Conteúdo por unidade"
-            placeholder="350"
-            step="0.01"
-            type="number"
-            {...register('measurementValue')}
-          />
-          <InputField
-            error={errors.unitsPerPackage?.message}
-            hint="Quantidade dentro da caixa, fardo ou pacote."
-            label="Qtde por caixa/fardo"
-            step="1"
-            type="number"
-            {...register('unitsPerPackage')}
-          />
-        </div>
-
-        <div className="imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]">
-          <p className="font-medium text-[var(--text-primary)]">Leitura rápida do cadastro</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
-              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
-                {formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
-              </p>
-            </div>
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada caixa/fardo</p>
-              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{unitsPerPackage} und</p>
-            </div>
-            <div className="imperial-card-stat px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
-              <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{calculatedStockTotal} und</p>
-            </div>
           </div>
-        </div>
 
-        <MeasurementUnitField
-          error={errors.measurementUnit?.message}
-          isManual={manualMeasurementMode}
-          register={register}
-          value={measurementUnitValue}
-        />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <InputField
+              error={errors.category?.message}
+              label="Categoria"
+              placeholder="Bebidas"
+              {...register('category')}
+            />
+            <SelectField
+              error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
+              hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."
+              label="Classe de cadastro"
+              options={packagingPresetOptions}
+              value={selectedPreset}
+              onChange={(event) => handlePresetChange(event.currentTarget.value)}
+            />
+          </div>
 
-        <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
+          <PackagingClassField
+            appearance={appearance}
+            error={errors.packagingClass?.message}
+            isManual={selectedPresetIsManual}
+            register={register}
+            value={packagingClassValue}
+          />
+        </section>
+
+        <section className={isEmbedded ? 'space-y-5 border-t border-dashed border-[var(--border)] pt-6' : 'space-y-5'}>
+          {isEmbedded ? (
+            <ProductSectionHeader
+              description="A estrutura de medida e embalagem fica num bloco contínuo, com leitura rápida do impacto no estoque."
+              eyebrow="Estrutura"
+              title="Medidas e embalagem"
+            />
+          ) : null}
+
+          <div className="grid gap-5 sm:grid-cols-[1.1fr_0.9fr_0.9fr]">
+            <SelectField
+              error={manualMeasurementMode ? undefined : errors.measurementUnit?.message}
+              hint="Use ml, L, kg, g, unidade ou crie outra medida."
+              label="Medida"
+              options={measurementUnitOptions}
+              value={measurementMode}
+              onChange={(event) => handleMeasurementModeChange(event.currentTarget.value)}
+            />
+            <InputField
+              error={errors.measurementValue?.message}
+              hint="Ex.: cada lata tem 350 ml, cada garrafa tem 2 L, cada pacote tem 1 kg."
+              label="Conteúdo por unidade"
+              placeholder="350"
+              step="0.01"
+              type="number"
+              {...register('measurementValue')}
+            />
+            <InputField
+              error={errors.unitsPerPackage?.message}
+              hint="Quantidade dentro da caixa, fardo ou pacote."
+              label="Qtde por caixa/fardo"
+              step="1"
+              type="number"
+              {...register('unitsPerPackage')}
+            />
+          </div>
+
+          <div
+            className={
+              isEmbedded
+                ? 'grid gap-3 border-t border-dashed border-[var(--border)] pt-4 sm:grid-cols-3'
+                : 'imperial-card-soft px-4 py-4 text-sm text-[var(--text-soft)]'
+            }
+          >
+            {isEmbedded ? (
+              <>
+                <InlineReading label="cada unidade" value={formatMeasurement(measurementValue, measurementUnitValue || 'UN')} />
+                <InlineReading label="cada caixa/fardo" value={`${unitsPerPackage} und`} />
+                <InlineReading label="estoque calculado" value={`${calculatedStockTotal} und`} />
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-[var(--text-primary)]">Leitura rápida do cadastro</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="imperial-card-stat px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada unidade</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
+                      {formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
+                    </p>
+                  </div>
+                  <div className="imperial-card-stat px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Cada caixa/fardo</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{unitsPerPackage} und</p>
+                  </div>
+                  <div className="imperial-card-stat px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{calculatedStockTotal} und</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <MeasurementUnitField
+            error={errors.measurementUnit?.message}
+            isManual={manualMeasurementMode}
+            register={register}
+            value={measurementUnitValue}
+          />
+        </section>
+
+        <div
+          className={
+            isEmbedded
+              ? 'grid gap-3 border-t border-dashed border-[var(--border)] pt-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
+              : 'imperial-card-soft flex items-center justify-between gap-4 px-4 py-4'
+          }
+        >
           <div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Produto do tipo combo</p>
             <p className="mt-0.5 text-xs text-[var(--text-soft)]">
@@ -426,7 +483,13 @@ export function ProductForm({
         </div>
 
         {isComboValue ? (
-          <div className="imperial-card-soft space-y-4 px-4 py-4">
+          <section
+            className={
+              isEmbedded
+                ? 'space-y-4 border-t border-dashed border-[var(--border)] pt-6'
+                : 'imperial-card-soft space-y-4 px-4 py-4'
+            }
+          >
             <InputField
               error={errors.comboDescription?.message}
               hint="Descreva rapidamente o que vem no combo para o operador."
@@ -471,7 +534,11 @@ export function ProductForm({
 
                 return (
                   <div
-                    className="space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3"
+                    className={
+                      isEmbedded
+                        ? 'space-y-2 rounded-[12px] border border-dashed border-[var(--border)] px-3 py-3'
+                        : 'space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3'
+                    }
                     key={field.id}
                   >
                     <SelectField
@@ -514,102 +581,156 @@ export function ProductForm({
                 )
               })}
             </div>
-          </div>
+          </section>
         ) : null}
 
-        <InputField
-          error={errors.description?.message}
-          hint="Use uma descrição curta e objetiva."
-          label="Descrição"
-          placeholder="Produto base para operação e simulação financeira."
-          {...register('description')}
-        />
-
-        <div className="grid gap-5 sm:grid-cols-3">
-          <InputField
-            error={errors.unitCost?.message}
-            label="Custo unitário"
-            step="0.01"
-            type="number"
-            {...register('unitCost')}
-          />
-          <InputField
-            error={errors.unitPrice?.message}
-            label="Preço unitário"
-            step="0.01"
-            type="number"
-            {...register('unitPrice')}
-          />
-          <SelectField
-            error={errors.currency?.message}
-            label="Moeda"
-            options={currencyOptions}
-            {...register('currency')}
-          />
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <InputField
-            error={errors.stockPackages?.message}
-            hint="Se comprou uma caixa ou fardo fechado, registre aqui."
-            label="Caixas / fardos em estoque"
-            step="1"
-            type="number"
-            {...register('stockPackages')}
-          />
-          <InputField
-            error={errors.stockLooseUnits?.message}
-            hint={stockLooseUnitsHint(unitsPerPackage)}
-            label="Unidades avulsas em estoque"
-            step="1"
-            type="number"
-            {...register('stockLooseUnits')}
-          />
-        </div>
-
-        <InputField
-          error={errors.lowStockThreshold?.message}
-          hint="Quando o estoque chegar nesse número (ou abaixo), o produto aparece como alerta no dashboard. Deixe em branco para desativar."
-          label="Limite de estoque baixo (opcional)"
-          placeholder="Ex.: 20"
-          step="1"
-          type="number"
-          {...register('lowStockThreshold')}
-        />
-
-        <div className="imperial-card-soft flex items-center justify-between gap-4 px-4 py-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Envia para a cozinha</p>
-              {categoryValue && isKitchenCategory(categoryValue) && (
-                <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#008cff)]">
-                  auto
-                </span>
-              )}
-            </div>
-            <p className="mt-0.5 text-xs text-[var(--text-soft)]">
-              Ative para que os pedidos desse item entrem automaticamente na fila da cozinha (KDS).
-            </p>
-          </div>
-          <button
-            aria-checked={requiresKitchenValue}
-            className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
-            role="switch"
-            style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
-            type="button"
-            onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
-          >
-            <span
-              className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
-              style={{ transform: requiresKitchenValue ? 'translateX(20px)' : 'translateX(0)' }}
+        <section className={isEmbedded ? 'space-y-5 border-t border-dashed border-[var(--border)] pt-6' : 'space-y-5'}>
+          {isEmbedded ? (
+            <ProductSectionHeader
+              description="Preço, custo e estoque ficam agrupados para leitura operacional e decisão rápida."
+              eyebrow="Operação"
+              title="Preço e estoque"
             />
-          </button>
-        </div>
+          ) : null}
 
-        <Button fullWidth loading={loading} size="lg" type="submit">
-          {product ? 'Salvar alterações' : 'Cadastrar produto'}
-        </Button>
+          <InputField
+            error={errors.description?.message}
+            hint="Use uma descrição curta e objetiva."
+            label="Descrição"
+            placeholder="Produto base para operação e simulação financeira."
+            {...register('description')}
+          />
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            <InputField
+              error={errors.unitCost?.message}
+              label="Custo unitário"
+              step="0.01"
+              type="number"
+              {...register('unitCost')}
+            />
+            <InputField
+              error={errors.unitPrice?.message}
+              label="Preço unitário"
+              step="0.01"
+              type="number"
+              {...register('unitPrice')}
+            />
+            <SelectField
+              error={errors.currency?.message}
+              label="Moeda"
+              options={currencyOptions}
+              {...register('currency')}
+            />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <InputField
+              error={errors.stockPackages?.message}
+              hint="Se comprou uma caixa ou fardo fechado, registre aqui."
+              label="Caixas / fardos em estoque"
+              step="1"
+              type="number"
+              {...register('stockPackages')}
+            />
+            <InputField
+              error={errors.stockLooseUnits?.message}
+              hint={stockLooseUnitsHint(unitsPerPackage)}
+              label="Unidades avulsas em estoque"
+              step="1"
+              type="number"
+              {...register('stockLooseUnits')}
+            />
+          </div>
+
+          <InputField
+            error={errors.lowStockThreshold?.message}
+            hint="Quando o estoque chegar nesse número (ou abaixo), o produto aparece como alerta no dashboard. Deixe em branco para desativar."
+            label="Limite de estoque baixo (opcional)"
+            placeholder="Ex.: 20"
+            step="1"
+            type="number"
+            {...register('lowStockThreshold')}
+          />
+
+          <div
+            className={
+              isEmbedded
+                ? 'grid gap-3 border-t border-dashed border-[var(--border)] pt-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
+                : 'imperial-card-soft flex items-center justify-between gap-4 px-4 py-4'
+            }
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-[var(--text-primary)]">Envia para a cozinha</p>
+                {categoryValue && isKitchenCategory(categoryValue) && (
+                  <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#008cff)]">
+                    auto
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-[var(--text-soft)]">
+                Ative para que os pedidos desse item entrem automaticamente na fila da cozinha (KDS).
+              </p>
+            </div>
+            <button
+              aria-checked={requiresKitchenValue}
+              className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
+              role="switch"
+              style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
+              type="button"
+              onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
+            >
+              <span
+                className="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform"
+                style={{ transform: requiresKitchenValue ? 'translateX(20px)' : 'translateX(0)' }}
+              />
+            </button>
+          </div>
+        </section>
+
+        {isEmbedded ? (
+          <div className="flex flex-col-reverse gap-3 border-t border-dashed border-[var(--border)] pt-6 sm:flex-row sm:items-center sm:justify-end">
+            <Button type="button" variant="ghost" onClick={onCancelEdit}>
+              Cancelar
+            </Button>
+            <Button loading={loading} size="lg" type="submit">
+              {product ? 'Salvar alterações' : 'Cadastrar produto'}
+            </Button>
+          </div>
+        ) : (
+          <Button fullWidth loading={loading} size="lg" type="submit">
+            {product ? 'Salvar alterações' : 'Cadastrar produto'}
+          </Button>
+        )}
       </form>
+    </div>
+  )
+}
+
+function ProductSectionHeader({
+  eyebrow,
+  title,
+  description,
+}: Readonly<{
+  eyebrow: string
+  title: string
+  description: string
+}>) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{eyebrow}</p>
+      <h3 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>
+      <p className="text-sm leading-6 text-[var(--text-soft)]">{description}</p>
+    </div>
+  )
+}
+
+function InlineReading({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
+      <p className="text-sm font-medium text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }

@@ -108,7 +108,7 @@ export async function upsertImportRow(
       unitPrice: row.unitPrice,
       currency: row.currency as CurrencyCode,
       stock: row.stock,
-      requiresKitchen: isKitchenCategory(safeCategory) ? true : undefined,
+      ...(isKitchenCategory(safeCategory) ? { requiresKitchen: true } : {}),
       active: true,
     },
   })

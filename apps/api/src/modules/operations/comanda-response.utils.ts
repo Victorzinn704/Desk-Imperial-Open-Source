@@ -3,9 +3,9 @@ import type { PrismaService } from '../../database/prisma.service'
 import type { CacheService } from '../../common/services/cache.service'
 import type { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsHelpersService } from './operations-helpers.service'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { toComandaRecord } from './operations.types'
 import { buildOptionalOperationsSnapshot, invalidateOperationsLiveCache } from './operations-domain.utils'
+import type { OperationsResponseOptionsDto } from './operations.schemas'
 
 export async function buildComandaResponse(
   helpers: OperationsHelpersService,

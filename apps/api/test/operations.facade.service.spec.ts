@@ -186,9 +186,13 @@ describe('OperationsService (facade)', () => {
     const result = await service.listMesas(makeOwnerAuthContext())
 
     expect(result).toHaveLength(2)
-    expect(result[0].status).toBe('ocupada')
-    expect(result[0].comandaId).toBe('comanda-1')
-    expect(result[1].status).toBe('reservada')
+    const firstMesa = result[0]
+    const secondMesa = result[1]
+    expect(firstMesa).toBeDefined()
+    expect(secondMesa).toBeDefined()
+    expect(firstMesa?.status).toBe('ocupada')
+    expect(firstMesa?.comandaId).toBe('comanda-1')
+    expect(secondMesa?.status).toBe('reservada')
   })
 
   it('bloqueia listagem de mesas para STAFF', async () => {

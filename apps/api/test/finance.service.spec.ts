@@ -494,7 +494,9 @@ describe('FinanceService', () => {
 
       // Assert
       expect(result.recentOrders).toHaveLength(5)
-      expect(result.recentOrders[0].id).toBe('order-1')
+      const firstRecentOrder = result.recentOrders[0]
+      expect(firstRecentOrder).toBeDefined()
+      expect(firstRecentOrder?.id).toBe('order-1')
     })
 
     it('deve retornar revenue timeline (últimos 6 meses)', async () => {
@@ -681,8 +683,10 @@ describe('FinanceService', () => {
       // Assert
       expect(result.salesMap).toBeDefined()
       expect(result.salesMap.length).toBeGreaterThan(0)
-      expect(result.salesMap[0].latitude).toBeDefined()
-      expect(result.salesMap[0].longitude).toBeDefined()
+      const firstSalesMapEntry = result.salesMap[0]
+      expect(firstSalesMapEntry).toBeDefined()
+      expect(firstSalesMapEntry?.latitude).toBeDefined()
+      expect(firstSalesMapEntry?.longitude).toBeDefined()
     })
 
     it('deve retornar top regions', async () => {

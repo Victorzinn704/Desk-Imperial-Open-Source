@@ -414,10 +414,7 @@ describe('ProductsService', () => {
     })
 
     it('deve permitir campos opcionais vazios', async () => {
-      const dto = makeCreateProductDto({
-        brand: undefined,
-        description: undefined,
-      })
+      const dto = makeCreateProductDto()
 
       mockPrisma.product.create.mockResolvedValue(makeProduct())
 
@@ -953,7 +950,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, makeCsvFile(invalidCsvContent), requestContext)
 
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].message).toContain('nome valido')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('nome valido')
     })
 
     it('deve rejeitar arquivo vazio', async () => {
@@ -981,7 +980,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, invalidCurrencyCsv, requestContext)
 
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].message).toContain('moeda')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('moeda')
     })
 
     it('deve sanitizar dados antes de upsert', async () => {
@@ -995,7 +996,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, csvWithHtml, requestContext)
 
       expect(result.summary.failedCount).toBe(1)
-      expect(result.errors[0].message).toContain('HTML')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('HTML')
     })
 
     it('deve registrar audit log de importação', async () => {
@@ -1051,7 +1054,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(result.summary.failedCount).toBe(2)
-      expect(result.errors[0].message).toContain('Falha inesperada ao importar a linha')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('Falha inesperada ao importar a linha')
     })
 
     it('deve ajustar requiresKitchen no update do upsert conforme categoria', async () => {
@@ -1064,8 +1069,12 @@ describe('ProductsService', () => {
 
       await productsService.importForUser(mockContext, csv, requestContext)
 
-      expect(mockPrisma.product.upsert.mock.calls[0][0].update.requiresKitchen).toBeUndefined()
-      expect(mockPrisma.product.upsert.mock.calls[1][0].update.requiresKitchen).toBe(true)
+      const firstUpsertCall = mockPrisma.product.upsert.mock.calls[0]
+      const secondUpsertCall = mockPrisma.product.upsert.mock.calls[1]
+      expect(firstUpsertCall).toBeDefined()
+      expect(secondUpsertCall).toBeDefined()
+      expect(firstUpsertCall?.[0].update.requiresKitchen).toBeUndefined()
+      expect(secondUpsertCall?.[0].update.requiresKitchen).toBe(true)
     })
 
     it.each([
@@ -1098,7 +1107,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, csv, requestContext)
 
       expect(result.summary.failedCount).toBe(1)
-      expect(result.errors[0].message).toContain(expected)
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain(expected)
     })
 
     it('deve aplicar validacoes defensivas quando parser retorna dados inconsistentes', async () => {

@@ -102,6 +102,9 @@ O package está presente em runtime, mas somente por wrappers de observabilidade
 **Justificativa:**  
 É o único advisory `critical` e aparece em runtime, mesmo que em trilha condicional de observabilidade. A exposição efetiva é baixa, mas o custo esperado do hotfix parece pequeno. O update ainda não foi executado porque o operador pediu aprovação prévia antes de qualquer mudança de dependência.
 
+**Status em 2026-04-18 (Passo 1):**  
+Resolvido em `origin/main` no commit `d69c56b` (merge do PR #4 / branch `hotfix/protobufjs-cve`).
+
 ### GHSA-5j98-mcp5-4vw2 — glob — command injection via glob CLI `-c/--cmd`
 
 **Severidade:** Alta  
@@ -453,3 +456,559 @@ O pacote só aparece na cadeia de prompts interativos do `@nestjs/cli`. Não há
 
 **Justificativa:**  
 Baixa, local-only e sem superfície de produção.
+
+## Retriagem em 2026-04-18 (1c-retake)
+
+### Evidência bruta executada
+
+#### a) `git log --oneline origin/main -20`
+
+```text
+7f518e6 (HEAD, origin/main, origin/HEAD) feat(quality): stabilize workspace and refresh project profile (#3)
+0f3c0db Merge pull request #2 from Victorzinn704/hardening/breaking-upgrades-staging-2026-04-01
+1b55b9c (hardening/breaking-upgrades-staging-2026-04-01) feat(perf): prewarm finance summary and refine landing hero
+...
+284a3c7 feat(stock): desconto automático de estoque ao fechar comanda + alerta de estoque baixo configurável
+8684afc feat(web): atualiza hero da landing page com identidade e gratuidade
+```
+
+#### b) No estado atual de `origin/main`
+
+Comandos executados:
+
+- `git checkout origin/main`
+- `npm install`
+- `npm audit --json > audit-origin-main-2026-04-18-retake.json`
+
+Output relevante:
+
+```text
+22 vulnerabilities (3 low, 7 moderate, 11 high, 1 critical)
+npm audit exit code: 1
+counts={"info":0,"low":3,"moderate":7,"high":11,"critical":1,"total":22}
+uniqueVulnObjects=22
+```
+
+#### c) `git log --all --oneline -- package-lock.json | head -20`
+
+```text
+6bf36e6 fix(deps): bump protobufjs to 7.5.5+ (GHSA-xq3m-2v4x-88gg)
+f66b6bf chore: update docs, infra scripts, audit logs, and package-lock
+9879bee feat: consolidate all changes from audit and refactoring sessions
+...
+904bd9d feat: evolve pdv salao workflow
+e3e7917 feat(auth): login OWNER/STAFF, cadastro com endereço, operações integradas
+```
+
+#### d) Comparação do snapshot original vs retake de `origin/main`
+
+Comparação automática entre `docs/security/audit-snapshot-2026-04-18.json` (triagem original) e `audit-origin-main-2026-04-18-retake.json`:
+
+```text
+original.counts={"info":0,"low":3,"moderate":6,"high":4,"critical":1,"total":14}
+retake.counts={"info":0,"low":3,"moderate":7,"high":11,"critical":1,"total":22}
+onlyRetake.packages=["@nestjs/config","@nestjs/core","@nestjs/platform-express","@nestjs/swagger","lodash","next","nodemailer","path-to-regexp"]
+onlyRetake.ghsa=["GHSA-27V5-C462-WPQ7","GHSA-36XV-JGW5-4Q75","GHSA-F23M-R3PF-42RH","GHSA-J3Q9-MXJG-W52F","GHSA-Q4GF-8MX6-V5V3","GHSA-R5FR-RJXR-66JC","GHSA-VVJJ-XCJG-GR5G"]
+```
+
+Validação adicional da hipótese de lockfile:
+
+- `git merge-base --is-ancestor 907023e origin/main` retornou exit code `1` (ou seja, `907023e` não está em `origin/main`).
+- `npm audit` no commit `907023e` hoje continua reproduzindo o snapshot original (`14` hits: `1 critical`, `4 high`, `6 moderate`, `3 low`).
+- Diferença de versões resolvidas no lockfile (`907023e` vs `origin/main`):
+  - `@nestjs/config`: `4.0.4` vs `4.0.3`
+  - `@nestjs/core`: `11.1.18` vs `11.1.17`
+  - `@nestjs/platform-express`: `11.1.18` vs `11.1.17`
+  - `@nestjs/swagger`: `11.2.7` vs `11.2.6`
+  - `next`: `16.2.3` vs `16.1.7`
+  - `nodemailer`: `8.0.5` vs `8.0.4`
+  - `lodash`: `4.18.1` vs `4.17.23`
+  - `path-to-regexp`: `8.4.2` vs `8.3.0`
+
+### Classificação da causa da discrepância
+
+- [x] **Cenário A**: triagem original foi feita contra lockfile local diferente do `origin/main`.
+- [ ] **Cenário B**: `origin/main` mudou desde a triagem original.
+- [ ] **Cenário C**: advisory database do `npm audit` mudou e sozinha explica a diferença.
+- [ ] **Cenário D**: combinação dos anteriores.
+
+Conclusão técnica: **A**.
+
+### Contagem atualizada após retake
+
+- `origin/main` (retake): `1 critical`, `11 high`, `7 moderate`, `3 low` (`22` package hits)
+- `hotfix/protobufjs-cve` (retake): `0 critical`, `11 high`, `7 moderate`, `3 low` (`21` package hits)
+
+Distribuição dos `11` highs reais de `origin/main`:
+
+- **Pré-wave-0 (runtime direta / runtime transitiva acoplada):** `7` package hits
+  - `@nestjs/config`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/swagger`, `next`, `lodash`, `path-to-regexp`
+- **Bloco de remoções finais/toolchain:** `4` package hits
+  - `@nestjs/cli`, `glob`, `picomatch`, `vite`
+
+Observação: `nodemailer` entrou no diff como **moderate** (`GHSA-vvjj-xcjg-gr5g`), não em high.
+
+### Triagem individual dos 11 highs reais de `origin/main`
+
+#### 1) `@nestjs/config` (high via `lodash`)
+
+**Severidade:** Alta  
+**Pacote:** `@nestjs/config @ 4.0.3`  
+**Tipo de dependência:** direta (runtime)  
+**Via:** `lodash` (`GHSA-r5fr-rjxr-66jc`, com `GHSA-f23m-r3pf-42rh` também presente no mesmo grafo)  
+**Área afetada:** bootstrap/configuração da API
+
+**Natureza da vulnerabilidade:**  
+Code injection em `lodash` (`_.template`) no range vulnerável.
+
+**Exposição real no Desk Imperial:**  
+`@nestjs/config` é usado em runtime (ex.: `ConfigModule.forRoot`, `ConfigService`), mas os valores vêm de variáveis de ambiente controladas pelo operador/deploy, não de input HTTP de usuário. Mesmo assim, é dependência direta de runtime e precisa estar em versão corrigida.
+
+**Fix disponível:**
+
+- Versão segura observada: `4.0.4`
+- Breaking change: não aparente (patch)
+- Comando sugerido: `npm --workspace @partner/api install @nestjs/config@4.0.4`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+É high em dependência direta de runtime e possui fix patch sem major.
+
+#### 2) `@nestjs/core` (high via `path-to-regexp`)
+
+**Severidade:** Alta  
+**Pacote:** `@nestjs/core @ 11.1.17`  
+**Tipo de dependência:** direta (runtime)  
+**Via:** `path-to-regexp` (`GHSA-j3q9-mxjg-w52f`) + advisory moderado próprio (`GHSA-36xv-jgw5-4q75`)  
+**Área afetada:** core HTTP/runtime da API
+
+**Natureza da vulnerabilidade:**  
+DoS por regex em `path-to-regexp` no matcher de rotas.
+
+**Exposição real no Desk Imperial:**  
+`@nestjs/core` está no caminho de todas as rotas públicas da API; entrada de path HTTP é controlada externamente. Mesmo sem PoC local, o risco é de disponibilidade no runtime principal.
+
+**Fix disponível:**
+
+- Versão segura observada: `11.1.19`
+- Breaking change: não aparente (minor dentro de `11.x`)
+- Comando sugerido: `npm --workspace @partner/api install @nestjs/core@11.1.19`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+Dependência de core runtime com high e fix sem major.
+
+#### 3) `@nestjs/platform-express` (high via `path-to-regexp`)
+
+**Severidade:** Alta  
+**Pacote:** `@nestjs/platform-express @ 11.1.17`  
+**Tipo de dependência:** direta (runtime)  
+**Via:** `path-to-regexp` (`GHSA-j3q9-mxjg-w52f`)  
+**Área afetada:** adapter HTTP exposto publicamente
+
+**Natureza da vulnerabilidade:**  
+DoS por regex no pipeline de matching de rotas.
+
+**Exposição real no Desk Imperial:**  
+A API de produção roda via adapter Express do Nest, portanto esse pacote participa da borda pública.
+
+**Fix disponível:**
+
+- Versão segura observada: `11.1.19`
+- Breaking change: não aparente (minor dentro de `11.x`)
+- Comando sugerido: `npm --workspace @partner/api install @nestjs/platform-express@11.1.19`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+Dependência direta de runtime HTTP e high com upgrade não-major.
+
+#### 4) `@nestjs/swagger` (high via `lodash` e `path-to-regexp`)
+
+**Severidade:** Alta  
+**Pacote:** `@nestjs/swagger @ 11.2.6`  
+**Tipo de dependência:** direta (runtime)  
+**Via:** `lodash` (`GHSA-r5fr-rjxr-66jc`) e `path-to-regexp` (`GHSA-j3q9-mxjg-w52f`)  
+**Área afetada:** camada de documentação OpenAPI/Swagger
+
+**Natureza da vulnerabilidade:**  
+Encadeia advisories high transitivos em libs de parsing/matching.
+
+**Exposição real no Desk Imperial:**  
+A docs API em produção está desabilitada por padrão (`ENABLE_API_DOCS=false`), reduzindo superfície. Ainda assim, o pacote integra o runtime da API e pode ser habilitado por configuração.
+
+**Fix disponível:**
+
+- Versão segura observada: `11.3.0`
+- Breaking change: não aparente (minor dentro de `11.x`)
+- Comando sugerido: `npm --workspace @partner/api install @nestjs/swagger@11.3.0`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+Continua sendo dependência direta do runtime da API, com fix sem major.
+
+#### 5) `next` (`GHSA-q4gf-8mx6-v5v3`)
+
+**Severidade:** Alta  
+**Pacote:** `next @ 16.1.7`  
+**Tipo de dependência:** direta (runtime web)  
+**Via:** advisory direto do próprio pacote (`DoS with Server Components`)  
+**Área afetada:** servidor web de produção
+
+**Natureza da vulnerabilidade:**  
+DoS em runtime de Server Components.
+
+**Exposição real no Desk Imperial:**  
+O web de produção roda `next start` (`apps/web/scripts/start.mjs` + Dockerfile web), então a superfície é de runtime pública.
+
+**Fix disponível:**
+
+- Versão segura observada: `16.2.4`
+- Breaking change: não aparente (patch/minor no major 16)
+- Comando sugerido: `npm --workspace @partner/web install next@16.2.4 eslint-config-next@16.2.4`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+High em framework de produção com correção sem major.
+
+#### 6) `lodash` (high transitivo runtime)
+
+**Severidade:** Alta  
+**Pacote:** `lodash @ 4.17.23`  
+**Tipo de dependência:** transitiva (runtime)  
+**Via:** `GHSA-r5fr-rjxr-66jc` (high) + `GHSA-f23m-r3pf-42rh` (moderate)  
+**Área afetada:** grafo de dependências da API
+
+**Natureza da vulnerabilidade:**  
+Code injection (template) e prototype pollution no range vulnerável.
+
+**Exposição real no Desk Imperial:**  
+Não há uso direto de `lodash` no código de produto, mas ele está no grafo de runtime por `@nestjs/config` e `@nestjs/swagger`.
+
+**Fix disponível:**
+
+- Correção prática: atualizar os pais diretos (`@nestjs/config` e `@nestjs/swagger`) para versões seguras
+- Versão resolvida vista no lockfile não vulnerável: `4.18.1`
+- Breaking change: não aparente no caminho de update dos pais
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0 (junto do lote runtime Nest)
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+É high transitivo em runtime e some com update não-major dos pais diretos.
+
+#### 7) `path-to-regexp` (high transitivo runtime)
+
+**Severidade:** Alta  
+**Pacote:** `path-to-regexp @ 8.3.0`  
+**Tipo de dependência:** transitiva (runtime)  
+**Via:** `GHSA-j3q9-mxjg-w52f` (high) + `GHSA-27v5-c462-wpq7` (moderate)  
+**Área afetada:** matching de rotas HTTP
+
+**Natureza da vulnerabilidade:**  
+ReDoS/DoS por padrões regex específicos.
+
+**Exposição real no Desk Imperial:**  
+Está no grafo de `@nestjs/core` / `@nestjs/platform-express` / `@nestjs/swagger`, no caminho de runtime da API pública.
+
+**Fix disponível:**
+
+- Correção prática: atualizar os pacotes Nest diretos para versões que resolvem `path-to-regexp` >= `8.4.0`
+- Versão resolvida vista no lockfile não vulnerável: `8.4.2`
+- Breaking change: não aparente no caminho `11.x`
+
+**Decisão:**
+
+- [x] Resolver antes da wave-0 (junto do lote runtime Nest)
+- [ ] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+High transitivo no pipeline de roteamento da API.
+
+#### 8) `@nestjs/cli` (high em tooling)
+
+**Severidade:** Alta  
+**Pacote:** `@nestjs/cli @ 10.3.2`  
+**Tipo de dependência:** direta (dev/tooling)  
+**Via:** `glob`, `picomatch`, `webpack`, `inquirer`  
+**Área afetada:** desenvolvimento/build local
+
+**Natureza da vulnerabilidade:**  
+Pacote agregador de advisories de tooling.
+
+**Exposição real no Desk Imperial:**  
+Usado em `nest start --watch` e build local. Imagens de produção fazem `npm prune --omit=dev`, então não entra no runtime entregue.
+
+**Fix disponível:**
+
+- Versão segura: `11.0.21`
+- Breaking change: sim (`10.x -> 11.x`)
+- Comando sugerido: `npm --workspace @partner/api install -D @nestjs/cli@11.0.21`
+
+**Decisão:**
+
+- [ ] Resolver antes da wave-0
+- [x] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+High nominal em tooling, com major bump na toolchain.
+
+#### 9) `glob` (`GHSA-5j98-mcp5-4vw2`)
+
+**Severidade:** Alta  
+**Pacote:** `glob @ 10.4.5`  
+**Tipo de dependência:** transitiva (dev/tooling)  
+**Via:** `@nestjs/cli -> glob`  
+**Área afetada:** CLI de desenvolvimento
+
+**Natureza da vulnerabilidade:**  
+Command injection no CLI do `glob` via `-c/--cmd`.
+
+**Exposição real no Desk Imperial:**  
+Sem caminho de request público em produção; acoplado ao CLI local.
+
+**Fix disponível:**
+
+- Correção via `@nestjs/cli@11.0.21`
+- Breaking change: sim (major da CLI)
+
+**Decisão:**
+
+- [ ] Resolver antes da wave-0
+- [x] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+Tooling/dev-only.
+
+#### 10) `picomatch` (`GHSA-c2c7-rcm5-vvqj`)
+
+**Severidade:** Alta  
+**Pacote:** `picomatch @ 3.0.1`  
+**Tipo de dependência:** transitiva (dev/tooling)  
+**Via:** cadeia de `@nestjs/cli` / `@angular-devkit/*`  
+**Área afetada:** tooling de build/scaffold
+
+**Natureza da vulnerabilidade:**  
+ReDoS em extglob quantifiers.
+
+**Exposição real no Desk Imperial:**  
+Sem import de produto e sem entrada pública de runtime; risco concentrado no tooling.
+
+**Fix disponível:**
+
+- Correção via atualização da cadeia de CLI (`@nestjs/cli@11.0.21`)
+- Breaking change: sim (major da CLI)
+
+**Decisão:**
+
+- [ ] Resolver antes da wave-0
+- [x] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+Tooling/dev-only com fix acoplado a major de toolchain.
+
+#### 11) `vite` (`GHSA-v2wj-q39q-566r`, `GHSA-p9ff-h696-f583`)
+
+**Severidade:** Alta  
+**Pacote:** `vite @ 8.0.3`  
+**Tipo de dependência:** transitiva (dev/test)  
+**Via:** `vitest -> vite`  
+**Área afetada:** ambiente de teste/dev server
+
+**Natureza da vulnerabilidade:**  
+Bypass/arb file read no dev server do Vite.
+
+**Exposição real no Desk Imperial:**  
+O web de produção usa Next.js; Vite aparece no contexto de testes (`vitest`) e não na borda pública de produção.
+
+**Fix disponível:**
+
+- Versão segura recomendada: `vite@8.0.8` (+ alinhamento de `vitest`)
+- Breaking change: não aparente, mas exige revalidação da suíte
+- Comando sugerido:
+  - `npm --workspace @partner/api install -D vitest@4.1.4 vite@8.0.8`
+  - `npm --workspace @partner/web install -D vitest@4.1.4 @vitest/coverage-v8@4.1.4 vite@8.0.8`
+
+**Decisão:**
+
+- [ ] Resolver antes da wave-0
+- [x] Resolver no bloco de remoções finais
+
+**Justificativa:**  
+High nominal restrito a test/dev tooling, sem superfície pública de runtime.
+
+## Atualização em 2026-04-18 (Passo 1 - merge do PR #4)
+
+### Evidência do merge
+
+- `origin/main` atualizado para `d69c56b` com mensagem: `merge: hotfix/protobufjs-cve (PR #4)`
+- Tag opcional criada para rastreabilidade: `phase-0-partial-protobufjs`
+
+### Contagem pós-merge em `origin/main`
+
+Comandos executados:
+
+- `npm install`
+- `npm audit --json > audit-origin-main-after-pr4.json`
+
+Output relevante:
+
+```text
+auditExit=1
+counts={"info":0,"low":3,"moderate":7,"high":11,"critical":0,"total":21}
+```
+
+Resumo:
+
+- Críticas: `0`
+- Altas: `11`
+- Médias: `7`
+- Baixas: `3`
+
+## Retriagem - Classificação de Breaking (Passo 2)
+
+Nota: este bloco preserva o estado inicial da triagem. A classificação final vigente para decisão operacional está na seção "Revalidação Prisma - Passo 3 (2026-04-18)".
+
+Regra aplicada:
+
+- Tudo verde (`typecheck`, `build`, `test`) => **sem breaking**
+- Quebra total em validações-chave => **com breaking**
+- Quebra parcial / inconclusiva => **parcialmente breaking**
+
+### Lote A — Nest Core Runtime
+
+- Branch: `investigation/nest-runtime-upgrade`
+- Target: `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/config`, `@nestjs/swagger`
+
+Resultado bruto (ordem solicitada):
+
+- `install`: `0`
+- `typecheck`: `2` (falhou)
+- `build`: `0`
+- `test`: `0`
+
+Validação adicional:
+
+- `typecheck` **após** `build` (que executa `prisma generate`) => `0`
+- `typecheck --force` no `origin/main` pós-merge também falha com o mesmo padrão de erro Prisma quando executado antes de regenerar client
+
+Classificação:
+
+- **Parcialmente breaking**
+
+Leitura técnica:
+
+- Não há evidência de quebra funcional introduzida especificamente pelo upgrade Nest.
+- O que apareceu foi fragilidade de ordem de pipeline (`typecheck` antes de regeneração do Prisma client) já reproduzível no baseline.
+
+### Lote B — Next.js
+
+- Branch: `investigation/next-upgrade`
+- Target: `next@latest` + `eslint-config-next@latest`
+
+Resultado bruto (ordem solicitada):
+
+- `install`: `0`
+- `typecheck`: `0`
+- `build`: `0`
+- `test`: `0`
+
+Classificação:
+
+- **Sem breaking** => candidato para resolver antes da wave-0
+
+### Lote C — Nodemailer
+
+- Branch: `investigation/nodemailer-patch`
+- Target: `nodemailer@latest`
+
+Resultado bruto (ordem solicitada):
+
+- `install`: `0`
+- `typecheck`: `2` (falhou)
+- `build`: `0`
+- `test`: `0`
+
+Validação adicional:
+
+- `typecheck` **após** `build` => `0`
+- Padrão de falha inicial é o mesmo observado no baseline quando força execução sem cache antes de regenerar Prisma client
+
+Classificação:
+
+- **Parcialmente breaking**
+
+Leitura técnica:
+
+- Não há evidência de breaking funcional específico do patch de `nodemailer`; a quebra observada está acoplada à ordem de execução do pipeline de validação.
+
+## Decisão operacional consolidada (Caminho C)
+
+- `protobufjs`: resolvido agora (PR #4 mergeado em `d69c56b`)
+- `next`: sem breaking na investigação => elegível para PR pré-wave-0
+- `nest-runtime`: parcialmente breaking (indício de fragilidade de pipeline; sem quebra funcional direta comprovada)
+- `nodemailer`: parcialmente breaking (mesmo padrão de pipeline)
+- Itens com breaking/risco transversal permanecem candidatos a wave 6 até decisão final do operador
+
+## Revalidação Prisma - Passo 3 (2026-04-18)
+
+Objetivo desta etapa:
+
+- validar a hipótese de falso positivo por client Prisma desatualizado usando a sequência explícita sem depender de build:
+  - `npm --workspace @partner/api exec prisma generate`
+  - `npm run typecheck`
+  - `npm run typecheck -- --force`
+
+### Lote A — `investigation/nest-runtime-upgrade`
+
+Resultado da sequência solicitada:
+
+- `prisma generate`: `0`
+- `typecheck` (sem build): `0`
+- `typecheck --force` (sem cache): `0`
+
+Conclusão:
+
+- hipótese Prisma confirmada
+- **reclassificação: sem breaking**
+
+### Lote C — `investigation/nodemailer-patch`
+
+Resultado da sequência solicitada:
+
+- `prisma generate`: `0`
+- `typecheck` (sem build): `0`
+- `typecheck --force` (sem cache): `0`
+
+Conclusão:
+
+- hipótese Prisma confirmada
+- **reclassificação: sem breaking**
+
+### Status consolidado atualizado
+
+- `protobufjs`: resolvido em `origin/main` (PR #4)
+- `next`: sem breaking
+- `nest-runtime`: sem breaking (falso positivo de ordem de pipeline Prisma)
+- `nodemailer`: sem breaking (falso positivo de ordem de pipeline Prisma)

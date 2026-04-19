@@ -15,17 +15,17 @@ import {
 } from '@opentelemetry/semantic-conventions'
 
 type InitializeApiOpenTelemetryOptions = {
-  endpoint?: string
-  tracesEndpoint?: string
-  metricsEndpoint?: string
-  logsEndpoint?: string
-  headers?: string
-  serviceName?: string
-  serviceVersion?: string
-  environment?: string
-  tracesSampleRate?: string | number
-  metricsExportIntervalMs?: string | number
-  diagnosticsEnabled?: boolean
+  endpoint?: string | undefined
+  tracesEndpoint?: string | undefined
+  metricsEndpoint?: string | undefined
+  logsEndpoint?: string | undefined
+  headers?: string | undefined
+  serviceName?: string | undefined
+  serviceVersion?: string | undefined
+  environment?: string | undefined
+  tracesSampleRate?: string | number | undefined
+  metricsExportIntervalMs?: string | number | undefined
+  diagnosticsEnabled?: boolean | undefined
 }
 
 let apiOtelSdk: NodeSDK | null = null
@@ -71,11 +71,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
   }
 
   if (traceEndpoint) {
-    sdkConfiguration.traceExporter = new OTLPTraceExporter({
-      url: traceEndpoint,
-      headers: parsedHeaders,
-      timeoutMillis: 3_000,
-    })
+    sdkConfiguration.traceExporter = new OTLPTraceExporter(buildOtlpExporterConfig(traceEndpoint, parsedHeaders))
     sdkConfiguration.sampler = new ParentBasedSampler({
       root: new TraceIdRatioBasedSampler(tracesSampleRate),
     })
@@ -83,11 +79,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   if (metricsEndpoint) {
     const metricReader = new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({
-        url: metricsEndpoint,
-        headers: parsedHeaders,
-        timeoutMillis: 3_000,
-      }),
+      exporter: new OTLPMetricExporter(buildOtlpExporterConfig(metricsEndpoint, parsedHeaders)),
       exportIntervalMillis: metricsExportIntervalMs,
       exportTimeoutMillis: 3_000,
     })
@@ -97,11 +89,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   if (logsEndpoint) {
     const logRecordProcessor = new BatchLogRecordProcessor(
-      new OTLPLogExporter({
-        url: logsEndpoint,
-        headers: parsedHeaders,
-        timeoutMillis: 3_000,
-      }),
+      new OTLPLogExporter(buildOtlpExporterConfig(logsEndpoint, parsedHeaders)),
     )
 
     sdkConfiguration.logRecordProcessors = [logRecordProcessor]
@@ -182,6 +170,14 @@ function parseOtlpHeaders(headers: string | undefined) {
   }
 
   return Object.fromEntries(entries)
+}
+
+function buildOtlpExporterConfig(url: string, headers: Record<string, string> | undefined) {
+  return {
+    url,
+    timeoutMillis: 3_000,
+    ...(headers ? { headers } : {}),
+  }
 }
 
 function parseSampleRate(value: string | number | undefined, fallback: number) {

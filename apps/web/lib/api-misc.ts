@@ -94,7 +94,7 @@ export async function lookupPostalCode(postalCode: string) {
 
   try {
     response = await fetchWithTimeout(
-      '/api/postal-code/lookup',
+      '/api/v1/postal-code/lookup',
       {
         method: 'POST',
         headers: {
@@ -104,7 +104,7 @@ export async function lookupPostalCode(postalCode: string) {
         body: JSON.stringify({ postalCode }),
       },
       POSTAL_LOOKUP_TIMEOUT_MS,
-      '/api/postal-code/lookup',
+      '/api/v1/postal-code/lookup',
     )
   } catch (error) {
     if (error instanceof Error && error.name === 'ApiTimeoutError') {

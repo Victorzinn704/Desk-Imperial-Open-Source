@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "tsx watch --clear-screen=false --tsconfig tsconfig.json src/main.ts",
     "build": "npm run prisma:generate && nest build --builder tsc",
     "start": "node ./scripts/start-dist.mjs",
     "lint": "eslint .",
@@ -12,12 +12,15 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "ts-node --project tsconfig.json --transpile-only prisma/seed.ts",
     "prisma:repair-demo": "ts-node --project tsconfig.json --transpile-only prisma/repair-demo.ts",
+    "openapi:generate": "tsx scripts/generate-openapi.ts",
     "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --runInBand",
+    "test:vitest": "vitest run",
     "test:critical": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --runInBand test/csrf.guard.spec.ts test/session.guard.spec.ts test/auth-rate-limit.service.spec.ts test/admin-pin.guard.spec.ts test/cache.service.spec.ts test/operations-realtime.socket-auth.spec.ts",
     "test:e2e": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --config ./test/jest-e2e.json --runInBand",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.17",
@@ -53,7 +56,8 @@
     "prisma": "6.19.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.2",
@@ -69,8 +73,11 @@
     "eslint": "^9.36.0",
     "jest": "^30.1.3",
     "supertest": "^7.1.4",
+    "tsx": "^4.20.5",
     "ts-jest": "^29.4.4",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "vitest": "^4.1.2",
+    "vitest-tsconfig-paths": "^3.4.1"
   }
 }

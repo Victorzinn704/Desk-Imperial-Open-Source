@@ -1,465 +1,535 @@
-export type CurrencyCode = 'BRL' | 'USD' | 'EUR'
+import { z } from 'zod'
 
-export type HealthResponse = {
-  status: 'ok'
-  service: string
-  timestamp: string
-}
+const isoDateStringSchema = z.string()
+const nullableIsoDateStringSchema = isoDateStringSchema.nullable()
+const nullableStringSchema = z.string().nullable()
+const nullableNumberSchema = z.number().nullable()
 
-export type EmployeeRecord = {
-  id: string
-  employeeCode: string
-  displayName: string
-  active: boolean
-  hasLogin: boolean
-  salarioBase: number
-  percentualVendas: number
-  createdAt: string
-  updatedAt: string
-}
+export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
+export type CurrencyCode = z.infer<typeof currencyCodeSchema>
 
-export type EmployeesResponse = {
-  items: EmployeeRecord[]
-  totals: {
-    totalEmployees: number
-    activeEmployees: number
-  }
-}
+export const healthResponseSchema = z.object({
+  status: z.literal('ok'),
+  service: z.string(),
+  timestamp: isoDateStringSchema,
+})
+export type HealthResponse = z.infer<typeof healthResponseSchema>
 
-export type ProductRecord = {
-  id: string
-  name: string
-  brand: string | null
-  category: string
-  packagingClass: string
-  measurementUnit: string
-  measurementValue: number
-  unitsPerPackage: number
-  isCombo?: boolean
-  comboDescription?: string | null
-  comboItems?: Array<{
-    componentProductId: string
-    componentProductName: string
-    packagingClass: string
-    measurementUnit: string
-    measurementValue: number
-    unitsPerPackage: number
-    quantityPackages: number
-    quantityUnits: number
-    totalUnits: number
-  }>
-  stockPackages: number
-  stockLooseUnits: number
-  description: string | null
-  currency: CurrencyCode
-  displayCurrency: CurrencyCode
-  unitCost: number
-  unitPrice: number
-  originalUnitCost: number
-  originalUnitPrice: number
-  stock: number
-  lowStockThreshold: number | null
-  isLowStock: boolean
-  requiresKitchen: boolean
-  active: boolean
-  createdAt: string
-  updatedAt: string
-  inventoryCostValue: number
-  inventorySalesValue: number
-  potentialProfit: number
-  originalInventoryCostValue: number
-  originalInventorySalesValue: number
-  originalPotentialProfit: number
-  stockBaseUnits: number
-  marginPercent: number
-}
+export const employeeRecordSchema = z.object({
+  id: z.string(),
+  employeeCode: z.string(),
+  displayName: z.string(),
+  active: z.boolean(),
+  hasLogin: z.boolean(),
+  salarioBase: z.number(),
+  percentualVendas: z.number(),
+  createdAt: isoDateStringSchema,
+  updatedAt: isoDateStringSchema,
+})
+export type EmployeeRecord = z.infer<typeof employeeRecordSchema>
 
-export type ProductsResponse = {
-  displayCurrency: CurrencyCode
-  ratesUpdatedAt: string | null
-  ratesSource: 'live' | 'stale-cache' | 'fallback'
-  ratesNotice: string | null
-  items: ProductRecord[]
-  totals: {
-    totalProducts: number
-    activeProducts: number
-    inactiveProducts: number
-    stockUnits: number
-    stockPackages: number
-    stockLooseUnits: number
-    stockBaseUnits: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-    averageMarginPercent: number
-    categories: string[]
-  }
-}
+export const employeesResponseSchema = z.object({
+  items: z.array(employeeRecordSchema),
+  totals: z.object({
+    totalEmployees: z.number(),
+    activeEmployees: z.number(),
+  }),
+})
+export type EmployeesResponse = z.infer<typeof employeesResponseSchema>
 
-export type FinanceSummaryResponse = {
-  displayCurrency: CurrencyCode
-  ratesUpdatedAt: string | null
-  ratesSource: 'live' | 'stale-cache' | 'fallback'
-  ratesNotice: string | null
-  totals: {
-    activeProducts: number
-    inventoryUnits: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-    realizedRevenue: number
-    realizedCost: number
-    realizedProfit: number
-    completedOrders: number
-    currentMonthRevenue: number
-    currentMonthProfit: number
-    previousMonthRevenue: number
-    previousMonthProfit: number
-    revenueGrowthPercent: number
-    profitGrowthPercent: number
-    averageMarginPercent: number
-    averageMarkupPercent: number
-    lowStockItems: number
-  }
-  categoryBreakdown: Array<{
-    category: string
-    products: number
-    units: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-  }>
-  topProducts: Array<{
-    id: string
-    name: string
-    category: string
-    stock: number
-    currency: CurrencyCode
-    displayCurrency: CurrencyCode
-    originalInventorySalesValue: number
-    originalPotentialProfit: number
-    inventoryCostValue: number
-    inventorySalesValue: number
-    potentialProfit: number
-    marginPercent: number
-  }>
-  recentOrders: Array<{
-    id: string
-    customerName: string | null
-    channel: string | null
-    currency: CurrencyCode
-    status: 'COMPLETED' | 'CANCELLED'
-    totalRevenue: number
-    totalProfit: number
-    originalTotalRevenue: number
-    originalTotalProfit: number
-    totalItems: number
-    createdAt: string
-  }>
-  revenueTimeline: Array<{
-    label: string
-    revenue: number
-    profit: number
-    orders: number
-  }>
-  salesByChannel: Array<{
-    channel: string
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topCustomers: Array<{
-    customerName: string
-    buyerType: 'PERSON' | 'COMPANY' | null
-    buyerDocument: string | null
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topEmployees: Array<{
-    employeeId: string | null
-    employeeCode: string | null
-    employeeName: string
-    orders: number
-    revenue: number
-    profit: number
-    averageTicket: number
-  }>
-  salesMap: Array<{
-    label: string
-    district: string | null
-    city: string | null
-    state: string | null
-    country: string | null
-    latitude: number
-    longitude: number
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  topRegions: Array<{
-    label: string
-    city: string | null
-    state: string | null
-    country: string | null
-    orders: number
-    revenue: number
-    profit: number
-  }>
-  categoryTopProducts: Record<string, FinanceSummaryResponse['topProducts']>
-}
+export const productComboItemRecordSchema = z.object({
+  componentProductId: z.string(),
+  componentProductName: z.string(),
+  packagingClass: z.string(),
+  measurementUnit: z.string(),
+  measurementValue: z.number(),
+  unitsPerPackage: z.number(),
+  quantityPackages: z.number(),
+  quantityUnits: z.number(),
+  totalUnits: z.number(),
+})
 
-export type MarketInsightResponse = {
-  generatedAt: string
-  model: string
-  focus: string
-  cached: boolean
-  summary: string
-  forecast: string
-  opportunities: string[]
-  risks: string[]
-  nextActions: string[]
-}
+export const productRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  brand: nullableStringSchema,
+  category: z.string(),
+  packagingClass: z.string(),
+  measurementUnit: z.string(),
+  measurementValue: z.number(),
+  unitsPerPackage: z.number(),
+  isCombo: z.boolean().optional(),
+  comboDescription: nullableStringSchema.optional(),
+  comboItems: z.array(productComboItemRecordSchema).optional(),
+  stockPackages: z.number(),
+  stockLooseUnits: z.number(),
+  description: nullableStringSchema,
+  currency: currencyCodeSchema,
+  displayCurrency: currencyCodeSchema,
+  unitCost: z.number(),
+  unitPrice: z.number(),
+  originalUnitCost: z.number(),
+  originalUnitPrice: z.number(),
+  stock: z.number(),
+  lowStockThreshold: nullableNumberSchema,
+  isLowStock: z.boolean(),
+  requiresKitchen: z.boolean(),
+  active: z.boolean(),
+  createdAt: isoDateStringSchema,
+  updatedAt: isoDateStringSchema,
+  inventoryCostValue: z.number(),
+  inventorySalesValue: z.number(),
+  potentialProfit: z.number(),
+  originalInventoryCostValue: z.number(),
+  originalInventorySalesValue: z.number(),
+  originalPotentialProfit: z.number(),
+  stockBaseUnits: z.number(),
+  marginPercent: z.number(),
+})
+export type ProductRecord = z.infer<typeof productRecordSchema>
 
-export type OrderRecord = {
-  id: string
-  comandaId: string | null
-  customerName: string | null
-  buyerType: 'PERSON' | 'COMPANY' | null
-  buyerDocument: string | null
-  buyerDistrict: string | null
-  buyerCity: string | null
-  buyerState: string | null
-  buyerCountry: string | null
-  buyerLatitude: number | null
-  buyerLongitude: number | null
-  employeeId: string | null
-  sellerCode: string | null
-  sellerName: string | null
-  channel: string | null
-  notes: string | null
-  currency: CurrencyCode
-  displayCurrency: CurrencyCode
-  status: 'COMPLETED' | 'CANCELLED'
-  totalRevenue: number
-  totalCost: number
-  totalProfit: number
-  originalTotalRevenue: number
-  originalTotalCost: number
-  originalTotalProfit: number
-  totalItems: number
-  createdAt: string
-  updatedAt: string
-  cancelledAt: string | null
-  items: Array<{
-    id: string
-    productId: string | null
-    productName: string
-    category: string
-    quantity: number
-    currency: CurrencyCode
-    unitPrice: number
-    unitCost: number
-    lineRevenue: number
-    lineCost: number
-    lineProfit: number
-    originalUnitPrice: number
-    originalUnitCost: number
-    originalLineRevenue: number
-    originalLineCost: number
-    originalLineProfit: number
-  }>
-}
+export const ratesSourceSchema = z.enum(['live', 'stale-cache', 'fallback'])
 
-export type OrdersResponse = {
-  items: OrderRecord[]
-  totals: {
-    completedOrders: number
-    cancelledOrders: number
-    realizedRevenue: number
-    realizedProfit: number
-    soldUnits: number
-  }
-}
+export const productsResponseSchema = z.object({
+  displayCurrency: currencyCodeSchema,
+  ratesUpdatedAt: nullableIsoDateStringSchema,
+  ratesSource: ratesSourceSchema,
+  ratesNotice: nullableStringSchema,
+  items: z.array(productRecordSchema),
+  totals: z.object({
+    totalProducts: z.number(),
+    activeProducts: z.number(),
+    inactiveProducts: z.number(),
+    stockUnits: z.number(),
+    stockPackages: z.number(),
+    stockLooseUnits: z.number(),
+    stockBaseUnits: z.number(),
+    inventoryCostValue: z.number(),
+    inventorySalesValue: z.number(),
+    potentialProfit: z.number(),
+    averageMarginPercent: z.number(),
+    categories: z.array(z.string()),
+  }),
+})
+export type ProductsResponse = z.infer<typeof productsResponseSchema>
 
-export type ProductImportResponse = {
-  summary: {
-    totalRows: number
-    createdCount: number
-    updatedCount: number
-    failedCount: number
-  }
-  errors: Array<{
-    line: number
-    message: string
-  }>
-}
+const financeCategoryBreakdownSchema = z.object({
+  category: z.string(),
+  products: z.number(),
+  units: z.number(),
+  inventoryCostValue: z.number(),
+  inventorySalesValue: z.number(),
+  potentialProfit: z.number(),
+})
 
-export type CashSessionStatus = 'OPEN' | 'CLOSED' | 'FORCE_CLOSED'
-export type CashMovementType = 'OPENING_FLOAT' | 'SUPPLY' | 'WITHDRAWAL' | 'ADJUSTMENT'
-export type CashClosureStatus = 'OPEN' | 'PENDING_EMPLOYEE_CLOSE' | 'CLOSED' | 'FORCE_CLOSED'
-export type ComandaStatus = 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED' | 'CANCELLED'
-export type KitchenItemStatus = 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+const financeTopProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  stock: z.number(),
+  currency: currencyCodeSchema,
+  displayCurrency: currencyCodeSchema,
+  originalInventorySalesValue: z.number(),
+  originalPotentialProfit: z.number(),
+  inventoryCostValue: z.number(),
+  inventorySalesValue: z.number(),
+  potentialProfit: z.number(),
+  marginPercent: z.number(),
+})
 
-export type CashMovementRecord = {
-  id: string
-  cashSessionId: string
-  employeeId: string | null
-  type: CashMovementType
-  amount: number
-  note: string | null
-  createdAt: string
-}
+const financeRecentOrderSchema = z.object({
+  id: z.string(),
+  customerName: nullableStringSchema,
+  channel: nullableStringSchema,
+  currency: currencyCodeSchema,
+  status: z.enum(['COMPLETED', 'CANCELLED']),
+  totalRevenue: z.number(),
+  totalProfit: z.number(),
+  originalTotalRevenue: z.number(),
+  originalTotalProfit: z.number(),
+  totalItems: z.number(),
+  createdAt: isoDateStringSchema,
+})
 
-export type CashSessionRecord = {
-  id: string
-  companyOwnerId: string
-  employeeId: string | null
-  status: CashSessionStatus
-  businessDate: string
-  openingCashAmount: number
-  countedCashAmount: number | null
-  expectedCashAmount: number
-  differenceAmount: number | null
-  grossRevenueAmount: number
-  realizedProfitAmount: number
-  notes: string | null
-  openedAt: string
-  closedAt: string | null
-  movements: CashMovementRecord[]
-}
+const financeRevenueTimelineSchema = z.object({
+  label: z.string(),
+  revenue: z.number(),
+  profit: z.number(),
+  orders: z.number(),
+})
 
-export type ComandaItemRecord = {
-  id: string
-  productId: string | null
-  productName: string
-  quantity: number
-  unitPrice: number
-  totalAmount: number
-  notes: string | null
-  kitchenStatus: KitchenItemStatus | null
-  kitchenQueuedAt: string | null
-  kitchenReadyAt: string | null
-}
+const financeSalesByChannelSchema = z.object({
+  channel: z.string(),
+  orders: z.number(),
+  revenue: z.number(),
+  profit: z.number(),
+})
 
-export type MesaStatus = 'livre' | 'ocupada' | 'reservada'
+const financeTopCustomerSchema = z.object({
+  customerName: z.string(),
+  buyerType: z.enum(['PERSON', 'COMPANY']).nullable(),
+  buyerDocument: nullableStringSchema,
+  orders: z.number(),
+  revenue: z.number(),
+  profit: z.number(),
+})
 
-export type MesaRecord = {
-  id: string
-  label: string
-  capacity: number
-  section: string | null
-  positionX: number | null
-  positionY: number | null
-  active: boolean
-  reservedUntil: string | null
-  status: MesaStatus
-  comandaId: string | null
-  currentEmployeeId: string | null
-}
+const financeTopEmployeeSchema = z.object({
+  employeeId: z.string().nullable(),
+  employeeCode: z.string().nullable(),
+  employeeName: z.string(),
+  orders: z.number(),
+  revenue: z.number(),
+  profit: z.number(),
+  averageTicket: z.number(),
+})
 
-export type ComandaRecord = {
-  id: string
-  companyOwnerId: string
-  cashSessionId: string | null
-  mesaId: string | null
-  currentEmployeeId: string | null
-  tableLabel: string
-  customerName: string | null
-  customerDocument: string | null
-  participantCount: number
-  status: ComandaStatus
-  subtotalAmount: number
-  discountAmount: number
-  serviceFeeAmount: number
-  totalAmount: number
-  notes: string | null
-  openedAt: string
-  closedAt: string | null
-  items: ComandaItemRecord[]
-}
+const financeSalesMapEntrySchema = z.object({
+  label: z.string(),
+  district: nullableStringSchema,
+  city: nullableStringSchema,
+  state: nullableStringSchema,
+  country: nullableStringSchema,
+  latitude: z.number(),
+  longitude: z.number(),
+  orders: z.number(),
+  revenue: z.number(),
+  profit: z.number(),
+})
 
-export type OperationsKitchenItemStatus = Exclude<KitchenItemStatus, 'DELIVERED'>
+const financeTopRegionSchema = z.object({
+  label: z.string(),
+  city: nullableStringSchema,
+  state: nullableStringSchema,
+  country: nullableStringSchema,
+  orders: z.number(),
+  revenue: z.number(),
+  profit: z.number(),
+})
 
-export type OperationsKitchenItemRecord = {
-  itemId: string
-  comandaId: string
-  mesaLabel: string
-  employeeId: string | null
-  employeeName: string
-  productName: string
-  quantity: number
-  notes: string | null
-  kitchenStatus: OperationsKitchenItemStatus
-  kitchenQueuedAt: string | null
-  kitchenReadyAt: string | null
-}
+export const financeSummaryResponseSchema = z.object({
+  displayCurrency: currencyCodeSchema,
+  ratesUpdatedAt: nullableIsoDateStringSchema,
+  ratesSource: ratesSourceSchema,
+  ratesNotice: nullableStringSchema,
+  totals: z.object({
+    activeProducts: z.number(),
+    inventoryUnits: z.number(),
+    inventoryCostValue: z.number(),
+    inventorySalesValue: z.number(),
+    potentialProfit: z.number(),
+    realizedRevenue: z.number(),
+    realizedCost: z.number(),
+    realizedProfit: z.number(),
+    completedOrders: z.number(),
+    currentMonthRevenue: z.number(),
+    currentMonthProfit: z.number(),
+    previousMonthRevenue: z.number(),
+    previousMonthProfit: z.number(),
+    revenueGrowthPercent: z.number(),
+    profitGrowthPercent: z.number(),
+    averageMarginPercent: z.number(),
+    averageMarkupPercent: z.number(),
+    lowStockItems: z.number(),
+  }),
+  categoryBreakdown: z.array(financeCategoryBreakdownSchema),
+  topProducts: z.array(financeTopProductSchema),
+  recentOrders: z.array(financeRecentOrderSchema),
+  revenueTimeline: z.array(financeRevenueTimelineSchema),
+  salesByChannel: z.array(financeSalesByChannelSchema),
+  topCustomers: z.array(financeTopCustomerSchema),
+  topEmployees: z.array(financeTopEmployeeSchema),
+  salesMap: z.array(financeSalesMapEntrySchema),
+  topRegions: z.array(financeTopRegionSchema),
+  categoryTopProducts: z.record(z.string(), z.array(financeTopProductSchema)),
+})
+export type FinanceSummaryResponse = z.infer<typeof financeSummaryResponseSchema>
 
-export type OperationsKitchenResponse = {
-  businessDate: string
-  companyOwnerId: string
-  items: OperationsKitchenItemRecord[]
-  statusCounts: {
-    queued: number
-    inPreparation: number
-    ready: number
-  }
-}
+export const marketInsightResponseSchema = z.object({
+  generatedAt: isoDateStringSchema,
+  model: z.string(),
+  focus: z.string(),
+  cached: z.boolean(),
+  summary: z.string(),
+  forecast: z.string(),
+  opportunities: z.array(z.string()),
+  risks: z.array(z.string()),
+  nextActions: z.array(z.string()),
+})
+export type MarketInsightResponse = z.infer<typeof marketInsightResponseSchema>
 
-export type OperationsExecutiveKpis = {
-  receitaRealizada: number
-  faturamentoAberto: number
-  projecaoTotal: number
-  lucroRealizado: number
-  lucroEsperado: number
-  caixaEsperado: number
-  openComandasCount: number
-  openSessionsCount: number
-}
+export const orderItemRecordSchema = z.object({
+  id: z.string(),
+  productId: z.string().nullable(),
+  productName: z.string(),
+  category: z.string(),
+  quantity: z.number(),
+  currency: currencyCodeSchema,
+  unitPrice: z.number(),
+  unitCost: z.number(),
+  lineRevenue: z.number(),
+  lineCost: z.number(),
+  lineProfit: z.number(),
+  originalUnitPrice: z.number(),
+  originalUnitCost: z.number(),
+  originalLineRevenue: z.number(),
+  originalLineCost: z.number(),
+  originalLineProfit: z.number(),
+})
 
-export type OperationsPerformerRankingEntry = {
-  nome: string
-  valor: number
-  comandas: number
-}
+export const orderRecordSchema = z.object({
+  id: z.string(),
+  comandaId: z.string().nullable(),
+  customerName: z.string().nullable(),
+  buyerType: z.enum(['PERSON', 'COMPANY']).nullable(),
+  buyerDocument: z.string().nullable(),
+  buyerDistrict: z.string().nullable(),
+  buyerCity: z.string().nullable(),
+  buyerState: z.string().nullable(),
+  buyerCountry: z.string().nullable(),
+  buyerLatitude: z.number().nullable(),
+  buyerLongitude: z.number().nullable(),
+  employeeId: z.string().nullable(),
+  sellerCode: z.string().nullable(),
+  sellerName: z.string().nullable(),
+  channel: z.string().nullable(),
+  notes: z.string().nullable(),
+  currency: currencyCodeSchema,
+  displayCurrency: currencyCodeSchema,
+  status: z.enum(['COMPLETED', 'CANCELLED']),
+  totalRevenue: z.number(),
+  totalCost: z.number(),
+  totalProfit: z.number(),
+  originalTotalRevenue: z.number(),
+  originalTotalCost: z.number(),
+  originalTotalProfit: z.number(),
+  totalItems: z.number(),
+  createdAt: isoDateStringSchema,
+  updatedAt: isoDateStringSchema,
+  cancelledAt: nullableIsoDateStringSchema,
+  items: z.array(orderItemRecordSchema),
+})
+export type OrderRecord = z.infer<typeof orderRecordSchema>
 
-export type OperationsTopProductEntry = {
-  nome: string
-  qtd: number
-  valor: number
-}
+export const ordersResponseSchema = z.object({
+  items: z.array(orderRecordSchema),
+  totals: z.object({
+    completedOrders: z.number(),
+    cancelledOrders: z.number(),
+    realizedRevenue: z.number(),
+    realizedProfit: z.number(),
+    soldUnits: z.number(),
+  }),
+})
+export type OrdersResponse = z.infer<typeof ordersResponseSchema>
 
-export type OperationsSummaryResponse = {
-  businessDate: string
-  companyOwnerId: string
-  kpis: OperationsExecutiveKpis
-  performers: OperationsPerformerRankingEntry[]
-  topProducts: OperationsTopProductEntry[]
-}
+export const productImportResponseSchema = z.object({
+  summary: z.object({
+    totalRows: z.number(),
+    createdCount: z.number(),
+    updatedCount: z.number(),
+    failedCount: z.number(),
+  }),
+  errors: z.array(
+    z.object({
+      line: z.number(),
+      message: z.string(),
+    }),
+  ),
+})
+export type ProductImportResponse = z.infer<typeof productImportResponseSchema>
 
-export type EmployeeOperationsRecord = {
-  employeeId: string | null
-  employeeCode: string | null
-  displayName: string
-  active: boolean
-  cashSession: CashSessionRecord | null
-  comandas: ComandaRecord[]
-}
+export const cashSessionStatusSchema = z.enum(['OPEN', 'CLOSED', 'FORCE_CLOSED'])
+export type CashSessionStatus = z.infer<typeof cashSessionStatusSchema>
 
-export type OperationsLiveResponse = {
-  businessDate: string
-  companyOwnerId: string
-  closure: {
-    status: CashClosureStatus
-    expectedCashAmount: number
-    countedCashAmount: number | null
-    differenceAmount: number | null
-    grossRevenueAmount: number
-    realizedProfitAmount: number
-    openSessionsCount: number
-    openComandasCount: number
-  } | null
-  employees: EmployeeOperationsRecord[]
-  unassigned: EmployeeOperationsRecord
-  mesas: MesaRecord[]
-}
+export const cashMovementTypeSchema = z.enum(['OPENING_FLOAT', 'SUPPLY', 'WITHDRAWAL', 'ADJUSTMENT'])
+export type CashMovementType = z.infer<typeof cashMovementTypeSchema>
+
+export const cashClosureStatusSchema = z.enum(['OPEN', 'PENDING_EMPLOYEE_CLOSE', 'CLOSED', 'FORCE_CLOSED'])
+export type CashClosureStatus = z.infer<typeof cashClosureStatusSchema>
+
+export const comandaStatusSchema = z.enum(['OPEN', 'IN_PREPARATION', 'READY', 'CLOSED', 'CANCELLED'])
+export type ComandaStatus = z.infer<typeof comandaStatusSchema>
+
+export const kitchenItemStatusSchema = z.enum(['QUEUED', 'IN_PREPARATION', 'READY', 'DELIVERED'])
+export type KitchenItemStatus = z.infer<typeof kitchenItemStatusSchema>
+
+export const cashMovementRecordSchema = z.object({
+  id: z.string(),
+  cashSessionId: z.string(),
+  employeeId: z.string().nullable(),
+  type: cashMovementTypeSchema,
+  amount: z.number(),
+  note: z.string().nullable(),
+  createdAt: isoDateStringSchema,
+})
+export type CashMovementRecord = z.infer<typeof cashMovementRecordSchema>
+
+export const cashSessionRecordSchema = z.object({
+  id: z.string(),
+  companyOwnerId: z.string(),
+  employeeId: z.string().nullable(),
+  status: cashSessionStatusSchema,
+  businessDate: isoDateStringSchema,
+  openingCashAmount: z.number(),
+  countedCashAmount: z.number().nullable(),
+  expectedCashAmount: z.number(),
+  differenceAmount: z.number().nullable(),
+  grossRevenueAmount: z.number(),
+  realizedProfitAmount: z.number(),
+  notes: z.string().nullable(),
+  openedAt: isoDateStringSchema,
+  closedAt: nullableIsoDateStringSchema,
+  movements: z.array(cashMovementRecordSchema),
+})
+export type CashSessionRecord = z.infer<typeof cashSessionRecordSchema>
+
+export const comandaItemRecordSchema = z.object({
+  id: z.string(),
+  productId: z.string().nullable(),
+  productName: z.string(),
+  quantity: z.number(),
+  unitPrice: z.number(),
+  totalAmount: z.number(),
+  notes: z.string().nullable(),
+  kitchenStatus: kitchenItemStatusSchema.nullable(),
+  kitchenQueuedAt: nullableIsoDateStringSchema,
+  kitchenReadyAt: nullableIsoDateStringSchema,
+})
+export type ComandaItemRecord = z.infer<typeof comandaItemRecordSchema>
+
+export const mesaStatusSchema = z.enum(['livre', 'ocupada', 'reservada'])
+export type MesaStatus = z.infer<typeof mesaStatusSchema>
+
+export const mesaRecordSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  capacity: z.number(),
+  section: z.string().nullable(),
+  positionX: z.number().nullable(),
+  positionY: z.number().nullable(),
+  active: z.boolean(),
+  reservedUntil: nullableIsoDateStringSchema,
+  status: mesaStatusSchema,
+  comandaId: z.string().nullable(),
+  currentEmployeeId: z.string().nullable(),
+})
+export type MesaRecord = z.infer<typeof mesaRecordSchema>
+
+export const comandaRecordSchema = z.object({
+  id: z.string(),
+  companyOwnerId: z.string(),
+  cashSessionId: z.string().nullable(),
+  mesaId: z.string().nullable(),
+  currentEmployeeId: z.string().nullable(),
+  tableLabel: z.string(),
+  customerName: z.string().nullable(),
+  customerDocument: z.string().nullable(),
+  participantCount: z.number(),
+  status: comandaStatusSchema,
+  subtotalAmount: z.number(),
+  discountAmount: z.number(),
+  serviceFeeAmount: z.number(),
+  totalAmount: z.number(),
+  notes: z.string().nullable(),
+  openedAt: isoDateStringSchema,
+  closedAt: nullableIsoDateStringSchema,
+  items: z.array(comandaItemRecordSchema),
+})
+export type ComandaRecord = z.infer<typeof comandaRecordSchema>
+
+export const operationsKitchenItemStatusSchema = z.enum(['QUEUED', 'IN_PREPARATION', 'READY'])
+export type OperationsKitchenItemStatus = z.infer<typeof operationsKitchenItemStatusSchema>
+
+export const operationsKitchenItemRecordSchema = z.object({
+  itemId: z.string(),
+  comandaId: z.string(),
+  mesaLabel: z.string(),
+  employeeId: z.string().nullable(),
+  employeeName: z.string(),
+  productName: z.string(),
+  quantity: z.number(),
+  notes: z.string().nullable(),
+  kitchenStatus: operationsKitchenItemStatusSchema,
+  kitchenQueuedAt: nullableIsoDateStringSchema,
+  kitchenReadyAt: nullableIsoDateStringSchema,
+})
+export type OperationsKitchenItemRecord = z.infer<typeof operationsKitchenItemRecordSchema>
+
+export const operationsKitchenResponseSchema = z.object({
+  businessDate: isoDateStringSchema,
+  companyOwnerId: z.string(),
+  items: z.array(operationsKitchenItemRecordSchema),
+  statusCounts: z.object({
+    queued: z.number(),
+    inPreparation: z.number(),
+    ready: z.number(),
+  }),
+})
+export type OperationsKitchenResponse = z.infer<typeof operationsKitchenResponseSchema>
+
+export const operationsExecutiveKpisSchema = z.object({
+  receitaRealizada: z.number(),
+  faturamentoAberto: z.number(),
+  projecaoTotal: z.number(),
+  lucroRealizado: z.number(),
+  lucroEsperado: z.number(),
+  caixaEsperado: z.number(),
+  openComandasCount: z.number(),
+  openSessionsCount: z.number(),
+})
+export type OperationsExecutiveKpis = z.infer<typeof operationsExecutiveKpisSchema>
+
+export const operationsPerformerRankingEntrySchema = z.object({
+  nome: z.string(),
+  valor: z.number(),
+  comandas: z.number(),
+})
+export type OperationsPerformerRankingEntry = z.infer<typeof operationsPerformerRankingEntrySchema>
+
+export const operationsTopProductEntrySchema = z.object({
+  nome: z.string(),
+  qtd: z.number(),
+  valor: z.number(),
+})
+export type OperationsTopProductEntry = z.infer<typeof operationsTopProductEntrySchema>
+
+export const operationsSummaryResponseSchema = z.object({
+  businessDate: isoDateStringSchema,
+  companyOwnerId: z.string(),
+  kpis: operationsExecutiveKpisSchema,
+  performers: z.array(operationsPerformerRankingEntrySchema),
+  topProducts: z.array(operationsTopProductEntrySchema),
+})
+export type OperationsSummaryResponse = z.infer<typeof operationsSummaryResponseSchema>
+
+export const employeeOperationsRecordSchema = z.object({
+  employeeId: z.string().nullable(),
+  employeeCode: z.string().nullable(),
+  displayName: z.string(),
+  active: z.boolean(),
+  cashSession: cashSessionRecordSchema.nullable(),
+  comandas: z.array(comandaRecordSchema),
+})
+export type EmployeeOperationsRecord = z.infer<typeof employeeOperationsRecordSchema>
+
+export const operationsClosureSnapshotSchema = z.object({
+  status: cashClosureStatusSchema,
+  expectedCashAmount: z.number(),
+  countedCashAmount: z.number().nullable(),
+  differenceAmount: z.number().nullable(),
+  grossRevenueAmount: z.number(),
+  realizedProfitAmount: z.number(),
+  openSessionsCount: z.number(),
+  openComandasCount: z.number(),
+})
+
+export const operationsLiveResponseSchema = z.object({
+  businessDate: isoDateStringSchema,
+  companyOwnerId: z.string(),
+  closure: operationsClosureSnapshotSchema.nullable(),
+  employees: z.array(employeeOperationsRecordSchema),
+  unassigned: employeeOperationsRecordSchema,
+  mesas: z.array(mesaRecordSchema),
+})
+export type OperationsLiveResponse = z.infer<typeof operationsLiveResponseSchema>

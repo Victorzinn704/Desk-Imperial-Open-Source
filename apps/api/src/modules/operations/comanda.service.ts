@@ -11,15 +11,6 @@ import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
-import type { AssignComandaDto } from './dto/assign-comanda.dto'
-import type { CloseComandaDto } from './dto/close-comanda.dto'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
@@ -48,6 +39,17 @@ import {
   resolveBusinessDate,
   toNumberOrZero,
 } from './operations-domain.utils'
+import type {
+  AddComandaItemDto,
+  AddComandaItemsBatchDto,
+  AssignComandaDto,
+  CloseComandaDto,
+  OpenComandaDto,
+  OperationsResponseOptionsDto,
+  ReplaceComandaDto,
+  UpdateComandaStatusDto,
+  UpdateKitchenItemStatusDto,
+} from './operations.schemas'
 
 const COMANDA_WRITE_ISOLATION_LEVEL = Prisma.TransactionIsolationLevel.Serializable
 

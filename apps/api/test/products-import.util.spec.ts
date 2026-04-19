@@ -81,7 +81,8 @@ describe('parseProductImportCsv', () => {
 
     const [row] = parseProductImportCsv(csv)
 
-    expect(row.stock).toBe(7)
+    expect(row).toBeDefined()
+    expect(row?.stock).toBe(7)
   })
 
   it('deve tratar stockPackages/stockLooseUnits invalidos como zero', () => {
@@ -91,9 +92,10 @@ describe('parseProductImportCsv', () => {
 
     const [row] = parseProductImportCsv(csv)
 
-    expect(row.stockPackages).toBe(0)
-    expect(row.stockLooseUnits).toBe(0)
-    expect(row.stock).toBe(0)
+    expect(row).toBeDefined()
+    expect(row?.stockPackages).toBe(0)
+    expect(row?.stockLooseUnits).toBe(0)
+    expect(row?.stock).toBe(0)
   })
 
   it('deve rejeitar linha acima do limite maximo de tamanho', () => {

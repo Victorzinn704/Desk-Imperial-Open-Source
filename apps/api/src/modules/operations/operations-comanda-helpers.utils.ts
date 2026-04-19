@@ -4,7 +4,6 @@ import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { PrismaService } from '../../database/prisma.service'
 import type { CurrencyService } from '../currency/currency.service'
-import type { ComandaDraftItemDto } from './dto/comanda-draft-item.dto'
 import {
   OPEN_COMANDA_STATUSES,
   resolveBuyerTypeFromDocument,
@@ -15,6 +14,7 @@ import {
   calculateEffectiveUnitCost,
   calculateRawEffectiveUnitCost,
 } from '../products/product-combo-consumption.util'
+import type { ComandaDraftItemDto } from './operations.schemas'
 
 type TransactionClient = Prisma.TransactionClient
 

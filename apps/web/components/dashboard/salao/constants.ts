@@ -16,15 +16,6 @@ export const GRID_SPACING_Y = 100
 export const GRID_COLS = 7
 export const CANVAS_PADDING = 24
 
-// ── Status Labels ─────────────────────────────────────────────────────────────
-
-export const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> = {
-  aberta: { text: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { text: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { text: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { text: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
-}
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type View = 'operacional' | 'comandas' | 'configuracao' | 'planta'

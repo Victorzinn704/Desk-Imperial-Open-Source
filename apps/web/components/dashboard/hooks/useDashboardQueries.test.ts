@@ -41,7 +41,7 @@ describe('useDashboardQueries', () => {
     })
 
     it('passes section to scoped queries', () => {
-      renderHook(() => useDashboardQueries({ section: 'sales' }))
+      renderHook(() => useDashboardQueries({ section: 'financeiro' }))
       // Should still invoke all expected queries
       expect(mockUseQuery).toHaveBeenCalled()
     })
@@ -71,7 +71,7 @@ describe('useDashboardQueries', () => {
     })
 
     it('disables consent query for non-settings section', () => {
-      renderHook(() => useDashboardScopedQueries({ userId: '123', isOwner: true, section: 'sales' }))
+      renderHook(() => useDashboardScopedQueries({ userId: '123', isOwner: true, section: 'financeiro' }))
 
       const consentCall = mockUseQuery.mock.calls.find((call: unknown[]) => {
         const opts = call[0] as { queryKey: string[] }
@@ -81,8 +81,8 @@ describe('useDashboardQueries', () => {
       expect((consentCall![0] as { enabled: boolean }).enabled).toBe(false)
     })
 
-    it('enables products for overview, sales, portfolio, pdv sections', () => {
-      for (const section of ['overview', 'sales', 'portfolio', 'pdv'] as const) {
+    it('enables products for overview, financeiro, pedidos, sales, portfolio and pdv sections', () => {
+      for (const section of ['overview', 'financeiro', 'pedidos', 'sales', 'portfolio', 'pdv'] as const) {
         mockUseQuery.mockClear()
         renderHook(() => useDashboardScopedQueries({ userId: '123', isOwner: true, section }))
 
@@ -105,8 +105,8 @@ describe('useDashboardQueries', () => {
       expect((productsCall![0] as { enabled: boolean }).enabled).toBe(false)
     })
 
-    it('enables orders only for overview and sales', () => {
-      for (const section of ['overview', 'sales'] as const) {
+    it('enables orders for overview, financeiro, pedidos, sales and map', () => {
+      for (const section of ['overview', 'financeiro', 'pedidos', 'sales', 'map'] as const) {
         mockUseQuery.mockClear()
         renderHook(() => useDashboardScopedQueries({ userId: '123', isOwner: true, section }))
 

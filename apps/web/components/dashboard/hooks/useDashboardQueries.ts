@@ -15,12 +15,16 @@ type UseDashboardQueriesOptions = {
 
 function resolveSectionRequirements(section?: DashboardSectionId) {
   const sectionRequiresConsent = section === undefined || section === 'settings'
-  const sectionRequiresProducts = section === undefined || ['overview', 'sales', 'portfolio', 'pdv'].includes(section)
-  const sectionRequiresOrders = section === undefined || ['overview', 'sales'].includes(section)
+  const sectionRequiresProducts =
+    section === undefined || ['overview', 'financeiro', 'pedidos', 'sales', 'portfolio', 'pdv'].includes(section)
+  const sectionRequiresOrders =
+    section === undefined || ['overview', 'financeiro', 'pedidos', 'sales', 'map'].includes(section)
   const sectionRequiresEmployees =
-    section === undefined || ['overview', 'sales', 'payroll', 'settings'].includes(section)
+    section === undefined ||
+    ['overview', 'financeiro', 'pedidos', 'equipe', 'sales', 'portfolio', 'payroll', 'settings'].includes(section)
   const sectionRequiresFinance =
-    section === undefined || ['overview', 'sales', 'portfolio', 'payroll'].includes(section)
+    section === undefined ||
+    ['overview', 'financeiro', 'pedidos', 'equipe', 'sales', 'portfolio', 'payroll', 'map'].includes(section)
 
   return {
     sectionRequiresConsent,

@@ -122,7 +122,9 @@ describe('finance-analytics.util', () => {
         potentialProfit: 180,
       },
     ])
-    expect(result.categoryTopProducts.Bebidas[0].name).toBe('Produto 1')
+    const bebidasTopProducts = result.categoryTopProducts.Bebidas
+    expect(bebidasTopProducts).toBeDefined()
+    expect(bebidasTopProducts?.[0]?.name).toBe('Produto 1')
   })
 
   it('mapeia recent orders mantendo valores originais e convertidos', () => {

@@ -13,7 +13,7 @@ export const options = {
 const baseUrl = __ENV.BASE_URL || 'http://localhost:4000'
 
 export default function () {
-  const response = http.get(`${baseUrl}/api/health`)
+  const response = http.get(`${baseUrl}/api/v1/health`)
 
   check(response, {
     'health responded 200': (r) => r.status === 200,

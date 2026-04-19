@@ -1,7 +1,7 @@
 # Fluxos de Operação - Desk Imperial
 
-**Versão:** 1.0.0  
-**Última atualização:** 26 de março de 2026  
+**Versão:** 1.1.0  
+**Última atualização:** 17 de abril de 2026  
 **Status:** ✅ Documentado e Testado
 
 ---
@@ -9,6 +9,8 @@
 ## Visão Geral
 
 Este documento descreve os principais fluxos operacionais do Desk Imperial, incluindo comandas, pedidos, funcionários e hierarquia de permissões.
+
+Todos os exemplos HTTP abaixo usam o prefixo publico atual `/api/v1`.
 
 ---
 
@@ -46,7 +48,7 @@ Employee
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/employees                    │
+│  POST /api/v1/employees                 │
 │  {                                      │
 │    employeeCode: "002",                 │
 │    displayName: "Maria Silva",          │
@@ -135,7 +137,7 @@ Mesa
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas          │
+│  POST /api/v1/operations/comandas       │
 │  {                                      │
 │    tableLabel: "Mesa 5",                │
 │    customerName: "João Cliente",        │
@@ -192,7 +194,7 @@ Mesa
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas/:id/items│
+│  POST /api/v1/operations/comandas/:id/items│
 │  {                                      │
 │    productId: "prod-1",                 │
 │    quantity: 2,                         │
@@ -230,7 +232,7 @@ Mesa
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas/:id/close│
+│  POST /api/v1/operations/comandas/:id/close│
 │  {                                      │
 │    paymentMethod: "CREDIT_CARD",        │
 │    discountAmount: 10.00,               │
@@ -324,7 +326,7 @@ OrderItem
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/orders                       │
+│  POST /api/v1/orders                    │
 │  {                                      │
 │    items: [                             │
 │      { productId: "prod-1", qty: 2 }    │
@@ -386,7 +388,7 @@ OrderItem
        │
        ▼
 ┌─────────────────────────────────────────┐
-│  POST /api/orders/:id/cancel            │
+│  POST /api/v1/orders/:id/cancel         │
 └──────────────┬──────────────────────────┘
                │
                ▼

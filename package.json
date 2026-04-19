@@ -34,6 +34,8 @@
     "quality:preflight": "node ./scripts/quality-preflight.mjs",
     "quality:preflight:full": "node ./scripts/quality-preflight.mjs --full",
     "typecheck": "turbo run typecheck",
+    "openapi:generate": "npm --workspace @partner/api run openapi:generate",
+    "openapi:check": "npm run openapi:generate && git diff --exit-code -- packages/api-contract/openapi.json",
     "lint-staged": "lint-staged",
     "seed": "npm --workspace @partner/api run prisma:seed",
     "gulp:images": "gulp images",

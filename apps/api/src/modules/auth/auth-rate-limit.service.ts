@@ -167,7 +167,7 @@ export class AuthRateLimitService {
       return
     }
 
-    const ready = await isReady.call(this.cache)
+    const ready = await Promise.resolve(isReady.call(this.cache))
 
     if (ready) {
       return

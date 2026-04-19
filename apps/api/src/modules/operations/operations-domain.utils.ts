@@ -9,8 +9,8 @@ import {
 } from '@prisma/client'
 import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import type { OperationsLiveResponse } from './operations.types'
+import type { OperationsResponseOptionsDto } from './operations.schemas'
 
 type OperationsSnapshotBuilder = {
   buildLiveSnapshot(

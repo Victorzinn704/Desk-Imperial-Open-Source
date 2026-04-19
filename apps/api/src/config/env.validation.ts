@@ -3,8 +3,7 @@ import { getRedisUrlKeys, hasRedisUrl } from '../common/utils/redis-url.util'
 type EnvShape = Record<string, string | undefined>
 
 const BOOLEAN_KEYS = [
-  'ENABLE_SWAGGER',
-  'SWAGGER_ALLOW_IN_PRODUCTION',
+  'ENABLE_API_DOCS',
   'PORTFOLIO_EMAIL_FALLBACK',
   'COOKIE_SECURE',
   'REGISTRATION_GEOCODING_STRICT',

@@ -35,21 +35,25 @@ export async function requireOwnedCashSession(
     includeMovements?: boolean
   },
 ) {
-  const session = await transaction.cashSession.findFirst({
+  const sessionQuery = {
     where: {
       id: cashSessionId,
       companyOwnerId: workspaceOwnerUserId,
     },
-    include: options?.includeMovements
+    ...(options?.includeMovements
       ? {
-          movements: {
-            orderBy: {
-              createdAt: 'asc',
+          include: {
+            movements: {
+              orderBy: {
+                createdAt: 'asc' as const,
+              },
             },
           },
         }
-      : undefined,
-  })
+      : {}),
+  }
+
+  const session = await transaction.cashSession.findFirst(sessionQuery)
 
   if (!session) {
     throw new NotFoundException('Caixa nao encontrado para esta empresa.')

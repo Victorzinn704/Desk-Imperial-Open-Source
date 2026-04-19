@@ -9,26 +9,28 @@ import { CashSessionService } from './cash-session.service'
 import { ComandaService } from './comanda.service'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { AssignComandaDto } from './dto/assign-comanda.dto'
-import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
-import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import type { CloseComandaDto } from './dto/close-comanda.dto'
-import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import type { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
 import { type MesaRecord, toMesaRecord } from './operations.types'
-import type { CreateMesaDto } from './dto/create-mesa.dto'
-import type { UpdateMesaDto } from './dto/update-mesa.dto'
 import { resolveBusinessDate } from './operations-domain.utils'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
+import type {
+  AddComandaItemDto,
+  AddComandaItemsBatchDto,
+  AssignComandaDto,
+  CloseCashClosureDto,
+  CloseCashSessionDto,
+  CloseComandaDto,
+  CreateCashMovementDto,
+  CreateMesaDto,
+  GetOperationsLiveQueryDto,
+  OpenCashSessionDto,
+  OpenComandaDto,
+  OperationsResponseOptionsDto,
+  ReplaceComandaDto,
+  UpdateComandaStatusDto,
+  UpdateKitchenItemStatusDto,
+  UpdateMesaDto,
+} from './operations.schemas'
 
 @Injectable()
 export class OperationsService {
@@ -47,11 +49,12 @@ export class OperationsService {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
     const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
+    const snapshotOptions = {
+      ...(query.includeCashMovements !== undefined ? { includeCashMovements: query.includeCashMovements } : {}),
+      ...(query.compactMode !== undefined ? { compactMode: query.compactMode } : {}),
+    }
 
-    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
-      includeCashMovements: query.includeCashMovements,
-      compactMode: query.compactMode,
-    })
+    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, snapshotOptions)
   }
 
   async getKitchenView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsKitchenResponse> {

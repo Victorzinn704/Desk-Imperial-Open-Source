@@ -76,7 +76,7 @@ export class MailerService {
       supportEmail: this.getSupportEmail(),
       fullName: params.fullName,
       changedAt: params.changedAt,
-      ipAddress: params.ipAddress,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
     })
 
     return this.sendTransactionalEmail({
@@ -101,8 +101,8 @@ export class MailerService {
       supportEmail: this.getSupportEmail(),
       fullName: params.fullName,
       occurredAt: params.occurredAt,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
+      ...(params.userAgent !== undefined ? { userAgent: params.userAgent } : {}),
     })
 
     return this.sendTransactionalEmail({
@@ -130,9 +130,9 @@ export class MailerService {
       fullName: params.fullName,
       occurredAt: params.occurredAt,
       attemptCount: params.attemptCount,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
-      locationSummary: params.locationSummary,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
+      ...(params.userAgent !== undefined ? { userAgent: params.userAgent } : {}),
+      ...(params.locationSummary !== undefined ? { locationSummary: params.locationSummary } : {}),
     })
 
     return this.sendTransactionalEmail({

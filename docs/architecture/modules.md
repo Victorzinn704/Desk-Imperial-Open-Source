@@ -1,15 +1,22 @@
 # Módulos de Domínio — Desk Imperial API
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
+**Versão:** 1.1  
+**Última atualização:** 2026-04-17  
 **Localização:** `apps/api/src/modules/`
 
 ---
 
 ## Visão geral
 
-A API do Desk Imperial é organizada em 16 módulos de domínio, cada um com responsabilidade clara e isolada.
-Todos seguem o padrão NestJS: Module → Controller → Service → DTO.
+A API do Desk Imperial é organizada em módulos de domínio com responsabilidade clara e isolada.
+
+Estado atual da borda HTTP:
+
+- prefixo global ativo: `/api/v1`
+- modulos migrados usam `ZodValidationPipe` + schemas Zod
+- modulos ainda nao migrados permanecem em modo legado durante a transicao
+- contratos compartilhados entre workspaces vivem em `packages/types`
+- a superficie documentada gera `packages/api-contract/openapi.json`
 
 Princípio central: **todo acesso a dado de negócio filtra por `companyOwnerId`**. Nenhum módulo retorna dados de outro workspace.
 

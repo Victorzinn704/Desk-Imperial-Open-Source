@@ -203,7 +203,7 @@ function buildFetchError(
 
 function buildApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${API_BASE_URL}/api${normalizedPath}`
+  return `${API_BASE_URL}/api/v1${normalizedPath}`
 }
 
 export function withOperationsOptions(path: string, options?: { includeSnapshot?: boolean }) {

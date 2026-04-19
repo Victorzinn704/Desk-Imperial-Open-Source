@@ -5,6 +5,7 @@ import { CheckCircle2, ChefHat, Clock, Flame, LoaderCircle, TriangleAlert, WifiO
 import { memo, useMemo, useState } from 'react'
 import type { OperationsKitchenItemRecord, OperationsKitchenResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
+import type { LabStatusTone } from '@/components/design-lab/lab-primitives'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 
 interface KitchenOrdersViewProps {
@@ -22,8 +23,8 @@ const STATUS_CONFIG: Record<
   {
     label: string
     Icon: React.FC<{ className?: string; strokeWidth?: number }>
-    color: string
-    bg: string
+    tone: LabStatusTone
+    colorVar: string
     nextStatus: 'IN_PREPARATION' | 'READY' | 'DELIVERED'
     nextLabel: string
   }
@@ -31,27 +32,58 @@ const STATUS_CONFIG: Record<
   QUEUED: {
     label: 'Na fila',
     Icon: Clock,
-    color: '#fbbf24',
-    bg: 'rgba(251,191,36,0.1)',
+    tone: 'warning',
+    colorVar: 'var(--warning)',
     nextStatus: 'IN_PREPARATION',
     nextLabel: 'Iniciar preparo',
   },
   IN_PREPARATION: {
     label: 'Em preparo',
     Icon: Flame,
-    color: '#fb923c',
-    bg: 'rgba(251,146,60,0.1)',
+    tone: 'info',
+    colorVar: 'var(--accent)',
     nextStatus: 'READY',
     nextLabel: 'Marcar como pronto',
   },
   READY: {
     label: 'Pronto',
     Icon: CheckCircle2,
-    color: '#34d399',
-    bg: 'rgba(52,211,153,0.1)',
+    tone: 'success',
+    colorVar: 'var(--success)',
     nextStatus: 'DELIVERED',
     nextLabel: 'Entregar',
   },
+}
+
+function getTonePanelStyle(tone: LabStatusTone) {
+  switch (tone) {
+    case 'success':
+      return {
+        borderColor: 'color-mix(in srgb, var(--success) 22%, var(--border))',
+        backgroundColor: 'color-mix(in srgb, var(--success) 8%, var(--surface))',
+      }
+    case 'warning':
+      return {
+        borderColor: 'color-mix(in srgb, var(--warning) 22%, var(--border))',
+        backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+      }
+    case 'danger':
+      return {
+        borderColor: 'color-mix(in srgb, var(--danger) 22%, var(--border))',
+        backgroundColor: 'color-mix(in srgb, var(--danger) 8%, var(--surface))',
+      }
+    case 'info':
+      return {
+        borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--border))',
+        backgroundColor: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
+      }
+    case 'neutral':
+    default:
+      return {
+        borderColor: 'var(--border)',
+        backgroundColor: 'color-mix(in srgb, var(--surface-muted) 34%, var(--surface))',
+      }
+  }
 }
 
 function elapsedLabel(isoDate: string | null): string {
@@ -75,13 +107,14 @@ function KitchenCard({
   const tab = item.kitchenStatus as KitchenTab
   const config = STATUS_CONFIG[tab]
   const elapsed = elapsedLabel(item.kitchenQueuedAt)
+  const tonePanelStyle = getTonePanelStyle(config.tone)
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] p-4" style={{ background: config.bg }}>
+    <div className="rounded-2xl border p-4" style={tonePanelStyle}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: config.color }}>
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: config.colorVar }}>
               Mesa {item.mesaLabel}
             </span>
             {elapsed && <span className="text-[10px] text-[var(--text-soft)]">{elapsed}</span>}
@@ -95,8 +128,8 @@ function KitchenCard({
           className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition-opacity active:opacity-70 disabled:opacity-40"
           disabled={isBusy}
           style={{
-            background: `rgba(${config.color === '#fbbf24' ? '251,191,36' : config.color === '#fb923c' ? '251,146,60' : '52,211,153'}, 0.2)`,
-            color: config.color,
+            ...tonePanelStyle,
+            color: config.colorVar,
           }}
           type="button"
           onClick={() => onAdvance(item.itemId, config.nextStatus)}
@@ -201,11 +234,17 @@ export function KitchenOrdersView({
   return (
     <div className="flex flex-col h-full">
       {errorMessage ? (
-        <div className="mx-4 mt-4 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+        <div
+          className="mx-4 mt-4 rounded-2xl border px-4 py-3 text-xs text-[var(--danger)]"
+          style={getTonePanelStyle('danger')}
+        >
           {errorMessage}
         </div>
       ) : isOffline ? (
-        <div className="mx-4 mt-4 rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+        <div
+          className="mx-4 mt-4 rounded-2xl border px-4 py-3 text-xs text-[var(--warning)]"
+          style={getTonePanelStyle('warning')}
+        >
           Você está offline. A fila da cozinha pode estar desatualizada até a reconexão.
         </div>
       ) : null}
@@ -220,9 +259,9 @@ export function KitchenOrdersView({
               className="flex-1 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
               key={tab}
               style={{
-                background: isActive ? config.bg : 'var(--surface)',
-                color: isActive ? config.color : 'var(--text-soft, #7a8896)',
-                border: `1px solid ${isActive ? `${config.color}40` : 'var(--border)'}`,
+                ...(isActive ? getTonePanelStyle(config.tone) : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }),
+                color: isActive ? config.colorVar : 'var(--text-soft)',
+                border: `1px solid ${isActive ? 'transparent' : 'var(--border)'}`,
               }}
               type="button"
               onClick={() => setActiveTab(tab)}
@@ -231,7 +270,7 @@ export function KitchenOrdersView({
               {count > 0 && (
                 <span
                   className="ml-1.5 inline-flex size-4 items-center justify-center rounded-full text-[10px]"
-                  style={{ background: config.color, color: '#000' }}
+                  style={{ background: config.colorVar, color: 'var(--on-accent)' }}
                 >
                   {count}
                 </span>
@@ -242,7 +281,7 @@ export function KitchenOrdersView({
       </div>
 
       {error && (
-        <div className="mx-4 mb-3 rounded-xl bg-[rgba(248,113,113,0.08)] px-4 py-2 text-sm text-[#fca5a5] border border-[rgba(248,113,113,0.2)]">
+        <div className="mx-4 mb-3 rounded-xl border px-4 py-2 text-sm text-[var(--danger)]" style={getTonePanelStyle('danger')}>
           {error}
           <button
             className="ml-3 text-xs font-semibold underline opacity-70"

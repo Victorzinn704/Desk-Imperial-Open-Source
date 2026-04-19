@@ -10,11 +10,6 @@ import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import {
   toCashSessionRecord,
@@ -30,6 +25,13 @@ import {
 } from './operations-domain.utils'
 import { publishCashRealtime, publishCashOpenedRealtime } from './cash-realtime-publish.utils'
 import { buildCashSessionResponse, buildCashMovementResponse, buildCashClosureResponse } from './cash-response.utils'
+import type {
+  CloseCashClosureDto,
+  CloseCashSessionDto,
+  CreateCashMovementDto,
+  OpenCashSessionDto,
+  OperationsResponseOptionsDto,
+} from './operations.schemas'
 
 @Injectable()
 export class CashSessionService {

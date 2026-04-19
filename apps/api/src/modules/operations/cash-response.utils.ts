@@ -1,11 +1,11 @@
 import type { OperationsHelpersService } from './operations-helpers.service'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { buildOptionalOperationsSnapshot } from './operations-domain.utils'
 import {
   toCashMovementRecord,
   toCashSessionRecord,
   toClosureRecord,
 } from './operations.types'
+import type { OperationsResponseOptionsDto } from './operations.schemas'
 
 export async function buildCashSessionResponse(
   helpers: OperationsHelpersService,
