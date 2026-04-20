@@ -1,4 +1,3 @@
-import { UserRound } from 'lucide-react'
 import type { ProfileFormValues } from '@/lib/validation'
 import type { AuthUser } from '@/lib/api'
 import { AccountProfileCard } from '@/components/dashboard/account-profile-card'
@@ -31,29 +30,24 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
   const companyLocation = formatCompanyLocation(user)
 
   return (
-    <>
-      <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] text-[var(--accent)]">
-            <UserRound className="size-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Conta e identidade</p>
-            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">Dados principais da operação</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Nome da empresa, responsável e moeda principal passam a ser geridos dentro do mesmo ambiente do dashboard.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
+        <div className="border-b border-[var(--border)] pb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Identidade ativa
+          </p>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
+            Nome exibido, responsável e localização principal da conta.
+          </p>
         </div>
-
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <SettingsInfoCard hint="Identidade principal da conta" label="Responsável" value={user.fullName} />
           <SettingsInfoCard hint="Identificador seguro de acesso" label="Email" value={user.email} />
           <SettingsInfoCard hint={companyLocation.helper} label="Localização" value={companyLocation.label} />
         </div>
-      </article>
+      </section>
 
       <AccountProfileCard error={profileError} loading={profileLoading} user={user} onSubmit={onProfileSubmit} />
-    </>
+    </div>
   )
 }

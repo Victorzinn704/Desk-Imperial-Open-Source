@@ -44,7 +44,7 @@ function RecentAccessSummary({
   }
 
   return (
-    <div className="mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
+    <div className="mt-3 border-l-2 border-[var(--border)] pl-4">
       <p className="text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(latest)}</p>
       <p className="mt-1 text-xs text-[var(--text-soft)]">
         {new Intl.DateTimeFormat('pt-BR', {
@@ -285,19 +285,20 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-      <article className="imperial-card p-7">
+    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <KeyRound className="size-5" />
           </span>
           <div>
-            <p className="text-sm text-[var(--text-soft)]">PIN administrativo</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">PIN administrativo</p>
             <h3 className="text-xl font-semibold text-[var(--text-primary)]">Controle fino das ações sensíveis</h3>
           </div>
         </div>
 
-        <div className="mt-6 rounded-[20px] border border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)] p-5">
+        <div className="mt-6 border-t border-[var(--border)] pt-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">Estado atual</p>
@@ -405,29 +406,30 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
             </div>
           )}
         </div>
-      </article>
+        </article>
 
-      <article className="imperial-card p-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Recuperação e revisão</p>
-        <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Fluxo seguro da conta principal</h3>
-        <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-          A troca definitiva de senha continua via validação segura por email enquanto o painel administrativo interno é
-          endurecido.
-        </p>
+        <aside className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Recuperação e revisão
+          </p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+            Recuperação de senha por email e leitura recente do acesso mais novo da conta.
+          </p>
 
-        <div className="mt-6">
-          <Link href="/recuperar-senha">
-            <Button fullWidth type="button" variant="secondary">
-              Abrir recuperação por email
-            </Button>
-          </Link>
-        </div>
+          <div className="mt-6">
+            <Link href="/recuperar-senha">
+              <Button fullWidth type="button" variant="secondary">
+                Abrir recuperação por email
+              </Button>
+            </Link>
+          </div>
 
-        <div className="mt-6 border-t border-[var(--border)] pt-6">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Leitura recente</p>
-          <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
-        </div>
-      </article>
-    </div>
+          <div className="mt-6 border-t border-[var(--border)] pt-6">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Leitura recente</p>
+            <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
+          </div>
+        </aside>
+      </div>
+    </section>
   )
 }

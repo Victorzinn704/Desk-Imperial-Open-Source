@@ -11,11 +11,13 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
+import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import {
-  LabMetric,
+  LabFactPill,
   LabPageHeader,
   LabPanel,
+  LabSignalRow,
   LabStatusPill,
   type LabStatusTone,
 } from '@/components/design-lab/lab-primitives'
@@ -152,7 +154,7 @@ export function DesignLabOverviewEnvironment() {
       <LabPageHeader
         eyebrow="visão geral da operação"
         title="Overview"
-        description="Resumo executivo com leitura de receita, resultado, ritmo operacional e alertas comerciais sem o peso de widgets genéricos."
+        description="Receita, lucro, ticket e alertas."
         meta={
           <div className="space-y-3">
             <LabMetaRow
@@ -190,81 +192,14 @@ export function DesignLabOverviewEnvironment() {
         </div>
       </LabPageHeader>
 
-      <div className="grid gap-4 xl:grid-cols-4">
-        <LabMetric
-          className="xl:col-span-2"
-          delta={`${snapshot.revenueGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.revenueGrowth)}`}
-          deltaTone={revenueTone}
-          hint={`Meta projetada ${formatCurrency(targetRevenue, snapshot.displayCurrency as 'BRL')}. ${targetProgress >= 100 ? 'A meta já foi coberta pelo ritmo atual.' : `Faltam ${formatCurrency(dailyRevenueNeed, snapshot.displayCurrency as 'BRL')} por dia útil para fechar o mês com folga.`}`}
-          icon={Wallet}
-          label="Receita do mês"
-          progress={targetProgress}
-          value={formatCurrency(snapshot.currentRevenue, snapshot.displayCurrency as 'BRL')}
-        />
-        <LabMetric
-          delta={`${snapshot.profitGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.profitGrowth)}`}
-          deltaTone={snapshot.profitGrowth >= 0 ? 'success' : 'danger'}
-          hint="Resultado líquido acumulado no recorte atual."
-          icon={ArrowUpRight}
-          label="Lucro do mês"
-          value={formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL')}
-        />
-        <LabMetric
-          delta={snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens` : 'Sem alerta'}
-          deltaTone={stockTone}
-          hint={snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos já converteram em caixa.` : 'Ainda sem fechamento no período.'}
-          icon={Activity}
-          label="Pedidos fechados"
-          value={String(snapshot.completedOrders)}
-        />
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_360px] xl:items-start">
-        <ChartOrError finance={finance} financeError={financeError} isLoading={financeQuery.isLoading} surface="lab" />
-        <LabPanel
-          title="Radar comercial"
-          subtitle="Leitura rápida para decidir o próximo movimento do turno"
-          padding="md"
-        >
-          <div className="space-y-4">
-            <LabSignalRow
-              label="Ticket médio"
-              note="Valor médio por pedido fechado."
-              tone="info"
-              value={formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
-            />
-            <LabSignalRow
-              label="Margem média"
-              note="Qualidade do mix vendido neste período."
-              tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}
-              value={formatPercent(snapshot.averageMargin)}
-            />
-            <LabSignalRow
-              label="Produto líder"
-              note="Item com maior tração comercial até agora."
-              tone="neutral"
-              value={snapshot.topProductName ?? 'Sem destaque claro'}
-            />
-            <LabSignalRow
-              label="Próxima ação"
-              note="Sinal operacional derivado do estado atual."
-              tone={snapshot.lowStockItems > 0 ? 'warning' : 'success'}
-              value={snapshot.lowStockItems > 0 ? 'Repor insumos do campeão de vendas' : 'Sustentar giro do item que lidera o caixa'}
-            />
-          </div>
-        </LabPanel>
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-        <OverviewRecentOrders
-          displayCurrency={snapshot.displayCurrency as 'BRL'}
-          isLoading={financeQuery.isLoading}
-          orders={finance?.recentOrders ?? []}
-          summaryText={snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos` : null}
-          surface="lab"
-        />
-        <OverviewTopProducts finance={finance} isLoading={financeQuery.isLoading} surface="lab" />
-      </div>
+      <OverviewExecutivePanel
+        dailyRevenueNeed={dailyRevenueNeed}
+        finance={finance}
+        isLoading={financeQuery.isLoading}
+        snapshot={snapshot}
+        targetProgress={targetProgress}
+        targetRevenue={targetRevenue}
+      />
     </section>
   )
 }
@@ -286,30 +221,6 @@ function LabMetaRow({
   )
 }
 
-function LabSignalRow({
-  label,
-  note,
-  value,
-  tone,
-}: Readonly<{
-  label: string
-  note: string
-  value: string
-  tone: LabStatusTone
-}>) {
-  return (
-    <article className="rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase text-[var(--lab-fg-muted)]">{label}</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--lab-fg-soft)]">{note}</p>
-        </div>
-        <span className={`max-w-[42%] text-right text-sm font-medium leading-6 ${labToneClass(tone)}`}>{value}</span>
-      </div>
-    </article>
-  )
-}
-
 function labToneClass(tone: LabStatusTone) {
   return {
     neutral: 'text-[var(--lab-fg)]',
@@ -318,6 +229,180 @@ function labToneClass(tone: LabStatusTone) {
     warning: 'text-[var(--lab-warning)]',
     danger: 'text-[var(--lab-danger)]',
   }[tone]
+}
+
+function OverviewExecutivePanel({
+  dailyRevenueNeed,
+  finance,
+  isLoading,
+  snapshot,
+  targetProgress,
+  targetRevenue,
+}: Readonly<{
+  dailyRevenueNeed: number
+  finance: FinanceSummaryResponse | undefined
+  isLoading: boolean
+  snapshot: OverviewSnapshot
+  targetProgress: number
+  targetRevenue: number
+}>) {
+  const targetDeltaLabel =
+    targetProgress >= 100
+      ? 'meta coberta pelo ritmo atual'
+      : `faltam ${formatCurrency(dailyRevenueNeed, snapshot.displayCurrency as 'BRL')} por dia útil`
+  const revenueTone: LabStatusTone = snapshot.revenueGrowth >= 0 ? 'success' : 'danger'
+  const stockTone: LabStatusTone = snapshot.lowStockItems > 0 ? 'warning' : 'success'
+
+  return (
+    <div className="space-y-5">
+      <section className="space-y-3">
+        <OverviewMetricBoard
+          items={[
+            {
+              label: 'receita do mês',
+              value: formatCurrency(snapshot.currentRevenue, snapshot.displayCurrency as 'BRL'),
+              description: `${snapshot.revenueGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.revenueGrowth)} vs mês anterior`,
+              tone: revenueTone,
+            },
+            {
+              label: 'lucro do mês',
+              value: formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL'),
+              description: `${snapshot.profitGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.profitGrowth)} no lucro líquido`,
+              tone: snapshot.profitGrowth >= 0 ? 'success' : 'danger',
+            },
+            {
+              label: 'pedidos fechados',
+              value: String(snapshot.completedOrders),
+              description:
+                snapshot.completedOrders > 0 ? 'pedidos já consolidados em caixa' : 'ainda sem fechamento no período',
+              tone: 'info',
+            },
+            {
+              label: 'margem média',
+              value: formatPercent(snapshot.averageMargin),
+              description:
+                snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens pedem reposição` : 'sem alerta crítico de estoque',
+              tone: stockTone,
+            },
+          ]}
+        />
+
+        <div className="flex flex-wrap gap-2">
+          <LabFactPill label="meta projetada" value={formatCurrency(targetRevenue, snapshot.displayCurrency as 'BRL')} />
+          <LabFactPill label="ritmo diário" value={targetDeltaLabel} />
+          <LabFactPill
+            label="ticket médio"
+            value={formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
+          />
+          {snapshot.topProductName ? <LabFactPill label="produto líder" value={snapshot.topProductName} /> : null}
+        </div>
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] xl:items-start">
+        <SalesPerformanceCard finance={finance} isLoading={isLoading} surface="lab" />
+
+        <LabPanel
+          action={<LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>}
+          padding="md"
+          title="Radar comercial"
+        >
+          <OverviewRadarSection
+            finance={finance}
+            snapshot={snapshot}
+          />
+        </LabPanel>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] xl:items-start">
+        <OverviewRecentOrders
+          displayCurrency={snapshot.displayCurrency as 'BRL'}
+          isLoading={isLoading}
+          orders={finance?.recentOrders ?? []}
+          summaryText={snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos` : null}
+          surface="lab"
+        />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} surface="lab" />
+      </div>
+    </div>
+  )
+}
+
+function OverviewMetricBoard({
+  items,
+}: Readonly<{
+  items: Array<{
+    label: string
+    value: string
+    description: string
+    tone: LabStatusTone
+  }>
+}>) {
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-[var(--lab-border)] bg-[var(--lab-surface)]">
+      <div className="grid gap-px bg-[var(--lab-border)] sm:grid-cols-2 xl:grid-cols-4">
+        {items.map((item) => (
+          <article className="min-w-0 bg-[var(--lab-surface-raised)] px-5 py-5" key={item.label}>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{item.label}</p>
+            <p className="mt-3 break-words text-[clamp(1.9rem,2.8vw,2.6rem)] font-semibold leading-none text-[var(--lab-fg)]">
+              {item.value}
+            </p>
+            <p className={`mt-3 text-xs leading-5 ${labToneClass(item.tone)}`}>{item.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function OverviewRadarSection({
+  finance,
+  snapshot,
+}: Readonly<{
+  finance: FinanceSummaryResponse | undefined
+  snapshot: OverviewSnapshot
+}>) {
+  const channels = finance?.salesByChannel.slice(0, 4) ?? []
+
+  return (
+    <div className="space-y-4">
+      <LabSignalRow
+        label="Ticket médio"
+        note="Valor médio por pedido fechado."
+        tone="info"
+        value={formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
+      />
+      <LabSignalRow
+        label="Margem média"
+        note="Qualidade do mix vendido neste período."
+        tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}
+        value={formatPercent(snapshot.averageMargin)}
+      />
+      <LabSignalRow
+        label="Produto líder"
+        note="Item com maior tração comercial até agora."
+        tone="neutral"
+        value={snapshot.topProductName ?? 'Sem destaque claro'}
+      />
+      <LabSignalRow
+        label="Próxima ação"
+        note="Sinal operacional derivado do estado atual."
+        tone={snapshot.lowStockItems > 0 ? 'warning' : 'success'}
+        value={snapshot.lowStockItems > 0 ? 'Repor insumos do campeão de vendas' : 'Sustentar giro do item que lidera o caixa'}
+      />
+      {channels.length > 0 ? (
+        <div className="border-t border-dashed border-[var(--lab-border)] pt-4">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">Canais no radar</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {channels.map((channel) => (
+              <LabStatusPill key={channel.channel} tone="neutral">
+                {channel.channel}
+              </LabStatusPill>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function daysLeftInMonth() {
@@ -902,11 +987,7 @@ function ChartOrError({
   if (financeError) {
     if (surface === 'lab') {
       return (
-        <LabPanel
-          title="Receita e lucro"
-          subtitle="Não foi possível carregar a série histórica deste recorte."
-          padding="md"
-        >
+        <LabPanel title="Receita e lucro" padding="md">
           <p className="text-sm leading-6 text-[var(--lab-danger)]">{financeError}</p>
         </LabPanel>
       )

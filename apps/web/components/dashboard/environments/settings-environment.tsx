@@ -5,10 +5,14 @@ import { useRouter } from 'next/navigation'
 import { Cog } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import type { ProfileFormValues } from '@/lib/validation'
-import { LabPageHeader, LabStatusPill } from '@/components/design-lab/lab-primitives'
+import { LabMiniStat, LabPageHeader, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
-import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
+import {
+  dashboardSettingsNav,
+  type DashboardSectionId,
+  type DashboardSettingsSectionId,
+} from '@/components/dashboard/dashboard-navigation'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 
@@ -38,6 +42,7 @@ export function SettingsEnvironment({
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const documentTitles = new Map(consentQuery.data?.documents.map((doc) => [doc.key, doc.title]) ?? [])
   const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error : undefined
+  const enabledCookiePreferences = Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
 
   const handleLogout = () => {
     _logoutMutation.mutate(undefined, {
@@ -57,12 +62,15 @@ export function SettingsEnvironment({
       compliance: 'Compliance',
       session: 'Sessão',
     }[activeSettingsSection] ?? 'Conta'
+  const activeTabDescription =
+    dashboardSettingsNav.find((item) => item.id === activeSettingsSection)?.description ??
+    'Ajustes centrais da conta e do workspace.'
 
   return (
     <section className="space-y-6">
       {presentation === 'lab' ? (
         <LabPageHeader
-          description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
+          description="Conta, segurança, preferências e conformidade do workspace num fluxo mais direto."
           eyebrow="Conta e governança"
           meta={
             <div className="space-y-3">
@@ -74,13 +82,20 @@ export function SettingsEnvironment({
                 <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">perfil</span>
                 <span className="text-sm font-medium text-[var(--lab-fg)]">{user.fullName}</span>
               </div>
+              <p className="text-xs leading-5 text-[var(--lab-fg-soft)]">{activeTabDescription}</p>
             </div>
           }
-          title="Configurações do workspace"
-        />
+          title="Configuração do workspace"
+        >
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <LabMiniStat label="aba ativa" value={activeTabLabel} />
+            <LabMiniStat label="aceites" value={String(legalAcceptances.length)} />
+            <LabMiniStat label="cookies opcionais" value={`${enabledCookiePreferences}/2`} />
+          </div>
+        </LabPageHeader>
       ) : (
         <DashboardSectionHeading
-          description="Conta, segurança, preferências locais e conformidade agora vivem em um único ambiente administrativo."
+          description="Conta, segurança e conformidade."
           eyebrow="Conta e governança"
           icon={Cog}
           title="Configurações do workspace"
@@ -97,6 +112,7 @@ export function SettingsEnvironment({
         preferenceMutation={preferenceMutation}
         profileError={profileMutationError?.message}
         profileLoading={updateProfileMutation.isPending}
+        presentation={presentation}
         user={user}
         onLogout={handleLogout}
         onNavigateSection={onNavigateSection}

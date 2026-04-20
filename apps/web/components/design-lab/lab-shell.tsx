@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -30,6 +29,8 @@ import {
 } from 'lucide-react'
 import { fetchCurrentUser } from '@/lib/api'
 import { useDashboardLogout, useDashboardMutations } from '@/components/dashboard/hooks'
+import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-navigation'
+import { BrandMark } from '@/components/shared/brand-mark'
 import { cn } from '@/lib/utils'
 
 type Role = 'OWNER' | 'STAFF'
@@ -65,10 +66,6 @@ const NAV_OWNER = [
     group: 'Inteligência',
     items: [{ id: 'ia', label: 'IA', href: '/design-lab/ia', icon: Bot }],
   },
-  {
-    group: 'Sistema',
-    items: [{ id: 'config', label: 'Config', href: '/design-lab/config', icon: Settings }],
-  },
 ]
 
 const NAV_STAFF = [
@@ -80,10 +77,6 @@ const NAV_STAFF = [
       { id: 'caixa', label: 'Caixa', href: '/design-lab/caixa', icon: Landmark },
       { id: 'cozinha', label: 'Cozinha (KDS)', href: '/design-lab/cozinha', icon: ChefHat },
     ],
-  },
-  {
-    group: 'Sistema',
-    items: [{ id: 'config', label: 'Config', href: '/design-lab/config', icon: Settings }],
   },
 ]
 
@@ -141,8 +134,22 @@ export function LabShell({ children }: { children: React.ReactNode }) {
   const role: Role = currentUser?.role === 'STAFF' ? 'STAFF' : 'OWNER'
   const navigation = role === 'STAFF' ? NAV_STAFF : NAV_OWNER
   const isDark = mounted ? resolvedTheme !== 'light' : true
+  const configHref = buildDesignLabConfigHref('account')
+  const isConfigRoute = pathname === '/design-lab/config'
 
   const activeNavigation = useMemo(() => {
+    if (pathname === '/design-lab/config') {
+      return {
+        groupLabel: 'Sistema',
+        item: {
+          id: 'config',
+          label: 'Config',
+          href: configHref,
+          icon: Settings,
+        },
+      }
+    }
+
     for (const group of navigation) {
       const activeItem = group.items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
       if (activeItem) {
@@ -157,7 +164,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
       groupLabel: 'Desk Imperial',
       item: navigation[0]?.items[0] ?? null,
     }
-  }, [navigation, pathname])
+  }, [configHref, navigation, pathname])
 
   const accountLabel = currentUser?.fullName?.trim() || 'Conta'
   const accountMeta = currentUser?.role === 'STAFF' ? 'Operação' : 'Administração'
@@ -171,8 +178,18 @@ export function LabShell({ children }: { children: React.ReactNode }) {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.add('design-lab-shell-open')
+    document.body.classList.add('design-lab-shell-open')
+
+    return () => {
+      document.documentElement.classList.remove('design-lab-shell-open')
+      document.body.classList.remove('design-lab-shell-open')
+    }
+  }, [])
+
   return (
-    <div className={cn('lab-root flex h-screen overflow-hidden', isDark ? 'lab-dark' : 'lab-light')} data-lab>
+    <div className={cn('lab-root flex h-dvh min-h-dvh overflow-hidden', isDark ? 'lab-dark' : 'lab-light')} data-lab>
       {/* Mobile overlay */}
       {mobileOpen && (
         <button
@@ -195,12 +212,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
       >
         {/* Logo */}
         <div className="lab-sidebar__header">
-          <Link href="/design-lab/overview" className="lab-brand">
-            <span className="lab-brand__icon">
-              <Image alt="" aria-hidden className="lab-brand__image" height={18} src="/favicon.svg" width={18} />
-            </span>
-            {!collapsed && <span className="lab-brand__name">Desk Imperial</span>}
-          </Link>
+          <BrandMark href="/design-lab/overview" presentation="lab" wordmark={collapsed ? 'hidden' : 'always'} />
           {!collapsed && (
             <button
               className="lab-icon-btn xl:flex hidden"
@@ -260,12 +272,21 @@ export function LabShell({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <div className="lab-sidebar__footer">
-          <Link className={cn('lab-user', collapsed && 'lab-user--compact')} href="/design-lab/config">
+          <Link
+            aria-label="Abrir configurações"
+            className={cn('lab-user', collapsed && 'lab-user--compact', isConfigRoute && 'lab-user--active')}
+            href={configHref}
+            title="Abrir configurações"
+          >
             <span className="lab-user__avatar">{accountInitials}</span>
             {!collapsed && (
               <div className="lab-user__info">
                 <span className="lab-user__name">{accountLabel}</span>
                 <span className="lab-user__role">{accountMeta}</span>
+                <span className="lab-user__config">
+                  <Settings className="size-3.5" />
+                  Configurações
+                </span>
               </div>
             )}
           </Link>
@@ -303,7 +324,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
 
             {currentUser ? (
               <>
-                <Link className="lab-account-chip" href="/design-lab/config">
+                <Link className={cn('lab-account-chip', isConfigRoute && 'lab-account-chip--active')} href={configHref}>
                   <span className="lab-account-chip__avatar">{accountInitials}</span>
                   <span className="lab-account-chip__text">
                     <span className="lab-account-chip__name">{accountLabel}</span>

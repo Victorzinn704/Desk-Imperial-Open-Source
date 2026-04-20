@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction } from 'react'
-import { Bell, CalendarRange } from 'lucide-react'
+import { CalendarRange } from 'lucide-react'
 import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
 import { CheckboxField } from '@/components/shared/checkbox-field'
 import { SelectField } from '@/components/shared/select-field'
@@ -15,35 +15,17 @@ type PreferencesTabProps = Readonly<{
 
 export function PreferencesTab({ preferences, onNavigateSection, onPreferencesChange }: PreferencesTabProps) {
   return (
-    <>
-      <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(37,99,235,0.18)] bg-[rgba(37,99,235,0.08)] text-[var(--accent)]">
-            <Bell className="size-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Preferências do workspace
+    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
+          <div className="border-b border-[var(--border)] pb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Prioridade visual
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
-              Leitura visual e rotina da operação
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Essas preferências organizam o ambiente neste dispositivo sem interferir no núcleo crítico do sistema.
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
+              Ajustes locais de leitura para destacar o que mais importa no desktop deste dispositivo.
             </p>
           </div>
-        </div>
-      </article>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-        <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Painéis com prioridade
-          </p>
-          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
-            O que fica mais visível na leitura executiva
-          </h3>
-
           <div className="mt-6 grid gap-3">
             {(
               [
@@ -86,9 +68,13 @@ export function PreferencesTab({ preferences, onNavigateSection, onPreferencesCh
           </div>
         </article>
 
-        <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Agenda operacional</p>
-          <h3 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Atalhos da rotina comercial</h3>
+        <article className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Atalhos operacionais
+          </p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+            Superfícies ligadas à rotina comercial e persistência local destas preferências.
+          </p>
           <div className="mt-6 space-y-4">
             <SettingsInfoCard
               hint="A agenda comercial agora fica acessível como módulo dedicado do workspace."
@@ -110,6 +96,6 @@ export function PreferencesTab({ preferences, onNavigateSection, onPreferencesCh
           </div>
         </article>
       </div>
-    </>
+    </section>
   )
 }
