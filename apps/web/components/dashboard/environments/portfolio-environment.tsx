@@ -63,9 +63,10 @@ const saleModeMeta: Record<
   },
 }
 
-function buildProductPayload(values: ProductFormValues) {
+function buildProductPayload(values: ProductFormValues, existingProduct?: ProductRecord | null) {
   return {
     name: values.name,
+    barcode: values.barcode ?? (existingProduct?.barcode ? null : undefined),
     brand: values.brand,
     category: values.category,
     packagingClass: values.packagingClass,
@@ -96,7 +97,7 @@ function filterProducts(products: ProductRecord[], searchQuery: string) {
   }
 
   return products.filter((product) =>
-    [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
+    [product.name, product.barcode ?? '', product.brand ?? '', product.category, product.packagingClass].some((value) => {
       const normalizedValue = normalizeTextForSearch(value)
       return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
     }),
@@ -214,7 +215,7 @@ export function PortfolioEnvironment() {
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
-    const payload = buildProductPayload(values)
+    const payload = buildProductPayload(values, activeProductModal)
     if (activeProductModal) {
       updateProductMutation.mutate({ productId: activeProductModal.id, values: payload })
       return
@@ -643,14 +644,13 @@ function PortfolioActionPanel({
       padding="md"
       title="Fluxos imediatos"
     >
-      <div className="space-y-0">
+      <div className="grid gap-3 sm:grid-cols-2">
         <ActionLaunchCard
           icon={Plus}
           label="Cadastrar produto"
           statLabel="fluxo"
           statValue="novo item"
           onClick={onOpenProduct}
-          tone="neutral"
         />
         <ActionLaunchCard
           icon={ShoppingCart}
@@ -658,7 +658,6 @@ function PortfolioActionPanel({
           statLabel="canal"
           statValue="delivery"
           onClick={onOpenSale}
-          tone="info"
         />
       </div>
     </LabPanel>
@@ -670,38 +669,42 @@ function ActionLaunchCard({
   label,
   statLabel,
   statValue,
-  tone,
   onClick,
 }: Readonly<{
   icon: typeof Plus
   label: string
   statLabel: string
   statValue: string
-  tone: 'neutral' | 'info'
   onClick: () => void
 }>) {
   return (
     <button
-      className="flex w-full items-start gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 text-left transition last:border-b-0 hover:bg-[var(--lab-surface-hover)]"
+      className="group flex min-h-[120px] w-full flex-col justify-between rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4 text-left transition hover:border-[var(--lab-blue-border)] hover:bg-[var(--lab-surface-hover)]"
       type="button"
       onClick={onClick}
     >
-      <span
-        className={`inline-flex size-10 shrink-0 items-center justify-center rounded-xl border ${
-          tone === 'info'
-            ? 'border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)]'
-            : 'border-[var(--lab-border)] bg-[var(--lab-surface)] text-[var(--lab-fg)]'
-        }`}
-      >
-        <Icon className="size-4" />
+      <span className="flex items-start gap-3">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)] transition group-hover:border-[var(--lab-blue)]">
+          <Icon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-semibold text-[var(--lab-fg)]">{label}</span>
+          <span className="mt-1 block text-sm leading-5 text-[var(--lab-fg-soft)]">
+            {label === 'Cadastrar produto'
+              ? 'Abrir cadastro completo de item, estoque, margem e cozinha.'
+              : 'Abrir venda rápida com localização e contexto de delivery.'}
+          </span>
+        </span>
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-[var(--lab-fg)]">{label}</span>
-        <span className="mt-1 block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{statLabel}</span>
-      </span>
-      <span className="shrink-0 text-right">
-        <span className="block text-sm font-semibold text-[var(--lab-fg)]">{statValue}</span>
-        <span className="mt-1 block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">abrir</span>
+
+      <span className="flex items-end justify-between gap-3 border-t border-dashed border-[var(--lab-border)] pt-3">
+        <span>
+          <span className="block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{statLabel}</span>
+          <span className="mt-1 block text-sm font-semibold text-[var(--lab-fg)]">{statValue}</span>
+        </span>
+        <span className="inline-flex h-9 items-center rounded-xl border border-[var(--lab-blue)] bg-[var(--lab-blue)] px-3 text-sm font-medium text-white transition group-hover:bg-[color:color-mix(in_srgb,var(--lab-blue)_82%,white_18%)]">
+          Abrir
+        </span>
       </span>
     </button>
   )
@@ -884,15 +887,21 @@ function PortfolioProductsPanel({
     : 'Abra o cadastro do portfólio para criar os primeiros itens reais.'
 
   return (
-    <LabPanel
-      action={<PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />}
-      padding="md"
-      title="Produtos cadastrados"
-    >
+    <section className="space-y-4">
+      <div className="flex flex-col gap-3 border-b border-[var(--lab-border)] pb-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-[var(--lab-fg)]">Produtos cadastrados</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--lab-fg-soft)]">
+            Catálogo real com estoque, margem, EAN e ações operacionais sem encapsular a tabela em outro card.
+          </p>
+        </div>
+        <PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />
+      </div>
+
       {productsError ? <AlertMessage message={productsError} tone="danger" /> : null}
       {mutationError ? <AlertMessage message={mutationError.message} tone="danger" /> : null}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {filterOptions.map((option) => (
           <LabFilterChip
             active={catalogFilter === option.key}
@@ -905,7 +914,6 @@ function PortfolioProductsPanel({
       </div>
 
       <LabTable
-        className="mt-4"
         dense
         columns={[
           {
@@ -916,6 +924,7 @@ function PortfolioProductsPanel({
                 <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
                 <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
                   {product.category} · {product.brand ?? 'sem marca'} · {product.packagingClass}
+                  {product.barcode ? ` · EAN ${product.barcode}` : ''}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   <ProductRowTag tone={product.active ? 'success' : 'neutral'}>
@@ -1060,7 +1069,7 @@ function PortfolioProductsPanel({
         </span>
         <span>{formatCurrency(productsTotalsValue(tableRows, currency), currency as never)} em venda filtrada</span>
       </div>
-    </LabPanel>
+    </section>
   )
 }
 
@@ -1108,7 +1117,7 @@ function PortfolioSearchBox({
       <Search className="size-4 text-[var(--lab-fg-muted)]" />
       <input
         className="h-8 min-w-0 flex-1 bg-transparent text-sm text-[var(--lab-fg)] outline-none placeholder:text-[var(--lab-fg-muted)]"
-        placeholder="Buscar nome, marca ou classe"
+        placeholder="Buscar nome, EAN, marca ou classe"
         type="search"
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}

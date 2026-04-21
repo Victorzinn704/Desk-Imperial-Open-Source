@@ -4,12 +4,11 @@ import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
   calcSubtotal,
   calcTotal,
-  isEndedComandaStatus,
   type Comanda,
   type ComandaStatus,
   formatElapsed,
 } from '@/components/pdv/pdv-types'
-import { ChevronDown, ChevronRight, ClipboardList, Edit2, LoaderCircle, Plus, Trash2, TriangleAlert, WifiOff } from 'lucide-react'
+import { ChevronRight, ClipboardList, Edit2, LoaderCircle, Plus, Trash2, TriangleAlert, WifiOff } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { useQuery } from '@tanstack/react-query'
@@ -18,6 +17,7 @@ import { toPdvComanda } from '@/components/pdv/pdv-operations'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
+  currentEmployeeId?: string | null
   onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
   onAddItems?: (comanda: Comanda) => void
   onNewComanda?: () => void
@@ -29,6 +29,11 @@ interface MobileComandaListProps {
   isOffline?: boolean
   errorMessage?: string | null
   isBusy?: boolean
+  summary?: {
+    activeCount: number
+    preparingCount: number
+    readyCount: number
+  }
 }
 
 type StatusConfig = {
@@ -69,6 +74,7 @@ const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada' | 'cancelada'>, Sta
 
 interface ComandaCardProps {
   comanda: Comanda
+  currentEmployeeId?: string | null
   isFocused: boolean
   onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
   onAddItems?: (comanda: Comanda) => void
@@ -80,6 +86,7 @@ interface ComandaCardProps {
 
 export function MobileComandaList({
   comandas,
+  currentEmployeeId = null,
   onUpdateStatus,
   onAddItems,
   onNewComanda,
@@ -91,8 +98,9 @@ export function MobileComandaList({
   isOffline = false,
   errorMessage = null,
   isBusy = false,
+  summary,
 }: MobileComandaListProps) {
-  const active = useMemo(() => comandas.filter((c) => !isEndedComandaStatus(c.status)), [comandas])
+  const active = useMemo(() => comandas, [comandas])
   const focusedRef = useRef<HTMLLIElement | null>(null)
 
   // scroll focused comanda into view when it changes
@@ -115,14 +123,12 @@ export function MobileComandaList({
     })
   }, [active, focusedId])
 
-  const encerradas = useMemo(() => comandas.filter((c) => isEndedComandaStatus(c.status)), [comandas])
-
-  if (active.length === 0 && encerradas.length === 0) {
+  if (active.length === 0) {
     if (isLoading) {
       return (
         <OperationEmptyState
           Icon={LoaderCircle}
-          description="Buscando comandas em aberto e comprovantes."
+          description="Buscando comandas abertas do salão."
           title="Carregando comandas"
         />
       )
@@ -142,7 +148,7 @@ export function MobileComandaList({
       return (
         <OperationEmptyState
           Icon={WifiOff}
-          description="Reconecte para consultar o estado atual das comandas."
+          description="Reconecte para consultar o estado atual das comandas do salão."
           title="Sem conexão para listar comandas"
         />
       )
@@ -164,8 +170,8 @@ export function MobileComandaList({
             </button>
           ) : null
         }
-        description="Crie um pedido em uma mesa para começar."
-        title="Nenhuma comanda ativa"
+        description="Abra uma mesa ou retome uma comanda em andamento para continuar a operação."
+        title="Nenhuma comanda ativa no salão"
       />
     )
   }
@@ -182,10 +188,42 @@ export function MobileComandaList({
         </div>
       ) : null}
 
-      {/* Header */}
+      <section className="mb-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
+              Comandas do salão
+            </p>
+            <h1 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">Operação aberta do turno</h1>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+              Retome, avance status e feche comandas abertas do salão, com responsável principal visível em cada mesa.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full border border-[rgba(0,140,255,0.22)] bg-[rgba(0,140,255,0.1)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent,#008cff)]">
+            {active.length} ativas
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-[18px] bg-[var(--border)]">
+          {[
+            { label: 'Ativas', value: summary?.activeCount ?? active.length, hint: 'em curso agora', tone: '#60a5fa' },
+            { label: 'Em preparo', value: summary?.preparingCount ?? 0, hint: 'pedidos correndo', tone: '#fb923c' },
+            { label: 'Prontas', value: summary?.readyCount ?? 0, hint: 'aguardando fechamento', tone: '#36f57c' },
+          ].map((item) => (
+            <div className="bg-[var(--surface-muted)] px-3 py-3" data-testid={`summary-card-${item.label.toLowerCase().replaceAll(' ', '-')}`} key={item.label}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{item.label}</p>
+              <p className="mt-2 text-lg font-semibold" style={{ color: item.tone }}>
+                {item.value}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{item.hint}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          Ativas — {active.length}
+          Em curso — {active.length}
         </p>
         {onNewComanda && (
           <button
@@ -207,6 +245,7 @@ export function MobileComandaList({
           return (
             <ComandaCard
               comanda={comanda}
+              currentEmployeeId={currentEmployeeId}
               isFocused={isFocused}
               key={comanda.id}
               ref={isFocused ? focusedRef : undefined}
@@ -220,27 +259,23 @@ export function MobileComandaList({
           )
         })}
       </ul>
-
-      {/* Comprovantes — tocáveis para ver extrato */}
-      {encerradas.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-            Encerradas — {encerradas.length}
-          </p>
-          <ul className="space-y-2">
-            {encerradas.map((comanda) => (
-              <ExtratoCard comanda={comanda} key={comanda.id} />
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }
 
 const ComandaCard = memo(
   forwardRef<HTMLLIElement, ComandaCardProps>(function ComandaCard(
-    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus, isBusy = false },
+    {
+      comanda,
+      currentEmployeeId = null,
+      isFocused,
+      onUpdateStatus,
+      onAddItems,
+      onCancelComanda,
+      onCloseComanda,
+      onFocus,
+      isBusy = false,
+    },
     ref,
   ) {
     const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)
@@ -265,6 +300,8 @@ const ComandaCard = memo(
       () => activeComanda.itens.reduce((sum, i) => sum + i.quantidade, 0),
       [activeComanda.itens],
     )
+    const isOwnedByCurrentEmployee = Boolean(currentEmployeeId && comanda.garcomId === currentEmployeeId)
+    const primaryWaiterName = comanda.garcomNome ?? null
     const canAddItems = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
     const showDirectClose = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
     const adjustedTotal = useMemo(
@@ -323,6 +360,18 @@ const ComandaCard = memo(
                   {activeComanda.clienteNome}
                 </p>
               )}
+              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                <span
+                  className="rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-[0.08em]"
+                  style={{
+                    color: isOwnedByCurrentEmployee ? '#36f57c' : 'var(--text-soft,#7a8896)',
+                    backgroundColor: isOwnedByCurrentEmployee ? 'rgba(54,245,124,0.12)' : 'rgba(122,136,150,0.1)',
+                    borderColor: isOwnedByCurrentEmployee ? 'rgba(54,245,124,0.22)' : 'var(--border)',
+                  }}
+                >
+                  {isOwnedByCurrentEmployee ? 'Sua mesa' : primaryWaiterName ? `Responsável ${primaryWaiterName}` : 'Sem responsável'}
+                </span>
+              </div>
               <p className="text-xs text-[var(--text-soft,#7a8896)] flex items-center gap-1.5 opacity-80">
                 <span>
                   {itemCount} {itemCount === 1 ? 'item' : 'itens'}
@@ -522,112 +571,3 @@ const ComandaCard = memo(
     )
   }),
 )
-
-// ── Extrato expandível ────────────────────────────────────────────────────────
-const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Aberta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
-  pronta: { label: 'Pronta', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-  fechada: { label: 'Paga', color: 'var(--text-soft, #7a8896)', bg: 'rgba(122,136,150,0.12)' },
-  cancelada: { label: 'Cancelada', color: '#f87171', bg: 'rgba(248,113,113,0.14)' },
-}
-
-function ExtratoCard({ comanda }: { comanda: Comanda }) {
-  const [open, setOpen] = useState(false)
-  const total = calcTotal(comanda)
-  const subtotal = calcSubtotal(comanda)
-  const descontoVal = subtotal * (comanda.desconto / 100)
-  const acrescimoVal = subtotal * (comanda.acrescimo / 100)
-  const badge = STATUS_BADGE[comanda.status] ?? STATUS_BADGE.aberta
-
-  return (
-    <li className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      {/* Header — clicável */}
-      <button
-        className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[var(--surface-muted)]"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div className="text-left">
-          <div className="mb-1 flex items-center gap-2">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Mesa {comanda.mesa ?? '—'}</p>
-            <span
-              className="rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ color: badge.color, background: badge.bg }}
-            >
-              {badge.label}
-            </span>
-          </div>
-          <p className="text-xs text-[var(--text-soft,#7a8896)]">
-            {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens · aberta há {formatElapsed(comanda.abertaEm)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-              Total
-            </p>
-            <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
-          </div>
-          {open ? (
-            <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
-          ) : (
-            <ChevronRight className="size-4 text-[var(--text-soft,#7a8896)]" />
-          )}
-        </div>
-      </button>
-
-      {/* Extrato expandido */}
-      {open && (
-        <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
-          {/* Itens */}
-          <ul className="mb-4 space-y-2">
-            {comanda.itens.map((item, idx) => (
-              <li
-                className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
-                key={idx}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
-                    {item.quantidade}× {item.nome}
-                  </p>
-                  {item.observacao && (
-                    <p className="mt-1 text-[10px] italic text-[var(--text-soft,#7a8896)]">{item.observacao}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-xs font-semibold text-[var(--text-primary)]">
-                  {formatCurrency(item.quantidade * item.precoUnitario)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Totais */}
-          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-xs">
-            <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {comanda.desconto > 0 && (
-              <div className="mt-2 flex justify-between text-[#f87171]">
-                <span>Desconto ({comanda.desconto}%)</span>
-                <span>– {formatCurrency(descontoVal)}</span>
-              </div>
-            )}
-            {comanda.acrescimo > 0 && (
-              <div className="mt-2 flex justify-between text-[#fb923c]">
-                <span>Serviço ({comanda.acrescimo}%)</span>
-                <span>+ {formatCurrency(acrescimoVal)}</span>
-              </div>
-            )}
-            <div className="mt-3 flex justify-between border-t border-[var(--border)] pt-3 font-semibold text-[var(--text-primary)]">
-              <span>Total final</span>
-              <span className="text-[#36f57c]">{formatCurrency(total)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </li>
-  )
-}

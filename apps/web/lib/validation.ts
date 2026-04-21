@@ -164,6 +164,20 @@ export const resetPasswordSchema = z
 export const productSchema = z
   .object({
     name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
+    barcode: z.preprocess(
+      (value) => {
+        if (value === null || value === undefined) {
+          return undefined
+        }
+
+        const normalized = String(value).replace(/\D/g, '')
+        return normalized.length > 0 ? normalized : undefined
+      },
+      z
+        .string()
+        .regex(/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/, 'O código de barras precisa ter 8, 12, 13 ou 14 dígitos.')
+        .optional(),
+    ),
     brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
     category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
     packagingClass: z

@@ -63,6 +63,7 @@ import {
   appendOptimisticComandaMutation,
   buildOptimisticComandaRecord,
   buildPerformerKpis,
+  buildPerformerStanding,
   invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
@@ -381,9 +382,22 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const comandasById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
   const activeComandas = useMemo(() => comandas.filter((comanda) => !isEndedComandaStatus(comanda.status)), [comandas])
+  const historicoComandas = useMemo(() => {
+    if (!currentUser?.employeeId) {
+      return []
+    }
+
+    return comandas.filter(
+      (comanda) => comanda.garcomId === currentUser.employeeId && isEndedComandaStatus(comanda.status),
+    )
+  }, [comandas, currentUser?.employeeId])
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
   const performerKpis = useMemo(
     () => buildPerformerKpis(operationsQuery.data, currentUser?.employeeId ?? null),
+    [currentUser?.employeeId, operationsQuery.data],
+  )
+  const performerStanding = useMemo(
+    () => buildPerformerStanding(operationsQuery.data, currentUser?.employeeId ?? null),
     [currentUser?.employeeId, operationsQuery.data],
   )
   const kitchenBadge = useMemo(
@@ -558,11 +572,37 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       : pendingAction.mesaLabel
     : '?'
   const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
+  const pendingComanda = pendingAction?.type === 'add' ? comandasById.get(pendingAction.comandaId) ?? null : null
+  const builderSummaryItems = pendingAction
+    ? [
+        { label: 'Mesa', value: mesaLabel, tone: '#008cff' },
+        pendingAction.type === 'add'
+          ? {
+              label: 'Responsável',
+              value:
+                pendingComanda?.garcomId === currentUser?.employeeId
+                  ? 'Sua mesa'
+                  : pendingComanda?.garcomNome ?? 'Sem responsável',
+              tone: pendingComanda?.garcomId === currentUser?.employeeId ? '#c4b5fd' : '#f0f0f3',
+            }
+          : {
+              label: 'Situação',
+              value: 'Mesa livre',
+              tone: '#36f57c',
+            },
+        {
+          label: 'Na cozinha',
+          value: String(kitchenBadge),
+          tone: kitchenBadge > 0 ? '#eab308' : '#36f57c',
+        },
+      ]
+    : undefined
 
   function renderActiveTab() {
     if (activeTab === 'mesas') {
       return (
         <MobileTableGrid
+          currentEmployeeId={currentUser?.employeeId ?? null}
           errorMessage={operationsErrorMessage}
           isLoading={operationsLoading}
           isOffline={isOffline}
@@ -575,6 +615,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     if (activeTab === 'cozinha') {
       return (
         <KitchenOrdersView
+          currentEmployeeId={currentUser?.employeeId ?? null}
           data={kitchenQuery.data}
           errorMessage={kitchenErrorMessage}
           isLoading={kitchenLoading}
@@ -600,6 +641,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
             setActiveTab('mesas')
           }}
           onSubmit={handleSubmit}
+          summaryItems={builderSummaryItems}
         />
       )
     }
@@ -630,6 +672,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
         <MobileComandaList
           errorMessage={operationsErrorMessage}
           comandas={activeComandas}
+          currentEmployeeId={currentUser?.employeeId ?? null}
           isBusy={isBusy}
           isLoading={operationsLoading}
           focusedId={focusedComandaId}
@@ -640,6 +683,11 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           onFocus={(id: string | null) => setFocusedComandaId(id)}
           onNewComanda={handleNewComanda}
           onUpdateStatus={handleUpdateStatus}
+          summary={{
+            activeCount: activeComandas.length,
+            preparingCount: activeComandas.filter((comanda) => comanda.status === 'em_preparo').length,
+            readyCount: activeComandas.filter((comanda) => comanda.status === 'pronta').length,
+          }}
         />
       )
     }
@@ -647,11 +695,12 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     if (activeTab === 'historico') {
       return (
         <MobileHistoricoView
-          comandas={comandas}
+          comandas={historicoComandas}
           summary={{
             receitaRealizada: performerKpis.receitaRealizada,
             receitaEsperada: performerKpis.receitaEsperada,
             openComandasCount: performerKpis.openComandasCount,
+            ranking: performerStanding,
           }}
         />
       )

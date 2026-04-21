@@ -57,6 +57,7 @@ function ProductChips({ product, measurementLabel }: { product: ProductRecord; m
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
       <span className={chipClass}>{product.category}</span>
       {product.brand ? <span className={`${chipClass} uppercase tracking-[0.12em]`}>{product.brand}</span> : null}
+      {product.barcode ? <span className={`${chipClass} font-mono`}>EAN {product.barcode}</span> : null}
       <span className={chipClass}>{measurementLabel}</span>
       {product.packagingClass && product.packagingClass !== 'UN' ? (
         <span className={chipClass}>{product.packagingClass}</span>

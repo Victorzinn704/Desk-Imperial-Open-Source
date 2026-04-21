@@ -100,6 +100,7 @@ export {
 export type { EmployeePayload, EmployeeRecord, EmployeesResponse, UpdateEmployeePayload } from './api-employees'
 
 export {
+  lookupBarcodeCatalog,
   lookupPostalCode,
   fetchConsentDocuments,
   fetchConsentOverview,
@@ -113,6 +114,7 @@ export {
 
 export type {
   ActivityFeedEntry,
+  BarcodeCatalogLookupResponse,
   ConsentDocument,
   ConsentOverview,
   CookiePreferencePayload,

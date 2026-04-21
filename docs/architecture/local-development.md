@@ -12,8 +12,9 @@ Deixar o projeto rodando localmente com:
 
 1. Copie `.env.example` para `.env`.
 2. Ajuste `DATABASE_URL` e `DIRECT_URL` para seu PostgreSQL local.
-3. Se quiser envio real de confirmação, redefinição e alertas de segurança, configure o bloco de email.
-4. Se quiser ativar o consultor executivo com IA, configure `GEMINI_API_KEY`.
+3. Ajuste `REDIS_PASSWORD` e mantenha `REDIS_URL` com a mesma senha quando usar o Docker local padrão.
+4. Se quiser envio real de confirmação, redefinição e alertas de segurança, configure o bloco de email.
+5. Se quiser ativar o consultor executivo com IA, configure `GEMINI_API_KEY`.
 
 Estratégia de ambiente:
 
@@ -27,12 +28,15 @@ Exemplo:
 ```env
 DATABASE_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
 DIRECT_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
+REDIS_PASSWORD=desk_imperial_redis_change_me
+REDIS_URL=redis://:desk_imperial_redis_change_me@localhost:6379
 APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
 COOKIE_SECRET=replace-with-a-long-random-cookie-secret
 CSRF_SECRET=replace-with-a-long-random-csrf-secret
 ENCRYPTION_KEY=replace-with-a-32-char-encryption-key
+DEMO_STAFF_PASSWORD=123456
 PASSWORD_RESET_TTL_MINUTES=30
 EMAIL_VERIFICATION_TTL_MINUTES=15
 GEMINI_API_KEY=
@@ -79,9 +83,26 @@ Se o ambiente não tiver Docker, basta apontar `DATABASE_URL` e `DIRECT_URL` par
 ## Comandos principais
 
 ```powershell
-npm --workspace @partner/api run prisma:generate
-npm --workspace @partner/api run prisma:migrate:dev
-npm run seed
+npm run local:backend:prepare
+```
+
+Esse fluxo faz:
+
+1. sobe Postgres e Redis locais
+2. espera os containers ficarem saudáveis
+3. gera o Prisma Client
+4. aplica migrations com `migrate deploy`
+5. executa seed
+6. normaliza o demo local com `repair-demo`
+
+Importante:
+
+- rode `local:backend:prepare` com a API local parada
+- em Windows, o `prisma generate` pode falhar se `http://localhost:4000` já estiver usando o Prisma Client
+- se você só precisa reidratar os dados demo com a API já ligada, use:
+
+```powershell
+npm run local:backend:sync-demo
 ```
 
 Depois:
@@ -91,10 +112,32 @@ npm --workspace @partner/api run dev
 npm --workspace @partner/web run dev
 ```
 
+## Smoke local de fresh-start
+
+Para validar o bootstrap local do zero lógico:
+
+```powershell
+npm run smoke:local:bootstrap
+```
+
+Esse smoke:
+
+1. exige a porta `4000` livre
+2. roda `local:backend:prepare`
+3. sobe a API local em modo dev
+4. valida `GET /api/v1/health`
+5. valida demo login `OWNER`
+6. valida demo login `STAFF` com `VD-001`
+
+Logs da API usados no smoke:
+
+- `artifacts/server-logs/api-smoke.out.log`
+- `artifacts/server-logs/api-smoke.err.log`
+
 ## Observações
 
 - a migration inicial já está versionada em `apps/api/prisma/migrations/202603142300_init`
-- o seed prepara documentos legais, usuario demo e produtos base
+- o seed prepara documentos legais, usuario demo, equipe demo com login STAFF e produtos base
 - sem PostgreSQL ativo, o front continua compilando, mas login/cadastro não concluem o fluxo real
 - sem API transacional da Brevo configurada, o backend registra os códigos de confirmação e redefinição no log em desenvolvimento
 - a API da Brevo é o caminho principal em produção

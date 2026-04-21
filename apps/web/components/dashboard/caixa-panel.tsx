@@ -4,12 +4,8 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
-  Banknote,
   CheckCircle2,
-  ChevronDown,
-  CircleDollarSign,
   Lock,
-  TrendingUp,
   Unlock,
   X,
 } from 'lucide-react'
@@ -17,7 +13,7 @@ import type { OperationsLiveResponse } from '@contracts/contracts'
 import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
 import { buildOperationsExecutiveKpis } from '@/lib/operations'
 import { formatBRL } from '@/lib/currency'
-import { LabEmptyState, LabModal, LabPanel, LabStatusPill, type LabStatusTone } from '@/components/design-lab/lab-primitives'
+import { LabModal, LabPanel, LabStatusPill, type LabStatusTone } from '@/components/design-lab/lab-primitives'
 import { cn } from '@/lib/utils'
 
 const fmtBRL = formatBRL
@@ -165,33 +161,6 @@ function MessageBox({
   return (
     <div className="rounded-[12px] border px-4 py-3 text-sm" style={toneClasses.panel}>
       <span className={cn('font-medium', toneClasses.icon)}>{children}</span>
-    </div>
-  )
-}
-
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-  tone = 'neutral',
-}: {
-  icon: React.ElementType
-  label: string
-  value: string
-  hint?: string
-  tone?: LabStatusTone
-}) {
-  const toneClasses = getToneClasses(tone)
-
-  return (
-    <div className="rounded-[16px] border px-4 py-4" style={toneClasses.panel}>
-      <div className={cn('inline-flex size-9 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]', toneClasses.icon)}>
-        <Icon className="size-4" />
-      </div>
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">{value}</p>
-      {hint ? <p className="mt-1.5 text-[11px] leading-5 text-[var(--text-soft)]">{hint}</p> : null}
     </div>
   )
 }
@@ -440,54 +409,64 @@ function CaixaHeaderActions({
 }
 
 function formatCaixaSubtitle(caixaAberto: boolean, openSessionsCount: number, openComandasCount: number): string {
-  if (!caixaAberto) return 'Nenhuma sessao de caixa ativa no momento.'
+  if (!caixaAberto) {
+    return 'Nenhuma sessao de caixa ativa no momento.'
+  }
   const comandaLabel = openComandasCount === 1 ? '' : 's'
   return `Caixa aberto · ${openSessionsCount} sessao ativa · ${openComandasCount} comanda${comandaLabel} em aberto`
 }
 
-function positiveOrNeutral(value: number): LabStatusTone {
-  return value > 0 ? 'success' : 'neutral'
+function resolveNextCashAction(openComandasCount: number, caixaAberto: boolean) {
+  if (openComandasCount > 0) {
+    return { label: 'fechar comandas', tone: 'warning' as const }
+  }
+
+  if (caixaAberto) {
+    return { label: 'conferir e encerrar', tone: 'success' as const }
+  }
+
+  return { label: 'abrir caixa', tone: 'info' as const }
 }
 
-function CaixaEsperadoRow({ caixaEsperado, openComandasCount }: { caixaEsperado: number; openComandasCount: number }) {
+function CaixaHeadlineMetric({
+  label,
+  value,
+  hint,
+}: Readonly<{
+  label: string
+  value: string
+  hint: string
+}>) {
   return (
-    <div className="mt-3 flex flex-col gap-3 rounded-[16px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Caixa esperado</p>
-        <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(caixaEsperado)}</p>
-        <p className="mt-1 text-xs text-[var(--text-soft)]">Abertura + movimentos + vendas fechadas</p>
-      </div>
-      {openComandasCount > 0 ? (
-        <div
-          className="flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xs"
-          style={{
-            borderColor: 'color-mix(in srgb, var(--warning) 20%, var(--border))',
-            backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
-          }}
-        >
-          <AlertTriangle className="size-3.5 shrink-0 text-[var(--warning)]" />
-          <span className="font-semibold text-[var(--warning)]">
-            {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta{openComandasCount !== 1 ? 's' : ''} — feche-as para encerrar o caixa
-          </span>
-        </div>
-      ) : null}
+    <div className="bg-[var(--surface)] px-5 py-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-2 text-[clamp(1.6rem,2vw,2.1rem)] font-semibold leading-none tracking-[-0.04em] text-[var(--text-primary)] tabular-nums">
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">{hint}</p>
     </div>
   )
 }
 
-function CaixaEmptyState({ onOpenModal }: { onOpenModal: () => void }) {
+function CaixaCompactSignalRow({
+  label,
+  note,
+  tone,
+  value,
+}: Readonly<{
+  label: string
+  note: string
+  tone: LabStatusTone
+  value: string
+}>) {
   return (
-    <LabEmptyState
-      action={
-        <PrimaryButton type="button" onClick={onOpenModal}>
-          <Unlock className="size-3.5" />
-          Abrir caixa agora
-        </PrimaryButton>
-      }
-      description='Clique em "Abrir caixa" para iniciar o turno e liberar o PDV para os funcionarios.'
-      icon={Banknote}
-      title="Caixa ainda nao foi aberto hoje"
-    />
+    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--border)] py-3 last:border-b-0">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">{label}</p>
+        <p className="mt-1 text-xs leading-5 text-[var(--text-soft)]">{note}</p>
+      </div>
+      <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
   )
 }
 
@@ -507,6 +486,7 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
     openSessionsCount,
   } = buildOperationsExecutiveKpis(operations)
   const caixaAberto = openSessionsCount > 0
+  const nextAction = resolveNextCashAction(openComandasCount, caixaAberto)
 
   return (
     <>
@@ -536,28 +516,89 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <KpiCard hint="Comandas fechadas hoje" icon={CircleDollarSign} label="Receita realizada" tone={positiveOrNeutral(receitaRealizada)} value={fmtBRL(receitaRealizada)} />
-          <KpiCard hint="Resultado liquido estimado" icon={TrendingUp} label="Lucro realizado" tone={positiveOrNeutral(lucroRealizado)} value={fmtBRL(lucroRealizado)} />
-          <KpiCard
-            hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
-            icon={ChevronDown}
-            label="Em aberto"
-            tone={faturamentoAberto > 0 ? 'info' : 'neutral'}
-            value={fmtBRL(faturamentoAberto)}
-          />
-          <KpiCard hint="Realizado + em aberto" icon={Banknote} label="Projecao total" tone={projecaoTotal > 0 ? 'info' : 'neutral'} value={fmtBRL(projecaoTotal)} />
+        <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface-muted)]">
+          <div className="grid gap-px bg-[var(--border)] sm:grid-cols-2 xl:grid-cols-5">
+            <CaixaHeadlineMetric hint="Comandas fechadas hoje" label="Receita realizada" value={fmtBRL(receitaRealizada)} />
+            <CaixaHeadlineMetric hint="Resultado líquido já capturado" label="Lucro realizado" value={fmtBRL(lucroRealizado)} />
+            <CaixaHeadlineMetric
+              hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
+              label="Em aberto"
+              value={fmtBRL(faturamentoAberto)}
+            />
+            <CaixaHeadlineMetric hint="Realizado + em aberto" label="Projeção total" value={fmtBRL(projecaoTotal)} />
+            <CaixaHeadlineMetric hint="Leitura provisória do fechamento" label="Lucro esperado" value={fmtBRL(lucroEsperado)} />
+          </div>
         </div>
 
-        <div className="mt-3 rounded-[16px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Lucro esperado</p>
-          <p className="mt-1.5 text-2xl font-semibold text-[var(--text-primary)]">{fmtBRL(lucroEsperado)}</p>
-          <p className="mt-1 text-xs text-[var(--text-soft)]">Leitura provisoria: lucro realizado + faturamento em aberto</p>
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="rounded-[18px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Fechamento do turno</p>
+            <p className="mt-2 text-[clamp(1.7rem,2.2vw,2.3rem)] font-semibold leading-none tracking-[-0.04em] text-[var(--text-primary)] tabular-nums">
+              {fmtBRL(caixaEsperado)}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
+              {caixaAberto
+                ? 'Referência viva do caixa para conferir o turno antes do encerramento.'
+                : 'Abra o caixa para iniciar o turno e liberar o PDV dos funcionários.'}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {caixaAberto ? (
+                openComandasCount > 0 ? (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xs"
+                    style={{
+                      borderColor: 'color-mix(in srgb, var(--warning) 20%, var(--border))',
+                      backgroundColor: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+                    }}
+                  >
+                    <AlertTriangle className="size-3.5 shrink-0 text-[var(--warning)]" />
+                    <span className="font-semibold text-[var(--warning)]">
+                      {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta{openComandasCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xs"
+                    style={{
+                      borderColor: 'color-mix(in srgb, var(--success) 20%, var(--border))',
+                      backgroundColor: 'color-mix(in srgb, var(--success) 8%, var(--surface))',
+                    }}
+                  >
+                    <CheckCircle2 className="size-3.5 shrink-0 text-[var(--success)]" />
+                    <span className="font-semibold text-[var(--success)]">Tudo pronto para conferência final</span>
+                  </div>
+                )
+              ) : (
+                <PrimaryButton type="button" onClick={() => setShowAbrirModal(true)}>
+                  <Unlock className="size-3.5" />
+                  Abrir caixa agora
+                </PrimaryButton>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+            <CaixaCompactSignalRow
+              label="status"
+              note="o turno só fecha depois da conferência do caixa"
+              tone={caixaAberto ? 'success' : 'neutral'}
+              value={caixaAberto ? 'aberto' : 'fechado'}
+            />
+            <CaixaCompactSignalRow
+              label="comandas abertas"
+              note="pendências que ainda travam o encerramento"
+              tone={openComandasCount > 0 ? 'warning' : 'success'}
+              value={String(openComandasCount)}
+            />
+            <CaixaCompactSignalRow
+              label="próxima ação"
+              note="o passo operacional mais importante agora"
+              tone={nextAction.tone}
+              value={nextAction.label}
+            />
+          </div>
         </div>
-
-        {caixaAberto ? <CaixaEsperadoRow caixaEsperado={caixaEsperado} openComandasCount={openComandasCount} /> : null}
-
-        {!caixaAberto && receitaRealizada === 0 ? <div className="mt-5"><CaixaEmptyState onOpenModal={() => setShowAbrirModal(true)} /></div> : null}
       </LabPanel>
 
       {showAbrirModal ? (

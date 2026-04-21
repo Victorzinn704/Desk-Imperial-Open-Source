@@ -1,5 +1,6 @@
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { UpdateProductDto } from './dto/update-product.dto'
+import { sanitizeProductBarcode } from './products-barcode.util'
 
 export function buildProductUpdateData(dto: UpdateProductDto, nextIsCombo: boolean) {
   const optionalText = (field: string | undefined, label: string, allowEmpty: boolean) =>
@@ -7,6 +8,7 @@ export function buildProductUpdateData(dto: UpdateProductDto, nextIsCombo: boole
 
   return {
     ...optionalText(dto.name, 'name', false),
+    ...(dto.barcode !== undefined ? { barcode: sanitizeProductBarcode(dto.barcode, 'Codigo de barras') } : {}),
     ...optionalText(dto.brand, 'brand', true),
     ...optionalText(dto.category, 'category', false),
     ...optionalText(dto.packagingClass, 'packagingClass', false),
@@ -22,5 +24,6 @@ export function buildProductUpdateData(dto: UpdateProductDto, nextIsCombo: boole
     ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
     ...(dto.active !== undefined ? { active: dto.active } : {}),
     ...(dto.requiresKitchen !== undefined ? { requiresKitchen: dto.requiresKitchen } : {}),
+    ...(dto.lowStockThreshold !== undefined ? { lowStockThreshold: dto.lowStockThreshold } : {}),
   }
 }

@@ -129,7 +129,6 @@ describe('MobileOrderBuilder', () => {
       />,
     )
 
-    expect(screen.getByText(/escolha a categoria/i)).toBeInTheDocument()
     expect(screen.queryByText('Oculto')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /petiscos/i }))
@@ -145,9 +144,6 @@ describe('MobileOrderBuilder', () => {
 
     expect(screen.getByText('2 itens')).toBeInTheDocument()
     expect(screen.getByText((content) => content.includes('20,00'))).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: /categorias/i }))
-    expect(screen.getByText(/escolha a categoria/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^todos$/i }))
     expect(screen.getByPlaceholderText('Buscar produto...')).toBeInTheDocument()
@@ -178,7 +174,7 @@ describe('MobileOrderBuilder', () => {
       />,
     )
 
-    expect(screen.getByText(/nenhum produto encontrado/i)).toBeInTheDocument()
+    expect(screen.getByText(/nenhum produto ativo no catálogo/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /enviando/i })).toBeDisabled()
 
     await user.click(screen.getByRole('button', { name: /cancelar/i }))
@@ -220,7 +216,7 @@ describe('MobileOrderBuilder', () => {
 
     expect(screen.getByRole('button', { name: /cerveja/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /vinho/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /combo/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^combo$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /pizza/i })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /pizza/i }))
@@ -228,5 +224,48 @@ describe('MobileOrderBuilder', () => {
     await user.click(screen.getByRole('button', { name: /remover margherita/i }))
 
     expect(screen.getByText(/carrinho vazio/i)).toBeInTheDocument()
+  })
+
+  it('renders owner summary strip and secondary action without breaking the base flow', async () => {
+    const user = userEvent.setup()
+    const onSecondaryAction = vi.fn()
+
+    render(
+      <MobileOrderBuilder
+        mesaLabel="21"
+        mode="new"
+        produtos={[makeProduct({ id: 'beer-1', category: 'Cerveja', name: 'Pilsen' })]}
+        onCancel={vi.fn()}
+        onSubmit={vi.fn()}
+        secondaryAction={{ label: 'Cadastro rápido', onClick: onSecondaryAction }}
+        summaryItems={[
+          { label: 'Mesa', value: '21', tone: '#008cff' },
+          { label: 'Livres', value: '4', tone: '#36f57c' },
+          { label: 'Na fila', value: '2', tone: '#eab308' },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Cadastro rápido')).toBeInTheDocument()
+    expect(screen.getByText('Livres')).toBeInTheDocument()
+    expect(screen.getByText('Na fila')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Cadastro rápido/i }))
+
+    expect(onSecondaryAction).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses the clearer opening action label when creating a new comanda', () => {
+    render(
+      <MobileOrderBuilder
+        mesaLabel="30"
+        mode="new"
+        produtos={[makeProduct({ id: 'beer-1', category: 'Cerveja', name: 'Pilsen' })]}
+        onCancel={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /abrir comanda/i })).toBeDisabled()
   })
 })

@@ -13,7 +13,6 @@ import {
 } from '@/components/design-lab/lab-primitives'
 import {
   buildKitchenSummary,
-  CozinhaKpiStrip,
   CozinhaSummaryPanels,
 } from '@/components/design-lab/sections/cozinha-summary-panels'
 import { useDashboardSessionQuery } from '@/components/dashboard/hooks/useDashboardQueries'
@@ -100,8 +99,6 @@ export default function DesignLabCozinhaPage() {
 
       {user && !errorMessage && !kitchenQuery.isLoading && !hasItems ? <KitchenIdleState /> : null}
 
-      {user && !errorMessage && hasItems ? <CozinhaKpiStrip summary={summary} /> : null}
-
       {user && !errorMessage && hasItems ? <CozinhaSummaryPanels summary={summary} /> : null}
     </section>
   )
@@ -171,21 +168,23 @@ function KitchenIdleState() {
         padding="md"
         title="Nenhum ticket ativo na cozinha"
       >
-        <div className="space-y-5">
-          <LabEmptyState
-            compact
-            description="Assim que um item exigir preparo, ele entra aqui com fila, responsável e próxima ação."
-            icon={ChefHat}
-            title="A fila está limpa neste momento"
-          />
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center">
+          <div className="space-y-5">
+            <LabEmptyState
+              compact
+              description="Assim que um item exigir preparo, ele entra aqui com fila, responsável e próxima ação."
+              icon={ChefHat}
+              title="A fila está limpa neste momento"
+            />
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <LabFactPill label="fila" value="0" />
-            <LabFactPill label="preparo" value="0" />
-            <LabFactPill label="prontos" value="0" />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <LabFactPill label="fila" value="0" />
+              <LabFactPill label="preparo" value="0" />
+              <LabFactPill label="prontos" value="0" />
+            </div>
           </div>
 
-          <div className="space-y-0">
+          <div className="space-y-0 rounded-[18px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
             <LabSignalRow label="status" note="nenhum pedido aguardando execução agora" tone="success" value="livre" />
             <LabSignalRow label="próxima ação" note="manter monitoramento até o próximo ticket" tone="neutral" value="aguardar entrada" />
             <LabSignalRow label="turno" note="a leitura volta a ficar viva quando houver item de cozinha" tone="info" value="sem pressão" />

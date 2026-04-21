@@ -55,15 +55,5 @@
     }
   ],
   "related_applications": [],
-  "protocol_handlers": [],
-  "share_target": {
-    "action": "/app/staff/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
+  "protocol_handlers": []
 }

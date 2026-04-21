@@ -4,6 +4,7 @@ import { type ApiBody, apiFetch } from './api-core'
 
 export type ProductPayload = {
   name: string
+  barcode?: string | null
   brand?: string
   category: string
   packagingClass: string

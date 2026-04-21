@@ -91,7 +91,7 @@ describe('FinanceiroEnvironment', () => {
     expect(screen.getByRole('heading', { name: 'Movimentacao do periodo' })).toBeInTheDocument()
     expect(screen.getByText('visão ativa')).toBeInTheDocument()
     expect(screen.getByText('Radar financeiro')).toBeInTheDocument()
-    expect(screen.getByText(/Leitura do período/i)).toBeInTheDocument()
+    expect(screen.getByText('Receita realizada total')).toBeInTheDocument()
     expect(screen.getByText('Fechamento por período')).toBeInTheDocument()
     expect(screen.getByTestId('finance-orders-table')).toBeInTheDocument()
   })

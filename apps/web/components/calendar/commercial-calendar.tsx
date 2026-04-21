@@ -807,11 +807,20 @@ function PlanningRadar({
   nextSevenDaysActivities,
   periodActivities,
   leadingType,
+  summaryRows,
+  filteredActivitiesCount,
 }: Readonly<{
   nextActivity?: CommercialActivity
   nextSevenDaysActivities: CommercialActivity[]
   periodActivities: CommercialActivity[]
   leadingType?: ActivityType
+  summaryRows: Array<{
+    type: ActivityType
+    style: (typeof ACTIVITY_STYLES)[ActivityType]
+    count: number
+    impact: number
+  }>
+  filteredActivitiesCount: number
 }>) {
   const nextPeak = nextSevenDaysActivities.reduce<CommercialActivity | undefined>((peak, activity) => {
     if (!activity.impactoEsperado) {
@@ -828,10 +837,10 @@ function PlanningRadar({
   return (
     <LabPanel
       padding="sm"
-      title="Radar da proxima janela"
-      subtitle="Leitura curta para decidir escala, compra e promocao antes do pico."
+      title="Radar do recorte"
+      subtitle="Proxima janela, mix de atividade e intensidade da agenda aberta."
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="space-y-0">
           <LabSignalRow
             label="Proxima atividade"
@@ -859,31 +868,72 @@ function PlanningRadar({
           />
         </div>
 
-        {nextSevenDaysActivities.length === 0 ? (
-          <LabEmptyState
-            compact
-            className="border-0 bg-[var(--surface)]"
-            icon={CalendarDays}
-            title="Sem agenda na proxima semana"
-            description="Assim que surgirem novas atividades, a fila curta aparece aqui."
-          />
-        ) : (
-          <div className="space-y-2 border-t border-[var(--border)] pt-4">
-            {nextSevenDaysActivities.slice(0, 4).map((activity) => {
-              const style = ACTIVITY_STYLES[activity.type]
-              return (
-                <div className="flex items-start gap-3" key={activity.id}>
-                  <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: style.dot }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">{activity.title}</p>
-                    <p className="mt-1 text-xs text-[var(--text-soft)]">{formatDateTime(activity.start)}</p>
-                  </div>
-                  {activity.impactoEsperado ? <LabStatusPill tone="success">+{activity.impactoEsperado}%</LabStatusPill> : null}
-                </div>
-              )
-            })}
+        <div className="space-y-3 border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+              Resumo do recorte
+            </p>
+            <LabStatusPill tone="neutral">{filteredActivitiesCount} atividades</LabStatusPill>
           </div>
-        )}
+
+          {summaryRows.length === 0 ? (
+            <LabEmptyState
+              compact
+              className="border-0 bg-[var(--surface)]"
+              icon={CalendarDays}
+              title="Sem resumo disponivel"
+              description="Abra outro recorte ou adicione atividades para montar a leitura lateral."
+            />
+          ) : (
+            <div className="space-y-3">
+              {summaryRows.map(({ type, style, count, impact }) => (
+                <div className="flex items-center justify-between gap-3" key={type}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="size-2 rounded-full" style={{ background: style.dot }} />
+                    <span className="text-sm text-[var(--text-primary)]">{ACTIVITY_LABELS[type]}</span>
+                    <span className="text-xs text-[var(--text-soft)]">({count})</span>
+                  </div>
+                  {impact > 0 ? <LabStatusPill tone={style.tone}>+{impact}%</LabStatusPill> : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+              Proxima fila
+            </p>
+            {nextSevenDaysActivities.length > 0 ? <LabStatusPill tone="info">{nextSevenDaysActivities.length} itens</LabStatusPill> : null}
+          </div>
+
+          {nextSevenDaysActivities.length === 0 ? (
+            <LabEmptyState
+              compact
+              className="border-0 bg-[var(--surface)]"
+              icon={CalendarDays}
+              title="Sem agenda na proxima semana"
+              description="Assim que surgirem novas atividades, a fila curta aparece aqui."
+            />
+          ) : (
+            <div className="space-y-2">
+              {nextSevenDaysActivities.slice(0, 4).map((activity) => {
+                const style = ACTIVITY_STYLES[activity.type]
+                return (
+                  <div className="flex items-start gap-3" key={activity.id}>
+                    <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: style.dot }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{activity.title}</p>
+                      <p className="mt-1 text-xs text-[var(--text-soft)]">{formatDateTime(activity.start)}</p>
+                    </div>
+                    {activity.impactoEsperado ? <LabStatusPill tone="success">+{activity.impactoEsperado}%</LabStatusPill> : null}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </LabPanel>
   )
@@ -1000,6 +1050,12 @@ export function CommercialCalendar() {
 
     return typeCount > leaderCount ? type : leader
   }, undefined)
+  const calendarHeight =
+    view === 'month'
+      ? 'clamp(520px, 66vh, 610px)'
+      : view === 'agenda'
+        ? 'clamp(500px, 62vh, 560px)'
+        : 'clamp(560px, 72vh, 680px)'
 
   return (
     <div className="space-y-5">
@@ -1098,7 +1154,7 @@ export function CommercialCalendar() {
               events={filteredActivities}
               localizer={localizer}
               messages={messages}
-              style={{ height: 640 }}
+              style={{ height: calendarHeight }}
               view={view}
               onEventDrop={onEventDrop}
               onEventResize={onEventResize}
@@ -1112,46 +1168,15 @@ export function CommercialCalendar() {
 
         <div className="space-y-4">
           <PlanningRadar
+            filteredActivitiesCount={filteredActivities.length}
             leadingType={leadingType}
             nextActivity={nextActivity}
             nextSevenDaysActivities={nextSevenDaysActivities}
             periodActivities={periodActivities}
+            summaryRows={summaryRows}
           />
 
           {filter === 'all' || filter === 'jogo' ? <FootballGamesWidget activities={filteredActivities} /> : null}
-
-          <LabPanel
-            padding="sm"
-            title="Resumo do recorte"
-            subtitle="Contagem e impacto esperado por tipo de atividade no calendario aberto."
-          >
-            {summaryRows.length === 0 ? (
-              <LabEmptyState
-                compact
-                icon={CalendarDays}
-                title="Sem resumo disponivel"
-                description="Abra outro recorte ou adicione atividades para montar a leitura lateral."
-              />
-            ) : (
-              <div className="space-y-3">
-                {summaryRows.map(({ type, style, count, impact }) => (
-                  <div className="flex items-center justify-between gap-3" key={type}>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="size-2 rounded-full" style={{ background: style.dot }} />
-                      <span className="text-sm text-[var(--text-primary)]">{ACTIVITY_LABELS[type]}</span>
-                      <span className="text-xs text-[var(--text-soft)]">({count})</span>
-                    </div>
-                    {impact > 0 ? <LabStatusPill tone={style.tone}>+{impact}%</LabStatusPill> : null}
-                  </div>
-                ))}
-
-                <div className="flex items-center gap-2 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-soft)]">
-                  <CalendarDays className="size-3.5 text-[var(--accent)]" />
-                  {filteredActivities.length} atividades em monitoramento
-                </div>
-              </div>
-            )}
-          </LabPanel>
         </div>
       </div>
 

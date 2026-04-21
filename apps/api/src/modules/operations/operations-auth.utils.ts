@@ -77,8 +77,8 @@ export async function requireAuthorizedComanda(
 
   const employee = actorEmployee ?? (await resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth))
 
-  if (!employee || comanda.currentEmployeeId !== employee.id) {
-    throw new ForbiddenException('Seu acesso so pode operar mesas vinculadas ao seu atendimento.')
+  if (!employee) {
+    throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para operar comandas.')
   }
 
   return comanda

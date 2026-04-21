@@ -12,7 +12,7 @@ import { useDashboardSessionQuery } from '@/components/dashboard/hooks/useDashbo
 import { CaixaSummaryPanels } from '@/components/design-lab/sections/caixa-summary-panels'
 import { CaixaPanel } from '@/components/dashboard/caixa-panel'
 import { ApiError, fetchOperationsLive } from '@/lib/api'
-import { OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
+import { buildOperationsExecutiveKpis, OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
 
 export default function DesignLabCaixaPage() {
   const sessionQuery = useDashboardSessionQuery()
@@ -27,7 +27,18 @@ export default function DesignLabCaixaPage() {
   })
   const errorMessage = operationsQuery.error instanceof ApiError ? operationsQuery.error.message : null
   const operations = operationsQuery.data
+  const kpis = buildOperationsExecutiveKpis(operations)
   const isInitialLoading = !errorMessage && operationsQuery.isLoading && !operations
+  const showSummaryPanels =
+    !operationsQuery.isLoading &&
+    !errorMessage &&
+    Boolean(
+      kpis.openSessionsCount > 0 ||
+        kpis.openComandasCount > 0 ||
+        kpis.receitaRealizada > 0 ||
+        kpis.faturamentoAberto > 0 ||
+        kpis.projecaoTotal > 0,
+    )
 
   return (
     <section className="space-y-5">
@@ -61,7 +72,7 @@ export default function DesignLabCaixaPage() {
 
       {user && !errorMessage && !operationsQuery.isLoading ? <CaixaPanel operations={operations} /> : null}
 
-      {user && !errorMessage && !operationsQuery.isLoading ? <CaixaSummaryPanels operations={operations} /> : null}
+      {user && showSummaryPanels ? <CaixaSummaryPanels operations={operations} /> : null}
 
       {errorMessage ? (
         <LabPanel padding="md">

@@ -14,6 +14,7 @@ function formatDateTime(date: Date): string {
 }
 
 type Filtro = 'tudo' | 'abertas' | 'fechadas'
+type ResponsibleFilter = 'all' | string
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
@@ -42,15 +43,32 @@ export function OwnerComandasView({
   isBusy = false,
 }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('tudo')
+  const [responsibleFilter, setResponsibleFilter] = useState<ResponsibleFilter>('all')
+
+  const responsibleOptions = useMemo(() => {
+    const values = new Set<string>()
+    for (const comanda of comandas) {
+      values.add(resolveResponsibleLabel(comanda))
+    }
+    return ['all', ...Array.from(values).sort((left, right) => left.localeCompare(right, 'pt-BR'))]
+  }, [comandas])
+
+  const scopedByResponsible = useMemo(
+    () =>
+      responsibleFilter === 'all'
+        ? comandas
+        : comandas.filter((comanda) => resolveResponsibleLabel(comanda) === responsibleFilter),
+    [comandas, responsibleFilter],
+  )
 
   const filtered = useMemo(
     () =>
-      comandas.filter((c) => {
+      scopedByResponsible.filter((c) => {
         if (filtro === 'abertas') {return c.status !== 'fechada'}
         if (filtro === 'fechadas') {return c.status === 'fechada'}
         return true
       }),
-    [comandas, filtro],
+    [scopedByResponsible, filtro],
   )
 
   const sorted = useMemo(() => {
@@ -64,8 +82,15 @@ export function OwnerComandasView({
     })
   }, [filtered, focusedId])
 
-  const countAbertas = useMemo(() => comandas.filter((c) => c.status !== 'fechada').length, [comandas])
-  const countFechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada').length, [comandas])
+  const countAbertas = useMemo(() => scopedByResponsible.filter((c) => c.status !== 'fechada').length, [scopedByResponsible])
+  const countFechadas = useMemo(() => scopedByResponsible.filter((c) => c.status === 'fechada').length, [scopedByResponsible])
+  const countProntas = useMemo(() => scopedByResponsible.filter((c) => c.status === 'pronta').length, [scopedByResponsible])
+  const valorEmAberto = useMemo(
+    () => scopedByResponsible.filter((c) => c.status !== 'fechada').reduce((sum, comanda) => sum + calcTotal(comanda), 0),
+    [scopedByResponsible],
+  )
+  const ultimaComanda = scopedByResponsible[0] ?? null
+  const selectedResponsibleLabel = responsibleFilter === 'all' ? 'Equipe inteira' : responsibleFilter
 
   return (
     <div className="p-3 sm:p-4">
@@ -79,11 +104,47 @@ export function OwnerComandasView({
         </div>
       ) : null}
 
-      {/* Filtros */}
+      <section className="mb-4 rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">Comandas</p>
+            <h1 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">Ao vivo e histórico</h1>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+              Acompanhe abertura, preparo e fechamento sem perder o rastro operacional por garçom.
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Recorte atual</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+              {selectedResponsibleLabel}
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--text-soft)]">
+              {ultimaComanda ? `última leitura há ${formatElapsed(ultimaComanda.abertaEm)}` : 'sem movimento'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-[18px] bg-[var(--border)] sm:grid-cols-4">
+          {[
+            { label: 'Abertas', value: String(countAbertas), color: '#f87171' },
+            { label: 'Prontas', value: String(countProntas), color: '#60a5fa' },
+            { label: 'Fechadas', value: String(countFechadas), color: '#36f57c' },
+            { label: 'Em aberto', value: formatCurrency(valorEmAberto), color: '#008cff' },
+          ].map(({ label, value, color }) => (
+            <div className="bg-[var(--surface-muted)] px-3 py-3" key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft,#7a8896)]">{label}</p>
+              <p className="mt-1 text-base font-bold leading-tight" style={{ color }}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="mb-4 flex flex-wrap gap-2">
         {(
           [
-            { id: 'tudo', label: `Tudo (${comandas.length})` },
+            { id: 'tudo', label: `Tudo (${scopedByResponsible.length})` },
             { id: 'abertas', label: `Abertas (${countAbertas})` },
             { id: 'fechadas', label: `Fechadas (${countFechadas})` },
           ] as const
@@ -102,6 +163,30 @@ export function OwnerComandasView({
             {label}
           </button>
         ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {responsibleOptions.map((option) => {
+          const isActive = responsibleFilter === option
+          const label = option === 'all' ? 'Equipe inteira' : option
+
+          return (
+            <button
+              className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+              data-testid={`owner-responsible-filter-${slugify(label)}`}
+              key={option}
+              style={{
+                background: isActive ? 'rgba(167,139,250,0.18)' : 'var(--surface)',
+                color: isActive ? '#c4b5fd' : 'var(--text-soft, #7a8896)',
+                border: `1px solid ${isActive ? 'rgba(167,139,250,0.36)' : 'var(--border)'}`,
+              }}
+              type="button"
+              onClick={() => setResponsibleFilter(option)}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {sorted.length === 0 ? (
@@ -145,6 +230,18 @@ export function OwnerComandasView({
       )}
     </div>
   )
+}
+
+function resolveResponsibleLabel(comanda: Comanda) {
+  return comanda.garcomNome?.trim() || 'Operação geral'
+}
+
+function slugify(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
 }
 
 function ComandaCard({
@@ -240,18 +337,19 @@ function ComandaCard({
 
       {open && (
         <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
-          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
-                Responsável
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                {activeComanda.garcomNome ?? 'Operação geral'}
-              </p>
-            </div>
-            <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Itens</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{itemCount}</p>
+          <div className="mb-4 overflow-hidden rounded-[16px] bg-[var(--border)]">
+            <div className="grid grid-cols-2 gap-px sm:grid-cols-4">
+              {[
+                { label: 'Cliente', value: activeComanda.clienteNome ?? 'Não identificado' },
+                { label: 'Responsável', value: activeComanda.garcomNome ?? 'Operação geral' },
+                { label: 'Itens', value: String(itemCount) },
+                { label: 'Abertura', value: formatDateTime(activeComanda.abertaEm) },
+              ].map(({ label, value }) => (
+                <div className="bg-[var(--surface-muted)] px-3 py-3" key={label}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -268,59 +366,70 @@ function ComandaCard({
             </button>
           ) : null}
 
-          {isLoadingDetails ? (
-            <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-6 text-xs text-[var(--text-soft)]">
-              Carregando extrato detalhado...
+          <section className="mb-4 border-b border-[var(--border)] pb-4">
+            <div className="flex items-center justify-between gap-3 pb-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Itens da comanda</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{detailHint}</p>
+              </div>
+              <span className="text-[10px] text-[var(--text-soft)]">{activeComanda.mesa ? `mesa ${activeComanda.mesa}` : 'sem mesa'}</span>
             </div>
-          ) : activeComanda.itens.length === 0 ? (
-            <div className="mb-4 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs text-[var(--text-soft)]">
-              Nenhum item detalhado para esta comanda.
-            </div>
-          ) : (
-            <ul className="mb-4 space-y-2" data-testid={`owner-comanda-items-${comanda.id}`}>
-              {activeComanda.itens.map((item, idx) => (
-                <li
-                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3"
-                  key={`${item.produtoId}-${idx}`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-[var(--text-primary)]">
-                      {item.quantidade}× {item.nome}
-                    </p>
-                    {item.observacao && (
-                      <p className="mt-1 text-[10px] italic text-[var(--text-soft)]">{`"${item.observacao}"`}</p>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-xs font-semibold text-[var(--text-primary)]">
-                    {formatCurrency(item.quantidade * item.precoUnitario)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
 
-          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-xs">
-            <div className="flex justify-between text-[var(--text-soft)]">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {activeComanda.desconto > 0 && (
-              <div className="mt-2 flex justify-between text-[#fca5a5]">
-                <span>Desconto ({activeComanda.desconto}%)</span>
-                <span>– {formatCurrency(descontoVal)}</span>
+            {isLoadingDetails ? (
+              <div className="flex items-center justify-center px-1 py-5 text-xs text-[var(--text-soft)]">
+                Carregando extrato detalhado...
               </div>
-            )}
-            {activeComanda.acrescimo > 0 && (
-              <div className="mt-2 flex justify-between text-[#fdba74]">
-                <span>Serviço ({activeComanda.acrescimo}%)</span>
-                <span>+ {formatCurrency(acrescimoVal)}</span>
+            ) : activeComanda.itens.length === 0 ? (
+              <div className="px-1 py-5 text-center text-xs text-[var(--text-soft)]">
+                Nenhum item detalhado para esta comanda.
               </div>
+            ) : (
+              <ul className="divide-y divide-[var(--border)]" data-testid={`owner-comanda-items-${comanda.id}`}>
+                {activeComanda.itens.map((item, idx) => (
+                  <li className="flex items-start justify-between gap-3 py-3" key={`${item.produtoId}-${idx}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                        {item.quantidade}× {item.nome}
+                      </p>
+                      {item.observacao ? (
+                        <p className="mt-1 text-[11px] italic text-[var(--text-soft)]">{`"${item.observacao}"`}</p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-[var(--text-primary)]">
+                      {formatCurrency(item.quantidade * item.precoUnitario)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-            <div className="mt-3 flex justify-between border-t border-[var(--border)] pt-3 font-semibold text-[var(--text-primary)]">
-              <span>Total final</span>
-              <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
+          </section>
+
+          <section className="text-xs">
+            <div className="space-y-2">
+              <div className="flex justify-between gap-3 text-[var(--text-soft)]">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              {activeComanda.desconto > 0 ? (
+                <div className="flex justify-between gap-3 text-[#fca5a5]">
+                  <span>Desconto ({activeComanda.desconto}%)</span>
+                  <span>– {formatCurrency(descontoVal)}</span>
+                </div>
+              ) : null}
+              {activeComanda.acrescimo > 0 ? (
+                <div className="flex justify-between gap-3 text-[#fdba74]">
+                  <span>Serviço ({activeComanda.acrescimo}%)</span>
+                  <span>+ {formatCurrency(acrescimoVal)}</span>
+                </div>
+              ) : null}
             </div>
-          </div>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Total final</span>
+              <span className="text-base font-bold" style={{ color: badge.color }}>
+                {formatCurrency(total)}
+              </span>
+            </div>
+          </section>
         </div>
       )}
     </li>

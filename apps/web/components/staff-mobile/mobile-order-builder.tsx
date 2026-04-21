@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { memo, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
@@ -9,13 +9,11 @@ import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import {
   Beer,
-  ChevronLeft,
   Coffee,
   Minus,
   Package,
   Pizza,
   Plus,
-  PlusCircle,
   Search,
   ShoppingCart,
   UtensilsCrossed,
@@ -32,6 +30,15 @@ interface MobileOrderBuilderProps {
   produtos: ProductRecord[]
   onSubmit: (items: ComandaItem[]) => Promise<void> | void
   onCancel: () => void
+  secondaryAction?: {
+    label: string
+    onClick: () => void
+  }
+  summaryItems?: Array<{
+    label: string
+    value: ReactNode
+    tone?: string
+  }>
 }
 
 type CartEntry = ComandaItem & { _key: string }
@@ -123,8 +130,6 @@ function getCategoryIcon(cat: string) {
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
-type BuilderScreen = 'categories' | 'items'
-
 function getActiveProducts(produtos: ProductRecord[]) {
   return produtos.filter((produto) => produto.active)
 }
@@ -182,102 +187,135 @@ function removeProductFromCart(cart: CartEntry[], produtoId: string) {
 
 function MobileOrderHeader({
   categories,
+  headerLabel,
   mode,
   mesaLabel,
   onCancel,
+  onSecondaryAction,
+  onSelectAll,
+  onSelectCategory,
   onSearchChange,
-  screen,
   search,
+  secondaryActionLabel,
   selectedCategory,
+  summaryItems,
 }: Readonly<{
   categories: string[]
+  headerLabel?: string
   mode: MobileOrderBuilderProps['mode']
   mesaLabel: string
   onCancel: () => void
+  onSecondaryAction?: () => void
+  onSelectAll: () => void
+  onSelectCategory: (category: string) => void
   onSearchChange: (value: string) => void
-  screen: BuilderScreen
   search: string
+  secondaryActionLabel?: string
   selectedCategory: string | null
+  summaryItems?: MobileOrderBuilderProps['summaryItems']
 }>) {
-  const showItemsScreen = screen === 'items' || categories.length === 0
-  const subtitle = mode === 'add' ? 'Adicionar itens à comanda' : 'Adicionar produtos ao pedido'
+  const subtitle =
+    mode === 'add'
+      ? 'Adicione itens sem perder o contexto da comanda em atendimento'
+      : 'Monte os itens e abra a comanda da mesa'
 
   return (
     <div className="border-b border-[var(--border)] px-3.5 py-3 sm:px-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            {mode === 'add' ? <PlusCircle className="size-3.5 text-[var(--accent,#008cff)]" /> : null}
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
-              Mesa {mesaLabel}
+              {headerLabel ?? `Mesa ${mesaLabel}`}
             </p>
           </div>
-          <p className="text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
+          <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
+            {mode === 'add' ? 'Retomar pedido' : 'Nova comanda'}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
         </div>
-        <button
-          className="min-h-[44px] shrink-0 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
-          type="button"
-          onClick={onCancel}
-        >
-          Cancelar
-        </button>
-      </div>
-
-      {showItemsScreen ? (
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
-          <input
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-3 pl-9 pr-4 text-base text-[var(--text-primary)] placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(0,140,255,0.45)]"
-            placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
-            type="text"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </div>
-      ) : categories.length > 0 ? (
-        <p className="mt-3 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
-          Escolha a categoria primeiro. Depois abrimos só a lista daquela classe, sem dividir a tela.
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function CategorySelectionScreen({
-  categories,
-  onSelectAll,
-  onSelectCategory,
-}: Readonly<{
-  categories: string[]
-  onSelectAll: () => void
-  onSelectCategory: (category: string) => void
-}>) {
-  return (
-    <div className="p-3.5 sm:p-4">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
-        Escolha uma categoria
-      </p>
-      <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:grid-cols-4">
-        <button
-          className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
-          type="button"
-          onClick={onSelectAll}
-        >
-          <Search className="mb-1 size-5 opacity-80 transition-opacity group-hover:opacity-100" />
-          <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">Todos</span>
-        </button>
-        {categories.map((category) => (
+        <div className="flex shrink-0 items-center gap-2">
+          {onSecondaryAction && secondaryActionLabel ? (
+            <button
+              className="min-h-[40px] rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent,#008cff)] transition active:opacity-80"
+              type="button"
+              onClick={onSecondaryAction}
+            >
+              {secondaryActionLabel}
+            </button>
+          ) : null}
           <button
-            className="group flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-2 py-3 text-[var(--text-soft,#7a8896)] transition-all active:scale-95 active:border-[var(--border-strong)]"
-            key={category}
+            className="min-h-[44px] shrink-0 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
             type="button"
-            onClick={() => onSelectCategory(category)}
+            onClick={onCancel}
           >
-            {getCategoryIcon(category)}
-            <span className="line-clamp-2 text-center text-[10px] font-bold uppercase tracking-wider">{category}</span>
+            Cancelar
           </button>
-        ))}
+        </div>
       </div>
+
+      {summaryItems && summaryItems.length > 0 ? (
+        <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-[16px] bg-[var(--border)]">
+          {summaryItems.map((item) => (
+            <div className="bg-[var(--surface-muted)] px-3 py-3" key={item.label}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft,#7a8896)]">
+                {item.label}
+              </p>
+              <p className="mt-1 text-base font-bold leading-tight" style={{ color: item.tone ?? 'var(--text-primary)' }}>
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="relative mt-3">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-soft,#7a8896)]" />
+        <input
+          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-3 pl-9 pr-4 text-base text-[var(--text-primary)] placeholder-[var(--text-soft,#7a8896)] outline-none focus:border-[rgba(0,140,255,0.45)]"
+          placeholder={selectedCategory ? `Buscar em ${selectedCategory}...` : 'Buscar produto...'}
+          type="text"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+      </div>
+
+      {categories.length > 0 ? (
+        <div className="-mx-1 mt-3 overflow-x-auto pb-1">
+          <div className="flex min-w-max gap-2 px-1">
+            <button
+              className="min-h-[40px] rounded-full border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]"
+              style={{
+                borderColor: selectedCategory === null ? 'rgba(0,140,255,0.28)' : 'var(--border)',
+                background: selectedCategory === null ? 'rgba(0,140,255,0.12)' : 'var(--surface-muted)',
+                color: selectedCategory === null ? 'var(--accent,#008cff)' : 'var(--text-primary)',
+              }}
+              type="button"
+              onClick={onSelectAll}
+            >
+              Todos
+            </button>
+            {categories.map((category) => {
+              const isActive = selectedCategory === category
+              return (
+                <button
+                  className="inline-flex min-h-[40px] items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]"
+                  key={category}
+                  style={{
+                    borderColor: isActive ? 'rgba(0,140,255,0.28)' : 'var(--border)',
+                    background: isActive ? 'rgba(0,140,255,0.12)' : 'var(--surface-muted)',
+                    color: isActive ? 'var(--accent,#008cff)' : 'var(--text-primary)',
+                  }}
+                  type="button"
+                  onClick={() => onSelectCategory(category)}
+                >
+                  {getCategoryIcon(category)}
+                  <span>{category}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -337,10 +375,11 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   produtos,
   onSubmit,
   onCancel,
+  secondaryAction,
+  summaryItems,
 }: Readonly<MobileOrderBuilderProps>) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [screen, setScreen] = useState<BuilderScreen>('categories')
   const [cart, setCart] = useState<CartEntry[]>([])
   const deferredSearch = useDeferredValue(search)
   const parentRef = useRef<HTMLDivElement | null>(null)
@@ -371,7 +410,6 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
   const totalItems = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade, 0), [cart])
   const totalValue = useMemo(() => cart.reduce((sum, c) => sum + c.quantidade * c.precoUnitario, 0), [cart])
-  const showItemsScreen = screen === 'items' || categories.length === 0
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
@@ -387,28 +425,18 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
     await onSubmit(items)
   }, [cart, busy, onSubmit])
 
-  const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Enviar pedido'
+  const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Abrir comanda'
   const handleSearchChange = useCallback((value: string) => {
     startTransition(() => setSearch(value))
   }, [])
   const showAllProducts = useCallback(() => {
     startTransition(() => {
       setSelectedCategory(null)
-      setSearch('')
-      setScreen('items')
     })
   }, [])
   const openCategory = useCallback((category: string) => {
     startTransition(() => {
       setSelectedCategory(category)
-      setSearch('')
-      setScreen('items')
-    })
-  }, [])
-  const returnToCategories = useCallback(() => {
-    startTransition(() => {
-      setScreen('categories')
-      setSearch('')
     })
   }, [])
 
@@ -416,13 +444,18 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
     <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
       <MobileOrderHeader
         categories={categories}
+        headerLabel={`Mesa ${mesaLabel}`}
         mesaLabel={mesaLabel}
         mode={mode}
-        screen={screen}
         search={search}
         selectedCategory={selectedCategory}
         onCancel={onCancel}
+        onSecondaryAction={secondaryAction?.onClick}
+        onSelectAll={showAllProducts}
+        onSelectCategory={openCategory}
         onSearchChange={handleSearchChange}
+        secondaryActionLabel={secondaryAction?.label}
+        summaryItems={summaryItems}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar" ref={parentRef}>
@@ -446,15 +479,11 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
               title={isOffline ? 'Sem conexão' : 'Falha ao carregar produtos'}
             />
           </div>
-        ) : !showItemsScreen && categories.length > 0 ? (
-          <CategorySelectionScreen
-            categories={categories}
-            onSelectAll={showAllProducts}
-            onSelectCategory={openCategory}
-          />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-sm text-[var(--text-soft,#7a8896)]">Nenhum produto encontrado</p>
+            <p className="text-sm text-[var(--text-soft,#7a8896)]">
+              {activeProdutos.length === 0 ? 'Nenhum produto ativo no catálogo' : 'Nenhum produto encontrado'}
+            </p>
           </div>
         ) : (
           <>
@@ -466,14 +495,15 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">{filtered.length} produtos disponíveis</p>
                 </div>
-                <button
-                  className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
-                  type="button"
-                  onClick={returnToCategories}
-                >
-                  <ChevronLeft className="size-3.5" />
-                  Categorias
-                </button>
+                {selectedCategory ? (
+                  <button
+                    className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-soft,#7a8896)] transition-colors active:text-[var(--text-primary)]"
+                    type="button"
+                    onClick={showAllProducts}
+                  >
+                    Ver tudo
+                  </button>
+                ) : null}
               </div>
             </div>
 

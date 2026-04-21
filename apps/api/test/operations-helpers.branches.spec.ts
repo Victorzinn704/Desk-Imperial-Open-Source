@@ -346,7 +346,7 @@ describe('OperationsHelpersService - branches', () => {
     )
   })
 
-  it('requireAuthorizedComanda permite OWNER e bloqueia STAFF sem vinculo', async () => {
+  it('requireAuthorizedComanda permite OWNER e STAFF ativo mesmo quando a comanda e de outro atendimento', async () => {
     const ownerAuth = makeOwnerAuthContext()
     const staffAuth = makeStaffAuthContext({ employeeId: 'emp-1' })
     const comanda = { id: 'comanda-1', currentEmployeeId: 'emp-2' }
@@ -355,6 +355,16 @@ describe('OperationsHelpersService - branches', () => {
     jest.spyOn(service as any, 'resolveEmployeeForStaff').mockResolvedValue({ id: 'emp-1' })
 
     await expect(service.requireAuthorizedComanda({} as any, 'owner-1', ownerAuth, 'comanda-1')).resolves.toBe(comanda)
+    await expect(service.requireAuthorizedComanda({} as any, 'owner-1', staffAuth, 'comanda-1')).resolves.toBe(comanda)
+  })
+
+  it('requireAuthorizedComanda bloqueia STAFF sem funcionario ativo vinculado', async () => {
+    const staffAuth = makeStaffAuthContext({ employeeId: 'emp-1' })
+    const comanda = { id: 'comanda-1', currentEmployeeId: 'emp-2' }
+
+    jest.spyOn(service as any, 'requireOwnedComanda').mockResolvedValue(comanda)
+    jest.spyOn(service as any, 'resolveEmployeeForStaff').mockResolvedValue(null)
+
     await expect(service.requireAuthorizedComanda({} as any, 'owner-1', staffAuth, 'comanda-1')).rejects.toThrow(
       ForbiddenException,
     )

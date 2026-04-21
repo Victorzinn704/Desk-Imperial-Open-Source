@@ -23,6 +23,7 @@ import { SelectField } from '@/components/shared/select-field'
 
 const emptyValues: ProductFormInputValues = {
   name: '',
+  barcode: '',
   brand: '',
   category: '',
   packagingClass: '',
@@ -77,6 +78,7 @@ function applyPackagingPreset(
 function buildProductResetValues(product: ProductRecord): ProductFormInputValues {
   return {
     name: product.name,
+    barcode: product.barcode ?? '',
     brand: product.brand ?? '',
     category: product.category,
     packagingClass: product.packagingClass,
@@ -338,22 +340,32 @@ export function ProductForm({
           ) : null}
 
           <div className="grid gap-5 sm:grid-cols-2">
-          <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
-          <InputField
-            error={errors.brand?.message}
-            label="Marca"
-            placeholder="Coca-Cola, Brahma, Guarana..."
-            {...register('brand')}
-          />
+            <InputField error={errors.name?.message} label="Nome" placeholder="Produto Alpha" {...register('name')} />
+            <InputField
+              error={errors.brand?.message}
+              label="Marca"
+              placeholder="Coca-Cola, Brahma, Guarana..."
+              {...register('brand')}
+            />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
+            <InputField
+              error={errors.barcode?.message}
+              hint="Aceita EAN com 8, 12, 13 ou 14 dígitos."
+              inputMode="numeric"
+              label="Código de barras"
+              placeholder="7891234567890"
+              {...register('barcode')}
+            />
             <InputField
               error={errors.category?.message}
               label="Categoria"
               placeholder="Bebidas"
               {...register('category')}
             />
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2">
             <SelectField
               error={!selectedPresetIsManual ? errors.packagingClass?.message : undefined}
               hint="Escolha um perfil pronto ou use Outro para criar um formato próprio."

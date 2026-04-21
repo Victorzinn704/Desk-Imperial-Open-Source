@@ -3,18 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ComandaItem, Mesa } from '@/components/pdv/pdv-types'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  BarChart3,
-  Building2,
-  ChefHat,
-  ClipboardList,
-  Cog,
-  Crown,
-  LogOut,
-  Package,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
+import { BarChart3, ClipboardList, Cog, LogOut, ShoppingCart, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { BrandMark } from '@/components/shared/brand-mark'
 import dynamic from 'next/dynamic'
@@ -39,7 +28,6 @@ import { MobileTableGrid } from '../staff-mobile/mobile-table-grid'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { useRouter } from 'next/navigation'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
-import { formatBRL as formatCurrency } from '@/lib/currency'
 import {
   addComandaItem,
   addComandaItems,
@@ -63,9 +51,18 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
-import { buildDesignLabConfigHref, buildDesignLabHref } from '@/components/design-lab/design-lab-navigation'
+import {
+  buildDesignLabConfigHref,
+  buildDesignLabFinanceiroHref,
+  buildDesignLabHref,
+} from '@/components/design-lab/design-lab-navigation'
+import { OwnerTodayView } from './owner-today-view'
+import { OwnerFinanceView } from './owner-finance-view'
+import { OwnerAccountView } from './owner-account-view'
 
-type Tab = 'mesas' | 'cozinha' | 'comandas' | 'resumo' | 'pedido'
+type Tab = 'today' | 'comandas' | 'pdv' | 'financeiro' | 'conta'
+type PdvView = 'mesas' | 'cozinha'
+const ownerQuickRegisterHref = '/app/owner/cadastro-rapido'
 
 type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
 type OwnerMobileShellProps = Readonly<{
@@ -75,7 +72,8 @@ type OwnerMobileShellProps = Readonly<{
 export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<Tab>('mesas')
+  const [activeTab, setActiveTab] = useState<Tab>('today')
+  const [pdvView, setPdvView] = useState<PdvView>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
   const [focusedComandaId, setFocusedComandaId] = useState<string | null>(null)
@@ -284,6 +282,30 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   // Ranking garçons — a partir do snapshot
   const garconRanking = useMemo(() => summaryQuery.data?.performers ?? [], [summaryQuery.data])
+  const garconSnapshots = useMemo(() => {
+    const activeByPerformer = new Map<string, number>()
+    for (const comanda of activeComandas) {
+      const performerName = comanda.garcomNome?.trim()
+      if (!performerName) {continue}
+      activeByPerformer.set(performerName, (activeByPerformer.get(performerName) ?? 0) + 1)
+    }
+
+    const known = new Set<string>()
+    const snapshots = garconRanking.map((performer) => {
+      known.add(performer.nome)
+      return {
+        ...performer,
+        abertasAgora: activeByPerformer.get(performer.nome) ?? 0,
+      }
+    })
+
+    for (const [nome, abertasAgora] of activeByPerformer.entries()) {
+      if (known.has(nome)) {continue}
+      snapshots.push({ nome, valor: 0, comandas: 0, abertasAgora })
+    }
+
+    return snapshots.sort((left, right) => right.valor - left.valor || right.abertasAgora - left.abertasAgora)
+  }, [activeComandas, garconRanking])
   const topProdutos = useMemo(() => summaryQuery.data?.topProducts ?? [], [summaryQuery.data])
 
   const isBusy =
@@ -366,8 +388,6 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
 
   return (
     <div className="flex min-h-screen min-h-[100svh] flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
-      {/* Header */}
-      {/* Header Minimalista */}
       <header
         className="relative z-50 flex shrink-0 items-center justify-between gap-3 bg-[var(--bg)] px-3 pb-2.5 sm:px-5 sm:pb-3"
         data-testid="owner-header"
@@ -400,34 +420,16 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <button
-            aria-label="Configurações"
-            className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
-            type="button"
-            onClick={() => router.push(buildDesignLabConfigHref('account'))}
-          >
-            <Cog className="size-4" />
-          </button>
-          <button
-            aria-label="Abrir painel completo"
-            className="flex size-9 items-center justify-center rounded-full bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)] transition-transform active:scale-95 sm:size-10"
-            type="button"
-            onClick={() => router.push(buildDesignLabHref('overview'))}
-          >
-            <Building2 className="size-4" />
-          </button>
-          <button
-            aria-label="Encerrar sessão"
-            className="flex size-9 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95 sm:size-10"
-            data-testid="logout-button"
-            disabled={logoutMutation.isPending}
-            type="button"
-            onClick={() => logoutMutation.mutate()}
-          >
-            <LogOut className="size-4" />
-          </button>
-        </div>
+        <button
+          aria-label="Encerrar sessão"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[var(--text-primary)] transition-transform active:scale-95 sm:size-10"
+          data-testid="logout-button"
+          disabled={logoutMutation.isPending}
+          type="button"
+          onClick={() => logoutMutation.mutate()}
+        >
+          <LogOut className="size-4" />
+        </button>
       </header>
 
       <ConnectionBanner status={realtimeStatus} />
@@ -443,55 +445,92 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
             OK
           </button>
         </div>
-      ) : null}
+        ) : null}
 
-      {/* Main content */}
-      <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain" ref={pullRef}>
+      <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[7.25rem]" ref={pullRef}>
         <PullIndicator isRefreshing={isRefreshing} progress={pullProgress} style={pullIndicatorStyle} />
-        {activeTab === 'mesas' ? (
-        <MobileTableGrid
-          errorMessage={operationsErrorMessage}
-          isLoading={operationsLoading}
-          isOffline={isOffline}
-          mesas={mesas}
-          onSelectMesa={(mesa: Mesa) => {
-            if (mesa.status === 'ocupada' && mesa.comandaId) {
-              setFocusedComandaId(mesa.comandaId)
+        {activeTab === 'today' ? (
+          <OwnerTodayView
+            activeComandas={executiveKpis.openComandasCount}
+            errorMessage={
+              ordersErrorMessage ??
+              operationsErrorMessage ??
+              kitchenErrorMessage ??
+              summaryErrorMessage ??
+              null
+            }
+            garconRanking={garconRanking}
+            garconSnapshots={garconSnapshots}
+            isLoading={ordersLoading || operationsLoading || kitchenLoading || summaryLoading}
+            isOffline={isOffline}
+            kitchenBadge={kitchenBadge}
+            mesasLivres={mesasLivres}
+            mesasOcupadas={mesasOcupadas}
+            ticketMedio={ticketMedio}
+            todayOrderCount={todayOrders.length}
+            todayRevenue={executiveKpis.receitaRealizada}
+            topProdutos={topProdutos}
+            onOpenComandas={() => {
+              setFocusedComandaId(null)
+              setPendingAction(null)
               setActiveTab('comandas')
-              } else {
-                setPendingAction({ type: 'new', mesa })
-                setFocusedComandaId(null)
-                setActiveTab('pedido')
-              }
             }}
+            onOpenFullDashboard={() => router.push(buildDesignLabHref('overview'))}
+            onOpenKitchen={() => {
+              setPendingAction(null)
+              setPdvView('cozinha')
+              setActiveTab('pdv')
+            }}
+            onOpenPdv={() => {
+              setFocusedComandaId(null)
+              setPendingAction(null)
+              setPdvView('mesas')
+              setActiveTab('pdv')
+            }}
+            onOpenQuickRegister={() => router.push(ownerQuickRegisterHref)}
           />
         ) : null}
 
-        {activeTab === 'pedido' ? (
-          pendingAction ? (
-            <MobileOrderBuilder
-              busy={isBusy}
-              errorMessage={productsErrorMessage}
-              isLoading={productsLoading}
-              mesaLabel={mesaLabel}
-              mode={orderMode}
-              isOffline={isOffline}
-              produtos={productsQuery.data?.items ?? []}
-              onCancel={() => {
-                setPendingAction(null)
-                setActiveTab('mesas')
-              }}
-              onSubmit={handleSubmit}
-            />
-          ) : null
-        ) : null}
-
-        {activeTab === 'cozinha' ? (
-          <KitchenOrdersView
-            data={kitchenQuery.data}
-            errorMessage={kitchenErrorMessage}
-            isLoading={kitchenLoading}
+        {activeTab === 'pdv' ? (
+          <OwnerPdvTab
+            errorMessage={pdvView === 'cozinha' ? kitchenErrorMessage : operationsErrorMessage}
+            isBusy={isBusy}
             isOffline={isOffline}
+            kitchenData={kitchenQuery.data}
+            kitchenLoading={kitchenLoading}
+            mesaLabel={mesaLabel}
+            mesas={mesas}
+            mesasLoading={operationsLoading}
+            mode={orderMode}
+            onCancelBuilder={() => {
+              setPendingAction(null)
+              setPdvView('mesas')
+            }}
+            onOpenQuickRegister={() => router.push(ownerQuickRegisterHref)}
+            onSelectMesa={(mesa: Mesa) => {
+              if (mesa.status === 'ocupada' && mesa.comandaId) {
+                setPendingAction({
+                  type: 'add',
+                  comandaId: mesa.comandaId,
+                  mesaLabel: normalizeTableLabel(mesa.numero),
+                })
+                setFocusedComandaId(null)
+                setPdvView('mesas')
+                setActiveTab('pdv')
+              } else {
+                setPendingAction({ type: 'new', mesa })
+                setFocusedComandaId(null)
+                setPdvView('mesas')
+                setActiveTab('pdv')
+              }
+            }}
+            onSetPdvView={setPdvView}
+            onSubmit={handleSubmit}
+            pdvView={pdvView}
+            pendingAction={pendingAction}
+            products={productsQuery.data?.items ?? []}
+            productsErrorMessage={productsErrorMessage}
+            productsLoading={productsLoading}
             queryKey={OPERATIONS_KITCHEN_QUERY_KEY}
           />
         ) : null}
@@ -510,43 +549,45 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
           />
         ) : null}
 
-        {activeTab === 'resumo' ? (
-          <OwnerResumoTab
-            activeComandas={executiveKpis.openComandasCount}
-            garconRanking={garconRanking}
-            errorMessage={
-              ordersErrorMessage ??
-              operationsErrorMessage ??
-              kitchenErrorMessage ??
-              summaryErrorMessage ??
-              null
-            }
-            isLoading={ordersLoading || operationsLoading || kitchenLoading || summaryLoading}
+        {activeTab === 'financeiro' ? (
+          <OwnerFinanceView
+            caixaEsperado={executiveKpis.caixaEsperado}
+            errorMessage={summaryErrorMessage ?? ordersErrorMessage ?? null}
             isOffline={isOffline}
-            kitchenBadge={kitchenBadge}
-            mesasLivres={mesasLivres}
-            mesasOcupadas={mesasOcupadas}
+            lucroRealizado={executiveKpis.lucroRealizado}
             ticketMedio={ticketMedio}
             todayOrderCount={todayOrders.length}
             todayRevenue={executiveKpis.receitaRealizada}
-            topProdutos={topProdutos}
-            onOpenFullDashboard={() => router.push(buildDesignLabHref('overview'))}
+            onOpenCash={() => router.push(buildDesignLabHref('caixa'))}
+            onOpenFinanceiro={() => router.push(buildDesignLabFinanceiroHref('movimentacao'))}
+          />
+        ) : null}
+
+        {activeTab === 'conta' ? (
+          <OwnerAccountView
+            companyName={companyName}
+            displayName={displayName}
+            onOpenDashboard={() => router.push(buildDesignLabHref('overview'))}
+            onOpenQuickRegister={() => router.push(ownerQuickRegisterHref)}
+            onOpenSecurity={() => router.push(buildDesignLabConfigHref('security'))}
+            onOpenSettings={() => router.push(buildDesignLabConfigHref('account'))}
           />
         ) : null}
       </main>
 
-      {/* Bottom nav Moderna (iFood style) */}
-      <nav
-        className="shrink-0 bg-[var(--bg)] px-1 pb-1 pt-1 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-1 pb-1 pt-1 sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
-        <div className="relative grid min-h-[4.25rem] grid-cols-4 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
+        <nav className="pointer-events-auto rounded-[1.8rem] bg-[var(--bg)] shadow-[0_-8px_24px_rgba(0,0,0,0.6)]">
+          <div className="relative grid min-h-[4.25rem] grid-cols-5 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           {(
             [
-              { id: 'mesas', label: 'Mesas', Icon: Building2, badge: 0 },
-              { id: 'cozinha', label: 'Cozinha', Icon: ChefHat, badge: kitchenBadge },
+              { id: 'today', label: 'Hoje', Icon: BarChart3, badge: 0 },
               { id: 'comandas', label: 'Comandas', Icon: ClipboardList, badge: activeComandas.length },
-              { id: 'resumo', label: 'Resumo', Icon: BarChart3, badge: 0 },
+              { id: 'pdv', label: 'PDV', Icon: ShoppingCart, badge: pendingAction ? 1 : 0 },
+              { id: 'financeiro', label: 'Financeiro', Icon: TrendingUp, badge: 0 },
+              { id: 'conta', label: 'Conta', Icon: Cog, badge: 0 },
             ] as const
           ).map(({ id, label, Icon, badge }) => {
             const isActive = activeTab === id
@@ -559,7 +600,9 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
                 type="button"
                 onClick={() => {
                   setActiveTab(id)
-                  if (id !== 'comandas') {setFocusedComandaId(null)}
+                  if (id !== 'comandas') {
+                    setFocusedComandaId(null)
+                  }
                 }}
               >
                 {isActive && (
@@ -586,41 +629,95 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
               </button>
             )
           })}
-        </div>
-      </nav>
+          </div>
+        </nav>
+      </div>
     </div>
   )
 }
 
-function OwnerResumoTab({
-  todayRevenue,
-  ticketMedio,
-  todayOrderCount,
-  activeComandas,
-  mesasLivres,
-  mesasOcupadas,
-  kitchenBadge,
-  garconRanking,
-  topProdutos,
-  isLoading,
-  isOffline,
+function OwnerPdvTab({
   errorMessage,
-  onOpenFullDashboard,
-}: {
-  todayRevenue: number
-  ticketMedio: number
-  todayOrderCount: number
-  activeComandas: number
-  mesasLivres: number
-  mesasOcupadas: number
-  kitchenBadge: number
-  garconRanking: { nome: string; valor: number; comandas: number }[]
-  topProdutos: { nome: string; qtd: number; valor: number }[]
-  isLoading: boolean
-  isOffline: boolean
+  isBusy,
+  isOffline,
+  kitchenData,
+  kitchenLoading,
+  mesaLabel,
+  mesas,
+  mesasLoading,
+  mode,
+  onCancelBuilder,
+  onOpenQuickRegister,
+  onSelectMesa,
+  onSetPdvView,
+  onSubmit,
+  pdvView,
+  pendingAction,
+  products,
+  productsErrorMessage,
+  productsLoading,
+  queryKey,
+}: Readonly<{
   errorMessage: string | null
-  onOpenFullDashboard: () => void
-}) {
+  isBusy: boolean
+  isOffline: boolean
+  kitchenData: Awaited<ReturnType<typeof fetchOperationsKitchen>> | undefined
+  kitchenLoading: boolean
+  mesaLabel: string
+  mesas: Mesa[]
+  mesasLoading: boolean
+  mode: 'new' | 'add'
+  onCancelBuilder: () => void
+  onOpenQuickRegister: () => void
+  onSelectMesa: (mesa: Mesa) => void
+  onSetPdvView: (view: PdvView) => void
+  onSubmit: (items: ComandaItem[]) => Promise<void> | void
+  pdvView: PdvView
+  pendingAction: PendingAction | null
+  products: Awaited<ReturnType<typeof fetchProducts>>['items']
+  productsErrorMessage: string | null
+  productsLoading: boolean
+  queryKey: typeof OPERATIONS_KITCHEN_QUERY_KEY
+}>) {
+  const mesasLivres = useMemo(() => mesas.filter((mesa) => mesa.status === 'livre').length, [mesas])
+  const mesasEmAtendimento = useMemo(() => mesas.filter((mesa) => mesa.status !== 'livre').length, [mesas])
+  const kitchenQueue =
+    (kitchenData?.statusCounts.queued ?? 0) + (kitchenData?.statusCounts.inPreparation ?? 0)
+
+  if (pendingAction) {
+    return (
+      <div className="space-y-4 p-3 pb-6">
+        {errorMessage ? (
+          <div className="rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.08)] px-4 py-3 text-xs text-[#fca5a5]">
+            {errorMessage}
+          </div>
+        ) : isOffline ? (
+          <div className="rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
+            O PDV pode estar desatualizado até a reconexão.
+          </div>
+        ) : null}
+
+        <MobileOrderBuilder
+          busy={isBusy}
+          errorMessage={productsErrorMessage}
+          isLoading={productsLoading}
+          isOffline={isOffline}
+          mesaLabel={mesaLabel}
+          mode={mode}
+          produtos={products}
+          onCancel={onCancelBuilder}
+          onSubmit={onSubmit}
+          secondaryAction={{ label: 'Cadastro rápido', onClick: onOpenQuickRegister }}
+          summaryItems={[
+            { label: 'Mesa', value: mesaLabel, tone: '#008cff' },
+            { label: 'Livres', value: String(mesasLivres), tone: '#36f57c' },
+            { label: 'Na fila', value: String(kitchenQueue), tone: '#eab308' },
+          ]}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 p-3 pb-6">
       {errorMessage ? (
@@ -629,163 +726,87 @@ function OwnerResumoTab({
         </div>
       ) : isOffline ? (
         <div className="rounded-2xl border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.08)] px-4 py-3 text-xs text-[#fcd34d]">
-          Você está offline. O resumo pode estar desatualizado até a reconexão.
+          O PDV pode estar desatualizado até a reconexão.
         </div>
       ) : null}
 
-      {/* KPIs do dia */}
-      <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          Hoje
-        </p>
-        <div className="grid grid-cols-2 gap-2.5">
+      <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">PDV</p>
+            <h1 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">Pedido e cozinha</h1>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
+              Mesas, nova comanda e fila de cozinha em uma única superfície.
+            </p>
+          </div>
+          <button
+            className="shrink-0 rounded-xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-3 py-2 text-xs font-semibold text-[var(--accent,#008cff)]"
+            type="button"
+            onClick={onOpenQuickRegister}
+          >
+            Cadastro rápido
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-[18px] bg-[var(--border)]">
           {[
-            {
-              label: 'Receita',
-              value: formatCurrency(todayRevenue),
-              sub: 'faturado',
-              color: '#36f57c',
-              Icon: TrendingUp,
-            },
-            {
-              label: 'Ticket médio',
-              value: formatCurrency(ticketMedio),
-              sub: 'por atendimento',
-              color: '#fb923c',
-              Icon: BarChart3,
-            },
-            {
-              label: 'Pedidos',
-              value: String(todayOrderCount),
-              sub: 'encerrados',
-              color: '#60a5fa',
-              Icon: ClipboardList,
-            },
-            {
-              label: 'Comandas',
-              value: String(activeComandas),
-              sub: 'abertas agora',
-              color: '#a78bfa',
-              Icon: Building2,
-            },
-          ].map(({ label, value, sub, color, Icon }) => (
-            <div
-              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5"
-              data-testid={`owner-kpi-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              key={label}
-            >
-              <div className="mb-1 flex items-center gap-1.5">
-                <Icon className="size-3.5" style={{ color }} />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">{label}</p>
-              </div>
-              {isLoading ? (
-                <div className="h-6 w-20 animate-pulse rounded bg-[var(--surface-soft)]" />
-              ) : (
-                <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
-              )}
-              <p className="mt-1 text-[10px] text-[var(--text-soft)]">{sub}</p>
+            { label: 'Livres', value: mesasLivres, color: '#36f57c' },
+            { label: 'Em uso', value: mesasEmAtendimento, color: '#f87171' },
+            { label: 'Na fila', value: kitchenQueue, color: '#eab308' },
+          ].map(({ label, value, color }) => (
+            <div className="bg-[var(--surface-muted)] px-3 py-3" key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft,#7a8896)]">{label}</p>
+              <p className="mt-1 text-xl font-bold" style={{ color }}>
+                {value}
+              </p>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Mesas + Cozinha ao vivo */}
-      <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          Ao vivo
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
-            <p className="text-2xl font-bold text-[#34d399]">{mesasLivres}</p>
-            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Livres</p>
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
-            <p className="text-2xl font-bold text-[#f87171]">{mesasOcupadas}</p>
-            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Ocupadas</p>
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center">
-            <p className="text-2xl font-bold text-[#eab308]">{kitchenBadge}</p>
-            <p className="text-[10px] text-[var(--text-soft)] mt-0.5">Cozinha</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Ranking garçons */}
-      <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          <Users className="inline size-3 mr-1" />
-          Ranking garçons
-        </p>
-        {garconRanking.length === 0 ? (
-          <p className="text-xs text-[var(--text-soft)] py-2 text-center">Nenhum garçom com vendas hoje</p>
-        ) : (
-          <ul className="space-y-2">
-            {garconRanking.map((g, i) => (
-              <li
-                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
-                key={g.nome}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="text-xs font-bold"
-                    style={{ color: i === 0 ? '#eab308' : 'var(--text-soft, #7a8896)' }}
-                  >
-                    {i === 0 ? <Crown className="size-3" /> : `#${i + 1}`}
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">{g.nome}</p>
-                    <p className="text-[10px] text-[var(--text-soft)]">{g.comandas} comandas</p>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-[#36f57c]">{formatCurrency(g.valor)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Top produtos */}
-      <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          <Package className="inline size-3 mr-1" />
-          Top produtos
-        </p>
-        {topProdutos.length === 0 ? (
-          <p className="text-xs text-[var(--text-soft)] py-2 text-center">Nenhum produto vendido hoje ainda</p>
-        ) : (
-          <ul className="space-y-2">
-            {topProdutos.map((p, i) => {
-              const maxValor = topProdutos[0]?.valor ?? 1
-              const pct = Math.round((p.valor / maxValor) * 100)
+        {!pendingAction ? (
+          <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-[16px] bg-[var(--border)]">
+            {([
+              { id: 'mesas', label: 'Mesas' },
+              { id: 'cozinha', label: 'Cozinha' },
+            ] as const).map(({ id, label }) => {
+              const isActive = pdvView === id
               return (
-                <li className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5" key={p.nome}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--text-primary)]">{p.nome}</p>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-[#60a5fa]">{formatCurrency(p.valor)}</span>
-                      <span className="ml-2 text-[10px] text-[var(--text-soft)]">×{p.qtd}</span>
-                    </div>
-                  </div>
-                  <div className="h-1 w-full rounded-full bg-[var(--surface-muted)]">
-                    <div
-                      className="h-1 rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: i === 0 ? '#36f57c' : 'rgba(96,165,250,0.6)' }}
-                    />
-                  </div>
-                </li>
+                <button
+                  className="bg-[var(--surface-muted)] px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
+                  data-testid={`owner-pdv-${id}`}
+                  key={id}
+                  style={{
+                    background: isActive ? 'rgba(0,140,255,0.12)' : 'var(--surface-muted)',
+                    color: isActive ? 'var(--accent,#008cff)' : 'var(--text-primary)',
+                  }}
+                  type="button"
+                  onClick={() => onSetPdvView(id)}
+                >
+                  {label}
+                </button>
               )
             })}
-          </ul>
-        )}
-      </div>
+          </div>
+        ) : null}
+      </section>
 
-      <button
-        className="w-full rounded-2xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
-        type="button"
-        onClick={onOpenFullDashboard}
-      >
-        Painel completo →
-      </button>
+      {pdvView === 'cozinha' ? (
+        <KitchenOrdersView
+          data={kitchenData}
+          errorMessage={errorMessage}
+          isLoading={kitchenLoading}
+          isOffline={isOffline}
+          queryKey={queryKey}
+        />
+      ) : (
+        <MobileTableGrid
+          errorMessage={errorMessage}
+          isLoading={mesasLoading}
+          isOffline={isOffline}
+          mesas={mesas}
+          onSelectMesa={onSelectMesa}
+        />
+      )}
     </div>
   )
 }

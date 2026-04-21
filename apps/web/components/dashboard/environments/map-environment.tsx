@@ -5,8 +5,6 @@ import type { CurrencyCode } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import {
-  LAB_RESPONSIVE_FOUR_UP_GRID,
-  LabMiniStat,
   LabPageHeader,
   LabPanel,
   LabStatusPill,
@@ -39,12 +37,14 @@ export function MapEnvironment() {
         eyebrow="Inteligência territorial"
         title="Mapa de vendas"
       >
-        <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-          <LabMiniStat label="pedidos" value={String(totalOrderCount ?? 0)} />
-          <LabMiniStat label="receita" value={formatCurrency(revenue, displayCurrency)} />
-          <LabMiniStat label="lucro" value={formatCurrency(profit, displayCurrency)} />
-          <LabMiniStat label="cobertura" value={`${coveragePct}%`} />
-        </div>
+        <MapHeaderStrip
+          items={[
+            { label: 'pedidos', value: String(totalOrderCount ?? 0) },
+            { label: 'receita', value: formatCurrency(revenue, displayCurrency) },
+            { label: 'lucro', value: formatCurrency(profit, displayCurrency) },
+            { label: 'cobertura', value: `${coveragePct}%` },
+          ]}
+        />
       </LabPageHeader>
 
       <MapSection
@@ -73,12 +73,14 @@ function MapAuthState() {
         }
         title="Mapa de vendas"
       >
-        <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-          <LabMiniStat label="pedidos" value="0" />
-          <LabMiniStat label="receita" value="R$ 0,00" />
-          <LabMiniStat label="lucro" value="R$ 0,00" />
-          <LabMiniStat label="canais" value="0/0" />
-        </div>
+        <MapHeaderStrip
+          items={[
+            { label: 'pedidos', value: '0' },
+            { label: 'receita', value: 'R$ 0,00' },
+            { label: 'lucro', value: 'R$ 0,00' },
+            { label: 'canais', value: '0/0' },
+          ]}
+        />
       </LabPageHeader>
 
       <LabPanel
@@ -93,12 +95,14 @@ function MapAuthState() {
         padding="md"
         title="Autenticação necessária"
       >
-        <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-          <LabMiniStat label="território" value="bloqueado" />
-          <LabMiniStat label="bairros" value="0" />
-          <LabMiniStat label="canais" value="0" />
-          <LabMiniStat label="pedidos" value="0" />
-        </div>
+        <MapHeaderStrip
+          items={[
+            { label: 'território', value: 'bloqueado' },
+            { label: 'bairros', value: '0' },
+            { label: 'canais', value: '0' },
+            { label: 'pedidos', value: '0' },
+          ]}
+        />
       </LabPanel>
     </section>
   )
@@ -117,6 +121,25 @@ function MapMetaRow({
     <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3 last:border-b-0 last:pb-0">
       <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
       <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
+  )
+}
+
+function MapHeaderStrip({
+  items,
+}: Readonly<{
+  items: Array<{ label: string; value: string }>
+}>) {
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]">
+      <div className="grid gap-px bg-[var(--lab-border)] sm:grid-cols-2 2xl:grid-cols-4">
+        {items.map((item) => (
+          <div className="bg-[var(--lab-surface)] px-4 py-4" key={item.label}>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{item.label}</p>
+            <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{item.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

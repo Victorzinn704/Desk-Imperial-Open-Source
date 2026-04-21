@@ -20,6 +20,7 @@ import type {
 import {
   buildBusinessDateWindow,
   formatBusinessDateKey,
+  isOpenComandaStatus,
   OPEN_COMANDA_STATUSES,
   toNumberOrZero,
 } from './operations-domain.utils'
@@ -218,8 +219,8 @@ export class OperationsHelpersService {
 
     const employee = actorEmployee ?? (await this.resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth))
 
-    if (!employee || comanda.currentEmployeeId !== employee.id) {
-      throw new ForbiddenException('Seu acesso so pode operar mesas vinculadas ao seu atendimento.')
+    if (!employee) {
+      throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para operar comandas.')
     }
 
     return comanda
@@ -404,6 +405,37 @@ export class OperationsHelpersService {
     }
 
     return snapshot
+  }
+
+  async buildStaffOperationalSnapshot(
+    workspaceOwnerUserId: string,
+    businessDate: Date,
+    staffEmployeeId: string,
+    options?: {
+      compactMode?: boolean
+    },
+  ): Promise<OperationsLiveResponse> {
+    const snapshot = await this.buildLiveSnapshot(workspaceOwnerUserId, businessDate, null, {
+      includeCashMovements: false,
+      ...(options?.compactMode !== undefined ? { compactMode: options.compactMode } : {}),
+    })
+
+    return {
+      ...snapshot,
+      closure: null,
+      employees: snapshot.employees.map((employee) => ({
+        ...employee,
+        cashSession: employee.employeeId === staffEmployeeId ? employee.cashSession : null,
+        comandas: employee.comandas.filter(
+          (comanda) => isOpenComandaStatus(comanda.status) || comanda.currentEmployeeId === staffEmployeeId,
+        ),
+      })),
+      unassigned: {
+        ...snapshot.unassigned,
+        cashSession: null,
+        comandas: snapshot.unassigned.comandas.filter((comanda) => isOpenComandaStatus(comanda.status)),
+      },
+    }
   }
 
   private async tryResolveLiveSnapshotFromCache(

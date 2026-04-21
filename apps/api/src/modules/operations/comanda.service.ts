@@ -1,5 +1,13 @@
  
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common'
 import { CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
@@ -155,7 +163,7 @@ export class ComandaService {
   async getComandaDetails(auth: AuthContext, comandaId: string) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
 
-    const comanda = await this.prisma.comanda.findUnique({
+    const comanda = await this.prisma.comanda.findFirst({
       where: { id: comandaId, companyOwnerId: workspaceOwnerUserId },
       include: {
         items: {
@@ -168,6 +176,17 @@ export class ComandaService {
 
     if (!comanda) {
       throw new NotFoundException('Comanda nao encontrada.')
+    }
+
+    if (auth.role === 'STAFF') {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      if (!actorEmployee) {
+        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para consultar comandas.')
+      }
+
+      if (!isOpenComandaStatus(comanda.status) && comanda.currentEmployeeId !== actorEmployee.id) {
+        throw new ForbiddenException('Seu acesso so pode consultar historico do seu proprio atendimento.')
+      }
     }
 
     return {
@@ -943,6 +962,13 @@ export class ComandaService {
     context: RequestContext,
   ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    if (auth.role === 'STAFF') {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      if (!actorEmployee) {
+        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para operar a cozinha.')
+      }
+    }
+
     const helpers = this.helpers
 
     const { updatedItem, refreshedComanda, businessDate, comandaId } = await this.prisma.$transaction(

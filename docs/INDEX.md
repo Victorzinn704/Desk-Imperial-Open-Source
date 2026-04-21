@@ -24,6 +24,8 @@ Navegação central de toda a documentação do projeto.
 | [product/requirements.md](./product/requirements.md)                   | Requisitos funcionais (RF) e não-funcionais (RNF)            |
 | [product/user-flows.md](./product/user-flows.md)                       | Fluxos principais do dono e do funcionário                   |
 | [product/risks-and-limitations.md](./product/risks-and-limitations.md) | Riscos conhecidos, limitações atuais, débito técnico         |
+| [product/owner-pwa-mvp.md](./product/owner-pwa-mvp.md)                 | Escopo oficial do Owner PWA e prioridade do cadastro rápido  |
+| [product/staff-pwa-mvp.md](./product/staff-pwa-mvp.md)                 | Escopo oficial do Staff PWA e boundary operacional           |
 
 ---
 
@@ -39,6 +41,7 @@ Navegação central de toda a documentação do projeto.
 | [architecture/authentication-flow.md](./architecture/authentication-flow.md) | Fluxo completo de autenticação, sessão e CSRF             |
 | [architecture/local-development.md](./architecture/local-development.md)     | Guia de setup do ambiente de desenvolvimento local        |
 | [architecture/coding-standards.md](./architecture/coding-standards.md)       | Padrões de código do projeto                              |
+| [architecture/multi-surface-platform-strategy.md](./architecture/multi-surface-platform-strategy.md) | Estratégia oficial para web, PWA, Kotlin e React Native |
 
 ---
 
@@ -85,6 +88,9 @@ Navegação central de toda a documentação do projeto.
 | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
 | [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                   | Gaps e riscos identificados pré-release |
 | [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)               | Critérios de release                    |
+| [release/multi-surface-delivery-workflow.md](./release/multi-surface-delivery-workflow.md)       | Workflow oficial para entrega entre web, PWA e apps        |
+| [release/web-pwa-closure-workflow-2026-04-21.md](./release/web-pwa-closure-workflow-2026-04-21.md) | Workflow executável da fase atual para fechar PWA, web, APIs, backend local e banco |
+| [release/route-closure-matrix-2026-04-21.md](./release/route-closure-matrix-2026-04-21.md)     | Matriz oficial de rotas canônicas, aliases, congeladas e superfícies removidas |
 | [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)     | Parecer técnico final                   |
 | [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md) | Plano de lapidação para release         |
 | [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints        |
@@ -118,6 +124,8 @@ docs/
 │   ├── overview.md           # O produto, para quem, por que
 │   ├── requirements.md       # RF e RNF
 │   ├── user-flows.md         # Fluxos do usuário
+│   ├── owner-pwa-mvp.md      # Escopo do PWA do dono
+│   ├── staff-pwa-mvp.md      # Escopo do PWA do funcionário
 │   └── risks-and-limitations.md
 ├── architecture/
 │   ├── overview.md
@@ -127,6 +135,7 @@ docs/
 │   ├── realtime.md           # Socket.IO
 │   ├── authentication-flow.md
 │   ├── local-development.md
+│   ├── multi-surface-platform-strategy.md
 │   └── coding-standards.md
 ├── security/
 │   ├── security-baseline.md
@@ -143,5 +152,8 @@ docs/
 │   ├── testing-guide.md
 │   └── AUDITORIA_TESTES_COMPLETA.md
 └── release/
+    ├── multi-surface-delivery-workflow.md
+    ├── web-pwa-closure-workflow-2026-04-21.md
+    ├── route-closure-matrix-2026-04-21.md
     └── (arquivos de diagnóstico e release)
 ```

@@ -126,10 +126,7 @@ export function FinanceiroLabSummary({
   return (
     <div className="space-y-5">
       {finance ? <FinanceOverviewTotal finance={finance} isLoading={false} /> : null}
-      <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
-        <FinancePeriodPanel snapshot={snapshot} />
-        <FinanceRadarPanel finance={finance} snapshot={snapshot} />
-      </div>
+      <FinanceRadarPanel finance={finance} snapshot={snapshot} />
     </div>
   )
 }
@@ -162,33 +159,6 @@ function FinanceHeaderKpis({ snapshot }: Readonly<{ snapshot: FinanceSnapshot }>
   )
 }
 
-function FinancePeriodPanel({ snapshot }: Readonly<{ snapshot: FinanceSnapshot }>) {
-  const summaryRows = [
-    { label: 'receita', value: formatCurrency(snapshot.revenue, snapshot.displayCurrency), tone: 'info' as const },
-    { label: 'resultado', value: formatCurrency(snapshot.profit, snapshot.displayCurrency), tone: snapshot.profit >= 0 ? ('success' as const) : ('danger' as const) },
-    { label: 'ticket', value: formatCurrency(snapshot.averageTicket, snapshot.displayCurrency), tone: 'neutral' as const },
-    {
-      label: 'margem',
-      value: formatPercent(snapshot.averageMargin),
-      tone: snapshot.averageMargin >= 30 ? ('success' as const) : ('warning' as const),
-    },
-  ]
-
-  return (
-    <LabPanel
-      action={<LabStatusPill tone="info">{snapshot.completedOrders} pedidos</LabStatusPill>}
-      padding="md"
-      title={`Leitura do período · ${viewLabel(snapshot.view)}`}
-    >
-      <div className="space-y-0">
-        {summaryRows.map((row) => (
-          <FinanceValueRow key={row.label} label={row.label} tone={row.tone} value={row.value} />
-        ))}
-      </div>
-    </LabPanel>
-  )
-}
-
 function FinanceRadarPanel({
   finance,
   snapshot,
@@ -206,11 +176,13 @@ function FinanceRadarPanel({
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_280px]">
         <div className="space-y-5">
-            <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-              <FinanceMiniStat label="receita" value={formatCurrency(snapshot.revenue, snapshot.displayCurrency)} />
-              <FinanceMiniStat label="margem" value={formatPercent(snapshot.averageMargin)} />
-              <FinanceMiniStat label="canal líder" value={radar.channelLead} />
-            <FinanceMiniStat label="cliente líder" value={radar.customerLead} />
+          <div className="overflow-hidden rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]">
+            <div className={`grid gap-px bg-[var(--lab-border)] ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
+              <FinanceStripStat label="receita" value={formatCurrency(snapshot.revenue, snapshot.displayCurrency)} />
+              <FinanceStripStat label="margem" value={formatPercent(snapshot.averageMargin)} />
+              <FinanceStripStat label="canal líder" value={radar.channelLead} />
+              <FinanceStripStat label="cliente líder" value={radar.customerLead} />
+            </div>
           </div>
           <FinanceChannelList channels={radar.channels} displayCurrency={snapshot.displayCurrency} />
         </div>
@@ -264,24 +236,7 @@ function FinanceMetaSummary({ snapshot }: Readonly<{ snapshot: FinanceSnapshot }
   )
 }
 
-function FinanceValueRow({
-  label,
-  tone,
-  value,
-}: Readonly<{
-  label: string
-  tone: LabStatusTone
-  value: string
-}>) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0">
-      <p className="text-sm font-medium text-[var(--lab-fg)]">{label}</p>
-      <LabStatusPill tone={tone}>{value}</LabStatusPill>
-    </div>
-  )
-}
-
-function FinanceMiniStat({
+function FinanceStripStat({
   label,
   value,
 }: Readonly<{
@@ -289,7 +244,7 @@ function FinanceMiniStat({
   value: string
 }>) {
   return (
-    <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+    <div className="bg-[var(--lab-surface)] px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
       <p className={`mt-2 text-[var(--lab-fg)] ${LAB_NUMERIC_COMPACT_CLASS}`}>
         {value}

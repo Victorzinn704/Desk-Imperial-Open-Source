@@ -1,6 +1,6 @@
 import type { OrderRecord, OrdersResponse } from '@contracts/contracts'
 
-import { type ApiBody, ApiError, apiFetch, POSTAL_LOOKUP_TIMEOUT_MS } from './api-core'
+import { type ApiBody, ApiError, apiFetch, BARCODE_LOOKUP_TIMEOUT_MS, POSTAL_LOOKUP_TIMEOUT_MS } from './api-core'
 
 export type PostalCodeLookupResponse = {
   postalCode: string
@@ -12,6 +12,21 @@ export type PostalCodeLookupResponse = {
   stateName: string | null
   country: string
   source: 'viacep'
+}
+
+export type BarcodeCatalogLookupResponse = {
+  barcode: string
+  name: string | null
+  description: string | null
+  brand: string | null
+  category: string | null
+  quantityLabel: string | null
+  measurementUnit: 'ML' | 'L' | 'G' | 'KG' | 'UN' | null
+  measurementValue: number | null
+  packagingClass: string | null
+  servingSize: string | null
+  imageUrl: string | null
+  source: 'open_food_facts'
 }
 
 export type ConsentDocument = {
@@ -118,6 +133,37 @@ export async function lookupPostalCode(postalCode: string) {
   }
 
   return (await response.json()) as PostalCodeLookupResponse
+}
+
+export async function lookupBarcodeCatalog(barcode: string) {
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      '/api/barcode/lookup',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ barcode }),
+      },
+      BARCODE_LOOKUP_TIMEOUT_MS,
+      '/api/barcode/lookup',
+    )
+  } catch (error) {
+    if (error instanceof Error && error.name === 'ApiTimeoutError') {
+      throw new ApiError('Consulta de EAN demorou demais. Tente novamente em instantes.', 504)
+    }
+    throw new ApiError('Nao foi possivel consultar o catalogo por EAN agora.', 0)
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response, readResponseRequestId(response))
+  }
+
+  return (await response.json()) as BarcodeCatalogLookupResponse
 }
 
 export async function fetchConsentDocuments() {

@@ -6,6 +6,7 @@ type ProductLike = Pick<
   Product,
   | 'id'
   | 'name'
+  | 'barcode'
   | 'brand'
   | 'category'
   | 'packagingClass'
@@ -49,6 +50,7 @@ type ProductWithComboLike = ProductLike & {
 export type ProductRecord = {
   id: string
   name: string
+  barcode: string | null
   brand: string | null
   category: string
   packagingClass: string
@@ -176,6 +178,7 @@ export function toProductRecord(
   return {
     id: product.id,
     name: product.name,
+    barcode: product.barcode,
     brand: product.brand,
     category: product.category,
     packagingClass: product.packagingClass,

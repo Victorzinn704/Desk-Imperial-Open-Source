@@ -49,6 +49,15 @@ export type OperationPerformerKpis = {
   openComandasCount: number
 }
 
+export type OperationPerformerStanding = {
+  position: number | null
+  totalPerformers: number
+  leaderName: string | null
+  leaderValue: number
+  performerValue: number
+  deltaToLeader: number
+}
+
 export function buildOperationsExecutiveKpis(
   snapshot: OperationsLiveResponse | null | undefined,
 ): OperationsExecutiveKpis {
@@ -95,6 +104,47 @@ export function buildPerformerKpis(snapshot: OperationsLiveResponse | null | und
     receitaRealizada,
     receitaEsperada: receitaRealizada + faturamentoAberto,
     openComandasCount: openComandas.length,
+  }
+}
+
+export function buildPerformerStanding(
+  snapshot: OperationsLiveResponse | null | undefined,
+  performerId?: string | null,
+): OperationPerformerStanding {
+  if (!snapshot || !performerId) {
+    return {
+      position: null,
+      totalPerformers: 0,
+      leaderName: null,
+      leaderValue: 0,
+      performerValue: 0,
+      deltaToLeader: 0,
+    }
+  }
+
+  const ranking = snapshot.employees
+    .map((employee) => {
+      const performerValue = employee.comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0)
+      return {
+        employeeId: employee.employeeId,
+        nome: employee.displayName,
+        valor: performerValue,
+      }
+    })
+    .filter((employee) => employee.employeeId)
+    .sort((left, right) => right.valor - left.valor)
+
+  const currentIndex = ranking.findIndex((entry) => entry.employeeId === performerId)
+  const current = currentIndex >= 0 ? ranking[currentIndex] : null
+  const leader = ranking[0] ?? null
+
+  return {
+    position: currentIndex >= 0 ? currentIndex + 1 : null,
+    totalPerformers: ranking.length,
+    leaderName: leader?.nome ?? null,
+    leaderValue: leader?.valor ?? 0,
+    performerValue: current?.valor ?? 0,
+    deltaToLeader: current && leader ? Math.max(0, leader.valor - current.valor) : 0,
   }
 }
 

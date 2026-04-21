@@ -55,21 +55,32 @@ export function CozinhaKpiStrip({ summary }: Readonly<{ summary: KitchenSummary 
 
 export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSummary }>) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
-      <LabPanel
-        action={<LabStatusPill tone={summary.pressureTone}>{summary.total} itens</LabStatusPill>}
-        padding="md"
-        title="Leitura da cozinha"
-      >
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start">
+    <LabPanel
+      action={<LabStatusPill tone={summary.pressureTone}>{resolvePressureLabel(summary)}</LabStatusPill>}
+      padding="md"
+      title="Radar da cozinha"
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_320px] xl:items-start">
+        <div className="space-y-5">
+          <div className="overflow-hidden rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]">
+            <div className="grid gap-px bg-[var(--lab-border)] sm:grid-cols-2 2xl:grid-cols-4">
+              <KitchenStripMetric label="na fila" value={String(summary.queued)} />
+              <KitchenStripMetric label="em preparo" value={String(summary.inPreparation)} />
+              <KitchenStripMetric label="prontos" value={String(summary.ready)} />
+              <KitchenStripMetric label="mesas ativas" value={String(summary.activeMesas)} />
+            </div>
+          </div>
+
           <div className="space-y-0">
             <KitchenSignalRow label="na fila" note="pedidos aguardando início" tone={summary.queued > 0 ? 'warning' : 'neutral'} value={String(summary.queued)} />
             <KitchenSignalRow label="em preparo" note="itens sob execução agora" tone={summary.inPreparation > 0 ? 'info' : 'neutral'} value={String(summary.inPreparation)} />
             <KitchenSignalRow label="prontos" note="pedidos que já podem sair" tone={summary.ready > 0 ? 'success' : 'neutral'} value={String(summary.ready)} />
-            <KitchenSignalRow label="mesas ativas" note="mesas com ticket na cozinha" tone="neutral" value={String(summary.activeMesas)} />
+            <KitchenSignalRow label="próxima ação" note="o próximo passo operacional já vem pronto" tone={resolveNextActionTone(summary)} value={resolveNextActionLabel(summary)} />
           </div>
+        </div>
 
-          <div className="rounded-[16px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+        <div className="space-y-4 rounded-[18px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+          <div>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">item de topo</p>
             <p className="mt-2 text-sm font-semibold text-[var(--lab-fg)]">
               {summary.hottestItem ? summary.hottestItem.productName : 'sem leitura'}
@@ -83,15 +94,7 @@ export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSum
               <p className="mt-3 text-xs text-[var(--lab-fg-soft)]">{summary.hottestItem.notes}</p>
             ) : null}
           </div>
-        </div>
-      </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone={summary.pressureTone}>{resolvePressureLabel(summary)}</LabStatusPill>}
-        padding="md"
-        title="Radar da fila"
-      >
-        <div className="space-y-5">
           <div className="flex flex-wrap gap-2">
             <LabFactPill label="tickets" value={String(summary.total)} />
             <LabFactPill label="mesa do topo" value={summary.hottestItem ? summary.hottestItem.mesaLabel : 'sem leitura'} />
@@ -100,13 +103,12 @@ export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSum
 
           <div className="space-y-0">
             <KitchenMetaRow label="pressão" tone={summary.pressureTone} value={resolvePressureLabel(summary)} />
-            <KitchenMetaRow label="próxima ação" tone={resolveNextActionTone(summary)} value={resolveNextActionLabel(summary)} />
             <KitchenMetaRow label="cozinheiro do topo" tone="neutral" value={summary.hottestItem?.employeeName ?? 'sem leitura'} />
             <KitchenMetaRow label="status" tone={summary.total > 0 ? 'info' : 'success'} value={summary.total > 0 ? 'operação viva' : 'cozinha livre'} />
           </div>
         </div>
-      </LabPanel>
-    </div>
+      </div>
+    </LabPanel>
   )
 }
 
@@ -202,6 +204,21 @@ function KitchenMiniStat({
 }>) {
   return (
     <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{value}</p>
+    </div>
+  )
+}
+
+function KitchenStripMetric({
+  label,
+  value,
+}: Readonly<{
+  label: string
+  value: string
+}>) {
+  return (
+    <div className="bg-[var(--lab-surface)] px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{value}</p>
     </div>

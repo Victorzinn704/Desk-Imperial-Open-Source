@@ -1,63 +1,7 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
-import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
-import { ChartSkeleton } from '@/components/shared/skeleton'
+import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCompactCurrency } from '@/lib/currency'
-
-const LazyPieChartInner = dynamic(
-  () =>
-    import('recharts').then((mod) => {
-      const { PieChart, Pie, Cell, Tooltip } = mod
-      // Wrapper that accepts data + colors and renders the full pie
-      function DoughnutPie({
-        data,
-        colors,
-        displayCurrency,
-        formatFn,
-      }: Readonly<{
-        data: Array<{ name: string; value: number }>
-        colors: string[]
-        displayCurrency: string
-        formatFn: (value: number, currency: CurrencyCode) => string
-      }>) {
-        return (
-          <PieChart>
-            <Pie
-              cx="50%"
-              cy="50%"
-              data={data}
-              dataKey="value"
-              innerRadius={36}
-              outerRadius={56}
-              paddingAngle={2}
-              strokeWidth={0}
-            >
-              {data.map((_, index) => (
-                <Cell fill={colors[index % colors.length]} key={index} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                background: 'rgba(18,24,20,0.97)',
-                border: '1px solid rgba(52,242,127,0.18)',
-                borderRadius: '12px',
-                color: '#fff',
-                fontSize: '12px',
-              }}
-              formatter={(value, name) => [formatFn(Number(value), displayCurrency as CurrencyCode), name]}
-            />
-          </PieChart>
-        )
-      }
-      return DoughnutPie
-    }),
-  {
-    ssr: false,
-    loading: () => <ChartSkeleton />,
-  },
-)
 
 const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
 
@@ -68,10 +12,10 @@ type Props = {
 
 export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Props) {
   const data = categoryBreakdown
-    .filter((c) => c.inventorySalesValue > 0)
-    .map((c) => ({
-      name: c.category,
-      value: c.inventorySalesValue,
+    .filter((category) => category.inventorySalesValue > 0)
+    .map((category) => ({
+      name: category.category,
+      value: category.inventorySalesValue,
     }))
 
   if (data.length === 0) {
@@ -82,16 +26,34 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
     )
   }
 
+  const total = data.reduce((sum, item) => sum + item.value, 0)
+  let current = 0
+  const segments = data.map((item, index) => {
+    const start = current
+    const share = total > 0 ? (item.value / total) * 100 : 0
+    current += share
+
+    return `${COLORS[index % COLORS.length]} ${start.toFixed(2)}% ${current.toFixed(2)}%`
+  })
+
+  const topItem = data[0]
+
   return (
-    <div className="size-[120px] shrink-0">
-      <ChartResponsiveContainer>
-        <LazyPieChartInner
-          colors={COLORS}
-          data={data}
-          displayCurrency={displayCurrency}
-          formatFn={formatCompactCurrency}
-        />
-      </ChartResponsiveContainer>
+    <div className="relative size-[120px] shrink-0">
+      <div
+        className="size-full rounded-full"
+        style={{
+          background: `conic-gradient(${segments.join(', ')})`,
+        }}
+      />
+      <div className="absolute inset-[18px] flex items-center justify-center rounded-full bg-[var(--surface-soft)] p-3 text-center">
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">{topItem.name}</p>
+          <p className="mt-1 text-xs font-semibold text-[var(--text-primary)]">
+            {formatCompactCurrency(topItem.value, displayCurrency)}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

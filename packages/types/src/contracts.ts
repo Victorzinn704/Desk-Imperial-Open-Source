@@ -52,6 +52,7 @@ export const productComboItemRecordSchema = z.object({
 export const productRecordSchema = z.object({
   id: z.string(),
   name: z.string(),
+  barcode: nullableStringSchema.optional(),
   brand: nullableStringSchema,
   category: z.string(),
   packagingClass: z.string(),

@@ -29,7 +29,7 @@ export function ProductSearchField({
           <input
             className="mt-1 h-9 w-full border-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[rgba(255,255,255,0.38)]"
             id="portfolio-search"
-            placeholder="Digite nome, inicial, marca ou classe"
+            placeholder="Digite nome, EAN, marca ou classe"
             type="search"
             value={value}
             onChange={(event) => onChange(event.currentTarget.value)}

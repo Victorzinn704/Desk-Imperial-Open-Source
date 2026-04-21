@@ -284,6 +284,7 @@ model Product {
   id               String             @id @default(cuid())
   userId           String
   name             String
+  barcode          String?
   brand            String?
   category         String
   packagingClass   String             @default("Cadastro rapido")
@@ -309,6 +310,7 @@ model Product {
   usedInCombos     ProductComboItem[] @relation("ComboComponentProducts")
 
   @@unique([userId, name])
+  @@unique([userId, barcode])
   @@index([userId, active])
   @@index([userId, active, createdAt])
   @@index([userId, category])

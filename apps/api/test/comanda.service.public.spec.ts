@@ -117,7 +117,7 @@ describe('ComandaService (public branches)', () => {
   })
 
   it('retorna detalhes da comanda quando encontrada', async () => {
-    prisma.comanda.findUnique.mockResolvedValue(makeComanda())
+    prisma.comanda.findFirst.mockResolvedValue(makeComanda())
 
     const result = await service.getComandaDetails(ownerAuth, 'comanda-1')
 
@@ -126,9 +126,30 @@ describe('ComandaService (public branches)', () => {
   })
 
   it('falha ao buscar detalhes quando comanda nao existe', async () => {
-    prisma.comanda.findUnique.mockResolvedValue(null)
+    prisma.comanda.findFirst.mockResolvedValue(null)
 
     await expect(service.getComandaDetails(ownerAuth, 'comanda-x')).rejects.toThrow(NotFoundException)
+  })
+
+  it('permite STAFF consultar comanda aberta de outro atendimento do mesmo workspace', async () => {
+    prisma.comanda.findFirst.mockResolvedValue(makeComanda(ComandaStatus.OPEN, { currentEmployeeId: 'emp-2' }))
+    helpers.resolveEmployeeForStaff.mockResolvedValue({ id: 'emp-1' })
+
+    const result = await service.getComandaDetails(
+      makeStaffAuthContext({ employeeId: 'emp-1' }) as AuthContext,
+      'comanda-1',
+    )
+
+    expect(result.comanda.id).toBe('comanda-1')
+  })
+
+  it('bloqueia STAFF consultando historico fechado de outro atendimento', async () => {
+    prisma.comanda.findFirst.mockResolvedValue(makeComanda(ComandaStatus.CLOSED, { currentEmployeeId: 'emp-2' }))
+    helpers.resolveEmployeeForStaff.mockResolvedValue({ id: 'emp-1' })
+
+    await expect(
+      service.getComandaDetails(makeStaffAuthContext({ employeeId: 'emp-1' }) as AuthContext, 'comanda-1'),
+    ).rejects.toThrow(ForbiddenException)
   })
 
   it('bloqueia addComandaItem quando comanda esta encerrada', async () => {

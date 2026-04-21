@@ -161,7 +161,7 @@ describe('PedidosEnvironment', () => {
 
     expect(screen.getByRole('heading', { name: 'Status dos pedidos' })).toBeInTheDocument()
     expect(screen.getByText('Pressao por status')).toBeInTheDocument()
-    expect(screen.getByText('Fila comercial')).toBeInTheDocument()
+    expect(screen.getAllByText('Fila comercial').length).toBeGreaterThan(0)
     expect(screen.getByText('Quadro por status')).toBeInTheDocument()
     expect(screen.getByText('Concluidos')).toBeInTheDocument()
     expect(screen.getByText('Cancelados')).toBeInTheDocument()
@@ -280,7 +280,7 @@ describe('PedidosEnvironment', () => {
 
     expect(screen.getByRole('heading', { name: 'Pedido selecionado' })).toBeInTheDocument()
     expect(screen.getByText('Pedido em foco')).toBeInTheDocument()
-    expect(screen.getByText('Contexto do pedido')).toBeInTheDocument()
+    expect(screen.getAllByText('Contexto do pedido').length).toBeGreaterThan(0)
     expect(screen.getByText('Detalhe do ultimo pedido')).toBeInTheDocument()
     expect(screen.getByText(/Entregar na portaria/i)).toBeInTheDocument()
   })

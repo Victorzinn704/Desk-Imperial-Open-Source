@@ -470,15 +470,14 @@ describe('OwnerMobileShell', () => {
     const user = userEvent.setup()
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
 
-    // Verifica se a navegação está presente
-    expect(screen.getByTestId('nav-mesas')).toBeInTheDocument()
-    expect(screen.getByTestId('nav-cozinha')).toBeInTheDocument()
+    expect(screen.getByTestId('nav-today')).toBeInTheDocument()
+    expect(screen.getByTestId('nav-pdv')).toBeInTheDocument()
 
-    const kitchenTab = screen.getByTestId('nav-cozinha')
-    await user.click(kitchenTab)
+    await user.click(screen.getByTestId('nav-pdv'))
+    await user.click(screen.getByTestId('owner-pdv-cozinha'))
 
     await waitFor(() => {
-      expect(screen.getByText('Na fila')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /iniciar preparo/i })).toBeInTheDocument()
     })
   })
 
@@ -496,12 +495,8 @@ describe('OwnerMobileShell', () => {
     })
   })
 
-  it('deve exibir o resumo executivo na aba resumo', async () => {
-    const user = userEvent.setup()
-
+  it('deve exibir o resumo executivo na aba Hoje', async () => {
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
-
-    await user.click(screen.getByTestId('nav-resumo'))
 
     await waitFor(() => {
       expect(screen.getByTestId('owner-kpi-receita')).toHaveTextContent('320,00')
@@ -539,7 +534,8 @@ describe('OwnerMobileShell', () => {
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
 
     await user.click(screen.getByTestId('nav-comandas'))
-    await user.click(await screen.findByText('Mesa 2'))
+    const comandaCard = await screen.findByTestId('owner-comanda-card-c-2')
+    await user.click(comandaCard.querySelector('button') as HTMLButtonElement)
     await user.click(await screen.findByRole('button', { name: /^fechar$/i }))
 
     await waitFor(() => {
@@ -552,12 +548,25 @@ describe('OwnerMobileShell', () => {
   })
 
   it('expõe aviso offline na visão de mesas do owner quando a conexão cai', async () => {
+    const user = userEvent.setup()
     useOperationsRealtimeMock.mockReturnValue({ status: 'disconnected' })
 
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+    await user.click(screen.getByTestId('nav-pdv'))
 
-    expect(
-      await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/O PDV pode estar desatualizado até a reconexão/i)).toBeInTheDocument()
+  })
+
+  it('retoma a comanda de uma mesa ocupada direto no PDV', async () => {
+    const user = userEvent.setup()
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+    await user.click(screen.getByTestId('nav-pdv'))
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Retomar pedido')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Buscar produto...')).toBeInTheDocument()
+    })
   })
 })

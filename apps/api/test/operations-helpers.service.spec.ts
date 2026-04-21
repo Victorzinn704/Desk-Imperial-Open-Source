@@ -180,6 +180,76 @@ describe('OperationsHelpersService', () => {
       )
     })
 
+    it('snapshot operacional do STAFF mostra comandas abertas globais e historico apenas do proprio atendimento', async () => {
+      const businessDate = new Date(2026, 2, 30)
+      const baseSnapshot = {
+        businessDate: '2026-03-30',
+        companyOwnerId: 'owner-1',
+        closure: {
+          status: 'OPEN',
+          expectedCashAmount: 200,
+          countedCashAmount: null,
+          differenceAmount: null,
+          grossRevenueAmount: 500,
+          realizedProfitAmount: 120,
+          openSessionsCount: 2,
+          openComandasCount: 3,
+        },
+        employees: [
+          {
+            employeeId: 'emp-1',
+            employeeCode: 'E01',
+            displayName: 'Marina',
+            active: true,
+            cashSession: { id: 'cash-1' },
+            comandas: [
+              { id: 'own-open', currentEmployeeId: 'emp-1', status: 'OPEN', totalAmount: 30 },
+              { id: 'own-closed', currentEmployeeId: 'emp-1', status: 'CLOSED', totalAmount: 90 },
+            ],
+          },
+          {
+            employeeId: 'emp-2',
+            employeeCode: 'E02',
+            displayName: 'Paulo',
+            active: true,
+            cashSession: { id: 'cash-2' },
+            comandas: [
+              { id: 'other-open', currentEmployeeId: 'emp-2', status: 'READY', totalAmount: 44 },
+              { id: 'other-closed', currentEmployeeId: 'emp-2', status: 'CLOSED', totalAmount: 120 },
+            ],
+          },
+        ],
+        unassigned: {
+          employeeId: null,
+          employeeCode: null,
+          displayName: 'Operacao de balcao',
+          active: true,
+          cashSession: { id: 'cash-owner' },
+          comandas: [
+            { id: 'owner-open', currentEmployeeId: null, status: 'IN_PREPARATION', totalAmount: 55 },
+            { id: 'owner-closed', currentEmployeeId: null, status: 'CLOSED', totalAmount: 70 },
+          ],
+        },
+        mesas: [],
+      }
+      const liveSpy = jest.spyOn(service, 'buildLiveSnapshot').mockResolvedValue(baseSnapshot as never)
+
+      const response = await service.buildStaffOperationalSnapshot('owner-1', businessDate, 'emp-1', {
+        compactMode: true,
+      })
+
+      expect(liveSpy).toHaveBeenCalledWith('owner-1', businessDate, null, {
+        compactMode: true,
+        includeCashMovements: false,
+      })
+      expect(response.closure).toBeNull()
+      expect(response.employees[0]?.cashSession).toEqual({ id: 'cash-1' })
+      expect(response.employees[1]?.cashSession).toBeNull()
+      expect(response.employees[0]?.comandas.map((comanda) => comanda.id)).toEqual(['own-open', 'own-closed'])
+      expect(response.employees[1]?.comandas.map((comanda) => comanda.id)).toEqual(['other-open'])
+      expect(response.unassigned.comandas.map((comanda) => comanda.id)).toEqual(['owner-open'])
+    })
+
     it('edge case: comanda aberta antes da meia-noite vinculada a sessão do dia seguinte NÃO aparece no snapshot do dia seguinte', async () => {
       // Risco documentado da abordagem por openedAt window:
       // Se uma comanda foi aberta às 23:58 de ontem (openedAt = ontem) mas pertence

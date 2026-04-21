@@ -108,9 +108,10 @@ function calcAvgMargin(products: ProductRecord[]): string {
 
 type ProductMutationError = ApiError | null
 
-function buildProductPayload(values: ProductFormValues) {
+function buildProductPayload(values: ProductFormValues, existingProduct?: ProductRecord | null) {
   return {
     name: values.name,
+    barcode: values.barcode ?? (existingProduct?.barcode ? null : undefined),
     brand: values.brand,
     category: values.category,
     packagingClass: values.packagingClass,
@@ -141,7 +142,7 @@ function filterProducts(products: ProductRecord[], searchQuery: string) {
   }
 
   return products.filter((product) =>
-    [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
+    [product.name, product.barcode ?? '', product.brand ?? '', product.category, product.packagingClass].some((value) => {
       const normalizedValue = normalizeTextForSearch(value)
       return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
     }),
@@ -383,7 +384,7 @@ export function PortfolioLegacyEnvironment() {
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
-    const payload = buildProductPayload(values)
+    const payload = buildProductPayload(values, editingProduct)
     if (editingProduct) {
       updateProductMutation.mutate({ productId: editingProduct.id, values: payload })
       return

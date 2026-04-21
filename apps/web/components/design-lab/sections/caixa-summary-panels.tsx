@@ -56,11 +56,13 @@ function CaixaRadarPanel({
       title="Radar do turno"
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_280px]">
-        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-          <CaixaMiniStat label="projeção" value={fmtBRL(kpis.projecaoTotal)} />
-          <CaixaMiniStat label="caixa esperado" value={fmtBRL(kpis.caixaEsperado)} />
-          <CaixaMiniStat label="sessões" value={String(kpis.openSessionsCount)} />
-          <CaixaMiniStat label="status" value={caixaAberto ? 'aberto' : 'fechado'} />
+        <div className="overflow-hidden rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]">
+          <div className="grid gap-px bg-[var(--lab-border)] sm:grid-cols-2 2xl:grid-cols-4">
+            <CaixaStripStat label="projeção" value={fmtBRL(kpis.projecaoTotal)} />
+            <CaixaStripStat label="caixa esperado" value={fmtBRL(kpis.caixaEsperado)} />
+            <CaixaStripStat label="sessões" value={String(kpis.openSessionsCount)} />
+            <CaixaStripStat label="status" value={caixaAberto ? 'aberto' : 'fechado'} />
+          </div>
         </div>
 
         <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
@@ -141,7 +143,7 @@ function CaixaMetaRow({
   )
 }
 
-function CaixaMiniStat({
+function CaixaStripStat({
   label,
   value,
 }: Readonly<{
@@ -149,7 +151,7 @@ function CaixaMiniStat({
   value: string
 }>) {
   return (
-    <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+    <div className="bg-[var(--lab-surface)] px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
       <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{value}</p>
     </div>

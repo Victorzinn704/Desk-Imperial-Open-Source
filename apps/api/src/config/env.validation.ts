@@ -23,6 +23,16 @@ const POSITIVE_NUMBER_KEYS = [
   'OTEL_METRICS_EXPORT_INTERVAL_MS',
 ]
 const REDIS_URL_CANDIDATE_KEYS = getRedisUrlKeys()
+const PRODUCTION_DEFAULT_SECRET_VALUES: Record<string, string[]> = {
+  COOKIE_SECRET: ['change-me', 'replace-with-a-long-random-cookie-secret'],
+  CSRF_SECRET: ['change-me', 'replace-with-a-long-random-csrf-secret'],
+  ENCRYPTION_KEY: ['change-me', 'replace-with-a-32-char-encryption-key'],
+  POSTGRES_PASSWORD: ['desk_imperial_change_me', 'change_me_in_prod'],
+  REDIS_PASSWORD: ['desk_imperial_redis_change_me', 'change_me_in_prod'],
+  DEMO_STAFF_PASSWORD: ['123456'],
+}
+const DEFAULT_DATABASE_PASSWORD_VALUES = ['desk_imperial_change_me', 'change_me_in_prod']
+const DEFAULT_REDIS_PASSWORD_VALUES = ['desk_imperial_redis_change_me', 'change_me_in_prod']
 
 export function validateEnvironment(config: EnvShape) {
   const env = { ...config }
@@ -43,6 +53,7 @@ export function validateEnvironment(config: EnvShape) {
 
   validateSecretLength(env.COOKIE_SECRET, 16, 'COOKIE_SECRET', issues)
   validateSecretLength(env.CSRF_SECRET, 32, 'CSRF_SECRET', issues)
+  validateSecretLength(env.ENCRYPTION_KEY, 32, 'ENCRYPTION_KEY', issues)
   validateProductionRequirements(env, nodeEnv, issues)
 
   if (issues.length > 0) {
@@ -141,6 +152,14 @@ function validateProductionRequirements(env: EnvShape, nodeEnv: string, issues: 
 
   validateRequiredSecret(env.COOKIE_SECRET, 'COOKIE_SECRET', issues)
   validateRequiredSecret(env.CSRF_SECRET, 'CSRF_SECRET', issues)
+  validateRequiredSecret(env.ENCRYPTION_KEY, 'ENCRYPTION_KEY', issues)
+  validateNoDefaultProductionSecrets(env, issues)
+  validateConnectionUrlPassword(env.DATABASE_URL, 'DATABASE_URL', DEFAULT_DATABASE_PASSWORD_VALUES, issues)
+  validateConnectionUrlPassword(env.DIRECT_URL, 'DIRECT_URL', DEFAULT_DATABASE_PASSWORD_VALUES, issues)
+
+  for (const key of REDIS_URL_CANDIDATE_KEYS) {
+    validateConnectionUrlPassword(env[key], key, DEFAULT_REDIS_PASSWORD_VALUES, issues)
+  }
 
   if (!hasRedisUrl(env)) {
     issues.push(
@@ -152,6 +171,21 @@ function validateProductionRequirements(env: EnvShape, nodeEnv: string, issues: 
 function validateRequiredSecret(value: string | undefined, label: string, issues: string[]) {
   if (!value?.trim()) {
     issues.push(`${label} é obrigatório em produção.`)
+  }
+}
+
+function validateNoDefaultProductionSecrets(env: EnvShape, issues: string[]) {
+  for (const [key, invalidValues] of Object.entries(PRODUCTION_DEFAULT_SECRET_VALUES)) {
+    const value = env[key]
+    if (!value?.trim()) {
+      continue
+    }
+
+    const normalized = value.trim().toLowerCase()
+    const matchesDefault = invalidValues.some((candidate) => normalized === candidate.toLowerCase())
+    if (matchesDefault) {
+      issues.push(`${key} não pode usar valor de placeholder/default em produção.`)
+    }
   }
 }
 
@@ -181,4 +215,30 @@ function isValidOriginLikeValue(value: string) {
 function isPositiveNumber(value: string) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) && numericValue > 0
+}
+
+function validateConnectionUrlPassword(
+  value: string | undefined,
+  label: string,
+  invalidPasswords: string[],
+  issues: string[],
+) {
+  if (!value?.trim()) {
+    return
+  }
+
+  try {
+    const parsed = new URL(value)
+    const normalizedPassword = parsed.password.trim().toLowerCase()
+    if (!normalizedPassword) {
+      return
+    }
+
+    const matchesDefault = invalidPasswords.some((candidate) => normalizedPassword === candidate.toLowerCase())
+    if (matchesDefault) {
+      issues.push(`${label} não pode usar senha de placeholder/default em produção.`)
+    }
+  } catch {
+    // A própria URL já é validada em validateUrlGroup.
+  }
 }

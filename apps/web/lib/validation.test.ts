@@ -409,6 +409,7 @@ describe('resetPasswordSchema', () => {
 describe('productSchema', () => {
   const validProduct = {
     name: 'Coca Cola 2L',
+    barcode: '',
     brand: 'Coca-Cola',
     category: 'Bebidas',
     packagingClass: 'Fardo 6und',
@@ -539,6 +540,19 @@ describe('productSchema', () => {
   it('accepts lowStockThreshold as number', () => {
     const result = productSchema.safeParse({ ...validProduct, lowStockThreshold: 10 })
     expect(result.success).toBe(true)
+  })
+
+  it('normalizes barcode when valido', () => {
+    const result = productSchema.safeParse({ ...validProduct, barcode: '789.4900.0115-17' })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.barcode).toBe('7894900011517')
+    }
+  })
+
+  it('rejects barcode with invalid length', () => {
+    const result = productSchema.safeParse({ ...validProduct, barcode: '12345' })
+    expect(result.success).toBe(false)
   })
 })
 

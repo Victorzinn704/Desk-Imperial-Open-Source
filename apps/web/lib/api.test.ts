@@ -279,6 +279,37 @@ describe('api client', () => {
 
     const request = getLastRequest(fetchMock)
     expect(request.headers.get('X-CSRF-Token')).toBe('storage-csrf-token')
+    expect(readJsonBody(request.init)).toEqual(
+      expect.objectContaining({
+        name: 'Cafe',
+      }),
+    )
+  })
+
+  it('sends barcode when creating product from quick register flow', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ product: { id: 'p-2' } }))
+
+    await api.createProduct({
+      name: 'Guarana Lata',
+      barcode: '7894900011517',
+      category: 'Bebidas',
+      packagingClass: 'Lata 350ml',
+      measurementUnit: 'UN',
+      measurementValue: 1,
+      unitsPerPackage: 1,
+      unitCost: 3,
+      unitPrice: 5.5,
+      currency: 'BRL',
+      stock: 24,
+    })
+
+    const request = getLastRequest(fetchMock)
+    expect(readJsonBody(request.init)).toEqual(
+      expect.objectContaining({
+        barcode: '7894900011517',
+        name: 'Guarana Lata',
+      }),
+    )
   })
 
   it('does not attach csrf token to GET requests', async () => {

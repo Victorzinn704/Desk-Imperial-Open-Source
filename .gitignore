@@ -86,6 +86,14 @@ Desktop.ini
 /apps/web/blob-report/
 /playwright/.cache/
 
+# ─── Artefatos locais de auditoria / screenshots ────────────────────────────
+.tmp/
+.tmp-wireframes/
+artifacts/
+apps/**/.tmp/
+apps/**/artifacts/
+CON
+
 # ─── Misc ────────────────────────────────────────────────────────────────────
 *.tgz
 *.zip

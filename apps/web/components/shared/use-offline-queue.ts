@@ -176,5 +176,13 @@ export function useOfflineQueue() {
     } satisfies OfflineDrainResult
   }, [])
 
-  return { enqueue, drainQueue }
+  const listQueue = useCallback(async () => {
+    try {
+      return await idbGetAll()
+    } catch {
+      return [] as OfflineAction[]
+    }
+  }, [])
+
+  return { enqueue, drainQueue, listQueue }
 }

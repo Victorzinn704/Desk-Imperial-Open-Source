@@ -90,7 +90,7 @@ describe('OwnerComandasView', () => {
       </QueryClientProvider>,
     )
 
-    await user.click(screen.getByText('Mesa 4'))
+    await user.click(screen.getByTestId('owner-comanda-card-c-1').querySelector('button') as HTMLButtonElement)
 
     await waitFor(() => {
       expect(api.fetchComandaDetails).toHaveBeenCalledWith('c-1')
@@ -99,10 +99,58 @@ describe('OwnerComandasView', () => {
     expect(await screen.findByText(/Risoto de camarão/i)).toBeInTheDocument()
     expect(screen.getByText(/Sem pimenta/i)).toBeInTheDocument()
     expect(screen.getByTestId('owner-comanda-items-c-1')).toBeInTheDocument()
-    expect(screen.getAllByText(/64,80/)).toHaveLength(2)
+    expect(screen.getAllByText(/64,80/)).toHaveLength(3)
 
     await user.click(screen.getByRole('button', { name: /^Fechar$/i }))
 
     expect(onCloseComanda).toHaveBeenCalledWith('c-1', 7.2, 0)
+  })
+
+  it('permite filtrar o atendimento por garçom e recalcula o recorte', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <OwnerComandasView
+          comandas={[
+            {
+              id: 'c-1',
+              status: 'aberta',
+              mesa: '4',
+              clienteNome: 'Mesa varanda',
+              garcomNome: 'Marina',
+              itens: [],
+              desconto: 0,
+              acrescimo: 0,
+              abertaEm: new Date('2026-03-30T13:00:00.000Z'),
+              subtotalBackend: 72,
+              totalBackend: 72,
+            },
+            {
+              id: 'c-2',
+              status: 'fechada',
+              mesa: '7',
+              clienteNome: 'Mesa salão',
+              garcomNome: 'Paulo',
+              itens: [],
+              desconto: 0,
+              acrescimo: 0,
+              abertaEm: new Date('2026-03-30T12:00:00.000Z'),
+              subtotalBackend: 40,
+              totalBackend: 40,
+            },
+          ]}
+        />
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByTestId('owner-responsible-filter-marina'))
+
+    expect(screen.getByText(/Recorte atual/i)).toBeInTheDocument()
+    expect(screen.getByTestId('owner-comanda-card-c-1')).toBeInTheDocument()
+    expect(screen.queryByTestId('owner-comanda-card-c-2')).not.toBeInTheDocument()
+    expect(screen.getByText(/Tudo \(1\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/Abertas \(1\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/Fechadas \(0\)/i)).toBeInTheDocument()
   })
 })

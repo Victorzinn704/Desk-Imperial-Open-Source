@@ -68,51 +68,54 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
   }
 
   return (
-    <div className="imperial-card grid gap-6 p-6 sm:p-8 xl:grid-cols-[auto_minmax(0,0.95fr)_minmax(320px,0.9fr)] xl:items-center">
-      <div className="flex justify-center xl:justify-start">
-        <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-          Receita realizada total
-        </p>
-
-        <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            {isPositive ? (
-              <TrendingUp className="size-4 text-[#36f57c]" />
-            ) : (
-              <TrendingDown className="size-4 text-red-400" />
-            )}
-            <span className={`text-sm font-semibold ${isPositive ? 'text-[#36f57c]' : 'text-red-400'}`}>
-              {isPositive ? '+' : ''}
-              {growth.toFixed(1)}% vs mês anterior
-            </span>
+    <div className="imperial-card p-6 sm:p-8">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.95fr)] xl:items-start">
+        <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
+          <div className="flex justify-center pt-1 lg:justify-start">
+            <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
           </div>
 
-          <span className="text-xs text-[var(--text-soft)]">
-            {categoryBreakdown.length} categoria{categoryBreakdown.length !== 1 ? 's' : ''} ativas
-          </span>
+          <div className="flex min-w-0 flex-col gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Receita realizada total
+            </p>
 
-          <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-2.5 py-0.5 text-xs font-semibold text-[#008CFF]">
-            {displayCurrency}
-          </span>
-        </div>
+            <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
 
-        <div className="mt-2 overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--border)]">
-          <div className={`grid gap-px bg-[var(--border)] ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-            <MetricTile label="Pedidos" value={String(totals.completedOrders)} />
-            <MetricTile label="Lucro realizado" value={formatCurrency(totals.realizedProfit, displayCurrency)} />
-            <MetricTile label="Margem média" value={`${totals.averageMarginPercent.toFixed(1)}%`} />
-            <MetricTile label="Mês atual" value={formatCurrency(totals.currentMonthRevenue, displayCurrency)} />
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                {isPositive ? (
+                  <TrendingUp className="size-4 text-[#36f57c]" />
+                ) : (
+                  <TrendingDown className="size-4 text-red-400" />
+                )}
+                <span className={`text-sm font-semibold ${isPositive ? 'text-[#36f57c]' : 'text-red-400'}`}>
+                  {isPositive ? '+' : ''}
+                  {growth.toFixed(1)}% vs mês anterior
+                </span>
+              </div>
+
+              <span className="text-xs text-[var(--text-soft)]">
+                {categoryBreakdown.length} categoria{categoryBreakdown.length !== 1 ? 's' : ''} ativas
+              </span>
+
+              <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-2.5 py-0.5 text-xs font-semibold text-[#008CFF]">
+                {displayCurrency}
+              </span>
+            </div>
+
+            <div className="mt-2 overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--border)]">
+              <div className={`grid gap-px bg-[var(--border)] ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
+                <MetricTile label="Pedidos" value={String(totals.completedOrders)} />
+                <MetricTile label="Lucro realizado" value={formatCurrency(totals.realizedProfit, displayCurrency)} />
+                <MetricTile label="Margem média" value={`${totals.averageMarginPercent.toFixed(1)}%`} />
+                <MetricTile label="Mês atual" value={formatCurrency(totals.currentMonthRevenue, displayCurrency)} />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-4 xl:border-l xl:border-[var(--border)] xl:pl-6">
+        <div className="space-y-4 xl:border-l xl:border-[var(--border)] xl:pl-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mix por categoria</p>
@@ -137,7 +140,8 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
           <div className="rounded-[16px] border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-soft)]">
             O mix por categoria aparece quando houver leitura comercial suficiente no período.
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

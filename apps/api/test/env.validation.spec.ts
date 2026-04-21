@@ -64,6 +64,16 @@ describe('validateEnvironment', () => {
         COOKIE_SECRET: '1234567890123456',
         CSRF_SECRET: '12345678901234567890123456789012',
       }),
+    ).toThrow(expect.objectContaining({ message: expect.stringContaining('ENCRYPTION_KEY é obrigatório em produção') }))
+
+    expect(() =>
+      validateEnvironment({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgres://user:pass@localhost:5432/desk',
+        COOKIE_SECRET: '1234567890123456',
+        CSRF_SECRET: '12345678901234567890123456789012',
+        ENCRYPTION_KEY: '12345678901234567890123456789012',
+      }),
     ).toThrow(expect.objectContaining({ message: expect.stringContaining('Uma URL Redis é obrigatória em produção') }))
 
     expect(() =>
@@ -72,6 +82,7 @@ describe('validateEnvironment', () => {
         DATABASE_URL: 'postgres://user:pass@localhost:5432/desk',
         COOKIE_SECRET: '1234567890123456',
         CSRF_SECRET: '12345678901234567890123456789012',
+        ENCRYPTION_KEY: '12345678901234567890123456789012',
         REDIS_URL: 'invalid-redis-url',
       }),
     ).toThrow(expect.objectContaining({ message: expect.stringContaining('REDIS_URL deve ser uma URL válida') }))
@@ -83,11 +94,33 @@ describe('validateEnvironment', () => {
       DATABASE_URL: 'postgres://user:pass@localhost:5432/desk',
       COOKIE_SECRET: '1234567890123456',
       CSRF_SECRET: '12345678901234567890123456789012',
+      ENCRYPTION_KEY: '12345678901234567890123456789012',
       COOKIE_SAME_SITE: 'none',
       COOKIE_SECURE: 'true',
       REDIS_PRIVATE_URL: 'redis://localhost:6379',
     })
 
     expect(env.NODE_ENV).toBe('production')
+  })
+
+  it('bloqueia placeholders/defaults em produção', () => {
+    expect(() =>
+      validateEnvironment({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgres://user:desk_imperial_change_me@localhost:5432/desk',
+        DIRECT_URL: 'postgres://user:pass@localhost:5432/desk',
+        REDIS_URL: 'redis://:desk_imperial_redis_change_me@localhost:6379',
+        COOKIE_SECRET: 'replace-with-a-long-random-cookie-secret',
+        CSRF_SECRET: 'replace-with-a-long-random-csrf-secret',
+        ENCRYPTION_KEY: 'replace-with-a-32-char-encryption-key',
+        POSTGRES_PASSWORD: 'desk_imperial_change_me',
+        REDIS_PASSWORD: 'desk_imperial_redis_change_me',
+        DEMO_STAFF_PASSWORD: '123456',
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        message: expect.stringContaining('COOKIE_SECRET não pode usar valor de placeholder/default em produção'),
+      }),
+    )
   })
 })

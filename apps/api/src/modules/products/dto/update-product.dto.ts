@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  Matches,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator'
 import { ProductComboItemDto } from './product-combo-item.dto'
+import { normalizeProductBarcodeInput } from '../products-barcode.util'
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Produto Alpha' })
@@ -23,6 +25,18 @@ export class UpdateProductDto {
   @MinLength(2)
   @MaxLength(120)
   name?: string
+
+  @ApiPropertyOptional({
+    example: '7891234567890',
+    description: 'EAN/código de barras do produto. Envie vazio/null para remover.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => normalizeProductBarcodeInput(value))
+  @IsString()
+  @Matches(/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/, {
+    message: 'O código de barras precisa ter 8, 12, 13 ou 14 dígitos.',
+  })
+  barcode?: string | null
 
   @ApiPropertyOptional({ example: 'Coca-Cola' })
   @IsOptional()

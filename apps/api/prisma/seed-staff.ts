@@ -1,5 +1,9 @@
 import { PrismaClient } from '@prisma/client'
 import * as argon2 from 'argon2'
+import { ensureEmployeeLoginUser } from '../src/modules/auth/auth-login-actor.utils'
+import { loadSeedEnv } from './seed-runtime'
+
+loadSeedEnv()
 
 const prisma = new PrismaClient()
 
@@ -18,6 +22,19 @@ async function main() {
   const employees = await prisma.employee.findMany({
     where: { userId: owner.id },
     orderBy: { employeeCode: 'asc' },
+    select: {
+      id: true,
+      active: true,
+      employeeCode: true,
+      displayName: true,
+      passwordHash: true,
+      loginUser: {
+        select: {
+          id: true,
+          passwordHash: true,
+        },
+      },
+    },
   })
 
   if (employees.length === 0) {
@@ -26,10 +43,6 @@ async function main() {
   }
 
   const passwordHash = await argon2.hash(process.env.DEMO_STAFF_PASSWORD ?? '123456', { type: argon2.argon2id })
-  const loginUserIds = employees
-    .map((employee) => employee.loginUserId)
-    .filter((value): value is string => Boolean(value))
-
   await prisma.$transaction(async (transaction) => {
     await transaction.user.update({
       where: { id: owner.id },
@@ -47,16 +60,13 @@ async function main() {
           active: true,
         },
       })
-    }
-
-    if (loginUserIds.length > 0) {
-      await transaction.user.updateMany({
-        where: {
-          id: { in: loginUserIds },
-        },
-        data: {
+      await ensureEmployeeLoginUser(transaction, {
+        employee: {
+          ...employee,
           passwordHash,
         },
+        ownerUser: owner,
+        fallbackPasswordHash: passwordHash,
       })
     }
   })

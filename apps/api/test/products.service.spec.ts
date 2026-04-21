@@ -83,6 +83,7 @@ function makeProduct(overrides: object = {}) {
     id: 'product-1',
     userId: 'user-1',
     name: 'Produto Teste',
+    barcode: null,
     brand: 'Marca Teste',
     category: 'Categoria Teste',
     packagingClass: 'Classe Teste',
@@ -251,6 +252,7 @@ describe('ProductsService', () => {
           where: expect.objectContaining({
             OR: expect.arrayContaining([
               { name: { contains: 'Coca', mode: 'insensitive' } },
+              { barcode: { contains: 'Coca', mode: 'insensitive' } },
               { brand: { contains: 'Coca', mode: 'insensitive' } },
               { category: { contains: 'Coca', mode: 'insensitive' } },
               { packagingClass: { contains: 'Coca', mode: 'insensitive' } },
@@ -389,6 +391,21 @@ describe('ProductsService', () => {
       expect(result.product).toBeDefined()
     })
 
+    it('deve criar produto com barcode normalizado', async () => {
+      const dto = makeCreateProductDto({
+        barcode: '789.1234.5678-90',
+      })
+      mockPrisma.product.create.mockResolvedValue(makeProduct({ ...dto, barcode: '7891234567890' }))
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          barcode: '7891234567890',
+        }),
+      })
+    })
+
     it('deve sanitizar texto e rejeitar HTML', async () => {
       const dto = makeCreateProductDto({
         name: '<script>alert("xss")</script>Produto',
@@ -423,6 +440,7 @@ describe('ProductsService', () => {
       expect(mockPrisma.product.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
+            barcode: null,
             brand: null,
             description: null,
           }),
@@ -681,6 +699,32 @@ describe('ProductsService', () => {
           }),
         }),
       )
+    })
+
+    it('deve permitir remover barcode na atualizacao', async () => {
+      const existingProduct = makeProduct({ barcode: '7891234567890' })
+      const updateDto: UpdateProductDto = {
+        barcode: null,
+      }
+
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
+      mockPrisma.product.update.mockResolvedValue({
+        ...existingProduct,
+        barcode: null,
+      })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({
+        ...existingProduct,
+        barcode: null,
+      })
+
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({
+          barcode: null,
+        }),
+      })
     })
 
     it('deve lançar NotFoundException se produto não existir', async () => {

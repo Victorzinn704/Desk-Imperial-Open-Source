@@ -104,7 +104,7 @@ export function PedidosEnvironment({
       <LabPageHeader
         description={copy.description}
         eyebrow={copy.eyebrow}
-        meta={<PedidosMetaSummary currency={displayCurrency} insights={insights} view={view} />}
+        meta={surface === 'lab' ? undefined : <PedidosMetaSummary currency={displayCurrency} insights={insights} view={view} />}
         title={copy.title}
       >
         {surface === 'lab' ? (
@@ -449,41 +449,45 @@ function PedidosLabSummary({
   const config = buildPedidosSummaryConfig({ currency, insights, view })
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <LabPanel
-        action={<LabStatusPill tone="info">{config.primaryAction}</LabStatusPill>}
-        padding="md"
-        title={config.primaryTitle}
-      >
-        <div className="space-y-5">
-          {config.primaryFacts && config.primaryFacts.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {config.primaryFacts.map((fact) => (
-                <LabFactPill key={fact.label} label={fact.label} value={fact.value} />
-              ))}
-            </div>
-          ) : null}
+    <LabPanel
+      action={<LabStatusPill tone="info">{config.primaryAction}</LabStatusPill>}
+      padding="md"
+      subtitle={config.secondaryTitle}
+      title={config.primaryTitle}
+    >
+      <div className="space-y-5">
+        {config.primaryFacts && config.primaryFacts.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {config.primaryFacts.map((fact) => (
+              <LabFactPill key={fact.label} label={fact.label} value={fact.value} />
+            ))}
+          </div>
+        ) : null}
 
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           <div className="space-y-0">
             {config.primaryRows.map((row) => (
               <LabSignalRow key={row.label} label={row.label} note={row.note} tone={row.tone ?? 'neutral'} value={row.value} />
             ))}
           </div>
-        </div>
-      </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="neutral">{config.secondaryAction}</LabStatusPill>}
-        padding="md"
-        title={config.secondaryTitle}
-      >
-        <div className="space-y-0">
-          {config.secondaryRows.map((row) => (
-            <LabSignalRow key={row.label} label={row.label} note={row.note} tone={row.tone ?? 'neutral'} value={row.value} />
-          ))}
+          <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+                {config.secondaryTitle}
+              </p>
+              <LabStatusPill tone="neutral">{config.secondaryAction}</LabStatusPill>
+            </div>
+
+            <div className="space-y-0">
+              {config.secondaryRows.map((row) => (
+                <LabSignalRow key={row.label} label={row.label} note={row.note} tone={row.tone ?? 'neutral'} value={row.value} />
+              ))}
+            </div>
+          </div>
         </div>
-      </LabPanel>
-    </div>
+      </div>
+    </LabPanel>
   )
 }
 
@@ -899,6 +903,30 @@ function PedidosSignalRow({
   return <LabSignalRow label={label} tone={tone} value={value} />
 }
 
+function PedidosPanelStats({
+  items,
+}: Readonly<{
+  items: Array<{
+    label: string
+    value: string
+    tone?: LabStatusTone
+  }>
+}>) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {items.map((item, index) => (
+        <div
+          className={index > 0 ? 'xl:border-l xl:border-dashed xl:border-[var(--lab-border)] xl:pl-4' : ''}
+          key={item.label}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{item.label}</p>
+          <p className={`mt-1 truncate text-sm font-medium ${toneTextClass(item.tone ?? 'neutral')}`}>{item.value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function resolvePedidosView(activeTab: DashboardTabId | 'historico' | null): PedidosView {
   if (activeTab === 'timeline' || activeTab === 'kanban' || activeTab === 'detalhe' || activeTab === 'historico') {
     return activeTab
@@ -991,6 +1019,22 @@ function toneLabel(tone: LabStatusTone) {
   }
 }
 
+function toneTextClass(tone: LabStatusTone) {
+  switch (tone) {
+    case 'success':
+      return 'text-[var(--lab-success)]'
+    case 'danger':
+      return 'text-[var(--lab-danger)]'
+    case 'warning':
+      return 'text-[var(--lab-warning)]'
+    case 'info':
+      return 'text-[var(--lab-blue)]'
+    case 'neutral':
+    default:
+      return 'text-[var(--lab-fg)]'
+  }
+}
+
 function OrdersTablePanel({
   currency,
   orders,
@@ -1004,83 +1048,80 @@ function OrdersTablePanel({
   const totalItems = orders.reduce((sum, order) => sum + order.totalItems, 0)
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-      <LabPanel
-        action={<LabStatusPill tone="neutral">{orders.length} pedidos</LabStatusPill>}
-        padding="none"
-        title="Tabela de pedidos"
-      >
-        <LabTable
-          className="rounded-none border-0"
-          columns={[
-            {
-              id: 'id',
-              header: 'Id',
-              cell: (order) => (
-                <span className="font-mono text-[var(--lab-fg-soft)]" title={order.id}>
-                  {formatOrderReference(order.id)}
-                </span>
-              ),
-              width: '120px',
-            },
-            {
-              id: 'data',
-              header: 'Data',
-              cell: (order) => <span className="text-[var(--lab-fg-soft)]">{formatOrderDate(order.createdAt)}</span>,
-              width: '140px',
-            },
-            {
-              id: 'cliente',
-              header: 'Cliente',
-              cell: (order) => <span className="font-medium text-[var(--lab-fg)]">{order.customerName ?? 'Sem nome'}</span>,
-            },
-            {
-              id: 'itens',
-              header: 'Itens',
-              cell: (order) => <span className="text-[var(--lab-fg-soft)]">{order.totalItems}</span>,
-              align: 'right',
-              width: '90px',
-            },
-            {
-              id: 'valor',
-              header: 'Valor',
-              cell: (order) => <span className="font-medium text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</span>,
-              align: 'right',
-              width: '120px',
-            },
-            {
-              id: 'canal',
-              header: 'Canal',
-              cell: (order) => <span className="text-[var(--lab-fg-soft)]">{order.channel ?? 'balcao'}</span>,
-              width: '120px',
-            },
-            {
-              id: 'status',
-              header: 'Status',
-              cell: (order) => <StatusPill status={order.status} />,
-              width: '130px',
-            },
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{orders.length} pedidos</LabStatusPill>}
+      padding="none"
+      subtitle="Consulta operacional por id, cliente, canal, valor e status."
+      title="Tabela de pedidos"
+    >
+      <div className="border-b border-[var(--lab-border)] px-5 py-4">
+        <PedidosPanelStats
+          items={[
+            { label: 'canal líder', tone: 'info', value: topChannel?.channel ?? '—' },
+            { label: 'operador líder', tone: 'neutral', value: topOperator?.name ?? '—' },
+            { label: 'maior pedido', tone: 'success', value: biggest ? formatCurrency(biggest.totalRevenue, currency) : '—' },
+            { label: 'itens', tone: 'neutral', value: String(totalItems) },
           ]}
-          emptyDescription="Nenhum pedido registrado ainda."
-          emptyTitle="Sem pedidos no periodo"
-          rowKey="id"
-          rows={orders}
         />
-      </LabPanel>
+      </div>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">{totalItems} itens</LabStatusPill>}
-        padding="md"
-        title="Leitura da tabela"
-      >
-        <div className="space-y-4">
-          <PedidosSignalRow label="canal líder" tone="info" value={topChannel?.channel ?? 'sem leitura'} />
-          <PedidosSignalRow label="operador líder" tone="neutral" value={topOperator?.name ?? 'sem leitura'} />
-          <PedidosSignalRow label="maior pedido" tone="success" value={biggest ? formatCurrency(biggest.totalRevenue, currency) : 'R$ 0,00'} />
-          <PedidosSignalRow label="último registro" tone="neutral" value={orders[0] ? formatOrderDate(orders[0].createdAt) : 'sem pedido'} />
-        </div>
-      </LabPanel>
-    </div>
+      <LabTable
+        className="rounded-none border-0"
+        columns={[
+          {
+            id: 'id',
+            header: 'Id',
+            cell: (order) => (
+              <span className="font-mono text-[var(--lab-fg-soft)]" title={order.id}>
+                {formatOrderReference(order.id)}
+              </span>
+            ),
+            width: '120px',
+          },
+          {
+            id: 'data',
+            header: 'Data',
+            cell: (order) => <span className="text-[var(--lab-fg-soft)]">{formatOrderDate(order.createdAt)}</span>,
+            width: '140px',
+          },
+          {
+            id: 'cliente',
+            header: 'Cliente',
+            cell: (order) => <span className="font-medium text-[var(--lab-fg)]">{order.customerName ?? 'Sem nome'}</span>,
+          },
+          {
+            id: 'itens',
+            header: 'Itens',
+            cell: (order) => <span className="text-[var(--lab-fg-soft)]">{order.totalItems}</span>,
+            align: 'right',
+            width: '90px',
+          },
+          {
+            id: 'valor',
+            header: 'Valor',
+            cell: (order) => <span className="font-medium text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</span>,
+            align: 'right',
+            width: '120px',
+          },
+          {
+            id: 'canal',
+            header: 'Canal',
+            cell: (order) => <span className="text-[var(--lab-fg-soft)]">{order.channel ?? 'balcao'}</span>,
+            width: '120px',
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            cell: (order) => <StatusPill status={order.status} />,
+            width: '130px',
+          },
+        ]}
+        emptyDescription="Nenhum pedido registrado ainda."
+        emptyTitle="Sem pedidos no periodo"
+        rowKey="id"
+        rows={orders}
+      />
+    </LabPanel>
   )
 }
 
@@ -1097,58 +1138,57 @@ function OrdersTimelinePanel({
   const averagePerDay = groups.length > 0 ? Math.round((orders.length / groups.length) * 10) / 10 : 0
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-      <LabPanel padding="md" title="Linha do tempo">
-        <div className="space-y-6">
-          {groups.length > 0 ? (
-            groups.map((group) => (
-              <section className="space-y-3 border-b border-dashed border-[var(--lab-border)] pb-5 last:border-b-0 last:pb-0" key={group.key}>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-[var(--lab-fg)]">{group.label}</h3>
-                    <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{group.orders.length} registros nesse dia.</p>
-                  </div>
-                  <LabStatusPill tone="info">{formatCurrency(group.orders.reduce((sum, order) => sum + order.totalRevenue, 0), currency)}</LabStatusPill>
+    <LabPanel
+      action={<LabStatusPill tone="info">{groups.length} dias</LabStatusPill>}
+      footer={
+        <PedidosPanelStats
+          items={[
+            { label: 'dias ativos', tone: 'neutral', value: String(groups.length) },
+            { label: 'média por dia', tone: 'info', value: groups.length > 0 ? String(averagePerDay) : '—' },
+            { label: 'dia mais forte', tone: 'success', value: busiestDay?.label ?? '—' },
+            { label: 'último registro', tone: 'neutral', value: latest ? formatOrderDate(latest.createdAt) : '—' },
+          ]}
+        />
+      }
+      padding="md"
+      title="Linha do tempo"
+    >
+      <div className="space-y-6">
+        {groups.length > 0 ? (
+          groups.map((group) => (
+            <section className="space-y-3 border-b border-dashed border-[var(--lab-border)] pb-5 last:border-b-0 last:pb-0" key={group.key}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--lab-fg)]">{group.label}</h3>
+                  <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{group.orders.length} registros nesse dia.</p>
                 </div>
+                <LabStatusPill tone="info">{formatCurrency(group.orders.reduce((sum, order) => sum + order.totalRevenue, 0), currency)}</LabStatusPill>
+              </div>
 
-                <div className="space-y-3">
-                  {group.orders.map((order) => (
-                    <div className="grid gap-3 rounded-[12px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3 md:grid-cols-[72px_minmax(0,1fr)_auto]" key={order.id}>
-                      <div className="text-xs font-medium text-[var(--lab-fg-soft)]">{formatOrderTime(order.createdAt)}</div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{order.customerName ?? 'Pedido sem cliente'}</p>
-                        <p className="mt-1 text-sm text-[var(--lab-fg-soft)]">
-                          {order.totalItems} itens · {order.channel ?? 'balcao'} · {order.sellerName ?? 'sem operador'}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between gap-3 md:justify-end">
-                        <strong className="text-sm text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</strong>
-                        <StatusPill status={order.status} />
-                      </div>
+              <div className="space-y-3">
+                {group.orders.map((order) => (
+                  <div className="grid gap-3 rounded-[12px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3 md:grid-cols-[72px_minmax(0,1fr)_auto]" key={order.id}>
+                    <div className="text-xs font-medium text-[var(--lab-fg-soft)]">{formatOrderTime(order.createdAt)}</div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{order.customerName ?? 'Pedido sem cliente'}</p>
+                      <p className="mt-1 text-sm text-[var(--lab-fg-soft)]">
+                        {order.totalItems} itens · {order.channel ?? 'balcao'} · {order.sellerName ?? 'sem operador'}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </section>
-            ))
-          ) : (
-            <LabEmptyState compact description="Sem eventos de pedidos no periodo." title="Linha do tempo vazia" />
-          )}
-        </div>
-      </LabPanel>
-
-      <LabPanel
-        action={<LabStatusPill tone="info">{groups.length} dias</LabStatusPill>}
-        padding="md"
-        title="Ritmo do período"
-      >
-        <div className="space-y-4">
-          <PedidosSignalRow label="dias ativos" tone="neutral" value={String(groups.length)} />
-          <PedidosSignalRow label="média por dia" tone="info" value={groups.length > 0 ? String(averagePerDay) : '0'} />
-          <PedidosSignalRow label="dia mais forte" tone="success" value={busiestDay?.label ?? 'sem leitura'} />
-          <PedidosSignalRow label="último registro" tone="neutral" value={latest ? formatOrderDate(latest.createdAt) : 'sem pedido'} />
-        </div>
-      </LabPanel>
-    </div>
+                    <div className="flex items-center justify-between gap-3 md:justify-end">
+                      <strong className="text-sm text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</strong>
+                      <StatusPill status={order.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <LabEmptyState compact description="Sem eventos de pedidos no periodo." title="Linha do tempo vazia" />
+        )}
+      </div>
+    </LabPanel>
   )
 }
 
@@ -1261,75 +1301,66 @@ function OrdersHistoryPanel({
   const lastCancelled = sortedOrders.find((order) => order.status === 'CANCELLED')
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-      <LabPanel
-        action={<LabStatusPill tone="neutral">{groups.length} dias</LabStatusPill>}
-        padding="md"
-        title="Historico consolidado"
-      >
-        {groups.length === 0 ? (
-          <LabEmptyState compact description="Sem pedidos para auditar no periodo atual." title="Historico vazio" />
-        ) : (
-          <div className="space-y-6">
-            {groups.map((group) => (
-              <section className="space-y-3 border-b border-dashed border-[var(--lab-border)] pb-5 last:border-b-0 last:pb-0" key={group.key}>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-[var(--lab-fg)]">{group.label}</h3>
-                    <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{group.orders.length} pedidos registrados nesse dia.</p>
-                  </div>
-                  <LabStatusPill tone="info">{formatCurrency(group.orders.reduce((sum, order) => sum + order.totalRevenue, 0), currency)}</LabStatusPill>
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{groups.length} dias</LabStatusPill>}
+      footer={
+        <PedidosPanelStats
+          items={[
+            { label: 'dias ativos', tone: 'neutral', value: String(groups.length) },
+            { label: 'operadores', tone: 'info', value: String(uniqueOperators) },
+            { label: 'canais', tone: 'neutral', value: String(uniqueChannels) },
+            { label: 'último cancelamento', tone: lastCancelled ? 'warning' : 'neutral', value: lastCancelled ? formatOrderDate(lastCancelled.createdAt) : '—' },
+          ]}
+        />
+      }
+      padding="md"
+      title="Historico consolidado"
+    >
+      {groups.length === 0 ? (
+        <LabEmptyState compact description="Sem pedidos para auditar no periodo atual." title="Historico vazio" />
+      ) : (
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <section className="space-y-3 border-b border-dashed border-[var(--lab-border)] pb-5 last:border-b-0 last:pb-0" key={group.key}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--lab-fg)]">{group.label}</h3>
+                  <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{group.orders.length} pedidos registrados nesse dia.</p>
                 </div>
+                <LabStatusPill tone="info">{formatCurrency(group.orders.reduce((sum, order) => sum + order.totalRevenue, 0), currency)}</LabStatusPill>
+              </div>
 
-                <div className="space-y-1">
-                  {group.orders.map((order) => (
-                    <div className="grid gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-3 last:border-b-0 md:grid-cols-[72px_minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]" key={order.id}>
-                      <div className="text-xs font-medium text-[var(--lab-fg-soft)]">{formatOrderTime(order.createdAt)}</div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{order.customerName ?? 'Pedido sem cliente'}</p>
-                        <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
-                          {order.totalItems} itens · {order.sellerName ?? 'sem operador'}
-                        </p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-[var(--lab-fg)]">{order.channel ?? 'balcao'}</p>
-                        <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
-                          {[order.buyerDistrict, order.buyerCity].filter(Boolean).join(' · ') || 'sem localizacao'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</p>
-                        <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{formatCurrency(order.totalProfit, currency)} lucro</p>
-                      </div>
-                      <div className="md:justify-self-end">
-                        <StatusPill status={order.status} />
-                      </div>
+              <div className="space-y-1">
+                {group.orders.map((order) => (
+                  <div className="grid gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-3 last:border-b-0 md:grid-cols-[72px_minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]" key={order.id}>
+                    <div className="text-xs font-medium text-[var(--lab-fg-soft)]">{formatOrderTime(order.createdAt)}</div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{order.customerName ?? 'Pedido sem cliente'}</p>
+                      <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                        {order.totalItems} itens · {order.sellerName ?? 'sem operador'}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
-      </LabPanel>
-
-      <LabPanel
-        action={<LabStatusPill tone="info">{sortedOrders.length} pedidos</LabStatusPill>}
-        padding="md"
-        title="Sinais do historico"
-      >
-        <div className="space-y-4">
-          <PedidosSignalRow label="dias ativos" tone="neutral" value={String(groups.length)} />
-          <PedidosSignalRow label="operadores" tone="info" value={String(uniqueOperators)} />
-          <PedidosSignalRow label="canais" tone="neutral" value={String(uniqueChannels)} />
-          <PedidosSignalRow
-            label="ultimo cancelamento"
-            tone={lastCancelled ? 'warning' : 'neutral'}
-            value={lastCancelled ? formatOrderDate(lastCancelled.createdAt) : 'sem cancelamento'}
-          />
+                    <div className="min-w-0">
+                      <p className="text-sm text-[var(--lab-fg)]">{order.channel ?? 'balcao'}</p>
+                      <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
+                        {[order.buyerDistrict, order.buyerCity].filter(Boolean).join(' · ') || 'sem localizacao'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-[var(--lab-fg)]">{formatCurrency(order.totalRevenue, currency)}</p>
+                      <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{formatCurrency(order.totalProfit, currency)} lucro</p>
+                    </div>
+                    <div className="md:justify-self-end">
+                      <StatusPill status={order.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
-      </LabPanel>
-    </div>
+      )}
+    </LabPanel>
   )
 }
 

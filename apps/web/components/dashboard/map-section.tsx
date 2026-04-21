@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic'
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
 import { MapRankingPanel } from '@/components/dashboard/map-ranking-panel'
 import { LabEmptyState, LabFactPill, LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
-import { formatCurrency } from '@/lib/currency'
 
 type MapTab = 'revenue' | 'orders' | 'profit'
 
@@ -34,9 +33,9 @@ export function MapSection({
   const [tab, setTab] = useState<MapTab>('revenue')
 
   const points = finance?.salesMap ?? []
-  const mappedRevenue = points.reduce((s, p) => s + p.revenue, 0)
   const mappedOrders = points.reduce((s, p) => s + p.orders, 0)
   const regionCount = points.length
+  const hasPoints = points.length > 0
   const coveragePct =
     totalOrderCount && totalOrderCount > 0
       ? Math.min(100, Math.round((mappedOrders / totalOrderCount) * 100))
@@ -45,18 +44,10 @@ export function MapSection({
   const topCustomer = finance?.topCustomers[0]
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap gap-3">
-        <LabFactPill label="regiões" value={String(regionCount)} />
-        <LabFactPill label="receita mapeada" value={formatCurrency(mappedRevenue, displayCurrency)} />
-        {coveragePct !== null ? <LabFactPill label="cobertura" value={`${coveragePct}%`} /> : null}
-        {topChannel ? <LabFactPill label="canal líder" value={topChannel.channel} /> : null}
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1fr_320px] xl:items-start">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
         <LabPanel
           action={
-            <LabStatusPill tone={points.length > 0 ? 'info' : 'neutral'}>
+            <LabStatusPill tone={hasPoints ? 'info' : 'neutral'}>
               {tab === 'revenue' ? 'receita' : tab === 'orders' ? 'pedidos' : 'lucro'}
             </LabStatusPill>
           }
@@ -65,17 +56,17 @@ export function MapSection({
           subtitle="Leitura geográfica da receita, volume e resultado por região."
           title="Cobertura geográfica"
         >
-          <div className="h-[520px]">
+          <div className={hasPoints ? 'h-[520px]' : ''}>
             {isLoading ? (
-              <div className="flex h-full items-center justify-center">
+              <div className="flex min-h-[360px] items-center justify-center">
                 <p className="text-sm text-[var(--lab-fg-soft)]">Carregando dados geográficos...</p>
               </div>
             ) : error ? (
-              <div className="flex h-full items-center justify-center px-6 text-center">
+              <div className="flex min-h-[360px] items-center justify-center px-6 text-center">
                 <p className="text-sm text-[var(--lab-danger)]">{error}</p>
               </div>
-            ) : points.length === 0 ? (
-              <div className="grid h-full gap-5 px-6 py-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center">
+            ) : !hasPoints ? (
+              <div className="grid gap-5 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
                 <div className="space-y-5">
                   <LabEmptyState
                     compact
@@ -123,7 +114,6 @@ export function MapSection({
             <div className="h-48 animate-pulse rounded-2xl bg-[var(--lab-surface-hover)]" />
           </LabPanel>
         )}
-      </div>
     </div>
   )
 }

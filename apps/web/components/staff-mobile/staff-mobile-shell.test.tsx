@@ -243,9 +243,188 @@ describe('StaffMobileShell', () => {
     await user.click(screen.getByTestId('nav-historico'))
 
     await waitFor(() => {
+      expect(screen.getByText(/Histórico próprio/i)).toBeInTheDocument()
       expect(screen.getByTestId('summary-card-receita-realizada')).toHaveTextContent('120,00')
       expect(screen.getByTestId('summary-card-receita-esperada')).toHaveTextContent('200,00')
-      expect(screen.getByText(/1 comanda em aberto no seu atendimento/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-posi-o')).toHaveTextContent('1º')
+      expect(screen.getByText(/Você está liderando o turno/i)).toBeInTheDocument()
+      expect(screen.getByText(/Mesa 1/i)).toBeInTheDocument()
+      expect(screen.queryByText(/Mesa 2/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('mostra comandas abertas do salão e identifica a responsabilidade principal', async () => {
+    const user = userEvent.setup()
+    const scopedSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [
+            {
+              id: 'c-1',
+              status: 'OPEN',
+              tableLabel: '1',
+              totalAmount: 120,
+              openedAt: '2026-03-28T10:00:00.000Z',
+              items: [{ id: 'i-1', productName: 'Pão de queijo', quantity: 2, unitPrice: 20, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+        {
+          employeeId: 'emp-2',
+          employeeCode: 'E02',
+          displayName: 'Paulo',
+          comandas: [
+            {
+              id: 'c-9',
+              status: 'READY',
+              tableLabel: '9',
+              totalAmount: 95,
+              openedAt: '2026-03-28T12:00:00.000Z',
+              items: [{ id: 'i-9', productName: 'Suco', quantity: 1, unitPrice: 15, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+      ],
+      unassigned: {
+        comandas: [],
+      },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-1',
+          currentEmployeeId: 'emp-1',
+        }),
+        buildMesaRecord({
+          id: 'mesa-9',
+          label: 'Mesa 9',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-9',
+          currentEmployeeId: 'emp-2',
+        }),
+      ],
+    })
+
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(scopedSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], scopedSnapshot)
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-pedidos'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('2')
+      expect(screen.getByLabelText(/Abrir detalhes da 1/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Abrir detalhes da 9/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sua mesa/i)).toBeInTheDocument()
+      expect(screen.getByText(/Responsável Paulo/i)).toBeInTheDocument()
+    })
+  })
+
+  it('mostra a cozinha compartilhada do salão com responsável visível', async () => {
+    const user = userEvent.setup()
+
+    vi.mocked(api.fetchOperationsKitchen).mockResolvedValue({
+      businessDate: '2026-04-21T00:00:00.000Z',
+      companyOwnerId: 'owner-1',
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:20:00.000Z',
+          kitchenReadyAt: null,
+        },
+        {
+          itemId: 'i-3',
+          comandaId: 'c-3',
+          mesaLabel: '9',
+          employeeId: 'emp-2',
+          employeeName: 'Paulo',
+          productName: 'Suco',
+          quantity: 2,
+          notes: 'sem gelo',
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:24:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 2,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+    testQueryClient.setQueryData(['operations', 'kitchen'], {
+      businessDate: '2026-04-21T00:00:00.000Z',
+      companyOwnerId: 'owner-1',
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:20:00.000Z',
+          kitchenReadyAt: null,
+        },
+        {
+          itemId: 'i-3',
+          comandaId: 'c-3',
+          mesaLabel: '9',
+          employeeId: 'emp-2',
+          employeeName: 'Paulo',
+          productName: 'Suco',
+          quantity: 2,
+          notes: 'sem gelo',
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:24:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 2,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-cozinha'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Fila compartilhada do salão/i)).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+      expect(screen.getByText(/Responsável Paulo/i)).toBeInTheDocument()
+    })
+  })
+
+  it('mostra o mapa compartilhado do salão com responsabilidade visível na aba de mesas', async () => {
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Mapa compartilhado do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('mesa-summary-livres')).toBeInTheDocument()
+      expect(screen.getByTestId('mesa-summary-suas')).toHaveTextContent('1')
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
     })
   })
 
@@ -390,12 +569,15 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
-    expect(await screen.findByText(/Escolha uma categoria/i)).toBeInTheDocument()
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-3'))
+    expect(await screen.findByText(/Nova comanda/i)).toBeInTheDocument()
+    expect(screen.getByText('Situação')).toBeInTheDocument()
+    expect(screen.getByText('Mesa livre')).toBeInTheDocument()
+    expect(screen.getByText('Na cozinha')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^Bebidas$/i }))
     await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
-    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+    await user.click(screen.getByRole('button', { name: /Abrir comanda/i }))
 
     await waitFor(() => {
       expect(api.openComanda).toHaveBeenCalledWith(
@@ -415,7 +597,8 @@ describe('StaffMobileShell', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/Ativas/i)).toBeInTheDocument()
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('1')
     })
   })
 
@@ -509,10 +692,10 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-3'))
     await user.click(await screen.findByRole('button', { name: /^Bebidas$/i }))
     await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
-    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+    await user.click(screen.getByRole('button', { name: /Abrir comanda/i }))
 
     await waitFor(() => {
       expect(api.openCashSession).not.toHaveBeenCalled()

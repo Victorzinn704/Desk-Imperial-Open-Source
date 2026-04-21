@@ -20,6 +20,7 @@ import { FinanceService } from '../finance/finance.service'
 import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayload } from './products-combo.utils'
 import { validateImportRow, upsertImportRow } from './products-import.utils'
 import { buildProductUpdateData } from './products-update.utils'
+import { sanitizeProductBarcode } from './products-barcode.util'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -91,6 +92,7 @@ export class ProductsService {
           ? {
               OR: [
                 { name: { contains: query.search.trim(), mode: 'insensitive' } },
+                { barcode: { contains: query.search.trim(), mode: 'insensitive' } },
                 { brand: { contains: query.search.trim(), mode: 'insensitive' } },
                 { category: { contains: query.search.trim(), mode: 'insensitive' } },
                 { packagingClass: { contains: query.search.trim(), mode: 'insensitive' } },
@@ -152,6 +154,7 @@ export class ProductsService {
               allowEmpty: false,
               rejectFormula: true,
             })!,
+            barcode: sanitizeProductBarcode(dto.barcode, 'Codigo de barras'),
             brand: sanitizePlainText(dto.brand, 'Marca', {
               allowEmpty: true,
               rejectFormula: true,
@@ -220,6 +223,7 @@ export class ProductsService {
         resourceId: product.id,
         metadata: {
           name: product.name,
+          barcode: product.barcode,
           brand: product.brand,
           category: product.category,
           packagingClass: product.packagingClass,
@@ -528,7 +532,7 @@ export class ProductsService {
 
 function handleProductConflict(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-    throw new ConflictException('Ja existe um produto com este nome para a sua conta.')
+    throw new ConflictException('Ja existe um produto com este nome ou codigo de barras para a sua conta.')
   }
 
   throw error

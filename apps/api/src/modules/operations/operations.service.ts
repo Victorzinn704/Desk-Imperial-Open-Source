@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -48,21 +48,36 @@ export class OperationsService {
   async getLiveSnapshot(auth: AuthContext, query: GetOperationsLiveQueryDto) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
-    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
     const snapshotOptions = {
       ...(query.includeCashMovements !== undefined ? { includeCashMovements: query.includeCashMovements } : {}),
       ...(query.compactMode !== undefined ? { compactMode: query.compactMode } : {}),
     }
 
-    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, snapshotOptions)
+    if (auth.role === 'STAFF') {
+      if (!auth.employeeId) {
+        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
+      }
+
+      return this.helpers.buildStaffOperationalSnapshot(
+        workspaceOwnerUserId,
+        businessDate,
+        auth.employeeId,
+        query.compactMode !== undefined ? { compactMode: query.compactMode } : undefined,
+      )
+    }
+
+    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, null, snapshotOptions)
   }
 
   async getKitchenView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsKitchenResponse> {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
-    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
 
-    return this.helpers.buildKitchenView(workspaceOwnerUserId, businessDate, scopedEmployeeId)
+    if (auth.role === 'STAFF' && !auth.employeeId) {
+      throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
+    }
+
+    return this.helpers.buildKitchenView(workspaceOwnerUserId, businessDate, null)
   }
 
   async getSummaryView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsSummaryResponse> {
