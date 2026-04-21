@@ -40,16 +40,16 @@ export const CategoryGrid = memo(function CategoryGrid({
           <button
             className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
               selectedCategory === null
-                ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]'
+                ? 'border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
             }`}
             onClick={() => onSelectCategory(null)}
           >
             <Search
-              className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+              className={`mb-1 size-5 opacity-80 transition-opacity group-hover:opacity-100 ${selectedCategory === null ? 'text-[var(--accent)]' : ''}`}
             />
             <span
-              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
+              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[var(--accent)]' : ''}`}
             >
               Todos
             </span>
@@ -62,14 +62,14 @@ export const CategoryGrid = memo(function CategoryGrid({
             <button
               className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
                 isActive
-                  ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-[var(--text-primary)]'
+                  ? 'border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                  : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
               }`}
               key={cat}
               onClick={() => onSelectCategory(cat)}
             >
               {getCategoryIcon(cat)}
-              <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
+              <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[var(--accent)]' : ''}`}>
                 {cat.length > 10 ? `${cat.substring(0, 10)}...` : cat}
               </span>
             </button>

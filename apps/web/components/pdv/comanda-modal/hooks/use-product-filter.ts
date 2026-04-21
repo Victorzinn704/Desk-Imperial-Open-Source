@@ -37,6 +37,6 @@ export function useProductFilter(products: SimpleProduct[]) {
     setSelectedCategory,
     categories,
     filtered,
-    showProducts: selectedCategory !== null || trimmedSearch.length > 0 || categories.length === 0,
+    showProducts: products.length > 0 || selectedCategory !== null || trimmedSearch.length > 0 || categories.length === 0,
   }
 }

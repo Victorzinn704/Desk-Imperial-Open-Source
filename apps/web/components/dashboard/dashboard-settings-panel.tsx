@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { LogOut } from 'lucide-react'
 import type { ProfileFormValues } from '@/lib/validation'
 import { type AuthUser, type CookiePreferencePayload, type CookiePreferences, fetchActivityFeed } from '@/lib/api'
-import { LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
+import { LAB_RESPONSIVE_FOUR_UP_GRID, LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { cn } from '@/lib/utils'
 import {
   type DashboardSectionId,
@@ -282,7 +282,7 @@ export function DashboardSettingsPanel({
   return (
     <section className="space-y-6">
       {/* Métricas de contexto */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className={`grid gap-4 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
         <SettingsMetric helper={user.email} label="Conta" value={user.companyName || user.fullName} />
         <SettingsMetric
           helper={user.role === 'OWNER' ? 'Controle administrativo completo' : 'Acesso operacional com auditoria'}

@@ -171,12 +171,14 @@ export function resolveActiveNavigation(
 // ── Main component ──────────────────────────────────────────────────────────────
 
 type DashboardShellProps = {
+  basePath?: string
   initialSection?: DashboardSectionId
   initialSettingsSection?: DashboardSettingsSectionId
   initialTab?: DashboardTabId | null
 }
 
 export function DashboardShell({
+  basePath = '/dashboard',
   initialSection = dashboardDefaultSection,
   initialSettingsSection = dashboardDefaultSettingsSection,
   initialTab = null,
@@ -210,7 +212,7 @@ export function DashboardShell({
     navigateToSection,
     navigateToSettings,
     navigateToTab,
-  } = useDashboardNavigation({ initialSection, initialSettingsSection, initialTab, isStaffUser })
+  } = useDashboardNavigation({ basePath, initialSection, initialSettingsSection, initialTab, isStaffUser })
 
   const { consentQuery: _consentQuery, productsQuery: _productsQuery, ordersQuery: _ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
     userId: currentUser?.userId,
@@ -313,6 +315,7 @@ export function DashboardShell({
           activeDisplaySection={activeDisplaySection}
           activeSettingsSection={activeSettingsSection}
           activeTab={activeTab}
+          basePath={basePath}
           compact={isCompactDesktop}
           navigationGroups={navigationGroups}
           sectionTabs={sectionTabs}
@@ -371,6 +374,7 @@ function DashboardWireframeHeader({
   activeDisplaySection,
   activeSettingsSection,
   activeTab,
+  basePath,
   compact,
   navigationGroups,
   onNavigate,
@@ -383,6 +387,7 @@ function DashboardWireframeHeader({
   activeDisplaySection: DashboardProductSectionId | 'settings'
   activeSettingsSection: DashboardSettingsSectionId
   activeTab: DashboardTabId | null
+  basePath: string
   compact: boolean
   navigationGroups: DashboardNavigationGroup[]
   onNavigate: (sectionId: DashboardSectionId, tabId?: DashboardTabId | null) => void
@@ -404,27 +409,23 @@ function DashboardWireframeHeader({
   return (
     <header className="wireframe-header">
       <div className={`wireframe-header__bar ${compact ? 'wireframe-header__bar--compact' : ''}`}>
-        <Link
-          className="wireframe-brand"
-          href={buildDashboardHref('overview', activeSettingsSection, 'principal')}
+        <BrandMark
+          href={buildDashboardHref('overview', activeSettingsSection, 'principal', basePath)}
           onClick={(event) => {
             if (!shouldHandleDashboardNav(event)) {return}
             event.preventDefault()
             onNavigate('overview', 'principal')
           }}
-        >
-          <span aria-hidden="true" className="wireframe-brand__mark wireframe-brand__mark--logo">
-            <img alt="" className="wireframe-brand__logo-image" height="24" src="/favicon.svg" width="24" />
-          </span>
-          <span className="wireframe-brand__name">Desk Imperial</span>
-        </Link>
+          presentation="wireframe"
+          wordmark="always"
+        />
 
         <div className="wireframe-header__actions">
           <WireframeThemeButton />
           <Link
             aria-label="Conta e configurações"
             className="wireframe-account-button"
-            href={buildDashboardHref('settings', 'account')}
+            href={buildDashboardHref('settings', 'account', undefined, basePath)}
             title={`${user.fullName} · ${user.email}`}
             onClick={(event) => {
               if (!shouldHandleDashboardNav(event)) {return}
@@ -449,7 +450,7 @@ function DashboardWireframeHeader({
               <Link
                 aria-current={active ? 'page' : undefined}
                 className={active ? 'wireframe-primary-nav__item wireframe-primary-nav__item--active' : 'wireframe-primary-nav__item'}
-                href={buildDashboardHref(item.id, activeSettingsSection)}
+                href={buildDashboardHref(item.id, activeSettingsSection, undefined, basePath)}
                 key={item.id}
                 onClick={(event) => {
                   if (!shouldHandleDashboardNav(event)) {return}
@@ -478,7 +479,7 @@ function DashboardWireframeHeader({
               <Link
                 aria-current={active ? 'true' : undefined}
                 className={active ? 'wireframe-subnav__item wireframe-subnav__item--active' : 'wireframe-subnav__item'}
-                href={buildDashboardHref(activeDisplaySection, activeSettingsSection, tab.id)}
+                href={buildDashboardHref(activeDisplaySection, activeSettingsSection, tab.id, basePath)}
                 key={tab.id}
                 title={tab.description}
                 onClick={(event) => {

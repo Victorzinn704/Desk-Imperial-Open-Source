@@ -2,17 +2,18 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
-import { calcTotal, type Comanda } from './pdv-types'
+import { calcTotal, isEndedComandaStatus, type Comanda } from './pdv-types'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
-type Filtro = 'tudo' | 'abertas' | 'fechadas'
+type Filtro = 'tudo' | 'abertas' | 'encerradas'
 type Ordenacao = 'recentes' | 'maior_valor'
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
   pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  cancelada: { label: 'Cancelada', color: '#f87171', bg: 'rgba(248,113,113,0.16)' },
   fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
 }
 
@@ -42,24 +43,24 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
 
   const summary = useMemo(() => {
     let abertas = 0
-    let fechadas = 0
+    let encerradas = 0
 
     for (const comanda of comandas) {
-      if (comanda.status === 'fechada') {
-        fechadas += 1
+      if (isEndedComandaStatus(comanda.status)) {
+        encerradas += 1
       } else {
         abertas += 1
       }
     }
 
-    return { abertas, fechadas, total: comandas.length }
+    return { abertas, encerradas, total: comandas.length }
   }, [comandas])
 
   const sorted = useMemo(() => {
     const buscaNormalizada = busca.trim().toLowerCase()
     const matchesFiltro = (comanda: Comanda) => {
-      if (filtro === 'abertas') {return comanda.status !== 'fechada'}
-      if (filtro === 'fechadas') {return comanda.status === 'fechada'}
+      if (filtro === 'abertas') {return !isEndedComandaStatus(comanda.status)}
+      if (filtro === 'encerradas') {return isEndedComandaStatus(comanda.status)}
       return true
     }
 
@@ -97,7 +98,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Histórico de comandas</p>
           <p className="mt-1 text-sm text-[var(--text-soft)]">
-            Visualize comandas abertas e fechadas com seus itens, valores e responsável pelo atendimento.
+            Visualize comandas abertas, pagas e canceladas com seus itens, valores e responsável pelo atendimento.
           </p>
         </div>
 
@@ -148,7 +149,7 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
               [
                 { id: 'tudo' as const, label: `Tudo (${summary.total})` },
                 { id: 'abertas' as const, label: `Abertas (${summary.abertas})` },
-                { id: 'fechadas' as const, label: `Fechadas (${summary.fechadas})` },
+                { id: 'encerradas' as const, label: `Encerradas (${summary.encerradas})` },
               ] as const
             ).map(({ id, label }) => (
               <button

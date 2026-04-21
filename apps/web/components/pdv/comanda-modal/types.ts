@@ -20,6 +20,7 @@ export type SaveComandaPayload = {
   mesa: string
   clienteNome: string
   clienteDocumento: string
+  notes: string
   itens: ComandaItem[]
   desconto: number
   acrescimo: number
@@ -35,5 +36,6 @@ export const STATUS_OPTIONS: StatusOption[] = [
   { value: 'aberta', label: 'Aberta', color: '#60a5fa' },
   { value: 'em_preparo', label: 'Em Preparo', color: '#fb923c' },
   { value: 'pronta', label: 'Pronta', color: '#36f57c' },
+  { value: 'cancelada', label: 'Cancelar Comanda', color: '#ef4444' },
   { value: 'fechada', label: 'Fechar Comanda', color: '#7a8896' },
 ]

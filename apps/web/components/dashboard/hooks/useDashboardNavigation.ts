@@ -20,6 +20,7 @@ import {
 } from '@/components/dashboard/dashboard-navigation'
 
 type UseDashboardNavigationOptions = {
+  basePath?: string
   initialSection?: DashboardSectionId
   initialSettingsSection?: DashboardSettingsSectionId
   initialTab?: DashboardTabId | null
@@ -31,6 +32,7 @@ type UseDashboardNavigationOptions = {
  * top-level tabs and role-based section filtering.
  */
 export function useDashboardNavigation({
+  basePath = '/dashboard',
   initialSection = dashboardDefaultSection,
   initialSettingsSection = dashboardDefaultSettingsSection,
   initialTab = null,
@@ -114,8 +116,8 @@ export function useDashboardNavigation({
 
       const canonicalHref =
         nextSection === 'settings'
-          ? buildDashboardHref('settings', nextSettingsSection)
-          : buildDashboardHref(nextSection, nextSettingsSection, nextTab)
+          ? buildDashboardHref('settings', nextSettingsSection, undefined, basePath)
+          : buildDashboardHref(nextSection, nextSettingsSection, nextTab, basePath)
       const shouldCanonicalize =
         nextSection === 'settings'
           ? !hasView || !hasPanel
@@ -129,14 +131,14 @@ export function useDashboardNavigation({
     syncFromLocation()
     globalThis.addEventListener('popstate', syncFromLocation)
     return () => globalThis.removeEventListener('popstate', syncFromLocation)
-  }, [allowedSections, initialSettingsSection, isStaffUser])
+  }, [allowedSections, basePath, initialSection, initialSettingsSection, initialTab, isStaffUser])
 
   const navigateToSection = (sectionId: DashboardSectionId, tabId?: DashboardTabId | null) => {
     const nextTab = sectionId === 'settings' ? null : (tabId ?? getDashboardDisplayTab(sectionId))
     setActiveSection(sectionId)
     setActiveTab(nextTab)
     if (typeof window !== 'undefined') {
-      globalThis.history.pushState({}, '', buildDashboardHref(sectionId, activeSettingsSection, nextTab))
+      globalThis.history.pushState({}, '', buildDashboardHref(sectionId, activeSettingsSection, nextTab, basePath))
     }
   }
 
@@ -149,7 +151,7 @@ export function useDashboardNavigation({
     setActiveSection(nextSection)
     setActiveTab(tabId)
     if (typeof window !== 'undefined') {
-      globalThis.history.pushState({}, '', buildDashboardHref(nextSection, activeSettingsSection, tabId))
+      globalThis.history.pushState({}, '', buildDashboardHref(nextSection, activeSettingsSection, tabId, basePath))
     }
   }
 
@@ -158,7 +160,7 @@ export function useDashboardNavigation({
     setActiveTab(null)
     setActiveSettingsSection(settingsSectionId)
     if (typeof window !== 'undefined') {
-      globalThis.history.pushState({}, '', buildDashboardHref('settings', settingsSectionId))
+      globalThis.history.pushState({}, '', buildDashboardHref('settings', settingsSectionId, undefined, basePath))
     }
   }
 

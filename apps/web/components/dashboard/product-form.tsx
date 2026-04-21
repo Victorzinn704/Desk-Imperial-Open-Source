@@ -471,7 +471,7 @@ export function ProductForm({
             aria-checked={isComboValue}
             className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
             role="switch"
-            style={{ background: isComboValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
+            style={{ background: isComboValue ? 'var(--accent, #008cff)' : 'var(--surface-muted)' }}
             type="button"
             onClick={() => setValue('isCombo', !isComboValue, { shouldDirty: true, shouldValidate: true })}
           >
@@ -502,7 +502,7 @@ export function ProductForm({
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-[var(--text-primary)]">Componentes do combo</p>
                 <button
-                  className="rounded-[10px] border border-[rgba(255,255,255,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[rgba(255,255,255,0.24)]"
+                  className="rounded-[10px] border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)]"
                   type="button"
                   onClick={() =>
                     appendComboItem({
@@ -519,7 +519,7 @@ export function ProductForm({
               {comboItemsRootError ? <p className="text-xs text-[var(--danger)]">{comboItemsRootError}</p> : null}
 
               {comboFields.length === 0 ? (
-                <div className="rounded-[12px] border border-dashed border-[rgba(255,255,255,0.14)] px-4 py-3 text-xs text-[var(--text-soft)]">
+                <div className="rounded-[12px] border border-dashed border-[var(--border)] px-4 py-3 text-xs text-[var(--text-soft)]">
                   Adicione os produtos que fazem parte do combo para habilitar a conversão por métrica.
                 </div>
               ) : null}
@@ -537,7 +537,7 @@ export function ProductForm({
                     className={
                       isEmbedded
                         ? 'space-y-2 rounded-[12px] border border-dashed border-[var(--border)] px-3 py-3'
-                        : 'space-y-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-3'
+                        : 'space-y-2 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] p-3'
                     }
                     key={field.id}
                   >
@@ -664,7 +664,7 @@ export function ProductForm({
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-[var(--text-primary)]">Envia para a cozinha</p>
                 {categoryValue && isKitchenCategory(categoryValue) && (
-                  <span className="rounded-full border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#008cff)]">
+                  <span className="rounded-full border border-[var(--accent-soft)] bg-[var(--accent-soft)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent,#008cff)]">
                     auto
                   </span>
                 )}
@@ -677,7 +677,7 @@ export function ProductForm({
               aria-checked={requiresKitchenValue}
               className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
               role="switch"
-              style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'rgba(255,255,255,0.12)' }}
+            style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'var(--surface-muted)' }}
               type="button"
               onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
             >

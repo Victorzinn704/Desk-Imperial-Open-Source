@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 type LabRouteTab = {
   id: string
   href: string
+  emoji?: string
   label: string
   description?: string
 }
@@ -29,7 +30,8 @@ export function LabRouteTabs({
             key={tab.id}
             title={tab.description}
           >
-            {tab.label}
+            {tab.emoji ? <span aria-hidden="true">{tab.emoji}</span> : null}
+            <span>{tab.label}</span>
           </Link>
         )
       })}

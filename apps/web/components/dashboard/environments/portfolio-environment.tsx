@@ -1,16 +1,22 @@
 'use client'
 
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from 'react'
-import { Archive, Boxes, MapPin, Package, PencilLine, Plus, RotateCcw, Search, ShoppingCart, Store, Tags, Trash2, TrendingUp, Truck, X } from 'lucide-react'
+import { type ReactNode, useMemo, useState } from 'react'
+import { Archive, MapPin, PencilLine, Plus, RotateCcw, Search, ShoppingCart, Store, Trash2, Truck, X } from 'lucide-react'
 import type { FinanceSummaryResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
 import {
-  LabMetric,
+  LabMiniStat,
   LabPageHeader,
+  LabFactPill,
+  LabFilterChip,
+  LabMetricStrip,
+  LabMetricStripItem,
   LabPanel,
+  LabSignalRow,
   LabStatusPill,
   LabTable,
   type LabStatusTone,
 } from '@/components/design-lab/lab-primitives'
+import { LabWorkbench } from '@/components/design-lab/lab-workbench'
 import { OrderForm } from '@/components/dashboard/order-form'
 import { ProductForm } from '@/components/dashboard/product-form'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
@@ -18,6 +24,7 @@ import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboard
 import { ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
+import { formatStockBreakdown } from '@/lib/product-packaging'
 import type { OrderFormInputValues, ProductFormValues } from '@/lib/validation'
 
 type ProductMutationError = ApiError | null
@@ -32,7 +39,6 @@ const saleModeMeta: Record<
   {
     label: string
     channel: string
-    description: string
     icon: typeof Truck
     tone: LabStatusTone
   }
@@ -40,21 +46,18 @@ const saleModeMeta: Record<
   delivery: {
     label: 'Delivery',
     channel: 'Delivery',
-    description: 'Entrega com localização do comprador, canal e observação operacional.',
     icon: Truck,
     tone: 'info',
   },
   balcao: {
     label: 'Balcão',
     channel: 'Balcão',
-    description: 'Venda rápida de retirada, com menos fricção e sem depender do PDV completo.',
     icon: Store,
     tone: 'success',
   },
   mesa: {
     label: 'Mesa',
     channel: 'Mesa',
-    description: 'Venda assistida por mesa, útil quando você quer registrar fora da comanda tradicional.',
     icon: MapPin,
     tone: 'warning',
   },
@@ -268,53 +271,40 @@ export function PortfolioEnvironment() {
   return (
     <section className="space-y-5">
       <LabPageHeader
-        description="Cadastro, estoque e margem reunidos numa superficie desktop mais limpa, sem perder mutacoes reais do portfolio."
+        description="Estoque, margem e giro do catálogo."
         eyebrow="Estoque e margem"
-        meta={<PortfolioMetaSummary avgMargin={avgMargin} lowStockItems={finance?.totals.lowStockItems ?? null} productsTotals={productsTotals} />}
         title="Portfolio de produtos"
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <PortfolioMetricTile
-          hint="produtos ativos no catalogo"
-          icon={Package}
-          label="SKUs ativos"
-          tone="info"
-          value={productsTotals ? String(productsTotals.activeProducts) : '0'}
-        />
-        <PortfolioMetricTile
-          hint="capital parado no estoque"
-          icon={Boxes}
-          label="capital em estoque"
-          tone="neutral"
-          value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, displayCurrency as never) : 'R$ 0,00'}
-        />
-        <PortfolioMetricTile
-          hint="valor de venda potencial"
-          icon={TrendingUp}
-          label="venda potencial"
-          tone="success"
-          value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, displayCurrency as never) : 'R$ 0,00'}
-        />
-        <PortfolioMetricTile
-          hint="alertas de estoque baixo"
-          icon={Tags}
-          label="itens em alerta"
-          tone={(finance?.totals.lowStockItems ?? 0) > 0 ? 'warning' : 'success'}
-          value={String(finance?.totals.lowStockItems ?? 0)}
-        />
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)] xl:items-start">
-        <PortfolioActionPanel
+      >
+        <PortfolioHeaderBoard
           activeProducts={productsTotals?.activeProducts ?? 0}
-          onOpenProduct={openNewProductSurface}
-          onOpenSale={() => openSaleSurface(null, 'delivery')}
+          displayCurrency={displayCurrency}
+          inventoryCostValue={productsTotals?.inventoryCostValue ?? 0}
+          inventorySalesValue={productsTotals?.inventorySalesValue ?? 0}
+          lowStockItems={finance?.totals.lowStockItems ?? 0}
         />
-        <PortfolioCategoryPanel
+      </LabPageHeader>
+
+      <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
+        <div className="space-y-5">
+          <PortfolioActionPanel
+            activeProducts={productsTotals?.activeProducts ?? 0}
+            onOpenProduct={openNewProductSurface}
+            onOpenSale={() => openSaleSurface(null, 'delivery')}
+          />
+          <PortfolioOperationalPanel
+            avgMargin={avgMargin}
+            products={products}
+            productsTotals={productsTotals}
+          />
+        </div>
+        <PortfolioRadarPanel
+          avgMargin={avgMargin}
           categoryBreakdown={finance?.categoryBreakdown ?? []}
           displayCurrency={displayCurrency}
+          lowStockItems={finance?.totals.lowStockItems ?? 0}
           maxCategoryProfit={maxCategoryProfit}
+          products={products}
+          productsTotals={productsTotals}
         />
       </div>
 
@@ -323,6 +313,7 @@ export function PortfolioEnvironment() {
         currency={displayCurrency}
         filteredProducts={filteredProducts}
         mutationError={productMutationError}
+        onCreate={openNewProductSurface}
         products={products}
         productsError={productsError}
         searchQuery={searchQuery}
@@ -335,8 +326,9 @@ export function PortfolioEnvironment() {
       />
 
       {surface?.kind === 'product' ? (
-        <PortfolioWorkbench
-          description="Cadastro do portfólio em tela operacional contínua, sem card dentro de card."
+        <LabWorkbench
+          description="Campos do produto, estoque e margem."
+          bodyClassName="portfolio-workbench-open"
           onClose={closeSurface}
           toolbar={<PortfolioProductToolbar product={activeProductModal} products={products} />}
           title={activeProductModal ? 'Editar produto' : 'Cadastrar produto'}
@@ -352,12 +344,13 @@ export function PortfolioEnvironment() {
               onSubmit={handleProductSubmit}
             />
           </PortfolioFormShell>
-        </PortfolioWorkbench>
+        </LabWorkbench>
       ) : null}
 
       {activeSaleSurface ? (
-        <PortfolioWorkbench
-          description="Venda em superfície tipo PDV, com leitura direta de canal, produto e localização."
+        <LabWorkbench
+          description="Produto, canal, localização e pagamento."
+          bodyClassName="portfolio-workbench-open"
           onClose={closeSurface}
           toolbar={
             <PortfolioSaleToolbar
@@ -379,13 +372,6 @@ export function PortfolioEnvironment() {
             employees={employees}
             errorMessage={saleMutationError}
             loading={createOrderMutation.isPending}
-            onModeChange={(mode) =>
-              setSurface((current) =>
-                current?.kind === 'sale'
-                  ? { ...current, mode }
-                  : current,
-              )
-            }
             onSubmit={({ values }) =>
               createOrderMutation.mutate(
                 { values },
@@ -394,173 +380,253 @@ export function PortfolioEnvironment() {
                 },
               )
             }
-            product={activeSaleSurface.product}
             products={products.filter((product) => product.active)}
             saleInitialValues={saleInitialValues}
             userRole={currentUser?.role ?? 'OWNER'}
           />
-        </PortfolioWorkbench>
+        </LabWorkbench>
       ) : null}
     </section>
   )
 }
 
-function PortfolioMetaSummary({
-  avgMargin,
+function PortfolioHeaderBoard({
+  activeProducts,
+  displayCurrency,
+  inventoryCostValue,
+  inventorySalesValue,
   lowStockItems,
+}: Readonly<{
+  activeProducts: number
+  displayCurrency: string
+  inventoryCostValue: number
+  inventorySalesValue: number
+  lowStockItems: number
+}>) {
+  return (
+    <LabMetricStrip>
+      <LabMetricStripItem
+        description="itens ativos no catálogo"
+        label="SKUs ativos"
+        value={String(activeProducts)}
+      />
+      <LabMetricStripItem
+        description="capital parado no estoque"
+        label="capital em estoque"
+        value={formatCurrency(inventoryCostValue, displayCurrency as never)}
+      />
+      <LabMetricStripItem
+        description="valor máximo de venda do mix"
+        label="venda potencial"
+        value={formatCurrency(inventorySalesValue, displayCurrency as never)}
+      />
+      <LabMetricStripItem
+        description={lowStockItems > 0 ? 'itens pedindo reposição' : 'sem pressão crítica no estoque'}
+        label="itens em alerta"
+        value={String(lowStockItems)}
+      />
+    </LabMetricStrip>
+  )
+}
+
+function PortfolioOperationalPanel({
+  avgMargin,
+  products,
   productsTotals,
 }: Readonly<{
   avgMargin: string
-  lowStockItems: number | null
+  products: ProductRecord[]
   productsTotals: ProductsResponse['totals'] | undefined
 }>) {
-  const items = [
-    { label: 'ativos', value: String(productsTotals?.activeProducts ?? 0), tone: 'neutral' as const },
-    { label: 'arquivados', value: String(productsTotals?.inactiveProducts ?? 0), tone: 'info' as const },
-    { label: 'margem media', value: avgMargin, tone: 'success' as const },
-    {
-      label: 'estoque baixo',
-      value: String(lowStockItems ?? 0),
-      tone: (lowStockItems ?? 0) > 0 ? ('warning' as const) : ('success' as const),
-    },
-  ]
+  const categoriesCount =
+    productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
+  const comboCount = products.filter((product) => product.isCombo).length
+  const kitchenCount = products.filter((product) => product.requiresKitchen).length
+  const inactiveCount = productsTotals?.inactiveProducts ?? 0
 
-  return (
-    <div className="space-y-3">
-      {items.map((item) => (
-        <div
-          className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3 last:border-b-0 last:pb-0"
-          key={item.label}
-        >
-          <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{item.label}</span>
-          <LabStatusPill tone={item.tone}>{item.value}</LabStatusPill>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function PortfolioMetricTile({
-  hint,
-  icon,
-  label,
-  tone,
-  value,
-}: Readonly<{
-  hint: string
-  icon: typeof Package
-  label: string
-  tone: LabStatusTone
-  value: string
-}>) {
-  return (
-    <LabMetric
-      className="h-full"
-      delta={metricToneLabel(tone)}
-      deltaTone={tone}
-      hint={hint}
-      icon={icon}
-      label={label}
-      value={value}
-    />
-  )
-}
-
-function metricToneLabel(tone: LabStatusTone) {
-  switch (tone) {
-    case 'success':
-      return 'ok'
-    case 'warning':
-      return 'alerta'
-    case 'danger':
-      return 'risco'
-    case 'neutral':
-      return 'base'
-    case 'info':
-    default:
-      return 'leitura'
-  }
-}
-
-function PortfolioCategoryPanel({
-  categoryBreakdown,
-  displayCurrency,
-  maxCategoryProfit,
-}: Readonly<{
-  categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
-  displayCurrency: string
-  maxCategoryProfit: number
-}>) {
   return (
     <LabPanel
-      action={<LabStatusPill tone="neutral">{categoryBreakdown.length} categorias</LabStatusPill>}
+      action={<LabStatusPill tone="neutral">{categoriesCount} famílias</LabStatusPill>}
       padding="md"
-      subtitle="Categorias com melhor potencial de venda e lucro no consolidado."
-      title="Fluxo por categoria"
+      title="Leitura operacional"
     >
-      <div className="space-y-1">
-        {categoryBreakdown.length > 0 ? (
-          categoryBreakdown.map((category) => {
-            const pct = maxCategoryProfit > 0 ? (category.potentialProfit / maxCategoryProfit) * 100 : 0
-            return (
-              <article
-                className="border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0"
-                key={category.category}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{category.category}</p>
-                    <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
-                      {category.products} SKU(s) · {formatCurrency(category.inventoryCostValue, displayCurrency as never)} de capital
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-[var(--lab-fg)]">
-                      {formatCurrency(category.potentialProfit, displayCurrency as never)}
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--lab-fg-muted)]">lucro potencial</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
-                  <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(pct, 8)}%` }} />
-                </div>
-
-                <p className="mt-2 text-xs text-[var(--lab-fg-soft)]">
-                  {formatCurrency(category.inventorySalesValue, displayCurrency as never)} em venda potencial
-                </p>
-              </article>
-            )
-          })
-        ) : (
-          <div className="rounded-[16px] border border-dashed border-[var(--lab-border)] px-5 py-8 text-center text-sm text-[var(--lab-fg-soft)]">
-            Cadastre produtos para liberar a leitura por categoria.
-          </div>
-        )}
+      <div className="space-y-0">
+        <LabSignalRow label="arquivados" note="itens fora do mix ativo" tone="neutral" value={String(inactiveCount)} />
+        <LabSignalRow label="combos" note="ofertas compostas no catálogo" tone="warning" value={String(comboCount)} />
+        <LabSignalRow label="cozinha" note="produtos que geram fila no KDS" tone="info" value={String(kitchenCount)} />
+        <LabSignalRow label="margem média" note="qualidade média de precificação" tone="success" value={avgMargin} />
       </div>
     </LabPanel>
   )
 }
 
-const formBridgeStyle = {
-  '--bg': '#0b1016',
-  '--surface': 'rgba(255,255,255,0.03)',
-  '--surface-muted': 'rgba(255,255,255,0.06)',
-  '--surface-soft': 'rgba(255,255,255,0.04)',
-  '--border': 'rgba(255,255,255,0.08)',
-  '--border-strong': 'rgba(255,255,255,0.14)',
-  '--text-primary': '#f4f7fb',
-  '--text-soft': '#98a2b3',
-  '--text-muted': '#64748b',
-  '--accent': '#36f57c',
-  '--accent-strong': '#28d86a',
-  '--accent-soft': 'rgba(54,245,124,0.12)',
-  '--on-accent': '#07120c',
-  '--danger': '#fca5a5',
-  '--warning': '#fb923c',
-  '--success': '#36f57c',
-  '--shadow-panel': '0 18px 40px rgba(0,0,0,0.34)',
-} as CSSProperties
+function PortfolioRadarPanel({
+  avgMargin,
+  categoryBreakdown,
+  displayCurrency,
+  lowStockItems,
+  maxCategoryProfit,
+  products,
+  productsTotals,
+}: Readonly<{
+  avgMargin: string
+  categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
+  displayCurrency: string
+  lowStockItems: number
+  maxCategoryProfit: number
+  products: ProductRecord[]
+  productsTotals: ProductsResponse['totals'] | undefined
+}>) {
+  const categoriesCount = productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
+  const comboCount = products.filter((product) => product.isCombo).length
+  const kitchenCount = products.filter((product) => product.requiresKitchen).length
+  const topCategories = categoryBreakdown.slice(0, 4)
+  const categoryLeader = topCategories[0]
+
+  if (topCategories.length === 0) {
+    return (
+      <LabPanel
+        action={<LabStatusPill tone="neutral">{categoriesCount} categorias</LabStatusPill>}
+        padding="md"
+        title="Radar do catálogo"
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <LabMiniStat label="categorias ativas" value={String(categoriesCount)} />
+          <LabMiniStat label="combos" value={String(comboCount)} />
+          <LabMiniStat label="cozinha" value={String(kitchenCount)} />
+          <LabMiniStat label="margem média" value={avgMargin} />
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <PortfolioRadarFact label="família líder" tone="info" value="sem leitura" />
+          <PortfolioRadarFact
+            label="lucro líder"
+            tone="success"
+            value={formatCurrency(0, displayCurrency as never)}
+          />
+          <PortfolioRadarFact
+            label="capital líder"
+            tone="neutral"
+            value={formatCurrency(0, displayCurrency as never)}
+          />
+          <PortfolioRadarFact
+            label="estoque baixo"
+            tone={lowStockItems > 0 ? 'warning' : 'success'}
+            value={String(lowStockItems)}
+          />
+        </div>
+      </LabPanel>
+    )
+  }
+
+  return (
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{categoriesCount} categorias</LabStatusPill>}
+      padding="md"
+      title="Radar do catálogo"
+    >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_280px]">
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            <LabMiniStat label="categorias ativas" value={String(categoriesCount)} />
+            <LabMiniStat label="combos" value={String(comboCount)} />
+            <LabMiniStat label="cozinha" value={String(kitchenCount)} />
+            <LabMiniStat label="margem média" value={avgMargin} />
+          </div>
+
+          {topCategories.length > 0 ? (
+            <div className="space-y-1">
+              {topCategories.map((category) => {
+                const pct = maxCategoryProfit > 0 ? (category.potentialProfit / maxCategoryProfit) * 100 : 0
+                return (
+                  <article
+                    className="border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0"
+                    key={category.category}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{category.category}</p>
+                        <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                          {category.products} SKU(s) · {formatCurrency(category.inventoryCostValue, displayCurrency as never)} de capital
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-[var(--lab-fg)]">
+                          {formatCurrency(category.potentialProfit, displayCurrency as never)}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--lab-fg-muted)]">lucro potencial</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
+                      <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(pct, 8)}%` }} />
+                    </div>
+
+                    <p className="mt-2 text-xs text-[var(--lab-fg-soft)]">
+                      {formatCurrency(category.inventorySalesValue, displayCurrency as never)} em venda potencial
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <LabMiniStat label="ranking" value="0" />
+              <LabMiniStat label="maior família" value="0 SKU" />
+              <LabMiniStat label="lucro por categoria" value={formatCurrency(0, displayCurrency as never)} />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+          <LabSignalRow
+            label="família líder"
+            note="categoria com maior lucro potencial"
+            tone="info"
+            value={categoryLeader?.category ?? 'sem leitura'}
+          />
+          <LabSignalRow
+            label="lucro líder"
+            note="potencial máximo da família dominante"
+            tone="success"
+            value={formatCurrency(categoryLeader?.potentialProfit ?? 0, displayCurrency as never)}
+          />
+          <LabSignalRow
+            label="capital líder"
+            note="estoque comprometido na família dominante"
+            tone="neutral"
+            value={formatCurrency(categoryLeader?.inventoryCostValue ?? 0, displayCurrency as never)}
+          />
+          <LabSignalRow
+            label="estoque baixo"
+            note="famílias pressionadas por reposição"
+            value={String(lowStockItems)}
+            tone={lowStockItems > 0 ? 'warning' : 'success'}
+          />
+        </div>
+      </div>
+    </LabPanel>
+  )
+}
+
+function PortfolioRadarFact({
+  label,
+  tone,
+  value,
+}: Readonly<{
+  label: string
+  tone: LabStatusTone
+  value: string
+}>) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-[16px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
+      <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+        {label}
+      </span>
+      <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
+  )
+}
 
 function PortfolioActionPanel({
   activeProducts,
@@ -575,21 +641,22 @@ function PortfolioActionPanel({
     <LabPanel
       action={<LabStatusPill tone="info">{activeProducts} ativos</LabStatusPill>}
       padding="md"
-      subtitle="Os fluxos de cadastro e venda agora entram sob demanda, como superfície acionada."
-      title="Fluxos sob demanda"
+      title="Fluxos imediatos"
     >
       <div className="space-y-0">
         <ActionLaunchCard
-          description="Abra o cadastro só quando precisar incluir ou revisar um item do portfólio."
           icon={Plus}
           label="Cadastrar produto"
+          statLabel="fluxo"
+          statValue="novo item"
           onClick={onOpenProduct}
           tone="neutral"
         />
         <ActionLaunchCard
-          description="Inicie uma venda com localização e canal já no contexto de delivery."
           icon={ShoppingCart}
           label="Vender produto"
+          statLabel="canal"
+          statValue="delivery"
           onClick={onOpenSale}
           tone="info"
         />
@@ -601,13 +668,15 @@ function PortfolioActionPanel({
 function ActionLaunchCard({
   icon: Icon,
   label,
-  description,
+  statLabel,
+  statValue,
   tone,
   onClick,
 }: Readonly<{
   icon: typeof Plus
   label: string
-  description: string
+  statLabel: string
+  statValue: string
   tone: 'neutral' | 'info'
   onClick: () => void
 }>) {
@@ -626,9 +695,13 @@ function ActionLaunchCard({
       >
         <Icon className="size-4" />
       </span>
-      <span className="space-y-1">
+      <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold text-[var(--lab-fg)]">{label}</span>
-        <span className="block text-sm leading-6 text-[var(--lab-fg-soft)]">{description}</span>
+        <span className="mt-1 block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{statLabel}</span>
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="block text-sm font-semibold text-[var(--lab-fg)]">{statValue}</span>
+        <span className="mt-1 block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">abrir</span>
       </span>
     </button>
   )
@@ -639,80 +712,7 @@ function PortfolioFormShell({
 }: Readonly<{
   children: ReactNode
 }>) {
-  return (
-    <div
-      className="scroll-mt-24 [&_.imperial-card]:rounded-none [&_.imperial-card]:border-0 [&_.imperial-card]:bg-transparent [&_.imperial-card]:p-0 [&_.imperial-card]:shadow-none [&_.imperial-card-soft]:rounded-none [&_.imperial-card-soft]:border-0 [&_.imperial-card-soft]:bg-transparent [&_.imperial-card-soft]:p-0 [&_.imperial-card-soft]:shadow-none [&_.imperial-card-stat]:rounded-none [&_.imperial-card-stat]:border-0 [&_.imperial-card-stat]:bg-transparent [&_.imperial-card-stat]:p-0 [&_.imperial-card-stat]:shadow-none"
-      style={formBridgeStyle}
-    >
-      {children}
-    </div>
-  )
-}
-
-function PortfolioWorkbench({
-  title,
-  description,
-  children,
-  toolbar,
-  onClose,
-}: Readonly<{
-  title: string
-  description: string
-  children: ReactNode
-  toolbar?: ReactNode
-  onClose: () => void
-}>) {
-  useEffect(() => {
-    document.body.classList.add('portfolio-workbench-open')
-    return () => {
-      document.body.classList.remove('portfolio-workbench-open')
-    }
-  }, [])
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-stretch justify-center p-0" role="presentation">
-      <button
-        aria-label="Fechar superfície"
-        className="absolute inset-0 border-0 bg-black/70 p-0 backdrop-blur-sm"
-        type="button"
-        onClick={onClose}
-      />
-
-      <div
-        aria-modal="true"
-        className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-[var(--bg)]"
-        role="dialog"
-        style={formBridgeStyle}
-      >
-        <div className="border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_92%,black_8%)]">
-          <div className="mx-auto flex w-full max-w-[1360px] flex-col gap-4 px-5 py-4 lg:px-8">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Superfície acionada</p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{title}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-soft)]">{description}</p>
-              </div>
-              <button
-                className="flex size-10 items-center justify-center rounded-[14px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
-                type="button"
-                onClick={onClose}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {toolbar ? <div className="flex flex-wrap items-center gap-2">{toolbar}</div> : null}
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--bg)]">
-          <div className="mx-auto w-full max-w-[1360px] px-5 py-6 lg:px-8">
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return <div className="scroll-mt-24">{children}</div>
 }
 
 function PortfolioSaleSurface({
@@ -720,9 +720,7 @@ function PortfolioSaleSurface({
   employees,
   errorMessage,
   loading,
-  onModeChange,
   onSubmit,
-  product,
   products,
   saleInitialValues,
   userRole,
@@ -731,9 +729,7 @@ function PortfolioSaleSurface({
   employees: Parameters<typeof OrderForm>[0]['employees']
   errorMessage: string | null
   loading: boolean
-  onModeChange: (mode: SaleMode) => void
   onSubmit: Parameters<typeof OrderForm>[0]['onSubmit']
-  product: ProductRecord | null
   products: ProductRecord[]
   saleInitialValues?: Partial<OrderFormInputValues>
   userRole: 'OWNER' | 'STAFF'
@@ -772,7 +768,7 @@ function PortfolioSaleToolbar({
 
   return (
     <>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Modalidade</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">Modalidade</span>
       <div className="flex flex-wrap gap-2">
         {(Object.keys(saleModeMeta) as SaleMode[]).map((entry) => {
           const entryMeta = saleModeMeta[entry]
@@ -783,8 +779,8 @@ function PortfolioSaleToolbar({
             <button
               className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                 active
-                  ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
-                  : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                  ? 'border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)]'
+                  : 'border-[var(--lab-border)] bg-[var(--lab-surface)] text-[var(--lab-fg-soft)] hover:border-[var(--lab-border-strong)] hover:text-[var(--lab-fg)]'
               }`}
               key={entry}
               type="button"
@@ -796,13 +792,12 @@ function PortfolioSaleToolbar({
           )
         })}
       </div>
-      <PortfolioHeaderFact label="canal" value={mode.channel} />
-      <PortfolioHeaderFact label="produto" value={product ? `${product.name} · ${product.category}` : 'seleção livre'} />
-      <PortfolioHeaderFact
+      <LabFactPill label="canal" value={mode.channel} />
+      <LabFactPill label="produto" value={product ? `${product.name} · ${product.category}` : 'seleção livre'} />
+      <LabFactPill
         label="preço base"
         value={product ? formatCurrency(product.unitPrice, product.displayCurrency) : 'valor do cadastro'}
       />
-      <span className="text-sm text-[var(--text-soft)]">{mode.description}</span>
     </>
   )
 }
@@ -816,26 +811,11 @@ function PortfolioProductToolbar({
 }>) {
   return (
     <>
-      <PortfolioHeaderFact label="modo" value={product ? 'edição' : 'novo item'} />
-      <PortfolioHeaderFact label="skus ativos" value={String(products.filter((item) => item.active).length)} />
-      <PortfolioHeaderFact label="cozinha" value={product?.requiresKitchen ? 'envia para KDS' : 'definido no fluxo'} />
-      <PortfolioHeaderFact label="combos" value={product?.isCombo ? 'combo habilitado' : 'produto simples'} />
+      <LabFactPill label="modo" value={product ? 'edição' : 'novo item'} />
+      <LabFactPill label="skus ativos" value={String(products.filter((item) => item.active).length)} />
+      <LabFactPill label="cozinha" value={product?.requiresKitchen ? 'envia para KDS' : 'definido no fluxo'} />
+      <LabFactPill label="combos" value={product?.isCombo ? 'combo habilitado' : 'produto simples'} />
     </>
-  )
-}
-
-function PortfolioHeaderFact({
-  label,
-  value,
-}: Readonly<{
-  label: string
-  value: string
-}>) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-soft)]">
-      <span className="uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</span>
-      <span className="font-medium text-[var(--text-primary)]">{value}</span>
-    </div>
   )
 }
 
@@ -844,6 +824,7 @@ function PortfolioProductsPanel({
   currency,
   filteredProducts,
   mutationError,
+  onCreate,
   onArchive,
   onDelete,
   onEdit,
@@ -858,6 +839,7 @@ function PortfolioProductsPanel({
   currency: string
   filteredProducts: ProductRecord[]
   mutationError: ProductMutationError
+  onCreate: () => void
   onArchive: (id: string) => void
   onDelete: (id: string) => void
   onEdit: (product: ProductRecord | null) => void
@@ -868,93 +850,151 @@ function PortfolioProductsPanel({
   searchQuery: string
   setSearchQuery: (value: string) => void
 }>) {
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'active' | 'low-stock' | 'combo' | 'kitchen'>('all')
+
+  const tableRows = useMemo(() => {
+    switch (catalogFilter) {
+      case 'active':
+        return filteredProducts.filter((product) => product.active)
+      case 'low-stock':
+        return filteredProducts.filter((product) => product.isLowStock)
+      case 'combo':
+        return filteredProducts.filter((product) => product.isCombo)
+      case 'kitchen':
+        return filteredProducts.filter((product) => product.requiresKitchen)
+      case 'all':
+      default:
+        return filteredProducts
+    }
+  }, [catalogFilter, filteredProducts])
+
+  const filterOptions = [
+    { key: 'all' as const, label: 'Todos', count: filteredProducts.length },
+    { key: 'active' as const, label: 'Ativos', count: filteredProducts.filter((product) => product.active).length },
+    { key: 'low-stock' as const, label: 'Estoque baixo', count: filteredProducts.filter((product) => product.isLowStock).length },
+    { key: 'combo' as const, label: 'Combos', count: filteredProducts.filter((product) => product.isCombo).length },
+    { key: 'kitchen' as const, label: 'Cozinha', count: filteredProducts.filter((product) => product.requiresKitchen).length },
+  ]
+
   const emptyTitle = products.length
     ? 'Nenhum produto bate com a busca'
     : 'Nenhum produto cadastrado'
   const emptyDescription = products.length
     ? 'Tente outro termo para localizar nome, marca, categoria ou classe.'
-    : 'Use o formulario ao lado para criar os primeiros itens do portfolio.'
+    : 'Abra o cadastro do portfólio para criar os primeiros itens reais.'
 
   return (
     <LabPanel
       action={<PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />}
       padding="md"
-      subtitle="Tabela de leitura rapida para editar, arquivar ou reativar produtos."
       title="Produtos cadastrados"
     >
       {productsError ? <AlertMessage message={productsError} tone="danger" /> : null}
       {mutationError ? <AlertMessage message={mutationError.message} tone="danger" /> : null}
 
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {filterOptions.map((option) => (
+          <LabFilterChip
+            active={catalogFilter === option.key}
+            count={option.count}
+            key={option.key}
+            label={option.label}
+            onClick={() => setCatalogFilter(option.key)}
+          />
+        ))}
+      </div>
+
       <LabTable
         className="mt-4"
+        dense
         columns={[
           {
             id: 'produto',
             header: 'Produto',
             cell: (product) => (
-              <div className="min-w-0">
+              <div className="min-w-0 space-y-2">
                 <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
                 <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
                   {product.category} · {product.brand ?? 'sem marca'} · {product.packagingClass}
                 </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <ProductRowTag tone={product.active ? 'success' : 'neutral'}>
+                    {product.active ? 'ativo' : 'arquivado'}
+                  </ProductRowTag>
+                  {product.requiresKitchen ? <ProductRowTag tone="info">cozinha</ProductRowTag> : null}
+                  {product.isCombo ? <ProductRowTag tone="warning">combo</ProductRowTag> : null}
+                </div>
               </div>
             ),
           },
           {
-            id: 'estoque',
-            header: 'Estoque',
+            id: 'operacao',
+            header: 'Leitura operacional',
             cell: (product) => (
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-sm text-[var(--lab-fg)]">{product.stockBaseUnits} und base</span>
-                <LabStatusPill tone={product.isLowStock ? 'warning' : 'success'}>
-                  {product.isLowStock ? 'baixo' : 'ok'}
-                </LabStatusPill>
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--lab-fg-soft)]">
+                  <span>{formatStockBreakdown(product.stock, product.unitsPerPackage, { compact: true })}</span>
+                  <span>·</span>
+                  <span>{product.stockBaseUnits} und base</span>
+                  {product.lowStockThreshold != null ? (
+                    <>
+                      <span>·</span>
+                      <span>alerta em {product.lowStockThreshold}</span>
+                    </>
+                  ) : null}
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
+                  <div
+                    className={product.isLowStock ? 'h-full rounded-full bg-[var(--lab-warning)]' : 'h-full rounded-full bg-[var(--lab-blue)]'}
+                    style={{
+                      width: `${Math.max(
+                        product.lowStockThreshold && product.lowStockThreshold > 0
+                          ? Math.min((product.stockBaseUnits / (product.lowStockThreshold * 3)) * 100, 100)
+                          : Math.min((product.stockBaseUnits / Math.max(product.stockBaseUnits, 1)) * 100, 100),
+                        10,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <LabStatusPill tone={product.isLowStock ? 'warning' : 'success'}>
+                    {product.isLowStock ? 'estoque baixo' : 'estoque estável'}
+                  </LabStatusPill>
+                </div>
+              </div>
+            ),
+            width: '270px',
+          },
+          {
+            id: 'preco',
+            header: 'Preço e margem',
+            cell: (product) => (
+              <div className="space-y-1.5">
+                <ValueReading label="custo" value={formatCurrency(product.unitCost, product.displayCurrency)} />
+                <ValueReading label="venda" value={formatCurrency(product.unitPrice, product.displayCurrency)} strong />
+                <div className="pt-0.5">
+                  <MarginPill marginPercent={product.marginPercent} />
+                </div>
               </div>
             ),
             align: 'right',
-            width: '130px',
+            width: '180px',
           },
           {
-            id: 'custo',
-            header: 'Custo unit.',
-            cell: (product) => <span className="text-[var(--lab-fg-soft)]">{formatCurrency(product.unitCost, product.displayCurrency)}</span>,
-            align: 'right',
-            width: '130px',
-          },
-          {
-            id: 'venda',
-            header: 'Venda unit.',
-            cell: (product) => <span className="font-medium text-[var(--lab-fg)]">{formatCurrency(product.unitPrice, product.displayCurrency)}</span>,
-            align: 'right',
-            width: '130px',
-          },
-          {
-            id: 'margem',
-            header: 'Margem',
-            cell: (product) => <MarginPill marginPercent={product.marginPercent} />,
-            align: 'right',
-            width: '120px',
-          },
-          {
-            id: 'lucro',
-            header: 'Lucro pot.',
-            cell: (product) => <span className="text-[var(--lab-fg-soft)]">{formatCurrency(product.potentialProfit, product.displayCurrency)}</span>,
-            align: 'right',
-            width: '140px',
-          },
-          {
-            id: 'status',
-            header: 'Status',
+            id: 'potencial',
+            header: 'Potencial',
             cell: (product) => (
-              <LabStatusPill tone={product.active ? 'success' : 'neutral'}>
-                {product.active ? 'ativo' : 'arquivado'}
-              </LabStatusPill>
+              <div className="space-y-1.5">
+                <ValueReading label="venda" value={formatCurrency(product.inventorySalesValue, product.displayCurrency)} strong />
+                <ValueReading label="lucro" value={formatCurrency(product.potentialProfit, product.displayCurrency)} />
+              </div>
             ),
-            width: '130px',
+            align: 'right',
+            width: '170px',
           },
           {
             id: 'acoes',
-            header: 'Acoes',
+            header: 'Ações',
             cell: (product) => (
               <div className="flex justify-end gap-2">
                 <ActionButton disabled={busy} icon={PencilLine} label="Editar" onClick={() => onEdit(product)} />
@@ -994,23 +1034,64 @@ function PortfolioProductsPanel({
               </div>
             ),
             align: 'right',
-            width: '360px',
+            width: '280px',
           },
         ]}
+        emptyAction={
+          <button
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-2 text-sm font-medium text-[var(--lab-fg)] transition hover:bg-[var(--lab-surface-hover)]"
+            type="button"
+            onClick={onCreate}
+          >
+            <Plus className="size-4" />
+            Cadastrar produto
+          </button>
+        }
         emptyDescription={emptyDescription}
         emptyTitle={emptyTitle}
         rowKey="id"
-        rows={filteredProducts}
+        rows={tableRows}
       />
 
       <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--lab-fg-muted)]">
         <span>
-          {filteredProducts.length} de {products.length}{' '}
-          {filteredProducts.length === 1 ? 'encontrado' : 'encontrados'}
+          {tableRows.length} de {products.length}{' '}
+          {tableRows.length === 1 ? 'encontrado' : 'encontrados'}
         </span>
-        <span>{formatCurrency(productsTotalsValue(filteredProducts, currency), currency as never)} em venda filtrada</span>
+        <span>{formatCurrency(productsTotalsValue(tableRows, currency), currency as never)} em venda filtrada</span>
       </div>
     </LabPanel>
+  )
+}
+
+function ProductRowTag({
+  children,
+  tone,
+}: Readonly<{
+  children: ReactNode
+  tone: LabStatusTone
+}>) {
+  return (
+    <LabStatusPill size="sm" tone={tone}>
+      {children}
+    </LabStatusPill>
+  )
+}
+
+function ValueReading({
+  label,
+  strong = false,
+  value,
+}: Readonly<{
+  label: string
+  strong?: boolean
+  value: string
+}>) {
+  return (
+    <div className="flex items-center justify-end gap-2 text-xs">
+      <span className="uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
+      <span className={strong ? 'font-semibold text-[var(--lab-fg)]' : 'text-[var(--lab-fg-soft)]'}>{value}</span>
+    </div>
   )
 }
 

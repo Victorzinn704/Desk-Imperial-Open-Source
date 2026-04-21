@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ChefHat, ClipboardList, Grid2x2, LogOut, ShoppingCart } from 'lucide-react'
-import { calcSubtotal, type Comanda, type ComandaItem, type ComandaStatus, type Mesa } from '@/components/pdv/pdv-types'
+import {
+  calcSubtotal,
+  isEndedComandaStatus,
+  type Comanda,
+  type ComandaItem,
+  type ComandaStatus,
+  type Mesa,
+} from '@/components/pdv/pdv-types'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
@@ -373,7 +380,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const mesas = useMemo(() => buildPdvMesas(operationsQuery.data), [operationsQuery.data])
   const comandas = useMemo(() => buildPdvComandas(operationsQuery.data), [operationsQuery.data])
   const comandasById = useMemo(() => new Map(comandas.map((comanda) => [comanda.id, comanda])), [comandas])
-  const activeComandas = useMemo(() => comandas.filter((comanda) => comanda.status !== 'fechada'), [comandas])
+  const activeComandas = useMemo(() => comandas.filter((comanda) => !isEndedComandaStatus(comanda.status)), [comandas])
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
   const performerKpis = useMemo(
     () => buildPerformerKpis(operationsQuery.data, currentUser?.employeeId ?? null),
@@ -389,6 +396,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     addComandaItemMutation.isPending ||
     addComandaItemsMutation.isPending ||
     updateComandaStatusMutation.isPending ||
+    cancelComandaMutation.isPending ||
     closeComandaMutation.isPending
 
   function handleSelectMesa(mesa: Mesa) {
@@ -504,6 +512,11 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           comandaId: id,
           ...amounts,
         })
+        return
+      }
+
+      if (status === 'cancelada') {
+        await cancelComandaMutation.mutateAsync(id)
         return
       }
 

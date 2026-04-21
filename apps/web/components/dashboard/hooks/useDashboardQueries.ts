@@ -111,13 +111,7 @@ export function useDashboardScopedQueries({
  * Evita duplicação de lógica de queries e simplifica o componente pai
  */
 export function useDashboardQueries({ section }: UseDashboardQueriesOptions = {}) {
-  const sessionQuery = useQuery({
-    queryKey: ['auth', 'me'],
-    queryFn: fetchCurrentUser,
-    retry: false,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  })
+  const sessionQuery = useDashboardSessionQuery()
 
   const userId = sessionQuery.data?.user.userId
   const isOwner = sessionQuery.data?.user.role === 'OWNER'
@@ -132,4 +126,14 @@ export function useDashboardQueries({ section }: UseDashboardQueriesOptions = {}
     sessionQuery,
     ...scopedQueries,
   }
+}
+
+export function useDashboardSessionQuery() {
+  return useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: fetchCurrentUser,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
 }

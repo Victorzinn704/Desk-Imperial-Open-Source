@@ -15,12 +15,38 @@ type MapCanvasProps = {
 
 const DEFAULT_CENTER: [number, number] = [-14.235, -52.0]
 const DEFAULT_ZOOM = 4
+type MapThemeMode = 'dark' | 'light'
 
 export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<LeafletMap | null>(null)
   const layerGroupRef = useRef<LayerGroup | null>(null)
   const [mapReady, setMapReady] = useState(false)
+  const [themeMode, setThemeMode] = useState<MapThemeMode>('dark')
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      return
+    }
+
+    const labRoot = containerRef.current.closest('[data-lab]')
+    if (!labRoot) {
+      return
+    }
+
+    const syncThemeMode = () => {
+      setThemeMode(labRoot.classList.contains('lab-light') ? 'light' : 'dark')
+    }
+
+    syncThemeMode()
+
+    const observer = new MutationObserver(syncThemeMode)
+    observer.observe(labRoot, { attributes: true, attributeFilter: ['class'] })
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   // Init map once
   useEffect(() => {
@@ -38,7 +64,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
         attributionControl: false,
       })
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      const tileLayer = L.tileLayer(resolveTileLayerUrl(themeMode), {
         subdomains: 'abcd',
         maxZoom: 20,
         tileSize: 256,
@@ -56,22 +82,14 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       const Legend = L.Control.extend({
         onAdd() {
           const div = L.DomUtil.create('div')
-          div.innerHTML = `
-            <div style="background:rgba(13,16,20,0.88);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:8px 12px;font-family:inherit;">
-              <p style="margin:0 0 5px;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);">Escala de calor</p>
-              <div style="display:flex;align-items:center;gap:3px;">
-                <span style="width:10px;height:10px;border-radius:50%;background:rgba(54,245,124,0.25);display:inline-block;"></span>
-                <span style="width:12px;height:12px;border-radius:50%;background:rgba(54,245,124,0.45);display:inline-block;"></span>
-                <span style="width:14px;height:14px;border-radius:50%;background:rgba(54,245,124,0.7);display:inline-block;"></span>
-                <span style="width:16px;height:16px;border-radius:50%;background:rgba(54,245,124,1);display:inline-block;"></span>
-                <span style="font-size:9px;color:rgba(255,255,255,0.5);margin-left:4px;">Maior receita</span>
-              </div>
-            </div>`
+          div.innerHTML = buildLegendMarkup(themeMode)
           return div
         },
       })
       new Legend({ position: 'bottomleft' }).addTo(map)
 
+      map.getContainer().dataset.themeMode = themeMode
+      ;(map as LeafletMap & { __deskTileLayer?: ReturnType<typeof L.tileLayer> }).__deskTileLayer = tileLayer
       const layerGroup = L.layerGroup().addTo(map)
       layerGroupRef.current = layerGroup
       mapRef.current = map
@@ -94,7 +112,42 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
         layerGroupRef.current = null
       }
     }
-  }, [])
+  }, [themeMode])
+
+  useEffect(() => {
+    let active = true
+
+    async function syncMapTheme() {
+      if (!mapRef.current) {
+        return
+      }
+
+      const L = (await import('leaflet')).default
+      if (!active) {
+        return
+      }
+
+      const typedMap = mapRef.current as LeafletMap & { __deskTileLayer?: ReturnType<typeof L.tileLayer> }
+      const previousLayer = typedMap.__deskTileLayer
+      if (previousLayer) {
+        mapRef.current.removeLayer(previousLayer)
+      }
+
+      const nextLayer = L.tileLayer(resolveTileLayerUrl(themeMode), {
+        subdomains: 'abcd',
+        maxZoom: 20,
+        tileSize: 256,
+      })
+      nextLayer.addTo(mapRef.current)
+      typedMap.__deskTileLayer = nextLayer
+      mapRef.current.getContainer().dataset.themeMode = themeMode
+    }
+
+    syncMapTheme()
+    return () => {
+      active = false
+    }
+  }, [themeMode])
 
   // Update markers when tab/points/mapReady changes
   useEffect(() => {
@@ -115,6 +168,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
       const getValue = (p: (typeof points)[0]) =>
         tab === 'revenue' ? p.revenue : tab === 'orders' ? p.orders : p.profit
 
+      const accentColor = themeMode === 'light' ? '#0078e7' : '#008cff'
       const maxValue = Math.max(1, ...points.map(getValue))
       const sorted = [...points].sort((a, b) => getValue(b) - getValue(a))
       const top3Set = new Set(sorted.slice(0, 3).map((p) => `${p.latitude}:${p.longitude}`))
@@ -133,8 +187,8 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
 
         const marker = L.circleMarker([point.latitude, point.longitude], {
           radius,
-          color: '#36f57c',
-          fillColor: '#36f57c',
+          color: accentColor,
+          fillColor: accentColor,
           fillOpacity,
           weight: isTop ? 2 : 1,
           opacity: 0.9,
@@ -157,7 +211,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
           const pulse = L.marker([point.latitude, point.longitude], {
             icon: L.divIcon({
               className: '',
-              html: `<div class="map-marker-pulse" style="width:${radius * 2 + 16}px;height:${radius * 2 + 16}px;border-radius:50%;border:2px solid #36f57c;"></div>`,
+              html: `<div class="map-marker-pulse" style="width:${radius * 2 + 16}px;height:${radius * 2 + 16}px;border-radius:50%;border:2px solid ${accentColor};"></div>`,
               iconSize: [0, 0],
               iconAnchor: [radius + 8, radius + 8],
             }),
@@ -180,7 +234,7 @@ export function MapCanvas({ displayCurrency, points, tab }: Readonly<MapCanvasPr
     return () => {
       active = false
     }
-  }, [displayCurrency, points, tab, mapReady])
+  }, [displayCurrency, points, tab, mapReady, themeMode])
 
   return <div className="h-full w-full min-h-[520px]" ref={containerRef} />
 }
@@ -192,4 +246,32 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
+}
+
+function resolveTileLayerUrl(themeMode: MapThemeMode) {
+  return themeMode === 'light'
+    ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+}
+
+function buildLegendMarkup(themeMode: MapThemeMode) {
+  const background = themeMode === 'light' ? 'rgba(255,255,255,0.96)' : 'rgba(13,16,20,0.88)'
+  const border = themeMode === 'light' ? 'rgba(17,24,39,0.08)' : 'rgba(255,255,255,0.08)'
+  const labelColor = themeMode === 'light' ? 'rgba(17,24,39,0.48)' : 'rgba(255,255,255,0.4)'
+  const accent = themeMode === 'light' ? 'rgba(0,120,231,1)' : 'rgba(0,140,255,1)'
+  const accentSoftA = themeMode === 'light' ? 'rgba(0,120,231,0.22)' : 'rgba(0,140,255,0.22)'
+  const accentSoftB = themeMode === 'light' ? 'rgba(0,120,231,0.44)' : 'rgba(0,140,255,0.44)'
+  const accentSoftC = themeMode === 'light' ? 'rgba(0,120,231,0.68)' : 'rgba(0,140,255,0.68)'
+
+  return `
+    <div style="background:${background};border:1px solid ${border};border-radius:12px;padding:8px 12px;font-family:inherit;box-shadow:0 10px 24px rgba(0,0,0,0.12);">
+      <p style="margin:0 0 5px;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:${labelColor};">Escala de calor</p>
+      <div style="display:flex;align-items:center;gap:3px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${accentSoftA};display:inline-block;"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:${accentSoftB};display:inline-block;"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:${accentSoftC};display:inline-block;"></span>
+        <span style="width:16px;height:16px;border-radius:50%;background:${accent};display:inline-block;"></span>
+        <span style="font-size:9px;color:${labelColor};margin-left:4px;">Maior leitura</span>
+      </div>
+    </div>`
 }

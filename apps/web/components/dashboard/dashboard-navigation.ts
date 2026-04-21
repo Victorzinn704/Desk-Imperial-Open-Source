@@ -396,13 +396,14 @@ export function buildDashboardHref(
   sectionId: DashboardSectionId,
   settingsSectionId: DashboardSettingsSectionId = dashboardDefaultSettingsSection,
   tabId?: DashboardTabId | null,
+  basePath = '/dashboard',
 ) {
   const params = new URLSearchParams()
 
   if (sectionId === 'settings') {
     params.set('view', 'settings')
     params.set('panel', settingsSectionId)
-    return `/dashboard?${params.toString()}`
+    return `${basePath}?${params.toString()}`
   }
 
   const resolvedTab = tabId ?? getDashboardDisplayTab(sectionId)
@@ -411,7 +412,7 @@ export function buildDashboardHref(
     params.set('tab', resolvedTab)
   }
 
-  return `/dashboard?${params.toString()}`
+  return `${basePath}?${params.toString()}`
 }
 
 export function getDashboardDisplaySection(sectionId: DashboardSectionId): DashboardProductSectionId | 'settings' {

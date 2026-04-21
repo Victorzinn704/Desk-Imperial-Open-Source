@@ -19,6 +19,11 @@ export const StatusButtons = memo(function StatusButtons({
   onClose,
   requirePin,
 }: StatusButtonsProps) {
+  const isEnded = comanda.status === 'fechada' || comanda.status === 'cancelada'
+  if (isEnded) {
+    return null
+  }
+
   return (
     <div className="grid grid-cols-2 gap-2 px-4 pb-3">
       {STATUS_OPTIONS.filter((option) => option.value !== comanda.status).map((option) => (
@@ -33,15 +38,20 @@ export const StatusButtons = memo(function StatusButtons({
           }}
           type="button"
           onClick={() => {
-            const requiresPinCheck = option.value === 'fechada'
+            const requiresPinCheck = option.value === 'fechada' || option.value === 'cancelada'
             if (requiresPinCheck) {
+              const title = option.value === 'cancelada' ? 'Cancelar Comanda' : 'Fechar Comanda'
+              const description =
+                option.value === 'cancelada'
+                  ? 'Confirme com seu PIN para cancelar esta comanda e tirá-la do fluxo operacional.'
+                  : 'Confirme com seu PIN para fechar completamente esta comanda.'
               requirePin(
                 async () => {
                   await onStatusChange(comanda, option.value)
                   onClose()
                 },
-                'Fechar Comanda',
-                'Confirme com seu PIN para fechar completamente esta comanda.',
+                title,
+                description,
               )
             } else {
               void (async () => {

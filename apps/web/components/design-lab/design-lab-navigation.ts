@@ -1,5 +1,6 @@
 import type {
   DashboardSectionId,
+  DashboardTabId,
   DashboardSettingsSectionId,
 } from '@/components/dashboard/dashboard-navigation'
 
@@ -12,6 +13,7 @@ export type DesignLabSectionId =
   | 'cozinha'
   | 'financeiro'
   | 'calendario'
+  | 'cadastro-rapido'
   | 'portfolio'
   | 'equipe'
   | 'payroll'
@@ -24,6 +26,7 @@ export type DesignLabFinanceiroTabId = 'movimentacao' | 'fluxo' | 'dre' | 'conta
 
 type DesignLabTabDefinition<TTab extends string> = {
   id: TTab
+  emoji?: string
   label: string
   description: string
 }
@@ -37,6 +40,7 @@ const DESIGN_LAB_SECTION_PATHS: Record<DesignLabSectionId, string> = {
   cozinha: '/design-lab/cozinha',
   financeiro: '/design-lab/financeiro',
   calendario: '/design-lab/calendario',
+  'cadastro-rapido': '/design-lab/cadastro-rapido',
   portfolio: '/design-lab/portfolio',
   equipe: '/design-lab/equipe',
   payroll: '/design-lab/payroll',
@@ -70,26 +74,31 @@ export const designLabPdvTabs: ReadonlyArray<DesignLabTabDefinition<DesignLabPdv
 export const designLabPedidosTabs: ReadonlyArray<DesignLabTabDefinition<DesignLabPedidosTabId>> = [
   {
     id: 'tabela',
+    emoji: '📋',
     label: 'Tabela',
     description: 'Auditoria densa com filtros e totais.',
   },
   {
     id: 'timeline',
+    emoji: '🕒',
     label: 'Timeline',
     description: 'Sequência cronológica dos pedidos registrados.',
   },
   {
     id: 'kanban',
+    emoji: '🧱',
     label: 'Kanban',
     description: 'Leitura de status por coluna operacional.',
   },
   {
     id: 'detalhe',
+    emoji: '🔎',
     label: 'Detalhe',
     description: 'Deep dive no pedido mais recente.',
   },
   {
     id: 'historico',
+    emoji: '🧾',
     label: 'Histórico',
     description: 'Hub consolidado de leitura operacional e auditoria.',
   },
@@ -196,6 +205,67 @@ export function mapDashboardSectionToDesignLabHref(sectionId: DashboardSectionId
     case 'settings':
       return buildDesignLabConfigHref('account')
     case 'sales':
+    default:
+      return buildDesignLabHref('overview')
+  }
+}
+
+export function mapDashboardLocationToDesignLabHref({
+  sectionId,
+  settingsSectionId = 'account',
+  tabId,
+}: Readonly<{
+  sectionId: DashboardSectionId
+  settingsSectionId?: DashboardSettingsSectionId
+  tabId?: DashboardTabId | null
+}>) {
+  switch (sectionId) {
+    case 'settings':
+      return buildDesignLabConfigHref(settingsSectionId)
+    case 'pdv':
+      return buildDesignLabPdvHref({
+        tab:
+          tabId === 'comandas' || tabId === 'kds' || tabId === 'cobranca'
+            ? tabId
+            : 'grid',
+      })
+    case 'salao':
+      return buildDesignLabHref('salao', {
+        tab:
+          tabId === 'planta'
+            ? 'planta'
+            : tabId === 'permanencia'
+              ? 'comandas'
+              : tabId === 'padroes'
+                ? 'configuracao'
+                : 'operacional',
+      })
+    case 'financeiro':
+      return buildDesignLabFinanceiroHref(
+        tabId === 'fluxo' || tabId === 'dre' || tabId === 'contas' ? tabId : 'movimentacao',
+      )
+    case 'pedidos':
+      return buildDesignLabPedidosHref(
+        tabId === 'timeline' || tabId === 'kanban' || tabId === 'detalhe' ? tabId : 'tabela',
+      )
+    case 'equipe':
+      if (tabId === 'folha') {
+        return buildDesignLabHref('payroll')
+      }
+      if (tabId === 'escala') {
+        return buildDesignLabHref('calendario')
+      }
+      return buildDesignLabHref('equipe')
+    case 'portfolio':
+      return buildDesignLabHref('portfolio')
+    case 'calendario':
+      return buildDesignLabHref('calendario')
+    case 'map':
+      return buildDesignLabFinanceiroHref('mapa')
+    case 'payroll':
+      return buildDesignLabHref('payroll')
+    case 'sales':
+    case 'overview':
     default:
       return buildDesignLabHref('overview')
   }

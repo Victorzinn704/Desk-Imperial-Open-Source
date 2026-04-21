@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import { fetchOperationsKitchen, fetchOperationsLive, type AuthUser } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { buildPdvComandas } from '@/components/pdv/pdv-operations'
-import { calcSubtotal, calcTotal, formatElapsed, type Comanda } from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, formatElapsed, isEndedComandaStatus, type Comanda } from '@/components/pdv/pdv-types'
 import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
 import { formatCurrency } from '@/lib/currency'
 
@@ -71,7 +71,7 @@ export function PdvWireframeEnvironment({
   const openComandas = useMemo(
     () =>
       comandas
-        .filter((comanda) => comanda.status !== 'fechada')
+        .filter((comanda) => !isEndedComandaStatus(comanda.status))
         .sort((left, right) => left.abertaEm.getTime() - right.abertaEm.getTime()),
     [comandas],
   )
@@ -157,21 +157,31 @@ function PdvGridView({
   return (
     <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_360px] xl:items-start">
       <article className="imperial-card p-5">
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-5 space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="wireframe-filtermeta">categorias do catálogo</p>
+              <p className="mt-1 text-sm text-[var(--text-soft)]">o shell define a visão. aqui você só recorta a grade.</p>
+            </div>
+            <span className="wireframe-filtermeta">{products.length} visíveis</span>
+          </div>
+
+          <div className="wireframe-filterbar">
           {categories.map((category) => {
             const active = activeCategory === category.id
             return (
               <button
-                className={active ? 'wireframe-subnav__item wireframe-subnav__item--active' : 'wireframe-subnav__item'}
+                className={active ? 'wireframe-filterchip wireframe-filterchip--active' : 'wireframe-filterchip'}
                 key={category.id}
                 type="button"
                 onClick={() => onCategoryChange(category.id)}
               >
-                <span>{category.count}</span>
+                <span className="wireframe-filterchip__meta">{category.count}</span>
                 {category.label}
               </button>
             )
           })}
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
@@ -189,7 +199,7 @@ function PdvGridView({
                 <strong className="text-sm text-[var(--text-primary)]">{formatCurrency(product.unitPrice, currency)}</strong>
                 <button
                   aria-label={`Adicionar ${product.name}`}
-                  className="wireframe-theme-button"
+                  className="wireframe-inline-button wireframe-inline-button--icon"
                   title={`Adicionar ${product.name}`}
                   type="button"
                 >
@@ -294,40 +304,67 @@ function PdvComandasView({
   comandas: Comanda[]
   currency: ComandaCurrency
 }>) {
+  const [activeGroup, setActiveGroup] = useState<'todas' | 'mesa' | 'balcao' | 'delivery'>('todas')
   const groups = useMemo(() => {
     const mesa = comandas.filter((comanda) => hasMesa(comanda))
     const balcao = comandas.filter((comanda) => !hasMesa(comanda) || /balcao|balc[aã]o/i.test(comanda.mesa ?? ''))
     const delivery = comandas.filter((comanda) => /delivery|ifood|uber/i.test(`${comanda.mesa ?? ''} ${comanda.clienteNome ?? ''}`))
     return [
-      { label: `todas (${comandas.length})`, active: true },
-      { label: `mesa (${mesa.length})` },
-      { label: `balcao (${balcao.length})` },
-      { label: `delivery (${delivery.length})` },
+      { id: 'todas' as const, label: 'todas', count: comandas.length },
+      { id: 'mesa' as const, label: 'mesa', count: mesa.length },
+      { id: 'balcao' as const, label: 'balcão', count: balcao.length },
+      { id: 'delivery' as const, label: 'delivery', count: delivery.length },
     ]
   }, [comandas])
+  const filteredComandas = useMemo(() => {
+    switch (activeGroup) {
+      case 'mesa':
+        return comandas.filter((comanda) => hasMesa(comanda))
+      case 'balcao':
+        return comandas.filter((comanda) => !hasMesa(comanda) || /balcao|balc[aã]o/i.test(comanda.mesa ?? ''))
+      case 'delivery':
+        return comandas.filter((comanda) => /delivery|ifood|uber/i.test(`${comanda.mesa ?? ''} ${comanda.clienteNome ?? ''}`))
+      case 'todas':
+      default:
+        return comandas
+    }
+  }, [activeGroup, comandas])
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {groups.map((group, index) => (
-          <span
-            className={group.active || index === 0 ? 'wireframe-subnav__item wireframe-subnav__item--active' : 'wireframe-subnav__item'}
-            key={group.label}
-          >
-            {group.label}
-          </span>
-        ))}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="wireframe-filtermeta">recorte das comandas</p>
+            <p className="mt-1 text-sm text-[var(--text-soft)]">a subseção continua no topo. aqui você só muda o conjunto visível.</p>
+          </div>
+          <span className="wireframe-filtermeta">{filteredComandas.length} na leitura</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {groups.map((group) => (
+            <button
+              className={activeGroup === group.id ? 'wireframe-filterchip wireframe-filterchip--active' : 'wireframe-filterchip'}
+              key={group.id}
+              type="button"
+              onClick={() => setActiveGroup(group.id)}
+            >
+              <span className="wireframe-filterchip__meta">{group.count}</span>
+              {group.label}
+            </button>
+          ))}
         <button
-          className="ml-auto rounded-full border border-transparent bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)]"
+          className="wireframe-inline-button ml-auto"
           type="button"
         >
           + nova comanda
         </button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        {comandas.length > 0 ? (
-          comandas.map((comanda) => {
+        {filteredComandas.length > 0 ? (
+          filteredComandas.map((comanda) => {
             const totalItems = comanda.itens.reduce((sum, item) => sum + item.quantidade, 0)
             const elapsed = formatElapsed(comanda.abertaEm)
 
@@ -360,7 +397,7 @@ function PdvComandasView({
           })
         ) : (
           <div className="rounded-[8px] border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-soft)] md:col-span-2 2xl:col-span-4">
-            Nenhuma comanda aberta no momento.
+            Nenhuma comanda corresponde a este recorte.
           </div>
         )}
       </div>
@@ -582,6 +619,11 @@ function ComandaStatusPill({ status }: Readonly<{ status: Comanda['status'] }>) 
       label: 'pronto',
       className:
         'border-[color-mix(in_srgb,var(--success)_28%,var(--paper))] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]',
+    },
+    cancelada: {
+      label: 'cancelada',
+      className:
+        'border-[color-mix(in_srgb,var(--danger)_28%,var(--paper))] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-[var(--danger)]',
     },
     fechada: {
       label: 'fechada',

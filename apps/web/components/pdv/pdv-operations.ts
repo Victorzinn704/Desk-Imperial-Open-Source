@@ -1,5 +1,5 @@
 import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
-import { calcSubtotal, type Comanda, type Garcom, type Mesa } from './pdv-types'
+import { calcSubtotal, isEndedComandaStatus, type Comanda, type Garcom, type Mesa } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
@@ -30,6 +30,7 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     mesa: comanda.tableLabel,
     clienteNome: comanda.customerName ?? undefined,
     clienteDocumento: comanda.customerDocument ?? undefined,
+    notes: comanda.notes ?? undefined,
     itens: comanda.items.map((item) => {
       const quantidade = Math.max(1, toFiniteNumber(item.quantity) ?? 1)
       return {
@@ -145,7 +146,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
     })
 }
 
-export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada'>) {
+export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada' | 'cancelada'>) {
   switch (status) {
     case 'em_preparo':
       return 'IN_PREPARATION' as const
@@ -179,8 +180,9 @@ function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
       return 'em_preparo'
     case 'READY':
       return 'pronta'
-    case 'CLOSED':
     case 'CANCELLED':
+      return 'cancelada'
+    case 'CLOSED':
       return 'fechada'
     case 'OPEN':
     default:
@@ -189,7 +191,8 @@ function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
 }
 
 function isOpenOperationsStatus(status: ComandaRecord['status']) {
-  return status === 'OPEN' || status === 'IN_PREPARATION' || status === 'READY'
+  const mappedStatus = mapComandaStatus(status)
+  return !isEndedComandaStatus(mappedStatus)
 }
 
 function toPercent(amount: number, subtotal: number) {

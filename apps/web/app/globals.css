@@ -139,6 +139,16 @@ html {
   scroll-behavior: smooth;
 }
 
+html.design-lab-shell-open,
+body.design-lab-shell-open {
+  height: 100%;
+  overflow: hidden;
+}
+
+body.design-lab-shell-open {
+  overscroll-behavior: none;
+}
+
 body {
   position: relative;
   isolation: isolate;
@@ -179,7 +189,8 @@ body > * {
   z-index: 2147483645;
 }
 
-body.portfolio-workbench-open #cookie-consent-root {
+body.portfolio-workbench-open #cookie-consent-root,
+body.lab-workbench-open #cookie-consent-root {
   display: none;
 }
 
@@ -443,6 +454,85 @@ select {
 .sales-map-popup__grid strong {
   font-size: 0.85rem;
   color: #fff;
+}
+
+/* ─── Leaflet inside design-lab ───────────────────────────────────────────── */
+
+[data-lab] .leaflet-container {
+  background: var(--lab-surface-hover);
+  color: var(--lab-fg);
+}
+
+[data-lab].lab-dark .leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(18, 22, 27, 0.92) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28) !important;
+}
+
+[data-lab].lab-light .leaflet-control-zoom {
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-lab].lab-dark .leaflet-control-zoom a {
+  color: rgba(255, 255, 255, 0.72) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-lab].lab-light .leaflet-control-zoom a {
+  color: rgba(17, 24, 39, 0.74) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-lab].lab-dark .leaflet-control-zoom a:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+}
+
+[data-lab].lab-light .leaflet-control-zoom a:hover {
+  background: rgba(0, 120, 231, 0.08) !important;
+  color: var(--lab-blue) !important;
+}
+
+[data-lab].lab-dark .leaflet-control-attribution {
+  background: rgba(13, 16, 20, 0.75) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-lab].lab-light .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(17, 24, 39, 0.45) !important;
+}
+
+[data-lab].lab-dark .leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-lab].lab-light .leaflet-control-attribution a {
+  color: rgba(0, 120, 231, 0.7) !important;
+}
+
+[data-lab] .sales-map-leaflet-popup .leaflet-popup-content-wrapper {
+  background: var(--lab-surface);
+  border: 1px solid var(--lab-border);
+  box-shadow: var(--lab-shadow-panel);
+}
+
+[data-lab] .sales-map-popup__label {
+  color: var(--lab-fg);
+}
+
+[data-lab] .sales-map-popup__grid div {
+  border-top: 1px solid var(--lab-border);
+}
+
+[data-lab] .sales-map-popup__grid span {
+  color: var(--lab-fg-soft);
+}
+
+[data-lab] .sales-map-popup__grid strong {
+  color: var(--lab-fg);
 }
 
 /* ─── Map pulse animation ───────────────────────────────────────────────────── */
@@ -779,11 +869,8 @@ select {
     padding: 0.2rem;
   }
 
-  .wireframe-brand__logo-image {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  .wireframe-brand__glyph {
+    color: var(--accent);
   }
 
   .wireframe-brand__name,

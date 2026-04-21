@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import {
   Activity,
   ArrowUpRight,
@@ -15,6 +16,8 @@ import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import {
   LabFactPill,
+  LAB_NUMERIC_SECTION_CLASS,
+  LAB_RESPONSIVE_FOUR_UP_GRID,
   LabPageHeader,
   LabPanel,
   LabSignalRow,
@@ -67,7 +70,9 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
   const financeTotals = finance?.totals
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
 
-  if (!user) {return null}
+  if (!user) {
+    return <OverviewLockedState />
+  }
 
   const snapshot: OverviewSnapshot = {
     companyName: user.companyName ?? 'Desk Imperial',
@@ -120,7 +125,9 @@ export function DesignLabOverviewEnvironment() {
   const financeTotals = finance?.totals
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
 
-  if (!user) {return null}
+  if (!user) {
+    return <OverviewLockedState />
+  }
 
   const snapshot: OverviewSnapshot = {
     companyName: user.companyName ?? 'Desk Imperial',
@@ -231,6 +238,62 @@ function labToneClass(tone: LabStatusTone) {
   }[tone]
 }
 
+function OverviewLockedState() {
+  return (
+    <section className="space-y-6">
+      <LabPageHeader
+        eyebrow="visão geral da operação"
+        title="Overview"
+        description="Receita, lucro, ticket e alertas."
+        meta={
+          <div className="space-y-3">
+            <LabMetaRow label="sessão" tone="warning" value="entrar" />
+            <LabMetaRow label="dados" tone="neutral" value="bloqueados" />
+            <LabMetaRow label="escopo" tone="info" value="resumo executivo" />
+          </div>
+        }
+      >
+        <OverviewMetricBoard
+          items={[
+            { label: 'receita do mês', value: 'R$ 0,00', description: 'sem leitura até autenticar', tone: 'neutral' },
+            { label: 'lucro do mês', value: 'R$ 0,00', description: 'resultado bloqueado', tone: 'neutral' },
+            { label: 'pedidos fechados', value: '0', description: 'histórico indisponível', tone: 'neutral' },
+            { label: 'ticket médio', value: 'R$ 0,00', description: 'aguardando sessão ativa', tone: 'neutral' },
+          ]}
+        />
+      </LabPageHeader>
+
+      <LabPanel
+        action={
+          <Link
+            className="inline-flex h-9 items-center rounded-[8px] border border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] px-3 text-sm font-medium text-[var(--lab-blue)] transition hover:bg-[var(--lab-surface-hover)]"
+            href="/login"
+          >
+            Entrar
+          </Link>
+        }
+        padding="md"
+        title="Autenticação necessária"
+      >
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="space-y-0">
+            <LabSignalRow label="receita" note="o resumo executivo abre após validar a sessão" tone="neutral" value="bloqueada" />
+            <LabSignalRow label="lucro" note="resultado e margem voltam com a leitura financeira" tone="neutral" value="bloqueado" />
+            <LabSignalRow label="pedidos" note="fluxo operacional só aparece com dados reais do workspace" tone="neutral" value="bloqueados" />
+            <LabSignalRow label="estoque" note="alertas comerciais dependem da mesma sessão" tone="neutral" value="bloqueado" />
+          </div>
+
+          <div className="space-y-2">
+            <LabFactPill label="empresa" value="não identificada" />
+            <LabFactPill label="sessão" value="pendente" />
+            <LabFactPill label="próximo passo" value="entrar no Desk" />
+          </div>
+        </div>
+      </LabPanel>
+    </section>
+  )
+}
+
 function OverviewExecutivePanel({
   dailyRevenueNeed,
   finance,
@@ -339,11 +402,11 @@ function OverviewMetricBoard({
 }>) {
   return (
     <div className="overflow-hidden rounded-[20px] border border-[var(--lab-border)] bg-[var(--lab-surface)]">
-      <div className="grid gap-px bg-[var(--lab-border)] sm:grid-cols-2 xl:grid-cols-4">
+      <div className={`grid gap-px bg-[var(--lab-border)] ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
         {items.map((item) => (
           <article className="min-w-0 bg-[var(--lab-surface-raised)] px-5 py-5" key={item.label}>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{item.label}</p>
-            <p className="mt-3 break-words text-[clamp(1.9rem,2.8vw,2.6rem)] font-semibold leading-none text-[var(--lab-fg)]">
+            <p className={`mt-3 text-[var(--lab-fg)] ${LAB_NUMERIC_SECTION_CLASS}`}>
               {item.value}
             </p>
             <p className={`mt-3 text-xs leading-5 ${labToneClass(item.tone)}`}>{item.description}</p>
@@ -936,7 +999,7 @@ function StandardMetricGrid({
   snapshot: OverviewSnapshot
 }>) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={`grid gap-4 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
       <MetricCard
         delta={snapshot.revenueGrowth}
         deltaPositive={snapshot.revenueGrowth >= 0}

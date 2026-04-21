@@ -82,6 +82,10 @@ describe('LabShell', () => {
     const configLink = screen.getByLabelText('Abrir configurações')
     expect(configLink).toHaveAttribute('href', '/design-lab/config?tab=account')
     expect(screen.getByText('Configurações')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Cadastro rápido/i })).toHaveAttribute(
+      'href',
+      '/design-lab/cadastro-rapido',
+    )
     expect(screen.queryByRole('link', { name: 'Config' })).not.toBeInTheDocument()
   })
 

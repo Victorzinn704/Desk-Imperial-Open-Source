@@ -3,6 +3,7 @@
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { LabPanel, LabStatusPill, LabTable, type LabStatusTone } from '@/components/design-lab/lab-primitives'
 import { formatCurrency } from '@/lib/currency'
+import { formatOrderReference } from '@/lib/order-reference'
 import { cn } from '@/lib/utils'
 
 type RecentOrder = FinanceSummaryResponse['recentOrders'][number]
@@ -93,7 +94,7 @@ export function OverviewRecentOrders({
               header: 'Pedido',
               cell: (order) => (
                 <div className="space-y-1">
-                  <span className="font-medium text-[var(--lab-fg)]">#{String(order.id).slice(-4)}</span>
+                  <span className="font-medium text-[var(--lab-fg)]">#{formatOrderReference(String(order.id))}</span>
                   <p className="text-xs text-[var(--lab-fg-muted)]">{order.customerName || 'Mesa sem identificação'}</p>
                 </div>
               ),
@@ -215,7 +216,7 @@ export function OverviewRecentOrders({
                 >
                   <td className="py-3 pr-4">
                     <span className="font-medium text-[var(--text-soft)]">
-                      #{String(order.id).slice(-4)}
+                      #{formatOrderReference(String(order.id))}
                     </span>
                   </td>
                   <td className="max-w-[140px] truncate py-3 pr-4 font-medium text-[var(--text-primary)]">

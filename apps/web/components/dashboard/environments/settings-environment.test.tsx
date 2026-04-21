@@ -1,0 +1,54 @@
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { SettingsEnvironment } from './settings-environment'
+
+const mockUseDashboardQueries = vi.fn()
+const mockUseDashboardMutations = vi.fn()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}))
+
+vi.mock('@/components/dashboard/hooks/useDashboardQueries', () => ({
+  useDashboardQueries: () => mockUseDashboardQueries(),
+}))
+
+vi.mock('@/components/dashboard/hooks/useDashboardMutations', () => ({
+  useDashboardMutations: () => mockUseDashboardMutations(),
+}))
+
+describe('SettingsEnvironment', () => {
+  it('mostra preview travado quando nao ha sessao', () => {
+    mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: {
+        data: { user: null },
+        error: null,
+      },
+      consentQuery: {
+        data: undefined,
+        isLoading: false,
+      },
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      logoutMutation: { isPending: false, mutate: vi.fn() },
+      preferenceMutation: {},
+      updateProfileMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+
+    render(
+      <SettingsEnvironment
+        activeSettingsSection="account"
+        onNavigateSection={vi.fn()}
+        onSettingsSectionChange={vi.fn()}
+        presentation="lab"
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Configuração do workspace' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Prévia travada das configurações' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Entrar para liberar config/i })).toBeInTheDocument()
+  })
+})

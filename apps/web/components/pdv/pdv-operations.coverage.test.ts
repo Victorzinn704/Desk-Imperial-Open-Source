@@ -43,9 +43,9 @@ describe('pdv-operations — coverage boost', () => {
     expect(toPdvComanda(comanda).status).toBe('fechada')
   })
 
-  it('toPdvComanda mapeia CANCELLED para fechada', () => {
+  it('toPdvComanda mapeia CANCELLED para cancelada', () => {
     const comanda = buildComanda({ status: 'CANCELLED' as unknown as typeof comanda.status })
-    expect(toPdvComanda(comanda).status).toBe('fechada')
+    expect(toPdvComanda(comanda).status).toBe('cancelada')
   })
 
   it('toPdvComanda mapeia IN_PREPARATION para em_preparo', () => {

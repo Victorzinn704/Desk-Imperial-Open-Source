@@ -67,7 +67,7 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
   return (
     <section className="space-y-6">
       <DashboardSectionHeading
-        description="A operação agora fica mais legível: um eixo para venda, um eixo para mix de categorias e um trilho manual para os últimos pedidos."
+        description="Venda, mix e pedidos recentes."
         eyebrow="Gestão comercial"
         icon={ShoppingCart}
         title="Central de operação comercial"

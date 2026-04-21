@@ -48,6 +48,22 @@ type CartItemValue = {
   unitPrice?: number
 }
 
+function estimateCartTotals(products: ProductRecord[], items: CartItemValue[]) {
+  return items.reduce(
+    (acc, item) => {
+      const product = products.find((entry) => entry.id === item.productId)
+      const resolvedUnitPrice = item.unitPrice ?? product?.unitPrice ?? 0
+      const lineTotal = resolvedUnitPrice * Number(item.quantity ?? 0)
+
+      return {
+        itemsTotal: acc.itemsTotal + lineTotal,
+        itemsCount: acc.itemsCount + Number(item.quantity ?? 0),
+      }
+    },
+    { itemsTotal: 0, itemsCount: 0 },
+  )
+}
+
 export function OrderForm({
   employees,
   products,
@@ -143,6 +159,7 @@ export function OrderForm({
   const selectedDraftProduct = products.find((product) => product.id === resolvedDraftProductId) ?? null
   const itemsError = typeof errors.items?.message === 'string' ? errors.items.message : undefined
   const totalCartUnits = currentItems.reduce((total, item) => total + Number(item.quantity ?? 0), 0)
+  const estimatedCart = useMemo(() => estimateCartTotals(products, currentItems), [currentItems, products])
   const selectedStockLabel = selectedDraftProduct
     ? formatStockBreakdown(selectedDraftProduct.stock, selectedDraftProduct.unitsPerPackage)
     : 'Selecione um produto'
@@ -303,7 +320,7 @@ export function OrderForm({
               <div className="flex flex-wrap gap-2">
                 <InlineFact label="linhas" value={String(currentItems.length)} />
                 <InlineFact label="unidades" value={String(totalCartUnits)} />
-                <InlineFact label="moeda" value={orderCurrency} />
+                <InlineFact label="total" value={formatCurrency(estimatedCart.itemsTotal, orderCurrency)} />
                 <InlineFact label="estoque em foco" value={selectedStockLabel} />
               </div>
             </>
@@ -411,14 +428,30 @@ export function OrderForm({
                 : 'mt-5 space-y-3'
             }
           >
+            {isEmbedded && fields.length ? (
+              <div className="grid gap-3 py-3 text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)] lg:grid-cols-[minmax(0,1.7fr)_110px_90px_130px_auto]">
+                <span>Item</span>
+                <span className="text-right">Unit.</span>
+                <span className="text-right">Qtd.</span>
+                <span className="text-right">Total</span>
+                <span className="text-right">Ação</span>
+              </div>
+            ) : null}
             {fields.length ? (
               fields.map((field, index) => {
                 const currentItem = currentItems[index]
                 const product = products.find((item) => item.id === field.productId)
+                const resolvedUnitPrice = currentItem?.unitPrice ?? product?.unitPrice ?? 0
+                const resolvedQuantity = Number(currentItem?.quantity ?? field.quantity ?? 0)
+                const lineTotal = resolvedUnitPrice * resolvedQuantity
 
                 return (
                   <div
-                    className={isEmbedded ? 'grid gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center' : 'imperial-card-soft px-4 py-4'}
+                    className={
+                      isEmbedded
+                        ? 'grid gap-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_110px_90px_130px_auto] lg:items-center'
+                        : 'imperial-card-soft px-4 py-4'
+                    }
                     key={field.id}
                   >
                     <div className="min-w-0">
@@ -432,20 +465,38 @@ export function OrderForm({
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">
-                        {currentItem?.quantity ?? field.quantity} und
+                    {isEmbedded ? (
+                      <>
+                        <div className="text-right text-sm text-[var(--text-soft)]">
+                          {currentItem?.unitPrice != null ? formatCurrency(resolvedUnitPrice, orderCurrency) : 'cadastro'}
+                        </div>
+                        <div className="text-right text-sm text-[var(--text-primary)]">{resolvedQuantity}</div>
+                        <div className="text-right text-sm font-medium text-[var(--text-primary)]">
+                          {formatCurrency(lineTotal, orderCurrency)}
+                        </div>
+                        <div className="flex justify-end">
+                          <Button size="sm" type="button" variant="ghost" onClick={() => remove(index)}>
+                            <Trash2 className="size-4" />
+                            Remover
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">
+                          {currentItem?.quantity ?? field.quantity} und
+                        </div>
+                        <div className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">
+                          {currentItem?.unitPrice != null
+                            ? `Preço manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
+                            : 'Preço do cadastro'}
+                        </div>
+                        <Button size="sm" type="button" variant="ghost" onClick={() => remove(index)}>
+                          <Trash2 className="size-4" />
+                          Remover
+                        </Button>
                       </div>
-                      <div className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">
-                        {currentItem?.unitPrice != null
-                          ? `Preço manual ${formatCurrency(currentItem.unitPrice, orderCurrency)}`
-                          : 'Preço do cadastro'}
-                      </div>
-                      <Button size="sm" type="button" variant="ghost" onClick={() => remove(index)}>
-                        <Trash2 className="size-4" />
-                        Remover
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 )
               })
@@ -464,6 +515,21 @@ export function OrderForm({
               </div>
             )}
           </div>
+
+          {isEmbedded && fields.length ? (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-[var(--border)] pt-4">
+              <div className="flex flex-wrap gap-2">
+                <InlineFact label="linhas ativas" value={String(fields.length)} />
+                <InlineFact label="unidades" value={String(estimatedCart.itemsCount)} />
+              </div>
+              <div className="text-right">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">Subtotal estimado</p>
+                <p className="text-lg font-semibold text-[var(--text-primary)]">
+                  {formatCurrency(estimatedCart.itemsTotal, orderCurrency)}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section className={isEmbedded ? 'space-y-5 border-t border-dashed border-[var(--border)] pt-6' : 'imperial-card-soft p-5'}>

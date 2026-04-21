@@ -18,6 +18,14 @@ import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import { calcTotal, type Comanda, type Mesa } from '@/components/pdv/pdv-types'
 import {
+  LAB_RESPONSIVE_FOUR_UP_GRID,
+  LabMiniStat,
+  LabPageHeader,
+  LabPanel,
+  LabStatusPill,
+  type LabStatusTone,
+} from '@/components/design-lab/lab-primitives'
+import {
   CANVAS_H,
   CARD_H,
   CARD_W,
@@ -42,6 +50,7 @@ type SalaoEnvironmentProps = {
   initialView?: View
   onViewChange?: (view: View) => void
   onOpenPdvFromMesa?: (intent: Omit<PdvMesaIntent, 'requestId'>) => void
+  surface?: 'legacy' | 'lab'
 }
 
 const FULL_LIVE_QUERY_KEY = ['operations', 'live', 'full'] as const
@@ -50,6 +59,7 @@ export function SalaoEnvironment({
   initialView = 'operacional',
   onViewChange,
   onOpenPdvFromMesa,
+  surface = 'legacy',
 }: Readonly<SalaoEnvironmentProps>) {
   const queryClient = useQueryClient()
   const [view, setView] = useState<View>(initialView)
@@ -71,7 +81,7 @@ export function SalaoEnvironment({
     refetchOnWindowFocus: false,
   })
 
-  const { data: compactLiveData, isLoading: compactLiveLoading } = useQuery({
+  const { data: compactLiveData, isLoading: compactLiveLoading, dataUpdatedAt: compactLiveUpdatedAt } = useQuery({
     queryKey: LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     refetchInterval: 15_000,
@@ -80,7 +90,7 @@ export function SalaoEnvironment({
     refetchOnWindowFocus: false,
   })
 
-  const { data: detailedLiveData, isLoading: detailedLiveLoading } = useQuery({
+  const { data: detailedLiveData, isLoading: detailedLiveLoading, dataUpdatedAt: detailedLiveUpdatedAt } = useQuery({
     queryKey: FULL_LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
@@ -91,6 +101,7 @@ export function SalaoEnvironment({
 
   const liveData = view === 'comandas' ? detailedLiveData : compactLiveData
   const liveLoading = view === 'comandas' ? detailedLiveLoading : compactLiveLoading
+  const liveReferenceTime = view === 'comandas' ? detailedLiveUpdatedAt : compactLiveUpdatedAt
   const liveMesas = useMemo(() => buildPdvMesas(liveData), [liveData])
   const liveComandas = useMemo(() => buildPdvComandas(liveData), [liveData])
 
@@ -127,6 +138,28 @@ export function SalaoEnvironment({
     [occupiedMesas],
   )
   const averageOpenTicket = occupiedMesas.length > 0 ? openRevenue / occupiedMesas.length : 0
+  const sectionStats = useMemo(() => {
+    const grouped = new Map<string, { total: number; occupied: number }>()
+
+    for (const mesa of liveMesas) {
+      const key = mesa.section?.trim() || 'Sem seção'
+      const current = grouped.get(key) ?? { total: 0, occupied: 0 }
+      current.total += 1
+      if (mesa.status === 'ocupada') {
+        current.occupied += 1
+      }
+      grouped.set(key, current)
+    }
+
+    return Array.from(grouped.entries())
+      .map(([label, stats]) => ({
+        label,
+        total: stats.total,
+        occupied: stats.occupied,
+        occupancy: stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0,
+      }))
+      .sort((left, right) => right.occupied - left.occupied || left.label.localeCompare(right.label))
+  }, [liveMesas])
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
@@ -271,19 +304,43 @@ export function SalaoEnvironment({
 
   return (
     <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Acompanhe ocupação, comandas, cadastro e planta baixa do salão sem perder o fluxo direto para o PDV."
-        eyebrow="Gestão do salão"
-        icon={Armchair}
-        title="Salão"
-      />
+      {surface === 'lab' ? (
+        <LabPageHeader
+          description="Ocupação, receita e giro de mesas."
+          eyebrow="Gestão do salão"
+          meta={
+            <div className="space-y-3">
+              <SalaoMetaRow label="mesas ativas" tone="info" value={String(liveMesas.length)} />
+              <SalaoMetaRow label="ocupadas" tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'} value={String(occupiedMesas.length)} />
+              <SalaoMetaRow label="atendentes" tone={activeWaiters > 0 ? 'success' : 'neutral'} value={String(activeWaiters)} />
+            </div>
+          }
+          title="Salão"
+        >
+          <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
+            <LabMiniStat label="receita aberta" value={fmtBRL(openRevenue)} />
+            <LabMiniStat label="livres" value={String(freeMesas.length)} />
+            <LabMiniStat label="ticket aberto" value={fmtBRL(averageOpenTicket)} />
+            <LabMiniStat label="ocupação" value={`${occupiedRate}%`} />
+          </div>
+        </LabPageHeader>
+      ) : (
+        <DashboardSectionHeading
+          description="Ocupação, comandas e giro de mesas."
+          eyebrow="Gestão do salão"
+          icon={Armchair}
+          title="Salão"
+        />
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard isHighlight label="Receita em aberto" tone="accent" value={fmtBRL(openRevenue)} />
-        <KpiCard label="Mesas livres" tone="success" total={liveMesas.length} value={freeMesas.length} />
-        <KpiCard label="Ticket aberto" tone="warning" value={fmtBRL(averageOpenTicket)} />
-        <KpiCard label="Ocupação" tone="danger" value={`${occupiedRate}%`} />
-      </div>
+      {surface === 'legacy' ? (
+        <div className={`grid gap-4 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
+          <KpiCard isHighlight label="Receita em aberto" tone="accent" value={fmtBRL(openRevenue)} />
+          <KpiCard label="Mesas livres" tone="success" total={liveMesas.length} value={freeMesas.length} />
+          <KpiCard label="Ticket aberto" tone="warning" value={fmtBRL(averageOpenTicket)} />
+          <KpiCard label="Ocupação" tone="danger" value={`${occupiedRate}%`} />
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-wrap items-center gap-2">
@@ -340,6 +397,7 @@ export function SalaoEnvironment({
           liveComandas={liveComandas}
           liveMesas={liveMesas}
           onOpenPdvFromMesa={onOpenPdvFromMesa ? openPdvFromMesa : undefined}
+          referenceTime={liveReferenceTime}
         />
       ) : null}
 
@@ -380,6 +438,67 @@ export function SalaoEnvironment({
         />
       ) : null}
 
+      {surface === 'lab' ? (
+        <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
+          <LabPanel
+            action={<LabStatusPill tone="info">{liveMesas.length} mesas</LabStatusPill>}
+            padding="md"
+            title="Leitura do salão"
+          >
+            <div className="space-y-0">
+              <SalaoSignalRow label="receita em aberto" note="valor vivo nas mesas ocupadas" tone="info" value={fmtBRL(openRevenue)} />
+              <SalaoSignalRow label="ocupação" note="pressão atual do salão" tone={occupiedRate >= 75 ? 'danger' : occupiedRate >= 40 ? 'warning' : 'success'} value={`${occupiedRate}%`} />
+              <SalaoSignalRow label="ticket aberto" note="média por mesa ocupada" tone={averageOpenTicket > 0 ? 'info' : 'neutral'} value={fmtBRL(averageOpenTicket)} />
+              <SalaoSignalRow label="atendentes" note="garçons com mesa em giro" tone={activeWaiters > 0 ? 'success' : 'neutral'} value={String(activeWaiters)} />
+            </div>
+          </LabPanel>
+
+          <LabPanel
+            action={<LabStatusPill tone="neutral">{sectionStats.length} setores</LabStatusPill>}
+            padding="md"
+            title="Radar do salão"
+          >
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_280px]">
+              <div className="space-y-5">
+                <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
+                  <SalaoMiniStat label="ocupadas" value={String(occupiedMesas.length)} />
+                  <SalaoMiniStat label="livres" value={String(freeMesas.length)} />
+                  <SalaoMiniStat label="reservas" value={String(reservedMesas.length)} />
+                  <SalaoMiniStat label="setor líder" value={sectionStats[0]?.label ?? 'sem leitura'} />
+                </div>
+
+                {sectionStats.length > 0 ? (
+                  <div className="space-y-1">
+                    {sectionStats.slice(0, 4).map((section) => (
+                      <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0" key={section.label}>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{section.label}</p>
+                          <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{section.occupied}/{section.total} ocupadas</p>
+                        </div>
+                        <LabStatusPill tone={section.occupancy >= 75 ? 'danger' : section.occupancy >= 40 ? 'warning' : 'success'}>
+                          {section.occupancy}%
+                        </LabStatusPill>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+                <SalaoMetaRow label="ocupadas" tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'} value={String(occupiedMesas.length)} />
+                <SalaoMetaRow label="reservadas" tone={reservedMesas.length > 0 ? 'info' : 'neutral'} value={String(reservedMesas.length)} />
+                <SalaoMetaRow label="livres" tone={freeMesas.length > 0 ? 'success' : 'warning'} value={String(freeMesas.length)} />
+                <SalaoMetaRow
+                  label="próxima ação"
+                  tone={occupiedRate >= 75 ? 'warning' : reservedMesas.length > 0 ? 'info' : 'success'}
+                  value={occupiedRate >= 75 ? 'girar mesas' : reservedMesas.length > 0 ? 'preparar reserva' : 'manter cadência'}
+                />
+              </div>
+            </div>
+          </LabPanel>
+        </div>
+      ) : null}
+
       {showCreate ? (
         <CreateMesaModal
           error={formError}
@@ -412,21 +531,76 @@ export function SalaoEnvironment({
   )
 }
 
+function SalaoMetaRow({
+  label,
+  tone,
+  value,
+}: Readonly<{
+  label: string
+  tone: LabStatusTone
+  value: string
+}>) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3 last:border-b-0 last:pb-0">
+      <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
+      <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
+  )
+}
+
+function SalaoSignalRow({
+  label,
+  note,
+  tone,
+  value,
+}: Readonly<{
+  label: string
+  note: string
+  tone: LabStatusTone
+  value: string
+}>) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0" >
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[var(--lab-fg)]">{label}</p>
+        <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{note}</p>
+      </div>
+      <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
+  )
+}
+
+function SalaoMiniStat({
+  label,
+  value,
+}: Readonly<{
+  label: string
+  value: string
+}>) {
+  return (
+    <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{value}</p>
+    </div>
+  )
+}
+
 function OperacionalView({
   liveMesas,
   liveComandas,
   garcomNames,
   isLoading,
   onOpenPdvFromMesa,
+  referenceTime,
 }: Readonly<{
   liveMesas: Mesa[]
   liveComandas: Comanda[]
   garcomNames: Record<string, string>
   isLoading: boolean
   onOpenPdvFromMesa?: (mesa: Mesa) => void
+  referenceTime: number
 }>) {
   const [sectionFilter, setSectionFilter] = useState('all')
-  const now = Date.now()
 
   const sectionPills = useMemo(() => {
     const grouped = new Map<string, { total: number; occupied: number }>()
@@ -528,8 +702,8 @@ function OperacionalView({
           const garcomName = mesa.garcomId ? garcomNames[mesa.garcomId] : undefined
 
           let urgency: 0 | 1 | 2 | 3 = 0
-          if (comanda && mesa.status === 'ocupada') {
-            const minutes = Math.floor((now - comanda.abertaEm.getTime()) / 60_000)
+          if (comanda && mesa.status === 'ocupada' && referenceTime > 0) {
+            const minutes = Math.floor((referenceTime - comanda.abertaEm.getTime()) / 60_000)
             urgency = minutes >= 90 ? 3 : minutes >= 60 ? 2 : minutes >= 30 ? 1 : 0
           }
 

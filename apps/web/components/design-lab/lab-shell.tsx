@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -26,6 +26,7 @@ import {
   Landmark,
   ChefHat,
   Bot,
+  ScanBarcode,
 } from 'lucide-react'
 import { fetchCurrentUser } from '@/lib/api'
 import { useDashboardLogout, useDashboardMutations } from '@/components/dashboard/hooks'
@@ -52,6 +53,7 @@ const NAV_OWNER = [
     items: [
       { id: 'financeiro', label: 'Financeiro', href: '/design-lab/financeiro', icon: BarChart3 },
       { id: 'calendario', label: 'Calendário', href: '/design-lab/calendario', icon: CalendarDays },
+      { id: 'cadastro-rapido', label: 'Cadastro rápido', href: '/design-lab/cadastro-rapido', icon: ScanBarcode },
       { id: 'portfolio', label: 'Portfólio', href: '/design-lab/portfolio', icon: Package },
     ],
   },
@@ -117,7 +119,6 @@ export function LabShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(() => getStoredBoolean(COLLAPSED_KEY, false))
-  const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const sessionQuery = useQuery({
@@ -133,11 +134,11 @@ export function LabShell({ children }: { children: React.ReactNode }) {
   const currentUser = sessionQuery.data?.user ?? null
   const role: Role = currentUser?.role === 'STAFF' ? 'STAFF' : 'OWNER'
   const navigation = role === 'STAFF' ? NAV_STAFF : NAV_OWNER
-  const isDark = mounted ? resolvedTheme !== 'light' : true
+  const isDark = resolvedTheme !== 'light'
   const configHref = buildDesignLabConfigHref('account')
   const isConfigRoute = pathname === '/design-lab/config'
 
-  const activeNavigation = useMemo(() => {
+  const activeNavigation = (() => {
     if (pathname === '/design-lab/config') {
       return {
         groupLabel: 'Sistema',
@@ -164,7 +165,7 @@ export function LabShell({ children }: { children: React.ReactNode }) {
       groupLabel: 'Desk Imperial',
       item: navigation[0]?.items[0] ?? null,
     }
-  }, [configHref, navigation, pathname])
+  })()
 
   const accountLabel = currentUser?.fullName?.trim() || 'Conta'
   const accountMeta = currentUser?.role === 'STAFF' ? 'Operação' : 'Administração'
@@ -173,10 +174,6 @@ export function LabShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem(COLLAPSED_KEY, String(collapsed))
   }, [collapsed])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     document.documentElement.classList.add('design-lab-shell-open')

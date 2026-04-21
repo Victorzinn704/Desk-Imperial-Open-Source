@@ -1,7 +1,14 @@
 'use client'
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
-import { calcSubtotal, calcTotal, type Comanda, type ComandaStatus, formatElapsed } from '@/components/pdv/pdv-types'
+import {
+  calcSubtotal,
+  calcTotal,
+  isEndedComandaStatus,
+  type Comanda,
+  type ComandaStatus,
+  formatElapsed,
+} from '@/components/pdv/pdv-types'
 import { ChevronDown, ChevronRight, ClipboardList, Edit2, LoaderCircle, Plus, Trash2, TriangleAlert, WifiOff } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
@@ -33,7 +40,7 @@ type StatusConfig = {
   nextBg: string
 }
 
-const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada'>, StatusConfig> = {
+const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada' | 'cancelada'>, StatusConfig> = {
   aberta: {
     label: 'Aberta',
     chipColor: '#60a5fa',
@@ -85,7 +92,7 @@ export function MobileComandaList({
   errorMessage = null,
   isBusy = false,
 }: MobileComandaListProps) {
-  const active = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
+  const active = useMemo(() => comandas.filter((c) => !isEndedComandaStatus(c.status)), [comandas])
   const focusedRef = useRef<HTMLLIElement | null>(null)
 
   // scroll focused comanda into view when it changes
@@ -108,9 +115,9 @@ export function MobileComandaList({
     })
   }, [active, focusedId])
 
-  const fechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada'), [comandas])
+  const encerradas = useMemo(() => comandas.filter((c) => isEndedComandaStatus(c.status)), [comandas])
 
-  if (active.length === 0 && fechadas.length === 0) {
+  if (active.length === 0 && encerradas.length === 0) {
     if (isLoading) {
       return (
         <OperationEmptyState
@@ -215,13 +222,13 @@ export function MobileComandaList({
       </ul>
 
       {/* Comprovantes — tocáveis para ver extrato */}
-      {fechadas.length > 0 && (
+      {encerradas.length > 0 && (
         <div className="mt-6">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-            Comprovantes — {fechadas.length}
+            Encerradas — {encerradas.length}
           </p>
           <ul className="space-y-2">
-            {fechadas.map((comanda) => (
+            {encerradas.map((comanda) => (
               <ExtratoCard comanda={comanda} key={comanda.id} />
             ))}
           </ul>
@@ -250,7 +257,7 @@ const ComandaCard = memo(
 
     const activeComanda = detailsData ?? comanda
 
-    const config = STATUS_CONFIG[activeComanda.status as Exclude<ComandaStatus, 'fechada'>]
+    const config = STATUS_CONFIG[activeComanda.status as Exclude<ComandaStatus, 'fechada' | 'cancelada'>]
     const total = useMemo(() => calcTotal(activeComanda), [activeComanda])
     const subtotal = useMemo(() => calcSubtotal(activeComanda), [activeComanda])
     const elapsed = useMemo(() => formatElapsed(activeComanda.abertaEm), [activeComanda.abertaEm])
@@ -522,6 +529,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
   pronta: { label: 'Pronta', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
   fechada: { label: 'Paga', color: 'var(--text-soft, #7a8896)', bg: 'rgba(122,136,150,0.12)' },
+  cancelada: { label: 'Cancelada', color: '#f87171', bg: 'rgba(248,113,113,0.14)' },
 }
 
 function ExtratoCard({ comanda }: { comanda: Comanda }) {

@@ -2,9 +2,6 @@
 
 import dynamic from 'next/dynamic'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-// Lightweight environments — loaded eagerly (small, always needed)
-import { SalesEnvironment } from './environments/sales-environment'
-import { PortfolioEnvironment } from './environments/portfolio-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
 import type { DashboardSectionId, DashboardSettingsSectionId, DashboardTabId } from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser, EmployeeRecord } from '@/lib/api'
@@ -38,17 +35,6 @@ const CalendarioEnvironment = dynamic(
     ssr: false,
   },
 )
-
-const MapEnvironment = dynamic(() => import('./environments/map-environment').then((m) => m.MapEnvironment), {
-  loading: () => <EnvironmentSkeleton tall />,
-  ssr: false,
-})
-
-// PayrollEnvironment: multiple sub-tables, AG-Grid-like (~180 KB)
-const PayrollEnvironment = dynamic(() => import('./payroll-environment').then((m) => m.PayrollEnvironment), {
-  loading: () => <EnvironmentSkeleton rows={5} />,
-  ssr: false,
-})
 
 // SalaoEnvironment: floor-plan drag-and-drop via @dnd-kit (~41 KB component + dnd-kit)
 const SalaoEnvironment = dynamic(() => import('./salao-environment').then((m) => m.SalaoEnvironment), {
@@ -101,9 +87,9 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
     case 'pedidos':
       return <PedidosEnvironment activeTab={props.activeTab} />
     case 'sales':
-      return <SalesEnvironment user={props.user} />
+      return <FinanceiroEnvironment activeTab="movimentacao" />
     case 'portfolio':
-      return <PortfolioEnvironment />
+      return <PdvWireframeEnvironment mesaIntent={props.pdvMesaIntent} user={props.user} variant="grid" />
     case 'pdv':
       return (
         <PdvWireframeEnvironment
@@ -130,14 +116,14 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
         />
       )
     case 'calendario':
-      return <CalendarioEnvironment />
+      return <OverviewEnvironment variant="editorial" />
     case 'equipe':
       if (props.activeTab === 'escala') {
         return <CalendarioEnvironment />
       }
       return <EquipeEnvironment activeTab={props.activeTab} employees={props.employees} finance={props.finance} />
     case 'payroll':
-      return <PayrollEnvironment employees={props.employees} finance={props.finance} />
+      return <EquipeEnvironment activeTab="folha" employees={props.employees} finance={props.finance} />
     case 'salao':
       return (
         <SalaoEnvironment
@@ -154,7 +140,7 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
         />
       )
     case 'map':
-      return <MapEnvironment />
+      return <FinanceiroEnvironment activeTab="fluxo" />
     case 'settings':
       return (
         <SettingsEnvironment

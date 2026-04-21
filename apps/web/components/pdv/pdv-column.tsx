@@ -15,7 +15,7 @@ export const PdvColumn = memo(function PdvColumn({ column, comandas, onCardClick
   const total = useMemo(() => comandas.reduce((sum, comanda) => sum + calcTotal(comanda), 0), [comandas])
 
   return (
-    <div className="flex min-w-[260px] max-w-[300px] flex-1 flex-col">
+    <div className="flex min-w-[272px] max-w-[320px] flex-1 flex-col">
       {/* Column header */}
       <div
         className="mb-3 flex items-center justify-between rounded-[16px] border px-4 py-3"
@@ -44,11 +44,11 @@ export const PdvColumn = memo(function PdvColumn({ column, comandas, onCardClick
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex flex-1 flex-col gap-2 rounded-[20px] border p-2 transition-all duration-200"
+            className="flex flex-1 flex-col gap-2 rounded-[20px] border bg-[var(--surface-soft)] p-2.5 transition-all duration-200"
             style={{
               minHeight: 200,
-              background: snapshot.isDraggingOver ? column.bgColor : 'rgba(255,255,255,0.02)',
-              borderColor: snapshot.isDraggingOver ? column.borderColor : 'rgba(255,255,255,0.05)',
+              background: snapshot.isDraggingOver ? column.bgColor : 'var(--surface-soft)',
+              borderColor: snapshot.isDraggingOver ? column.borderColor : 'var(--border)',
             }}
           >
             {comandas.length === 0 && !snapshot.isDraggingOver && (

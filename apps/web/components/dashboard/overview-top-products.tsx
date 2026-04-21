@@ -1,7 +1,7 @@
 'use client'
 
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-import { Package2, TrendingUp } from 'lucide-react'
+import { Package2 } from 'lucide-react'
 import { LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
@@ -18,7 +18,7 @@ export function OverviewTopProducts({
   surface = 'default',
 }: Readonly<TopProductsProps>) {
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
-  const topProducts = finance?.topProducts?.slice(0, 6) ?? []
+  const topProducts = finance?.topProducts?.slice(0, surface === 'lab' ? 5 : 6) ?? []
 
   if (surface === 'lab') {
     if (isLoading) {
@@ -34,7 +34,7 @@ export function OverviewTopProducts({
           }
           padding="md"
         >
-          <div className="space-y-3">
+          <div className="space-y-0" data-testid="overview-top-products-list">
             {Array.from({ length: 5 }).map((_, i) => (
               <div className="skeleton-shimmer h-[72px] rounded-2xl" key={i} />
             ))}
@@ -55,7 +55,7 @@ export function OverviewTopProducts({
             Sem vendas registradas ainda.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-0" data-testid="overview-top-products-list">
             {topProducts.map((product, index) => {
               const maxValue = topProducts[0]?.inventorySalesValue ?? 1
               const widthPercent = Math.max(8, (product.inventorySalesValue / maxValue) * 100)
@@ -64,45 +64,37 @@ export function OverviewTopProducts({
 
               return (
                 <article
-                  className="rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3"
+                  className="border-b border-dashed border-[var(--lab-border)] py-3 last:border-b-0"
                   key={product.id}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex size-7 items-center justify-center rounded-full border border-[var(--lab-border)] bg-[var(--lab-surface)] text-xs font-medium text-[var(--lab-fg-muted)]">
-                          {index + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{product.name}</p>
-                          <p className="mt-1 text-xs text-[var(--lab-fg-muted)]">
-                            {product.stock} em estoque · potencial de lucro {formatCurrency(product.potentialProfit, displayCurrency)}
-                          </p>
-                        </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-xs font-medium text-[var(--lab-fg-muted)]">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{product.name}</p>
+                        <p className="mt-1 truncate text-xs text-[var(--lab-fg-muted)]">
+                          {product.stock} em estoque · lucro potencial {formatCurrency(product.potentialProfit, displayCurrency)}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="shrink-0 text-right">
                       <p className="text-sm font-semibold text-[var(--lab-fg)]">
                         {formatCurrency(product.inventorySalesValue, displayCurrency)}
                       </p>
-                      <p className="mt-1 text-xs text-[var(--lab-fg-muted)]">receita gerada</p>
+                      <div className="mt-1 flex justify-end">
+                        <LabStatusPill tone={marginTone}>margem {marginPercent.toFixed(1)}%</LabStatusPill>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-3">
+                  <div className="mt-2">
                     <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
                       <div
                         className="h-full rounded-full bg-[var(--lab-blue)] transition-all duration-500"
                         style={{ width: `${widthPercent}%` }}
                       />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="text-xs text-[var(--lab-fg-muted)]">participação relativa</span>
-                      <div className="flex items-center gap-2">
-                        <LabStatusPill icon={<TrendingUp className="size-3" />} tone={marginTone}>
-                          margem {marginPercent.toFixed(1)}%
-                        </LabStatusPill>
-                      </div>
                     </div>
                   </div>
                 </article>

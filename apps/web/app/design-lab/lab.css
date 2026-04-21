@@ -14,8 +14,8 @@
   --lab-border: rgba(255, 255, 255, 0.07);
   --lab-border-strong: rgba(255, 255, 255, 0.13);
   --lab-fg: #f0f0f0;
-  --lab-fg-soft: #a0a0a0;
-  --lab-fg-muted: #636363;
+  --lab-fg-soft: #bcc2cc;
+  --lab-fg-muted: #8b94a3;
   --lab-blue: #008cff;
   --lab-blue-soft: rgba(0, 140, 255, 0.12);
   --lab-blue-border: rgba(0, 140, 255, 0.25);
@@ -42,8 +42,8 @@
   --lab-border: rgba(0, 0, 0, 0.07);
   --lab-border-strong: rgba(0, 0, 0, 0.13);
   --lab-fg: #111827;
-  --lab-fg-soft: #6b7280;
-  --lab-fg-muted: #9ca3af;
+  --lab-fg-soft: #4b5563;
+  --lab-fg-muted: #6b7280;
   --lab-blue: #0078e7;
   --lab-blue-soft: rgba(0, 120, 231, 0.08);
   --lab-blue-border: rgba(0, 120, 231, 0.2);
