@@ -1,0 +1,170 @@
+'use client'
+
+import dynamic from 'next/dynamic'
+import {
+  buildDesignLabConfigHref,
+  buildDesignLabFinanceiroHref,
+  buildDesignLabHref,
+} from '@/components/design-lab/design-lab-navigation'
+import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
+import { OwnerAccountView } from './owner-account-view'
+import { OwnerFinanceView } from './owner-finance-view'
+import { OwnerPdvTab } from './owner-mobile-pdv-tab'
+import { OwnerTodayView } from './owner-today-view'
+import type { OwnerMobileShellController } from './use-owner-mobile-shell-controller'
+
+const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then((mod) => mod.OwnerComandasView), {
+  ssr: false,
+})
+
+const OWNER_QUICK_REGISTER_HREF = '/app/owner/cadastro-rapido'
+
+function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerTodayView
+      activeComandas={controller.executiveKpis.openComandasCount}
+      errorMessage={controller.todayErrorMessage}
+      garconRanking={controller.garconRanking}
+      garconSnapshots={controller.garconSnapshots}
+      isLoading={
+        controller.ordersLoading ||
+        controller.operationsLoading ||
+        controller.kitchenLoading ||
+        controller.summaryLoading
+      }
+      isOffline={controller.isOffline}
+      kitchenBadge={controller.kitchenBadge}
+      mesasLivres={controller.mesasLivres}
+      mesasOcupadas={controller.mesasOcupadas}
+      ticketMedio={controller.ticketMedio}
+      todayOrderCount={controller.todayOrderCount}
+      todayRevenue={controller.executiveKpis.receitaRealizada}
+      topProdutos={controller.topProdutos}
+      onOpenComandas={() => {
+        controller.setFocusedComandaId(null)
+        controller.setPendingAction(null)
+        controller.setActiveTab('comandas')
+      }}
+      onOpenFullDashboard={() => controller.router.push(buildDesignLabHref('overview'))}
+      onOpenKitchen={() => {
+        controller.setPendingAction(null)
+        controller.setPdvView('cozinha')
+        controller.setActiveTab('pdv')
+      }}
+      onOpenPdv={() => {
+        controller.setFocusedComandaId(null)
+        controller.setPendingAction(null)
+        controller.setPdvView('mesas')
+        controller.setActiveTab('pdv')
+      }}
+      onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
+    />
+  )
+}
+
+function OwnerPdvPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerPdvTab
+      errorMessage={controller.pdvErrorMessage}
+      isBusy={controller.isBusy}
+      isOffline={controller.isOffline}
+      kitchenData={controller.kitchenQuery.data}
+      kitchenLoading={controller.kitchenLoading}
+      mesas={controller.mesas}
+      mesasLoading={controller.operationsLoading}
+      pdvView={controller.pdvView}
+      pendingAction={controller.pendingAction}
+      products={controller.productsQuery.data?.items ?? []}
+      productsErrorMessage={controller.productsErrorMessage}
+      productsLoading={controller.productsLoading}
+      onCancelBuilder={() => {
+        controller.setPendingAction(null)
+        controller.setPdvView('mesas')
+      }}
+      onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
+      onSelectMesa={(mesa) => {
+        if (mesa.status === 'ocupada' && mesa.comandaId) {
+          controller.setPendingAction({
+            type: 'add',
+            comandaId: mesa.comandaId,
+            mesaLabel: normalizeTableLabel(mesa.numero),
+          })
+          controller.setFocusedComandaId(null)
+          controller.setPdvView('mesas')
+          controller.setActiveTab('pdv')
+          return
+        }
+
+        controller.setPendingAction({ type: 'new', mesa })
+        controller.setFocusedComandaId(null)
+        controller.setPdvView('mesas')
+        controller.setActiveTab('pdv')
+      }}
+      onSetPdvView={controller.setPdvView}
+      onSubmit={controller.handleSubmit}
+    />
+  )
+}
+
+function OwnerComandasPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerComandasView
+      comandas={controller.comandas}
+      errorMessage={controller.operationsErrorMessage}
+      focusedId={controller.focusedComandaId}
+      isBusy={controller.isBusy}
+      isLoading={controller.operationsLoading}
+      isOffline={controller.isOffline}
+      onCloseComanda={(comandaId, discountAmount, serviceFeeAmount) =>
+        controller.closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount })
+      }
+    />
+  )
+}
+
+function OwnerFinancePanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerFinanceView
+      caixaEsperado={controller.executiveKpis.caixaEsperado}
+      errorMessage={controller.financeErrorMessage}
+      isOffline={controller.isOffline}
+      lucroRealizado={controller.executiveKpis.lucroRealizado}
+      ticketMedio={controller.ticketMedio}
+      todayOrderCount={controller.todayOrderCount}
+      todayRevenue={controller.executiveKpis.receitaRealizada}
+      onOpenCash={() => controller.router.push(buildDesignLabHref('caixa'))}
+      onOpenFinanceiro={() => controller.router.push(buildDesignLabFinanceiroHref('movimentacao'))}
+    />
+  )
+}
+
+function OwnerAccountPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerAccountView
+      companyName={controller.companyName}
+      displayName={controller.displayName}
+      onOpenDashboard={() => controller.router.push(buildDesignLabHref('overview'))}
+      onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
+      onOpenSecurity={() => controller.router.push(buildDesignLabConfigHref('security'))}
+      onOpenSettings={() => controller.router.push(buildDesignLabConfigHref('account'))}
+    />
+  )
+}
+
+type OwnerMobileShellContentProps = Readonly<{ controller: OwnerMobileShellController }>
+
+export function OwnerMobileShellContent({ controller }: OwnerMobileShellContentProps) {
+  if (controller.activeTab === 'today') {
+    return <OwnerTodayPanel controller={controller} />
+  }
+  if (controller.activeTab === 'pdv') {
+    return <OwnerPdvPanel controller={controller} />
+  }
+  if (controller.activeTab === 'comandas') {
+    return <OwnerComandasPanel controller={controller} />
+  }
+  if (controller.activeTab === 'financeiro') {
+    return <OwnerFinancePanel controller={controller} />
+  }
+  return <OwnerAccountPanel controller={controller} />
+}
