@@ -56,6 +56,15 @@ Registro da estabilizacao em andamento:
 
 - [pwa-owner-stabilization-2026-04-21.md](./pwa-owner-stabilization-2026-04-21.md)
 
+Estado atual:
+
+1. `Hoje` fechado estruturalmente
+2. `Comandas` fechado estruturalmente
+3. `Financeiro` fechado estruturalmente
+4. `Conta` fechada estruturalmente
+5. `PDV` fechado estruturalmente
+6. proxima fila: passada final de integração e congelamento do bloco Owner PWA
+
 ### Trilha B — Web
 
 Fechar o desktop já em andamento sem reabrir `/dashboard` congelado.
@@ -131,8 +140,13 @@ npm run verify:owner-pwa
 Esse gate cobre:
 
 1. shell do owner
-2. visão de comandas
-3. builder mobile
+2. hoje
+3. visão de comandas
+4. financeiro
+5. conta
+6. PDV owner
+7. cadastro rápido
+8. builder mobile
 
 ### Gate da fase atual
 

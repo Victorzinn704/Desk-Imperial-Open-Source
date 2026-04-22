@@ -81,6 +81,78 @@ Resultado:
 - ranking e top produtos tirados do componente principal
 - superficie pronta para evoluir sem voltar ao arquivo monolitico
 
+### 4. Comandas
+
+Rodada atual de fechamento estrutural.
+
+O `OwnerComandasView` foi quebrado em:
+
+- `owner-comandas-view.tsx`
+- `owner-comandas-view-model.ts`
+- `owner-comandas-view-sections.tsx`
+- `owner-comanda-card.tsx`
+- `owner-comanda-card-sections.tsx`
+
+Resultado:
+
+- filtros e recorte por garcom sairam do arquivo principal
+- leitura de status, hero e empty states ficaram isoladas
+- card de comanda foi separado da composicao de totais/itens
+- extrato detalhado e fechamento continuaram cobertos por teste focado
+- superficie pronta para evoluir sem reabrir um arquivo unico grande
+
+### 5. Financeiro
+
+Rodada atual de fechamento estrutural.
+
+O `OwnerFinanceView` foi quebrado em:
+
+- `owner-finance-view.tsx`
+- `owner-finance-view-model.ts`
+- `owner-finance-view-sections.tsx`
+
+Resultado:
+
+- prioridade financeira virou model puro
+- banner de erro/offline ficou isolado do restante da view
+- hero e acoes sairam do arquivo principal
+- teste focado e `typecheck` seguiram verdes
+
+### 6. Conta
+
+Rodada atual de fechamento estrutural.
+
+O `OwnerAccountView` foi quebrado em:
+
+- `owner-account-view.tsx`
+- `owner-account-view-model.ts`
+- `owner-account-view-sections.tsx`
+
+Resultado:
+
+- perfil do proprietario saiu do bloco de grupos
+- agrupamento de atalhos virou model puro por dominio
+- `Sistema` e `Operação` agora compartilham a mesma linha de ação
+- teste focado e `typecheck` seguiram verdes
+
+### 7. PDV
+
+Rodada atual de fechamento estrutural.
+
+O `OwnerPdvTab` foi estabilizado em:
+
+- `owner-mobile-pdv-tab.tsx`
+- `owner-mobile-pdv-tab-model.ts`
+- `owner-mobile-pdv-tab-sections.tsx`
+- `owner-mobile-pdv-chrome.tsx`
+
+Resultado:
+
+- o orquestrador ficou separado de `overview` e `builder`
+- métricas de salão/cozinha e contexto de `pendingAction` viraram model puro
+- a integração com `MobileTableGrid`, `KitchenOrdersView` e `MobileOrderBuilder` ficou coberta por teste focado
+- a superfície central do Owner PWA saiu da zona de refactor implícito
+
 ## Testes e gates executados na rodada
 
 ### Testes focados
@@ -91,6 +163,10 @@ Executados com sucesso:
 npm --workspace @partner/web run test -- components/owner-mobile/owner-quick-register-view.test.tsx
 npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-shell.test.tsx
 npm --workspace @partner/web run test -- components/owner-mobile/owner-today-view.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-comandas-view.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-finance-view.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-account-view.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-pdv-tab.test.tsx
 ```
 
 ### Typecheck
@@ -112,13 +188,14 @@ Executado com `--max-warnings 0` nos arquivos tocados antes de cada commit/refec
 1. Shell Owner
 2. Cadastro rapido
 3. Hoje
+4. Comandas
+5. Financeiro
+6. Conta
+7. PDV
 
 ### Ja modelado, mas ainda pede lapidacao semelhante
 
-1. `Comandas`
-2. `PDV` visual fino e subfluxos
-3. `Financeiro`
-4. `Conta`
+1. passada final de integração do Owner PWA
 
 ## Regra de continuidade
 
@@ -132,7 +209,5 @@ Para as proximas superficies do Owner PWA:
 
 ## Proxima fila recomendada
 
-1. `OwnerComandasView`
-2. `OwnerFinanceView`
-3. `OwnerAccountView`
-4. padrao de testes por superficie do Owner PWA
+1. passada final de integração do Owner PWA
+2. congelamento do bloco antes da virada para backend

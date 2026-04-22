@@ -13,11 +13,11 @@ describe('OwnerFinanceView', () => {
         errorMessage={null}
         isOffline={false}
         lucroRealizado={320}
-        onOpenCash={onOpenCash}
-        onOpenFinanceiro={onOpenFinanceiro}
         ticketMedio={42.5}
         todayOrderCount={8}
         todayRevenue={1200}
+        onOpenCash={onOpenCash}
+        onOpenFinanceiro={onOpenFinanceiro}
       />,
     )
 
@@ -39,11 +39,11 @@ describe('OwnerFinanceView', () => {
         errorMessage={null}
         isOffline={false}
         lucroRealizado={0}
-        onOpenCash={() => undefined}
-        onOpenFinanceiro={() => undefined}
         ticketMedio={0}
         todayOrderCount={0}
         todayRevenue={0}
+        onOpenCash={() => undefined}
+        onOpenFinanceiro={() => undefined}
       />,
     )
 

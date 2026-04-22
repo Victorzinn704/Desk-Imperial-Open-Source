@@ -27,6 +27,10 @@ Isso significa:
 - fronteiras menores por view/hook/model
 - testes focados por superficie
 - `typecheck` validando a rodada
+- `Comandas` estabilizada em view/model/sections/card sem perder o extrato detalhado
+- `Financeiro` estabilizado em model + sections sem misturar prioridade, banner e acoes num bloco unico
+- `Conta` estabilizada com perfil e grupos de atalhos separados sem virar settings desktop comprimido
+- `PDV` estabilizado com orchestrator, model e sections, mantendo builder e cozinha sob teste focado
 
 Registro detalhado desta rodada:
 
@@ -95,6 +99,8 @@ Estado atual da modelagem:
 
 - filtro por garcom responsavel para leitura de atendimento individual
 - recorte recalculando totais e status sem abrir outra tela
+- hero operacional separado da lista de comandas
+- card de comanda quebrado em header, extrato e totais para evitar novo arquivo-deus
 
 ### 3. PDV
 
@@ -117,6 +123,7 @@ Estado atual da modelagem:
 - modo `Cozinha` aparece como subarea operacional do PDV movel
 - builder reaproveita a base madura do staff, com contexto extra do owner
 - `Cadastro rapido` aparece como acao de apoio, sem virar item fixo da bottom nav
+- métricas de overview e contexto de `pendingAction` agora estão explicitados em model
 
 ### 4. Financeiro
 
@@ -136,6 +143,7 @@ Estado atual da modelagem:
 - abertura curta com prioridade financeira do turno
 - KPIs em strip unico, sem microcards soltos
 - acoes principais reduzidas a `Caixa do turno` e `Financeiro completo`
+- banner de erro/offline isolado do hero para nao poluir a leitura principal
 
 ### 5. Conta
 
@@ -155,6 +163,7 @@ Estado atual da modelagem:
 - identidade do proprietario em abertura curta
 - atalhos agrupados por `Sistema` e `Operacao`
 - sem lista genérica de botões soltos
+- grupos e linhas de ação agora reutilizam o mesmo contrato visual
 
 ## Cadastro rapido
 
