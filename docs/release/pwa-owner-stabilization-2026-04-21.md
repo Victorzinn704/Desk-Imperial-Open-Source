@@ -1,0 +1,138 @@
+# PWA Owner — Estabilizacao Estrutural 2026-04-21
+
+Data: 2026-04-21
+Escopo: reduzir arquivos-deus do Owner PWA sem mudar o comportamento funcional.
+
+## Objetivo da rodada
+
+Esta rodada nao foi de design novo.
+
+Foi uma rodada de:
+
+1. quebrar superficies grandes em fronteiras menores
+2. preservar hooks, queries, mutacoes e navegacao existentes
+3. manter o PWA Owner validado por testes focados
+4. registrar a ordem de fechamento para nao reabrir divida tecnica sem perceber
+
+## O que foi estabilizado
+
+### 1. Cadastro rapido
+
+Commit base:
+
+- `59b5687 refactor(web): split owner quick register flow`
+
+O fluxo foi quebrado em:
+
+- `view` orquestradora
+- hooks de form, submit, lookup e offline queue
+- secoes visuais menores
+- model/contrato dedicado
+
+Resultado:
+
+- menos acoplamento
+- menor risco ao evoluir EAN, offline e enrichments
+- teste focado da superficie mantido verde
+
+### 2. Shell Owner
+
+Commit base:
+
+- `0095f23 refactor(web): split owner mobile shell`
+
+O shell foi quebrado em:
+
+- `owner-mobile-shell.tsx`
+- `owner-mobile-shell-header.tsx`
+- `owner-mobile-shell-bottom-nav.tsx`
+- `owner-mobile-shell-content.tsx`
+- `owner-mobile-pdv-tab.tsx`
+- `owner-mobile-pdv-chrome.tsx`
+- `use-owner-mobile-shell-queries.ts`
+- `use-owner-mobile-shell-mutations.ts`
+- `use-owner-mobile-shell-controller.ts`
+- `owner-mobile-shell-model.ts`
+- `owner-mobile-shell-types.ts`
+
+Resultado:
+
+- queries separadas da composicao visual
+- mutacoes separadas da tela
+- controller dedicado
+- PDV movel isolado do shell
+- navegacao inferior e header isolados do fluxo operacional
+
+### 3. Hoje
+
+Rodada atual da sessao.
+
+O `OwnerTodayView` foi quebrado em:
+
+- `owner-today-view.tsx`
+- `owner-today-view-model.ts`
+- `owner-today-view-sections.tsx`
+- `owner-today-view-radar.tsx`
+
+Resultado:
+
+- prioridade do turno isolada em model puro
+- hero, acoes, mapa rapido e radar separados
+- ranking e top produtos tirados do componente principal
+- superficie pronta para evoluir sem voltar ao arquivo monolitico
+
+## Testes e gates executados na rodada
+
+### Testes focados
+
+Executados com sucesso:
+
+```bash
+npm --workspace @partner/web run test -- components/owner-mobile/owner-quick-register-view.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-shell.test.tsx
+npm --workspace @partner/web run test -- components/owner-mobile/owner-today-view.test.tsx
+```
+
+### Typecheck
+
+Executado com sucesso:
+
+```bash
+npm run typecheck
+```
+
+### Lint focado
+
+Executado com `--max-warnings 0` nos arquivos tocados antes de cada commit/refechamento.
+
+## Boundary atual do Owner PWA
+
+### Fechado estruturalmente
+
+1. Shell Owner
+2. Cadastro rapido
+3. Hoje
+
+### Ja modelado, mas ainda pede lapidacao semelhante
+
+1. `Comandas`
+2. `PDV` visual fino e subfluxos
+3. `Financeiro`
+4. `Conta`
+
+## Regra de continuidade
+
+Para as proximas superficies do Owner PWA:
+
+1. nao crescer arquivo principal acima do necessario
+2. mover logica derivada para `*-model.ts` ou hooks dedicados
+3. manter testes focados por superficie
+4. rodar `typecheck` no fechamento de cada bloco
+5. documentar o bloco fechado antes de seguir para o proximo
+
+## Proxima fila recomendada
+
+1. `OwnerComandasView`
+2. `OwnerFinanceView`
+3. `OwnerAccountView`
+4. padrao de testes por superficie do Owner PWA

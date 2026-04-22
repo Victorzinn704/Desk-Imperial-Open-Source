@@ -14,6 +14,24 @@ Peso: 70% operacional / 30% analitico
 
 O dono no celular quer enxergar o que esta acontecendo agora, agir rapido e consultar historico. O celular nao substitui o desktop em gestao profunda.
 
+## Estado atual da estabilizacao
+
+Ja foram estabilizados estruturalmente nesta fase:
+
+1. shell do Owner
+2. `Hoje`
+3. `Cadastro rapido`
+
+Isso significa:
+
+- fronteiras menores por view/hook/model
+- testes focados por superficie
+- `typecheck` validando a rodada
+
+Registro detalhado desta rodada:
+
+- [PWA Owner - Estabilizacao Estrutural 2026-04-21](../release/pwa-owner-stabilization-2026-04-21.md)
+
 ## Navegacao inferior oficial
 
 O Owner PWA trabalha com 5 abas:
@@ -179,15 +197,15 @@ Essa e a feature prioritaria do PWA.
 
 ## Boundary oficial
 
-| Area | Recorte |
-| --- | --- |
-| Hoje | leitura global curta do estabelecimento |
-| Comandas | global, com filtro por garcom responsavel |
-| PDV | global da operacao, por mesa/comanda |
-| Financeiro | resumo movel; analise densa fica no desktop |
-| Conta | atalhos de sistema e operacao, sem settings desktop comprimido |
-| Cadastro rapido | fluxo dedicado fora da bottom nav |
-| Staff | nao aparece aqui; o staff tem PWA proprio e historico pessoal |
+| Area            | Recorte                                                        |
+| --------------- | -------------------------------------------------------------- |
+| Hoje            | leitura global curta do estabelecimento                        |
+| Comandas        | global, com filtro por garcom responsavel                      |
+| PDV             | global da operacao, por mesa/comanda                           |
+| Financeiro      | resumo movel; analise densa fica no desktop                    |
+| Conta           | atalhos de sistema e operacao, sem settings desktop comprimido |
+| Cadastro rapido | fluxo dedicado fora da bottom nav                              |
+| Staff           | nao aparece aqui; o staff tem PWA proprio e historico pessoal  |
 
 ### Fase posterior
 

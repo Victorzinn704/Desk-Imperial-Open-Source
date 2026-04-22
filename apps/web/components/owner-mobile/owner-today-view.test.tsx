@@ -18,15 +18,15 @@ describe('OwnerTodayView', () => {
         kitchenBadge={3}
         mesasLivres={2}
         mesasOcupadas={5}
+        ticketMedio={45}
+        todayOrderCount={9}
+        todayRevenue={405}
+        topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={onOpenKitchen}
         onOpenPdv={onOpenPdv}
         onOpenQuickRegister={() => undefined}
-        ticketMedio={45}
-        todayOrderCount={9}
-        todayRevenue={405}
-        topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
       />,
     )
 
@@ -55,15 +55,15 @@ describe('OwnerTodayView', () => {
         kitchenBadge={0}
         mesasLivres={10}
         mesasOcupadas={0}
+        ticketMedio={0}
+        todayOrderCount={0}
+        todayRevenue={0}
+        topProdutos={[]}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={() => undefined}
         onOpenPdv={() => undefined}
         onOpenQuickRegister={() => undefined}
-        ticketMedio={0}
-        todayOrderCount={0}
-        todayRevenue={0}
-        topProdutos={[]}
       />,
     )
 
@@ -91,15 +91,15 @@ describe('OwnerTodayView', () => {
         kitchenBadge={0}
         mesasLivres={2}
         mesasOcupadas={5}
+        ticketMedio={45}
+        todayOrderCount={9}
+        todayRevenue={405}
+        topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={() => undefined}
         onOpenPdv={() => undefined}
         onOpenQuickRegister={() => undefined}
-        ticketMedio={45}
-        todayOrderCount={9}
-        todayRevenue={405}
-        topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
       />,
     )
 

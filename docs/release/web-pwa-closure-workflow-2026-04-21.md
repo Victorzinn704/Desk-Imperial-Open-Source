@@ -52,6 +52,10 @@ Fechar:
 5. `Conta`
 6. `Cadastro rápido` como fluxo de apoio
 
+Registro da estabilizacao em andamento:
+
+- [pwa-owner-stabilization-2026-04-21.md](./pwa-owner-stabilization-2026-04-21.md)
+
 ### Trilha B — Web
 
 Fechar o desktop já em andamento sem reabrir `/dashboard` congelado.
@@ -163,7 +167,7 @@ Esse gate cobre:
 
 1. `quality:preflight`
 2. `test:critical`
-2. `verify:current-phase`
+3. `verify:current-phase`
 
 Regra: sem esse gate verde, a fase não avança.
 
