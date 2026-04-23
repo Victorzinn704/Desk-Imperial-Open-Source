@@ -23,7 +23,7 @@ const securityHeaders = [
       `script-src 'self' 'unsafe-inline'${developmentScriptSources} https://static.cloudflareinsights.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.openfoodfacts.org https://*.basemaps.cartocdn.com",
+      "img-src 'self' data: blob: https://images.unsplash.com https://images.pexels.com https://*.openfoodfacts.org https://*.basemaps.cartocdn.com",
       `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
       "frame-src 'self' https://widget.api-futebol.com.br",
       "frame-ancestors 'none'",
@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
       },
       {
         protocol: 'https',

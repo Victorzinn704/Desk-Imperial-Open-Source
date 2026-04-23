@@ -51,7 +51,6 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         onLogout={() => logoutMutation.mutate()}
       />
       <ConnectionBanner status={realtimeStatus} />
-      <OwnerPwaInstallPrompt />
       {screenError ? <OwnerScreenErrorBanner message={screenError} onDismiss={() => setScreenError(null)} /> : null}
       <main
         className={`relative min-h-0 flex-1 pb-[7.25rem] ${
@@ -62,6 +61,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         <PullIndicator isRefreshing={isRefreshing} progress={progress} style={indicatorStyle} />
         <OwnerMobileShellContent controller={controller} />
       </main>
+      <OwnerPwaInstallPrompt />
       <OwnerMobileShellBottomNav
         activeComandasCount={activeComandas.length}
         activeTab={activeTab}

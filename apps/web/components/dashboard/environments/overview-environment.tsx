@@ -166,13 +166,13 @@ export function DesignLabOverviewEnvironment() {
       <LabPageHeader
         description="Receita, lucro, ticket e alertas."
         eyebrow="visão geral da operação"
-        asideClassName="xl:max-w-[760px]"
+        asideClassName="xl:max-w-[690px]"
         metaContainerClassName="border-0 bg-transparent p-0 xl:max-w-none"
         meta={
-          <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+          <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
             <VascoNextMatchWidget
-              className="h-full border-[var(--lab-border)] bg-[var(--lab-surface)]"
-              iframeClassName="h-[270px]"
+              className="border-[var(--lab-border)] bg-[var(--lab-surface)]"
+              compact
             />
             <div className="flex h-full flex-col rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-4">
               <div className="space-y-3">
