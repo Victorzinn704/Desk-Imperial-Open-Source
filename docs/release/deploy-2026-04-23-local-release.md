@@ -58,6 +58,7 @@ Observação:
   - redirecionou para `/design-lab/overview`
   - não exibiu `Cannot POST /api/auth/demo`
   - não exibiu aviso de API desconectada
+- Prometheus na `vm2`: `prometheus_down_targets=0`
 
 ## Migrations
 
