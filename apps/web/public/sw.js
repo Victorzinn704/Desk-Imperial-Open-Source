@@ -1,9 +1,10 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'desk-imperial-v1'
+const CACHE_NAME = 'desk-imperial-v2'
 const STATIC_ASSETS = [
   '/app/staff',
   '/app/owner',
+  '/app/owner/cadastro-rapido',
   '/manifest.json',
 ]
 

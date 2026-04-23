@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
@@ -142,8 +142,14 @@ async function submitNewComanda(
   await mutateAsync(payload)
 }
 
-function useOwnerMobileShellState() {
-  const [activeTab, setActiveTab] = useState<OwnerMobileTab>('today')
+const OWNER_TABS = new Set<OwnerMobileTab>(['today', 'comandas', 'pdv', 'financeiro', 'conta'])
+
+function resolveOwnerTab(value: string | null): OwnerMobileTab {
+  return value && OWNER_TABS.has(value as OwnerMobileTab) ? (value as OwnerMobileTab) : 'today'
+}
+
+function useOwnerMobileShellState(initialTab: OwnerMobileTab) {
+  const [activeTab, setActiveTab] = useState<OwnerMobileTab>(initialTab)
   const [pdvView, setPdvView] = useState<OwnerPdvView>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
@@ -216,13 +222,21 @@ function useOwnerHandleSubmit({
 
 export function useOwnerMobileShellController(currentUser: OwnerCurrentUser | null) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
   const queryClient = useQueryClient()
-  const shellState = useOwnerMobileShellState()
+  const initialTab = resolveOwnerTab(tabParam)
+  const shellState = useOwnerMobileShellState(initialTab)
   const realtime = useRealtimeRefresh(Boolean(currentUser), queryClient)
   const queries = useOwnerMobileShellQueries(currentUser)
   const mutations = useOwnerMobileShellMutations(queryClient, router)
   const metrics = useOwnerMetrics(queries)
   const handleSubmit = useOwnerHandleSubmit({ ...shellState, mutations, queryClient })
+  const { setActiveTab } = shellState
+
+  useEffect(() => {
+    setActiveTab(resolveOwnerTab(tabParam))
+  }, [setActiveTab, tabParam])
 
   return buildOwnerMobileShellControllerValue({
     currentUser,

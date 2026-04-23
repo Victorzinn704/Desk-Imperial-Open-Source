@@ -5,6 +5,7 @@ import { PullIndicator } from '@/components/shared/pull-indicator'
 import { OwnerMobileShellBottomNav } from './owner-mobile-shell-bottom-nav'
 import { OwnerMobileShellContent } from './owner-mobile-shell-content'
 import { OwnerMobileShellHeader } from './owner-mobile-shell-header'
+import { OwnerPwaInstallPrompt } from './owner-pwa-install-prompt'
 import type { OwnerMobileShellProps } from './owner-mobile-shell-types'
 import { useOwnerMobileShellController } from './use-owner-mobile-shell-controller'
 
@@ -49,6 +50,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
         onLogout={() => logoutMutation.mutate()}
       />
       <ConnectionBanner status={realtimeStatus} />
+      <OwnerPwaInstallPrompt />
       {screenError ? <OwnerScreenErrorBanner message={screenError} onDismiss={() => setScreenError(null)} /> : null}
       <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[7.25rem]" ref={containerRef}>
         <PullIndicator isRefreshing={isRefreshing} progress={progress} style={indicatorStyle} />

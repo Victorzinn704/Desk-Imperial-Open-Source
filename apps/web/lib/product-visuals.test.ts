@@ -45,7 +45,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
   })
 
-  it('prioriza packshot nacional quando a origem marcada e o produto e bebida embalada nacional', () => {
+  it('mantem foto real acima do packshot nacional quando os dois existem', () => {
     const visual = resolveProductVisual({
       name: 'Coca-Cola Lata',
       brand: 'Coca-Cola',
@@ -57,8 +57,23 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toEqual({
+      src: 'https://images.openfoodfacts.org/images/products/789/490/001/1326/front_pt.3.200.jpg',
+      alt: 'Foto de Coca-Cola Lata',
+      source: 'catalog',
+    })
+  })
+
+  it('usa foto de combo quando a categoria indica combo mesmo sem flag persistida', () => {
+    const visual = resolveProductVisual({
+      name: 'Balde Heineken',
+      category: 'Combos',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('combo-fallback')
+    expect(visual?.src).toContain('images.unsplash.com')
   })
 
   it('ignora url insegura e usa packshot nacional quando o produto embalado e reconhecido', () => {

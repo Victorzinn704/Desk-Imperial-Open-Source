@@ -34,6 +34,7 @@ describe('OwnerTodayView', () => {
     expect(screen.getByTestId('owner-kpi-receita')).toHaveTextContent('405,00')
     expect(screen.getByText('Ranking garçons')).toBeInTheDocument()
     expect(screen.getByText('Top produtos')).toBeInTheDocument()
+    expect(screen.getByText(/Próximo jogo do Vasco/i)).toBeInTheDocument()
     expect(screen.getByText(/Receita/i)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Abrir PDV/i }))

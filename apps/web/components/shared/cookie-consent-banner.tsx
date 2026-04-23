@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Check, Cookie } from 'lucide-react'
 import { updateCookiePreferences } from '@/lib/api'
 import { type CookieConsentChoice, persistCookieConsent, readCookieConsentChoice } from '@/lib/cookie-consent'
@@ -12,6 +13,7 @@ const DEFAULT_COOKIE_PREFERENCES: CookieConsentChoice = {
 }
 
 export function CookieConsentBanner() {
+  const pathname = usePathname()
   const [isReady, setIsReady] = useState(false)
   const [hasDecision, setHasDecision] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -40,6 +42,10 @@ export function CookieConsentBanner() {
   if (!isReady || hasDecision) {
     return null
   }
+
+  const bottomOffsetClass = pathname === '/app/owner' || pathname === '/app/staff'
+    ? 'bottom-[6.25rem] sm:bottom-[6.75rem]'
+    : 'bottom-4 sm:bottom-5'
 
   const handleDecision = async (choice: CookieConsentChoice) => {
     setIsSubmitting(true)
@@ -75,7 +81,7 @@ export function CookieConsentBanner() {
     <section
       aria-labelledby="cookie-consent-title"
       aria-modal="false"
-      className="fixed bottom-4 left-1/2 z-[2147483645] w-[min(640px,calc(100vw-32px))] -translate-x-1/2 rounded-[8px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] px-3 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.14)] sm:bottom-5"
+      className={`fixed left-1/2 z-[2147483645] w-[min(640px,calc(100vw-32px))] -translate-x-1/2 rounded-[8px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] px-3 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.14)] ${bottomOffsetClass}`}
       data-testid="cookie-consent-banner"
       role="dialog"
       style={{ backdropFilter: 'blur(14px)' }}

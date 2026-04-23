@@ -41,12 +41,7 @@ const comboFallbacks = [
 ] as const
 
 export function resolveProductVisual(product: ProductVisualInput): ProductVisual | null {
-  const curatedPackshot = resolveBrazilianPackagedBeverageVisual(product)
   const directImage = sanitizeVisualUrl(product.imageUrl)
-  if (curatedPackshot && (isNationalPackagedBeverageSource(product.catalogSource) || !directImage)) {
-    return curatedPackshot
-  }
-
   if (directImage) {
     return {
       src: directImage,
@@ -55,15 +50,20 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
     }
   }
 
-  if (!product.isCombo) {
+  if (isComboLike(product)) {
+    return {
+      src: resolveComboFallback(product),
+      alt: `Imagem ilustrativa de ${product.name}`,
+      source: 'combo-fallback',
+    }
+  }
+
+  const curatedPackshot = resolveBrazilianPackagedBeverageVisual(product)
+  if (curatedPackshot && isNationalPackagedBeverageSource(product.catalogSource)) {
     return curatedPackshot
   }
 
-  return {
-    src: resolveComboFallback(product),
-    alt: `Imagem ilustrativa de ${product.name}`,
-    source: 'combo-fallback',
-  }
+  return curatedPackshot
 }
 
 export function buildProductInitials(name: string) {
@@ -85,6 +85,15 @@ function resolveComboFallback(product: ProductVisualInput) {
     matchedFallback?.src ??
     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80'
   )
+}
+
+function isComboLike(product: ProductVisualInput) {
+  if (product.isCombo) {
+    return true
+  }
+
+  const haystack = `${product.name} ${product.category ?? ''}`.toLowerCase()
+  return ['combo', 'combos', 'kit', 'balde', 'promocao', 'promoção'].some((keyword) => haystack.includes(keyword))
 }
 
 function sanitizeVisualUrl(value: string | null | undefined) {

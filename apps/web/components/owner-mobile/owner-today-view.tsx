@@ -6,6 +6,7 @@ import { OwnerTodayRadar } from './owner-today-view-radar'
 import {
   OwnerTodayActions,
   OwnerTodayDashboardButton,
+  OwnerTodayFootballWidget,
   OwnerTodayHero,
   OwnerTodayLiveMap,
   OwnerTodayStatusBanner,
@@ -31,6 +32,7 @@ export function OwnerTodayView(props: OwnerTodayViewProps) {
         todayOrderCount={props.todayOrderCount}
         todayRevenue={props.todayRevenue}
       />
+      <OwnerTodayFootballWidget />
       <OwnerTodayActions
         onOpenComandas={props.onOpenComandas}
         onOpenKitchen={props.onOpenKitchen}

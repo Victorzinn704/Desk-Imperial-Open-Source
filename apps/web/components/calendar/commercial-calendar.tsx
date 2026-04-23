@@ -9,6 +9,7 @@ import { CalendarDays, Plus, Trophy } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import { Button } from '@/components/shared/button'
+import { VascoCalendarWidget } from '@/components/shared/football-widgets'
 import {
   LabEmptyState,
   LabFilterChip,
@@ -106,13 +107,6 @@ const FOOTBALL_COMPETITION_LABELS: Record<FootballCompetition, string> = {
   copa_do_brasil: 'Copa do Brasil',
   libertadores: 'Libertadores',
   sulamericana: 'Sul-Americana',
-}
-
-const FOOTBALL_COMPETITION_SHORT_LABELS: Record<FootballCompetition, string> = {
-  serie_a: 'A',
-  copa_do_brasil: 'CB',
-  libertadores: 'LIB',
-  sulamericana: 'SUL',
 }
 
 const FOOTBALL_COMPETITIONS = Object.keys(FOOTBALL_COMPETITION_LABELS) as FootballCompetition[]
@@ -721,87 +715,6 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
   )
 }
 
-function FootballGamesWidget({ activities }: Readonly<{ activities: CommercialActivity[] }>) {
-  const footballGames = activities
-    .filter((activity) => activity.type === 'jogo' && activity.footballCompetition)
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-
-  const upcomingGames = footballGames.filter((activity) => activity.start >= new Date()).slice(0, 5)
-
-  return (
-    <LabPanel
-      padding="sm"
-      title="Agenda esportiva"
-      subtitle="Serie A, Copa do Brasil, Libertadores e Sul-Americana como sinal de movimento."
-      action={<LabStatusPill icon={<Trophy className="size-3" />} tone="warning">4 campeonatos</LabStatusPill>}
-    >
-      {footballGames.length === 0 ? (
-        <LabEmptyState
-          compact
-          icon={Trophy}
-          title="Sem jogos monitorados"
-          description="Quando houver novos confrontos no calendario, eles passam a compor este radar."
-        />
-      ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            {FOOTBALL_COMPETITIONS.map((competition) => {
-              const count = footballGames.filter((activity) => activity.footballCompetition === competition).length
-
-              return (
-                <div
-                  className="rounded-xl border bg-[var(--surface)] px-3 py-2"
-                  key={competition}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--warning)]">
-                      {FOOTBALL_COMPETITION_SHORT_LABELS[competition]}
-                    </span>
-                    <LabStatusPill tone="warning">{count}</LabStatusPill>
-                  </div>
-                  <p className="mt-1 truncate text-[11px] font-medium text-[var(--text-soft)]">
-                    {FOOTBALL_COMPETITION_LABELS[competition]}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="space-y-2 border-t border-[var(--border)] pt-4">
-            {upcomingGames.map((game) => (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5" key={game.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{game.title}</p>
-                    <p className="mt-1 truncate text-xs text-[var(--text-soft)]">
-                      {[game.homeTeam, game.visitorTeam].filter(Boolean).join(' x ') || game.descricao}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-xs font-bold text-[var(--warning)]">{format(game.start, 'dd/MM', { locale: ptBR })}</p>
-                    <p className="text-[11px] text-[var(--text-soft)]">{format(game.start, 'HH:mm', { locale: ptBR })}</p>
-                  </div>
-                </div>
-                {game.operationalHint ? (
-                  <p
-                    className="mt-2 rounded-lg px-2 py-1 text-[11px] leading-4"
-                    style={{
-                      background: 'color-mix(in srgb, var(--warning) 10%, var(--surface))',
-                      color: 'var(--warning)',
-                    }}
-                  >
-                    {game.operationalHint}
-                  </p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </LabPanel>
-  )
-}
-
 function PlanningRadar({
   nextActivity,
   nextSevenDaysActivities,
@@ -1176,7 +1089,17 @@ export function CommercialCalendar() {
             summaryRows={summaryRows}
           />
 
-          {filter === 'all' || filter === 'jogo' ? <FootballGamesWidget activities={filteredActivities} /> : null}
+          {filter === 'all' || filter === 'jogo' ? (
+            <LabPanel
+              action={<LabStatusPill icon={<Trophy className="size-3" />} tone="warning">vasco</LabStatusPill>}
+              contentClassName="p-0"
+              padding="none"
+              title="Calendário de jogos"
+              subtitle="Widget oficial para leitura rápida e acompanhamento do calendário esportivo."
+            >
+              <VascoCalendarWidget className="rounded-none border-0 bg-transparent" />
+            </LabPanel>
+          ) : null}
         </div>
       </div>
 

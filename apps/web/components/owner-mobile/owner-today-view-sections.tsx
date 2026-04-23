@@ -1,5 +1,6 @@
 'use client'
 
+import { CalendarDays } from 'lucide-react'
 import {
   buildOwnerTodayActions,
   buildOwnerTodayChips,
@@ -9,6 +10,7 @@ import {
   type OwnerTodayViewProps,
   type TurnPriority,
 } from './owner-today-view-model'
+import { VascoNextMatchWidget } from '@/components/shared/football-widgets'
 
 export function OwnerTodayStatusBanner({
   errorMessage,
@@ -152,6 +154,28 @@ export function OwnerTodayActions(
           </button>
         ))}
       </div>
+    </section>
+  )
+}
+
+export function OwnerTodayFootballWidget() {
+  return (
+    <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)]">
+      <div className="border-b border-[var(--border)] px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
+              Agenda esportiva
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">Próximo jogo do Vasco</p>
+          </div>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--accent,#008cff)]">
+            <CalendarDays className="size-4" />
+          </span>
+        </div>
+      </div>
+
+      <VascoNextMatchWidget className="rounded-none border-0 bg-transparent" />
     </section>
   )
 }

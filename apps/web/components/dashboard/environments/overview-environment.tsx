@@ -30,6 +30,7 @@ import { OverviewTopProducts } from '@/components/dashboard/overview-top-product
 import { OverviewRecentOrders } from '@/components/dashboard/overview-recent-orders'
 import { formatCurrency } from '@/lib/currency'
 import { SalesPerformanceCard } from '@/components/dashboard/sales-performance-card'
+import { VascoNextMatchWidget } from '@/components/shared/football-widgets'
 
 type OverviewVariant = 'principal' | 'layout' | 'meta' | 'operacional' | 'editorial'
 
@@ -396,15 +397,27 @@ function OverviewExecutivePanel({
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] xl:items-start">
         <SalesPerformanceCard finance={finance} isLoading={isLoading} surface="lab" />
 
-        <LabPanel
-          action={
-            <LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>
-          }
-          padding="md"
-          title="Radar comercial"
-        >
-          <OverviewRadarSection finance={finance} snapshot={snapshot} />
-        </LabPanel>
+        <div className="space-y-5">
+          <LabPanel
+            action={
+              <LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>
+            }
+            padding="md"
+            title="Radar comercial"
+          >
+            <OverviewRadarSection finance={finance} snapshot={snapshot} />
+          </LabPanel>
+
+          <LabPanel
+            action={<LabStatusPill tone="info">vasco</LabStatusPill>}
+            contentClassName="p-0"
+            padding="none"
+            title="Próximo jogo"
+            subtitle="Leitura rápida do próximo confronto direto na abertura do painel."
+          >
+            <VascoNextMatchWidget className="rounded-none border-0 bg-transparent" />
+          </LabPanel>
+        </div>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] xl:items-start">
