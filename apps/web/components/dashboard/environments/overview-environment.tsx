@@ -166,6 +166,11 @@ export function DesignLabOverviewEnvironment() {
       <LabPageHeader
         description="Receita, lucro, ticket e alertas."
         eyebrow="visão geral da operação"
+        actions={
+          <div className="w-full xl:max-w-sm">
+            <VascoNextMatchWidget className="border-[var(--lab-border)] bg-[var(--lab-surface)]" />
+          </div>
+        }
         meta={
           <div className="space-y-3">
             <LabMetaRow label="Empresa" tone="neutral" value={snapshot.companyName} />
@@ -188,34 +193,19 @@ export function DesignLabOverviewEnvironment() {
         }
         title="Overview"
       >
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] xl:items-start">
-          <div className="flex flex-wrap gap-2">
-            <LabStatusPill tone="info">
-              ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
-            </LabStatusPill>
-            <LabStatusPill tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}>
-              margem {formatPercent(snapshot.averageMargin)}
-            </LabStatusPill>
-            <LabStatusPill tone={stockTone}>
-              {snapshot.lowStockItems > 0 ? 'reposição no radar' : 'estoque estável'}
-            </LabStatusPill>
-            {snapshot.topProductName ? (
-              <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill>
-            ) : null}
-          </div>
-
-          <div className="space-y-2 rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
-                  Próximo jogo
-                </h2>
-                <p className="mt-1 text-sm font-medium text-[var(--lab-fg)]">Vasco no radar do dia</p>
-              </div>
-              <LabStatusPill tone="info">vasco</LabStatusPill>
-            </div>
-            <VascoNextMatchWidget className="border-0 bg-transparent" />
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <LabStatusPill tone="info">
+            ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
+          </LabStatusPill>
+          <LabStatusPill tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}>
+            margem {formatPercent(snapshot.averageMargin)}
+          </LabStatusPill>
+          <LabStatusPill tone={stockTone}>
+            {snapshot.lowStockItems > 0 ? 'reposição no radar' : 'estoque estável'}
+          </LabStatusPill>
+          {snapshot.topProductName ? (
+            <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill>
+          ) : null}
         </div>
       </LabPageHeader>
 

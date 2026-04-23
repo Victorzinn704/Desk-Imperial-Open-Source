@@ -86,7 +86,6 @@ describe('DesignLabOverviewEnvironment', () => {
     expect(screen.getByText('meta projetada')).toBeInTheDocument()
     expect(screen.getByText('ritmo diário')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Radar comercial' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Próximo jogo' })).toBeInTheDocument()
     expect(screen.getByTitle('Próximo jogo do Vasco')).toBeInTheDocument()
     expect(screen.getByTestId('sales-performance-card')).toHaveTextContent('grafico-lab')
     expect(screen.getByTestId('overview-recent-orders')).toHaveTextContent('recent-orders-lab')
