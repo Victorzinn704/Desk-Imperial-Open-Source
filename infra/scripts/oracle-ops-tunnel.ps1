@@ -21,6 +21,7 @@ ssh -i $KeyPath `
   -o StrictHostKeyChecking=accept-new `
   -o UserKnownHostsFile=$KnownHostsPath `
   -L 3001:127.0.0.1:3001 `
+  -L 3002:127.0.0.1:3002 `
   -L 9090:127.0.0.1:9090 `
   -L 9093:127.0.0.1:9093 `
   -L 9000:127.0.0.1:9000 `

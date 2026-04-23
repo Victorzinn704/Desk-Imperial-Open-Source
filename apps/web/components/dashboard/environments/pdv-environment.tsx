@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { ChefHat, Radio } from 'lucide-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
-  LabFactPill,
-  LabMiniStat,
   LAB_NUMERIC_SECTION_CLASS,
   LAB_RESPONSIVE_FOUR_UP_GRID,
-  LabPanel,
+  LabFactPill,
+  LabMiniStat,
   LabPageHeader,
+  LabPanel,
   LabSignalRow,
   LabStatusPill,
 } from '@/components/design-lab/lab-primitives'
@@ -58,11 +58,17 @@ export function PdvEnvironment({
     .map((p) => ({
       id: p.id,
       name: p.name,
+      brand: p.brand ?? null,
       category: p.category,
+      barcode: p.barcode ?? null,
+      packagingClass: p.packagingClass,
+      quantityLabel: p.quantityLabel ?? null,
       unitPrice: p.unitPrice,
       currency: String(p.currency),
       stock: p.stock,
       isLowStock: p.isLowStock,
+      imageUrl: p.imageUrl ?? null,
+      catalogSource: p.catalogSource ?? null,
       isCombo: p.isCombo ?? false,
       comboDescription: p.comboDescription ?? null,
       comboItems: p.comboItems ?? [],
@@ -142,7 +148,9 @@ export function PdvEnvironment({
 
       {operationsError ? (
         <LabPanel padding="md">
-          <p className="text-sm text-[var(--danger)]">Não foi possível carregar a operação viva agora. {operationsError}</p>
+          <p className="text-sm text-[var(--danger)]">
+            Não foi possível carregar a operação viva agora. {operationsError}
+          </p>
         </LabPanel>
       ) : null}
 
@@ -155,10 +163,10 @@ export function PdvEnvironment({
           {showExecutiveOperations ? <CaixaPanel operations={operations} /> : null}
           <PdvBoard
             mesaIntent={mesaIntent}
-            onConsumeMesaIntent={onConsumeMesaIntent}
             operations={operations}
             products={boardProducts}
             variant="cobranca"
+            onConsumeMesaIntent={onConsumeMesaIntent}
           />
         </div>
       ) : null}
@@ -166,20 +174,20 @@ export function PdvEnvironment({
       {variant === 'comandas' ? (
         <PdvBoard
           mesaIntent={mesaIntent}
-          onConsumeMesaIntent={onConsumeMesaIntent}
           operations={operations}
           products={boardProducts}
           variant="comandas"
+          onConsumeMesaIntent={onConsumeMesaIntent}
         />
       ) : null}
 
       {variant === 'grid' ? (
         <PdvBoard
           mesaIntent={mesaIntent}
-          onConsumeMesaIntent={onConsumeMesaIntent}
           operations={operations}
           products={boardProducts}
           variant="grid"
+          onConsumeMesaIntent={onConsumeMesaIntent}
         />
       ) : null}
     </section>
@@ -241,10 +249,20 @@ function PdvLockedState({
       >
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
           <div className="space-y-0">
-            <LabSignalRow label="abrir comanda" note="libera mesa, cliente e inclusão de itens" tone="neutral" value="bloqueado" />
+            <LabSignalRow
+              label="abrir comanda"
+              note="libera mesa, cliente e inclusão de itens"
+              tone="neutral"
+              value="bloqueado"
+            />
             <LabSignalRow label="cobrança" note="fechamento e repasse para caixa" tone="neutral" value="bloqueada" />
             <LabSignalRow label="cozinha" note="fila só aparece com operação viva" tone="neutral" value="bloqueada" />
-            <LabSignalRow label="estoque" note="queda e alerta só entram com produto real" tone="neutral" value="bloqueado" />
+            <LabSignalRow
+              label="estoque"
+              note="queda e alerta só entram com produto real"
+              tone="neutral"
+              value="bloqueado"
+            />
           </div>
 
           <div className="flex flex-wrap gap-2 xl:content-start">
@@ -268,23 +286,27 @@ function PdvKitchenQueuePanel({
   const sortedItems = [...items].sort((left, right) => new Date(right.start).getTime() - new Date(left.start).getTime())
 
   return (
-    <LabPanel
-      action={<ChefHat className="size-4 text-[var(--accent)]" />}
-      padding="md"
-      title="Fila de preparo"
-    >
+    <LabPanel action={<ChefHat className="size-4 text-[var(--accent)]" />} padding="md" title="Fila de preparo">
       {loading ? (
         <div className="space-y-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div className="h-10 animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--surface-muted)_46%,transparent)]" key={index} />
+            <div
+              className="h-10 animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--surface-muted)_46%,transparent)]"
+              key={index}
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
           {sortedItems.length > 0 ? (
             sortedItems.map((item) => (
-              <div className="grid gap-3 rounded-[8px] border border-[var(--border)] px-4 py-3 md:grid-cols-[120px_minmax(0,1fr)_140px_auto]" key={item.id}>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{formatShortTime(item.start)}</div>
+              <div
+                className="grid gap-3 rounded-[8px] border border-[var(--border)] px-4 py-3 md:grid-cols-[120px_minmax(0,1fr)_140px_auto]"
+                key={item.id}
+              >
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  {formatShortTime(item.start)}
+                </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
                   <p className="mt-1 text-sm text-[var(--text-soft)]">
@@ -336,10 +358,7 @@ function PdvOperationalHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <LabStatusPill
-            icon={<Radio className="size-3" />}
-            tone={isFetching ? 'info' : 'success'}
-          >
+          <LabStatusPill icon={<Radio className="size-3" />} tone={isFetching ? 'info' : 'success'}>
             {isFetching ? 'Sincronizando' : 'Ao vivo'}
           </LabStatusPill>
           <p className="text-xs text-[var(--lab-fg-muted)]">
@@ -355,7 +374,9 @@ function PdvOperationalHeader({
             key={metric.label}
           >
             <p className="text-[11px] tracking-[0.08em] text-[var(--lab-fg-muted)]">{metric.label}</p>
-            <p className={`mt-2 ${LAB_NUMERIC_SECTION_CLASS} ${metric.muted ? 'text-[var(--lab-fg-muted)]' : 'text-[var(--lab-fg)]'}`}>
+            <p
+              className={`mt-2 ${LAB_NUMERIC_SECTION_CLASS} ${metric.muted ? 'text-[var(--lab-fg-muted)]' : 'text-[var(--lab-fg)]'}`}
+            >
               {metric.value}
             </p>
             <p className="mt-2 text-xs text-[var(--lab-fg-soft)]">{metric.caption}</p>

@@ -1,10 +1,13 @@
 'use client'
 
-import { memo, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState, type ReactNode } from 'react'
+/* eslint-disable max-lines, max-lines-per-function, complexity, no-nested-ternary */
+
+import { memo, type ReactNode, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import {
@@ -59,6 +62,7 @@ const ProductItem = memo(function ProductItem({
 }>) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
+      <ProductThumb product={produto} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-[var(--text-primary)]">{produto.name}</p>
         <p className="mt-0.5 text-xs text-[var(--text-soft,#7a8896)]">
@@ -448,14 +452,14 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
         mesaLabel={mesaLabel}
         mode={mode}
         search={search}
+        secondaryActionLabel={secondaryAction?.label}
         selectedCategory={selectedCategory}
+        summaryItems={summaryItems}
         onCancel={onCancel}
+        onSearchChange={handleSearchChange}
         onSecondaryAction={secondaryAction?.onClick}
         onSelectAll={showAllProducts}
         onSelectCategory={openCategory}
-        onSearchChange={handleSearchChange}
-        secondaryActionLabel={secondaryAction?.label}
-        summaryItems={summaryItems}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar" ref={parentRef}>
@@ -531,9 +535,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                         }}
                       >
                         <ProductItem
+                          busy={busy}
                           produto={produto}
                           qty={qty}
-                          busy={busy}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}
                         />
@@ -545,9 +549,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                     return (
                       <div className="border-b border-[var(--border)]" key={produto.id}>
                         <ProductItem
+                          busy={busy}
                           produto={produto}
                           qty={qty}
-                          busy={busy}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}
                         />

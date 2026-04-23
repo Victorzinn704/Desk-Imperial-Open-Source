@@ -93,6 +93,10 @@ function makeProduct(overrides: object = {}) {
     isCombo: false,
     comboDescription: null,
     description: 'Descrição teste',
+    quantityLabel: null,
+    servingSize: null,
+    imageUrl: null,
+    catalogSource: null,
     unitCost: 10.0,
     unitPrice: 20.0,
     currency: CurrencyCode.BRL,
@@ -406,6 +410,34 @@ describe('ProductsService', () => {
       })
     })
 
+    it('deve persistir metadados do catalogo externo', async () => {
+      const dto = makeCreateProductDto({
+        barcode: '7891234567890',
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/brahma.jpg',
+        catalogSource: 'open_food_facts',
+      })
+      mockPrisma.product.create.mockResolvedValue(
+        makeProduct({
+          ...dto,
+          barcode: '7891234567890',
+        }),
+      )
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          barcode: '7891234567890',
+          quantityLabel: '350ml',
+          servingSize: '269ml',
+          imageUrl: 'https://images.example/brahma.jpg',
+          catalogSource: 'open_food_facts',
+        }),
+      })
+    })
+
     it('deve sanitizar texto e rejeitar HTML', async () => {
       const dto = makeCreateProductDto({
         name: '<script>alert("xss")</script>Produto',
@@ -443,9 +475,39 @@ describe('ProductsService', () => {
             barcode: null,
             brand: null,
             description: null,
+            quantityLabel: '1 und',
+            catalogSource: 'manual',
           }),
         }),
       )
+    })
+
+    it('deve derivar base canônica para produto manual novo quando o catálogo não vier preenchido', async () => {
+      const dto = makeCreateProductDto({
+        name: 'Heineken 350ml',
+        measurementUnit: 'ML',
+        measurementValue: 350,
+      })
+
+      mockPrisma.product.create.mockResolvedValue(
+        makeProduct({
+          ...dto,
+          brand: 'Heineken',
+          quantityLabel: '350ml',
+          catalogSource: 'manual',
+        }),
+      )
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: 'Heineken 350ml',
+          brand: 'Heineken',
+          quantityLabel: '350ml',
+          catalogSource: 'manual',
+        }),
+      })
     })
 
     it('deve lançar ConflictException em caso de duplicate name', async () => {
@@ -723,6 +785,43 @@ describe('ProductsService', () => {
         where: { id: 'product-1' },
         data: expect.objectContaining({
           barcode: null,
+        }),
+      })
+    })
+
+    it('deve atualizar metadados do catalogo externo', async () => {
+      const existingProduct = makeProduct({
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/old.jpg',
+        catalogSource: 'open_food_facts',
+      })
+      const updateDto: UpdateProductDto = {
+        quantityLabel: '473ml',
+        servingSize: '330ml',
+        imageUrl: 'https://images.example/new.jpg',
+        catalogSource: 'manual_review',
+      }
+
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
+      mockPrisma.product.update.mockResolvedValue({
+        ...existingProduct,
+        ...updateDto,
+      })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({
+        ...existingProduct,
+        ...updateDto,
+      })
+
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({
+          quantityLabel: '473ml',
+          servingSize: '330ml',
+          imageUrl: 'https://images.example/new.jpg',
+          catalogSource: 'manual_review',
         }),
       })
     })
@@ -1089,6 +1188,31 @@ describe('ProductsService', () => {
 
       expect(result.summary.updatedCount).toBe(1)
       expect(result.summary.createdCount).toBe(1)
+    })
+
+    it('deve derivar base canônica no upsert de importação quando o CSV não traz metadados externos', async () => {
+      const csv = makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
+    Brahma 350ml,Cervejas,Lata,ML,350,1,Desc,4.50,6.90,BRL,12`)
+
+      mockPrisma.product.findUnique.mockResolvedValue(null)
+      mockPrisma.product.upsert.mockResolvedValue(makeProduct())
+
+      await productsService.importForUser(mockContext, csv, requestContext)
+
+      expect(mockPrisma.product.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            brand: 'Brahma',
+            quantityLabel: '350ml',
+            catalogSource: 'manual',
+          }),
+          update: expect.objectContaining({
+            brand: 'Brahma',
+            quantityLabel: '350ml',
+            catalogSource: 'manual',
+          }),
+        }),
+      )
     })
 
     it('deve usar mensagem padrao quando erro da linha nao e instancia de Error', async () => {

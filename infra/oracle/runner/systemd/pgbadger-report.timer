@@ -1,0 +1,9 @@
+[Unit]
+Description=Desk Imperial pgBadger daily timer
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

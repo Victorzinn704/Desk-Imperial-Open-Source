@@ -10,6 +10,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
   MinLength,
@@ -75,6 +76,34 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(280)
   description?: string
+
+  @ApiPropertyOptional({ example: '350ml', description: 'Leitura bruta de quantidade vinda do catálogo externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsString()
+  @MaxLength(64)
+  quantityLabel?: string
+
+  @ApiPropertyOptional({ example: '269ml', description: 'Porção/medida de consumo retornada pelo catálogo externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsString()
+  @MaxLength(64)
+  servingSize?: string
+
+  @ApiPropertyOptional({ example: 'https://images.openfoodfacts.org/images/products/789/123/456/7890/front_pt.3.400.jpg' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsUrl({ require_protocol: true })
+  @MaxLength(500)
+  imageUrl?: string
+
+  @ApiPropertyOptional({ example: 'open_food_facts', description: 'Origem do enriquecimento por catálogo externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsString()
+  @MaxLength(80)
+  catalogSource?: string
 
   @ApiPropertyOptional({ example: false, description: 'Define se este produto funciona como combo.' })
   @IsOptional()

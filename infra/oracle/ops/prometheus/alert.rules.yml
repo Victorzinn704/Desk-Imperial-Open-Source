@@ -91,6 +91,15 @@ groups:
           summary: SonarQube health probe falhou
           description: O endpoint de status do SonarQube nao respondeu com sucesso por mais de 5 minutos.
 
+      - alert: MetabaseHealthProbeFailed
+        expr: probe_success{job="metabase-health"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Metabase health probe falhou
+          description: O endpoint de health do Metabase nao respondeu com sucesso por mais de 5 minutos.
+
       - alert: OracleNodeExporterDown
         expr: up{job="oracle-node-exporter"} == 0
         for: 5m
@@ -99,6 +108,60 @@ groups:
         annotations:
           summary: Node exporter indisponivel em VM Oracle
           description: O node exporter de {{ $labels.oracle_vm }} esta sem scrape valido por mais de 5 minutos.
+
+      - alert: DeskDbNodeExporterDown
+        expr: up{job="desk-db-node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node exporter do banco indisponivel
+          description: O node exporter da Ampere da Lohana esta sem scrape valido por mais de 5 minutos.
+
+      - alert: DeskDbPostgresExporterDown
+        expr: up{job="desk-db-postgres-exporter"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: Postgres exporter indisponivel
+          description: O postgres exporter do banco principal esta sem scrape valido por mais de 3 minutos.
+
+      - alert: DeskDbDiskHigh
+        expr: (1 - (node_filesystem_avail_bytes{job="desk-db-node-exporter",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{job="desk-db-node-exporter",fstype!~"tmpfs|overlay"})) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Disco do banco acima de 85%
+          description: A Ampere do banco esta com uso de disco acima de 85% por mais de 10 minutos.
+
+      - alert: DeskDbConnectionsHigh
+        expr: sum(pg_stat_database_numbackends{job="desk-db-postgres-exporter"}) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Numero de conexoes alto no PostgreSQL
+          description: O banco principal ultrapassou 90 conexoes por mais de 10 minutos.
+
+      - alert: DeskDbPgbackrestFullBackupStale
+        expr: time() - max(desk_pgbackrest_last_success_timestamp_seconds{type="full"}) > 691200
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup full do PostgreSQL está vencido
+          description: O último backup full registrado do PostgreSQL da Ampere tem mais de 8 dias.
+
+      - alert: DeskDbPgbackrestDiffBackupStale
+        expr: time() - max(desk_pgbackrest_last_success_timestamp_seconds{type="diff"}) > 129600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup differential do PostgreSQL está vencido
+          description: O último backup differential registrado do PostgreSQL da Ampere tem mais de 36 horas.
 
       - alert: PrometheusScrapeStalled
         expr: sum(increase(scrape_samples_scraped[10m])) <= 0

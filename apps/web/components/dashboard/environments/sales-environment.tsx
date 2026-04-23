@@ -133,7 +133,13 @@ export function SalesEnvironment({ user }: Readonly<SalesEnvironmentProps>) {
         </div>
 
         <div className="space-y-4">
-          {finance ? <FinanceCategoriesSidebar finance={finance} isLoading={financeQuery.isLoading} /> : null}
+          {finance ? (
+            <FinanceCategoriesSidebar
+              finance={finance}
+              isLoading={financeQuery.isLoading}
+              products={products}
+            />
+          ) : null}
 
           {user.role === 'OWNER' ? (
             <EmployeeManagementCard

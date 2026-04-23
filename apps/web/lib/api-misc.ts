@@ -26,7 +26,7 @@ export type BarcodeCatalogLookupResponse = {
   packagingClass: string | null
   servingSize: string | null
   imageUrl: string | null
-  source: 'open_food_facts'
+  source: 'open_food_facts' | 'national_beverage_catalog'
 }
 
 export type ConsentDocument = {

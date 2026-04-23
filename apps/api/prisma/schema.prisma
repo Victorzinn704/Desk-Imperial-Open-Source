@@ -294,6 +294,10 @@ model Product {
   isCombo          Boolean            @default(false)
   comboDescription String?
   description      String?
+  quantityLabel    String?
+  servingSize      String?
+  imageUrl         String?
+  catalogSource    String?
   unitCost         Decimal            @db.Decimal(10, 2)
   unitPrice        Decimal            @db.Decimal(10, 2)
   currency         CurrencyCode       @default(BRL)

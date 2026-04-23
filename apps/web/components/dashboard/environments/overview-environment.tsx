@@ -12,12 +12,12 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import {
-  LabFactPill,
   LAB_NUMERIC_SECTION_CLASS,
   LAB_RESPONSIVE_FOUR_UP_GRID,
+  LabFactPill,
   LabPageHeader,
   LabPanel,
   LabSignalRow,
@@ -59,7 +59,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ variant?: OverviewVariant }>) {
-  const { sessionQuery, financeQuery, ordersQuery } = useDashboardQueries({
+  const { sessionQuery, financeQuery, ordersQuery, productsQuery } = useDashboardQueries({
     section: 'overview',
   })
 
@@ -69,6 +69,7 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
   const ordersTotals = ordersQuery.data?.totals
   const financeTotals = finance?.totals
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
+  const products = productsQuery.data?.items ?? []
 
   if (!user) {
     return <OverviewLockedState />
@@ -82,7 +83,8 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
     averageMargin: financeTotals?.averageMarginPercent ?? 0,
     averageTicket:
       (ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0) > 0
-        ? (financeTotals?.currentMonthRevenue ?? 0) / Math.max(1, ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0)
+        ? (financeTotals?.currentMonthRevenue ?? 0) /
+          Math.max(1, ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0)
         : 0,
     lowStockItems: financeTotals?.lowStockItems ?? 0,
     revenueGrowth: financeTotals?.revenueGrowthPercent ?? 0,
@@ -95,6 +97,7 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
     finance,
     financeError,
     isLoading: financeQuery.isLoading,
+    products,
     snapshot,
   }
 
@@ -114,16 +117,16 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
 }
 
 export function DesignLabOverviewEnvironment() {
-  const { sessionQuery, financeQuery, ordersQuery } = useDashboardQueries({
+  const { sessionQuery, financeQuery, ordersQuery, productsQuery } = useDashboardQueries({
     section: 'overview',
   })
 
   const user = sessionQuery.data?.user
   const finance = financeQuery.data
-  const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
   const ordersTotals = ordersQuery.data?.totals
   const financeTotals = finance?.totals
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
+  const products = productsQuery.data?.items ?? []
 
   if (!user) {
     return <OverviewLockedState />
@@ -137,7 +140,8 @@ export function DesignLabOverviewEnvironment() {
     averageMargin: financeTotals?.averageMarginPercent ?? 0,
     averageTicket:
       (ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0) > 0
-        ? (financeTotals?.currentMonthRevenue ?? 0) / Math.max(1, ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0)
+        ? (financeTotals?.currentMonthRevenue ?? 0) /
+          Math.max(1, ordersTotals?.completedOrders ?? financeTotals?.completedOrders ?? 0)
         : 0,
     lowStockItems: financeTotals?.lowStockItems ?? 0,
     revenueGrowth: financeTotals?.revenueGrowthPercent ?? 0,
@@ -159,16 +163,11 @@ export function DesignLabOverviewEnvironment() {
   return (
     <section className="space-y-6">
       <LabPageHeader
-        eyebrow="visão geral da operação"
-        title="Overview"
         description="Receita, lucro, ticket e alertas."
+        eyebrow="visão geral da operação"
         meta={
           <div className="space-y-3">
-            <LabMetaRow
-              label="Empresa"
-              tone="neutral"
-              value={snapshot.companyName}
-            />
+            <LabMetaRow label="Empresa" tone="neutral" value={snapshot.companyName} />
             <LabMetaRow
               label="Receita vs mês anterior"
               tone={revenueTone}
@@ -186,16 +185,21 @@ export function DesignLabOverviewEnvironment() {
             />
           </div>
         }
+        title="Overview"
       >
         <div className="flex flex-wrap gap-2">
-          <LabStatusPill tone="info">ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}</LabStatusPill>
+          <LabStatusPill tone="info">
+            ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
+          </LabStatusPill>
           <LabStatusPill tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}>
             margem {formatPercent(snapshot.averageMargin)}
           </LabStatusPill>
           <LabStatusPill tone={stockTone}>
             {snapshot.lowStockItems > 0 ? 'reposição no radar' : 'estoque estável'}
           </LabStatusPill>
-          {snapshot.topProductName ? <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill> : null}
+          {snapshot.topProductName ? (
+            <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill>
+          ) : null}
         </div>
       </LabPageHeader>
 
@@ -203,6 +207,7 @@ export function DesignLabOverviewEnvironment() {
         dailyRevenueNeed={dailyRevenueNeed}
         finance={finance}
         isLoading={financeQuery.isLoading}
+        products={products}
         snapshot={snapshot}
         targetProgress={targetProgress}
         targetRevenue={targetRevenue}
@@ -242,9 +247,8 @@ function OverviewLockedState() {
   return (
     <section className="space-y-6">
       <LabPageHeader
-        eyebrow="visão geral da operação"
-        title="Overview"
         description="Receita, lucro, ticket e alertas."
+        eyebrow="visão geral da operação"
         meta={
           <div className="space-y-3">
             <LabMetaRow label="sessão" tone="warning" value="entrar" />
@@ -252,6 +256,7 @@ function OverviewLockedState() {
             <LabMetaRow label="escopo" tone="info" value="resumo executivo" />
           </div>
         }
+        title="Overview"
       >
         <OverviewMetricBoard
           items={[
@@ -277,10 +282,30 @@ function OverviewLockedState() {
       >
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
           <div className="space-y-0">
-            <LabSignalRow label="receita" note="o resumo executivo abre após validar a sessão" tone="neutral" value="bloqueada" />
-            <LabSignalRow label="lucro" note="resultado e margem voltam com a leitura financeira" tone="neutral" value="bloqueado" />
-            <LabSignalRow label="pedidos" note="fluxo operacional só aparece com dados reais do workspace" tone="neutral" value="bloqueados" />
-            <LabSignalRow label="estoque" note="alertas comerciais dependem da mesma sessão" tone="neutral" value="bloqueado" />
+            <LabSignalRow
+              label="receita"
+              note="o resumo executivo abre após validar a sessão"
+              tone="neutral"
+              value="bloqueada"
+            />
+            <LabSignalRow
+              label="lucro"
+              note="resultado e margem voltam com a leitura financeira"
+              tone="neutral"
+              value="bloqueado"
+            />
+            <LabSignalRow
+              label="pedidos"
+              note="fluxo operacional só aparece com dados reais do workspace"
+              tone="neutral"
+              value="bloqueados"
+            />
+            <LabSignalRow
+              label="estoque"
+              note="alertas comerciais dependem da mesma sessão"
+              tone="neutral"
+              value="bloqueado"
+            />
           </div>
 
           <div className="space-y-2">
@@ -298,6 +323,7 @@ function OverviewExecutivePanel({
   dailyRevenueNeed,
   finance,
   isLoading,
+  products,
   snapshot,
   targetProgress,
   targetRevenue,
@@ -305,6 +331,7 @@ function OverviewExecutivePanel({
   dailyRevenueNeed: number
   finance: FinanceSummaryResponse | undefined
   isLoading: boolean
+  products: ProductRecord[]
   snapshot: OverviewSnapshot
   targetProgress: number
   targetRevenue: number
@@ -344,14 +371,19 @@ function OverviewExecutivePanel({
               label: 'margem média',
               value: formatPercent(snapshot.averageMargin),
               description:
-                snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens pedem reposição` : 'sem alerta crítico de estoque',
+                snapshot.lowStockItems > 0
+                  ? `${snapshot.lowStockItems} itens pedem reposição`
+                  : 'sem alerta crítico de estoque',
               tone: stockTone,
             },
           ]}
         />
 
         <div className="flex flex-wrap gap-2">
-          <LabFactPill label="meta projetada" value={formatCurrency(targetRevenue, snapshot.displayCurrency as 'BRL')} />
+          <LabFactPill
+            label="meta projetada"
+            value={formatCurrency(targetRevenue, snapshot.displayCurrency as 'BRL')}
+          />
           <LabFactPill label="ritmo diário" value={targetDeltaLabel} />
           <LabFactPill
             label="ticket médio"
@@ -365,14 +397,13 @@ function OverviewExecutivePanel({
         <SalesPerformanceCard finance={finance} isLoading={isLoading} surface="lab" />
 
         <LabPanel
-          action={<LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>}
+          action={
+            <LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>
+          }
           padding="md"
           title="Radar comercial"
         >
-          <OverviewRadarSection
-            finance={finance}
-            snapshot={snapshot}
-          />
+          <OverviewRadarSection finance={finance} snapshot={snapshot} />
         </LabPanel>
       </div>
 
@@ -384,7 +415,7 @@ function OverviewExecutivePanel({
           summaryText={snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos` : null}
           surface="lab"
         />
-        <OverviewTopProducts finance={finance} isLoading={isLoading} surface="lab" />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} surface="lab" />
       </div>
     </div>
   )
@@ -406,9 +437,7 @@ function OverviewMetricBoard({
         {items.map((item) => (
           <article className="min-w-0 bg-[var(--lab-surface-raised)] px-5 py-5" key={item.label}>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{item.label}</p>
-            <p className={`mt-3 text-[var(--lab-fg)] ${LAB_NUMERIC_SECTION_CLASS}`}>
-              {item.value}
-            </p>
+            <p className={`mt-3 text-[var(--lab-fg)] ${LAB_NUMERIC_SECTION_CLASS}`}>{item.value}</p>
             <p className={`mt-3 text-xs leading-5 ${labToneClass(item.tone)}`}>{item.description}</p>
           </article>
         ))}
@@ -450,7 +479,11 @@ function OverviewRadarSection({
         label="Próxima ação"
         note="Sinal operacional derivado do estado atual."
         tone={snapshot.lowStockItems > 0 ? 'warning' : 'success'}
-        value={snapshot.lowStockItems > 0 ? 'Repor insumos do campeão de vendas' : 'Sustentar giro do item que lidera o caixa'}
+        value={
+          snapshot.lowStockItems > 0
+            ? 'Repor insumos do campeão de vendas'
+            : 'Sustentar giro do item que lidera o caixa'
+        }
       />
       {channels.length > 0 ? (
         <div className="border-t border-dashed border-[var(--lab-border)] pt-4">
@@ -474,12 +507,7 @@ function daysLeftInMonth() {
   return Math.max(daysInMonth - today.getDate(), 1)
 }
 
-function OverviewPrincipalView({
-  finance,
-  financeError,
-  isLoading,
-  snapshot,
-}: Readonly<OverviewViewProps>) {
+function OverviewPrincipalView({ finance, financeError, isLoading, products, snapshot }: Readonly<OverviewViewProps>) {
   const principalLedger = [
     {
       label: 'pedidos fechados',
@@ -497,19 +525,19 @@ function OverviewPrincipalView({
       label: 'margem média',
       value: formatPercent(snapshot.averageMargin),
       note: 'qualidade do mix vendido',
-      tone: snapshot.averageMargin >= 30 ? 'success' as const : 'warning' as const,
+      tone: snapshot.averageMargin >= 30 ? ('success' as const) : ('warning' as const),
     },
     {
       label: 'lucro do mês',
       value: formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL'),
       note: 'resultado líquido atual',
-      tone: snapshot.currentProfit >= 0 ? 'success' as const : 'danger' as const,
+      tone: snapshot.currentProfit >= 0 ? ('success' as const) : ('danger' as const),
     },
     {
       label: 'estoque baixo',
       value: snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens` : 'sem alerta crítico',
       note: snapshot.lowStockItems > 0 ? 'reposições precisam entrar no radar' : 'sem ruptura crítica agora',
-      tone: snapshot.lowStockItems > 0 ? 'warning' as const : 'soft' as const,
+      tone: snapshot.lowStockItems > 0 ? ('warning' as const) : ('soft' as const),
     },
     {
       label: 'produto líder',
@@ -528,7 +556,8 @@ function OverviewPrincipalView({
             A leitura que abre o Desk Imperial sem peso de dashboard genérico
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-soft)]">
-            Receita, lucro, ritmo de pedidos e sinais de atenção em uma composição mais editorial. O foco aqui é entender o negócio em segundos e só depois aprofundar.
+            Receita, lucro, ritmo de pedidos e sinais de atenção em uma composição mais editorial. O foco aqui é
+            entender o negócio em segundos e só depois aprofundar.
           </p>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(260px,0.6fr)_minmax(0,1fr)] xl:items-stretch">
@@ -602,7 +631,10 @@ function OverviewPrincipalView({
             },
             {
               label: 'ritmo do caixa',
-              value: snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos concluídos` : 'sem fechamento ainda',
+              value:
+                snapshot.completedOrders > 0
+                  ? `${snapshot.completedOrders} pedidos concluídos`
+                  : 'sem fechamento ainda',
               tone: 'accent',
             },
           ]}
@@ -617,25 +649,20 @@ function OverviewPrincipalView({
           orders={finance?.recentOrders ?? []}
           summaryText={snapshot.completedOrders > 0 ? `${snapshot.completedOrders} pedidos` : null}
         />
-        <OverviewTopProducts finance={finance} isLoading={isLoading} />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} />
       </div>
     </section>
   )
 }
 
-function OverviewLayoutView({
-  finance,
-  financeError,
-  isLoading,
-  snapshot,
-}: Readonly<OverviewViewProps>) {
+function OverviewLayoutView({ finance, financeError, isLoading, products, snapshot }: Readonly<OverviewViewProps>) {
   return (
     <section className="space-y-5">
       <StandardMetricGrid isLoading={isLoading} snapshot={snapshot} />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <ChartOrError finance={finance} financeError={financeError} isLoading={isLoading} />
-        <OverviewTopProducts finance={finance} isLoading={isLoading} />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} />
       </div>
 
       <OverviewRecentOrders
@@ -648,13 +675,11 @@ function OverviewLayoutView({
   )
 }
 
-function OverviewMetaView({
-  finance,
-  financeError,
-  isLoading,
-  snapshot,
-}: Readonly<OverviewViewProps>) {
-  const targetRevenue = Math.max(snapshot.currentRevenue * 1.18, snapshot.currentRevenue + Math.max(snapshot.averageTicket * 20, 1000))
+function OverviewMetaView({ finance, financeError, isLoading, products, snapshot }: Readonly<OverviewViewProps>) {
+  const targetRevenue = Math.max(
+    snapshot.currentRevenue * 1.18,
+    snapshot.currentRevenue + Math.max(snapshot.averageTicket * 20, 1000),
+  )
   const targetProgress = targetRevenue > 0 ? clamp((snapshot.currentRevenue / targetRevenue) * 100, 0, 100) : 0
   const today = new Date()
   const elapsedDays = Math.max(today.getDate(), 1)
@@ -675,25 +700,26 @@ function OverviewMetaView({
       label: 'falta para bater',
       value: revenueGap > 0 ? formatCurrency(revenueGap, snapshot.displayCurrency as 'BRL') : 'meta superada',
       note: revenueGap > 0 ? 'gap restante até o alvo' : 'já está acima do objetivo',
-      tone: revenueGap > 0 ? 'warning' as const : 'success' as const,
+      tone: revenueGap > 0 ? ('warning' as const) : ('success' as const),
     },
     {
       label: 'média por dia',
       value: revenueGap > 0 ? formatCurrency(dailyNeed, snapshot.displayCurrency as 'BRL') : 'folga diária',
       note: `${remainingDays} dias restantes para fechar o mês`,
-      tone: revenueGap > 0 ? 'accent' as const : 'success' as const,
+      tone: revenueGap > 0 ? ('accent' as const) : ('success' as const),
     },
     {
       label: 'pedidos necessários',
       value: revenueGap > 0 ? `${ordersNeeded}` : '0',
       note: 'mantendo o ticket médio atual',
-      tone: revenueGap > 0 ? 'soft' as const : 'success' as const,
+      tone: revenueGap > 0 ? ('soft' as const) : ('success' as const),
     },
     {
       label: 'projeção de fechamento',
       value: formatCurrency(projectedClose, snapshot.displayCurrency as 'BRL'),
-      note: projectedClose >= targetRevenue ? 'o ritmo atual entrega a meta' : 'o ritmo atual ainda fica abaixo do alvo',
-      tone: projectedClose >= targetRevenue ? 'success' as const : 'warning' as const,
+      note:
+        projectedClose >= targetRevenue ? 'o ritmo atual entrega a meta' : 'o ritmo atual ainda fica abaixo do alvo',
+      tone: projectedClose >= targetRevenue ? ('success' as const) : ('warning' as const),
     },
     {
       label: 'alavanca principal',
@@ -713,7 +739,8 @@ function OverviewMetaView({
             {formatCurrency(snapshot.currentRevenue, snapshot.displayCurrency as 'BRL')}
           </p>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">
-            Aqui a leitura favorece um único número dominante, progresso visível e contexto curto para orientar a rotina comercial antes de mergulhar no resto do painel.
+            Aqui a leitura favorece um único número dominante, progresso visível e contexto curto para orientar a rotina
+            comercial antes de mergulhar no resto do painel.
           </p>
 
           <div className="mt-5">
@@ -786,7 +813,7 @@ function OverviewMetaView({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <ChartOrError finance={finance} financeError={financeError} isLoading={isLoading} />
-        <OverviewTopProducts finance={finance} isLoading={isLoading} />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} />
       </div>
 
       <OverviewRecentOrders
@@ -803,6 +830,7 @@ function OverviewOperationalView({
   finance,
   financeError,
   isLoading,
+  products,
   snapshot,
 }: Readonly<OverviewViewProps>) {
   return (
@@ -810,27 +838,27 @@ function OverviewOperationalView({
       <div className="grid gap-3 xl:grid-cols-4">
         <CompactTile
           label="volume atual"
-          value={`${snapshot.completedOrders}`}
           note="pedidos concluídos"
           tone="accent"
+          value={`${snapshot.completedOrders}`}
         />
         <CompactTile
           label="ticket médio"
-          value={formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
           note="caixa por pedido"
           tone="soft"
+          value={formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
         />
         <CompactTile
           label="margem"
-          value={formatPercent(snapshot.averageMargin)}
           note="qualidade do mix"
           tone="success"
+          value={formatPercent(snapshot.averageMargin)}
         />
         <CompactTile
           label="estoque baixo"
-          value={snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems}` : '0'}
           note="alertas críticos"
           tone={snapshot.lowStockItems > 0 ? 'warning' : 'soft'}
+          value={snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems}` : '0'}
         />
       </div>
 
@@ -870,21 +898,17 @@ function OverviewOperationalView({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <ChartOrError finance={finance} financeError={financeError} isLoading={isLoading} />
-        <OverviewTopProducts finance={finance} isLoading={isLoading} />
+        <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} />
       </div>
     </section>
   )
 }
 
-function OverviewEditorialView({
-  finance,
-  financeError,
-  isLoading,
-  snapshot,
-}: Readonly<OverviewViewProps>) {
-  const narrative = snapshot.completedOrders > 0
-    ? `${snapshot.companyName} abriu o período com ${snapshot.completedOrders} pedidos fechados e ticket médio de ${formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}.`
-    : `${snapshot.companyName} ainda não tem pedidos fechados no período, então a leitura editorial fica voltada a meta, margem e preparação.`
+function OverviewEditorialView({ finance, financeError, isLoading, products, snapshot }: Readonly<OverviewViewProps>) {
+  const narrative =
+    snapshot.completedOrders > 0
+      ? `${snapshot.companyName} abriu o período com ${snapshot.completedOrders} pedidos fechados e ticket médio de ${formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}.`
+      : `${snapshot.companyName} ainda não tem pedidos fechados no período, então a leitura editorial fica voltada a meta, margem e preparação.`
   const editorialLedger = [
     {
       label: 'leitura do caixa',
@@ -902,13 +926,13 @@ function OverviewEditorialView({
       label: 'ponto de atenção',
       value: snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens no radar` : 'sem ruptura crítica',
       note: snapshot.lowStockItems > 0 ? 'estoque merece ação curta ainda hoje' : 'estoque não bloqueia a operação',
-      tone: snapshot.lowStockItems > 0 ? 'warning' as const : 'success' as const,
+      tone: snapshot.lowStockItems > 0 ? ('warning' as const) : ('success' as const),
     },
     {
       label: 'tom do dia',
       value: snapshot.revenueGrowth >= 0 ? 'crescimento com tração' : 'dia pede correção',
       note: snapshot.revenueGrowth >= 0 ? 'receita acompanha uma narrativa positiva' : 'vale revisar conversão e mix',
-      tone: snapshot.revenueGrowth >= 0 ? 'success' as const : 'danger' as const,
+      tone: snapshot.revenueGrowth >= 0 ? ('success' as const) : ('danger' as const),
     },
     {
       label: 'produto em foco',
@@ -930,12 +954,17 @@ function OverviewEditorialView({
         <div>
           <SectionEyebrow icon={Newspaper} label="editorial diário" />
           <h2 className="mt-3 max-w-4xl font-['Architects_Daughter','Patrick_Hand',sans-serif] text-[clamp(2rem,4.2vw,3.2rem)] font-semibold leading-tight text-[var(--text-primary)]">
-            Hoje o produto principal é {snapshot.topProductName ?? 'o giro da casa'}, e o painel precisa contar isso com clareza.
+            Hoje o produto principal é {snapshot.topProductName ?? 'o giro da casa'}, e o painel precisa contar isso com
+            clareza.
           </h2>
           <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--text-soft)]">{narrative}</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <EditorialChip label={`receita ${formatCurrency(snapshot.currentRevenue, snapshot.displayCurrency as 'BRL')}`} />
-            <EditorialChip label={`lucro ${formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL')}`} />
+            <EditorialChip
+              label={`receita ${formatCurrency(snapshot.currentRevenue, snapshot.displayCurrency as 'BRL')}`}
+            />
+            <EditorialChip
+              label={`lucro ${formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL')}`}
+            />
             <EditorialChip label={`margem ${formatPercent(snapshot.averageMargin)}`} />
           </div>
         </div>
@@ -961,7 +990,8 @@ function OverviewEditorialView({
             },
             {
               label: 'estoque',
-              value: snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens exigem atenção` : 'estoque sob controle',
+              value:
+                snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens exigem atenção` : 'estoque sob controle',
               tone: snapshot.lowStockItems > 0 ? 'warning' : 'soft',
             },
           ]}
@@ -979,7 +1009,7 @@ function OverviewEditorialView({
         />
       </div>
 
-      <OverviewTopProducts finance={finance} isLoading={isLoading} />
+      <OverviewTopProducts finance={finance} isLoading={isLoading} products={products} />
     </section>
   )
 }
@@ -988,6 +1018,7 @@ type OverviewViewProps = {
   finance?: Parameters<typeof OverviewTopProducts>[0]['finance']
   financeError: string | null
   isLoading: boolean
+  products: ProductRecord[]
   snapshot: OverviewSnapshot
 }
 
@@ -1050,7 +1081,7 @@ function ChartOrError({
   if (financeError) {
     if (surface === 'lab') {
       return (
-        <LabPanel title="Receita e lucro" padding="md">
+        <LabPanel padding="md" title="Receita e lucro">
           <p className="text-sm leading-6 text-[var(--lab-danger)]">{financeError}</p>
         </LabPanel>
       )
@@ -1111,7 +1142,9 @@ function DataLedger({
   const gridClass = columns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
 
   return (
-    <div className={`overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--surface-soft)] ${gridClass} grid`}>
+    <div
+      className={`overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--surface-soft)] ${gridClass} grid`}
+    >
       {items.map((item, index) => {
         const isLastItem = index === items.length - 1
         const isLastColumn = columns === 3 ? index % 3 === 2 : index % 2 === 1
@@ -1124,11 +1157,13 @@ function DataLedger({
             } ${!isLastColumn ? 'lg:border-r' : ''} ${isLastRow ? 'lg:border-b-0' : ''}`}
             key={item.label}
           >
-          <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.label}</p>
-          <p className={`mt-2 text-[1.05rem] font-semibold leading-snug ${briefToneClass(item.tone).replace('text-right ', '')}`}>
-            {item.value}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">{item.note}</p>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.label}</p>
+            <p
+              className={`mt-2 text-[1.05rem] font-semibold leading-snug ${briefToneClass(item.tone).replace('text-right ', '')}`}
+            >
+              {item.value}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">{item.note}</p>
           </div>
         )
       })}
@@ -1152,8 +1187,13 @@ function OverviewBriefPanel({
       <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">{title}</p>
       <div className="mt-4 space-y-3">
         {entries.map((entry) => (
-          <div className="flex items-start justify-between gap-4 border-b border-dashed border-[var(--border)] pb-3 last:border-b-0 last:pb-0" key={entry.label}>
-            <span className="max-w-[46%] text-[12px] uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.label}</span>
+          <div
+            className="flex items-start justify-between gap-4 border-b border-dashed border-[var(--border)] pb-3 last:border-b-0 last:pb-0"
+            key={entry.label}
+          >
+            <span className="max-w-[46%] text-[12px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {entry.label}
+            </span>
             <span className={briefToneClass(entry.tone)}>{entry.value}</span>
           </div>
         ))}
@@ -1176,7 +1216,11 @@ function CompactTile({
   return (
     <article className="imperial-card p-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</p>
-      <p className={`mt-2 font-['Architects_Daughter','Patrick_Hand',sans-serif] text-[1.6rem] leading-none ${compactToneClass(tone)}`}>{value}</p>
+      <p
+        className={`mt-2 font-['Architects_Daughter','Patrick_Hand',sans-serif] text-[1.6rem] leading-none ${compactToneClass(tone)}`}
+      >
+        {value}
+      </p>
       <p className="mt-2 text-xs text-[var(--text-soft)]">{note}</p>
     </article>
   )

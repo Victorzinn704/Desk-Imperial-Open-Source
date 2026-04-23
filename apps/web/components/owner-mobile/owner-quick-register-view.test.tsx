@@ -235,6 +235,10 @@ describe('OwnerQuickRegisterView', () => {
           measurementUnit: 'ML',
           measurementValue: 350,
           description: 'Cerveja lager',
+          quantityLabel: '350ml',
+          servingSize: '269ml',
+          imageUrl: 'https://images.example/brahma.jpg',
+          catalogSource: 'open_food_facts',
         }),
       )
     })
@@ -248,6 +252,12 @@ describe('OwnerQuickRegisterView', () => {
     fireEvent.change(screen.getByPlaceholderText('Aponte o leitor ou digite o EAN'), {
       target: { value: '7891234567890' },
     })
+    fireEvent.click(screen.getByRole('button', { name: /Buscar dados do EAN/i }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Nome')).toHaveValue('Brahma Lata')
+    })
+
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Brahma 350ml' } })
     fireEvent.change(screen.getByLabelText('Marca'), { target: { value: 'Brahma' } })
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'Cervejas' } })
@@ -264,6 +274,10 @@ describe('OwnerQuickRegisterView', () => {
             brand: 'Brahma',
             category: 'Cervejas',
             barcode: '7891234567890',
+            quantityLabel: '350ml',
+            servingSize: '269ml',
+            imageUrl: 'https://images.example/brahma.jpg',
+            catalogSource: 'open_food_facts',
             unitPrice: 7.5,
             stock: 24,
           }),

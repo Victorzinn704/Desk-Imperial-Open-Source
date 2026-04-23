@@ -3,11 +3,17 @@ import type { Comanda, ComandaItem } from '../pdv-types'
 export type SimpleProduct = {
   id: string
   name: string
+  brand?: string | null
   category: string
+  barcode?: string | null
+  packagingClass?: string | null
+  quantityLabel?: string | null
   unitPrice: number
   currency: string
   stock: number
   isLowStock: boolean
+  imageUrl?: string | null
+  catalogSource?: string | null
   isCombo?: boolean
   comboDescription?: string | null
   comboItems?: Array<{

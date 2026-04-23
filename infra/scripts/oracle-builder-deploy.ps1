@@ -3,6 +3,8 @@ param(
   [string] $Service = 'all',
   [ValidateSet('registry', 'archive')]
   [string] $Transport = 'registry',
+  [ValidateSet('working-tree', 'head')]
+  [string] $SourceMode = 'working-tree',
   [string] $KeyPath = (Join-Path $env:TEMP 'desk_oci_key.pem'),
   [string] $SourceKeyPath = 'C:\Users\Desktop\.oci\oci_api_key_new.pem',
   [string] $BuilderHost = $env:DESK_BUILDER_HOST,
@@ -63,19 +65,22 @@ $imageArchive = Join-Path $env:TEMP "desk-imperial-images-$release.tgz"
 $remoteArchive = "/tmp/desk-imperial-source-$release.tgz"
 $remoteImageArchive = "/tmp/desk-imperial-images-$release.tgz"
 
-Write-Host "==> Empacotando working tree: $archive"
+Write-Host "==> Empacotando fonte ($SourceMode): $archive"
 if (Test-Path -LiteralPath $archive) {
   Remove-Item -LiteralPath $archive -Force
 }
 $hasLocalChanges = [bool](git status --porcelain)
-if (-not $hasLocalChanges) {
+if ($SourceMode -eq 'head') {
+  git archive --format=tar.gz --output=$archive HEAD
+}
+elseif (-not $hasLocalChanges) {
   git archive --format=tar.gz --output=$archive HEAD
 }
 else {
   git ls-files -z -co --exclude-standard | tar.exe --null -czf $archive -T -
 }
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $archive)) {
-  throw "Empacotamento do working tree falhou."
+  throw "Empacotamento da fonte falhou."
 }
 
 Write-Host "==> Enviando fonte para builder: $BuilderHost"

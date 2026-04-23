@@ -10,6 +10,7 @@ import { CurrencyService } from '../currency/currency.service'
 import { CacheService } from '../../common/services/cache.service'
 import { PillarsService } from './pillars.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
+import { resolveProductCatalogMetadata } from '../products/products-catalog.util'
 import {
   buildCategoryCollections,
   buildRecentOrders,
@@ -31,7 +32,16 @@ const FINANCE_SUMMARY_REFRESH_AHEAD_MS = 90_000
 const financeProductSelect = {
   id: true,
   name: true,
+  brand: true,
   category: true,
+  barcode: true,
+  packagingClass: true,
+  measurementUnit: true,
+  measurementValue: true,
+  quantityLabel: true,
+  imageUrl: true,
+  catalogSource: true,
+  isCombo: true,
   unitCost: true,
   unitPrice: true,
   currency: true,
@@ -491,7 +501,16 @@ function toFinanceProductAnalyticsRecord(
   product: {
     id: string
     name: string
+    brand: string | null
     category: string
+    barcode: string | null
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: { toNumber(): number } | number
+    quantityLabel: string | null
+    imageUrl: string | null
+    catalogSource: string | null
+    isCombo: boolean
     unitCost: { toNumber(): number } | number
     unitPrice: { toNumber(): number } | number
     currency: FinanceProductAnalyticsRecord['currency']
@@ -503,6 +522,15 @@ function toFinanceProductAnalyticsRecord(
     snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>
   },
 ): FinanceProductAnalyticsRecord {
+  const catalogMetadata = resolveProductCatalogMetadata({
+    name: product.name,
+    brand: product.brand,
+    measurementUnit: product.measurementUnit,
+    measurementValue: product.measurementValue,
+    quantityLabel: product.quantityLabel,
+    imageUrl: product.imageUrl,
+    catalogSource: product.catalogSource,
+  })
   const originalUnitCost = toNumber(product.unitCost)
   const originalUnitPrice = toNumber(product.unitPrice)
   const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
@@ -524,7 +552,14 @@ function toFinanceProductAnalyticsRecord(
   return {
     id: product.id,
     name: product.name,
+    brand: catalogMetadata.brand,
     category: product.category,
+    barcode: product.barcode,
+    packagingClass: product.packagingClass,
+    quantityLabel: catalogMetadata.quantityLabel,
+    imageUrl: catalogMetadata.imageUrl,
+    catalogSource: catalogMetadata.catalogSource,
+    isCombo: product.isCombo,
     stock: product.stock,
     currency: product.currency,
     displayCurrency: options.displayCurrency,

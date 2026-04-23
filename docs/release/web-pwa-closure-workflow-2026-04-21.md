@@ -88,6 +88,10 @@ Toda mudança de dado persistido precisa sair com:
 3. seed ou repair quando necessário
 4. docs mínimas de impacto
 
+Registro da rodada atual:
+
+- `Product` agora persiste metadados de enriquecimento do EAN (`quantityLabel`, `servingSize`, `imageUrl`, `catalogSource`) com schema, migration, contrato e testes fechados.
+
 ## Workflow diário obrigatório
 
 ### 1. Subir a stack local

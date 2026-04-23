@@ -14,6 +14,8 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "ts-node --project tsconfig.json --transpile-only prisma/seed.ts",
     "prisma:repair-demo": "ts-node --project tsconfig.json --transpile-only prisma/repair-demo.ts",
+    "prisma:backfill:product-catalog-base": "ts-node --project tsconfig.json --transpile-only prisma/backfill-product-catalog-base.ts",
+    "prisma:refresh:bi": "node ./scripts/refresh-bi.mjs",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ../../scripts/run-with-sanitized-node-options.mjs jest --runInBand",
     "test:vitest": "vitest run",

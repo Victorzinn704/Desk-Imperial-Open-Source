@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { ProductRecord } from '@contracts/contracts'
-import { Camera, Database, Keyboard, ScanBarcode, Smartphone } from 'lucide-react'
+import { Camera, Database, Keyboard, type ScanBarcode, Smartphone } from 'lucide-react'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { QuickRegisterProductForm } from '@/components/design-lab/sections/quick-register-product-form'
@@ -15,9 +15,10 @@ import {
   LabPanel,
   LabSignalRow,
   LabStatusPill,
-  LabTable,
   type LabStatusTone,
+  LabTable,
 } from '@/components/design-lab/lab-primitives'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatCurrency } from '@/lib/currency'
 
 const barcodeLengths = new Set([8, 12, 13, 14])
@@ -44,21 +45,13 @@ export default function DesignLabCadastroRapidoPage() {
             label="produtos no banco"
             value={String(totals?.totalProducts ?? products.length)}
           />
-          <LabMetricStripItem
-            description="famílias já existentes"
-            label="categorias"
-            value={String(categoriesCount)}
-          />
+          <LabMetricStripItem description="famílias já existentes" label="categorias" value={String(categoriesCount)} />
           <LabMetricStripItem
             description="itens pedindo reposição"
             label="estoque baixo"
             value={String(lowStockCount)}
           />
-          <LabMetricStripItem
-            description="leitura local planejada"
-            label="bipador"
-            value="local"
-          />
+          <LabMetricStripItem description="leitura local planejada" label="bipador" value="local" />
         </LabMetricStrip>
       </LabPageHeader>
 
@@ -73,9 +66,7 @@ export default function DesignLabCadastroRapidoPage() {
       {user ? (
         <QuickRegisterWorkspace
           createBusy={createProductMutation.isPending}
-          createError={
-            createProductMutation.error instanceof Error ? createProductMutation.error.message : null
-          }
+          createError={createProductMutation.error instanceof Error ? createProductMutation.error.message : null}
           isLoading={productsQuery.isLoading || productsQuery.isFetching}
           products={products}
           productsError={productsQuery.error instanceof Error ? productsQuery.error.message : null}
@@ -99,9 +90,9 @@ function QuickRegisterLockedState() {
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_320px]">
         <div className="space-y-5">
           <QuickRegisterSectionLead
+            description="A leitura rápida nasce de três entradas: catálogo real, captura por câmera e leitura local por HID."
             eyebrow="entrada prevista"
             title="Fontes que entram no fluxo"
-            description="A leitura rápida nasce de três entradas: catálogo real, captura por câmera e leitura local por HID."
           />
           <div className="flex flex-wrap gap-2">
             <LabFactPill label="fonte" value="API · câmera · local" />
@@ -119,9 +110,9 @@ function QuickRegisterLockedState() {
 
         <div className="space-y-0 xl:border-l xl:border-[var(--lab-border)] xl:pl-5">
           <QuickRegisterSectionLead
+            description="A superfície passa a ler o banco real e já prepara o próximo passo para captura via EAN."
             eyebrow="fluxo esperado"
             title="O que destrava ao entrar"
-            description="A superfície passa a ler o banco real e já prepara o próximo passo para captura via EAN."
           />
           <LabSignalRow
             label="produtos do banco"
@@ -166,7 +157,8 @@ function QuickRegisterWorkspace({
 }>) {
   const [manualCode, setManualCode] = useState('')
   const normalizedCode = manualCode.replace(/\D/g, '')
-  const codeTone: LabStatusTone = normalizedCode.length === 0 ? 'neutral' : barcodeLengths.has(normalizedCode.length) ? 'success' : 'warning'
+  const codeTone: LabStatusTone =
+    normalizedCode.length === 0 ? 'neutral' : barcodeLengths.has(normalizedCode.length) ? 'success' : 'warning'
   const codeValue =
     normalizedCode.length === 0
       ? 'aguardando'
@@ -186,7 +178,9 @@ function QuickRegisterWorkspace({
       ) : null}
 
       <LabPanel
-        action={<LabStatusPill tone={isLoading ? 'warning' : 'success'}>{isLoading ? 'lendo' : 'conectado'}</LabStatusPill>}
+        action={
+          <LabStatusPill tone={isLoading ? 'warning' : 'success'}>{isLoading ? 'lendo' : 'conectado'}</LabStatusPill>
+        }
         padding="md"
         subtitle="Banco, câmera, leitura local e hardware HID entram na mesma leitura operacional."
         title="Entrada rápida"
@@ -194,9 +188,9 @@ function QuickRegisterWorkspace({
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(320px,0.95fr)]">
           <div className="space-y-0">
             <QuickRegisterSectionLead
+              description="O catálogo real continua vindo da API. O restante entra como captura local ou mobile."
               eyebrow="canais ativos"
               title="Entrada operacional"
-              description="O catálogo real continua vindo da API. O restante entra como captura local ou mobile."
             />
             <QuickRegisterChannel
               icon={Database}
@@ -309,9 +303,9 @@ function QuickRegisterCaptureRail({
     <div className="space-y-5 xl:border-l xl:border-[var(--lab-border)] xl:px-5">
       <div className="flex items-start justify-between gap-3">
         <QuickRegisterSectionLead
+          description="Campo para scanner teclado/HID e validação imediata do comprimento do código."
           eyebrow="leitura local"
           title="Scanner pronto"
-          description="Campo para scanner teclado/HID e validação imediata do comprimento do código."
         />
         <LabStatusPill tone={codeTone}>{codeValue}</LabStatusPill>
       </div>
@@ -350,9 +344,9 @@ function QuickRegisterArchitectureRail({ className }: Readonly<{ className?: str
   return (
     <div className={className}>
       <QuickRegisterSectionLead
+        description="Decisão prática para captura local sem depender de Bluetooth web como peça central."
         eyebrow="celular como bipador"
         title="Arquitetura local"
-        description="Decisão prática para captura local sem depender de Bluetooth web como peça central."
       />
       <div className="space-y-0">
         <LabSignalRow
@@ -453,11 +447,28 @@ function RecentProductsSection({ products }: Readonly<{ products: ProductRecord[
             id: 'produto',
             header: 'Produto',
             cell: (product) => (
-              <div className="min-w-0">
-                <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
-                <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
-                  {product.category} · {product.brand ?? 'sem marca'}{product.barcode ? ` · EAN ${product.barcode}` : ''}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <ProductThumb
+                  product={{
+                    name: product.name,
+                    brand: product.brand,
+                    barcode: product.barcode,
+                    category: product.category,
+                    packagingClass: product.packagingClass,
+                    quantityLabel: product.quantityLabel,
+                    imageUrl: product.imageUrl,
+                    catalogSource: product.catalogSource,
+                    isCombo: product.isCombo,
+                  }}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
+                    {product.category} · {product.brand ?? 'sem marca'}
+                    {product.barcode ? ` · EAN ${product.barcode}` : ''}
+                  </p>
+                </div>
               </div>
             ),
           },
@@ -486,9 +497,7 @@ function RecentProductsSection({ products }: Readonly<{ products: ProductRecord[
             id: 'origem',
             header: 'Origem',
             cell: (product) => (
-              <span className="text-xs text-[var(--lab-fg-soft)]">
-                API · {formatProductDate(product.updatedAt)}
-              </span>
+              <span className="text-xs text-[var(--lab-fg-soft)]">API · {formatProductDate(product.updatedAt)}</span>
             ),
             align: 'right',
             width: '180px',

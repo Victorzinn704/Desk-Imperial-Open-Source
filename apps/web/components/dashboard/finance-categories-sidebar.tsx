@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatCompactCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { CardSkeleton } from '@/components/shared/skeleton'
@@ -10,6 +11,7 @@ import { CardSkeleton } from '@/components/shared/skeleton'
 type Props = {
   finance: FinanceSummaryResponse
   isLoading?: boolean
+  products?: ProductRecord[]
 }
 
 type Tab = 'products' | 'metrics'
@@ -23,10 +25,11 @@ const CATEGORY_COLORS = [
   { bar: 'bg-[#38bdf8]', text: 'text-sky-400', bg: 'bg-[rgba(56,189,248,0.08)]' },
 ]
 
-export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
+export function FinanceCategoriesSidebar({ finance, isLoading, products }: Props) {
   const { categoryBreakdown, topProducts, displayCurrency } = finance
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('products')
+  const productsById = new Map((products ?? []).map((product) => [product.id, product]))
 
   const total = categoryBreakdown.reduce((sum, c) => sum + c.inventorySalesValue, 0)
 
@@ -111,7 +114,35 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
                   className="space-y-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3"
                   key={product.id}
                 >
-                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
+                  {(() => {
+                    const catalogProduct = productsById.get(product.id)
+                    const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
+
+                    return (
+                  <div className="flex items-center gap-3">
+                    <ProductThumb
+                      product={{
+                        name: product.name,
+                        brand: productBrand,
+                        category: product.category,
+                        barcode: product.barcode ?? catalogProduct?.barcode,
+                        packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                        quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                        imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                        catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                        isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                      }}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
+                      {productBrand ? (
+                        <p className="mt-1 truncate text-[11px] text-[var(--text-soft)]">{productBrand}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                    )
+                  })()}
 
                   <div className="grid grid-cols-2 gap-1.5">
                     <div className="rounded-lg bg-[rgba(255,255,255,0.04)] px-2 py-1.5">
@@ -265,21 +296,45 @@ export function FinanceCategoriesSidebar({ finance, isLoading }: Props) {
 
           <div className="space-y-2">
             {topProducts.slice(0, 5).map((product, i) => (
-              <div
-                className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.04)] p-3 transition-colors hover:border-[rgba(255,255,255,0.08)]"
-                key={product.id}
-              >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-xs font-bold text-[var(--text-soft)]">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
-                  <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
-                </div>
-                <p className="shrink-0 text-sm font-semibold text-[#36f57c]">
-                  {formatCompactCurrency(product.inventorySalesValue, displayCurrency)}
-                </p>
-              </div>
+              (() => {
+                const catalogProduct = productsById.get(product.id)
+                const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
+
+                return (
+                  <div
+                    className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.04)] p-3 transition-colors hover:border-[rgba(255,255,255,0.08)]"
+                    key={product.id}
+                  >
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-xs font-bold text-[var(--text-soft)]">
+                      {i + 1}
+                    </span>
+                    <ProductThumb
+                      product={{
+                        name: product.name,
+                        brand: productBrand,
+                        category: product.category,
+                        barcode: product.barcode ?? catalogProduct?.barcode,
+                        packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                        quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                        imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                        catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                        isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                      }}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
+                      <p className="text-[11px] text-[var(--text-soft)]">
+                        {product.category}
+                        {productBrand ? ` · ${productBrand}` : ''}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-[#36f57c]">
+                      {formatCompactCurrency(product.inventorySalesValue, displayCurrency)}
+                    </p>
+                  </div>
+                )
+              })()
             ))}
           </div>
         </section>

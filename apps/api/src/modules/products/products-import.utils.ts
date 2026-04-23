@@ -3,6 +3,7 @@ import type { PrismaService } from '../../database/prisma.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { ProductImportRow } from './products-import.util'
+import { resolveProductCatalogMetadata } from './products-catalog.util'
 
 export function isSupportedCurrency(value: string) {
   return value === 'BRL' || value === 'USD' || value === 'EUR'
@@ -72,6 +73,15 @@ export async function upsertImportRow(
 ): Promise<'created' | 'updated'> {
   const { safeName, safeCategory, safeBrand, safePackagingClass, safeMeasurementUnit, safeDescription } =
     sanitizeImportRow(row)
+  const catalogMetadata = resolveProductCatalogMetadata({
+    name: safeName,
+    brand: safeBrand,
+    measurementUnit: safeMeasurementUnit,
+    measurementValue: row.measurementValue,
+    quantityLabel: null,
+    imageUrl: null,
+    catalogSource: null,
+  })
 
   const existing = await prisma.product.findUnique({
     where: { userId_name: { userId: workspaceUserId, name: safeName } },
@@ -82,13 +92,15 @@ export async function upsertImportRow(
     create: {
       userId: workspaceUserId,
       name: safeName,
-      brand: safeBrand,
+      brand: catalogMetadata.brand,
       category: safeCategory,
       packagingClass: safePackagingClass,
       measurementUnit: safeMeasurementUnit,
       measurementValue: row.measurementValue,
       unitsPerPackage: row.unitsPerPackage,
       description: safeDescription,
+      quantityLabel: catalogMetadata.quantityLabel,
+      catalogSource: catalogMetadata.catalogSource,
       unitCost: row.unitCost,
       unitPrice: row.unitPrice,
       currency: row.currency as CurrencyCode,
@@ -97,13 +109,15 @@ export async function upsertImportRow(
       active: true,
     },
     update: {
-      brand: safeBrand,
+      brand: catalogMetadata.brand,
       category: safeCategory,
       packagingClass: safePackagingClass,
       measurementUnit: safeMeasurementUnit,
       measurementValue: row.measurementValue,
       unitsPerPackage: row.unitsPerPackage,
       description: safeDescription,
+      quantityLabel: catalogMetadata.quantityLabel,
+      catalogSource: catalogMetadata.catalogSource,
       unitCost: row.unitCost,
       unitPrice: row.unitPrice,
       currency: row.currency as CurrencyCode,

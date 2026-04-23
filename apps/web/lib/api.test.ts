@@ -297,6 +297,10 @@ describe('api client', () => {
       measurementUnit: 'UN',
       measurementValue: 1,
       unitsPerPackage: 1,
+      quantityLabel: '350ml',
+      servingSize: '269ml',
+      imageUrl: 'https://images.example/guarana.jpg',
+      catalogSource: 'open_food_facts',
       unitCost: 3,
       unitPrice: 5.5,
       currency: 'BRL',
@@ -308,6 +312,10 @@ describe('api client', () => {
       expect.objectContaining({
         barcode: '7894900011517',
         name: 'Guarana Lata',
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/guarana.jpg',
+        catalogSource: 'open_food_facts',
       }),
     )
   })

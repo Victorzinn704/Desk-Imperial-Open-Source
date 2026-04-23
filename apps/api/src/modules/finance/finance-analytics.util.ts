@@ -19,7 +19,14 @@ export type FinanceAggregationOptions = {
 export type FinanceProductAnalyticsRecord = {
   id: string
   name: string
+  brand: string | null
   category: string
+  barcode: string | null
+  packagingClass: string
+  quantityLabel: string | null
+  imageUrl: string | null
+  catalogSource: string
+  isCombo: boolean
   stock: number
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -34,7 +41,14 @@ export type FinanceProductAnalyticsRecord = {
 type FinanceTopProduct = {
   id: string
   name: string
+  brand: string | null
   category: string
+  barcode: string | null
+  packagingClass: string
+  quantityLabel: string | null
+  imageUrl: string | null
+  catalogSource: string
+  isCombo: boolean
   stock: number
   currency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -110,7 +124,14 @@ export function buildTopProducts(records: FinanceProductAnalyticsRecord[], limit
     .map((record) => ({
       id: record.id,
       name: record.name,
+      brand: record.brand,
       category: record.category,
+      barcode: record.barcode,
+      packagingClass: record.packagingClass,
+      quantityLabel: record.quantityLabel,
+      imageUrl: record.imageUrl,
+      catalogSource: record.catalogSource,
+      isCombo: record.isCombo,
       stock: record.stock,
       currency: record.currency,
       displayCurrency: record.displayCurrency,

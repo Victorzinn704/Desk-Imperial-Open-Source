@@ -1,6 +1,7 @@
 'use client'
 
 import { memo } from 'react'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatCurrency } from '@/lib/currency'
 import type { SimpleProduct } from '../types'
 
@@ -12,13 +13,6 @@ type ProductCardProps = {
 }
 
 export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd, onDragStart }: ProductCardProps) {
-  const initials = product.name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((chunk) => chunk[0]!.toUpperCase())
-    .join('')
-
   const available = product.stock - inCartQty
   const stockColor =
     available <= 0
@@ -36,11 +30,9 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
       onClick={onAdd}
       onDragStart={onDragStart}
     >
-      <div className="flex items-start gap-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[11px] font-bold tracking-[0.08em] text-[var(--accent)]">
-          {initials || 'IT'}
-        </span>
-        <div>
+      <div className="flex items-start gap-3">
+        <ProductThumb product={product} size="md" />
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">{product.name}</p>
           <p className="text-[11px] text-[var(--text-soft)]">{product.category}</p>
           {product.isCombo ? (

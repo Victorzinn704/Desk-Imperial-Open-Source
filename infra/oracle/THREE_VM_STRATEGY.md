@@ -1,21 +1,25 @@
-# Estratégia Oracle — 3 VMs
+# Estratégia Oracle — 5 VMs
 
-Este documento registra a separação operacional adotada para manter o Desk Imperial leve, seguro e mais previsível na Oracle.
+Este documento registra a separação operacional adotada para manter o Desk Imperial previsível, barato e sem depender do Neon.
 
 ## Distribuição
 
-| VM                | Papel       | Responsabilidade                                                                                                            |
-| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `vm-free-01`      | Produção    | `nginx`, `web`, `api`, `redis`, `certbot` e `node-exporter` preso ao loopback                                               |
-| `vm-free-02`      | Ops/Builder | build das imagens Docker, registry privado, Grafana, Prometheus, Loki, Tempo, Alloy, Alertmanager, Blackbox, SonarQube e DB |
-| `vm-amd-micro-01` | Sentinela   | healthcheck externo e tarefas pequenas de bastion/ops                                                                       |
+| VM                        | Papel            | Responsabilidade                                                                                                             |
+| ------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `vm-free-01`              | Produção         | `nginx`, `web`, `api`, `redis`, `certbot` e runtime público                                                                  |
+| `vm-free-02`              | Ops/Builder/BI   | build das imagens Docker, registry privado, Grafana, Prometheus, Loki, Tempo, Alloy, Alertmanager, Blackbox, SonarQube e Metabase |
+| `vm-amd-micro-01`         | Sentinela        | healthcheck externo, bastion e tarefas pequenas de ops                                                                      |
+| `lohana-ampere-01`        | Banco            | `PostgreSQL 17`, `PgBouncer`, `pgBackRest`, `postgres_exporter`, `node-exporter`                                            |
+| `lohana-amd-micro-01`     | Runner           | restore drill, `pgBadger`, jobs leves de backup/checagem                                                                    |
 
 ## Decisão
 
-- A produção não deve ser usada como máquina principal de build.
-- A `vm-free-02` deve absorver build e validação para reduzir CPU, I/O e risco operacional na `vm-free-01`.
-- A `vm-free-02` também concentra observabilidade e SonarQube porque tem memória suficiente, enquanto mantém as UIs presas em `127.0.0.1`.
-- A AMD micro tem pouca memória; por isso não deve rodar aplicação, observabilidade pesada, SonarQube ou build.
+- A produção não deve ser usada como máquina principal de build nem como host do banco.
+- A `vm-free-02` absorve build, observabilidade e Metabase para não disputar RAM com o banco.
+- A Ampere da Lohana é dedicada ao dado e não hospeda app, Grafana ou SonarQube.
+- A AMD micro da Lohana não deve rodar banco primário nem BI; ela existe para restore drill e jobs leves.
+- O runner AMD também usa WireGuard e não expõe serviço algum ao público.
+- Como a conta da Lohana é separada, a rede entre as VMs deve ser privada por WireGuard.
 
 ## Camada de operações
 
@@ -27,6 +31,7 @@ A stack operacional da `vm-free-02` fica em:
 Serviços:
 
 - Grafana: `127.0.0.1:3001`
+- Metabase: `127.0.0.1:3002`
 - Prometheus: `127.0.0.1:9090`
 - Alertmanager: `127.0.0.1:9093`
 - SonarQube: `127.0.0.1:9000`
@@ -42,10 +47,11 @@ O acesso humano deve usar túnel SSH:
 .\infra\scripts\oracle-ops-tunnel.ps1
 ```
 
-O Prometheus coleta métricas de host de duas formas:
+O Prometheus coleta métricas de host de três formas:
 
 - `vm-free-02`: `node-exporter` como serviço do compose
 - `vm-free-01`: `node-exporter` em `127.0.0.1:9100` acessado por proxy SSH interno `prod-node-exporter-proxy:19100`
+- `lohana-ampere-01`: `node-exporter` e `postgres_exporter` por IP privado WireGuard via `file_sd`
 
 ## Fluxo de deploy rápido
 
@@ -97,10 +103,9 @@ O fallback antigo por pacote de imagem continua disponível:
 - `api + web` com mudança de fonte real: ~1min37s.
 - `api + web` com cache quente: ~24s.
 
-## Próxima melhoria recomendada
+## Fronteiras de responsabilidade
 
-O fluxo atual já tira build da produção, elimina o `docker save/load` pela máquina local e usa BuildKit quando ele está disponível. A próxima evolução é habilitar cache persistente do Next.js/Turbopack para reduzir o tempo quando a camada de código do `web` muda:
-
-```bash
-NEXT_CACHE_DIR=...
-```
+- `vm-free-01` não deve conter banco.
+- `vm-free-02` não deve conter OLTP do produto.
+- a Ampere da Lohana não deve conter Metabase, Grafana ou SonarQube.
+- o runner AMD da Lohana não deve conter tráfego crítico do produto.

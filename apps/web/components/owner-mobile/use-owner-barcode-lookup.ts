@@ -109,7 +109,12 @@ function buildLookupSuccessMessage(appliedCount: number, source: string) {
   if (appliedCount === 0) {
     return 'EAN encontrado, mas os campos atuais foram mantidos.'
   }
-  const sourceLabel = source === 'open_food_facts' ? 'Open Food Facts' : 'catalogo externo'
+  const sourceLabel =
+    source === 'open_food_facts'
+      ? 'Open Food Facts'
+      : source === 'national_beverage_catalog'
+        ? 'base nacional de bebidas'
+        : 'catalogo externo'
   return `Dados do EAN aplicados via ${sourceLabel}.`
 }
 

@@ -17,39 +17,18 @@ import type { OperationsLiveResponse } from '@contracts/contracts'
 import { invalidateOperationsWorkspace, rollbackOperationsSnapshot, setOptimisticComandaStatus } from '@/lib/operations'
 import { PdvColumn } from './pdv-column'
 import { PdvComandaModal } from './pdv-comanda-modal'
+import { buildPdvComandas, buildPdvMesas, toOperationAmounts, toOperationsStatus, toPdvComanda } from './pdv-operations'
 import {
-  buildPdvComandas,
-  buildPdvMesas,
-  toOperationAmounts,
-  toOperationsStatus,
-  toPdvComanda,
-} from './pdv-operations'
-import {
-  isEndedComandaStatus,
   type Comanda,
   type ComandaItem,
   type ComandaStatus,
+  isEndedComandaStatus,
   KANBAN_COLUMNS,
   type Mesa,
 } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 import type { PdvMesaIntent } from './pdv-navigation-intent'
-
-type SimpleProduct = {
-  id: string
-  name: string
-  category: string
-  unitPrice: number
-  currency: string
-  stock: number
-  isLowStock: boolean
-  isCombo?: boolean
-  comboDescription?: string | null
-  comboItems?: Array<{
-    componentProductName: string
-    totalUnits: number
-  }>
-}
+import type { SimpleProduct } from './comanda-modal'
 
 type PdvBoardProps = Readonly<{
   mesaIntent?: PdvMesaIntent | null
@@ -115,16 +94,20 @@ export function PdvBoard({
       lastHandledIntentRef.current = null
       return
     }
-    if (lastHandledIntentRef.current === mesaIntent.requestId) {return}
+    if (lastHandledIntentRef.current === mesaIntent.requestId) {
+      return
+    }
 
-    const comandaFromIntent = mesaIntent.comandaId ? comandasById.get(mesaIntent.comandaId) ?? null : null
+    const comandaFromIntent = mesaIntent.comandaId ? (comandasById.get(mesaIntent.comandaId) ?? null) : null
     const mesaFromIntent =
       mesasById.get(mesaIntent.mesaId) ??
       mesas.find((mesa) => normalizeTableLabel(mesa.numero) === normalizeTableLabel(mesaIntent.mesaLabel)) ??
       null
 
     // Espera o primeiro snapshot ao abrir direto uma comanda existente.
-    if (mesaIntent.comandaId && !comandaFromIntent && !operations) {return}
+    if (mesaIntent.comandaId && !comandaFromIntent && !operations) {
+      return
+    }
 
     lastHandledIntentRef.current = mesaIntent.requestId
     const frame = window.requestAnimationFrame(() => {
@@ -236,7 +219,7 @@ export function PdvBoard({
       mesas.find((mesa) => normalizeTableLabel(mesa.numero) === normalizeTableLabel(data.mesa)) ?? null
     const payload = {
       tableLabel: normalizeTableLabel(data.mesa),
-      mesaId: editingComanda ? selectedMesa?.id : mesaPreSelected?.id ?? selectedMesa?.id,
+      mesaId: editingComanda ? selectedMesa?.id : (mesaPreSelected?.id ?? selectedMesa?.id),
       customerName: data.clienteNome.trim() || undefined,
       customerDocument: data.clienteDocumento.trim() || undefined,
       notes: data.notes.trim() || undefined,
@@ -307,10 +290,14 @@ export function PdvBoard({
 
   async function onDragEnd(result: DropResult) {
     const { source, destination, draggableId } = result
-    if (!destination || source.droppableId === destination.droppableId) {return}
+    if (!destination || source.droppableId === destination.droppableId) {
+      return
+    }
 
     const comanda = comandasById.get(draggableId)
-    if (!comanda) {return}
+    if (!comanda) {
+      return
+    }
 
     await transitionComanda(comanda, destination.droppableId as ComandaStatus)
   }

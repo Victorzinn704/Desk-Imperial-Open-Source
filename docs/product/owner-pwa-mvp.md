@@ -200,6 +200,7 @@ Essa e a feature prioritaria do PWA.
 - fallback limpo para EAN manual/HID quando a leitura nativa nao existir
 - lookup por EAN via rota local do web, com pre-preenchimento de nome, marca e categoria
 - lookup por EAN enriquecido com medida, embalagem sugerida, porcao e contexto visual do item
+- persistencia real de `quantityLabel`, `servingSize`, `imageUrl` e `catalogSource` no produto criado
 - fila offline local no aparelho para cadastro de produto quando a API cair
 - drenagem automatica da fila offline ao reconectar ou receber `Background Sync`
 - superficie de `Comandas` reestruturada em leitura mais densa, com foco em status, extrato e fechamento sem card decorativo interno

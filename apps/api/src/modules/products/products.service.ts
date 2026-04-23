@@ -21,6 +21,7 @@ import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayloa
 import { validateImportRow, upsertImportRow } from './products-import.utils'
 import { buildProductUpdateData } from './products-update.utils'
 import { sanitizeProductBarcode } from './products-barcode.util'
+import { resolveProductCatalogMetadata, sanitizeProductCatalogImageUrl } from './products-catalog.util'
 
 type UploadedCsvFile = {
   buffer: Buffer
@@ -96,6 +97,9 @@ export class ProductsService {
                 { brand: { contains: query.search.trim(), mode: 'insensitive' } },
                 { category: { contains: query.search.trim(), mode: 'insensitive' } },
                 { packagingClass: { contains: query.search.trim(), mode: 'insensitive' } },
+                { quantityLabel: { contains: query.search.trim(), mode: 'insensitive' } },
+                { servingSize: { contains: query.search.trim(), mode: 'insensitive' } },
+                { catalogSource: { contains: query.search.trim(), mode: 'insensitive' } },
                 { description: { contains: query.search.trim(), mode: 'insensitive' } },
               ],
             }
@@ -140,6 +144,52 @@ export class ProductsService {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const isCombo = dto.isCombo ?? false
     const normalizedComboItems = normalizeComboItemsInput(dto.comboItems)
+    const safeName = sanitizePlainText(dto.name, 'Nome do produto', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const safeBrand = sanitizePlainText(dto.brand, 'Marca', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const safeCategory = sanitizePlainText(dto.category, 'Categoria', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const safePackagingClass = sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const safeMeasurementUnit = sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
+      allowEmpty: false,
+      rejectFormula: true,
+    })!
+    const safeDescription = sanitizePlainText(dto.description, 'Descricao', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const safeQuantityLabel = sanitizePlainText(dto.quantityLabel, 'Quantidade do catalogo', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const safeServingSize = sanitizePlainText(dto.servingSize, 'Porcao do catalogo', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const safeImageUrl = sanitizeProductCatalogImageUrl(dto.imageUrl)
+    const safeCatalogSource = sanitizePlainText(dto.catalogSource, 'Origem do catalogo', {
+      allowEmpty: true,
+      rejectFormula: true,
+    })
+    const catalogMetadata = resolveProductCatalogMetadata({
+      name: safeName,
+      brand: safeBrand,
+      measurementUnit: safeMeasurementUnit,
+      measurementValue: dto.measurementValue,
+      quantityLabel: safeQuantityLabel,
+      imageUrl: safeImageUrl,
+      catalogSource: safeCatalogSource,
+    })
 
     if (isCombo && normalizedComboItems.length === 0) {
       throw new BadRequestException('Produtos do tipo combo precisam informar pelo menos um componente.')
@@ -150,27 +200,12 @@ export class ProductsService {
         const createdProduct = await transaction.product.create({
           data: {
             userId: workspaceUserId,
-            name: sanitizePlainText(dto.name, 'Nome do produto', {
-              allowEmpty: false,
-              rejectFormula: true,
-            })!,
+            name: safeName,
             barcode: sanitizeProductBarcode(dto.barcode, 'Codigo de barras'),
-            brand: sanitizePlainText(dto.brand, 'Marca', {
-              allowEmpty: true,
-              rejectFormula: true,
-            }),
-            category: sanitizePlainText(dto.category, 'Categoria', {
-              allowEmpty: false,
-              rejectFormula: true,
-            })!,
-            packagingClass: sanitizePlainText(dto.packagingClass, 'Classe de cadastro', {
-              allowEmpty: false,
-              rejectFormula: true,
-            })!,
-            measurementUnit: sanitizePlainText(dto.measurementUnit, 'Unidade de medida', {
-              allowEmpty: false,
-              rejectFormula: true,
-            })!,
+            brand: catalogMetadata.brand,
+            category: safeCategory,
+            packagingClass: safePackagingClass,
+            measurementUnit: safeMeasurementUnit,
             measurementValue: dto.measurementValue,
             unitsPerPackage: dto.unitsPerPackage,
             isCombo,
@@ -180,10 +215,11 @@ export class ProductsService {
                   rejectFormula: true,
                 })
               : null,
-            description: sanitizePlainText(dto.description, 'Descricao', {
-              allowEmpty: true,
-              rejectFormula: true,
-            }),
+            description: safeDescription,
+            quantityLabel: catalogMetadata.quantityLabel,
+            servingSize: safeServingSize,
+            imageUrl: catalogMetadata.imageUrl,
+            catalogSource: catalogMetadata.catalogSource,
             unitCost: dto.unitCost,
             unitPrice: dto.unitPrice,
             currency: dto.currency,
@@ -230,6 +266,10 @@ export class ProductsService {
           measurementUnit: product.measurementUnit,
           measurementValue: Number(product.measurementValue),
           unitsPerPackage: product.unitsPerPackage,
+          quantityLabel: product.quantityLabel,
+          servingSize: product.servingSize,
+          imageUrl: product.imageUrl,
+          catalogSource: product.catalogSource,
           isCombo: product.isCombo,
           comboItemsCount: product.comboComponents.length,
           stock: product.stock,

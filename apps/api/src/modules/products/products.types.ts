@@ -1,6 +1,7 @@
 import type { CurrencyCode, Product } from '@prisma/client'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import type { CurrencyService, ExchangeRatesSnapshot } from '../currency/currency.service'
+import { resolveProductCatalogMetadata } from './products-catalog.util'
 
 type ProductLike = Pick<
   Product,
@@ -16,6 +17,10 @@ type ProductLike = Pick<
   | 'isCombo'
   | 'comboDescription'
   | 'description'
+  | 'quantityLabel'
+  | 'servingSize'
+  | 'imageUrl'
+  | 'catalogSource'
   | 'unitCost'
   | 'unitPrice'
   | 'currency'
@@ -73,6 +78,10 @@ export type ProductRecord = {
   stockPackages: number
   stockLooseUnits: number
   description: string | null
+  quantityLabel: string | null
+  servingSize: string | null
+  imageUrl: string | null
+  catalogSource: string | null
   currency: CurrencyCode
   displayCurrency: CurrencyCode
   unitCost: number
@@ -136,6 +145,15 @@ export function toProductRecord(
   const stockPackages = product.unitsPerPackage > 1 ? Math.floor(product.stock / product.unitsPerPackage) : 0
   const stockLooseUnits = product.unitsPerPackage > 1 ? product.stock % product.unitsPerPackage : product.stock
   const isLowStock = product.lowStockThreshold != null && product.stock <= product.lowStockThreshold
+  const catalogMetadata = resolveProductCatalogMetadata({
+    name: product.name,
+    brand: product.brand,
+    measurementUnit: product.measurementUnit,
+    measurementValue: product.measurementValue,
+    quantityLabel: product.quantityLabel,
+    imageUrl: product.imageUrl,
+    catalogSource: product.catalogSource,
+  })
   const comboItems = (product.comboComponents ?? []).map((component) => ({
     componentProductId: component.componentProductId,
     componentProductName: component.componentProduct.name,
@@ -179,7 +197,7 @@ export function toProductRecord(
     id: product.id,
     name: product.name,
     barcode: product.barcode,
-    brand: product.brand,
+    brand: catalogMetadata.brand,
     category: product.category,
     packagingClass: product.packagingClass,
     measurementUnit: product.measurementUnit,
@@ -191,6 +209,10 @@ export function toProductRecord(
     stockPackages,
     stockLooseUnits,
     description: product.description,
+    quantityLabel: catalogMetadata.quantityLabel,
+    servingSize: product.servingSize,
+    imageUrl: catalogMetadata.imageUrl,
+    catalogSource: catalogMetadata.catalogSource,
     currency: product.currency,
     displayCurrency: options.displayCurrency,
     unitCost,

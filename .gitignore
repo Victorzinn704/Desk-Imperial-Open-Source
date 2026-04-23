@@ -58,6 +58,11 @@ CLAUDE.md
 docker-compose.override.yml
 docker-compose.local.yml
 infra/docker/.env
+infra/oracle/db/.runtime/
+infra/oracle/runner/.runtime/
+infra/oracle/runner/reports/
+infra/oracle/runner/restore/
+nul
 
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log

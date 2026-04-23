@@ -49,6 +49,24 @@ scrape_configs:
           oracle_vm: vm-free-01
           role: production
 
+  - job_name: desk-db-node-exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/*.json
+    relabel_configs:
+      - source_labels: [job]
+        regex: desk-db-node-exporter
+        action: keep
+
+  - job_name: desk-db-postgres-exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/*.json
+    relabel_configs:
+      - source_labels: [job]
+        regex: desk-db-postgres-exporter
+        action: keep
+
   - job_name: desk-api-health
     metrics_path: /probe
     params:
@@ -86,6 +104,22 @@ scrape_configs:
     params:
       module: [http_2xx]
       target: ['http://sonarqube:9000/api/system/status']
+    static_configs:
+      - targets: ['blackbox:9115']
+    relabel_configs:
+      - source_labels: [__param_target]
+        target_label: instance
+      - source_labels: [__address__]
+        target_label: __tmp_blackbox_instance
+        replacement: blackbox:9115
+      - source_labels: [__tmp_blackbox_instance]
+        target_label: __address__
+
+  - job_name: metabase-health
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ['http://metabase:3000/api/health']
     static_configs:
       - targets: ['blackbox:9115']
     relabel_configs:

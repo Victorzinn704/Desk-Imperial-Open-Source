@@ -1,22 +1,35 @@
 'use client'
 
 import { type ReactNode, useMemo, useState } from 'react'
-import { Archive, MapPin, PencilLine, Plus, RotateCcw, Search, ShoppingCart, Store, Trash2, Truck, X } from 'lucide-react'
+import {
+  Archive,
+  MapPin,
+  PencilLine,
+  Plus,
+  RotateCcw,
+  Search,
+  ShoppingCart,
+  Store,
+  Trash2,
+  Truck,
+  X,
+} from 'lucide-react'
 import type { FinanceSummaryResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
 import {
-  LabMiniStat,
-  LabPageHeader,
   LabFactPill,
   LabFilterChip,
   LabMetricStrip,
   LabMetricStripItem,
+  LabMiniStat,
+  LabPageHeader,
   LabPanel,
   LabSignalRow,
   LabStatusPill,
-  LabTable,
   type LabStatusTone,
+  LabTable,
 } from '@/components/design-lab/lab-primitives'
 import { LabWorkbench } from '@/components/design-lab/lab-workbench'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { OrderForm } from '@/components/dashboard/order-form'
 import { ProductForm } from '@/components/dashboard/product-form'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
@@ -97,10 +110,12 @@ function filterProducts(products: ProductRecord[], searchQuery: string) {
   }
 
   return products.filter((product) =>
-    [product.name, product.barcode ?? '', product.brand ?? '', product.category, product.packagingClass].some((value) => {
-      const normalizedValue = normalizeTextForSearch(value)
-      return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
-    }),
+    [product.name, product.barcode ?? '', product.brand ?? '', product.category, product.packagingClass].some(
+      (value) => {
+        const normalizedValue = normalizeTextForSearch(value)
+        return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
+      },
+    ),
   )
 }
 
@@ -292,11 +307,7 @@ export function PortfolioEnvironment() {
             onOpenProduct={openNewProductSurface}
             onOpenSale={() => openSaleSurface(null, 'delivery')}
           />
-          <PortfolioOperationalPanel
-            avgMargin={avgMargin}
-            products={products}
-            productsTotals={productsTotals}
-          />
+          <PortfolioOperationalPanel avgMargin={avgMargin} products={products} productsTotals={productsTotals} />
         </div>
         <PortfolioRadarPanel
           avgMargin={avgMargin}
@@ -314,12 +325,12 @@ export function PortfolioEnvironment() {
         currency={displayCurrency}
         filteredProducts={filteredProducts}
         mutationError={productMutationError}
-        onCreate={openNewProductSurface}
         products={products}
         productsError={productsError}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onArchive={archiveProductMutation.mutate}
+        onCreate={openNewProductSurface}
         onDelete={handleDeleteProduct}
         onEdit={handleEditProduct}
         onRestore={restoreProductMutation.mutate}
@@ -328,11 +339,11 @@ export function PortfolioEnvironment() {
 
       {surface?.kind === 'product' ? (
         <LabWorkbench
-          description="Campos do produto, estoque e margem."
           bodyClassName="portfolio-workbench-open"
-          onClose={closeSurface}
-          toolbar={<PortfolioProductToolbar product={activeProductModal} products={products} />}
+          description="Campos do produto, estoque e margem."
           title={activeProductModal ? 'Editar produto' : 'Cadastrar produto'}
+          toolbar={<PortfolioProductToolbar product={activeProductModal} products={products} />}
+          onClose={closeSurface}
         >
           {productMutationError ? <AlertMessage message={productMutationError.message} tone="danger" /> : null}
           <PortfolioFormShell>
@@ -350,29 +361,28 @@ export function PortfolioEnvironment() {
 
       {activeSaleSurface ? (
         <LabWorkbench
-          description="Produto, canal, localização e pagamento."
           bodyClassName="portfolio-workbench-open"
-          onClose={closeSurface}
+          description="Produto, canal, localização e pagamento."
+          title={activeSaleSurface.product ? `Vender ${activeSaleSurface.product.name}` : 'Vender produto'}
           toolbar={
             <PortfolioSaleToolbar
               currentMode={activeSaleSurface.mode}
-              onModeChange={(mode) =>
-                setSurface((current) =>
-                  current?.kind === 'sale'
-                    ? { ...current, mode }
-                    : current,
-                )
-              }
               product={activeSaleSurface.product}
+              onModeChange={(mode) =>
+                setSurface((current) => (current?.kind === 'sale' ? { ...current, mode } : current))
+              }
             />
           }
-          title={activeSaleSurface.product ? `Vender ${activeSaleSurface.product.name}` : 'Vender produto'}
+          onClose={closeSurface}
         >
           <PortfolioSaleSurface
             currentMode={activeSaleSurface.mode}
             employees={employees}
             errorMessage={saleMutationError}
             loading={createOrderMutation.isPending}
+            products={products.filter((product) => product.active)}
+            saleInitialValues={saleInitialValues}
+            userRole={currentUser?.role ?? 'OWNER'}
             onSubmit={({ values }) =>
               createOrderMutation.mutate(
                 { values },
@@ -381,9 +391,6 @@ export function PortfolioEnvironment() {
                 },
               )
             }
-            products={products.filter((product) => product.active)}
-            saleInitialValues={saleInitialValues}
-            userRole={currentUser?.role ?? 'OWNER'}
           />
         </LabWorkbench>
       ) : null}
@@ -406,11 +413,7 @@ function PortfolioHeaderBoard({
 }>) {
   return (
     <LabMetricStrip>
-      <LabMetricStripItem
-        description="itens ativos no catálogo"
-        label="SKUs ativos"
-        value={String(activeProducts)}
-      />
+      <LabMetricStripItem description="itens ativos no catálogo" label="SKUs ativos" value={String(activeProducts)} />
       <LabMetricStripItem
         description="capital parado no estoque"
         label="capital em estoque"
@@ -439,8 +442,7 @@ function PortfolioOperationalPanel({
   products: ProductRecord[]
   productsTotals: ProductsResponse['totals'] | undefined
 }>) {
-  const categoriesCount =
-    productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
+  const categoriesCount = productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
   const comboCount = products.filter((product) => product.isCombo).length
   const kitchenCount = products.filter((product) => product.requiresKitchen).length
   const inactiveCount = productsTotals?.inactiveProducts ?? 0
@@ -500,11 +502,7 @@ function PortfolioRadarPanel({
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <PortfolioRadarFact label="família líder" tone="info" value="sem leitura" />
-          <PortfolioRadarFact
-            label="lucro líder"
-            tone="success"
-            value={formatCurrency(0, displayCurrency as never)}
-          />
+          <PortfolioRadarFact label="lucro líder" tone="success" value={formatCurrency(0, displayCurrency as never)} />
           <PortfolioRadarFact
             label="capital líder"
             tone="neutral"
@@ -548,7 +546,8 @@ function PortfolioRadarPanel({
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{category.category}</p>
                         <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
-                          {category.products} SKU(s) · {formatCurrency(category.inventoryCostValue, displayCurrency as never)} de capital
+                          {category.products} SKU(s) ·{' '}
+                          {formatCurrency(category.inventoryCostValue, displayCurrency as never)} de capital
                         </p>
                       </div>
                       <div className="text-right">
@@ -560,7 +559,10 @@ function PortfolioRadarPanel({
                     </div>
 
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
-                      <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(pct, 8)}%` }} />
+                      <div
+                        className="h-full rounded-full bg-[var(--lab-blue)]"
+                        style={{ width: `${Math.max(pct, 8)}%` }}
+                      />
                     </div>
 
                     <p className="mt-2 text-xs text-[var(--lab-fg-soft)]">
@@ -601,8 +603,8 @@ function PortfolioRadarPanel({
           <LabSignalRow
             label="estoque baixo"
             note="famílias pressionadas por reposição"
-            value={String(lowStockItems)}
             tone={lowStockItems > 0 ? 'warning' : 'success'}
+            value={String(lowStockItems)}
           />
         </div>
       </div>
@@ -771,7 +773,9 @@ function PortfolioSaleToolbar({
 
   return (
     <>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">Modalidade</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">
+        Modalidade
+      </span>
       <div className="flex flex-wrap gap-2">
         {(Object.keys(saleModeMeta) as SaleMode[]).map((entry) => {
           const entryMeta = saleModeMeta[entry]
@@ -874,14 +878,20 @@ function PortfolioProductsPanel({
   const filterOptions = [
     { key: 'all' as const, label: 'Todos', count: filteredProducts.length },
     { key: 'active' as const, label: 'Ativos', count: filteredProducts.filter((product) => product.active).length },
-    { key: 'low-stock' as const, label: 'Estoque baixo', count: filteredProducts.filter((product) => product.isLowStock).length },
+    {
+      key: 'low-stock' as const,
+      label: 'Estoque baixo',
+      count: filteredProducts.filter((product) => product.isLowStock).length,
+    },
     { key: 'combo' as const, label: 'Combos', count: filteredProducts.filter((product) => product.isCombo).length },
-    { key: 'kitchen' as const, label: 'Cozinha', count: filteredProducts.filter((product) => product.requiresKitchen).length },
+    {
+      key: 'kitchen' as const,
+      label: 'Cozinha',
+      count: filteredProducts.filter((product) => product.requiresKitchen).length,
+    },
   ]
 
-  const emptyTitle = products.length
-    ? 'Nenhum produto bate com a busca'
-    : 'Nenhum produto cadastrado'
+  const emptyTitle = products.length ? 'Nenhum produto bate com a busca' : 'Nenhum produto cadastrado'
   const emptyDescription = products.length
     ? 'Tente outro termo para localizar nome, marca, categoria ou classe.'
     : 'Abra o cadastro do portfólio para criar os primeiros itens reais.'
@@ -920,18 +930,22 @@ function PortfolioProductsPanel({
             id: 'produto',
             header: 'Produto',
             cell: (product) => (
-              <div className="min-w-0 space-y-2">
-                <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
-                <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
-                  {product.category} · {product.brand ?? 'sem marca'} · {product.packagingClass}
-                  {product.barcode ? ` · EAN ${product.barcode}` : ''}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <ProductRowTag tone={product.active ? 'success' : 'neutral'}>
-                    {product.active ? 'ativo' : 'arquivado'}
-                  </ProductRowTag>
-                  {product.requiresKitchen ? <ProductRowTag tone="info">cozinha</ProductRowTag> : null}
-                  {product.isCombo ? <ProductRowTag tone="warning">combo</ProductRowTag> : null}
+              <div className="flex min-w-0 items-start gap-3">
+                <ProductThumb product={product} size="md" />
+                <div className="min-w-0 space-y-2">
+                  <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
+                    {product.category} · {product.brand ?? 'sem marca'} · {product.packagingClass}
+                    {product.quantityLabel ? ` · ${product.quantityLabel}` : ''}
+                    {product.barcode ? ` · EAN ${product.barcode}` : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <ProductRowTag tone={product.active ? 'success' : 'neutral'}>
+                      {product.active ? 'ativo' : 'arquivado'}
+                    </ProductRowTag>
+                    {product.requiresKitchen ? <ProductRowTag tone="info">cozinha</ProductRowTag> : null}
+                    {product.isCombo ? <ProductRowTag tone="warning">combo</ProductRowTag> : null}
+                  </div>
                 </div>
               </div>
             ),
@@ -954,7 +968,11 @@ function PortfolioProductsPanel({
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
                   <div
-                    className={product.isLowStock ? 'h-full rounded-full bg-[var(--lab-warning)]' : 'h-full rounded-full bg-[var(--lab-blue)]'}
+                    className={
+                      product.isLowStock
+                        ? 'h-full rounded-full bg-[var(--lab-warning)]'
+                        : 'h-full rounded-full bg-[var(--lab-blue)]'
+                    }
                     style={{
                       width: `${Math.max(
                         product.lowStockThreshold && product.lowStockThreshold > 0
@@ -980,7 +998,7 @@ function PortfolioProductsPanel({
             cell: (product) => (
               <div className="space-y-1.5">
                 <ValueReading label="custo" value={formatCurrency(product.unitCost, product.displayCurrency)} />
-                <ValueReading label="venda" value={formatCurrency(product.unitPrice, product.displayCurrency)} strong />
+                <ValueReading strong label="venda" value={formatCurrency(product.unitPrice, product.displayCurrency)} />
                 <div className="pt-0.5">
                   <MarginPill marginPercent={product.marginPercent} />
                 </div>
@@ -994,7 +1012,11 @@ function PortfolioProductsPanel({
             header: 'Potencial',
             cell: (product) => (
               <div className="space-y-1.5">
-                <ValueReading label="venda" value={formatCurrency(product.inventorySalesValue, product.displayCurrency)} strong />
+                <ValueReading
+                  strong
+                  label="venda"
+                  value={formatCurrency(product.inventorySalesValue, product.displayCurrency)}
+                />
                 <ValueReading label="lucro" value={formatCurrency(product.potentialProfit, product.displayCurrency)} />
               </div>
             ),
@@ -1064,8 +1086,7 @@ function PortfolioProductsPanel({
 
       <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--lab-fg-muted)]">
         <span>
-          {tableRows.length} de {products.length}{' '}
-          {tableRows.length === 1 ? 'encontrado' : 'encontrados'}
+          {tableRows.length} de {products.length} {tableRows.length === 1 ? 'encontrado' : 'encontrados'}
         </span>
         <span>{formatCurrency(productsTotalsValue(tableRows, currency), currency as never)} em venda filtrada</span>
       </div>
@@ -1167,7 +1188,7 @@ function ActionButton({
       ? 'border-[var(--lab-danger-soft)] bg-[var(--lab-danger-soft)] text-[var(--lab-danger)]'
       : tone === 'info'
         ? 'border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)]'
-      : 'border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-fg-soft)] hover:bg-[var(--lab-surface-hover)] hover:text-[var(--lab-fg)]'
+        : 'border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-fg-soft)] hover:bg-[var(--lab-surface-hover)] hover:text-[var(--lab-fg)]'
 
   return (
     <button

@@ -1,8 +1,9 @@
 'use client'
 
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import { FinanceOrdersTable } from '@/components/dashboard/finance-orders-table'
-import { LabPanel, LabStatusPill, LabTable, type LabStatusTone } from '@/components/design-lab/lab-primitives'
+import { LabPanel, LabStatusPill, LabTable } from '@/components/design-lab/lab-primitives'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatCurrency } from '@/lib/currency'
 import { type FinanceiroView, formatPercent } from './financeiro-model'
 import { FinanceSummaryRow } from './financeiro-shared'
@@ -11,18 +12,20 @@ export function FinanceiroTabBody({
   displayCurrency,
   finance,
   isLoading,
+  products,
   view,
 }: Readonly<{
   displayCurrency: FinanceSummaryResponse['displayCurrency']
   finance: FinanceSummaryResponse | undefined
   isLoading: boolean
+  products: ProductRecord[]
   view: FinanceiroView
 }>) {
   switch (view) {
     case 'fluxo':
       return <FluxoView displayCurrency={displayCurrency} finance={finance} />
     case 'dre':
-      return <DreView displayCurrency={displayCurrency} finance={finance} />
+      return <DreView displayCurrency={displayCurrency} finance={finance} products={products} />
     case 'contas':
       return <ContasView displayCurrency={displayCurrency} finance={finance} />
     case 'movimentacao':
@@ -57,15 +60,17 @@ function FluxoView({
 function DreView({
   displayCurrency,
   finance,
+  products,
 }: Readonly<{
   displayCurrency: FinanceSummaryResponse['displayCurrency']
   finance: FinanceSummaryResponse | undefined
+  products: ProductRecord[]
 }>) {
   return (
     <>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
         <DreStatementPanel displayCurrency={displayCurrency} finance={finance} />
-        <DreProductDriversPanel displayCurrency={displayCurrency} finance={finance} />
+        <DreProductDriversPanel displayCurrency={displayCurrency} finance={finance} products={products} />
       </div>
       <DrePeriodBreakdownPanel displayCurrency={displayCurrency} finance={finance} />
     </>
@@ -250,7 +255,9 @@ function buildTimelineAuditRows(timeline: FinanceSummaryResponse['revenueTimelin
   const computed = timeline.map((row, index) => {
     const previous = index > 0 ? timeline[index - 1] : null
     const revenueDelta =
-      previous && previous.revenue > 0 ? Number((((row.revenue - previous.revenue) / previous.revenue) * 100).toFixed(1)) : null
+      previous && previous.revenue > 0
+        ? Number((((row.revenue - previous.revenue) / previous.revenue) * 100).toFixed(1))
+        : null
     const averageTicket = row.orders > 0 ? row.revenue / row.orders : 0
 
     return {
@@ -284,7 +291,10 @@ function FinanceOrdersBlock({
       subtitle={subtitle}
       title={title}
     >
-      <FinanceOrdersTable displayCurrency={displayCurrency as FinanceSummaryResponse['displayCurrency']} orders={orders} />
+      <FinanceOrdersTable
+        displayCurrency={displayCurrency as FinanceSummaryResponse['displayCurrency']}
+        orders={orders}
+      />
     </LabPanel>
   )
 }
@@ -306,6 +316,7 @@ function FinanceFlowAuditPanel({
       title="Janelas do caixa"
     >
       <LabTable
+        dense
         className="rounded-none border-0 bg-transparent"
         columns={[
           {
@@ -346,7 +357,6 @@ function FinanceFlowAuditPanel({
             cell: (row: FlowAuditRow) => formatCurrency(row.averageTicket, displayCurrency),
           },
         ]}
-        dense
         emptyDescription="Sem histórico suficiente para montar o fluxo agora."
         emptyTitle="Nenhuma janela consolidada"
         rowKey="label"
@@ -426,7 +436,11 @@ function DreStatementPanel({
   const rows = [
     { label: 'Receita bruta', value: formatCurrency(revenue, displayCurrency), tone: 'neutral' as const },
     { label: 'Custo realizado', value: formatCurrency(realizedCost, displayCurrency), tone: 'warning' as const },
-    { label: 'Lucro líquido', value: formatCurrency(profit, displayCurrency), tone: profit >= 0 ? ('success' as const) : ('danger' as const) },
+    {
+      label: 'Lucro líquido',
+      value: formatCurrency(profit, displayCurrency),
+      tone: profit >= 0 ? ('success' as const) : ('danger' as const),
+    },
     { label: 'Margem média', value: formatPercent(totals?.averageMarginPercent ?? 0), tone: 'info' as const },
     { label: 'Markup médio', value: formatPercent(totals?.averageMarkupPercent ?? 0), tone: 'neutral' as const },
     { label: 'Ticket médio', value: formatCurrency(averageTicket, displayCurrency), tone: 'neutral' as const },
@@ -435,7 +449,11 @@ function DreStatementPanel({
 
   return (
     <LabPanel
-      action={<LabStatusPill tone={profit >= 0 ? 'success' : 'danger'}>{formatCurrency(profit, displayCurrency)}</LabStatusPill>}
+      action={
+        <LabStatusPill tone={profit >= 0 ? 'success' : 'danger'}>
+          {formatCurrency(profit, displayCurrency)}
+        </LabStatusPill>
+      }
       padding="md"
       subtitle="Demonstrativo objetivo do resultado, sem repetir o hero."
       title="DRE resumido"
@@ -452,11 +470,14 @@ function DreStatementPanel({
 function DreProductDriversPanel({
   displayCurrency,
   finance,
+  products: catalogProducts,
 }: Readonly<{
   displayCurrency: FinanceSummaryResponse['displayCurrency']
   finance?: FinanceSummaryResponse
+  products: ProductRecord[]
 }>) {
   const products = finance?.topProducts.slice(0, 4) ?? []
+  const productsById = new Map(catalogProducts.map((product) => [product.id, product]))
   const totalRevenue = products.reduce((sum, product) => sum + product.inventorySalesValue, 0)
 
   return (
@@ -470,14 +491,35 @@ function DreProductDriversPanel({
         {products.length > 0 ? (
           products.map((product) => {
             const share = totalRevenue > 0 ? (product.inventorySalesValue / totalRevenue) * 100 : 0
+            const catalogProduct = productsById.get(product.id)
+            const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
             return (
               <div className="space-y-2" key={product.id}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{product.name}</p>
-                    <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
-                      {product.category} · margem {formatPercent(product.marginPercent)}
-                    </p>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <ProductThumb
+                      product={{
+                        name: product.name,
+                        brand: productBrand,
+                        category: product.category,
+                        barcode: product.barcode ?? catalogProduct?.barcode,
+                        packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                        quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                        imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                        catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                        isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                      }}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{product.name}</p>
+                      <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                        {product.category}
+                        {productBrand ? ` · ${productBrand}` : ''}
+                        {' · '}
+                        margem {formatPercent(product.marginPercent)}
+                      </p>
+                    </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-sm font-medium text-[var(--lab-fg)]">
@@ -520,6 +562,7 @@ function DrePeriodBreakdownPanel({
       title="Fechamento gerencial"
     >
       <LabTable
+        dense
         className="rounded-none border-0 bg-transparent"
         columns={[
           {
@@ -560,7 +603,6 @@ function DrePeriodBreakdownPanel({
             cell: (row: DreAuditRow) => row.orders,
           },
         ]}
-        dense
         emptyDescription="Sem períodos suficientes para fechar o demonstrativo."
         emptyTitle="Nenhum fechamento disponível"
         rowKey="label"
@@ -594,10 +636,26 @@ function AccountsSummaryPanel({
       title="Base de recebimento"
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-        <FinanceSummaryRow label="Recebimento consolidado" tone="success" value={formatCurrency(realizedRevenue, displayCurrency)} />
+        <FinanceSummaryRow
+          label="Recebimento consolidado"
+          tone="success"
+          value={formatCurrency(realizedRevenue, displayCurrency)}
+        />
         <FinanceSummaryRow label="Ticket médio" tone="info" value={formatCurrency(averageTicket, displayCurrency)} />
-        <FinanceSummaryRow label="Cancelados" tone={cancelledOrders > 0 ? 'warning' : 'success'} value={String(cancelledOrders)} />
-        <FinanceSummaryRow label="Maior cliente" tone="neutral" value={topCustomer ? `${topCustomer.customerName} · ${formatCurrency(topCustomer.revenue, displayCurrency)}` : 'Sem registro'} />
+        <FinanceSummaryRow
+          label="Cancelados"
+          tone={cancelledOrders > 0 ? 'warning' : 'success'}
+          value={String(cancelledOrders)}
+        />
+        <FinanceSummaryRow
+          label="Maior cliente"
+          tone="neutral"
+          value={
+            topCustomer
+              ? `${topCustomer.customerName} · ${formatCurrency(topCustomer.revenue, displayCurrency)}`
+              : 'Sem registro'
+          }
+        />
       </div>
       <FinanceChannelTotals channels={channels} displayCurrency={displayCurrency} />
     </LabPanel>
@@ -621,6 +679,7 @@ function AccountsCustomerLedgerPanel({
       title="Clientes que mais pesam"
     >
       <LabTable
+        dense
         className="rounded-none border-0 bg-transparent"
         columns={[
           {
@@ -629,7 +688,9 @@ function AccountsCustomerLedgerPanel({
             cell: (row: FinanceSummaryResponse['topCustomers'][number]) => (
               <div>
                 <p className="font-medium text-[var(--lab-fg)]">{row.customerName}</p>
-                <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{row.buyerType === 'COMPANY' ? 'empresa' : 'pessoa'}</p>
+                <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                  {row.buyerType === 'COMPANY' ? 'empresa' : 'pessoa'}
+                </p>
               </div>
             ),
           },
@@ -660,7 +721,6 @@ function AccountsCustomerLedgerPanel({
             cell: (row: FinanceSummaryResponse['topCustomers'][number]) => formatCurrency(row.profit, displayCurrency),
           },
         ]}
-        dense
         emptyDescription="Sem clientes suficientes para leitura de contas agora."
         emptyTitle="Nenhum cliente consolidado"
         rowKey={(row) => `${row.customerName}-${row.orders}`}
@@ -680,7 +740,10 @@ function FinanceChannelTotals({
   return (
     <div className="mt-5 space-y-2">
       {channels.map((channel) => (
-        <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-2 last:border-b-0 last:pb-0" key={channel.channel}>
+        <div
+          className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-2 last:border-b-0 last:pb-0"
+          key={channel.channel}
+        >
           <span className="text-sm text-[var(--lab-fg)]">{channel.channel}</span>
           <span className="text-sm text-[var(--lab-fg-soft)]">
             {channel.orders} pedidos · {formatCurrency(channel.revenue, displayCurrency)}

@@ -33,7 +33,13 @@ export const ownerQuickRegisterSchema = z
 
 export type OwnerQuickRegisterInput = z.input<typeof ownerQuickRegisterSchema>
 export type OwnerQuickRegisterValues = z.output<typeof ownerQuickRegisterSchema>
-export type OwnerQueuedProductPayload = OwnerQuickRegisterValues & { barcode?: string }
+export type OwnerQueuedProductPayload = OwnerQuickRegisterValues & {
+  barcode?: string
+  quantityLabel?: string | null
+  servingSize?: string | null
+  imageUrl?: string | null
+  catalogSource?: string | null
+}
 export type LookupFeedbackTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info'
 export type LookupFeedback = { tone: LookupFeedbackTone; message: string }
 
@@ -62,5 +68,9 @@ export function resolveLookupProductFields(barcode: string, lookupContext: Barco
     measurementValue: lookupContext.measurementValue ?? 1,
     unitsPerPackage: 1,
     description: lookupContext.description ?? '',
+    quantityLabel: lookupContext.quantityLabel,
+    servingSize: lookupContext.servingSize,
+    imageUrl: lookupContext.imageUrl,
+    catalogSource: lookupContext.source,
   }
 }

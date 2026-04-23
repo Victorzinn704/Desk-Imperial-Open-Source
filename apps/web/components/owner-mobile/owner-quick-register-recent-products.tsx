@@ -1,4 +1,5 @@
 import type { ProductRecord } from '@contracts/contracts'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
 export function OwnerQuickRegisterRecentProducts({ products }: Readonly<{ products: ProductRecord[] }>) {
@@ -38,12 +39,16 @@ function RecentProductCard({ product }: Readonly<{ product: ProductRecord }>) {
   return (
     <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
-          <p className="mt-1 text-xs text-[var(--text-soft)]">
-            {product.category} · {product.brand ?? 'sem marca'}
-            {product.barcode ? ` · EAN ${product.barcode}` : ''}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <ProductThumb product={product} size="sm" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
+            <p className="mt-1 text-xs text-[var(--text-soft)]">
+              {product.category} · {product.brand ?? 'sem marca'}
+              {product.quantityLabel ? ` · ${product.quantityLabel}` : ''}
+              {product.barcode ? ` · EAN ${product.barcode}` : ''}
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <p className="text-sm font-semibold text-[var(--text-primary)]">{formatCurrency(product.unitPrice)}</p>

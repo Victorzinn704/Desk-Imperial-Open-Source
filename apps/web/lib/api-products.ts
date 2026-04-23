@@ -19,6 +19,10 @@ export type ProductPayload = {
     quantityUnits: number
   }>
   description?: string
+  quantityLabel?: string | null
+  servingSize?: string | null
+  imageUrl?: string | null
+  catalogSource?: string | null
   unitCost: number
   unitPrice: number
   currency: CurrencyCode

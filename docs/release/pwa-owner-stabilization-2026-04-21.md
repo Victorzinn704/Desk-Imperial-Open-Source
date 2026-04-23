@@ -153,6 +153,35 @@ Resultado:
 - a integração com `MobileTableGrid`, `KitchenOrdersView` e `MobileOrderBuilder` ficou coberta por teste focado
 - a superfície central do Owner PWA saiu da zona de refactor implícito
 
+### 8. Backend do cadastro rapido
+
+Rodada atual de fechamento de contrato/persistencia.
+
+O dominio `Product` passou a persistir os metadados uteis vindos do lookup por EAN:
+
+- `quantityLabel`
+- `servingSize`
+- `imageUrl`
+- `catalogSource`
+
+Arquivos de base desta rodada:
+
+- `apps/api/prisma/schema.prisma`
+- `apps/api/prisma/migrations/20260421224500_add_product_catalog_metadata/migration.sql`
+- `apps/api/src/modules/products/dto/create-product.dto.ts`
+- `apps/api/src/modules/products/dto/update-product.dto.ts`
+- `apps/api/src/modules/products/products.service.ts`
+- `apps/api/src/modules/products/products.types.ts`
+- `packages/types/src/contracts.ts`
+- `apps/web/lib/api-products.ts`
+- `apps/web/components/owner-mobile/owner-quick-register-model.ts`
+
+Resultado:
+
+- o lookup do EAN nao se perde mais ao persistir o produto
+- o Owner PWA ficou alinhado com o backend real do catalogo
+- a base ficou pronta para futuras leituras visuais do produto sem inventar estado no frontend
+
 ## Testes e gates executados na rodada
 
 ### Testes focados
@@ -167,6 +196,8 @@ npm --workspace @partner/web run test -- components/owner-mobile/owner-comandas-
 npm --workspace @partner/web run test -- components/owner-mobile/owner-finance-view.test.tsx
 npm --workspace @partner/web run test -- components/owner-mobile/owner-account-view.test.tsx
 npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-pdv-tab.test.tsx
+npm --workspace @partner/api run test -- test/products.service.spec.ts
+npm --workspace @partner/web run test -- components/owner-mobile/owner-quick-register-view.test.tsx lib/api.test.ts
 ```
 
 ### Typecheck
@@ -175,6 +206,7 @@ Executado com sucesso:
 
 ```bash
 npm run typecheck
+npm run verify:current-phase
 ```
 
 ### Lint focado

@@ -1,31 +1,33 @@
 'use client'
 
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import { Package2 } from 'lucide-react'
 import { LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
+import { ProductThumb } from '@/components/shared/product-thumb'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 type TopProductsProps = {
   finance?: FinanceSummaryResponse
   isLoading?: boolean
+  products?: ProductRecord[]
   surface?: 'default' | 'lab'
 }
 
 export function OverviewTopProducts({
   finance,
   isLoading = false,
+  products,
   surface = 'default',
 }: Readonly<TopProductsProps>) {
   const displayCurrency = finance?.displayCurrency ?? 'BRL'
   const topProducts = finance?.topProducts?.slice(0, surface === 'lab' ? 5 : 6) ?? []
+  const productsById = new Map((products ?? []).map((product) => [product.id, product]))
 
   if (surface === 'lab') {
     if (isLoading) {
       return (
         <LabPanel
-          title="Top produtos"
-          subtitle="Itens com maior tração de receita e margem"
           action={
             <span className="inline-flex items-center gap-2 text-xs text-[var(--lab-fg-muted)]">
               <Package2 className="size-4" />
@@ -33,6 +35,8 @@ export function OverviewTopProducts({
             </span>
           }
           padding="md"
+          subtitle="Itens com maior tração de receita e margem"
+          title="Top produtos"
         >
           <div className="space-y-0" data-testid="overview-top-products-list">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -45,10 +49,10 @@ export function OverviewTopProducts({
 
     return (
       <LabPanel
-        title="Top produtos"
-        subtitle="Itens que mais puxam venda, margem e ritmo comercial"
         action={<LabStatusPill tone="info">{topProducts.length} itens</LabStatusPill>}
         padding="md"
+        subtitle="Itens que mais puxam venda, margem e ritmo comercial"
+        title="Top produtos"
       >
         {topProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--lab-border)] px-5 py-10 text-center text-sm text-[var(--lab-fg-muted)]">
@@ -61,6 +65,8 @@ export function OverviewTopProducts({
               const widthPercent = Math.max(8, (product.inventorySalesValue / maxValue) * 100)
               const marginPercent = product.marginPercent ?? 0
               const marginTone = marginPercent >= 30 ? 'success' : marginPercent >= 20 ? 'info' : 'warning'
+              const catalogProduct = productsById.get(product.id)
+              const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
 
               return (
                 <article
@@ -72,10 +78,27 @@ export function OverviewTopProducts({
                       <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-xs font-medium text-[var(--lab-fg-muted)]">
                         {index + 1}
                       </span>
+                      <ProductThumb
+                        className="mt-0.5"
+                        product={{
+                          name: product.name,
+                          brand: productBrand,
+                          category: product.category,
+                          barcode: product.barcode ?? catalogProduct?.barcode,
+                          packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                          quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                          imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                          catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                          isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                        }}
+                        size="sm"
+                      />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{product.name}</p>
                         <p className="mt-1 truncate text-xs text-[var(--lab-fg-muted)]">
-                          {product.stock} em estoque · lucro potencial {formatCurrency(product.potentialProfit, displayCurrency)}
+                          {productBrand ? `${productBrand} · ` : ''}
+                          {product.stock} em estoque · lucro potencial{' '}
+                          {formatCurrency(product.potentialProfit, displayCurrency)}
                         </p>
                       </div>
                     </div>
@@ -123,9 +146,7 @@ export function OverviewTopProducts({
     <div className="rounded-[8px] border border-[var(--border-strong)] bg-[var(--surface)] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-            Top produtos
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Top produtos</h3>
           <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">mais vendidos hoje</p>
         </div>
         <span className="font-mono text-xs text-[var(--text-muted)]">{topProducts.length} itens</span>
@@ -139,11 +160,36 @@ export function OverviewTopProducts({
             const maxValue = topProducts[0]?.inventorySalesValue ?? 1
             const widthPercent = Math.max(8, (product.inventorySalesValue / maxValue) * 100)
             const opacity = Math.max(0.34, 0.9 - index * 0.12)
+            const catalogProduct = productsById.get(product.id)
+            const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
 
             return (
               <div key={product.id}>
-                <div className="flex items-center justify-between">
-                  <span className="truncate pr-3 text-sm text-[var(--text-primary)]">{product.name}</span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ProductThumb
+                      product={{
+                        name: product.name,
+                        brand: productBrand,
+                        category: product.category,
+                        barcode: product.barcode ?? catalogProduct?.barcode,
+                        packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                        quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                        imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                        catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                        isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                      }}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <span className="block truncate pr-3 text-sm text-[var(--text-primary)]">{product.name}</span>
+                      {productBrand ? (
+                        <span className="mt-0.5 block truncate pr-3 text-[11px] text-[var(--text-muted)]">
+                          {productBrand}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--text-soft)]">
                     <span>{product.stock}x</span>
                     <span className="font-semibold text-[var(--text-primary)]">

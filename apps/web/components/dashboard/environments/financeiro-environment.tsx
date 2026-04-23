@@ -13,7 +13,7 @@ export function FinanceiroEnvironment({
   activeTab,
   surface = 'legacy',
 }: Readonly<{ activeTab: DashboardTabId | null; surface?: FinanceiroSurface }>) {
-  const { sessionQuery, financeQuery } = useDashboardQueries({ section: 'financeiro' })
+  const { sessionQuery, financeQuery, productsQuery } = useDashboardQueries({ section: 'financeiro' })
   const user = sessionQuery.data?.user
   const view = resolveFinanceView(activeTab)
 
@@ -23,6 +23,7 @@ export function FinanceiroEnvironment({
 
   const finance = financeQuery.data
   const displayCurrency = (finance?.displayCurrency ?? user.preferredCurrency) as FinanceSummaryResponse['displayCurrency']
+  const products = productsQuery.data?.items ?? []
   const snapshot = buildFinanceSnapshot(finance, displayCurrency, view)
   const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null
 
@@ -43,6 +44,7 @@ export function FinanceiroEnvironment({
           displayCurrency={displayCurrency}
           finance={finance}
           isLoading={financeQuery.isLoading}
+          products={products}
           view={view}
         />
       ) : null}

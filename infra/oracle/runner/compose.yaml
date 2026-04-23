@@ -1,0 +1,16 @@
+name: desk-imperial-db-runner
+
+services:
+  utility:
+    build:
+      context: ../..
+      dockerfile: oracle/runner/docker/utility.Dockerfile
+    container_name: desk-db-runner
+    environment:
+      PGBACKREST_STANZA: ${PGBACKREST_STANZA:-deskimperial}
+    entrypoint: ['/bin/sh', '-lc', 'sleep infinity']
+    volumes:
+      - ./.runtime/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./reports:/reports
+      - ./restore:/restore
+    restart: unless-stopped

@@ -1,0 +1,9 @@
+[Unit]
+Description=Desk Imperial BI refresh
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/desk-imperial
+ExecStart=/usr/bin/env bash /opt/desk-imperial/infra/oracle/db/scripts/refresh-bi.sh

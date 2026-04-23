@@ -3,11 +3,13 @@
 **Versão:** 1.0  
 **Última atualização:** 2026-04-01  
 **ORM:** Prisma  
-**Banco:** PostgreSQL 16+ (Neon serverless em produção)
+**Banco:** PostgreSQL 17 (migração em curso do Neon para a Ampere self-hosted; Neon permanece apenas como origem transitória até o cutover)
 
 ---
 
 ## Visão geral
+
+Além do schema transacional padrão, o banco passa a ter um schema analítico `bi` para leitura de gestão e Metabase. Esse schema não substitui o OLTP; ele existe para evitar dashboard pesado em cima das tabelas operacionais.
 
 O banco tem 22 modelos organizados em grupos funcionais:
 

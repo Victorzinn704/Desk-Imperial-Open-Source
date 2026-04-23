@@ -55,10 +55,15 @@ function makeProduct(overrides: object = {}) {
     id: 'product-1',
     userId: 'user-1',
     name: 'Produto Teste',
+    barcode: null,
     brand: null,
     packagingClass: 'Padrão',
     measurementUnit: 'UN',
     measurementValue: 1,
+    quantityLabel: null,
+    imageUrl: null,
+    catalogSource: null,
+    isCombo: false,
     unitsPerPackage: 1,
     description: null,
     category: 'Bebidas',
@@ -463,7 +468,10 @@ describe('FinanceService', () => {
 
     it('deve retornar top products', async () => {
       // Arrange
-      const products = [makeProduct({ name: 'Produto 1', stock: 100 }), makeProduct({ name: 'Produto 2', stock: 50 })]
+      const products = [
+        makeProduct({ name: 'Brahma 350ml', measurementUnit: 'ML', measurementValue: 350, stock: 100 }),
+        makeProduct({ name: 'Produto 2', stock: 50 }),
+      ]
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.order.findMany.mockResolvedValue([])
       mockPrisma.order.groupBy.mockResolvedValue([])
@@ -474,6 +482,12 @@ describe('FinanceService', () => {
       // Assert
       expect(result.topProducts).toBeDefined()
       expect(Array.isArray(result.topProducts)).toBe(true)
+      expect(result.topProducts[0]).toMatchObject({
+        name: 'Brahma 350ml',
+        brand: 'Brahma',
+        quantityLabel: '350ml',
+        catalogSource: 'manual',
+      })
     })
 
     it('deve retornar recent orders (últimos 5)', async () => {

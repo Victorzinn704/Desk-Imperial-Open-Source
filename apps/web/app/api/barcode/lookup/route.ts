@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import {
+  getNationalPackagedBeverageSource,
+  resolveBrazilianPackagedBeverageMatch,
+} from '@/lib/brazilian-packaged-beverage-catalog'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,6 +108,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'EAN encontrado, mas sem dados suficientes para pre-preenchimento.' }, { status: 404 })
     }
 
+    const nationalBeverageMatch = resolveBrazilianPackagedBeverageMatch({
+      barcode: normalizedBarcode,
+      name: name ?? '',
+      brand,
+      category,
+      packagingClass,
+      quantityLabel: quantity.quantityLabel,
+    })
+
     return NextResponse.json({
       barcode: normalizedBarcode,
       name,
@@ -116,7 +129,7 @@ export async function POST(request: Request) {
       packagingClass,
       servingSize: firstNonEmpty([product.serving_size]),
       imageUrl: firstNonEmpty([product.image_front_small_url]),
-      source: 'open_food_facts',
+      source: nationalBeverageMatch ? getNationalPackagedBeverageSource() : 'open_food_facts',
     })
   } catch {
     return NextResponse.json(
