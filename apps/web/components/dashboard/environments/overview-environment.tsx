@@ -188,19 +188,34 @@ export function DesignLabOverviewEnvironment() {
         }
         title="Overview"
       >
-        <div className="flex flex-wrap gap-2">
-          <LabStatusPill tone="info">
-            ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
-          </LabStatusPill>
-          <LabStatusPill tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}>
-            margem {formatPercent(snapshot.averageMargin)}
-          </LabStatusPill>
-          <LabStatusPill tone={stockTone}>
-            {snapshot.lowStockItems > 0 ? 'reposição no radar' : 'estoque estável'}
-          </LabStatusPill>
-          {snapshot.topProductName ? (
-            <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill>
-          ) : null}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] xl:items-start">
+          <div className="flex flex-wrap gap-2">
+            <LabStatusPill tone="info">
+              ticket {formatCurrency(snapshot.averageTicket, snapshot.displayCurrency as 'BRL')}
+            </LabStatusPill>
+            <LabStatusPill tone={snapshot.averageMargin >= 30 ? 'success' : 'warning'}>
+              margem {formatPercent(snapshot.averageMargin)}
+            </LabStatusPill>
+            <LabStatusPill tone={stockTone}>
+              {snapshot.lowStockItems > 0 ? 'reposição no radar' : 'estoque estável'}
+            </LabStatusPill>
+            {snapshot.topProductName ? (
+              <LabStatusPill tone="neutral">destaque {snapshot.topProductName}</LabStatusPill>
+            ) : null}
+          </div>
+
+          <div className="space-y-2 rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+                  Próximo jogo
+                </h2>
+                <p className="mt-1 text-sm font-medium text-[var(--lab-fg)]">Vasco no radar do dia</p>
+              </div>
+              <LabStatusPill tone="info">vasco</LabStatusPill>
+            </div>
+            <VascoNextMatchWidget className="border-0 bg-transparent" />
+          </div>
         </div>
       </LabPageHeader>
 
@@ -396,28 +411,15 @@ function OverviewExecutivePanel({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] xl:items-start">
         <SalesPerformanceCard finance={finance} isLoading={isLoading} surface="lab" />
-
-        <div className="space-y-5">
-          <LabPanel
-            action={
-              <LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>
-            }
-            padding="md"
-            title="Radar comercial"
-          >
-            <OverviewRadarSection finance={finance} snapshot={snapshot} />
-          </LabPanel>
-
-          <LabPanel
-            action={<LabStatusPill tone="info">vasco</LabStatusPill>}
-            contentClassName="p-0"
-            padding="none"
-            title="Próximo jogo"
-            subtitle="Leitura rápida do próximo confronto direto na abertura do painel."
-          >
-            <VascoNextMatchWidget className="rounded-none border-0 bg-transparent" />
-          </LabPanel>
-        </div>
+        <LabPanel
+          action={
+            <LabStatusPill tone="neutral">{(finance?.salesByChannel ?? []).slice(0, 4).length} canais</LabStatusPill>
+          }
+          padding="md"
+          title="Radar comercial"
+        >
+          <OverviewRadarSection finance={finance} snapshot={snapshot} />
+        </LabPanel>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] xl:items-start">

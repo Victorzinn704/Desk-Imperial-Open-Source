@@ -6,13 +6,23 @@ const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#f
 
 export const DEFAULT_TABLE_LABELS = [...Array.from({ length: 12 }, (_, index) => String(index + 1)), 'VIP']
 
+function collectOperationGroups(snapshot: OperationsLiveResponse | undefined) {
+  if (!snapshot) {
+    return []
+  }
+
+  const employeeGroups = Array.isArray(snapshot.employees) ? snapshot.employees : []
+  const unassignedGroups = snapshot.unassigned ? [snapshot.unassigned] : []
+
+  return [...employeeGroups, ...unassignedGroups]
+}
+
 export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): Comanda[] {
   if (!snapshot) {
     return []
   }
 
-  const groups = [...snapshot.employees, snapshot.unassigned]
-  return groups
+  return collectOperationGroups(snapshot)
     .flatMap((group) =>
       group.comandas.map((c) => ({
         ...toPdvComanda(c),
@@ -54,7 +64,7 @@ export function buildPdvGarcons(snapshot: OperationsLiveResponse | undefined): G
     return []
   }
 
-  return snapshot.employees
+  return collectOperationGroups(snapshot)
     .filter((employee) => employee.employeeId)
     .map((employee, index) => ({
       id: employee.employeeId!,
@@ -69,7 +79,7 @@ function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
 
   if (!snapshot) {return { empMap, comandaOwnerName }}
 
-  for (const emp of snapshot.employees) {
+  for (const emp of collectOperationGroups(snapshot)) {
     if (emp.employeeId) {empMap.set(emp.employeeId, emp.displayName)}
     if ((emp as Record<string, unknown>).userId) {
       empMap.set((emp as Record<string, unknown>).userId as string, emp.displayName)
@@ -171,7 +181,7 @@ function collectComandas(snapshot: OperationsLiveResponse | undefined) {
     return [] as ComandaRecord[]
   }
 
-  return [...snapshot.employees, snapshot.unassigned].flatMap((group) => group.comandas)
+  return collectOperationGroups(snapshot).flatMap((group) => group.comandas)
 }
 
 function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {

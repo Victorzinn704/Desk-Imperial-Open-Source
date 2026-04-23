@@ -1,5 +1,5 @@
-import { LandingPage } from '@/components/marketing/landing-page'
+import { HomeRouteEntry } from '@/components/marketing/home-route-entry'
 
 export default function HomePage() {
-  return <LandingPage />
+  return <HomeRouteEntry />
 }

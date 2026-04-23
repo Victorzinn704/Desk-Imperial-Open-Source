@@ -36,6 +36,7 @@ export type CommercialActivity = {
   impactoEsperado?: number
   isAutoManaged?: boolean
   operationalHint?: string
+  primaryClub?: 'vasco' | 'botafogo' | 'fluminense' | 'flamengo' | 'outro'
   visitorTeam?: string
 }
 
@@ -65,11 +66,11 @@ const ACTIVITY_STYLES: Record<
     tone: 'danger',
   },
   jogo: {
-    bg: 'color-mix(in srgb, var(--warning) 10%, var(--surface))',
-    border: 'color-mix(in srgb, var(--warning) 22%, var(--border))',
-    text: 'var(--warning)',
-    dot: 'var(--warning)',
-    tone: 'warning',
+    bg: 'color-mix(in srgb, var(--accent) 10%, var(--surface))',
+    border: 'color-mix(in srgb, var(--accent) 24%, var(--border))',
+    text: 'var(--text-primary)',
+    dot: 'var(--accent)',
+    tone: 'info',
   },
   promocao: {
     bg: 'color-mix(in srgb, var(--success) 10%, var(--surface))',
@@ -121,60 +122,79 @@ const VIEW_LABELS: Record<View, string> = {
 
 const FOOTBALL_GAME_ACTIVITIES: CommercialActivity[] = [
   {
-    id: 'football-serie-a-1',
-    title: 'Serie A · jogo com telao',
+    id: 'football-vasco-1',
+    title: 'Vasco x Gremio',
     type: 'jogo',
     footballCompetition: 'serie_a',
-    homeTeam: 'Time da casa',
-    visitorTeam: 'Rival nacional',
-    start: new Date(2026, 3, 11, 19, 0),
-    end: new Date(2026, 3, 11, 21, 0),
-    descricao: 'Preparar telao, balcao e combo de bebidas.',
-    impactoEsperado: 42,
+    homeTeam: 'Vasco',
+    visitorTeam: 'Gremio',
+    primaryClub: 'vasco',
+    start: new Date(2026, 3, 25, 11, 0),
+    end: new Date(2026, 3, 25, 13, 0),
+    descricao: 'Abrir almoço reforçado, combo de cerveja e time extra no salão.',
+    impactoEsperado: 88,
     isAutoManaged: true,
-    operationalHint: 'Reforcar bebidas e salao 60 min antes',
+    operationalHint: 'Prioridade máxima: reforçar bar, salão e combos frios.',
   },
   {
-    id: 'football-copa-brasil-1',
-    title: 'Copa do Brasil · mata-mata',
+    id: 'football-botafogo-1',
+    title: 'Botafogo x Palmeiras',
     type: 'jogo',
-    footballCompetition: 'copa_do_brasil',
-    homeTeam: 'Clube brasileiro',
-    visitorTeam: 'Adversario nacional',
-    start: new Date(2026, 3, 15, 21, 30),
-    end: new Date(2026, 3, 15, 23, 30),
-    descricao: 'Noite de decisao: preparar cozinha, combos e reforco no caixa.',
-    impactoEsperado: 58,
+    footballCompetition: 'serie_a',
+    homeTeam: 'Botafogo',
+    visitorTeam: 'Palmeiras',
+    primaryClub: 'botafogo',
+    start: new Date(2026, 3, 25, 16, 0),
+    end: new Date(2026, 3, 25, 18, 0),
+    descricao: 'Segundo pico do dia. Segurar delivery, chope e giro de petisco.',
+    impactoEsperado: 74,
     isAutoManaged: true,
-    operationalHint: 'Tratar como pico noturno',
+    operationalHint: 'Mesmo dia do Vasco: operar como grade dupla de jogo.',
   },
   {
-    id: 'football-libertadores-1',
-    title: 'Libertadores · clube brasileiro',
+    id: 'football-flamengo-1',
+    title: 'Flamengo x Racing',
     type: 'jogo',
     footballCompetition: 'libertadores',
-    homeTeam: 'Brasileiro na Libertadores',
-    visitorTeam: 'Adversario continental',
-    start: new Date(2026, 3, 21, 21, 30),
-    end: new Date(2026, 3, 21, 23, 30),
-    descricao: 'Jogo de alto impacto para bar ou restaurante com transmissao.',
-    impactoEsperado: 64,
+    homeTeam: 'Flamengo',
+    visitorTeam: 'Racing',
+    primaryClub: 'flamengo',
+    start: new Date(2026, 3, 27, 21, 30),
+    end: new Date(2026, 3, 27, 23, 30),
+    descricao: 'Noite continental com pico de consumo e permanência alta.',
+    impactoEsperado: 84,
     isAutoManaged: true,
-    operationalHint: 'Reservar mesas e preparar estoque de maior giro',
+    operationalHint: 'Operar com cozinha reforçada e estoque de longa permanência.',
   },
   {
-    id: 'football-sulamericana-1',
-    title: 'Sul-Americana · clube brasileiro',
+    id: 'football-fluminense-1',
+    title: 'Fluminense x Lanus',
     type: 'jogo',
     footballCompetition: 'sulamericana',
-    homeTeam: 'Brasileiro na Sul-Americana',
-    visitorTeam: 'Adversario continental',
-    start: new Date(2026, 3, 23, 19, 0),
-    end: new Date(2026, 3, 23, 21, 0),
-    descricao: 'Transmissao com impacto moderado no movimento.',
-    impactoEsperado: 36,
+    homeTeam: 'Fluminense',
+    visitorTeam: 'Lanus',
+    primaryClub: 'fluminense',
+    start: new Date(2026, 3, 27, 19, 0),
+    end: new Date(2026, 3, 27, 21, 0),
+    descricao: 'Transmissão de início de noite para puxar salão e rodada dupla.',
+    impactoEsperado: 68,
     isAutoManaged: true,
-    operationalHint: 'Oferta leve para balcao e delivery',
+    operationalHint: 'Empilhar atendimento cedo e preparar virada para o segundo jogo.',
+  },
+  {
+    id: 'football-vasco-2',
+    title: 'Vasco x Bahia',
+    type: 'jogo',
+    footballCompetition: 'copa_do_brasil',
+    homeTeam: 'Vasco',
+    visitorTeam: 'Bahia',
+    primaryClub: 'vasco',
+    start: new Date(2026, 3, 30, 20, 0),
+    end: new Date(2026, 3, 30, 22, 0),
+    descricao: 'Mata-mata com leitura forte para salão e pós-jogo.',
+    impactoEsperado: 82,
+    isAutoManaged: true,
+    operationalHint: 'Virada de caixa e cozinha com fila de pico.',
   },
 ]
 
@@ -190,17 +210,6 @@ const INITIAL_ACTIVITIES: CommercialActivity[] = [
   },
   {
     id: '2',
-    title: 'Jogo do Brasileirao',
-    type: 'jogo',
-    footballCompetition: 'serie_a',
-    start: new Date(2026, 2, 23, 16, 0),
-    end: new Date(2026, 2, 23, 18, 0),
-    descricao: 'Transmissao no telao',
-    impactoEsperado: 60,
-  },
-  ...FOOTBALL_GAME_ACTIVITIES,
-  {
-    id: '3',
     title: 'Lancamento Cardapio Verao',
     type: 'evento',
     start: new Date(2026, 2, 28, 19, 0),
@@ -208,6 +217,7 @@ const INITIAL_ACTIVITIES: CommercialActivity[] = [
     descricao: 'Novos pratos e bebidas sazonais',
     impactoEsperado: 45,
   },
+  ...FOOTBALL_GAME_ACTIVITIES,
 ]
 
 const CALENDAR_THEME = `
@@ -454,19 +464,218 @@ function getPeriodRange(view: View, date: Date) {
 
 function eventStyleGetter(event: CommercialActivity) {
   const colors = ACTIVITY_STYLES[event.type]
+  const clubAccent = resolveFootballClubAccent(event)
 
   return {
     style: {
-      background: colors.bg,
+      background: event.type === 'jogo' ? 'color-mix(in srgb, var(--surface-soft) 82%, transparent)' : colors.bg,
       border: `1px solid ${colors.border}`,
-      color: colors.text,
+      borderLeft: event.type === 'jogo' ? `3px solid ${clubAccent}` : `1px solid ${colors.border}`,
+      color: event.type === 'jogo' ? 'var(--text-primary)' : colors.text,
       borderRadius: '10px',
-      fontSize: '12px',
+      fontSize: '11px',
       fontWeight: 600,
-      padding: '2px 6px',
+      padding: '2px 8px',
       cursor: 'grab',
     },
   }
+}
+
+function resolveFootballClubAccent(activity: CommercialActivity) {
+  switch (activity.primaryClub) {
+    case 'vasco':
+      return '#8ea4c4'
+    case 'botafogo':
+      return '#94a3b8'
+    case 'fluminense':
+      return '#3aa364'
+    case 'flamengo':
+      return '#d65b52'
+    default:
+      return 'var(--accent)'
+  }
+}
+
+function footballClubBadge(activity: CommercialActivity) {
+  switch (activity.primaryClub) {
+    case 'vasco':
+      return 'VAS'
+    case 'botafogo':
+      return 'BOT'
+    case 'fluminense':
+      return 'FLU'
+    case 'flamengo':
+      return 'FLA'
+    default:
+      return 'JG'
+  }
+}
+
+function footballPriority(activity: CommercialActivity) {
+  const priority = {
+    vasco: 0,
+    botafogo: 1,
+    fluminense: 2,
+    flamengo: 3,
+    outro: 10,
+  } as const
+
+  return priority[activity.primaryClub ?? 'outro'] ?? 10
+}
+
+function compareActivities(left: CommercialActivity, right: CommercialActivity) {
+  const timeDelta = left.start.getTime() - right.start.getTime()
+  if (timeDelta !== 0) {
+    return timeDelta
+  }
+
+  const typeDelta = Number(left.type !== 'jogo') - Number(right.type !== 'jogo')
+  if (typeDelta !== 0) {
+    return typeDelta
+  }
+
+  const footballDelta = footballPriority(left) - footballPriority(right)
+  if (footballDelta !== 0) {
+    return footballDelta
+  }
+
+  return (right.impactoEsperado ?? 0) - (left.impactoEsperado ?? 0)
+}
+
+function ActivityEventContent({ event }: Readonly<{ event: CommercialActivity }>) {
+  const label = event.type === 'jogo'
+    ? [footballClubBadge(event), event.homeTeam, event.visitorTeam].filter(Boolean).join(' ')
+    : event.title
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      {event.type === 'jogo' ? (
+        <span
+          className="inline-flex shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-[0.12em]"
+          style={{
+            background: 'color-mix(in srgb, var(--surface) 82%, transparent)',
+            color: resolveFootballClubAccent(event),
+          }}
+        >
+          {footballClubBadge(event)}
+        </span>
+      ) : null}
+      <span className="truncate">{label}</span>
+    </div>
+  )
+}
+
+type FootballGameDayGroup = {
+  date: Date
+  games: CommercialActivity[]
+}
+
+function groupFootballGameDays(activities: CommercialActivity[]) {
+  const grouped = new Map<string, FootballGameDayGroup>()
+
+  for (const activity of activities) {
+    if (activity.type !== 'jogo') {
+      continue
+    }
+
+    const dateKey = format(activity.start, 'yyyy-MM-dd')
+    const currentGroup = grouped.get(dateKey)
+
+    if (!currentGroup) {
+      grouped.set(dateKey, {
+        date: startOfDay(activity.start),
+        games: [activity],
+      })
+      continue
+    }
+
+    currentGroup.games.push(activity)
+    currentGroup.games.sort(compareActivities)
+  }
+
+  return Array.from(grouped.values()).sort((left, right) => left.date.getTime() - right.date.getTime())
+}
+
+function FootballGameRail({
+  gameDays,
+  onOpenGame,
+}: Readonly<{
+  gameDays: FootballGameDayGroup[]
+  onOpenGame: (activity: CommercialActivity) => void
+}>) {
+  if (gameDays.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_72%,transparent)] px-4 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+            Rodada carioca do recorte
+          </p>
+          <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+            O mesmo dia pode concentrar mais de um jogo e abrir duas ondas comerciais.
+          </p>
+        </div>
+        <LabStatusPill tone="info">{gameDays.length} dia{gameDays.length === 1 ? '' : 's'} com jogo</LabStatusPill>
+      </div>
+
+      <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+        {gameDays.map((gameDay) => (
+          <div
+            className="min-w-[280px] rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3"
+            key={format(gameDay.date, 'yyyy-MM-dd')}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+                  {format(gameDay.date, "EEE dd/MM", { locale: ptBR })}
+                </p>
+                <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+                  {gameDay.games.length === 1 ? 'Jogo do dia' : 'Jogos empilhados'}
+                </p>
+              </div>
+              <LabStatusPill tone="neutral">{gameDay.games.length} jogo{gameDay.games.length === 1 ? '' : 's'}</LabStatusPill>
+            </div>
+
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {gameDay.games.map((game) => (
+                <button
+                  className="min-w-[184px] rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-left transition hover:border-[var(--border-strong)]"
+                  key={game.id}
+                  type="button"
+                  onClick={() => onOpenGame(game)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold tracking-[0.12em]"
+                      style={{
+                        background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
+                        color: resolveFootballClubAccent(game),
+                      }}
+                    >
+                      {footballClubBadge(game)}
+                    </span>
+                    <span className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                      {game.homeTeam} x {game.visitorTeam}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--text-soft)]">
+                    <span>{format(game.start, 'HH:mm')}</span>
+                    {game.impactoEsperado ? (
+                      <LabStatusPill tone="success">+{game.impactoEsperado}%</LabStatusPill>
+                    ) : null}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 type ActivityModalProps = Readonly<{
@@ -923,10 +1132,10 @@ export function CommercialCalendar() {
     showMore: (total: number) => `+ ${total} mais`,
   }
 
-  const filteredActivities = useMemo(
-    () => (filter === 'all' ? activities : activities.filter((activity) => activity.type === filter)),
-    [activities, filter],
-  )
+  const filteredActivities = useMemo(() => {
+    const scoped = filter === 'all' ? activities : activities.filter((activity) => activity.type === filter)
+    return [...scoped].sort(compareActivities)
+  }, [activities, filter])
 
   const periodRange = useMemo(() => getPeriodRange(view, date), [date, view])
 
@@ -942,6 +1151,7 @@ export function CommercialCalendar() {
   const periodActivities = filteredActivities.filter((activity) =>
     isWithinInterval(activity.start, { start: periodRange.start, end: periodRange.end }),
   )
+  const periodFootballGameDays = groupFootballGameDays(periodActivities)
   const periodImpacto = periodActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
   const nextSevenDaysImpact = nextSevenDaysActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
 
@@ -1055,6 +1265,8 @@ export function CommercialCalendar() {
           subtitle={`${periodActivities.length} atividade${periodActivities.length === 1 ? '' : 's'} no recorte aberto em ${periodRange.label}.`}
           action={<LabStatusPill tone="info">{VIEW_LABELS[view]}</LabStatusPill>}
         >
+          <FootballGameRail gameDays={periodFootballGameDays} onOpenGame={setEditingActivity} />
+
           <div className="imperial-cal overflow-hidden">
             <style>{CALENDAR_THEME}</style>
             <DnDCalendar
@@ -1063,6 +1275,9 @@ export function CommercialCalendar() {
               culture="pt-BR"
               date={date}
               defaultView="month"
+              components={{
+                event: ActivityEventContent,
+              }}
               eventPropGetter={eventStyleGetter}
               events={filteredActivities}
               localizer={localizer}
@@ -1091,11 +1306,11 @@ export function CommercialCalendar() {
 
           {filter === 'all' || filter === 'jogo' ? (
             <LabPanel
-              action={<LabStatusPill icon={<Trophy className="size-3" />} tone="warning">vasco</LabStatusPill>}
+              action={<LabStatusPill icon={<Trophy className="size-3" />} tone="info">vasco</LabStatusPill>}
               contentClassName="p-0"
               padding="none"
-              title="Calendário de jogos"
-              subtitle="Widget oficial para leitura rápida e acompanhamento do calendário esportivo."
+              title="Widget oficial do Vasco"
+              subtitle="A agenda interna prioriza os cariocas; o widget mantém a leitura oficial do Vasco."
             >
               <VascoCalendarWidget className="rounded-none border-0 bg-transparent" />
             </LabPanel>

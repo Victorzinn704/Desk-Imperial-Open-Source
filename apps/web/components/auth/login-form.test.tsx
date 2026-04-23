@@ -44,6 +44,11 @@ const createTestQueryClient = () =>
 describe('LoginForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    })
   })
 
   it('liga os labels aos campos corretos para empresa e funcionário', async () => {
@@ -101,5 +106,32 @@ describe('LoginForm', () => {
       { loginMode: 'STAFF', employeeCode: 'VD-001' },
       expect.objectContaining({ client: expect.anything() }),
     )
+  })
+
+  it('redireciona owner mobile para o app móvel em vez do desktop', async () => {
+    const user = userEvent.setup()
+    const queryClient = createTestQueryClient()
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 430,
+    })
+
+    vi.mocked(fetchCurrentUser).mockResolvedValue({ user: { role: 'OWNER' } } as never)
+    vi.mocked(fetchFinanceSummary).mockResolvedValue({ totals: {} } as never)
+    vi.mocked(login).mockResolvedValue({ user: { role: 'OWNER' } } as never)
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LoginForm />
+      </QueryClientProvider>,
+    )
+
+    await user.type(screen.getByLabelText(/email corporativo/i), 'ceo@empresa.com')
+    await user.type(screen.getByLabelText(/senha de acesso/i), '12345678')
+    await user.click(screen.getByRole('button', { name: /entrar no portal/i }))
+
+    expect(routerReplace).toHaveBeenCalledWith('/app/owner')
   })
 })

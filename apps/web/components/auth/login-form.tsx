@@ -18,11 +18,8 @@ import {
   loginDemo,
   type LoginPayload,
 } from '@/lib/api'
+import { resolveAuthenticatedRoute } from '@/lib/authenticated-route'
 import { type LoginFormValues, loginSchema } from '@/lib/validation'
-
-function resolvePostLoginRoute(role: AuthResponse['user']['role']) {
-  return role === 'OWNER' ? '/design-lab/overview' : '/design-lab/pdv'
-}
 
 function prewarmDashboardEntry(queryClient: ReturnType<typeof useQueryClient>, role: AuthResponse['user']['role']) {
   const tasks = [
@@ -152,6 +149,8 @@ export function LoginForm() {
     router.prefetch('/design-lab/overview')
     router.prefetch('/design-lab/pdv')
     router.prefetch('/app')
+    router.prefetch('/app/owner')
+    router.prefetch('/app/staff')
   }, [router])
 
   const {
@@ -182,7 +181,7 @@ export function LoginForm() {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.replace(resolvePostLoginRoute(data.user.role))
+        router.replace(resolveAuthenticatedRoute(data.user.role, window.innerWidth))
       })
     },
     onError: (error, variables) => {
@@ -205,7 +204,7 @@ export function LoginForm() {
       queryClient.setQueryData(['auth', 'me'], { user: data.user })
       prewarmDashboardEntry(queryClient, data.user.role)
       startTransition(() => {
-        router.replace(resolvePostLoginRoute(data.user.role))
+        router.replace(resolveAuthenticatedRoute(data.user.role, window.innerWidth))
       })
     },
   })
