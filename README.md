@@ -63,19 +63,19 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 
 ## Stack
 
-| Camada             | Tecnologia                    |
-| ------------------ | ----------------------------- |
-| Backend            | NestJS 11 + TypeScript        |
-| Frontend           | Next.js 16 + React 19         |
-| Banco de dados     | PostgreSQL 16 + Prisma ORM    |
-| Cache / Rate limit | Redis                         |
-| Tempo real         | Socket.IO                     |
-| Autenticação       | Cookies HttpOnly + CSRF duplo |
-| Monorepo           | Turborepo + npm workspaces    |
+| Camada             | Tecnologia                                   |
+| ------------------ | -------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                       |
+| Frontend           | Next.js 16 + React 19                        |
+| Banco de dados     | PostgreSQL 16 + Prisma ORM                   |
+| Cache / Rate limit | Redis                                        |
+| Tempo real         | Socket.IO                                    |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                |
+| Monorepo           | Turborepo + npm workspaces                   |
 | Deploy             | Railway (atual) · Oracle Cloud + Neon (alvo) |
-| Testes backend     | Jest + 53+ arquivos de spec   |
-| Testes frontend    | Vitest + Playwright           |
-| Load tests         | K6                            |
+| Testes backend     | Jest + 53+ arquivos de spec                  |
+| Testes frontend    | Vitest + Playwright                          |
+| Load tests         | K6                                           |
 
 ---
 
@@ -209,20 +209,19 @@ npm run test:load:ci
 ```
 desk-imperial/
 ├── apps/
-│   ├── api/          # NestJS — 16 módulos de domínio
+│   ├── api/          # NestJS — 15 módulos de domínio
 │   └── web/          # Next.js — 10 domínios de componentes
 ├── packages/
-│   ├── types/        # Contratos compartilhados API ↔ frontend
-│   ├── config/       # ESLint e TypeScript compartilhados
-│   └── ui/           # Componentes reutilizáveis
+│   ├── api-contract/ # Contrato OpenAPI versionado
+│   └── types/        # Contratos compartilhados API ↔ frontend
 ├── docs/             # 70+ arquivos de documentação técnica
 ├── infra/            # Docker Compose + scripts de deploy
 └── tests/load/k6/    # Load tests
 ```
 
-**Módulos da API (16):**
+**Módulos da API (15):**
 
-`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `users` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring` · `cache`
+`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring` · `health`
 
 Veja [docs/architecture/modules.md](./docs/architecture/modules.md) para a responsabilidade de cada um.
 
@@ -242,24 +241,24 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ## Documentação
 
-| Área                                   | Link                                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
+| Área                                   | Link                                                                                                                   |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                                                       |
 | Auditoria SonarQube e sprints          | [docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md](./docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md) |
-| Runtime alvo Oracle Cloud + Neon       | [docs/release/oracle-cloud-runtime-plan-2026-04-04.md](./docs/release/oracle-cloud-runtime-plan-2026-04-04.md) |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
-| Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
-| Template de perfil técnico             | [README_PROFILE.md](./README_PROFILE.md)                                                     |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
+| Runtime alvo Oracle Cloud + Neon       | [docs/release/oracle-cloud-runtime-plan-2026-04-04.md](./docs/release/oracle-cloud-runtime-plan-2026-04-04.md)         |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                                                 |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                                                         |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                                             |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)                                       |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                                                         |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                                                       |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                                                       |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)                                     |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                                             |
+| Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md)                           |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                                                   |
+| Template de perfil técnico             | [README_PROFILE.md](./README_PROFILE.md)                                                                               |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                                                   |
 
 ---
 
