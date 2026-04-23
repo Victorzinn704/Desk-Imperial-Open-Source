@@ -34,7 +34,6 @@ modules/
 ├── products/              # Portfólio de produtos e combos
 ├── finance/               # KPIs financeiros e analytics
 ├── employees/             # Gestão de equipe e folha de pagamento
-├── users/                 # Perfil de usuário e workspace
 ├── consent/               # LGPD — consentimento e documentos legais
 ├── currency/              # Cotações de moeda com cache e fallback
 ├── geocoding/             # Geocodificação de endereços via Nominatim
@@ -224,18 +223,6 @@ modules/
 - Histórico de vendas por funcionário
 - Funcionários podem ter credenciais de login próprias (papel STAFF)
 - Cache Redis com TTL 600s
-
----
-
-## Módulo: users
-
-**Responsabilidade:** perfil de usuário, configurações de workspace e ownership.
-
-**Comportamento:**
-
-- Cada usuário OWNER define o `companyOwnerId` do workspace
-- Configurações de perfil (nome, endereço, cidade da empresa)
-- Geocodificação do endereço disparada no cadastro/atualização
 
 ---
 
