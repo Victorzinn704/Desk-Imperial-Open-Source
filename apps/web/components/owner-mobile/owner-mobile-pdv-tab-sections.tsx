@@ -145,25 +145,27 @@ export function OwnerPdvBuilder({
   const builder = buildOwnerPdvBuilderContext(pendingAction)
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
       <OwnerPdvBanner errorMessage={errorMessage} isOffline={isOffline} />
-      <MobileOrderBuilder
-        busy={isBusy}
-        errorMessage={productsErrorMessage}
-        isLoading={productsLoading}
-        isOffline={isOffline}
-        mesaLabel={builder.mesaLabel}
-        mode={builder.mode}
-        produtos={products}
-        secondaryAction={{ label: 'Cadastro rápido', onClick: onOpenQuickRegister }}
-        summaryItems={[
-          { label: 'Mesa', value: builder.mesaLabel, tone: '#008cff' },
-          { label: 'Modo', value: builder.mode === 'add' ? 'Adicionar' : 'Nova', tone: '#36f57c' },
-          { label: 'Fluxo', value: 'Ao vivo', tone: '#eab308' },
-        ]}
-        onCancel={onCancelBuilder}
-        onSubmit={onSubmit}
-      />
-    </>
+      <div className="min-h-0 flex-1 overflow-hidden rounded-[22px] border border-[var(--border)] bg-[var(--surface)]">
+        <MobileOrderBuilder
+          busy={isBusy}
+          errorMessage={productsErrorMessage}
+          isLoading={productsLoading}
+          isOffline={isOffline}
+          mesaLabel={builder.mesaLabel}
+          mode={builder.mode}
+          produtos={products}
+          secondaryAction={{ label: 'Cadastro rápido', onClick: onOpenQuickRegister }}
+          summaryItems={[
+            { label: 'Mesa', value: builder.mesaLabel, tone: '#008cff' },
+            { label: 'Modo', value: builder.mode === 'add' ? 'Adicionar' : 'Nova', tone: '#36f57c' },
+            { label: 'Fluxo', value: 'Ao vivo', tone: '#eab308' },
+          ]}
+          onCancel={onCancelBuilder}
+          onSubmit={onSubmit}
+        />
+      </div>
+    </div>
   )
 }

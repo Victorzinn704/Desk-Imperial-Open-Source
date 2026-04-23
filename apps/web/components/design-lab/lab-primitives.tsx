@@ -11,10 +11,12 @@ export type LabPageHeaderProps = {
   title: ReactNode
   description?: ReactNode
   meta?: LabHeaderMetaSlot
+  metaContainerClassName?: string
   actions?: ReactNode
   tabs?: ReactNode
   children?: ReactNode
   className?: string
+  asideClassName?: string
 }
 
 type LabPanelPadding = 'none' | 'sm' | 'md' | 'lg'
@@ -173,10 +175,12 @@ export function LabPageHeader({
   title,
   description,
   meta,
+  metaContainerClassName,
   actions,
   tabs,
   children,
   className,
+  asideClassName,
 }: LabPageHeaderProps) {
   return (
     <header
@@ -200,9 +204,19 @@ export function LabPageHeader({
         </div>
 
         {(meta || actions) && (
-          <div className="lab-page-header__aside flex w-full flex-col gap-3 xl:max-w-md xl:items-end">
+          <div
+            className={cn(
+              'lab-page-header__aside flex w-full flex-col gap-3 xl:max-w-md xl:items-end',
+              asideClassName,
+            )}
+          >
             {meta ? (
-              <div className="lab-page-header__meta w-full rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-4 xl:max-w-sm">
+              <div
+                className={cn(
+                  'lab-page-header__meta w-full rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-4 xl:max-w-sm',
+                  metaContainerClassName,
+                )}
+              >
                 {meta}
               </div>
             ) : null}

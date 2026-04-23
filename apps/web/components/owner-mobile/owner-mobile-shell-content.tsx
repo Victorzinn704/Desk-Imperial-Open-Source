@@ -1,11 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import {
-  buildDesignLabConfigHref,
-  buildDesignLabFinanceiroHref,
-  buildDesignLabHref,
-} from '@/components/design-lab/design-lab-navigation'
+import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-navigation'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { OwnerAccountView } from './owner-account-view'
 import { OwnerFinanceView } from './owner-finance-view'
@@ -17,6 +13,8 @@ const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then((mo
   ssr: false,
 })
 
+const OWNER_HOME_HREF = '/app/owner?tab=today'
+const OWNER_FINANCE_HREF = '/app/owner?tab=financeiro'
 const OWNER_QUICK_REGISTER_HREF = '/app/owner/cadastro-rapido'
 
 function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
@@ -45,7 +43,7 @@ function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShell
         controller.setPendingAction(null)
         controller.setActiveTab('comandas')
       }}
-      onOpenFullDashboard={() => controller.router.push(buildDesignLabHref('overview'))}
+      onOpenFullDashboard={() => controller.router.push(OWNER_HOME_HREF)}
       onOpenKitchen={() => {
         controller.setPendingAction(null)
         controller.setPdvView('cozinha')
@@ -132,8 +130,8 @@ function OwnerFinancePanel({ controller }: Readonly<{ controller: OwnerMobileShe
       ticketMedio={controller.ticketMedio}
       todayOrderCount={controller.todayOrderCount}
       todayRevenue={controller.executiveKpis.receitaRealizada}
-      onOpenCash={() => controller.router.push(buildDesignLabHref('caixa'))}
-      onOpenFinanceiro={() => controller.router.push(buildDesignLabFinanceiroHref('movimentacao'))}
+      onOpenCash={() => controller.router.push(OWNER_FINANCE_HREF)}
+      onOpenFinanceiro={() => controller.router.push(OWNER_FINANCE_HREF)}
     />
   )
 }
@@ -143,7 +141,7 @@ function OwnerAccountPanel({ controller }: Readonly<{ controller: OwnerMobileShe
     <OwnerAccountView
       companyName={controller.companyName}
       displayName={controller.displayName}
-      onOpenDashboard={() => controller.router.push(buildDesignLabHref('overview'))}
+      onOpenDashboard={() => controller.router.push(OWNER_HOME_HREF)}
       onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
       onOpenSecurity={() => controller.router.push(buildDesignLabConfigHref('security'))}
       onOpenSettings={() => controller.router.push(buildDesignLabConfigHref('account'))}

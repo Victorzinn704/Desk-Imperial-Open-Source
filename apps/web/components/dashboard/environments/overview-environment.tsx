@@ -166,29 +166,34 @@ export function DesignLabOverviewEnvironment() {
       <LabPageHeader
         description="Receita, lucro, ticket e alertas."
         eyebrow="visão geral da operação"
-        actions={
-          <div className="w-full xl:max-w-sm">
-            <VascoNextMatchWidget className="border-[var(--lab-border)] bg-[var(--lab-surface)]" />
-          </div>
-        }
+        asideClassName="xl:max-w-[760px]"
+        metaContainerClassName="border-0 bg-transparent p-0 xl:max-w-none"
         meta={
-          <div className="space-y-3">
-            <LabMetaRow label="Empresa" tone="neutral" value={snapshot.companyName} />
-            <LabMetaRow
-              label="Receita vs mês anterior"
-              tone={revenueTone}
-              value={`${snapshot.revenueGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.revenueGrowth)}`}
+          <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+            <VascoNextMatchWidget
+              className="h-full border-[var(--lab-border)] bg-[var(--lab-surface)]"
+              iframeClassName="h-[270px]"
             />
-            <LabMetaRow
-              label="Lucro do mês"
-              tone={profitTone}
-              value={formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL')}
-            />
-            <LabMetaRow
-              label="Estoque crítico"
-              tone={stockTone}
-              value={snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens` : 'Sem alerta'}
-            />
+            <div className="flex h-full flex-col rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-4">
+              <div className="space-y-3">
+                <LabMetaRow label="Empresa" tone="neutral" value={snapshot.companyName} />
+                <LabMetaRow
+                  label="Receita vs mês anterior"
+                  tone={revenueTone}
+                  value={`${snapshot.revenueGrowth >= 0 ? '+' : ''}${formatPercent(snapshot.revenueGrowth)}`}
+                />
+                <LabMetaRow
+                  label="Lucro do mês"
+                  tone={profitTone}
+                  value={formatCurrency(snapshot.currentProfit, snapshot.displayCurrency as 'BRL')}
+                />
+                <LabMetaRow
+                  label="Estoque crítico"
+                  tone={stockTone}
+                  value={snapshot.lowStockItems > 0 ? `${snapshot.lowStockItems} itens` : 'Sem alerta'}
+                />
+              </div>
+            </div>
           </div>
         }
         title="Overview"

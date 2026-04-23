@@ -337,32 +337,42 @@ function CartSummaryBar({
   totalItems: number
   totalValue: number
 }>) {
+  if (totalItems === 0) {
+    return null
+  }
+
+  const compactLabel = submitLabel.toLowerCase().includes('adicionar') ? 'Adicionar' : 'Abrir'
+
   return (
-    <div className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[var(--surface)] px-4 py-3">
-      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
-        <div className="relative">
-          <ShoppingCart className="size-5 text-[var(--text-soft,#7a8896)]" />
-          {totalItems > 0 && (
+    <div
+      className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[var(--bg)]/95 px-3 pb-3 pt-2 backdrop-blur"
+      style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[20px] border border-[rgba(0,140,255,0.22)] bg-[var(--surface)] p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.28)]">
+        <div className="flex min-w-0 items-center gap-3 rounded-[16px] bg-[var(--surface-muted)] px-3 py-3">
+          <div className="relative shrink-0">
+            <ShoppingCart className="size-5 text-[var(--accent,#008cff)]" />
             <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-[var(--on-accent)]">
               {totalItems}
             </span>
-          )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft,#7a8896)]">
+              {totalItems} {totalItems === 1 ? 'item' : 'itens'}
+            </p>
+            <p className="truncate text-base font-semibold text-[var(--text-primary)]">{formatCurrency(totalValue)}</p>
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-xs text-[var(--text-soft,#7a8896)]">
-            {totalItems === 0 ? 'Carrinho vazio' : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
-          </p>
-          {totalValue > 0 ? (
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{formatCurrency(totalValue)}</p>
-          ) : null}
-        </div>
+
         <button
-          className="min-h-[48px] w-full rounded-xl bg-[var(--accent,#008cff)] px-5 py-3 text-sm font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic sm:w-auto"
-          disabled={totalItems === 0 || busy}
+          aria-label={submitLabel}
+          className="flex min-h-[72px] min-w-[84px] flex-col items-center justify-center rounded-[18px] bg-[var(--accent,#008cff)] px-3 py-2 text-center text-[11px] font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+          disabled={busy}
           type="button"
           onClick={onSubmit}
         >
-          {busy ? 'Enviando...' : submitLabel}
+          <ShoppingCart className="size-5" />
+          <span className="mt-1 leading-tight">{busy ? 'Enviando' : compactLabel}</span>
         </button>
       </div>
     </div>
@@ -445,7 +455,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
+    <div className="flex min-h-0 flex-1 flex-col bg-[var(--surface)]">
       <MobileOrderHeader
         categories={categories}
         headerLabel={`Mesa ${mesaLabel}`}

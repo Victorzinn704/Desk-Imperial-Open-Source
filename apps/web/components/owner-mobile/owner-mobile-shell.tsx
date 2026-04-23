@@ -39,6 +39,7 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
     setFocusedComandaId,
     setScreenError,
   } = controller
+  const isPdvBuilderOpen = activeTab === 'pdv' && Boolean(pendingAction)
 
   return (
     <div className="flex min-h-screen min-h-[100svh] flex-col overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
@@ -52,7 +53,12 @@ export function OwnerMobileShell({ currentUser }: OwnerMobileShellProps) {
       <ConnectionBanner status={realtimeStatus} />
       <OwnerPwaInstallPrompt />
       {screenError ? <OwnerScreenErrorBanner message={screenError} onDismiss={() => setScreenError(null)} /> : null}
-      <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[7.25rem]" ref={containerRef}>
+      <main
+        className={`relative min-h-0 flex-1 pb-[7.25rem] ${
+          isPdvBuilderOpen ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-y-contain'
+        }`}
+        ref={containerRef}
+      >
         <PullIndicator isRefreshing={isRefreshing} progress={progress} style={indicatorStyle} />
         <OwnerMobileShellContent controller={controller} />
       </main>

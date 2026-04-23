@@ -175,7 +175,7 @@ describe('MobileOrderBuilder', () => {
     )
 
     expect(screen.getByText(/nenhum produto ativo no catálogo/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /enviando/i })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /abrir comanda/i })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /cancelar/i }))
     expect(onCancel).toHaveBeenCalledTimes(1)
@@ -221,9 +221,10 @@ describe('MobileOrderBuilder', () => {
 
     await user.click(screen.getByRole('button', { name: /pizza/i }))
     await user.click(screen.getByRole('button', { name: /adicionar margherita/i }))
+    expect(screen.getByRole('button', { name: /abrir comanda/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /remover margherita/i }))
 
-    expect(screen.getByText(/carrinho vazio/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /abrir comanda/i })).not.toBeInTheDocument()
   })
 
   it('renders owner summary strip and secondary action without breaking the base flow', async () => {
@@ -255,7 +256,9 @@ describe('MobileOrderBuilder', () => {
     expect(onSecondaryAction).toHaveBeenCalledTimes(1)
   })
 
-  it('uses the clearer opening action label when creating a new comanda', () => {
+  it('só mostra o dock de abertura depois que o carrinho recebe itens', async () => {
+    const user = userEvent.setup()
+
     render(
       <MobileOrderBuilder
         mesaLabel="30"
@@ -266,6 +269,11 @@ describe('MobileOrderBuilder', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: /abrir comanda/i })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /abrir comanda/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /adicionar pilsen/i }))
+
+    expect(screen.getByRole('button', { name: /abrir comanda/i })).toBeInTheDocument()
+    expect(screen.getByText('Abrir')).toBeInTheDocument()
   })
 })

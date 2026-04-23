@@ -5,7 +5,6 @@ import { buildTurnPriority, type OwnerTodayViewProps } from './owner-today-view-
 import { OwnerTodayRadar } from './owner-today-view-radar'
 import {
   OwnerTodayActions,
-  OwnerTodayDashboardButton,
   OwnerTodayFootballWidget,
   OwnerTodayHero,
   OwnerTodayLiveMap,
@@ -52,7 +51,6 @@ export function OwnerTodayView(props: OwnerTodayViewProps) {
         setSelectedPerformer={setSelectedPerformer}
         topProdutos={props.topProdutos}
       />
-      <OwnerTodayDashboardButton onOpenFullDashboard={props.onOpenFullDashboard} />
     </div>
   )
 }

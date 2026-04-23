@@ -4,9 +4,9 @@ import { OwnerPdvBuilder, OwnerPdvOverview } from './owner-mobile-pdv-tab-sectio
 import { type OwnerPdvTabProps } from './owner-mobile-pdv-tab-model'
 
 export function OwnerPdvTab(props: OwnerPdvTabProps) {
-  return (
-    <div className="space-y-4 p-3 pb-6">
-      {props.pendingAction ? (
+  if (props.pendingAction) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
         <OwnerPdvBuilder
           errorMessage={props.errorMessage}
           isBusy={props.isBusy}
@@ -19,20 +19,24 @@ export function OwnerPdvTab(props: OwnerPdvTabProps) {
           onOpenQuickRegister={props.onOpenQuickRegister}
           onSubmit={props.onSubmit}
         />
-      ) : (
-        <OwnerPdvOverview
-          errorMessage={props.errorMessage}
-          isOffline={props.isOffline}
-          kitchenData={props.kitchenData}
-          kitchenLoading={props.kitchenLoading}
-          mesas={props.mesas}
-          mesasLoading={props.mesasLoading}
-          pdvView={props.pdvView}
-          onOpenQuickRegister={props.onOpenQuickRegister}
-          onSelectMesa={props.onSelectMesa}
-          onSetPdvView={props.onSetPdvView}
-        />
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4 p-3 pb-6">
+      <OwnerPdvOverview
+        errorMessage={props.errorMessage}
+        isOffline={props.isOffline}
+        kitchenData={props.kitchenData}
+        kitchenLoading={props.kitchenLoading}
+        mesas={props.mesas}
+        mesasLoading={props.mesasLoading}
+        pdvView={props.pdvView}
+        onOpenQuickRegister={props.onOpenQuickRegister}
+        onSelectMesa={props.onSelectMesa}
+        onSetPdvView={props.onSetPdvView}
+      />
     </div>
   )
 }
