@@ -1,7 +1,11 @@
 'use client'
 
+import type { FinanceSummaryResponse } from '@contracts/contracts'
+
 export type OwnerFinanceViewProps = Readonly<{
   caixaEsperado: number
+  categoryBreakdown?: FinanceSummaryResponse['categoryBreakdown']
+  displayCurrency?: FinanceSummaryResponse['displayCurrency']
   errorMessage: string | null
   isOffline: boolean
   lucroRealizado: number

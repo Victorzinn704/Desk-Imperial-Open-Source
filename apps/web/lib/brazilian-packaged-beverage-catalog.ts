@@ -45,7 +45,6 @@ const beverageCatalog: PackagedBeverageCatalogEntry[] = [
     aliases: ['brahma', 'brahma chopp', 'brahma duplo malte'],
     colors: { body: '#d3272e', panel: '#fff4eb', accent: '#f4c24e', text: '#8a1419', cap: '#d9dbe2' },
     defaultShape: 'can',
-    barcodes: ['7891149105069', '7891991294942'],
   },
   {
     id: 'antarctica',
@@ -53,7 +52,6 @@ const beverageCatalog: PackagedBeverageCatalogEntry[] = [
     aliases: ['antarctica', 'antarctica sub zero'],
     colors: { body: '#e8edf5', panel: '#2f5ea8', accent: '#e65050', text: '#102a52', cap: '#d8dde5' },
     defaultShape: 'can',
-    barcodes: ['7891991000826'],
   },
   {
     id: 'heineken',

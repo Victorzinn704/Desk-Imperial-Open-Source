@@ -287,12 +287,12 @@ describe('OwnerQuickRegisterView', () => {
     })
   })
 
-  it('abre o scanner por câmera e mostra fallback quando o navegador não suporta BarcodeDetector', async () => {
+  it('abre o scanner por câmera e mostra fallback quando o dispositivo não oferece câmera ao navegador', async () => {
     renderView()
 
     fireEvent.click(screen.getByRole('button', { name: /Escanear câmera/i }))
 
     expect(await screen.findByRole('dialog', { name: /Ler código pela câmera/i })).toBeInTheDocument()
-    expect(screen.getAllByText(/Este navegador ainda não oferece leitura nativa por câmera/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/A câmera não está disponível neste dispositivo/i).length).toBeGreaterThan(0)
   })
 })

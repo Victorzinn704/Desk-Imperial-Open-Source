@@ -2,8 +2,7 @@
 
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { formatCompactCurrency } from '@/lib/currency'
-
-const COLORS = ['#36f57c', '#2265d8', '#C9A84C', '#f04438', '#a78bfa', '#38bdf8', '#fb923c', '#e879f9']
+import { getFinanceCategoryColor } from './finance-category-colors'
 
 type Props = {
   categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
@@ -27,13 +26,14 @@ export function FinanceDoughnutChart({ categoryBreakdown, displayCurrency }: Pro
   }
 
   const total = data.reduce((sum, item) => sum + item.value, 0)
-  let current = 0
   const segments = data.map((item, index) => {
-    const start = current
+    const start = data
+      .slice(0, index)
+      .reduce((sum, previousItem) => sum + (total > 0 ? (previousItem.value / total) * 100 : 0), 0)
     const share = total > 0 ? (item.value / total) * 100 : 0
-    current += share
+    const end = start + share
 
-    return `${COLORS[index % COLORS.length]} ${start.toFixed(2)}% ${current.toFixed(2)}%`
+    return `${getFinanceCategoryColor(index)} ${start.toFixed(2)}% ${end.toFixed(2)}%`
   })
 
   const topItem = data[0]

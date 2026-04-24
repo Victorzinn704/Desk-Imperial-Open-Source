@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 import type { OperationsLiveResponse, OperationsSummaryResponse } from '@contracts/contracts'
 import {
@@ -32,6 +32,18 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
   const kitchenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      for (const timerRef of [operationsTimerRef, kitchenTimerRef, summaryTimerRef, commercialTimerRef]) {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current)
+          timerRef.current = null
+        }
+      }
+    },
+    [],
+  )
 
   const refreshBaseline = useCallback(() => {
     void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
@@ -95,9 +107,7 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
 
       const patchResult = applyRealtimeEnvelope(queryClient, envelope)
 
-      if (patchResult.livePatched) {
-        syncSummaryFromLive()
-      }
+      const summarySyncedFromLive = patchResult.livePatched ? syncSummaryFromLive() : false
 
       if (!patchResult.livePatched || patchResult.liveNeedsRefresh) {
         queueOperationsRefresh()
@@ -107,7 +117,11 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
         queueKitchenRefresh()
       }
 
-      if (requiresSummaryRefresh(envelope.event) && (!patchResult.summaryPatched || patchResult.summaryNeedsRefresh)) {
+      if (
+        requiresSummaryRefresh(envelope.event) &&
+        !summarySyncedFromLive &&
+        (!patchResult.summaryPatched || patchResult.summaryNeedsRefresh)
+      ) {
         queueSummaryRefresh()
       }
 
@@ -119,7 +133,14 @@ export function useOperationsRealtime(enabled: boolean, queryClient: QueryClient
         return
       }
     },
-    [queryClient, queueCommercialRefresh, queueKitchenRefresh, queueOperationsRefresh, queueSummaryRefresh],
+    [
+      queryClient,
+      queueCommercialRefresh,
+      queueKitchenRefresh,
+      queueOperationsRefresh,
+      queueSummaryRefresh,
+      syncSummaryFromLive,
+    ],
   )
 
   const { status } = useOperationsSocket(enabled, handleEvent, refreshBaseline)

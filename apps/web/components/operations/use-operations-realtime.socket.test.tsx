@@ -3,6 +3,8 @@ import { render } from '@testing-library/react'
 import { useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOperationsRealtime } from './use-operations-realtime'
+import { OPERATIONS_LIVE_COMPACT_QUERY_KEY, OPERATIONS_SUMMARY_QUERY_KEY } from '@/lib/operations'
+import { liveSnapshot, summarySnapshot } from './__fixtures__/operations-realtime.fixtures'
 
 const { mockSocket, ioMock } = vi.hoisted(() => {
   const socket = {
@@ -21,17 +23,22 @@ vi.mock('socket.io-client', () => ({
   io: ioMock,
 }))
 
-function RealtimeHarness() {
+function RealtimeHarness({
+  queryClient: providedQueryClient,
+}: Readonly<{
+  queryClient?: QueryClient
+}>) {
   const queryClient = useMemo(
     () =>
+      providedQueryClient ??
       new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
+          defaultOptions: {
+            queries: {
+              retry: false,
+            },
           },
-        },
-      }),
-    [],
+        }),
+    [providedQueryClient],
   )
 
   useOperationsRealtime(true, queryClient)
@@ -68,5 +75,65 @@ describe('useOperationsRealtime socket wiring', () => {
         timeout: 8_000,
       }),
     )
+  })
+
+  it('não refaz summary quando o patch local já sincroniza o resumo a partir do live snapshot', () => {
+    vi.useFakeTimers()
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+    queryClient.setQueryData(
+      OPERATIONS_LIVE_COMPACT_QUERY_KEY,
+      liveSnapshot({
+        unassigned: {
+          employeeId: null,
+          employeeCode: null,
+          displayName: 'Operação',
+          active: true,
+          cashSession: null,
+          comandas: [],
+        },
+      }),
+    )
+    queryClient.setQueryData(OPERATIONS_SUMMARY_QUERY_KEY, summarySnapshot())
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    render(<RealtimeHarness queryClient={queryClient} />)
+    const openedSubscription = mockSocket.on.mock.calls.find(([eventName]) => eventName === 'comanda.opened')
+    const openedHandler = openedSubscription?.[1] as ((envelope: unknown) => void) | undefined
+
+    openedHandler?.({
+      event: 'comanda.opened',
+      payload: {
+        businessDate: '2026-03-30',
+        comandaId: 'c-99',
+        items: [
+          {
+            id: 'i-99',
+            productId: 'p-99',
+            productName: 'Café',
+            quantity: 1,
+            unitPrice: 10,
+            totalAmount: 10,
+            notes: null,
+            kitchenStatus: null,
+            kitchenQueuedAt: null,
+            kitchenReadyAt: null,
+          },
+        ],
+        openedAt: '2026-03-30T10:00:00.000Z',
+        status: 'OPEN',
+        tableLabel: 'Mesa 9',
+        totalAmount: 10,
+      },
+    })
+    vi.advanceTimersByTime(2_000)
+
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY })
+    vi.useRealTimers()
   })
 })

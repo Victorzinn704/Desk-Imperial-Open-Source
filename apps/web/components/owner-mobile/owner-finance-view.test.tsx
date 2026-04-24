@@ -10,6 +10,25 @@ describe('OwnerFinanceView', () => {
     render(
       <OwnerFinanceView
         caixaEsperado={850}
+        categoryBreakdown={[
+          {
+            category: 'Petiscos',
+            inventoryCostValue: 400,
+            inventorySalesValue: 900,
+            potentialProfit: 500,
+            products: 4,
+            units: 20,
+          },
+          {
+            category: 'Cervejas',
+            inventoryCostValue: 250,
+            inventorySalesValue: 300,
+            potentialProfit: 50,
+            products: 2,
+            units: 30,
+          },
+        ]}
+        displayCurrency="BRL"
         errorMessage={null}
         isOffline={false}
         lucroRealizado={320}
@@ -24,6 +43,9 @@ describe('OwnerFinanceView', () => {
     expect(screen.getByText('saudável')).toBeInTheDocument()
     expect(screen.getByText((content) => content.includes('1.200,00'))).toBeInTheDocument()
     expect(screen.getByText(/margem 26,7%/i)).toBeInTheDocument()
+    expect(screen.getByText('Mix por categoria')).toBeInTheDocument()
+    expect(screen.getByText('Petiscos')).toBeInTheDocument()
+    expect(screen.getByText('Cervejas')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Caixa do turno/i }))
     fireEvent.click(screen.getByRole('button', { name: /Financeiro completo/i }))

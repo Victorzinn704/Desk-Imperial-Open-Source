@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from 'react'
+import type { IScannerControls } from '@zxing/browser'
 import { Camera, CameraOff, RefreshCcw, ScanLine, X } from 'lucide-react'
 
 const preferredBarcodeFormats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] as const
@@ -45,12 +46,18 @@ export function OwnerBarcodeScannerSheet({
 }>) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const zxingControlsRef = useRef<IScannerControls | null>(null)
   const timerRef = useRef<number | null>(null)
   const [state, setState] = useState<ScannerState>('idle')
   const [message, setMessage] = useState('Abrindo câmera traseira...')
   const [attempt, setAttempt] = useState(0)
 
   const stopScanner = useCallback(() => {
+    if (zxingControlsRef.current) {
+      zxingControlsRef.current.stop()
+      zxingControlsRef.current = null
+    }
+
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
@@ -83,13 +90,6 @@ export function OwnerBarcodeScannerSheet({
     let cancelled = false
 
     async function startScanner() {
-      const BarcodeDetector = getBarcodeDetector()
-      if (!BarcodeDetector) {
-        setState('unsupported')
-        setMessage('Este navegador ainda não oferece leitura nativa por câmera. Continue com EAN manual ou leitor HID.')
-        return
-      }
-
       if (!navigator.mediaDevices?.getUserMedia) {
         setState('unsupported')
         setMessage('A câmera não está disponível neste dispositivo. Continue com o fluxo manual.')
@@ -98,6 +98,21 @@ export function OwnerBarcodeScannerSheet({
 
       setState('starting')
       setMessage('Abrindo câmera traseira...')
+
+      const BarcodeDetector = getBarcodeDetector()
+      if (!BarcodeDetector) {
+        await startZxingScanner({
+          cancelled: () => cancelled,
+          onClose,
+          onDetected,
+          setMessage,
+          setState,
+          stopScanner,
+          videoRef,
+          zxingControlsRef,
+        })
+        return
+      }
 
       try {
         const supportedFormats = BarcodeDetector.getSupportedFormats
@@ -302,4 +317,87 @@ export function OwnerBarcodeScannerSheet({
       </section>
     </div>
   )
+}
+
+async function startZxingScanner({
+  cancelled,
+  onClose,
+  onDetected,
+  setMessage,
+  setState,
+  stopScanner,
+  videoRef,
+  zxingControlsRef,
+}: Readonly<{
+  cancelled: () => boolean
+  onClose: () => void
+  onDetected: (code: string) => void
+  setMessage: (message: string) => void
+  setState: (state: ScannerState) => void
+  stopScanner: () => void
+  videoRef: RefObject<HTMLVideoElement | null>
+  zxingControlsRef: MutableRefObject<IScannerControls | null>
+}>) {
+  const video = videoRef.current
+  if (!video) {
+    setState('error')
+    setMessage('A câmera não conseguiu montar a prévia de leitura. Continue com EAN manual ou leitor HID.')
+    return
+  }
+
+  try {
+    const { BarcodeFormat, BrowserMultiFormatReader } = await import('@zxing/browser')
+    const reader = new BrowserMultiFormatReader()
+    reader.possibleFormats = [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+    ]
+
+    setMessage('Abrindo leitura compatível por câmera...')
+    const controls = await reader.decodeFromConstraints(
+      {
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      },
+      video,
+      (result) => {
+        if (cancelled()) {
+          return
+        }
+
+        const detectedCode = normalizeDetectedCode(result?.getText())
+        if (!detectedCode) {
+          return
+        }
+
+        stopScanner()
+        onDetected(detectedCode)
+        onClose()
+      },
+    )
+
+    if (cancelled()) {
+      controls.stop()
+      return
+    }
+
+    zxingControlsRef.current = controls
+    setState('ready')
+    setMessage('Aponte a câmera para o código de barras.')
+  } catch (error) {
+    const fallbackMessage =
+      error instanceof Error && /Permission|NotAllowed/i.test(error.name + error.message)
+        ? 'O acesso à câmera foi negado. Libere a câmera do navegador para usar a leitura nativa.'
+        : 'Não foi possível iniciar a leitura por câmera neste navegador. Continue com EAN manual ou leitor HID.'
+    setState('error')
+    setMessage(fallbackMessage)
+    stopScanner()
+  }
 }

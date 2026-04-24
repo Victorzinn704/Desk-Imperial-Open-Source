@@ -28,7 +28,7 @@ export function isMobileViewport(viewportWidth?: number | null) {
 }
 
 function hasStandaloneDisplay() {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false
   }
 
@@ -46,7 +46,7 @@ function hasMobileUserAgent() {
 }
 
 function hasCoarsePointer() {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false
   }
 

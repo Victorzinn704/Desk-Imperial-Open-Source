@@ -42,7 +42,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('usa packshot nacional para bebida embalada reconhecida sem foto valida', () => {
+  it('nao inventa packshot para cerveja de marca sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Heineken 350ml',
       brand: 'Heineken',
@@ -53,8 +53,7 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toBeNull()
   })
 
   it('mantem foto real acima do packshot nacional quando os dois existem', () => {
@@ -88,7 +87,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('ignora url insegura e usa packshot nacional quando o produto embalado e reconhecido', () => {
+  it('ignora url insegura e nao troca bebida embalada por imagem fake', () => {
     const visual = resolveProductVisual({
       name: 'Água',
       category: 'Bebidas',
@@ -96,11 +95,10 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toBeNull()
   })
 
-  it('reconhece Guaravita como bebida nacional embalada', () => {
+  it('nao usa packshot local para Guaravita sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Guaravita',
       brand: 'Guaravita',
@@ -111,11 +109,10 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toBeNull()
   })
 
-  it('reconhece Bohemia como bebida nacional embalada', () => {
+  it('nao usa packshot local para Bohemia sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Bohemia 600ml',
       brand: 'Bohemia',
@@ -126,11 +123,10 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toBeNull()
   })
 
-  it('reconhece cerveja sem alcool generica como bebida nacional embalada', () => {
+  it('nao usa packshot local para cerveja generica sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Cerveja sem Alcool 350ml',
       category: 'Cervejas',
@@ -140,7 +136,6 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(visual).toBeNull()
   })
 })

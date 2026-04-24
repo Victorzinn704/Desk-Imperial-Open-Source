@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import {
@@ -32,6 +32,7 @@ import { fetchCurrentUser } from '@/lib/api'
 import { useDashboardLogout, useDashboardMutations } from '@/components/dashboard/hooks'
 import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-navigation'
 import { BrandMark } from '@/components/shared/brand-mark'
+import { resolveAuthenticatedRoute } from '@/lib/authenticated-route'
 import { cn } from '@/lib/utils'
 
 type Role = 'OWNER' | 'STAFF'
@@ -83,6 +84,7 @@ const NAV_STAFF = [
 ]
 
 const COLLAPSED_KEY = 'lab_sidebar_collapsed'
+const FORCE_DESKTOP_PARAM = 'forceDesktop'
 
 function getStoredBoolean(key: string, fallback: boolean) {
   if (typeof window === 'undefined') {
@@ -115,11 +117,22 @@ function getInitials(name?: string | null) {
   return parts.map((part) => part[0]?.toUpperCase() ?? '').join('')
 }
 
+function getForceDesktopShellFromLocation() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  return new URLSearchParams(window.location.search).get(FORCE_DESKTOP_PARAM) === '1'
+}
+
 export function LabShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(() => getStoredBoolean(COLLAPSED_KEY, false))
+  const [forceDesktopShell] = useState(getForceDesktopShellFromLocation)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [viewportWidth, setViewportWidth] = useState<number | null>(null)
 
   const sessionQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -172,6 +185,24 @@ export function LabShell({ children }: { children: React.ReactNode }) {
   const accountInitials = getInitials(currentUser?.fullName)
 
   useEffect(() => {
+    const syncViewport = () => setViewportWidth(window.innerWidth)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
+  const mobileShellHref = currentUser ? resolveAuthenticatedRoute(role, viewportWidth) : null
+  const shouldRedirectToMobileShell = !forceDesktopShell && Boolean(mobileShellHref?.startsWith('/app/'))
+
+  useEffect(() => {
+    if (!shouldRedirectToMobileShell || !mobileShellHref) {
+      return
+    }
+
+    router.replace(mobileShellHref)
+  }, [mobileShellHref, router, shouldRedirectToMobileShell])
+
+  useEffect(() => {
     localStorage.setItem(COLLAPSED_KEY, String(collapsed))
   }, [collapsed])
 
@@ -184,6 +215,14 @@ export function LabShell({ children }: { children: React.ReactNode }) {
       document.body.classList.remove('design-lab-shell-open')
     }
   }, [])
+
+  if (shouldRedirectToMobileShell) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 text-center text-sm text-[var(--text-soft)]">
+        Abrindo o app operacional...
+      </main>
+    )
+  }
 
   return (
     <div className={cn('lab-root flex h-dvh min-h-dvh overflow-hidden', isDark ? 'lab-dark' : 'lab-light')} data-lab>

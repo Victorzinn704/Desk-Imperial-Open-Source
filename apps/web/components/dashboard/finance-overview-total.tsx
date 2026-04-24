@@ -11,6 +11,7 @@ import {
 import { formatCurrency } from '@/lib/currency'
 import { CardSkeleton } from '@/components/shared/skeleton'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
+import { getFinanceCategoryColor } from './finance-category-colors'
 
 type Props = {
   finance: FinanceSummaryResponse
@@ -57,9 +58,11 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
   const categoryTotal = categoryBreakdown.reduce((sum, category) => sum + category.inventorySalesValue, 0)
   const topCategories = categoryBreakdown
     .filter((category) => category.inventorySalesValue > 0)
+    .sort((left, right) => right.inventorySalesValue - left.inventorySalesValue)
     .slice(0, 4)
-    .map((category) => ({
+    .map((category, index) => ({
       ...category,
+      color: getFinanceCategoryColor(index),
       share: categoryTotal > 0 ? (category.inventorySalesValue / categoryTotal) * 100 : 0,
     }))
 
@@ -116,30 +119,33 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
         </div>
 
         <div className="space-y-4 xl:border-l xl:border-[var(--border)] xl:pl-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mix por categoria</p>
-            <p className="mt-1 text-sm text-[var(--text-primary)]">Peso comercial do período</p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                Mix por categoria
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-primary)]">Peso comercial do período</p>
+            </div>
+            <span className="text-xs text-[var(--text-soft)]">{topCategories.length || 0} faixas</span>
           </div>
-          <span className="text-xs text-[var(--text-soft)]">{topCategories.length || 0} faixas</span>
-        </div>
 
-        {topCategories.length > 0 ? (
-          <div className="space-y-3">
-            {topCategories.map((category) => (
-              <CategoryShareRow
-                category={category.category}
-                currency={displayCurrency}
-                key={category.category}
-                share={category.share}
-                value={category.inventorySalesValue}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-[16px] border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-soft)]">
-            O mix por categoria aparece quando houver leitura comercial suficiente no período.
-          </div>
+          {topCategories.length > 0 ? (
+            <div className="space-y-3">
+              {topCategories.map((category) => (
+                <CategoryShareRow
+                  category={category.category}
+                  color={category.color}
+                  currency={displayCurrency}
+                  key={category.category}
+                  share={category.share}
+                  value={category.inventorySalesValue}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[16px] border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-soft)]">
+              O mix por categoria aparece quando houver leitura comercial suficiente no período.
+            </div>
           )}
         </div>
       </div>
@@ -160,11 +166,13 @@ function MetricTile({ label, value }: { label: string; value: string }) {
 
 function CategoryShareRow({
   category,
+  color,
   share,
   value,
   currency,
 }: {
   category: string
+  color: string
   share: number
   value: number
   currency: FinanceSummaryResponse['displayCurrency']
@@ -172,7 +180,10 @@ function CategoryShareRow({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="truncate text-[var(--text-primary)]">{category}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="size-2 shrink-0 rounded-full" style={{ background: color }} />
+          <span className="truncate text-[var(--text-primary)]">{category}</span>
+        </span>
         <div className="flex shrink-0 items-center gap-3">
           <span className="text-[var(--text-soft)]">{share.toFixed(1)}%</span>
           <span className="font-medium text-[var(--text-primary)]">{formatCurrency(value, currency)}</span>
@@ -181,8 +192,8 @@ function CategoryShareRow({
 
       <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-soft)]">
         <div
-          className="h-full rounded-full bg-[var(--accent)]"
-          style={{ width: `${Math.max(10, Math.min(share, 100))}%` }}
+          className="h-full rounded-full"
+          style={{ background: color, width: `${Math.max(10, Math.min(share, 100))}%` }}
         />
       </div>
     </div>

@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
+import type * as ApiModule from '@/lib/api'
 import { MobileOrderBuilder } from './mobile-order-builder'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
   return {
     ...actual,
     searchCatalogImages: vi.fn().mockResolvedValue([]),
@@ -284,6 +285,7 @@ describe('MobileOrderBuilder', () => {
 
     await user.click(screen.getByRole('button', { name: /adicionar pilsen/i }))
 
+    expect(screen.getByTestId('mobile-order-checkout-dock')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /abrir comanda/i })).toBeInTheDocument()
     expect(screen.getByText('Abrir')).toBeInTheDocument()
   })

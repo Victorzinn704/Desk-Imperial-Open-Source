@@ -1,10 +1,17 @@
 'use client'
 
 import { type OwnerFinanceViewProps } from './owner-finance-view-model'
-import { OwnerFinanceActions, OwnerFinanceHero, OwnerFinanceStatusBanner } from './owner-finance-view-sections'
+import {
+  OwnerFinanceActions,
+  OwnerFinanceCategoryMix,
+  OwnerFinanceHero,
+  OwnerFinanceStatusBanner,
+} from './owner-finance-view-sections'
 
 export function OwnerFinanceView({
   caixaEsperado,
+  categoryBreakdown = [],
+  displayCurrency = 'BRL',
   errorMessage,
   isOffline,
   lucroRealizado,
@@ -24,6 +31,7 @@ export function OwnerFinanceView({
         todayOrderCount={todayOrderCount}
         todayRevenue={todayRevenue}
       />
+      <OwnerFinanceCategoryMix categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
       <OwnerFinanceActions onOpenCash={onOpenCash} onOpenFinanceiro={onOpenFinanceiro} />
     </div>
   )

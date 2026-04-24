@@ -9,7 +9,7 @@ loadSeedEnv()
 
 const prisma = new PrismaClient()
 const DEFAULT_BATCH_SIZE = 50
-const DEFAULT_DELAY_MS = 450
+const DEFAULT_DELAY_MS = 750
 const PEXELS_API_URL = (process.env.PEXELS_API_URL?.trim() || 'https://api.pexels.com/v1').replace(/\/$/, '')
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY?.trim()
 
@@ -45,6 +45,7 @@ type PexelsPhotoSource = {
 type PexelsPhoto = {
   id: number
   alt: string
+  url?: string
   src: PexelsPhotoSource
 }
 
@@ -279,7 +280,7 @@ function buildProductImageSearchQuery(product: ProductImageCandidate) {
 
   if (product.isCombo || containsAny(haystack, COMBO_KEYWORDS)) {
     if (containsAny(haystack, BEER_SNACK_COMBO_KEYWORDS)) {
-      return 'petisco cerveja bar'
+      return 'beer appetizers bar table'
     }
 
     if (containsAny(haystack, BURGER_COMBO_KEYWORDS)) {
@@ -338,7 +339,7 @@ function normalize(value: string) {
 async function searchPexelsImage(query: string) {
   const searchUrl = new URL(`${PEXELS_API_URL}/search`)
   searchUrl.searchParams.set('query', query)
-  searchUrl.searchParams.set('per_page', '1')
+  searchUrl.searchParams.set('per_page', '6')
   searchUrl.searchParams.set('orientation', 'landscape')
   searchUrl.searchParams.set('size', 'medium')
   searchUrl.searchParams.set('locale', 'pt-BR')
@@ -355,8 +356,41 @@ async function searchPexelsImage(query: string) {
   }
 
   const payload = (await response.json()) as PexelsSearchResponse
-  const imageUrl = payload.photos[0]?.src.large
+  const imageUrl = selectBestPexelsPhoto(query, payload.photos)?.src.large
   return sanitizeProductCatalogImageUrl(imageUrl ?? null, 'Imagem do Pexels')
+}
+
+function selectBestPexelsPhoto(query: string, photos: PexelsPhoto[]) {
+  const scored = photos
+    .map((photo, index) => ({ index, photo, score: scorePexelsPhoto(query, photo) }))
+    .filter((entry) => entry.score >= 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+
+  return scored[0]?.photo ?? photos[0] ?? null
+}
+
+function scorePexelsPhoto(query: string, photo: PexelsPhoto) {
+  const normalizedQuery = normalize(query)
+  const haystack = normalize(`${photo.alt ?? ''} ${photo.url ?? ''}`)
+  let score = 0
+
+  const positiveTerms = normalizedQuery.includes('beer') && normalizedQuery.includes('appetizers')
+    ? ['beer', 'snack', 'appetizer', 'food', 'bar', 'restaurant', 'table']
+    : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
+
+  for (const term of positiveTerms) {
+    if (haystack.includes(term)) {
+      score += 2
+    }
+  }
+
+  for (const term of ['portrait', 'person', 'people', 'woman', 'man', 'dog', 'cat', 'beach', 'mountain', 'city']) {
+    if (haystack.includes(term)) {
+      score -= 3
+    }
+  }
+
+  return score
 }
 
 async function safeReadText(response: Response) {

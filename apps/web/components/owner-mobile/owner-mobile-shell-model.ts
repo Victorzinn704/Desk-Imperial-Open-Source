@@ -69,8 +69,12 @@ export function getTodayErrorMessage(errors: {
   )
 }
 
-export function getFinanceErrorMessage(summaryErrorMessage: string | null, ordersErrorMessage: string | null) {
-  return summaryErrorMessage ?? ordersErrorMessage ?? null
+export function getFinanceErrorMessage(
+  summaryErrorMessage: string | null,
+  ordersErrorMessage: string | null,
+  financeErrorMessage: string | null,
+) {
+  return summaryErrorMessage ?? ordersErrorMessage ?? financeErrorMessage ?? null
 }
 
 export function getPdvErrorMessage(
@@ -135,7 +139,11 @@ function buildControllerVisuals({
   return {
     companyName: getCompanyName(currentUser),
     displayName: getDisplayName(currentUser),
-    financeErrorMessage: getFinanceErrorMessage(queries.summaryErrorMessage, queries.ordersErrorMessage),
+    financeErrorMessage: getFinanceErrorMessage(
+      queries.summaryErrorMessage,
+      queries.ordersErrorMessage,
+      queries.financeErrorMessage,
+    ),
     pdvErrorMessage: getPdvErrorMessage(pdvView, queries.kitchenErrorMessage, queries.operationsErrorMessage),
     todayErrorMessage: getTodayErrorMessage(queries),
   }

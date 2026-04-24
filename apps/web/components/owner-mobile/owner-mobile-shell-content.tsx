@@ -5,6 +5,7 @@ import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-nav
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { OwnerAccountView } from './owner-account-view'
 import { OwnerFinanceView } from './owner-finance-view'
+import { buildOwnerMobileFullLabHref } from './owner-mobile-links'
 import { OwnerPdvTab } from './owner-mobile-pdv-tab'
 import { OwnerTodayView } from './owner-today-view'
 import type { OwnerMobileShellController } from './use-owner-mobile-shell-controller'
@@ -13,9 +14,12 @@ const OwnerComandasView = dynamic(() => import('./owner-comandas-view').then((mo
   ssr: false,
 })
 
-const OWNER_HOME_HREF = '/app/owner?tab=today'
-const OWNER_FINANCE_HREF = '/app/owner?tab=financeiro'
 const OWNER_QUICK_REGISTER_HREF = '/app/owner/cadastro-rapido'
+const FULL_DASHBOARD_HREF = buildOwnerMobileFullLabHref('/design-lab/overview')
+const FULL_CASH_HREF = buildOwnerMobileFullLabHref('/design-lab/caixa')
+const FULL_FINANCE_HREF = buildOwnerMobileFullLabHref('/design-lab/financeiro')
+const FULL_CONFIG_ACCOUNT_HREF = buildOwnerMobileFullLabHref(buildDesignLabConfigHref('account'))
+const FULL_CONFIG_SECURITY_HREF = buildOwnerMobileFullLabHref(buildDesignLabConfigHref('security'))
 
 function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
   return (
@@ -43,7 +47,7 @@ function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShell
         controller.setPendingAction(null)
         controller.setActiveTab('comandas')
       }}
-      onOpenFullDashboard={() => controller.router.push(OWNER_HOME_HREF)}
+      onOpenFullDashboard={() => controller.router.push(FULL_DASHBOARD_HREF)}
       onOpenKitchen={() => {
         controller.setPendingAction(null)
         controller.setPdvView('cozinha')
@@ -124,14 +128,16 @@ function OwnerFinancePanel({ controller }: Readonly<{ controller: OwnerMobileShe
   return (
     <OwnerFinanceView
       caixaEsperado={controller.executiveKpis.caixaEsperado}
+      categoryBreakdown={controller.financeQuery.data?.categoryBreakdown ?? []}
+      displayCurrency={controller.financeQuery.data?.displayCurrency ?? 'BRL'}
       errorMessage={controller.financeErrorMessage}
       isOffline={controller.isOffline}
       lucroRealizado={controller.executiveKpis.lucroRealizado}
       ticketMedio={controller.ticketMedio}
       todayOrderCount={controller.todayOrderCount}
       todayRevenue={controller.executiveKpis.receitaRealizada}
-      onOpenCash={() => controller.router.push(OWNER_FINANCE_HREF)}
-      onOpenFinanceiro={() => controller.router.push(OWNER_FINANCE_HREF)}
+      onOpenCash={() => controller.router.push(FULL_CASH_HREF)}
+      onOpenFinanceiro={() => controller.router.push(FULL_FINANCE_HREF)}
     />
   )
 }
@@ -141,10 +147,10 @@ function OwnerAccountPanel({ controller }: Readonly<{ controller: OwnerMobileShe
     <OwnerAccountView
       companyName={controller.companyName}
       displayName={controller.displayName}
-      onOpenDashboard={() => controller.router.push(OWNER_HOME_HREF)}
+      onOpenDashboard={() => controller.router.push(FULL_DASHBOARD_HREF)}
       onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
-      onOpenSecurity={() => controller.router.push(buildDesignLabConfigHref('security'))}
-      onOpenSettings={() => controller.router.push(buildDesignLabConfigHref('account'))}
+      onOpenSecurity={() => controller.router.push(FULL_CONFIG_SECURITY_HREF)}
+      onOpenSettings={() => controller.router.push(FULL_CONFIG_ACCOUNT_HREF)}
     />
   )
 }

@@ -79,7 +79,7 @@ function ScannerCallout({ onOpenScanner }: Readonly<{ onOpenScanner: () => void 
         Escanear câmera
       </button>
       <span className="text-[11px] leading-5 text-[var(--text-soft)]">
-        Android/Chrome primeiro. Safari continua no EAN manual ou leitor HID.
+        Usa leitor nativo quando existe e fallback por câmera quando o navegador permitir.
       </span>
     </div>
   )

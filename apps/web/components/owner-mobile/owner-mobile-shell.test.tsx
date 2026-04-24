@@ -30,6 +30,7 @@ vi.mock('@/lib/api', () => ({
   fetchOperationsSummary: vi.fn(),
   fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
+  fetchFinanceSummary: vi.fn(),
   fetchComandaDetails: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
@@ -79,6 +80,7 @@ describe('OwnerMobileShell', () => {
     const mockFetchOperationsSummary = vi.mocked(api.fetchOperationsSummary)
     const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
+    const mockFetchFinanceSummary = vi.mocked(api.fetchFinanceSummary)
     const mockFetchComandaDetails = vi.mocked(api.fetchComandaDetails)
 
     const mockSnapshot = buildOperationsSnapshot({
@@ -311,6 +313,59 @@ describe('OwnerMobileShell', () => {
     }
     mockFetchOrders.mockResolvedValue(mockOrdersResponse)
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
+    mockFetchFinanceSummary.mockResolvedValue({
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      totals: {
+        activeProducts: 3,
+        inventoryUnits: 30,
+        inventoryCostValue: 300,
+        inventorySalesValue: 600,
+        potentialProfit: 300,
+        realizedRevenue: 300,
+        realizedCost: 180,
+        realizedProfit: 120,
+        completedOrders: 2,
+        currentMonthRevenue: 300,
+        currentMonthProfit: 120,
+        previousMonthRevenue: 200,
+        previousMonthProfit: 80,
+        revenueGrowthPercent: 50,
+        profitGrowthPercent: 50,
+        averageMarginPercent: 40,
+        averageMarkupPercent: 66.6,
+        lowStockItems: 0,
+      },
+      categoryBreakdown: [
+        {
+          category: 'Petiscos',
+          products: 2,
+          units: 12,
+          inventoryCostValue: 120,
+          inventorySalesValue: 240,
+          potentialProfit: 120,
+        },
+        {
+          category: 'Cervejas',
+          products: 1,
+          units: 18,
+          inventoryCostValue: 180,
+          inventorySalesValue: 360,
+          potentialProfit: 180,
+        },
+      ],
+      topProducts: [],
+      recentOrders: [],
+      revenueTimeline: [],
+      salesByChannel: [],
+      topCustomers: [],
+      topEmployees: [],
+      salesMap: [],
+      topRegions: [],
+      categoryTopProducts: {},
+    })
 
     // Pré-popula o cache para evitar estados de "loading" nos testes
     testQueryClient.setQueryData(OPERATIONS_LIVE_COMPACT_QUERY_KEY, mockSnapshot)
@@ -453,6 +508,59 @@ describe('OwnerMobileShell', () => {
         categories: [],
       },
     } as unknown as Awaited<ReturnType<typeof api.fetchProducts>>)
+    testQueryClient.setQueryData(['finance', 'summary', 'owner-mobile'], {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      totals: {
+        activeProducts: 3,
+        inventoryUnits: 30,
+        inventoryCostValue: 300,
+        inventorySalesValue: 600,
+        potentialProfit: 300,
+        realizedRevenue: 300,
+        realizedCost: 180,
+        realizedProfit: 120,
+        completedOrders: 2,
+        currentMonthRevenue: 300,
+        currentMonthProfit: 120,
+        previousMonthRevenue: 200,
+        previousMonthProfit: 80,
+        revenueGrowthPercent: 50,
+        profitGrowthPercent: 50,
+        averageMarginPercent: 40,
+        averageMarkupPercent: 66.6,
+        lowStockItems: 0,
+      },
+      categoryBreakdown: [
+        {
+          category: 'Petiscos',
+          products: 2,
+          units: 12,
+          inventoryCostValue: 120,
+          inventorySalesValue: 240,
+          potentialProfit: 120,
+        },
+        {
+          category: 'Cervejas',
+          products: 1,
+          units: 18,
+          inventoryCostValue: 180,
+          inventorySalesValue: 360,
+          potentialProfit: 180,
+        },
+      ],
+      topProducts: [],
+      recentOrders: [],
+      revenueTimeline: [],
+      salesByChannel: [],
+      topCustomers: [],
+      topEmployees: [],
+      salesMap: [],
+      topRegions: [],
+      categoryTopProducts: {},
+    } as unknown as Awaited<ReturnType<typeof api.fetchFinanceSummary>>)
   })
 
   const renderWithClient = (ui: React.ReactElement) => {

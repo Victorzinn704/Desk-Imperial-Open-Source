@@ -327,12 +327,14 @@ function MobileOrderHeader({
 
 function CartSummaryBar({
   busy,
+  mode,
   onSubmit,
   submitLabel,
   totalItems,
   totalValue,
 }: Readonly<{
   busy?: boolean
+  mode: MobileOrderBuilderProps['mode']
   onSubmit: () => void
   submitLabel: string
   totalItems: number
@@ -343,14 +345,15 @@ function CartSummaryBar({
   }
 
   const compactLabel = submitLabel.toLowerCase().includes('adicionar') ? 'Adicionar' : 'Abrir'
+  const helper = mode === 'add' ? 'Itens entram na comanda aberta' : 'Abra a comanda sem rolar a lista'
 
   return (
     <div
-      className="shrink-0 border-t border-[rgba(0,140,255,0.2)] bg-[var(--bg)]/95 px-3 pb-3 pt-2 backdrop-blur"
-      style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+      className="fixed inset-x-3 bottom-[calc(5.3rem+env(safe-area-inset-bottom,0px))] z-40 md:static md:inset-auto md:z-auto md:shrink-0 md:border-t md:border-[rgba(0,140,255,0.2)] md:bg-[var(--bg)]/95 md:px-3 md:pb-3 md:pt-2 md:backdrop-blur"
+      data-testid="mobile-order-checkout-dock"
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[20px] border border-[rgba(0,140,255,0.22)] bg-[var(--surface)] p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.28)]">
-        <div className="flex min-w-0 items-center gap-3 rounded-[16px] bg-[var(--surface-muted)] px-3 py-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_4.25rem] gap-2 rounded-[18px] border border-[rgba(0,140,255,0.24)] bg-[var(--surface)] p-2 shadow-[0_-14px_34px_rgba(0,0,0,0.34)]">
+        <div className="flex min-w-0 items-center gap-3 rounded-[14px] bg-[var(--surface-muted)] px-3 py-2.5">
           <div className="relative shrink-0">
             <ShoppingCart className="size-5 text-[var(--accent,#008cff)]" />
             <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-[var(--accent,#008cff)] text-[10px] font-bold text-[var(--on-accent)]">
@@ -362,12 +365,13 @@ function CartSummaryBar({
               {totalItems} {totalItems === 1 ? 'item' : 'itens'}
             </p>
             <p className="truncate text-base font-semibold text-[var(--text-primary)]">{formatCurrency(totalValue)}</p>
+            <p className="mt-0.5 truncate text-[10px] text-[var(--text-soft,#7a8896)]">{helper}</p>
           </div>
         </div>
 
         <button
           aria-label={submitLabel}
-          className="flex min-h-[72px] min-w-[84px] flex-col items-center justify-center rounded-[18px] bg-[var(--accent,#008cff)] px-3 py-2 text-center text-[11px] font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
+          className="flex size-[68px] flex-col items-center justify-center rounded-[16px] bg-[var(--accent,#008cff)] px-2 py-2 text-center text-[11px] font-semibold text-[var(--on-accent)] transition-opacity disabled:opacity-40 active:opacity-80 btn-haptic"
           disabled={busy}
           type="button"
           onClick={onSubmit}
@@ -474,7 +478,12 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
         onSelectCategory={openCategory}
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar" ref={parentRef}>
+      <div
+        className={`min-h-0 flex-1 overflow-y-auto scroll-optimized custom-scrollbar ${
+          totalItems > 0 ? 'pb-28 md:pb-0' : ''
+        }`}
+        ref={parentRef}
+      >
         {isLoading && activeProdutos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 size-10 animate-spin rounded-full border-2 border-[var(--accent,#008cff)] border-t-transparent" />
@@ -525,7 +534,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
             <div
               style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
+                height: `${rowVirtualizer.getTotalSize() + (totalItems > 0 ? 118 : 0)}px`,
                 position: 'relative',
               }}
             >
@@ -577,6 +586,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
       <CartSummaryBar
         busy={busy}
+        mode={mode}
         submitLabel={submitLabel}
         totalItems={totalItems}
         totalValue={totalValue}

@@ -1,8 +1,3 @@
-import {
-  isNationalPackagedBeverageSource,
-  resolveBrazilianPackagedBeverageVisual,
-} from './brazilian-packaged-beverage-catalog'
-
 type ProductVisualInput = {
   name: string
   brand?: string | null
@@ -18,7 +13,7 @@ type ProductVisualInput = {
 type ProductVisual = {
   src: string
   alt: string
-  source: 'catalog' | 'national-beverage-catalog' | 'combo-fallback'
+  source: 'catalog' | 'combo-fallback'
 }
 
 const comboFallbacks = [
@@ -58,12 +53,7 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
     }
   }
 
-  const curatedPackshot = resolveBrazilianPackagedBeverageVisual(product)
-  if (curatedPackshot && isNationalPackagedBeverageSource(product.catalogSource)) {
-    return curatedPackshot
-  }
-
-  return curatedPackshot
+  return null
 }
 
 export function buildProductInitials(name: string) {

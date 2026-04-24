@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { OwnerCurrentUser } from './owner-mobile-shell-types'
 import {
+  fetchFinanceSummary,
   fetchOperationsKitchen,
   fetchOperationsLive,
   fetchOperationsSummary,
@@ -77,6 +78,18 @@ function useOwnerSummaryQuery(enabled: boolean) {
   })
 }
 
+function useOwnerFinanceQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: ['finance', 'summary', 'owner-mobile'],
+    queryFn: () => fetchFinanceSummary(),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+  })
+}
+
 export function useOwnerMobileShellQueries(currentUser: OwnerCurrentUser | null) {
   const enabled = Boolean(currentUser)
   const operationsQuery = useOwnerOperationsQuery(enabled)
@@ -84,8 +97,10 @@ export function useOwnerMobileShellQueries(currentUser: OwnerCurrentUser | null)
   const ordersQuery = useOwnerOrdersQuery(enabled)
   const kitchenQuery = useOwnerKitchenQuery(enabled)
   const summaryQuery = useOwnerSummaryQuery(enabled)
+  const financeQuery = useOwnerFinanceQuery(enabled)
 
   return {
+    financeQuery,
     kitchenQuery,
     operationsQuery,
     ordersQuery,
@@ -99,6 +114,8 @@ export function useOwnerMobileShellQueries(currentUser: OwnerCurrentUser | null)
     ordersLoading: ordersQuery.isLoading && !ordersQuery.data,
     productsErrorMessage: getErrorMessage(productsQuery.error),
     productsLoading: productsQuery.isLoading && !productsQuery.data,
+    financeErrorMessage: getErrorMessage(financeQuery.error),
+    financeLoading: financeQuery.isLoading && !financeQuery.data,
     summaryErrorMessage: getErrorMessage(summaryQuery.error),
     summaryLoading: summaryQuery.isLoading && !summaryQuery.data,
   }

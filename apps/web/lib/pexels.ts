@@ -81,16 +81,51 @@ export async function searchPexelsImages({
   }
 
   const payload = (await response.json()) as PexelsSearchResponse
-  return payload.photos.map((photo) => ({
-    id: String(photo.id),
-    alt: photo.alt || 'Imagem de apoio do catálogo',
-    photographer: photo.photographer,
-    photographerUrl: photo.photographer_url,
-    previewUrl: photo.src.medium,
-    imageUrl: photo.src.large,
-    color: photo.avg_color,
-    sourceUrl: photo.url,
-  }))
+  return payload.photos
+    .map((photo, index) => ({ index, photo, score: scorePexelsPhoto(normalizedQuery, photo) }))
+    .filter((entry) => entry.score >= 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ photo }) => ({
+      id: String(photo.id),
+      alt: photo.alt || 'Imagem de apoio do catálogo',
+      photographer: photo.photographer,
+      photographerUrl: photo.photographer_url,
+      previewUrl: photo.src.medium,
+      imageUrl: photo.src.large,
+      color: photo.avg_color,
+      sourceUrl: photo.url,
+    }))
+}
+
+function scorePexelsPhoto(query: string, photo: PexelsPhoto) {
+  const normalizedQuery = normalize(query)
+  const haystack = normalize(`${photo.alt ?? ''} ${photo.url ?? ''}`)
+  let score = 0
+
+  const positiveTerms = normalizedQuery.includes('beer') && normalizedQuery.includes('appetizers')
+    ? ['beer', 'snack', 'appetizer', 'food', 'bar', 'restaurant', 'table']
+    : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
+
+  for (const term of positiveTerms) {
+    if (haystack.includes(term)) {
+      score += 2
+    }
+  }
+
+  for (const term of ['portrait', 'person', 'people', 'woman', 'man', 'dog', 'cat', 'beach', 'mountain', 'city']) {
+    if (haystack.includes(term)) {
+      score -= 3
+    }
+  }
+
+  return score
+}
+
+function normalize(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
 }
 
 async function safeReadText(response: Response) {

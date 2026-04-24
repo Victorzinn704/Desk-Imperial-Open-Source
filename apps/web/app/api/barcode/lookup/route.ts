@@ -8,6 +8,11 @@ import {
 export const dynamic = 'force-dynamic'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+const OPEN_FOOD_FACTS_API_URL = (
+  process.env.OPEN_FOOD_FACTS_API_URL ?? 'https://world.openfoodfacts.org/api/v2'
+).replace(/\/$/, '')
+const OPEN_FOOD_FACTS_USER_AGENT =
+  process.env.OPEN_FOOD_FACTS_USER_AGENT ?? 'DeskImperial/1.0 (https://app.deskimperial.online)'
 const LOOKUP_TIMEOUT_MS = 6_000
 const validBarcodeLengths = new Set([8, 12, 13, 14])
 const openFoodFactsFields = [
@@ -68,11 +73,12 @@ export async function POST(request: Request) {
 
   try {
     const response = await fetch(
-      `https://world.openfoodfacts.net/api/v2/product/${normalizedBarcode}?fields=${encodeURIComponent(openFoodFactsFields)}`,
+      `${OPEN_FOOD_FACTS_API_URL}/product/${normalizedBarcode}.json?fields=${encodeURIComponent(openFoodFactsFields)}`,
       {
         cache: 'no-store',
         headers: {
           Accept: 'application/json',
+          'User-Agent': OPEN_FOOD_FACTS_USER_AGENT,
         },
         signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
       },
