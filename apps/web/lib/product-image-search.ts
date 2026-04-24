@@ -55,7 +55,7 @@ export function buildProductImageSearchQuery(input: ProductImageSearchInput) {
 
   if (isComboLike(input, haystack)) {
     if (containsAny(haystack, BEER_SNACK_COMBO_KEYWORDS)) {
-      return 'beer appetizers bar table'
+      return 'beer pub snacks platter'
     }
 
     if (containsAny(haystack, BURGER_COMBO_KEYWORDS)) {

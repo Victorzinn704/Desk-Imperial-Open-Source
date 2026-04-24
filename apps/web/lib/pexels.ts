@@ -46,10 +46,7 @@ type SearchPexelsInput = {
 const DEFAULT_PEXELS_API_URL = 'https://api.pexels.com/v1'
 const MAX_PEXELS_PER_PAGE = 12
 
-export async function searchPexelsImages({
-  query,
-  perPage = 8,
-}: SearchPexelsInput): Promise<PexelsImageCandidate[]> {
+export async function searchPexelsImages({ query, perPage = 8 }: SearchPexelsInput): Promise<PexelsImageCandidate[]> {
   const apiKey = process.env.PEXELS_API_KEY?.trim()
   if (!apiKey) {
     throw new Error('PEXELS_API_KEY ainda não foi configurada.')
@@ -102,9 +99,10 @@ function scorePexelsPhoto(query: string, photo: PexelsPhoto) {
   const haystack = normalize(`${photo.alt ?? ''} ${photo.url ?? ''}`)
   let score = 0
 
-  const positiveTerms = normalizedQuery.includes('beer') && normalizedQuery.includes('appetizers')
-    ? ['beer', 'snack', 'appetizer', 'food', 'bar', 'restaurant', 'table']
-    : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
+  const positiveTerms =
+    normalizedQuery.includes('beer') && normalizedQuery.includes('snacks')
+      ? ['beer', 'snack', 'appetizer', 'platter', 'pub', 'bar', 'table', 'food', 'restaurant']
+      : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
 
   for (const term of positiveTerms) {
     if (haystack.includes(term)) {

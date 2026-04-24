@@ -23,7 +23,7 @@ const comboFallbacks = [
   },
   {
     keywords: ['petisco', 'cerveja', 'beer', 'chopp', 'balde', 'bucket', 'lager', 'futebol'],
-    src: 'https://images.pexels.com/photos/20329664/pexels-photo-20329664.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    src: 'https://images.pexels.com/photos/12940820/pexels-photo-12940820.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
     keywords: ['drink', 'drinks', 'coquetel', 'cocktail', 'caipirinha', 'gin', 'destilado'],

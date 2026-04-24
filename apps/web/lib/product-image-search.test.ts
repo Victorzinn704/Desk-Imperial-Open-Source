@@ -31,7 +31,7 @@ describe('product-image-search', () => {
         category: 'Combos',
         isCombo: true,
       }),
-    ).toBe('beer appetizers bar table')
+    ).toBe('beer pub snacks platter')
   })
 
   it('gera busca de comida para prato sem foto', () => {

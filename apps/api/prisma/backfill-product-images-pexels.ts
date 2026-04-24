@@ -280,7 +280,7 @@ function buildProductImageSearchQuery(product: ProductImageCandidate) {
 
   if (product.isCombo || containsAny(haystack, COMBO_KEYWORDS)) {
     if (containsAny(haystack, BEER_SNACK_COMBO_KEYWORDS)) {
-      return 'beer appetizers bar table'
+      return 'beer pub snacks platter'
     }
 
     if (containsAny(haystack, BURGER_COMBO_KEYWORDS)) {
@@ -374,9 +374,10 @@ function scorePexelsPhoto(query: string, photo: PexelsPhoto) {
   const haystack = normalize(`${photo.alt ?? ''} ${photo.url ?? ''}`)
   let score = 0
 
-  const positiveTerms = normalizedQuery.includes('beer') && normalizedQuery.includes('appetizers')
-    ? ['beer', 'snack', 'appetizer', 'food', 'bar', 'restaurant', 'table']
-    : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
+  const positiveTerms =
+    normalizedQuery.includes('beer') && normalizedQuery.includes('snacks')
+      ? ['beer', 'snack', 'appetizer', 'platter', 'pub', 'bar', 'table', 'food', 'restaurant']
+      : normalizedQuery.split(/\s+/).filter((term) => term.length > 3)
 
   for (const term of positiveTerms) {
     if (haystack.includes(term)) {
