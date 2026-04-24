@@ -22,7 +22,7 @@ export function OwnerFinanceView({
   todayRevenue,
 }: OwnerFinanceViewProps) {
   return (
-    <div className="space-y-4 p-3 pb-6">
+    <div className="space-y-4 p-3 pb-[8.5rem]">
       <OwnerFinanceStatusBanner errorMessage={errorMessage} isOffline={isOffline} />
       <OwnerFinanceHero
         caixaEsperado={caixaEsperado}

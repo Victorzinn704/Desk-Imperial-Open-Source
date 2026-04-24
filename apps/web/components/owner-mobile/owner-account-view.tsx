@@ -12,7 +12,7 @@ export function OwnerAccountView({
   onOpenSettings,
 }: OwnerAccountViewProps) {
   return (
-    <div className="space-y-4 p-3 pb-6">
+    <div className="space-y-4 p-3 pb-[8.5rem]">
       <OwnerAccountProfile companyName={companyName} displayName={displayName} />
       <OwnerAccountGroups
         onOpenDashboard={onOpenDashboard}
