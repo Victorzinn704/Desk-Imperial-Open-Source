@@ -15,6 +15,7 @@ import {
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations/operations-query'
+import { buildOperationsExecutiveKpis, buildTopProducts } from '@/lib/operations/operations-kpis'
 import type { OperationsRealtimeEnvelope } from '@/components/operations/hooks/use-operations-socket'
 
 type OperationsRealtimePatchResult = {
@@ -79,11 +80,27 @@ export function requiresSummaryRefresh(event: OperationsRealtimeEnvelope['event'
   return (
     event === 'comanda.opened' ||
     event === 'comanda.updated' ||
-    event === 'comanda.closed' ||
-    event === 'cash.updated' ||
-    event === 'cash.opened' ||
-    event === 'cash.closure.updated'
+    event === 'comanda.closed'
   )
+}
+
+export function syncSummarySnapshotFromLive(
+  summarySnapshot: OperationsSummaryResponse | null | undefined,
+  liveSnapshot: OperationsLiveResponse | null | undefined,
+) {
+  if (!summarySnapshot || !liveSnapshot) {
+    return null
+  }
+
+  if (summarySnapshot.businessDate !== liveSnapshot.businessDate) {
+    return null
+  }
+
+  return {
+    ...summarySnapshot,
+    kpis: buildOperationsExecutiveKpis(liveSnapshot),
+    topProducts: buildTopProducts(liveSnapshot),
+  }
 }
 
 function isKitchenEvent(event: OperationsRealtimeEnvelope['event']) {

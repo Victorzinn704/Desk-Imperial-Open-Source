@@ -415,10 +415,11 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   function handleSelectMesa(mesa: Mesa) {
     if (mesa.status === 'ocupada' && mesa.comandaId) {
-      // Mesa ocupada → foca a comanda na aba Ativo para o garçom ver o estado atual
-      // O botão "Adicionar itens" dentro do card da comanda leva ao order builder
-      setFocusedComandaId(mesa.comandaId)
-      setActiveTab('pedidos')
+      // Mesa ocupada -> abre direto o builder para continuar a comanda sem forçar
+      // passagem extra pela lista de comandas.
+      setPendingAction({ type: 'add', comandaId: mesa.comandaId, mesaLabel: normalizeTableLabel(mesa.numero) })
+      setFocusedComandaId(null)
+      setActiveTab('pedido')
     } else {
       // Mesa livre → cria nova comanda direto no builder de pedido
       setPendingAction({ type: 'new', mesa })

@@ -56,4 +56,17 @@ describe('useOperationsRealtime socket wiring', () => {
     expect(mockSocket.off).toHaveBeenCalledWith('comanda.closed', closeHandler)
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1)
   })
+
+  it('abre o socket operacional apenas por websocket sem fallback para polling', () => {
+    render(<RealtimeHarness />)
+
+    expect(ioMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        transports: ['websocket'],
+        upgrade: false,
+        timeout: 8_000,
+      }),
+    )
+  })
 })

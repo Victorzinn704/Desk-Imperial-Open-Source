@@ -1,8 +1,11 @@
 import type { ProductRecord } from '@contracts/contracts'
 import { ProductThumb } from '@/components/shared/product-thumb'
+import { useCatalogVisualSuggestions } from '@/components/shared/use-catalog-visual-suggestions'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
 export function OwnerQuickRegisterRecentProducts({ products }: Readonly<{ products: ProductRecord[] }>) {
+  const { decorateProduct } = useCatalogVisualSuggestions(products)
+
   return (
     <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="flex items-start justify-between gap-3">
@@ -20,7 +23,7 @@ export function OwnerQuickRegisterRecentProducts({ products }: Readonly<{ produc
         {products.length === 0 ? (
           <EmptyRecentProducts />
         ) : (
-          products.map((product) => <RecentProductCard key={product.id} product={product} />)
+          products.map((product) => <RecentProductCard key={product.id} product={decorateProduct(product)} />)
         )}
       </div>
     </section>

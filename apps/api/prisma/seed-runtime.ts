@@ -7,8 +7,13 @@ export function loadSeedEnv() {
   }
 
   const candidatePaths = [
+    resolve(process.cwd(), '.env.local'),
     resolve(process.cwd(), '.env'),
+    resolve(process.cwd(), 'apps', 'web', '.env.local'),
+    resolve(process.cwd(), 'apps', 'api', '.env.local'),
+    resolve(__dirname, '..', '.env.local'),
     resolve(__dirname, '..', '.env'),
+    resolve(__dirname, '..', '..', '..', '.env.local'),
     resolve(__dirname, '..', '..', '..', '.env'),
   ]
 

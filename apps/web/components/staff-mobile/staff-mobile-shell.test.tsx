@@ -428,6 +428,20 @@ describe('StaffMobileShell', () => {
     })
   })
 
+  it('abre direto o builder ao tocar em uma mesa ocupada', async () => {
+    const user = userEvent.setup()
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Retomar pedido/i)).toBeInTheDocument()
+      expect(screen.getByText('Responsável')).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+    })
+  })
+
   it('abre uma nova comanda pelo fluxo categorias → produtos e envia o pedido', async () => {
     const user = userEvent.setup()
     const flowSnapshot = buildOperationsSnapshot({

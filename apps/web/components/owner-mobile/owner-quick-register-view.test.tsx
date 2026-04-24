@@ -16,6 +16,7 @@ const listQueueMock = vi.fn()
 vi.mock('@/lib/api', () => ({
   fetchProducts: vi.fn(),
   lookupBarcodeCatalog: vi.fn(),
+  searchCatalogImages: vi.fn(),
   ApiError: class ApiError extends Error {
     status: number
     constructor(message: string, status: number) {

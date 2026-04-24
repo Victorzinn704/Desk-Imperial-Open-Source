@@ -100,16 +100,11 @@ function useOwnerMetrics(queries: ReturnType<typeof useOwnerMobileShellQueries>)
 }
 
 async function submitExistingComanda(
-  queryClient: ReturnType<typeof useQueryClient>,
   comandaId: string,
   items: ComandaItem[],
   mutateAsync: ReturnType<typeof useOwnerMobileShellMutations>['addComandaItemsMutation']['mutateAsync'],
 ) {
   await mutateAsync({ comandaId, items: items.map(mapOrderItemPayload) })
-  await invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-    includeKitchen: true,
-    includeSummary: false,
-  })
 }
 
 async function submitNewComanda(
@@ -194,7 +189,6 @@ function useOwnerHandleSubmit({
       try {
         if (pendingAction.type === 'add') {
           await submitExistingComanda(
-            queryClient,
             pendingAction.comandaId,
             items,
             mutations.addComandaItemsMutation.mutateAsync,

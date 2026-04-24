@@ -41,7 +41,10 @@ export function useOperationsSocket(
     setStatus('connecting')
 
     const socket = io(buildOperationsSocketUrl(), {
+      transports: ['websocket'],
+      upgrade: false,
       withCredentials: true,
+      timeout: 8_000,
       reconnectionDelay: 2_000,
       reconnectionDelayMax: 10_000,
     })
@@ -60,8 +63,8 @@ export function useOperationsSocket(
       shouldRefreshBaselineRef.current = true
     }
     const onConnectError = () => {
-      onDisconnect()
-      onEvent()
+      setStatus('disconnected')
+      shouldRefreshBaselineRef.current = true
     }
 
     socket.on('connect', onConnect)

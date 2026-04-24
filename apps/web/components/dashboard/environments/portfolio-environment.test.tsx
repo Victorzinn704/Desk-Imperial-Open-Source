@@ -1,5 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
@@ -15,6 +16,14 @@ vi.mock('@/components/dashboard/hooks/useDashboardQueries', () => ({
 vi.mock('@/components/dashboard/hooks/useDashboardMutations', () => ({
   useDashboardMutations: () => mockUseDashboardMutations(),
 }))
+
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  return {
+    ...actual,
+    searchCatalogImages: vi.fn().mockResolvedValue([]),
+  }
+})
 
 function makeProduct(overrides: Partial<ProductRecord> = {}): ProductRecord {
   return {
@@ -142,7 +151,7 @@ describe('PortfolioEnvironment', () => {
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     await user.click(screen.getByRole('button', { name: /editar/i }))
 
@@ -227,7 +236,7 @@ describe('PortfolioEnvironment', () => {
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     await user.click(screen.getByRole('button', { name: /cadastrar produto/i }))
     const createDialog = screen.getByRole('dialog')
@@ -323,7 +332,7 @@ describe('PortfolioEnvironment', () => {
       createOrderMutation: { isPending: false, error: null, mutate: createOrderMutate },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     await user.click(screen.getByRole('button', { name: /^vender$/i }))
 
@@ -429,7 +438,7 @@ describe('PortfolioEnvironment', () => {
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     expect(screen.getByText(/SKUs ativos/i)).toBeInTheDocument()
     expect(screen.getAllByText('2').length).toBeGreaterThan(0)
@@ -510,7 +519,7 @@ describe('PortfolioEnvironment', () => {
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     const editButtons = screen.getAllByRole('button', { name: /editar/i })
     await user.click(editButtons[0])
@@ -548,3 +557,15 @@ describe('PortfolioEnvironment', () => {
     confirmSpy.mockRestore()
   })
 })
+
+function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}

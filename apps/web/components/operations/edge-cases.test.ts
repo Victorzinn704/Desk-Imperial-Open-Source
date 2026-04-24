@@ -4,6 +4,7 @@ import {
   comanda, liveSnapshot, kitchenSnapshot, summarySnapshot,
   createQueryClientMock, qc,
 } from './__fixtures__/operations-realtime.fixtures'
+import { requiresSummaryRefresh, syncSummarySnapshotFromLive } from '@/lib/operations/operations-realtime-patching'
 
 // ---------------------------------------------------------------------------
 // business date mismatch
@@ -145,6 +146,64 @@ describe('requiresSummaryRefresh', () => {
       })
     }
     expect(mock.getSummarySnapshot()?.kpis.projecaoTotal).toBe(150) // unchanged
+  })
+
+  it('does not trigger aggregate summary refresh for cash events handled by live patching', () => {
+    expect(requiresSummaryRefresh('cash.opened')).toBe(false)
+    expect(requiresSummaryRefresh('cash.updated')).toBe(false)
+    expect(requiresSummaryRefresh('cash.closure.updated')).toBe(false)
+  })
+
+  it('syncs summary kpis and top products from the live snapshot', () => {
+    const live = liveSnapshot({
+      closure: {
+        status: 'OPEN',
+        expectedCashAmount: 320,
+        countedCashAmount: null,
+        differenceAmount: null,
+        grossRevenueAmount: 180,
+        realizedProfitAmount: 70,
+        openSessionsCount: 1,
+        openComandasCount: 1,
+      },
+      unassigned: {
+        employeeId: null,
+        employeeCode: null,
+        displayName: 'Operacao',
+        active: true,
+        cashSession: null,
+        comandas: [
+          comanda({
+            id: 'c-1',
+            totalAmount: 60,
+            items: [
+              { id: 'item-1', productId: 'p-1', productName: 'Pizza', quantity: 2, unitPrice: 30, totalAmount: 60, notes: null, kitchenStatus: null, kitchenQueuedAt: null, kitchenReadyAt: null },
+            ],
+          }),
+        ],
+      },
+    })
+    const currentSummary = summarySnapshot({
+      kpis: {
+        receitaRealizada: 100,
+        faturamentoAberto: 20,
+        projecaoTotal: 120,
+        lucroRealizado: 30,
+        lucroEsperado: 50,
+        caixaEsperado: 100,
+        openComandasCount: 2,
+        openSessionsCount: 0,
+      },
+      topProducts: [],
+    })
+
+    const synced = syncSummarySnapshotFromLive(currentSummary, live)
+
+    expect(synced?.kpis.receitaRealizada).toBe(180)
+    expect(synced?.kpis.faturamentoAberto).toBe(60)
+    expect(synced?.kpis.projecaoTotal).toBe(240)
+    expect(synced?.kpis.caixaEsperado).toBe(320)
+    expect(synced?.topProducts[0]).toMatchObject({ nome: 'Pizza', qtd: 2, valor: 60 })
   })
 })
 

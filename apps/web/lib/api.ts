@@ -111,6 +111,7 @@ export {
   fetchActivityFeed,
   fetchLastLogins,
 } from './api-misc'
+export { searchCatalogImages } from './api-media'
 
 export type {
   ActivityFeedEntry,
@@ -123,3 +124,4 @@ export type {
   OrderPayload,
   PostalCodeLookupResponse,
 } from './api-misc'
+export type { CatalogImageCandidate } from './api-media'

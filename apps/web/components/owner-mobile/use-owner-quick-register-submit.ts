@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import type { UseFormReset } from 'react-hook-form'
 import { toast } from 'sonner'
-import type { BarcodeCatalogLookupResponse } from '@/lib/api'
+import { searchCatalogImages, type BarcodeCatalogLookupResponse } from '@/lib/api'
+import { buildProductImageSearchQuery } from '@/lib/product-image-search'
 import {
   isOfflineProductCreateError,
   type OwnerQueuedProductPayload,
@@ -31,7 +32,7 @@ export function useOwnerQuickRegisterSubmit(input: SubmitInput) {
       if (!input.canSubmit) {
         return
       }
-      const payload = buildOwnerProductPayload(
+      const payload = await buildOwnerProductPayload(
         values,
         input.normalizedBarcode,
         input.barcodeValid,
@@ -51,17 +52,19 @@ export function useOwnerQuickRegisterSubmit(input: SubmitInput) {
   )
 }
 
-function buildOwnerProductPayload(
+export async function buildOwnerProductPayload(
   values: OwnerQuickRegisterValues,
   normalizedBarcode: string,
   barcodeValid: boolean,
   activeLookupContext: BarcodeCatalogLookupResponse | null,
 ) {
-  return {
+  const payload = {
     ...values,
     ...resolveLookupProductFields(normalizedBarcode, activeLookupContext),
     barcode: barcodeValid ? normalizedBarcode : undefined,
   } satisfies OwnerQueuedProductPayload
+
+  return enrichPayloadWithCatalogImage(payload)
 }
 
 async function handleSubmitFailure(error: unknown, payload: OwnerQueuedProductPayload, input: SubmitInput) {
@@ -74,4 +77,37 @@ async function handleSubmitFailure(error: unknown, payload: OwnerQueuedProductPa
   input.reset(ownerQuickRegisterDefaultValues)
   input.resetAfterOfflineQueue()
   await input.refreshQueuedCount()
+}
+
+async function enrichPayloadWithCatalogImage(payload: OwnerQueuedProductPayload) {
+  if (payload.imageUrl) {
+    return payload
+  }
+
+  const searchQuery = buildProductImageSearchQuery({
+    name: payload.name,
+    brand: payload.brand,
+    category: payload.category,
+    packagingClass: payload.packagingClass,
+    quantityLabel: payload.quantityLabel,
+  })
+
+  if (!searchQuery) {
+    return payload
+  }
+
+  try {
+    const [candidate] = await searchCatalogImages(searchQuery, 1)
+    if (!candidate?.imageUrl) {
+      return payload
+    }
+
+    return {
+      ...payload,
+      imageUrl: candidate.imageUrl,
+      catalogSource: payload.catalogSource ?? 'pexels',
+    } satisfies OwnerQueuedProductPayload
+  } catch {
+    return payload
+  }
 }

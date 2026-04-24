@@ -1,8 +1,17 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
 import { MobileOrderBuilder } from './mobile-order-builder'
+
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  return {
+    ...actual,
+    searchCatalogImages: vi.fn().mockResolvedValue([]),
+  }
+})
 
 function makeProduct(overrides: Partial<ProductRecord>): ProductRecord {
   return {
@@ -44,7 +53,7 @@ function makeProduct(overrides: Partial<ProductRecord>): ProductRecord {
 
 describe('MobileOrderBuilder', () => {
   it('renders categories ordered with pt-BR locale semantics', () => {
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="12"
         mode="new"
@@ -66,7 +75,7 @@ describe('MobileOrderBuilder', () => {
   })
 
   it('matches categories and names accent-insensitively when searching', () => {
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="7"
         mode="new"
@@ -95,7 +104,7 @@ describe('MobileOrderBuilder', () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn().mockResolvedValue(undefined)
 
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="9"
         mode="add"
@@ -163,7 +172,7 @@ describe('MobileOrderBuilder', () => {
     const onCancel = vi.fn()
     const onSubmit = vi.fn()
 
-    const { rerender } = render(
+    const { rerender } = renderWithQueryClient(
       <MobileOrderBuilder
         busy
         mesaLabel="11"
@@ -181,13 +190,15 @@ describe('MobileOrderBuilder', () => {
     expect(onCancel).toHaveBeenCalledTimes(1)
 
     rerender(
-      <MobileOrderBuilder
-        mesaLabel="11"
-        mode="new"
-        produtos={[makeProduct({ id: 'pet-1', category: 'Petiscos', name: 'Pastel' })]}
-        onCancel={onCancel}
-        onSubmit={onSubmit}
-      />,
+      withQueryClient(
+        <MobileOrderBuilder
+          mesaLabel="11"
+          mode="new"
+          produtos={[makeProduct({ id: 'pet-1', category: 'Petiscos', name: 'Pastel' })]}
+          onCancel={onCancel}
+          onSubmit={onSubmit}
+        />,
+      ),
     )
 
     await user.click(screen.getByRole('button', { name: /petiscos/i }))
@@ -199,7 +210,7 @@ describe('MobileOrderBuilder', () => {
   it('renders category icon paths and clears the cart when the last item is removed', async () => {
     const user = userEvent.setup()
 
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="15"
         mode="new"
@@ -231,7 +242,7 @@ describe('MobileOrderBuilder', () => {
     const user = userEvent.setup()
     const onSecondaryAction = vi.fn()
 
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="21"
         mode="new"
@@ -259,7 +270,7 @@ describe('MobileOrderBuilder', () => {
   it('só mostra o dock de abertura depois que o carrinho recebe itens', async () => {
     const user = userEvent.setup()
 
-    render(
+    renderWithQueryClient(
       <MobileOrderBuilder
         mesaLabel="30"
         mode="new"
@@ -277,3 +288,19 @@ describe('MobileOrderBuilder', () => {
     expect(screen.getByText('Abrir')).toBeInTheDocument()
   })
 })
+
+function renderWithQueryClient(ui: React.ReactElement) {
+  return render(withQueryClient(ui))
+}
+
+function withQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  return <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+}

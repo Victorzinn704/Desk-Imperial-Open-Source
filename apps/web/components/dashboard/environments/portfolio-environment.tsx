@@ -30,6 +30,7 @@ import {
 } from '@/components/design-lab/lab-primitives'
 import { LabWorkbench } from '@/components/design-lab/lab-workbench'
 import { ProductThumb } from '@/components/shared/product-thumb'
+import { useCatalogVisualSuggestions } from '@/components/shared/use-catalog-visual-suggestions'
 import { OrderForm } from '@/components/dashboard/order-form'
 import { ProductForm } from '@/components/dashboard/product-form'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
@@ -895,6 +896,7 @@ function PortfolioProductsPanel({
   const emptyDescription = products.length
     ? 'Tente outro termo para localizar nome, marca, categoria ou classe.'
     : 'Abra o cadastro do portfólio para criar os primeiros itens reais.'
+  const { decorateProduct } = useCatalogVisualSuggestions(tableRows.slice(0, 12))
 
   return (
     <section className="space-y-4">
@@ -931,7 +933,7 @@ function PortfolioProductsPanel({
             header: 'Produto',
             cell: (product) => (
               <div className="flex min-w-0 items-start gap-3">
-                <ProductThumb product={product} size="md" />
+                <ProductThumb product={decorateProduct(product)} size="md" />
                 <div className="min-w-0 space-y-2">
                   <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
                   <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
