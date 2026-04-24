@@ -65,9 +65,36 @@ describe('FinanceiroEnvironment', () => {
             { channel: 'Balcão', revenue: 18800, profit: 6500, orders: 140 },
             { channel: 'Delivery', revenue: 9610, profit: 3380, orders: 84 },
           ],
-          topCustomers: [{ customerName: 'Ana', revenue: 1800, profit: 620, orders: 12, buyerDocument: null, buyerType: 'PERSON' }],
-          topEmployees: [{ employeeId: '1', employeeCode: 'VD-001', employeeName: 'Pedro', orders: 24, revenue: 3800, profit: 1200, averageTicket: 158.3 }],
-          topProducts: [{ id: 'p1', name: 'Gin', category: 'Bebidas', stock: 12, currency: 'BRL', displayCurrency: 'BRL', originalInventorySalesValue: 1400, originalPotentialProfit: 640, inventoryCostValue: 760, inventorySalesValue: 1400, potentialProfit: 640, marginPercent: 45 }],
+          topCustomers: [
+            { customerName: 'Ana', revenue: 1800, profit: 620, orders: 12, buyerDocument: null, buyerType: 'PERSON' },
+          ],
+          topEmployees: [
+            {
+              employeeId: '1',
+              employeeCode: 'VD-001',
+              employeeName: 'Pedro',
+              orders: 24,
+              revenue: 3800,
+              profit: 1200,
+              averageTicket: 158.3,
+            },
+          ],
+          topProducts: [
+            {
+              id: 'p1',
+              name: 'Gin',
+              category: 'Bebidas',
+              stock: 12,
+              currency: 'BRL',
+              displayCurrency: 'BRL',
+              originalInventorySalesValue: 1400,
+              originalPotentialProfit: 640,
+              inventoryCostValue: 760,
+              inventorySalesValue: 1400,
+              potentialProfit: 640,
+              marginPercent: 45,
+            },
+          ],
           categoryBreakdown: [
             {
               category: 'Bebidas',
@@ -81,6 +108,9 @@ describe('FinanceiroEnvironment', () => {
         },
         error: null,
         isLoading: false,
+      },
+      productsQuery: {
+        data: { items: [] },
       },
     })
   })

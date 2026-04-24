@@ -44,8 +44,10 @@ describe('OwnerFinanceView', () => {
     expect(screen.getByText((content) => content.includes('1.200,00'))).toBeInTheDocument()
     expect(screen.getByText(/margem 26,7%/i)).toBeInTheDocument()
     expect(screen.getByText('Mix por categoria')).toBeInTheDocument()
-    expect(screen.getByText('Petiscos')).toBeInTheDocument()
-    expect(screen.getByText('Cervejas')).toBeInTheDocument()
+    expect(screen.getAllByText('Petiscos').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Cervejas').length).toBeGreaterThan(0)
+    expect(screen.getByText('75,0%')).toBeInTheDocument()
+    expect(screen.getByText('25,0%')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Caixa do turno/i }))
     fireEvent.click(screen.getByRole('button', { name: /Financeiro completo/i }))

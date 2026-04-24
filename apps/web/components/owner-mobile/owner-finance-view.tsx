@@ -1,12 +1,8 @@
 'use client'
 
 import { type OwnerFinanceViewProps } from './owner-finance-view-model'
-import {
-  OwnerFinanceActions,
-  OwnerFinanceCategoryMix,
-  OwnerFinanceHero,
-  OwnerFinanceStatusBanner,
-} from './owner-finance-view-sections'
+import { OwnerFinanceCategoryMix } from './owner-finance-category-mix'
+import { OwnerFinanceActions, OwnerFinanceHero, OwnerFinanceStatusBanner } from './owner-finance-view-sections'
 
 export function OwnerFinanceView({
   caixaEsperado,
