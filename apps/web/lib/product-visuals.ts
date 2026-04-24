@@ -27,8 +27,8 @@ const comboFallbacks = [
     src: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
   },
   {
-    keywords: ['cerveja', 'beer', 'chopp', 'balde', 'bucket', 'lager'],
-    src: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
+    keywords: ['petisco', 'cerveja', 'beer', 'chopp', 'balde', 'bucket', 'lager', 'futebol'],
+    src: 'https://images.pexels.com/photos/20329664/pexels-photo-20329664.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
     keywords: ['drink', 'drinks', 'coquetel', 'cocktail', 'caipirinha', 'gin', 'destilado'],
@@ -93,7 +93,9 @@ function isComboLike(product: ProductVisualInput) {
   }
 
   const haystack = `${product.name} ${product.category ?? ''}`.toLowerCase()
-  return ['combo', 'combos', 'kit', 'balde', 'promocao', 'promoção'].some((keyword) => haystack.includes(keyword))
+  return ['combo', 'combos', 'kit', 'balde', 'petisco', 'promocao', 'promoção'].some((keyword) =>
+    haystack.includes(keyword),
+  )
 }
 
 function sanitizeVisualUrl(value: string | null | undefined) {

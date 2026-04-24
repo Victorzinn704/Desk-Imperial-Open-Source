@@ -86,6 +86,9 @@ const PACKAGED_BEVERAGE_KEYWORDS = [
   'garrafa',
   'long neck',
 ]
+const BEER_SNACK_COMBO_KEYWORDS = ['cerveja', 'beer', 'chopp', 'petisco', 'porcao', 'porção', 'futebol']
+const BURGER_COMBO_KEYWORDS = ['burger', 'hamb', 'lanche', 'batata']
+const PIZZA_COMBO_KEYWORDS = ['pizza', 'calabresa', 'mussarela', 'pepperoni']
 
 async function main() {
   const options = parseOptions(process.argv.slice(2))
@@ -170,7 +173,9 @@ async function main() {
       updated += 1
     } catch (error) {
       failed += 1
-      console.warn(`Falha ao enriquecer ${product.id} | ${product.name}: ${error instanceof Error ? error.message : String(error)}`)
+      console.warn(
+        `Falha ao enriquecer ${product.id} | ${product.name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     await sleep(options.delayMs)
@@ -191,7 +196,9 @@ async function main() {
   if (sampleChanges.length > 0) {
     console.log('- Amostra de mudanças:')
     for (const sample of sampleChanges) {
-      console.log(`  • ${sample.id} | ${sample.name} | ${sample.previousSource ?? 'sem-origem'} -> ${sample.nextImageUrl}`)
+      console.log(
+        `  • ${sample.id} | ${sample.name} | ${sample.previousSource ?? 'sem-origem'} -> ${sample.nextImageUrl}`,
+      )
     }
   }
 }
@@ -268,14 +275,26 @@ function buildProductImageSearchQuery(product: ProductImageCandidate) {
     return null
   }
 
-  if (isPackagedBeverageLike(product)) {
-    return null
-  }
-
   const haystack = normalize(`${product.name} ${product.brand ?? ''} ${product.category} ${product.packagingClass}`)
 
   if (product.isCombo || containsAny(haystack, COMBO_KEYWORDS)) {
+    if (containsAny(haystack, BEER_SNACK_COMBO_KEYWORDS)) {
+      return 'petisco cerveja bar'
+    }
+
+    if (containsAny(haystack, BURGER_COMBO_KEYWORDS)) {
+      return `${name} hamburguer combo restaurante`
+    }
+
+    if (containsAny(haystack, PIZZA_COMBO_KEYWORDS)) {
+      return `${name} pizza combo restaurante`
+    }
+
     return `${name} comida combo restaurante`
+  }
+
+  if (isPackagedBeverageLike(product)) {
+    return null
   }
 
   if (containsAny(haystack, PREPARED_DRINK_KEYWORDS)) {
@@ -297,6 +316,10 @@ function isPackagedBeverageLike(product: ProductImageCandidate) {
   const haystack = normalize(
     `${product.name} ${product.brand ?? ''} ${product.category} ${product.packagingClass} ${product.quantityLabel ?? ''}`,
   )
+
+  if (product.isCombo || containsAny(haystack, COMBO_KEYWORDS)) {
+    return false
+  }
 
   return containsAny(haystack, PACKAGED_BEVERAGE_KEYWORDS)
 }
@@ -403,5 +426,5 @@ function formatScriptError(error: unknown) {
     return `Nao foi possivel conectar ao banco para o backfill. Verifique DATABASE_URL antes de rodar o script.\nDetalhe: ${error.message}`
   }
 
-  return error instanceof Error ? error.stack ?? error.message : String(error)
+  return error instanceof Error ? (error.stack ?? error.message) : String(error)
 }

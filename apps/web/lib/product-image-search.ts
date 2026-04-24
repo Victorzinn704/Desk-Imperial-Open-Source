@@ -41,6 +41,9 @@ const PACKAGED_BEVERAGE_KEYWORDS = [
   'garrafa',
   'long neck',
 ]
+const BEER_SNACK_COMBO_KEYWORDS = ['cerveja', 'beer', 'chopp', 'petisco', 'porcao', 'porção', 'futebol']
+const BURGER_COMBO_KEYWORDS = ['burger', 'hamb', 'lanche', 'batata']
+const PIZZA_COMBO_KEYWORDS = ['pizza', 'calabresa', 'mussarela', 'pepperoni']
 
 export function buildProductImageSearchQuery(input: ProductImageSearchInput) {
   const name = input.name.trim()
@@ -48,14 +51,26 @@ export function buildProductImageSearchQuery(input: ProductImageSearchInput) {
     return null
   }
 
-  if (isPackagedBeverageLike(input)) {
-    return null
-  }
-
   const haystack = normalize(`${input.name} ${input.brand ?? ''} ${input.category ?? ''}`)
 
   if (isComboLike(input, haystack)) {
+    if (containsAny(haystack, BEER_SNACK_COMBO_KEYWORDS)) {
+      return 'petisco cerveja bar'
+    }
+
+    if (containsAny(haystack, BURGER_COMBO_KEYWORDS)) {
+      return `${name} hamburguer combo restaurante`
+    }
+
+    if (containsAny(haystack, PIZZA_COMBO_KEYWORDS)) {
+      return `${name} pizza combo restaurante`
+    }
+
     return `${name} comida combo restaurante`
+  }
+
+  if (isPackagedBeverageLike(input)) {
+    return null
   }
 
   if (containsAny(haystack, PREPARED_DRINK_KEYWORDS)) {
@@ -77,6 +92,10 @@ export function isPackagedBeverageLike(input: ProductImageSearchInput) {
   const haystack = normalize(
     `${input.name} ${input.brand ?? ''} ${input.category ?? ''} ${input.packagingClass ?? ''} ${input.quantityLabel ?? ''}`,
   )
+
+  if (isComboLike(input, haystack)) {
+    return false
+  }
 
   return containsAny(haystack, PACKAGED_BEVERAGE_KEYWORDS)
 }

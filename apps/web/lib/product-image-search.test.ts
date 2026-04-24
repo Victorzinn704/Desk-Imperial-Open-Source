@@ -21,7 +21,17 @@ describe('product-image-search', () => {
         category: 'Combos',
         isCombo: true,
       }),
-    ).toBe('Combo Burger da Casa comida combo restaurante')
+    ).toBe('Combo Burger da Casa hamburguer combo restaurante')
+  })
+
+  it('nao trata combo com cerveja como bebida embalada', () => {
+    expect(
+      buildProductImageSearchQuery({
+        name: 'Combo Petisco Mais 2 Cervejas',
+        category: 'Combos',
+        isCombo: true,
+      }),
+    ).toBe('petisco cerveja bar')
   })
 
   it('gera busca de comida para prato sem foto', () => {
@@ -42,5 +52,15 @@ describe('product-image-search', () => {
         quantityLabel: '500ml',
       }),
     ).toBe(true)
+  })
+
+  it('nao marca combo como bebida embalada mesmo com palavra cerveja', () => {
+    expect(
+      isPackagedBeverageLike({
+        name: 'Combo Petisco Mais 2 Cervejas',
+        category: 'Combos',
+        isCombo: true,
+      }),
+    ).toBe(false)
   })
 })

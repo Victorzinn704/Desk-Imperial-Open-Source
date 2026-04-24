@@ -30,6 +30,18 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.unsplash.com')
   })
 
+  it('usa fallback mais aderente para combo de petisco com cerveja', () => {
+    const visual = resolveProductVisual({
+      name: 'Combo Petisco Mais 2 Cervejas',
+      category: 'Combos',
+      imageUrl: null,
+      isCombo: true,
+    })
+
+    expect(visual?.source).toBe('combo-fallback')
+    expect(visual?.src).toContain('images.pexels.com')
+  })
+
   it('usa packshot nacional para bebida embalada reconhecida sem foto valida', () => {
     const visual = resolveProductVisual({
       name: 'Heineken 350ml',
@@ -73,7 +85,7 @@ describe('resolveProductVisual', () => {
     })
 
     expect(visual?.source).toBe('combo-fallback')
-    expect(visual?.src).toContain('images.unsplash.com')
+    expect(visual?.src).toContain('images.pexels.com')
   })
 
   it('ignora url insegura e usa packshot nacional quando o produto embalado e reconhecido', () => {
@@ -95,6 +107,35 @@ describe('resolveProductVisual', () => {
       category: 'Outros',
       packagingClass: 'carton',
       quantityLabel: '290ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+  })
+
+  it('reconhece Bohemia como bebida nacional embalada', () => {
+    const visual = resolveProductVisual({
+      name: 'Bohemia 600ml',
+      brand: 'Bohemia',
+      category: 'Cervejas',
+      packagingClass: 'Long neck 600ml',
+      quantityLabel: '600ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.src.startsWith('data:image/svg+xml')).toBe(true)
+  })
+
+  it('reconhece cerveja sem alcool generica como bebida nacional embalada', () => {
+    const visual = resolveProductVisual({
+      name: 'Cerveja sem Alcool 350ml',
+      category: 'Cervejas',
+      packagingClass: 'Lata 350ml',
+      quantityLabel: '350ml',
       imageUrl: null,
       isCombo: false,
     })

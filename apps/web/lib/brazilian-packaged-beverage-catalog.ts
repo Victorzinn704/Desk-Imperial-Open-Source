@@ -70,6 +70,13 @@ const beverageCatalog: PackagedBeverageCatalogEntry[] = [
     defaultShape: 'can',
   },
   {
+    id: 'bohemia',
+    label: 'BOHEMIA',
+    aliases: ['bohemia'],
+    colors: { body: '#8d1d24', panel: '#fbf1e8', accent: '#d1a24a', text: '#fff7f1', cap: '#d9dbe2' },
+    defaultShape: 'longneck',
+  },
+  {
     id: 'stella-artois',
     label: 'STELLA',
     aliases: ['stella artois', 'stella'],
@@ -109,6 +116,34 @@ const beverageCatalog: PackagedBeverageCatalogEntry[] = [
     label: 'SKOL',
     aliases: ['skol'],
     colors: { body: '#f7c61c', panel: '#fff4d0', accent: '#e13129', text: '#a7221d', cap: '#d7d9dd' },
+    defaultShape: 'can',
+  },
+  {
+    id: 'chopp',
+    label: 'CHOPP',
+    aliases: ['chopp'],
+    colors: { body: '#bb7a26', panel: '#fff4d8', accent: '#5e3812', text: '#fff8ee', cap: '#efe2c2' },
+    defaultShape: 'bottle',
+  },
+  {
+    id: 'ipa-artesanal',
+    label: 'IPA',
+    aliases: ['ipa', 'cerveja artesanal', 'artesanal ipa'],
+    colors: { body: '#d87518', panel: '#fff3dd', accent: '#3f2a17', text: '#fff8ef', cap: '#d9dbe2' },
+    defaultShape: 'bottle',
+  },
+  {
+    id: 'cerveja-sem-alcool',
+    label: 'SEM ALCOOL',
+    aliases: ['cerveja sem alcool', 'cerveja sem álcool', 'sem alcool', 'sem álcool'],
+    colors: { body: '#eef1f6', panel: '#1f4b8f', accent: '#70b14a', text: '#173052', cap: '#d7dade' },
+    defaultShape: 'can',
+  },
+  {
+    id: 'cerveja-generica',
+    label: 'CERVEJA',
+    aliases: ['cerveja lata', 'cerveja long neck', 'cerveja garrafa', 'cerveja litrao', 'cerveja litrão'],
+    colors: { body: '#c49b39', panel: '#fff5db', accent: '#7f1f1f', text: '#fff8ef', cap: '#d7dade' },
     defaultShape: 'can',
   },
   {
@@ -176,19 +211,21 @@ export function resolveBrazilianPackagedBeverageMatch(
   }
 
   const haystack = normalizeText(
-    [input.name, input.brand ?? '', input.category ?? '', input.packagingClass ?? '', input.quantityLabel ?? ''].join(' '),
+    [input.name, input.brand ?? '', input.category ?? '', input.packagingClass ?? '', input.quantityLabel ?? ''].join(
+      ' ',
+    ),
   )
   if (!haystack || !looksLikePackagedBeverage(haystack)) {
     return null
   }
 
-  const matched = beverageCatalog.find((entry) => entry.aliases.some((alias) => haystack.includes(normalizeText(alias))))
+  const matched = beverageCatalog.find((entry) =>
+    entry.aliases.some((alias) => haystack.includes(normalizeText(alias))),
+  )
   return matched ? { entry: matched, matchedBy: 'keywords' } : null
 }
 
-export function resolveBrazilianPackagedBeverageVisual(
-  input: PackagedBeverageInput,
-): PackagedBeverageVisual | null {
+export function resolveBrazilianPackagedBeverageVisual(input: PackagedBeverageInput): PackagedBeverageVisual | null {
   const match = resolveBrazilianPackagedBeverageMatch(input)
   if (!match) {
     return null
@@ -427,9 +464,5 @@ function normalizeText(value: string) {
 }
 
 function escapeXml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
