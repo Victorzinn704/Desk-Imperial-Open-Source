@@ -11,23 +11,13 @@ import { ProductThumb } from '@/components/shared/product-thumb'
 import { useCatalogVisualSuggestions } from '@/components/shared/use-catalog-visual-suggestions'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
-import {
-  Beer,
-  Coffee,
-  Minus,
-  Package,
-  Pizza,
-  Plus,
-  Search,
-  ShoppingCart,
-  UtensilsCrossed,
-  Wine,
-} from 'lucide-react'
+import { Beer, Coffee, Minus, Package, Pizza, Plus, Search, ShoppingCart, UtensilsCrossed, Wine } from 'lucide-react'
 
 interface MobileOrderBuilderProps {
   mesaLabel: string
   mode: 'new' | 'add'
   busy?: boolean
+  checkoutDockOffset?: 'navigation' | 'screen'
   isLoading?: boolean
   isOffline?: boolean
   errorMessage?: string | null
@@ -122,16 +112,21 @@ const ProductItem = memo(function ProductItem({
 // Heuristic icon mapper extracted for stable references
 function getCategoryIcon(cat: string) {
   const low = cat.toLowerCase()
-  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-    {return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('vinho'))
-    {return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-    {return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('combo') || low.includes('kit'))
-    {return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-    {return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
+  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) {
+    return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('vinho')) {
+    return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) {
+    return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('combo') || low.includes('kit')) {
+    return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) {
+    return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
@@ -265,7 +260,10 @@ function MobileOrderHeader({
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft,#7a8896)]">
                 {item.label}
               </p>
-              <p className="mt-1 text-base font-bold leading-tight" style={{ color: item.tone ?? 'var(--text-primary)' }}>
+              <p
+                className="mt-1 text-base font-bold leading-tight"
+                style={{ color: item.tone ?? 'var(--text-primary)' }}
+              >
                 {item.value}
               </p>
             </div>
@@ -327,6 +325,7 @@ function MobileOrderHeader({
 
 function CartSummaryBar({
   busy,
+  dockOffset = 'navigation',
   mode,
   onSubmit,
   submitLabel,
@@ -334,6 +333,7 @@ function CartSummaryBar({
   totalValue,
 }: Readonly<{
   busy?: boolean
+  dockOffset?: MobileOrderBuilderProps['checkoutDockOffset']
   mode: MobileOrderBuilderProps['mode']
   onSubmit: () => void
   submitLabel: string
@@ -346,10 +346,14 @@ function CartSummaryBar({
 
   const compactLabel = submitLabel.toLowerCase().includes('adicionar') ? 'Adicionar' : 'Abrir'
   const helper = mode === 'add' ? 'Itens entram na comanda aberta' : 'Abra a comanda sem rolar a lista'
+  const fixedOffsetClass =
+    dockOffset === 'screen'
+      ? 'bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))]'
+      : 'bottom-[calc(5.3rem+env(safe-area-inset-bottom,0px))]'
 
   return (
     <div
-      className="fixed inset-x-3 bottom-[calc(5.3rem+env(safe-area-inset-bottom,0px))] z-40 md:static md:inset-auto md:z-auto md:shrink-0 md:border-t md:border-[rgba(0,140,255,0.2)] md:bg-[var(--bg)]/95 md:px-3 md:pb-3 md:pt-2 md:backdrop-blur"
+      className={`fixed inset-x-3 ${fixedOffsetClass} z-40 md:static md:inset-auto md:z-auto md:shrink-0 md:border-t md:border-[rgba(0,140,255,0.2)] md:bg-[var(--bg)]/95 md:px-3 md:pb-3 md:pt-2 md:backdrop-blur`}
       data-testid="mobile-order-checkout-dock"
     >
       <div className="grid grid-cols-[minmax(0,1fr)_4.25rem] gap-2 rounded-[18px] border border-[rgba(0,140,255,0.24)] bg-[var(--surface)] p-2 shadow-[0_-14px_34px_rgba(0,0,0,0.34)]">
@@ -388,6 +392,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   mesaLabel,
   mode,
   busy,
+  checkoutDockOffset = 'navigation',
   isLoading = false,
   isOffline = false,
   errorMessage = null,
@@ -440,7 +445,9 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   const virtualItems = rowVirtualizer.getVirtualItems()
 
   const handleSubmit = useCallback(async () => {
-    if (cart.length === 0 || busy) {return}
+    if (cart.length === 0 || busy) {
+      return
+    }
     const items: ComandaItem[] = cart.map(({ _key: _k, ...rest }) => rest)
     await onSubmit(items)
   }, [cart, busy, onSubmit])
@@ -488,9 +495,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 size-10 animate-spin rounded-full border-2 border-[var(--accent,#008cff)] border-t-transparent" />
             <p className="text-sm font-medium text-[var(--text-primary)]">Carregando produtos...</p>
-            <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">
-              Aguarde o catálogo terminar de sincronizar.
-            </p>
+            <p className="mt-1 text-xs text-[var(--text-soft,#7a8896)]">Aguarde o catálogo terminar de sincronizar.</p>
           </div>
         ) : errorMessage && activeProdutos.length === 0 ? (
           <div className="px-4 py-6">
@@ -586,6 +591,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 
       <CartSummaryBar
         busy={busy}
+        dockOffset={checkoutDockOffset}
         mode={mode}
         submitLabel={submitLabel}
         totalItems={totalItems}

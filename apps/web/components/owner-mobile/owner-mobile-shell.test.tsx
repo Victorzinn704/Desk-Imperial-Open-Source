@@ -676,5 +676,6 @@ describe('OwnerMobileShell', () => {
       expect(screen.getByText('Retomar pedido')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('Buscar produto...')).toBeInTheDocument()
     })
+    expect(screen.queryByTestId('nav-pdv')).not.toBeInTheDocument()
   })
 })

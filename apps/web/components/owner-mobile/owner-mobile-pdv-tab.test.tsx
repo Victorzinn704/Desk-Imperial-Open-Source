@@ -17,6 +17,7 @@ vi.mock('next/dynamic', () => {
       }
 
       return function MockMobileOrderBuilder(props: {
+        checkoutDockOffset?: 'navigation' | 'screen'
         mesaLabel: string
         mode: 'add' | 'new'
         onCancel: () => void
@@ -27,6 +28,7 @@ vi.mock('next/dynamic', () => {
           <div data-testid="mock-mobile-order-builder">
             <div>{props.mesaLabel}</div>
             <div>{props.mode}</div>
+            <div>{props.checkoutDockOffset}</div>
             <button type="button" onClick={props.secondaryAction.onClick}>
               {props.secondaryAction.label}
             </button>
@@ -119,6 +121,7 @@ describe('OwnerPdvTab', () => {
     expect(screen.getByTestId('mock-mobile-order-builder')).toBeInTheDocument()
     expect(screen.getByText('Mesa 12')).toBeInTheDocument()
     expect(screen.getByText('add')).toBeInTheDocument()
+    expect(screen.getByText('screen')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cadastro rápido' }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar builder' }))

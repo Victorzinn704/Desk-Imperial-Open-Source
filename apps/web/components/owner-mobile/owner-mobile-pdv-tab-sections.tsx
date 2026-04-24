@@ -150,6 +150,7 @@ export function OwnerPdvBuilder({
       <div className="min-h-0 flex-1 overflow-hidden rounded-[22px] border border-[var(--border)] bg-[var(--surface)]">
         <MobileOrderBuilder
           busy={isBusy}
+          checkoutDockOffset="screen"
           errorMessage={productsErrorMessage}
           isLoading={productsLoading}
           isOffline={isOffline}
