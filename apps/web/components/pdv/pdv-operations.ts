@@ -40,6 +40,7 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     mesa: comanda.tableLabel,
     clienteNome: comanda.customerName ?? undefined,
     clienteDocumento: comanda.customerDocument ?? undefined,
+    participantCount: comanda.participantCount,
     notes: comanda.notes ?? undefined,
     itens: comanda.items.map((item) => {
       const quantidade = Math.max(1, toFiniteNumber(item.quantity) ?? 1)
@@ -56,6 +57,16 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     abertaEm: new Date(comanda.openedAt),
     subtotalBackend: typeof comanda.subtotalAmount === 'number' ? comanda.subtotalAmount : undefined,
     totalBackend: typeof comanda.totalAmount === 'number' ? comanda.totalAmount : undefined,
+    paidAmount: typeof comanda.paidAmount === 'number' ? comanda.paidAmount : undefined,
+    remainingAmount: typeof comanda.remainingAmount === 'number' ? comanda.remainingAmount : undefined,
+    paymentStatus: comanda.paymentStatus,
+    payments: (comanda.payments ?? []).map((payment) => ({
+      id: payment.id,
+      method: payment.method,
+      amount: payment.amount,
+      note: payment.note ?? undefined,
+      paidAt: new Date(payment.paidAt),
+    })),
   }
 }
 
@@ -77,10 +88,14 @@ function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
   const empMap = new Map<string, string>()
   const comandaOwnerName = new Map<string, string>()
 
-  if (!snapshot) {return { empMap, comandaOwnerName }}
+  if (!snapshot) {
+    return { empMap, comandaOwnerName }
+  }
 
   for (const emp of collectOperationGroups(snapshot)) {
-    if (emp.employeeId) {empMap.set(emp.employeeId, emp.displayName)}
+    if (emp.employeeId) {
+      empMap.set(emp.employeeId, emp.displayName)
+    }
     if ((emp as Record<string, unknown>).userId) {
       empMap.set((emp as Record<string, unknown>).userId as string, emp.displayName)
     }
@@ -99,7 +114,9 @@ function resolveGarcomNome(
   comanda?: { id: string },
 ) {
   const fromMap = gId ? empMap.get(gId) : undefined
-  if (fromMap) {return fromMap}
+  if (fromMap) {
+    return fromMap
+  }
   return comanda ? comandaOwnerName.get(comanda.id) : undefined
 }
 
@@ -135,7 +152,9 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
   const comandaByTable = new Map<string, (typeof activeComandas)[0]>()
   for (const c of activeComandas) {
-    if (c.tableLabel) {comandaByTable.set(normalizeTableLabel(c.tableLabel), c)}
+    if (c.tableLabel) {
+      comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
+    }
   }
 
   return snapshot.mesas

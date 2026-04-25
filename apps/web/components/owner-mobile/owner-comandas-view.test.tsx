@@ -30,6 +30,7 @@ describe('OwnerComandasView', () => {
   it('carrega o extrato detalhado ao expandir uma comanda compacta', async () => {
     const user = userEvent.setup()
     const onCloseComanda = vi.fn()
+    const onCreatePayment = vi.fn()
 
     const detailsRecord: ComandaRecord = {
       id: 'c-1',
@@ -46,9 +47,22 @@ describe('OwnerComandasView', () => {
       discountAmount: 7.2,
       serviceFeeAmount: 0,
       totalAmount: 64.8,
+      paidAmount: 20,
+      remainingAmount: 44.8,
+      paymentStatus: 'PARTIAL',
       notes: null,
       openedAt: '2026-03-30T13:00:00.000Z',
       closedAt: null,
+      payments: [
+        {
+          id: 'pay-1',
+          amount: 20,
+          method: 'PIX',
+          note: null,
+          paidAt: '2026-03-30T13:20:00.000Z',
+          status: 'CONFIRMED',
+        },
+      ],
       items: [
         {
           id: 'i-1',
@@ -86,6 +100,7 @@ describe('OwnerComandasView', () => {
             },
           ]}
           onCloseComanda={onCloseComanda}
+          onCreatePayment={onCreatePayment}
         />
       </QueryClientProvider>,
     )
@@ -100,10 +115,17 @@ describe('OwnerComandasView', () => {
     expect(screen.getByText(/Sem pimenta/i)).toBeInTheDocument()
     expect(screen.getByTestId('owner-comanda-items-c-1')).toBeInTheDocument()
     expect(screen.getAllByText(/64,80/)).toHaveLength(3)
+    expect(screen.getByText(/20,00/)).toBeInTheDocument()
+    expect(screen.getByText(/44,80/)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /^Fechar$/i }))
+    await user.click(screen.getByRole('button', { name: /^Meia$/i }))
+    await user.click(screen.getByRole('button', { name: /^Parcial$/i }))
 
-    expect(onCloseComanda).toHaveBeenCalledWith('c-1', 7.2, 0)
+    expect(onCreatePayment).toHaveBeenCalledWith('c-1', 22.4, 'PIX')
+
+    await user.click(screen.getByRole('button', { name: /Pagar restante e fechar/i }))
+
+    expect(onCloseComanda).toHaveBeenCalledWith('c-1', 7.2, 0, 'PIX')
   })
 
   it('permite filtrar o atendimento por garçom e recalcula o recorte', async () => {

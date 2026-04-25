@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ClipboardList, LoaderCircle, TriangleAlert, WifiOff } from 'lucide-react'
+import type { ComandaPaymentMethod } from '@contracts/contracts'
 import { calcTotal, type Comanda } from '@/components/pdv/pdv-types'
 
 export type ComandasFilter = 'tudo' | 'abertas' | 'fechadas'
@@ -18,7 +19,13 @@ export type OwnerComandasViewProps = Readonly<{
   comandas: Comanda[]
   focusedId?: string | null
   onAddItems?: (comanda: Comanda) => void
-  onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
+  onCloseComanda?: (
+    id: string,
+    discountAmount: number,
+    serviceFeeAmount: number,
+    paymentMethod?: ComandaPaymentMethod,
+  ) => Promise<unknown> | void
+  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
   isLoading?: boolean
   isOffline?: boolean
   errorMessage?: string | null

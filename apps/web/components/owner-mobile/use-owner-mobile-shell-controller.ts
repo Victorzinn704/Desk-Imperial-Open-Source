@@ -107,6 +107,24 @@ async function submitExistingComanda(
   await mutateAsync({ comandaId, items: items.map(mapOrderItemPayload) })
 }
 
+async function replaceExistingComanda(
+  pendingAction: Extract<PendingAction, { type: 'edit' }>,
+  items: ComandaItem[],
+  mutateAsync: ReturnType<typeof useOwnerMobileShellMutations>['replaceComandaMutation']['mutateAsync'],
+) {
+  await mutateAsync({
+    comandaId: pendingAction.comandaId,
+    payload: {
+      tableLabel: pendingAction.mesaLabel,
+      customerName: pendingAction.comanda.clienteNome,
+      customerDocument: pendingAction.comanda.clienteDocumento,
+      participantCount: pendingAction.comanda.participantCount,
+      notes: pendingAction.comanda.notes,
+      items: items.map(mapOrderItemPayload),
+    },
+  })
+}
+
 async function submitNewComanda(
   queryClient: ReturnType<typeof useQueryClient>,
   pendingAction: Extract<PendingAction, { type: 'new' }>,
@@ -187,7 +205,13 @@ function useOwnerHandleSubmit({
       setScreenError(null)
 
       try {
-        if (pendingAction.type === 'add') {
+        if (pendingAction.type === 'edit') {
+          await replaceExistingComanda(
+            pendingAction,
+            items,
+            mutations.replaceComandaMutation.mutateAsync,
+          )
+        } else if (pendingAction.type === 'add') {
           await submitExistingComanda(
             pendingAction.comandaId,
             items,
@@ -205,6 +229,7 @@ function useOwnerHandleSubmit({
     [
       mutations.addComandaItemsMutation.mutateAsync,
       mutations.openComandaMutation.mutateAsync,
+      mutations.replaceComandaMutation.mutateAsync,
       pendingAction,
       queryClient,
       setActiveTab,

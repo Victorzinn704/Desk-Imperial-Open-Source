@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import type { ComandaPaymentMethod } from '@contracts/contracts'
 import { calcSubtotal, calcTotal, type Comanda, formatElapsed } from '@/components/pdv/pdv-types'
 import { toPdvComanda } from '@/components/pdv/pdv-operations'
 import { formatBRL as formatCurrency } from '@/lib/currency'
@@ -15,7 +16,13 @@ type OwnerComandaCardProps = {
   defaultOpen?: boolean
   isBusy?: boolean
   onAddItems?: (comanda: Comanda) => void
-  onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
+  onCloseComanda?: (
+    id: string,
+    discountAmount: number,
+    serviceFeeAmount: number,
+    paymentMethod?: ComandaPaymentMethod,
+  ) => Promise<unknown> | void
+  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
 }
 
 export function OwnerComandaCard({
@@ -24,6 +31,7 @@ export function OwnerComandaCard({
   isBusy = false,
   onAddItems,
   onCloseComanda,
+  onCreatePayment,
 }: OwnerComandaCardProps) {
   const [open, setOpen] = useState(defaultOpen)
   const detailsQuery = useQuery({
@@ -65,6 +73,7 @@ export function OwnerComandaCard({
           total={derived.total}
           onAddItems={onAddItems}
           onCloseComanda={onCloseComanda}
+          onCreatePayment={onCreatePayment}
         />
       ) : null}
     </li>

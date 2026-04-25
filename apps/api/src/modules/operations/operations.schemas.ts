@@ -2,6 +2,7 @@ import {
   cashMovementRecordSchema,
   cashMovementTypeSchema,
   cashSessionRecordSchema,
+  comandaPaymentMethodSchema,
   comandaRecordSchema,
   comandaStatusSchema,
   mesaRecordSchema,
@@ -81,11 +82,7 @@ function coerceLooseOptionalBoolean(value: unknown) {
 }
 
 function createMoneySchema(minValue: number) {
-  return z
-    .number()
-    .finite()
-    .min(minValue)
-    .refine(hasAtMostTwoDecimalPlaces, 'Use no máximo 2 casas decimais.')
+  return z.number().finite().min(minValue).refine(hasAtMostTwoDecimalPlaces, 'Use no máximo 2 casas decimais.')
 }
 
 function createOptionalMoneySchema(minValue: number) {
@@ -248,10 +245,20 @@ export const closeComandaBodySchema = z
   .object({
     discountAmount: createOptionalMoneySchema(0),
     serviceFeeAmount: createOptionalMoneySchema(0),
+    paymentMethod: comandaPaymentMethodSchema.optional(),
     notes: z.string().max(240).optional(),
   })
   .strict()
 export type CloseComandaDto = z.infer<typeof closeComandaBodySchema>
+
+export const createComandaPaymentBodySchema = z
+  .object({
+    amount: createRequiredMoneySchema(0.01),
+    method: comandaPaymentMethodSchema,
+    note: z.string().max(160).optional(),
+  })
+  .strict()
+export type CreateComandaPaymentDto = z.infer<typeof createComandaPaymentBodySchema>
 
 export const updateKitchenItemStatusBodySchema = z
   .object({

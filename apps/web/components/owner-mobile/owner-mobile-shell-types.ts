@@ -1,9 +1,12 @@
-import type { ComandaItem, Mesa } from '@/components/pdv/pdv-types'
+import type { Comanda, ComandaItem, Mesa } from '@/components/pdv/pdv-types'
 
 export type OwnerMobileTab = 'today' | 'comandas' | 'pdv' | 'caixa' | 'financeiro' | 'conta'
 export type OwnerPdvView = 'mesas' | 'cozinha'
 
-export type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
+export type PendingAction =
+  | { type: 'new'; mesa: Mesa }
+  | { type: 'add'; comandaId: string; mesaLabel: string }
+  | { type: 'edit'; comandaId: string; mesaLabel: string; comanda: Comanda }
 
 export type OwnerCurrentUser = {
   name?: string

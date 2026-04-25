@@ -154,13 +154,18 @@ export function OwnerPdvBuilder({
           errorMessage={productsErrorMessage}
           isLoading={productsLoading}
           isOffline={isOffline}
+          initialItems={builder.initialItems}
           mesaLabel={builder.mesaLabel}
           mode={builder.mode}
           produtos={products}
           secondaryAction={{ label: 'Cadastro rápido', onClick: onOpenQuickRegister }}
           summaryItems={[
             { label: 'Mesa', value: builder.mesaLabel, tone: '#008cff' },
-            { label: 'Modo', value: builder.mode === 'add' ? 'Adicionar' : 'Nova', tone: '#36f57c' },
+            {
+              label: 'Modo',
+              value: builder.mode === 'edit' ? 'Editar' : builder.mode === 'add' ? 'Adicionar' : 'Nova',
+              tone: '#36f57c',
+            },
             { label: 'Fluxo', value: 'Ao vivo', tone: '#eab308' },
           ]}
           onCancel={onCancelBuilder}

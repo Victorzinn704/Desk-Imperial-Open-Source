@@ -90,6 +90,13 @@ export function OwnerBarcodeScannerSheet({
     let cancelled = false
 
     async function startScanner() {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      if (!window.isSecureContext && !isLocalhost) {
+        setState('unsupported')
+        setMessage('A câmera do navegador exige HTTPS. Abra o Desk Imperial pelo endereço seguro do app.')
+        return
+      }
+
       if (!navigator.mediaDevices?.getUserMedia) {
         setState('unsupported')
         setMessage('A câmera não está disponível neste dispositivo. Continue com o fluxo manual.')

@@ -10,6 +10,7 @@ import {
   comandaDetailsResponseSchema,
   comandaWithOptionalSnapshotResponseSchema,
   createCashMovementBodySchema,
+  createComandaPaymentBodySchema,
   createMesaBodySchema,
   kitchenItemStatusUpdateResponseSchema,
   mesaResponseSchema,
@@ -61,6 +62,7 @@ export function registerOperationsOpenApi(registry: OpenAPIRegistry) {
   const assignComandaRequest = registry.register('AssignComandaRequest', assignComandaBodySchema)
   const updateComandaStatusRequest = registry.register('UpdateComandaStatusRequest', updateComandaStatusBodySchema)
   const closeComandaRequest = registry.register('CloseComandaRequest', closeComandaBodySchema)
+  const createComandaPaymentRequest = registry.register('CreateComandaPaymentRequest', createComandaPaymentBodySchema)
   const updateKitchenItemStatusRequest = registry.register(
     'UpdateKitchenItemStatusRequest',
     updateKitchenItemStatusBodySchema,
@@ -69,8 +71,14 @@ export function registerOperationsOpenApi(registry: OpenAPIRegistry) {
   const updateMesaRequest = registry.register('UpdateMesaRequest', updateMesaBodySchema)
 
   const operationsLiveResponse = registry.register('OperationsLiveResponse', operationsLiveResponseOpenApiSchema)
-  const operationsKitchenResponse = registry.register('OperationsKitchenResponse', operationsKitchenResponseOpenApiSchema)
-  const operationsSummaryResponse = registry.register('OperationsSummaryResponse', operationsSummaryResponseOpenApiSchema)
+  const operationsKitchenResponse = registry.register(
+    'OperationsKitchenResponse',
+    operationsKitchenResponseOpenApiSchema,
+  )
+  const operationsSummaryResponse = registry.register(
+    'OperationsSummaryResponse',
+    operationsSummaryResponseOpenApiSchema,
+  )
   const cashSessionResponse = registry.register(
     'OperationsCashSessionResponse',
     cashSessionWithOptionalSnapshotResponseSchema,
@@ -378,6 +386,31 @@ export function registerOperationsOpenApi(registry: OpenAPIRegistry) {
       200: buildJsonResponse(comandaDetailsResponse, 'Comanda details.'),
       401: buildErrorResponse('Authentication required.'),
       404: buildErrorResponse('Comanda not found.'),
+    },
+  })
+
+  registry.registerPath({
+    method: 'post',
+    path: '/operations/comandas/{comandaId}/payments',
+    tags: ['operations'],
+    summary: 'Register a comanda payment',
+    request: {
+      params: comandaIdParam,
+      body: {
+        content: {
+          'application/json': {
+            schema: createComandaPaymentRequest,
+          },
+        },
+      },
+      query: operationsResponseOptions,
+    },
+    responses: {
+      201: buildJsonResponse(comandaResponse, 'Comanda payment registered.'),
+      400: buildErrorResponse('Invalid request payload.'),
+      401: buildErrorResponse('Authentication required.'),
+      404: buildErrorResponse('Comanda not found.'),
+      409: buildErrorResponse('Comanda cannot receive payments.'),
     },
   })
 

@@ -36,12 +36,14 @@ import {
   ApiError,
   cancelComanda,
   closeComanda,
+  createComandaPayment,
   fetchOperationsKitchen,
   fetchOperationsLive,
   fetchProducts,
   logout,
   openCashSession,
   openComanda,
+  replaceComanda,
   updateComandaStatus,
 } from '@/lib/api'
 import { useRouter } from 'next/navigation'
@@ -61,27 +63,35 @@ import { useOfflineQueue } from '@/components/shared/use-offline-queue'
 import {
   appendOptimisticComandaItem,
   appendOptimisticComandaMutation,
+  appendOptimisticComandaPayment,
   buildOptimisticComandaRecord,
   buildPerformerKpis,
   buildPerformerStanding,
-  invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   rollbackOperationsSnapshot,
+  scheduleOperationsWorkspaceReconcile,
   setOptimisticComandaStatus,
 } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
 
 function realtimeStatusColor(status: string): string {
-  if (status === 'connected') {return '#34f27f'}
-  if (status === 'connecting') {return '#fbbf24'}
+  if (status === 'connected') {
+    return '#34f27f'
+  }
+  if (status === 'connecting') {
+    return '#fbbf24'
+  }
   return '#f87171'
 }
 
 type Tab = 'mesas' | 'cozinha' | 'pedido' | 'pedidos' | 'historico'
 
-type PendingAction = { type: 'new'; mesa: Mesa } | { type: 'add'; comandaId: string; mesaLabel: string }
+type PendingAction =
+  | { type: 'new'; mesa: Mesa }
+  | { type: 'add'; comandaId: string; mesaLabel: string }
+  | { type: 'edit'; comandaId: string; mesaLabel: string; comanda: Comanda }
 
 // null = no focus; string = scroll-to & highlight that comanda
 
@@ -101,8 +111,12 @@ function toApiItemPayload(item: ComandaItem) {
 }
 
 function isNetworkError(error: unknown): boolean {
-  if (error instanceof ApiError && error.status === 0) {return true}
-  if (error instanceof Error && error.message.toLowerCase().includes('fetch')) {return true}
+  if (error instanceof ApiError && error.status === 0) {
+    return true
+  }
+  if (error instanceof Error && error.message.toLowerCase().includes('fetch')) {
+    return true
+  }
   return false
 }
 
@@ -146,9 +160,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   // Canal 1 — Background Sync: SW acorda a aba mesmo quando está em background
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {return}
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+      return
+    }
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'DRAIN_QUEUE') {void runDrain()}
+      if (event.data?.type === 'DRAIN_QUEUE') {
+        void runDrain()
+      }
     }
     navigator.serviceWorker.addEventListener('message', handler)
     return () => navigator.serviceWorker.removeEventListener('message', handler)
@@ -156,7 +174,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   // Canal 2 — Fallback: drena ao reconectar para browsers sem Background Sync
   useEffect(() => {
-    if (realtimeStatus !== 'connected') {return}
+    if (realtimeStatus !== 'connected') {
+      return
+    }
     void runDrain()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [realtimeStatus])
@@ -247,7 +267,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -266,7 +286,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
       })
@@ -291,12 +311,40 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
       })
       toast.success('Itens adicionados')
       haptic.light()
+    },
+  })
+  const replaceComandaMutation = useMutation({
+    mutationFn: ({
+      comandaId,
+      payload,
+    }: {
+      comandaId: string
+      payload: Parameters<typeof replaceComanda>[1]
+    }) => replaceComanda(comandaId, payload, { includeSnapshot: false }),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      return { snapshot }
+    },
+    onError: (_err, _vars, ctx) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      toast.error('Erro ao salvar edição')
+      haptic.error()
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: true,
+      })
+      toast.success('Comanda atualizada')
+      haptic.success()
     },
   })
   const updateComandaStatusMutation = useMutation({
@@ -313,7 +361,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
       })
       toast.success('Status atualizado')
@@ -341,7 +389,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: true,
         includeOrders: true,
@@ -349,6 +397,36 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       })
       toast.success('Comanda fechada — pagamento efetuado')
       haptic.heavy()
+    },
+  })
+  const createComandaPaymentMutation = useMutation({
+    mutationFn: ({
+      amount,
+      comandaId,
+      method,
+    }: {
+      amount: number
+      comandaId: string
+      method: Parameters<typeof createComandaPayment>[1]['method']
+    }) => createComandaPayment(comandaId, { amount, method }, { includeSnapshot: false }),
+    onMutate: async ({ amount, comandaId, method }) => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = appendOptimisticComandaPayment(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, {
+        amount,
+        method,
+      })
+      return { snapshot }
+    },
+    onError: (_err, _vars, ctx) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      toast.error('Erro ao registrar pagamento')
+      haptic.error()
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, { includeSummary: true })
+      toast.success('Pagamento registrado')
+      haptic.success()
     },
   })
   const cancelComandaMutation = useMutation({
@@ -369,7 +447,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       haptic.error()
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: true,
       })
@@ -409,17 +487,17 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     openComandaMutation.isPending ||
     addComandaItemMutation.isPending ||
     addComandaItemsMutation.isPending ||
+    replaceComandaMutation.isPending ||
     updateComandaStatusMutation.isPending ||
     cancelComandaMutation.isPending ||
+    createComandaPaymentMutation.isPending ||
     closeComandaMutation.isPending
 
   function handleSelectMesa(mesa: Mesa) {
     if (mesa.status === 'ocupada' && mesa.comandaId) {
-      // Mesa ocupada -> abre direto o builder para continuar a comanda sem forçar
-      // passagem extra pela lista de comandas.
-      setPendingAction({ type: 'add', comandaId: mesa.comandaId, mesaLabel: normalizeTableLabel(mesa.numero) })
-      setFocusedComandaId(null)
-      setActiveTab('pedido')
+      setPendingAction(null)
+      setFocusedComandaId(mesa.comandaId)
+      setActiveTab('pedidos')
     } else {
       // Mesa livre → cria nova comanda direto no builder de pedido
       setPendingAction({ type: 'new', mesa })
@@ -429,7 +507,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   }
 
   function handleAddItemsToComanda(comanda: Comanda) {
-    setPendingAction({ type: 'add', comandaId: comanda.id, mesaLabel: comanda.mesa ?? '?' })
+    setPendingAction({ type: 'edit', comandaId: comanda.id, mesaLabel: comanda.mesa ?? '?', comanda })
     setActiveTab('pedido')
   }
 
@@ -442,7 +520,10 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   async function enqueueOfflineItems(items: ComandaItem[]) {
     if (pendingAction?.type === 'add') {
       for (const item of items) {
-        await enqueue({ type: 'add-item', payload: { comandaId: pendingAction.comandaId, payload: toApiItemPayload(item) } })
+        await enqueue({
+          type: 'add-item',
+          payload: { comandaId: pendingAction.comandaId, payload: toApiItemPayload(item) },
+        })
       }
     } else if (pendingAction?.type === 'new') {
       await enqueue({
@@ -465,9 +546,22 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       comandaId,
       items: items.map(toApiItemPayload),
     })
-    void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-      includeKitchen: true,
-      includeSummary: false,
+    setPendingAction(null)
+    setFocusedComandaId(response.comanda.id)
+    setActiveTab('pedidos')
+  }
+
+  async function handleSubmitEditComanda(items: ComandaItem[], action: Extract<PendingAction, { type: 'edit' }>) {
+    const response = await replaceComandaMutation.mutateAsync({
+      comandaId: action.comandaId,
+      payload: {
+        tableLabel: action.mesaLabel,
+        customerName: action.comanda.clienteNome,
+        customerDocument: action.comanda.clienteDocumento,
+        participantCount: action.comanda.participantCount,
+        notes: action.comanda.notes,
+        items: items.map(toApiItemPayload),
+      },
     })
     setPendingAction(null)
     setFocusedComandaId(response.comanda.id)
@@ -484,11 +578,13 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     try {
       await openComandaMutation.mutateAsync(comParams)
     } catch (err: unknown) {
-      if (!isCashSessionRequiredError(err)) {throw err}
+      if (!isCashSessionRequiredError(err)) {
+        throw err
+      }
       toast.dismiss()
       toast.info('Abrindo caixa automaticamente...')
       await openCashSession({ openingCashAmount: 0 }, { includeSnapshot: false })
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, { includeSummary: true })
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, { includeSummary: true })
       await openComandaMutation.mutateAsync(comParams)
     }
     setPendingAction(null)
@@ -496,17 +592,23 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   }
 
   async function handleSubmit(items: ComandaItem[]) {
-    if (!pendingAction) {return}
+    if (!pendingAction) {
+      return
+    }
     setScreenError(null)
 
     try {
+      if (pendingAction.type === 'edit') {
+        await handleSubmitEditComanda(items, pendingAction)
+        return
+      }
       if (pendingAction.type === 'add') {
         await handleSubmitAddItems(items, pendingAction.comandaId)
         return
       }
       await handleSubmitNewComanda(items, pendingAction.mesa)
     } catch (error) {
-      if (isNetworkError(error) && pendingAction) {
+      if (isNetworkError(error) && pendingAction && pendingAction.type !== 'edit') {
         await enqueueOfflineItems(items)
         return
       }
@@ -516,7 +618,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   async function handleUpdateStatus(id: string, status: ComandaStatus) {
     const comanda = comandasById.get(id)
-    if (!comanda) {return}
+    if (!comanda) {
+      return
+    }
 
     try {
       setScreenError(null)
@@ -555,7 +659,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
 
   async function handleCloseWithDiscount(id: string, discountPercent: number, surchargePercent: number) {
     const comanda = comandasById.get(id)
-    if (!comanda) {return}
+    if (!comanda) {
+      return
+    }
     try {
       setScreenError(null)
       const subtotal = calcSubtotal(comanda)
@@ -567,23 +673,39 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     }
   }
 
+  async function handleCreatePayment(
+    id: string,
+    amount: number,
+    method: Parameters<typeof createComandaPayment>[1]['method'],
+  ) {
+    try {
+      setScreenError(null)
+      await createComandaPaymentMutation.mutateAsync({ amount, comandaId: id, method })
+    } catch (error) {
+      setScreenError(error instanceof Error ? error.message : 'Não foi possível registrar o pagamento.')
+    }
+  }
+
   const mesaLabel = pendingAction
     ? pendingAction.type === 'new'
       ? normalizeTableLabel(pendingAction.mesa.numero)
       : pendingAction.mesaLabel
     : '?'
-  const orderMode = pendingAction?.type === 'add' ? 'add' : 'new'
-  const pendingComanda = pendingAction?.type === 'add' ? comandasById.get(pendingAction.comandaId) ?? null : null
+  const orderMode = pendingAction?.type === 'edit' ? 'edit' : pendingAction?.type === 'add' ? 'add' : 'new'
+  const pendingComanda =
+    pendingAction?.type === 'add' || pendingAction?.type === 'edit'
+      ? (comandasById.get(pendingAction.comandaId) ?? (pendingAction.type === 'edit' ? pendingAction.comanda : null))
+      : null
   const builderSummaryItems = pendingAction
     ? [
         { label: 'Mesa', value: mesaLabel, tone: '#008cff' },
-        pendingAction.type === 'add'
+        pendingAction.type === 'add' || pendingAction.type === 'edit'
           ? {
               label: 'Responsável',
               value:
                 pendingComanda?.garcomId === currentUser?.employeeId
                   ? 'Sua mesa'
-                  : pendingComanda?.garcomNome ?? 'Sem responsável',
+                  : (pendingComanda?.garcomNome ?? 'Sem responsável'),
               tone: pendingComanda?.garcomId === currentUser?.employeeId ? '#c4b5fd' : '#f0f0f3',
             }
           : {
@@ -631,6 +753,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
         <MobileOrderBuilder
           busy={isBusy}
           errorMessage={productsErrorMessage}
+          initialItems={pendingAction.type === 'edit' ? pendingAction.comanda.itens : undefined}
           isLoading={productsLoading}
           mesaLabel={mesaLabel}
           mode={orderMode}
@@ -681,6 +804,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
           onAddItems={handleAddItemsToComanda}
           onCancelComanda={handleCancel}
           onCloseComanda={handleCloseWithDiscount}
+          onCreatePayment={handleCreatePayment}
           onFocus={(id: string | null) => setFocusedComandaId(id)}
           onNewComanda={handleNewComanda}
           onUpdateStatus={handleUpdateStatus}
@@ -794,7 +918,9 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
                 type="button"
                 onClick={() => {
                   setActiveTab(id)
-                  if (id !== 'pedidos') {setFocusedComandaId(null)}
+                  if (id !== 'pedidos') {
+                    setFocusedComandaId(null)
+                  }
                 }}
               >
                 {isActive && (

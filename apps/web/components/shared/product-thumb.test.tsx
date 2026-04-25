@@ -37,7 +37,7 @@ describe('ProductThumb', () => {
     expect(image.closest('[data-product-visual-source="combo-fallback"]')).toBeInTheDocument()
   })
 
-  it('usa iniciais para bebida embalada sem foto real', () => {
+  it('usa packshot local para bebida embalada sem foto real', () => {
     render(
       <ProductThumb
         product={{
@@ -52,9 +52,9 @@ describe('ProductThumb', () => {
       />,
     )
 
-    const initials = screen.getByText('CL')
-    expect(initials).toBeInTheDocument()
-    expect(initials.closest('[data-product-visual-source="initials"]')).toBeInTheDocument()
+    const image = screen.getByAltText('Packshot de Coca-Cola Lata')
+    expect(image).toBeInTheDocument()
+    expect(image.closest('[data-product-visual-source="national-beverage-catalog"]')).toBeInTheDocument()
   })
 
   it('faz fallback para iniciais quando a imagem falha ao carregar', () => {

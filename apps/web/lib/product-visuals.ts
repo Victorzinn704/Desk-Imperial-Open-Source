@@ -1,3 +1,5 @@
+import { resolveBrazilianPackagedBeverageVisual } from './brazilian-packaged-beverage-catalog'
+
 type ProductVisualInput = {
   name: string
   brand?: string | null
@@ -13,7 +15,7 @@ type ProductVisualInput = {
 type ProductVisual = {
   src: string
   alt: string
-  source: 'catalog' | 'combo-fallback'
+  source: 'catalog' | 'combo-fallback' | 'national-beverage-catalog'
 }
 
 const comboFallbacks = [
@@ -43,6 +45,11 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
       alt: `Foto de ${product.name}`,
       source: 'catalog',
     }
+  }
+
+  const beverageVisual = resolveBrazilianPackagedBeverageVisual(product)
+  if (beverageVisual) {
+    return beverageVisual
   }
 
   if (isComboLike(product)) {

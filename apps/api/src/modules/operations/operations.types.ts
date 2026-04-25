@@ -1,9 +1,19 @@
-import type { CashClosure, CashMovement, CashSession, Comanda, ComandaItem, Employee, Mesa } from '@prisma/client'
+import type {
+  CashClosure,
+  CashMovement,
+  CashSession,
+  Comanda,
+  ComandaItem,
+  ComandaPayment,
+  Employee,
+  Mesa,
+} from '@prisma/client'
 
 import type {
   CashMovementRecord,
   CashSessionRecord,
   ComandaItemRecord,
+  ComandaPaymentRecord,
   ComandaRecord,
   EmployeeOperationsRecord,
   KitchenItemStatus,
@@ -69,6 +79,8 @@ type ComandaItemLike = Pick<
   | 'kitchenReadyAt'
 >
 
+type ComandaPaymentLike = Pick<ComandaPayment, 'id' | 'method' | 'amount' | 'note' | 'status' | 'paidAt'>
+
 type MesaLike = Pick<
   Mesa,
   'id' | 'label' | 'capacity' | 'section' | 'positionX' | 'positionY' | 'active' | 'reservedUntil'
@@ -95,6 +107,7 @@ export type ComandaLike = Pick<
   | 'closedAt'
 > & {
   items?: ComandaItemLike[]
+  payments?: ComandaPaymentLike[]
 }
 
 type EmployeeLike = Pick<Employee, 'id' | 'employeeCode' | 'displayName' | 'active'>
@@ -158,6 +171,17 @@ export function toComandaItemRecord(item: ComandaItemLike): ComandaItemRecord {
   }
 }
 
+export function toComandaPaymentRecord(payment: ComandaPaymentLike): ComandaPaymentRecord {
+  return {
+    id: payment.id,
+    method: payment.method,
+    amount: toNumberOrNull(payment.amount) ?? 0,
+    note: payment.note,
+    status: payment.status,
+    paidAt: payment.paidAt.toISOString(),
+  }
+}
+
 export function toMesaRecord(
   mesa: MesaLike,
   openComanda: Pick<Comanda, 'id' | 'currentEmployeeId'> | null,
@@ -178,6 +202,14 @@ export function toMesaRecord(
 }
 
 export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
+  const payments = comanda.payments ? comanda.payments.map(toComandaPaymentRecord) : []
+  const paidAmount = payments
+    .filter((payment) => payment.status === 'CONFIRMED')
+    .reduce((sum, payment) => sum + payment.amount, 0)
+  const totalAmount = toNumberOrNull(comanda.totalAmount) ?? 0
+  const remainingAmount = Math.max(0, totalAmount - paidAmount)
+  const paymentStatus = paidAmount <= 0 ? 'UNPAID' : remainingAmount > 0.009 ? 'PARTIAL' : 'PAID'
+
   return {
     id: comanda.id,
     companyOwnerId: comanda.companyOwnerId,
@@ -192,11 +224,15 @@ export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
     subtotalAmount: toNumberOrNull(comanda.subtotalAmount) ?? 0,
     discountAmount: toNumberOrNull(comanda.discountAmount) ?? 0,
     serviceFeeAmount: toNumberOrNull(comanda.serviceFeeAmount) ?? 0,
-    totalAmount: toNumberOrNull(comanda.totalAmount) ?? 0,
+    totalAmount,
+    paidAmount,
+    remainingAmount,
+    paymentStatus,
     notes: comanda.notes,
     openedAt: comanda.openedAt.toISOString(),
     closedAt: comanda.closedAt?.toISOString() ?? null,
     items: comanda.items ? comanda.items.map(toComandaItemRecord) : [],
+    payments,
   }
 }
 

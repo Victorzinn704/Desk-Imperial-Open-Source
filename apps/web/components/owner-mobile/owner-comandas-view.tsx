@@ -20,6 +20,7 @@ export function OwnerComandasView({
   isOffline = false,
   onAddItems,
   onCloseComanda,
+  onCreatePayment,
 }: OwnerComandasViewProps) {
   const controller = useOwnerComandasController(comandas, focusedId)
 
@@ -33,6 +34,7 @@ export function OwnerComandasView({
       isOffline={isOffline}
       onAddItems={onAddItems}
       onCloseComanda={onCloseComanda}
+      onCreatePayment={onCreatePayment}
     />
   )
 }
@@ -46,6 +48,7 @@ function OwnerComandasViewLayout({
   isOffline,
   onAddItems,
   onCloseComanda,
+  onCreatePayment,
 }: {
   controller: ReturnType<typeof useOwnerComandasController>
   errorMessage: string | null
@@ -55,6 +58,7 @@ function OwnerComandasViewLayout({
   isOffline: boolean
   onAddItems: OwnerComandasViewProps['onAddItems']
   onCloseComanda: OwnerComandasViewProps['onCloseComanda']
+  onCreatePayment: OwnerComandasViewProps['onCreatePayment']
 }) {
   return (
     <div className="p-3 sm:p-4">
@@ -68,6 +72,7 @@ function OwnerComandasViewLayout({
         isOffline={isOffline}
         onAddItems={onAddItems}
         onCloseComanda={onCloseComanda}
+        onCreatePayment={onCreatePayment}
       />
     </div>
   )
@@ -118,6 +123,7 @@ function OwnerComandasViewContent({
   isOffline,
   onAddItems,
   onCloseComanda,
+  onCreatePayment,
 }: {
   controller: ReturnType<typeof useOwnerComandasController>
   errorMessage: string | null
@@ -127,6 +133,7 @@ function OwnerComandasViewContent({
   isOffline: boolean
   onAddItems: OwnerComandasViewProps['onAddItems']
   onCloseComanda: OwnerComandasViewProps['onCloseComanda']
+  onCreatePayment: OwnerComandasViewProps['onCreatePayment']
 }) {
   return (
     <OwnerComandasList
@@ -138,6 +145,7 @@ function OwnerComandasViewContent({
           key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
           onAddItems={onAddItems}
           onCloseComanda={onCloseComanda}
+          onCreatePayment={onCreatePayment}
         />
       ))}
       emptyState={

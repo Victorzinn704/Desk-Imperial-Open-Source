@@ -10,6 +10,12 @@ import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
 import { AuthService } from '../auth/auth.service'
+import {
+  recordOperationsRealtimeRedisAdapterState,
+  recordOperationsRealtimeSocketConnected,
+  recordOperationsRealtimeSocketDisconnected,
+  recordOperationsRealtimeSocketRejected,
+} from '../../common/observability/business-telemetry.util'
 import { getAllowedOriginsFromValues, isAllowedOrigin } from '../../common/utils/origin.util'
 import { resolveRedisUrl } from '../../common/utils/redis-url.util'
 import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
@@ -85,12 +91,15 @@ export class OperationsRealtimeGateway
         pubClient.on('error', (error) => this.logger.error(`Redis pub/sub erro (pub): ${error.message}`))
         subClient.on('error', (error) => this.logger.error(`Redis pub/sub erro (sub): ${error.message}`))
         server.server.adapter(createAdapter(pubClient, subClient))
+        recordOperationsRealtimeRedisAdapterState(true, 'configured')
         this.logger.log('Redis adapter ativo — Socket.IO pronto para escalonamento horizontal.')
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
+        recordOperationsRealtimeRedisAdapterState(false, 'initialization_error')
         this.logger.warn(`Redis adapter não inicializado — usando adapter padrão em memória: ${msg}`)
       }
     } else {
+      recordOperationsRealtimeRedisAdapterState(false, 'missing_redis_url')
       this.logger.log(
         'Redis não definido (REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL) — Socket.IO usando adapter em memória (instância única).',
       )
@@ -112,6 +121,9 @@ export class OperationsRealtimeGateway
     const socketOriginHeader = socket.handshake.headers.origin
     const socketOrigin = Array.isArray(socketOriginHeader) ? socketOriginHeader[0] : socketOriginHeader
     if (socketOrigin && !isAllowedOrigin(socketOrigin, ALLOWED_ORIGINS)) {
+      recordOperationsRealtimeSocketRejected('origin_not_allowed', {
+        'desk.operations.realtime.has_origin': true,
+      })
       this.logger.warn(`Socket ${socket.id} recusado por origem não autorizada: ${socketOrigin}`)
       socket.disconnect(true)
       return
@@ -120,12 +132,19 @@ export class OperationsRealtimeGateway
     try {
       const connection = await this.authenticateConnection(socket)
       await socket.join(connection.workspaceChannel)
+      recordOperationsRealtimeSocketConnected({
+        'desk.operations.realtime.actor_role': connection.auth.role,
+        'desk.operations.realtime.has_workspace': Boolean(connection.workspaceOwnerUserId),
+      })
 
       this.logger.debug(
         `Socket ${socket.id} conectado em ${connection.workspaceChannel} (${connection.auth.userId} -> ${connection.workspaceOwnerUserId})`,
       )
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Falha ao autenticar socket operacional.'
+      recordOperationsRealtimeSocketRejected('auth_failed', {
+        'desk.operations.realtime.has_auth_error': true,
+      })
       this.logger.warn(`Falha ao autenticar socket ${socket.id}: ${reason}`)
       socket.emit('operations.error', { message: 'Falha ao autenticar sessao realtime.' })
       socket.disconnect(true)
@@ -135,6 +154,9 @@ export class OperationsRealtimeGateway
   handleDisconnect(socket: Pick<Socket, 'id' | 'data'>) {
     const workspaceChannel = socket.data.workspaceChannel
     if (workspaceChannel) {
+      recordOperationsRealtimeSocketDisconnected({
+        'desk.operations.realtime.had_workspace': true,
+      })
       this.logger.debug(`Socket ${socket.id} desconectado de ${workspaceChannel}`)
       return
     }

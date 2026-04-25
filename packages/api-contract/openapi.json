@@ -450,11 +450,51 @@
             ],
             "minimum": 0
           },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "PIX",
+              "DEBIT",
+              "CREDIT",
+              "VOUCHER",
+              "OTHER"
+            ]
+          },
           "notes": {
             "type": "string",
             "maxLength": 240
           }
         },
+        "additionalProperties": false
+      },
+      "CreateComandaPaymentRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "PIX",
+              "DEBIT",
+              "CREDIT",
+              "VOUCHER",
+              "OTHER"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "amount",
+          "method"
+        ],
         "additionalProperties": false
       },
       "UpdateKitchenItemStatusRequest": {
@@ -832,6 +872,20 @@
                       "totalAmount": {
                         "type": "number"
                       },
+                      "paidAmount": {
+                        "type": "number"
+                      },
+                      "remainingAmount": {
+                        "type": "number"
+                      },
+                      "paymentStatus": {
+                        "type": "string",
+                        "enum": [
+                          "UNPAID",
+                          "PARTIAL",
+                          "PAID"
+                        ]
+                      },
                       "notes": {
                         "type": [
                           "string",
@@ -916,6 +970,55 @@
                             "kitchenStatus",
                             "kitchenQueuedAt",
                             "kitchenReadyAt"
+                          ]
+                        }
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": [
+                                "CASH",
+                                "PIX",
+                                "DEBIT",
+                                "CREDIT",
+                                "VOUCHER",
+                                "OTHER"
+                              ]
+                            },
+                            "amount": {
+                              "type": "number"
+                            },
+                            "note": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "CONFIRMED",
+                                "VOIDED"
+                              ]
+                            },
+                            "paidAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "method",
+                            "amount",
+                            "note",
+                            "status",
+                            "paidAt"
                           ]
                         }
                       }
@@ -1180,6 +1283,20 @@
                     "totalAmount": {
                       "type": "number"
                     },
+                    "paidAmount": {
+                      "type": "number"
+                    },
+                    "remainingAmount": {
+                      "type": "number"
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "UNPAID",
+                        "PARTIAL",
+                        "PAID"
+                      ]
+                    },
                     "notes": {
                       "type": [
                         "string",
@@ -1264,6 +1381,55 @@
                           "kitchenStatus",
                           "kitchenQueuedAt",
                           "kitchenReadyAt"
+                        ]
+                      }
+                    },
+                    "payments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "CASH",
+                              "PIX",
+                              "DEBIT",
+                              "CREDIT",
+                              "VOUCHER",
+                              "OTHER"
+                            ]
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "CONFIRMED",
+                              "VOIDED"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "method",
+                          "amount",
+                          "note",
+                          "status",
+                          "paidAt"
                         ]
                       }
                     }
@@ -2024,6 +2190,20 @@
                           "totalAmount": {
                             "type": "number"
                           },
+                          "paidAmount": {
+                            "type": "number"
+                          },
+                          "remainingAmount": {
+                            "type": "number"
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "UNPAID",
+                              "PARTIAL",
+                              "PAID"
+                            ]
+                          },
                           "notes": {
                             "type": [
                               "string",
@@ -2108,6 +2288,55 @@
                                 "kitchenStatus",
                                 "kitchenQueuedAt",
                                 "kitchenReadyAt"
+                              ]
+                            }
+                          },
+                          "payments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CASH",
+                                    "PIX",
+                                    "DEBIT",
+                                    "CREDIT",
+                                    "VOUCHER",
+                                    "OTHER"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CONFIRMED",
+                                    "VOIDED"
+                                  ]
+                                },
+                                "paidAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "method",
+                                "amount",
+                                "note",
+                                "status",
+                                "paidAt"
                               ]
                             }
                           }
@@ -2372,6 +2601,20 @@
                         "totalAmount": {
                           "type": "number"
                         },
+                        "paidAmount": {
+                          "type": "number"
+                        },
+                        "remainingAmount": {
+                          "type": "number"
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "UNPAID",
+                            "PARTIAL",
+                            "PAID"
+                          ]
+                        },
                         "notes": {
                           "type": [
                             "string",
@@ -2456,6 +2699,55 @@
                               "kitchenStatus",
                               "kitchenQueuedAt",
                               "kitchenReadyAt"
+                            ]
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "PIX",
+                                  "DEBIT",
+                                  "CREDIT",
+                                  "VOUCHER",
+                                  "OTHER"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "CONFIRMED",
+                                  "VOIDED"
+                                ]
+                              },
+                              "paidAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "method",
+                              "amount",
+                              "note",
+                              "status",
+                              "paidAt"
                             ]
                           }
                         }
@@ -3061,6 +3353,20 @@
                           "totalAmount": {
                             "type": "number"
                           },
+                          "paidAmount": {
+                            "type": "number"
+                          },
+                          "remainingAmount": {
+                            "type": "number"
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "UNPAID",
+                              "PARTIAL",
+                              "PAID"
+                            ]
+                          },
                           "notes": {
                             "type": [
                               "string",
@@ -3145,6 +3451,55 @@
                                 "kitchenStatus",
                                 "kitchenQueuedAt",
                                 "kitchenReadyAt"
+                              ]
+                            }
+                          },
+                          "payments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CASH",
+                                    "PIX",
+                                    "DEBIT",
+                                    "CREDIT",
+                                    "VOUCHER",
+                                    "OTHER"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CONFIRMED",
+                                    "VOIDED"
+                                  ]
+                                },
+                                "paidAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "method",
+                                "amount",
+                                "note",
+                                "status",
+                                "paidAt"
                               ]
                             }
                           }
@@ -3409,6 +3764,20 @@
                         "totalAmount": {
                           "type": "number"
                         },
+                        "paidAmount": {
+                          "type": "number"
+                        },
+                        "remainingAmount": {
+                          "type": "number"
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "UNPAID",
+                            "PARTIAL",
+                            "PAID"
+                          ]
+                        },
                         "notes": {
                           "type": [
                             "string",
@@ -3493,6 +3862,55 @@
                               "kitchenStatus",
                               "kitchenQueuedAt",
                               "kitchenReadyAt"
+                            ]
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "PIX",
+                                  "DEBIT",
+                                  "CREDIT",
+                                  "VOUCHER",
+                                  "OTHER"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "CONFIRMED",
+                                  "VOIDED"
+                                ]
+                              },
+                              "paidAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "method",
+                              "amount",
+                              "note",
+                              "status",
+                              "paidAt"
                             ]
                           }
                         }
@@ -3972,6 +4390,20 @@
                           "totalAmount": {
                             "type": "number"
                           },
+                          "paidAmount": {
+                            "type": "number"
+                          },
+                          "remainingAmount": {
+                            "type": "number"
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "UNPAID",
+                              "PARTIAL",
+                              "PAID"
+                            ]
+                          },
                           "notes": {
                             "type": [
                               "string",
@@ -4056,6 +4488,55 @@
                                 "kitchenStatus",
                                 "kitchenQueuedAt",
                                 "kitchenReadyAt"
+                              ]
+                            }
+                          },
+                          "payments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CASH",
+                                    "PIX",
+                                    "DEBIT",
+                                    "CREDIT",
+                                    "VOUCHER",
+                                    "OTHER"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CONFIRMED",
+                                    "VOIDED"
+                                  ]
+                                },
+                                "paidAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "method",
+                                "amount",
+                                "note",
+                                "status",
+                                "paidAt"
                               ]
                             }
                           }
@@ -4320,6 +4801,20 @@
                         "totalAmount": {
                           "type": "number"
                         },
+                        "paidAmount": {
+                          "type": "number"
+                        },
+                        "remainingAmount": {
+                          "type": "number"
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "UNPAID",
+                            "PARTIAL",
+                            "PAID"
+                          ]
+                        },
                         "notes": {
                           "type": [
                             "string",
@@ -4404,6 +4899,55 @@
                               "kitchenStatus",
                               "kitchenQueuedAt",
                               "kitchenReadyAt"
+                            ]
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "PIX",
+                                  "DEBIT",
+                                  "CREDIT",
+                                  "VOUCHER",
+                                  "OTHER"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "CONFIRMED",
+                                  "VOIDED"
+                                ]
+                              },
+                              "paidAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "method",
+                              "amount",
+                              "note",
+                              "status",
+                              "paidAt"
                             ]
                           }
                         }
@@ -4603,6 +5147,20 @@
               "totalAmount": {
                 "type": "number"
               },
+              "paidAmount": {
+                "type": "number"
+              },
+              "remainingAmount": {
+                "type": "number"
+              },
+              "paymentStatus": {
+                "type": "string",
+                "enum": [
+                  "UNPAID",
+                  "PARTIAL",
+                  "PAID"
+                ]
+              },
               "notes": {
                 "type": [
                   "string",
@@ -4687,6 +5245,55 @@
                     "kitchenStatus",
                     "kitchenQueuedAt",
                     "kitchenReadyAt"
+                  ]
+                }
+              },
+              "payments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "CASH",
+                        "PIX",
+                        "DEBIT",
+                        "CREDIT",
+                        "VOUCHER",
+                        "OTHER"
+                      ]
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMED",
+                        "VOIDED"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "method",
+                    "amount",
+                    "note",
+                    "status",
+                    "paidAt"
                   ]
                 }
               }
@@ -5004,6 +5611,20 @@
                           "totalAmount": {
                             "type": "number"
                           },
+                          "paidAmount": {
+                            "type": "number"
+                          },
+                          "remainingAmount": {
+                            "type": "number"
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "UNPAID",
+                              "PARTIAL",
+                              "PAID"
+                            ]
+                          },
                           "notes": {
                             "type": [
                               "string",
@@ -5088,6 +5709,55 @@
                                 "kitchenStatus",
                                 "kitchenQueuedAt",
                                 "kitchenReadyAt"
+                              ]
+                            }
+                          },
+                          "payments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CASH",
+                                    "PIX",
+                                    "DEBIT",
+                                    "CREDIT",
+                                    "VOUCHER",
+                                    "OTHER"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CONFIRMED",
+                                    "VOIDED"
+                                  ]
+                                },
+                                "paidAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "method",
+                                "amount",
+                                "note",
+                                "status",
+                                "paidAt"
                               ]
                             }
                           }
@@ -5352,6 +6022,20 @@
                         "totalAmount": {
                           "type": "number"
                         },
+                        "paidAmount": {
+                          "type": "number"
+                        },
+                        "remainingAmount": {
+                          "type": "number"
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "UNPAID",
+                            "PARTIAL",
+                            "PAID"
+                          ]
+                        },
                         "notes": {
                           "type": [
                             "string",
@@ -5436,6 +6120,55 @@
                               "kitchenStatus",
                               "kitchenQueuedAt",
                               "kitchenReadyAt"
+                            ]
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "PIX",
+                                  "DEBIT",
+                                  "CREDIT",
+                                  "VOUCHER",
+                                  "OTHER"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "CONFIRMED",
+                                  "VOIDED"
+                                ]
+                              },
+                              "paidAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "method",
+                              "amount",
+                              "note",
+                              "status",
+                              "paidAt"
                             ]
                           }
                         }
@@ -5635,6 +6368,20 @@
               "totalAmount": {
                 "type": "number"
               },
+              "paidAmount": {
+                "type": "number"
+              },
+              "remainingAmount": {
+                "type": "number"
+              },
+              "paymentStatus": {
+                "type": "string",
+                "enum": [
+                  "UNPAID",
+                  "PARTIAL",
+                  "PAID"
+                ]
+              },
               "notes": {
                 "type": [
                   "string",
@@ -5719,6 +6466,55 @@
                     "kitchenStatus",
                     "kitchenQueuedAt",
                     "kitchenReadyAt"
+                  ]
+                }
+              },
+              "payments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "CASH",
+                        "PIX",
+                        "DEBIT",
+                        "CREDIT",
+                        "VOUCHER",
+                        "OTHER"
+                      ]
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "CONFIRMED",
+                        "VOIDED"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "method",
+                    "amount",
+                    "note",
+                    "status",
+                    "paidAt"
                   ]
                 }
               }
@@ -6719,6 +7515,68 @@
           },
           "404": {
             "description": "Comanda not found."
+          }
+        }
+      }
+    },
+    "/operations/comandas/{comandaId}/payments": {
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Register a comanda payment",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "comandaId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "required": false,
+            "name": "includeSnapshot",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateComandaPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comanda payment registered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsComandaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request payload."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "404": {
+            "description": "Comanda not found."
+          },
+          "409": {
+            "description": "Comanda cannot receive payments."
           }
         }
       }

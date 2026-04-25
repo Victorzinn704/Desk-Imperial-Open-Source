@@ -105,4 +105,83 @@ describe('MobileComandaList', () => {
 
     expect(onCloseComanda).toHaveBeenCalledWith('c-1', 10, 5)
   })
+
+  it('permite registrar pagamento parcial sem sair da comanda focada', async () => {
+    const user = userEvent.setup()
+    const onCreatePayment = vi.fn()
+
+    const detailsRecord: ComandaRecord = {
+      id: 'c-2',
+      companyOwnerId: 'owner-1',
+      cashSessionId: 'cash-1',
+      mesaId: 'mesa-8',
+      currentEmployeeId: 'emp-1',
+      tableLabel: '8',
+      customerName: 'Mesa oito',
+      customerDocument: null,
+      participantCount: 2,
+      status: 'OPEN',
+      subtotalAmount: 80,
+      discountAmount: 0,
+      serviceFeeAmount: 0,
+      totalAmount: 80,
+      paidAmount: 20,
+      remainingAmount: 60,
+      paymentStatus: 'PARTIAL',
+      notes: null,
+      openedAt: '2026-03-30T13:00:00.000Z',
+      closedAt: null,
+      items: [],
+      payments: [
+        {
+          id: 'pay-1',
+          amount: 20,
+          method: 'PIX',
+          status: 'CONFIRMED',
+          paidAt: '2026-03-30T13:10:00.000Z',
+          note: null,
+        },
+      ],
+    }
+
+    vi.mocked(api.fetchComandaDetails).mockResolvedValue({ comanda: detailsRecord })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MobileComandaList
+          comandas={[
+            {
+              id: 'c-2',
+              status: 'aberta',
+              mesa: '8',
+              clienteNome: 'Mesa oito',
+              garcomNome: 'Paulo',
+              itens: [],
+              desconto: 0,
+              acrescimo: 0,
+              abertaEm: new Date('2026-03-30T13:00:00.000Z'),
+              paidAmount: 20,
+              remainingAmount: 60,
+              paymentStatus: 'PARTIAL',
+              subtotalBackend: 80,
+              totalBackend: 80,
+            },
+          ]}
+          focusedId="c-2"
+          onCreatePayment={onCreatePayment}
+          onFocus={vi.fn()}
+          onUpdateStatus={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(api.fetchComandaDetails).toHaveBeenCalledWith('c-2')
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Meia' }))
+    await user.click(screen.getByRole('button', { name: 'Parcial' }))
+
+    expect(onCreatePayment).toHaveBeenCalledWith('c-2', 30, 'PIX')
+  })
 })

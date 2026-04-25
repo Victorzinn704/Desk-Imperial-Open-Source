@@ -72,6 +72,15 @@ export const comandaItemSnapshotSelect = {
   kitchenReadyAt: true,
 } as const
 
+export const comandaPaymentSnapshotSelect = {
+  id: true,
+  method: true,
+  amount: true,
+  note: true,
+  status: true,
+  paidAt: true,
+} as const
+
 export const comandaSnapshotSelect = {
   id: true,
   companyOwnerId: true,
@@ -94,6 +103,15 @@ export const comandaSnapshotSelect = {
     select: comandaItemSnapshotSelect,
     orderBy: {
       createdAt: 'asc' as const,
+    },
+  },
+  payments: {
+    select: comandaPaymentSnapshotSelect,
+    where: {
+      status: 'CONFIRMED' as const,
+    },
+    orderBy: {
+      paidAt: 'asc' as const,
     },
   },
 } as const

@@ -43,6 +43,7 @@ export function buildOwnerPdvOverviewMetrics(
 export function buildOwnerPdvBuilderContext(pendingAction: PendingAction) {
   return {
     mesaLabel: pendingAction.type === 'new' ? normalizeTableLabel(pendingAction.mesa.numero) : pendingAction.mesaLabel,
-    mode: pendingAction.type === 'add' ? 'add' : 'new',
+    mode: pendingAction.type === 'edit' ? 'edit' : pendingAction.type === 'add' ? 'add' : 'new',
+    initialItems: pendingAction.type === 'edit' ? pendingAction.comanda.itens : undefined,
   } as const
 }

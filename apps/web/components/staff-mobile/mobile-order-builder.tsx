@@ -2,7 +2,17 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, no-nested-ternary */
 
-import { memo, type ReactNode, startTransition, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  type ReactNode,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
@@ -15,12 +25,13 @@ import { Beer, Coffee, Minus, Package, Pizza, Plus, Search, ShoppingCart, Utensi
 
 interface MobileOrderBuilderProps {
   mesaLabel: string
-  mode: 'new' | 'add'
+  mode: 'new' | 'add' | 'edit'
   busy?: boolean
   checkoutDockOffset?: 'navigation' | 'screen'
   isLoading?: boolean
   isOffline?: boolean
   errorMessage?: string | null
+  initialItems?: ComandaItem[]
   produtos: ProductRecord[]
   onSubmit: (items: ComandaItem[]) => Promise<void> | void
   onCancel: () => void
@@ -36,6 +47,43 @@ interface MobileOrderBuilderProps {
 }
 
 type CartEntry = ComandaItem & { _key: string }
+
+function getInitialItemsKey(initialItems: ComandaItem[] | undefined) {
+  return (initialItems ?? [])
+    .map((item) =>
+      [
+        item.produtoId,
+        item.nome,
+        String(item.quantidade),
+        String(item.precoUnitario),
+        item.observacao ?? '',
+      ].join('|'),
+    )
+    .join('::')
+}
+
+function buildInitialCart(initialItems: ComandaItem[] | undefined): CartEntry[] {
+  const grouped = new Map<string, CartEntry>()
+
+  for (const item of initialItems ?? []) {
+    const key = [item.produtoId, item.nome, String(item.precoUnitario), item.observacao ?? ''].join('|')
+    const existing = grouped.get(key)
+    if (existing) {
+      grouped.set(key, {
+        ...existing,
+        quantidade: existing.quantidade + item.quantidade,
+      })
+      continue
+    }
+
+    grouped.set(key, {
+      ...item,
+      _key: key,
+    })
+  }
+
+  return Array.from(grouped.values())
+}
 
 // Componente memoizado para cada item de produto
 const ProductItem = memo(function ProductItem({
@@ -215,9 +263,11 @@ function MobileOrderHeader({
   summaryItems?: MobileOrderBuilderProps['summaryItems']
 }>) {
   const subtitle =
-    mode === 'add'
-      ? 'Adicione itens sem perder o contexto da comanda em atendimento'
-      : 'Monte os itens e abra a comanda da mesa'
+    mode === 'edit'
+      ? 'Revise quantidades e salve a composição atual da comanda'
+      : mode === 'add'
+        ? 'Adicione itens sem perder o contexto da comanda em atendimento'
+        : 'Monte os itens e abra a comanda da mesa'
 
   return (
     <div className="border-b border-[var(--border)] px-3.5 py-3 sm:px-4">
@@ -229,7 +279,7 @@ function MobileOrderHeader({
             </p>
           </div>
           <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
-            {mode === 'add' ? 'Retomar pedido' : 'Nova comanda'}
+            {mode === 'edit' ? 'Editar comanda' : mode === 'add' ? 'Retomar pedido' : 'Nova comanda'}
           </h2>
           <p className="mt-1 text-sm text-[var(--text-soft,#7a8896)]">{subtitle}</p>
         </div>
@@ -344,8 +394,17 @@ function CartSummaryBar({
     return null
   }
 
-  const compactLabel = submitLabel.toLowerCase().includes('adicionar') ? 'Adicionar' : 'Abrir'
-  const helper = mode === 'add' ? 'Itens entram na comanda aberta' : 'Abra a comanda sem rolar a lista'
+  const compactLabel = submitLabel.toLowerCase().includes('salvar')
+    ? 'Salvar'
+    : submitLabel.toLowerCase().includes('adicionar')
+      ? 'Adicionar'
+      : 'Abrir'
+  const helper =
+    mode === 'edit'
+      ? 'Salve sem rolar até o fim'
+      : mode === 'add'
+        ? 'Itens entram na comanda aberta'
+        : 'Abra a comanda sem rolar a lista'
   const fixedOffsetClass =
     dockOffset === 'screen'
       ? 'bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))]'
@@ -396,6 +455,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   isLoading = false,
   isOffline = false,
   errorMessage = null,
+  initialItems,
   produtos,
   onSubmit,
   onCancel,
@@ -404,9 +464,20 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
 }: Readonly<MobileOrderBuilderProps>) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [cart, setCart] = useState<CartEntry[]>([])
+  const initialItemsKey = useMemo(() => getInitialItemsKey(initialItems), [initialItems])
+  const lastInitialItemsKey = useRef(initialItemsKey)
+  const [cart, setCart] = useState<CartEntry[]>(() => buildInitialCart(initialItems))
   const deferredSearch = useDeferredValue(search)
   const parentRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (lastInitialItemsKey.current === initialItemsKey) {
+      return
+    }
+
+    lastInitialItemsKey.current = initialItemsKey
+    setCart(buildInitialCart(initialItems))
+  }, [initialItems, initialItemsKey])
 
   const activeProdutos = useMemo(() => getActiveProducts(produtos), [produtos])
   const categories = useMemo(() => getSortedCategories(activeProdutos), [activeProdutos])
@@ -419,7 +490,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
   // Mapa de quantidades para lookup O(1)
   const qtyMap = useMemo(() => {
     const map = new Map<string, number>()
-    cart.forEach((c) => map.set(c.produtoId, c.quantidade))
+    cart.forEach((c) => map.set(c.produtoId, (map.get(c.produtoId) ?? 0) + c.quantidade))
     return map
   }, [cart])
 
@@ -452,7 +523,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
     await onSubmit(items)
   }, [cart, busy, onSubmit])
 
-  const submitLabel = mode === 'add' ? 'Adicionar itens' : 'Abrir comanda'
+  const submitLabel = mode === 'edit' ? 'Salvar edição' : mode === 'add' ? 'Adicionar itens' : 'Abrir comanda'
   const handleSearchChange = useCallback((value: string) => {
     startTransition(() => setSearch(value))
   }, [])

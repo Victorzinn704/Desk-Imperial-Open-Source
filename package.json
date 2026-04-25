@@ -17,6 +17,7 @@
     "local:backend:prepare": "npm run db:up && node ./scripts/wait-for-local-infra.mjs && node ./scripts/prisma-generate-local.mjs && npm --workspace @partner/api run prisma:migrate:deploy && npm run seed && npm --workspace @partner/api run prisma:repair-demo",
     "local:backend:sync-demo": "npm run seed && npm --workspace @partner/api run prisma:repair-demo",
     "smoke:local:bootstrap": "node ./scripts/local-bootstrap-smoke.mjs",
+    "smoke:operations:performance": "node ./scripts/operations-performance-smoke.mjs",
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",

@@ -15,6 +15,7 @@ import {
   closeCashClosureBodySchema,
   closeCashSessionBodySchema,
   closeComandaBodySchema,
+  createComandaPaymentBodySchema,
   createCashMovementBodySchema,
   createMesaBodySchema,
   openCashSessionBodySchema,
@@ -31,6 +32,7 @@ import {
   type CloseCashClosureDto,
   type CloseCashSessionDto,
   type CloseComandaDto,
+  type CreateComandaPaymentDto,
   type CreateCashMovementDto,
   type CreateMesaDto,
   type GetOperationsLiveQueryDto,
@@ -55,6 +57,7 @@ const replaceComandaBodyPipe = new ZodValidationPipe(replaceComandaBodySchema)
 const assignComandaBodyPipe = new ZodValidationPipe(assignComandaBodySchema)
 const updateComandaStatusBodyPipe = new ZodValidationPipe(updateComandaStatusBodySchema)
 const closeComandaBodyPipe = new ZodValidationPipe(closeComandaBodySchema)
+const createComandaPaymentBodyPipe = new ZodValidationPipe(createComandaPaymentBodySchema)
 const closeCashClosureBodyPipe = new ZodValidationPipe(closeCashClosureBodySchema)
 const updateKitchenItemStatusBodyPipe = new ZodValidationPipe(updateKitchenItemStatusBodySchema)
 const createMesaBodyPipe = new ZodValidationPipe(createMesaBodySchema)
@@ -193,6 +196,18 @@ export class OperationsController {
   @Get('comandas/:comandaId/details')
   getComandaDetails(@CurrentAuth() auth: AuthContext, @Param('comandaId') comandaId: string) {
     return this.operationsService.getComandaDetails(auth, comandaId)
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Post('comandas/:comandaId/payments')
+  createComandaPayment(
+    @CurrentAuth() auth: AuthContext,
+    @Param('comandaId') comandaId: string,
+    @Body(createComandaPaymentBodyPipe) body: CreateComandaPaymentDto,
+    @Query(operationsResponseOptionsPipe) options: OperationsResponseOptionsDto,
+    @Req() request: Request,
+  ) {
+    return this.operationsService.createComandaPayment(auth, comandaId, body, extractRequestContext(request), options)
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

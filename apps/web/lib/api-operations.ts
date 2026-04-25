@@ -1,5 +1,6 @@
 import type {
   CashSessionRecord,
+  ComandaPaymentMethod,
   ComandaRecord,
   ComandaStatus,
   MesaRecord,
@@ -138,6 +139,13 @@ export type CloseComandaPayload = {
   notes?: string
   discountAmount?: number
   serviceFeeAmount?: number
+  paymentMethod?: ComandaPaymentMethod
+}
+
+export type CreateComandaPaymentPayload = {
+  amount: number
+  method: ComandaPaymentMethod
+  note?: string
 }
 
 type OperationsRequestOptions = {
@@ -256,6 +264,21 @@ export async function closeComanda(
     {
       method: 'POST',
       body: payload,
+    },
+  )
+}
+
+export async function createComandaPayment(
+  comandaId: string,
+  payload: CreateComandaPaymentPayload,
+  options?: OperationsRequestOptions,
+) {
+  const resolvedOptions: OperationsRequestOptions = { includeSnapshot: false, ...options }
+  return apiFetch<{ comanda: ComandaRecord; snapshot?: OperationsLiveResponse }>(
+    withOperationsOptions(`/operations/comandas/${comandaId}/payments`, resolvedOptions),
+    {
+      method: 'POST',
+      body: payload as JsonBody,
     },
   )
 }

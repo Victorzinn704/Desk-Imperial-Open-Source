@@ -34,9 +34,11 @@ vi.mock('@/lib/api', () => ({
   fetchComandaDetails: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
+  replaceComanda: vi.fn(),
   addComandaItem: vi.fn(),
   addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
+  createComandaPayment: vi.fn(),
   updateComandaStatus: vi.fn(),
   openCashSession: vi.fn(),
   ApiError: class ApiError extends Error {
@@ -632,9 +634,22 @@ describe('OwnerMobileShell', () => {
         discountAmount: 0,
         serviceFeeAmount: 0,
         totalAmount: 80,
+        paidAmount: 80,
+        remainingAmount: 0,
+        paymentStatus: 'PAID',
         notes: null,
         openedAt: '2026-03-28T11:00:00.000Z',
         closedAt: '2026-03-28T11:20:00.000Z',
+        payments: [
+          {
+            id: 'pay-1',
+            amount: 80,
+            method: 'PIX',
+            note: null,
+            paidAt: '2026-03-28T11:20:00.000Z',
+            status: 'CONFIRMED',
+          },
+        ],
         items: [],
       },
     })
@@ -644,12 +659,12 @@ describe('OwnerMobileShell', () => {
     await user.click(screen.getByTestId('nav-comandas'))
     const comandaCard = await screen.findByTestId('owner-comanda-card-c-2')
     await user.click(comandaCard.querySelector('button') as HTMLButtonElement)
-    await user.click(await screen.findByRole('button', { name: /^fechar$/i }))
+    await user.click(await screen.findByRole('button', { name: /pagar restante e fechar/i }))
 
     await waitFor(() => {
       expect(api.closeComanda).toHaveBeenCalledWith(
         'c-2',
-        { discountAmount: 0, serviceFeeAmount: 0 },
+        { discountAmount: 0, paymentMethod: 'PIX', serviceFeeAmount: 0 },
         { includeSnapshot: false },
       )
     })
@@ -680,7 +695,7 @@ describe('OwnerMobileShell', () => {
     await user.click(await screen.findByRole('button', { name: /editar \/ adicionar itens/i }))
 
     await waitFor(() => {
-      expect(screen.getByText('Retomar pedido')).toBeInTheDocument()
+      expect(screen.getByText('Editar comanda')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('Buscar produto...')).toBeInTheDocument()
     })
     expect(screen.queryByTestId('nav-pdv')).not.toBeInTheDocument()

@@ -39,6 +39,22 @@ export async function invalidateOperationsWorkspace(
   await Promise.all(tasks)
 }
 
+export function scheduleOperationsWorkspaceReconcile(
+  queryClient: QueryClient,
+  operationsQueryKey: readonly unknown[] = OPERATIONS_LIVE_QUERY_PREFIX,
+  options?: InvalidateOperationsWorkspaceOptions & { delayMs?: number },
+) {
+  const { delayMs = 1_200, ...invalidateOptions } = options ?? {}
+
+  const timer = setTimeout(() => {
+    void invalidateOperationsWorkspace(queryClient, operationsQueryKey, invalidateOptions)
+  }, delayMs)
+
+  if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
+    timer.unref()
+  }
+}
+
 export function patchOperationsSnapshot(
   snapshot: OperationsLiveResponse,
   updater: (current: OperationsLiveResponse) => OperationsLiveResponse,

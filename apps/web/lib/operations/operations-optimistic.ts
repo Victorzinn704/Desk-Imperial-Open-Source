@@ -141,6 +141,41 @@ export function setOptimisticComandaStatus(
   }))
 }
 
+export function appendOptimisticComandaPayment(
+  queryClient: QueryClient,
+  queryKey: readonly unknown[],
+  comandaId: string,
+  input: {
+    amount: number
+    method: NonNullable<ComandaRecord['payments']>[number]['method']
+  },
+) {
+  return patchOptimisticComanda(queryClient, queryKey, comandaId, (comanda) => {
+    const paidAmount = Math.min(comanda.totalAmount, (comanda.paidAmount ?? 0) + input.amount)
+    const remainingAmount = Math.max(0, comanda.totalAmount - paidAmount)
+    const paymentStatus: ComandaRecord['paymentStatus'] =
+      remainingAmount <= 0.009 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'UNPAID'
+
+    return {
+      ...comanda,
+      paidAmount,
+      remainingAmount,
+      paymentStatus,
+      payments: [
+        ...(comanda.payments ?? []),
+        {
+          id: generateOptimisticId('opt-pay'),
+          amount: input.amount,
+          method: input.method,
+          status: 'CONFIRMED',
+          paidAt: new Date().toISOString(),
+          note: null,
+        },
+      ],
+    }
+  })
+}
+
 export async function patchOptimisticComandaMutation(
   queryClient: QueryClient,
   queryKey: readonly unknown[],

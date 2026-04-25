@@ -1,4 +1,3 @@
- 
 import {
   BadRequestException,
   ConflictException,
@@ -8,7 +7,14 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common'
-import { CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
+import {
+  CashSessionStatus,
+  ComandaPaymentMethod,
+  ComandaPaymentStatus,
+  ComandaStatus,
+  KitchenItemStatus,
+  Prisma,
+} from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
@@ -42,7 +48,9 @@ import {
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import { assertMesaAvailability, resolveMesaSelection } from './comanda-mesa.utils'
 import {
+  buildCashUpdatedPayload,
   buildCashClosurePayload,
+  formatBusinessDateKey,
   isOpenComandaStatus,
   resolveBusinessDate,
   toNumberOrZero,
@@ -52,6 +60,7 @@ import type {
   AddComandaItemsBatchDto,
   AssignComandaDto,
   CloseComandaDto,
+  CreateComandaPaymentDto,
   OpenComandaDto,
   OperationsResponseOptionsDto,
   ReplaceComandaDto,
@@ -160,6 +169,43 @@ export class ComandaService {
     void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
   }
 
+  private calculateConfirmedPaidAmount(comanda: {
+    payments?: Array<{ amount: Prisma.Decimal | number; status?: string }>
+  }) {
+    return roundCurrency(
+      (comanda.payments ?? [])
+        .filter((payment) => !payment.status || payment.status === ComandaPaymentStatus.CONFIRMED)
+        .reduce((sum, payment) => sum + toNumberOrZero(payment.amount), 0),
+    )
+  }
+
+  private async loadComandaWithPayments(transaction: Prisma.TransactionClient, comandaId: string) {
+    const comanda = await transaction.comanda.findUnique({
+      where: { id: comandaId },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+        payments: {
+          where: {
+            status: ComandaPaymentStatus.CONFIRMED,
+          },
+          orderBy: {
+            paidAt: 'asc',
+          },
+        },
+      },
+    })
+
+    if (!comanda) {
+      throw new NotFoundException('Comanda nao encontrada.')
+    }
+
+    return comanda
+  }
+
   async getComandaDetails(auth: AuthContext, comandaId: string) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
 
@@ -169,6 +215,14 @@ export class ComandaService {
         items: {
           orderBy: {
             createdAt: 'asc',
+          },
+        },
+        payments: {
+          where: {
+            status: ComandaPaymentStatus.CONFIRMED,
+          },
+          orderBy: {
+            paidAt: 'asc',
           },
         },
       },
@@ -181,7 +235,9 @@ export class ComandaService {
     if (auth.role === 'STAFF') {
       const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
       if (!actorEmployee) {
-        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para consultar comandas.')
+        throw new ForbiddenException(
+          'Seu acesso precisa estar vinculado a um funcionario ativo para consultar comandas.',
+        )
       }
 
       if (!isOpenComandaStatus(comanda.status) && comanda.currentEmployeeId !== actorEmployee.id) {
@@ -955,6 +1011,108 @@ export class ComandaService {
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
+  async createComandaPayment(
+    auth: AuthContext,
+    comandaId: string,
+    dto: CreateComandaPaymentDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
+
+    if (!isOpenComandaStatus(comanda.status)) {
+      throw new ConflictException('Nao e possivel registrar pagamento em uma comanda encerrada ou cancelada.')
+    }
+
+    const amount = roundCurrency(dto.amount)
+    const paidAmount = this.calculateConfirmedPaidAmount(comanda)
+    const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(comanda.totalAmount) - paidAmount))
+    if (amount > remainingAmount) {
+      throw new BadRequestException('O pagamento informado passa do saldo restante da comanda.')
+    }
+
+    const note = sanitizePlainText(dto.note, 'Observacao do pagamento', {
+      allowEmpty: true,
+      rejectFormula: false,
+    })
+
+    const helpers = this.helpers
+    const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
+      async (transaction) => {
+        await transaction.comandaPayment.create({
+          data: {
+            companyOwnerId: workspaceOwnerUserId,
+            comandaId: comanda.id,
+            cashSessionId: comanda.cashSessionId,
+            employeeId: comanda.currentEmployeeId ?? actorEmployee?.id ?? null,
+            createdByUserId: auth.userId,
+            method: dto.method,
+            amount,
+            note,
+          },
+        })
+
+        const updatedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
+        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
+        const updatedSession = updatedComanda.cashSessionId
+          ? await helpers.recalculateCashSession(transaction, updatedComanda.cashSessionId)
+          : null
+        const closureSnapshot = await helpers.syncCashClosure(transaction, workspaceOwnerUserId, resolvedBusinessDate)
+
+        return {
+          refreshedComanda: updatedComanda,
+          refreshedSession: updatedSession,
+          closure: closureSnapshot,
+          businessDate: resolvedBusinessDate,
+        }
+      },
+      {
+        isolationLevel: COMANDA_WRITE_ISOLATION_LEVEL,
+      },
+    )
+
+    await this.auditLogService.record({
+      actorUserId: resolveAuthActorUserId(auth),
+      event: 'operations.comanda_payment.created',
+      resource: 'comanda',
+      resourceId: comanda.id,
+      metadata: {
+        amount,
+        method: dto.method,
+        remainingAmount: roundCurrency(
+          Math.max(
+            0,
+            toNumberOrZero(refreshedComanda.totalAmount) - this.calculateConfirmedPaidAmount(refreshedComanda),
+          ),
+        ),
+      },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    if (refreshedSession) {
+      this.operationsRealtimeService.publishCashUpdated(auth, {
+        ...buildCashUpdatedPayload(refreshedSession),
+        businessDate: formatBusinessDateKey(businessDate),
+      })
+    }
+    if (closure) {
+      this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+    }
+
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
+  }
+
   async updateKitchenItemStatus(
     auth: AuthContext,
     itemId: string,
@@ -1007,7 +1165,11 @@ export class ComandaService {
           },
         })
 
-        const txRefreshedComanda = await propagateKitchenStatusToComanda(tx, item.comanda, deriveComandaStatusFromKitchen)
+        const txRefreshedComanda = await propagateKitchenStatusToComanda(
+          tx,
+          item.comanda,
+          deriveComandaStatusFromKitchen,
+        )
 
         const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(
           tx,
@@ -1097,7 +1259,34 @@ export class ComandaService {
           discountAmount,
           serviceFeeAmount,
         })
-        const closedComanda = await transaction.comanda.update({
+        const confirmedPayments = await transaction.comandaPayment.aggregate({
+          where: {
+            comandaId: comanda.id,
+            status: ComandaPaymentStatus.CONFIRMED,
+          },
+          _sum: {
+            amount: true,
+          },
+        })
+        const paidAmount = roundCurrency(toNumberOrZero(confirmedPayments._sum.amount))
+        const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(recalculatedComanda.totalAmount) - paidAmount))
+
+        if (remainingAmount > 0) {
+          await transaction.comandaPayment.create({
+            data: {
+              companyOwnerId: workspaceOwnerUserId,
+              comandaId: comanda.id,
+              cashSessionId: comanda.cashSessionId,
+              employeeId: comanda.currentEmployeeId ?? actorEmployee?.id ?? null,
+              createdByUserId: auth.userId,
+              method: dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
+              amount: remainingAmount,
+              note: 'Pagamento final da comanda',
+            },
+          })
+        }
+
+        await transaction.comanda.update({
           where: { id: comanda.id },
           data: {
             status: ComandaStatus.CLOSED,
@@ -1105,14 +1294,8 @@ export class ComandaService {
             closedByUserId: auth.userId,
             notes: notes ?? recalculatedComanda.notes,
           },
-          include: {
-            items: {
-              orderBy: {
-                createdAt: 'asc',
-              },
-            },
-          },
         })
+        const closedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
 
         await helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
 
@@ -1146,16 +1329,16 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaCloseRealtime(
-      auth,
-      refreshedComanda,
-      refreshedSession,
-      closure,
-      businessDate,
-    )
+    this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
     void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
     this.refreshFinanceSummary(workspaceOwnerUserId)
-    void checkLowStockAfterClose(this.prisma, this.auditLogService, auth.userId, workspaceOwnerUserId, refreshedComanda.items)
+    void checkLowStockAfterClose(
+      this.prisma,
+      this.auditLogService,
+      auth.userId,
+      workspaceOwnerUserId,
+      refreshedComanda.items,
+    )
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }

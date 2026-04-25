@@ -200,8 +200,10 @@ export function buildOwnerMobileShellControllerValue(args: ControllerBuildArgs) 
       args.mutations.openComandaMutation.isPending ||
       args.mutations.addComandaItemMutation.isPending ||
       args.mutations.addComandaItemsMutation.isPending ||
+      args.mutations.replaceComandaMutation.isPending ||
       args.mutations.updateComandaStatusMutation.isPending ||
       args.mutations.closeComandaMutation.isPending ||
+      args.mutations.createComandaPaymentMutation.isPending ||
       args.mutations.openCashSessionMutation.isPending,
     router: args.router,
   }

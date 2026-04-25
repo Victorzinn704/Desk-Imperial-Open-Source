@@ -1,5 +1,12 @@
 import { NotFoundException } from '@nestjs/common'
-import { CashClosureStatus, CashMovementType, CashSessionStatus, ComandaStatus, type Prisma } from '@prisma/client'
+import {
+  CashClosureStatus,
+  CashMovementType,
+  CashSessionStatus,
+  ComandaPaymentStatus,
+  ComandaStatus,
+  type Prisma,
+} from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { buildBusinessDateWindow, OPEN_COMANDA_STATUSES, toNumberOrZero } from './operations-domain.utils'
 
@@ -15,15 +22,22 @@ export async function recalculateCashSession(transaction: TransactionClient, cas
         },
       },
       comandas: {
-        where: {
-          status: ComandaStatus.CLOSED,
-        },
         include: {
           items: {
             include: {
               product: true,
             },
           },
+          payments: {
+            where: {
+              status: ComandaPaymentStatus.CONFIRMED,
+            },
+          },
+        },
+      },
+      payments: {
+        where: {
+          status: ComandaPaymentStatus.CONFIRMED,
         },
       },
     },
@@ -42,25 +56,26 @@ export async function recalculateCashSession(transaction: TransactionClient, cas
   const adjustmentAmount = session.movements
     .filter((movement) => movement.type === CashMovementType.ADJUSTMENT)
     .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0)
-  const grossRevenueAmount = roundCurrency(
-    session.comandas.reduce((sum, comanda) => sum + toNumberOrZero(comanda.totalAmount), 0),
-  )
+  const paidComandaIds = new Set(session.payments.map((payment) => payment.comandaId))
+  const paidRevenueAmount = session.payments.reduce((sum, payment) => sum + toNumberOrZero(payment.amount), 0)
+  const legacyClosedRevenueAmount = session.comandas
+    .filter((comanda) => comanda.status === ComandaStatus.CLOSED && !paidComandaIds.has(comanda.id))
+    .reduce((sum, comanda) => sum + toNumberOrZero(comanda.totalAmount), 0)
+  const grossRevenueAmount = roundCurrency(paidRevenueAmount + legacyClosedRevenueAmount)
   const realizedProfitAmount = roundCurrency(
-    session.comandas.reduce((sum, comanda) => {
-      const comandaCost = comanda.items.reduce((itemsTotal, item) => {
-        const unitCost = item.product ? toNumberOrZero(item.product.unitCost) : 0
-        return itemsTotal + roundCurrency(unitCost * item.quantity)
-      }, 0)
+    session.comandas
+      .filter((comanda) => comanda.status === ComandaStatus.CLOSED)
+      .reduce((sum, comanda) => {
+        const comandaCost = comanda.items.reduce((itemsTotal, item) => {
+          const unitCost = item.product ? toNumberOrZero(item.product.unitCost) : 0
+          return itemsTotal + roundCurrency(unitCost * item.quantity)
+        }, 0)
 
-      return sum + roundCurrency(toNumberOrZero(comanda.totalAmount) - comandaCost)
-    }, 0),
+        return sum + roundCurrency(toNumberOrZero(comanda.totalAmount) - comandaCost)
+      }, 0),
   )
   const expectedCashAmount = roundCurrency(
-    toNumberOrZero(session.openingCashAmount) +
-      supplyAmount +
-      adjustmentAmount -
-      withdrawalAmount +
-      grossRevenueAmount,
+    toNumberOrZero(session.openingCashAmount) + supplyAmount + adjustmentAmount - withdrawalAmount + grossRevenueAmount,
   )
 
   return transaction.cashSession.update({

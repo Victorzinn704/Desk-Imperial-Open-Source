@@ -64,6 +64,7 @@ export {
   updateComandaStatus,
   cancelComanda,
   closeComanda,
+  createComandaPayment,
   openCashSession,
   closeCashClosure,
   createCashMovement,
@@ -84,18 +85,13 @@ export type {
   CloseCashSessionPayload,
   CloseComandaPayload,
   ComandaDraftItemPayload,
+  CreateComandaPaymentPayload,
   CreateCashMovementPayload,
   OpenCashSessionPayload,
   OperationsLiveOptions,
 } from './api-operations'
 
-export {
-  fetchEmployees,
-  createEmployee,
-  updateEmployee,
-  archiveEmployee,
-  restoreEmployee,
-} from './api-employees'
+export { fetchEmployees, createEmployee, updateEmployee, archiveEmployee, restoreEmployee } from './api-employees'
 
 export type { EmployeePayload, EmployeeRecord, EmployeesResponse, UpdateEmployeePayload } from './api-employees'
 

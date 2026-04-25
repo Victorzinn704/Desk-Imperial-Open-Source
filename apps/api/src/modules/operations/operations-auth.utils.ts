@@ -100,6 +100,14 @@ export async function requireOwnedComanda(
           createdAt: 'asc',
         },
       },
+      payments: {
+        where: {
+          status: 'CONFIRMED',
+        },
+        orderBy: {
+          paidAt: 'asc',
+        },
+      },
     },
   })
 

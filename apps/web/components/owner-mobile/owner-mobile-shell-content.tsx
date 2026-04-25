@@ -124,15 +124,19 @@ function OwnerComandasPanel({ controller }: Readonly<{ controller: OwnerMobileSh
       isOffline={controller.isOffline}
       onAddItems={(comanda) => {
         controller.setPendingAction({
-          type: 'add',
+          type: 'edit',
+          comanda,
           comandaId: comanda.id,
           mesaLabel: comanda.mesa ? normalizeTableLabel(comanda.mesa) : 'Comanda',
         })
         controller.setPdvView('mesas')
         controller.setActiveTab('pdv')
       }}
-      onCloseComanda={(comandaId, discountAmount, serviceFeeAmount) =>
-        controller.closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount })
+      onCloseComanda={(comandaId, discountAmount, serviceFeeAmount, paymentMethod) =>
+        controller.closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount, paymentMethod })
+      }
+      onCreatePayment={(comandaId, amount, method) =>
+        controller.createComandaPaymentMutation.mutateAsync({ comandaId, amount, method })
       }
     />
   )

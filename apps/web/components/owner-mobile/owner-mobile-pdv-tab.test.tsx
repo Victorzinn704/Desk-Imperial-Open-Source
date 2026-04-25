@@ -19,7 +19,7 @@ vi.mock('next/dynamic', () => {
       return function MockMobileOrderBuilder(props: {
         checkoutDockOffset?: 'navigation' | 'screen'
         mesaLabel: string
-        mode: 'add' | 'new'
+        mode: 'add' | 'edit' | 'new'
         onCancel: () => void
         onSubmit: (items: []) => void
         secondaryAction: { label: string; onClick: () => void }

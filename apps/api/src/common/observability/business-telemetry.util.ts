@@ -52,6 +52,34 @@ const operationsKitchenItems = meter.createHistogram('desk.operations.kitchen.it
   unit: '{item}',
 })
 
+const operationsRealtimePublishDuration = meter.createHistogram('desk.operations.realtime.publish.duration', {
+  description: 'Tempo para publicar um evento operacional no barramento local e no namespace Socket.IO',
+  unit: 'ms',
+})
+
+const operationsRealtimeEvents = meter.createCounter('desk.operations.realtime.events', {
+  description: 'Eventos operacionais publicados por tipo e resultado',
+  unit: '{event}',
+})
+
+const operationsRealtimeSocketConnections = meter.createCounter('desk.operations.realtime.socket.connections', {
+  description: 'Tentativas de conexão Socket.IO operacional por resultado',
+  unit: '{connection}',
+})
+
+const operationsRealtimeActiveSockets = meter.createUpDownCounter('desk.operations.realtime.socket.active', {
+  description: 'Sockets operacionais ativos por workspace',
+  unit: '{socket}',
+})
+
+const operationsRealtimeRedisAdapterTransitions = meter.createCounter(
+  'desk.operations.realtime.redis_adapter.transitions',
+  {
+    description: 'Mudanças de estado do adapter Redis do Socket.IO operacional',
+    unit: '{transition}',
+  },
+)
+
 export function recordFinanceSummaryTelemetry(
   durationMs: number,
   shape: {
@@ -91,4 +119,33 @@ export function recordOperationsKitchenTelemetry(
 ) {
   operationsKitchenDuration.record(durationMs, attributes)
   operationsKitchenItems.record(shape.items, attributes)
+}
+
+export function recordOperationsRealtimePublishTelemetry(durationMs: number, attributes: Attributes) {
+  operationsRealtimePublishDuration.record(durationMs, attributes)
+  operationsRealtimeEvents.add(1, attributes)
+}
+
+export function recordOperationsRealtimeSocketConnected(attributes: Attributes) {
+  operationsRealtimeSocketConnections.add(1, { ...attributes, 'desk.operations.realtime.connection_result': 'accepted' })
+  operationsRealtimeActiveSockets.add(1, attributes)
+}
+
+export function recordOperationsRealtimeSocketRejected(reason: string, attributes: Attributes) {
+  operationsRealtimeSocketConnections.add(1, {
+    ...attributes,
+    'desk.operations.realtime.connection_result': 'rejected',
+    'desk.operations.realtime.rejection_reason': reason,
+  })
+}
+
+export function recordOperationsRealtimeSocketDisconnected(attributes: Attributes) {
+  operationsRealtimeActiveSockets.add(-1, attributes)
+}
+
+export function recordOperationsRealtimeRedisAdapterState(enabled: boolean, reason: string) {
+  operationsRealtimeRedisAdapterTransitions.add(1, {
+    'desk.operations.realtime.redis_adapter_enabled': enabled,
+    'desk.operations.realtime.redis_adapter_reason': reason,
+  })
 }

@@ -27,12 +27,21 @@ export type ComandaItem = {
   observacao?: string
 }
 
+export type ComandaPayment = {
+  id: string
+  method: 'CASH' | 'PIX' | 'DEBIT' | 'CREDIT' | 'VOUCHER' | 'OTHER'
+  amount: number
+  note?: string
+  paidAt: Date
+}
+
 export type Comanda = {
   id: string
   status: ComandaStatus
   mesa?: string
   clienteNome?: string
   clienteDocumento?: string
+  participantCount?: number
   notes?: string
   garcomId?: string
   garcomNome?: string
@@ -43,6 +52,10 @@ export type Comanda = {
   subtotalBackend?: number
   // backend provided totals for compact mode:
   totalBackend?: number
+  paidAmount?: number
+  remainingAmount?: number
+  paymentStatus?: 'UNPAID' | 'PARTIAL' | 'PAID'
+  payments?: ComandaPayment[]
 }
 
 export type KanbanColumn = {
@@ -136,7 +149,9 @@ export function isEndedComandaStatus(status: ComandaStatus): boolean {
 export function formatElapsed(abertaEm: Date): string {
   const ms = Date.now() - abertaEm.getTime()
   const min = Math.floor(ms / 60000)
-  if (min < 60) {return `${min}min`}
+  if (min < 60) {
+    return `${min}min`
+  }
   const h = Math.floor(min / 60)
   const m = min % 60
   return `${h}h${m > 0 ? ` ${m}min` : ''}`

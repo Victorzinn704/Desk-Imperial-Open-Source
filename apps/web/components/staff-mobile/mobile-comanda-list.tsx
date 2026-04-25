@@ -1,19 +1,15 @@
 'use client'
 
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  calcSubtotal,
-  calcTotal,
-  type Comanda,
-  type ComandaStatus,
-  formatElapsed,
-} from '@/components/pdv/pdv-types'
+import { calcSubtotal, calcTotal, type Comanda, type ComandaStatus, formatElapsed } from '@/components/pdv/pdv-types'
 import { ChevronRight, ClipboardList, Edit2, LoaderCircle, Plus, Trash2, TriangleAlert, WifiOff } from 'lucide-react'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { useQuery } from '@tanstack/react-query'
 import { fetchComandaDetails } from '@/lib/api'
 import { toPdvComanda } from '@/components/pdv/pdv-operations'
+
+type PaymentMethod = 'PIX' | 'CREDIT' | 'DEBIT' | 'CASH' | 'VOUCHER' | 'OTHER'
 
 interface MobileComandaListProps {
   comandas: Comanda[]
@@ -23,6 +19,7 @@ interface MobileComandaListProps {
   onNewComanda?: () => void
   onCancelComanda?: (id: string) => Promise<void> | void
   onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
+  onCreatePayment?: (id: string, amount: number, method: PaymentMethod) => Promise<void> | void
   focusedId?: string | null
   onFocus?: (id: string | null) => void
   isLoading?: boolean
@@ -80,6 +77,7 @@ interface ComandaCardProps {
   onAddItems?: (comanda: Comanda) => void
   onCancelComanda?: (id: string) => Promise<void> | void
   onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
+  onCreatePayment?: (id: string, amount: number, method: PaymentMethod) => Promise<void> | void
   onFocus?: (id: string | null) => void
   isBusy?: boolean
 }
@@ -92,6 +90,7 @@ export function MobileComandaList({
   onNewComanda,
   onCancelComanda,
   onCloseComanda,
+  onCreatePayment,
   focusedId,
   onFocus,
   isLoading = false,
@@ -105,7 +104,7 @@ export function MobileComandaList({
 
   // scroll focused comanda into view when it changes
   useEffect(() => {
-    if (focusedId && focusedRef.current) {
+    if (focusedId && typeof focusedRef.current?.scrollIntoView === 'function') {
       focusedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [focusedId])
@@ -117,8 +116,12 @@ export function MobileComandaList({
     }
 
     return [...active].sort((a, b) => {
-      if (a.id === focusedId) {return -1}
-      if (b.id === focusedId) {return 1}
+      if (a.id === focusedId) {
+        return -1
+      }
+      if (b.id === focusedId) {
+        return 1
+      }
       return b.abertaEm.getTime() - a.abertaEm.getTime()
     })
   }, [active, focusedId])
@@ -210,8 +213,14 @@ export function MobileComandaList({
             { label: 'Em preparo', value: summary?.preparingCount ?? 0, hint: 'pedidos correndo', tone: '#fb923c' },
             { label: 'Prontas', value: summary?.readyCount ?? 0, hint: 'aguardando fechamento', tone: '#36f57c' },
           ].map((item) => (
-            <div className="bg-[var(--surface-muted)] px-3 py-3" data-testid={`summary-card-${item.label.toLowerCase().replaceAll(' ', '-')}`} key={item.label}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">{item.label}</p>
+            <div
+              className="bg-[var(--surface-muted)] px-3 py-3"
+              data-testid={`summary-card-${item.label.toLowerCase().replaceAll(' ', '-')}`}
+              key={item.label}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft,#7a8896)]">
+                {item.label}
+              </p>
               <p className="mt-2 text-lg font-semibold" style={{ color: item.tone }}>
                 {item.value}
               </p>
@@ -252,6 +261,7 @@ export function MobileComandaList({
               onAddItems={onAddItems}
               onCancelComanda={onCancelComanda}
               onCloseComanda={onCloseComanda}
+              onCreatePayment={onCreatePayment}
               onFocus={onFocus}
               onUpdateStatus={onUpdateStatus}
               isBusy={isBusy}
@@ -273,6 +283,7 @@ const ComandaCard = memo(
       onAddItems,
       onCancelComanda,
       onCloseComanda,
+      onCreatePayment,
       onFocus,
       isBusy = false,
     },
@@ -280,6 +291,8 @@ const ComandaCard = memo(
   ) {
     const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)
     const [surchargePercent, setSurchargePercent] = useState(() => comanda.acrescimo ?? 0)
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX')
+    const [paymentAmount, setPaymentAmount] = useState('')
     const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
       queryKey: ['comanda-details', comanda.id],
       queryFn: async () => {
@@ -308,6 +321,24 @@ const ComandaCard = memo(
       () => subtotal * (1 - discountPercent / 100) * (1 + surchargePercent / 100),
       [discountPercent, surchargePercent, subtotal],
     )
+    const paidAmount = activeComanda.paidAmount ?? 0
+    const remainingAmount = Math.max(0, activeComanda.remainingAmount ?? adjustedTotal - paidAmount)
+    const parsedPaymentAmount = Number(paymentAmount.replace(',', '.'))
+    const canCreatePayment =
+      Boolean(onCreatePayment) &&
+      Number.isFinite(parsedPaymentAmount) &&
+      parsedPaymentAmount > 0 &&
+      parsedPaymentAmount <= remainingAmount + 0.009
+    const paymentMethods: Array<{ label: string; value: PaymentMethod }> = [
+      { label: 'Pix', value: 'PIX' },
+      { label: 'Crédito', value: 'CREDIT' },
+      { label: 'Débito', value: 'DEBIT' },
+      { label: 'Dinheiro', value: 'CASH' },
+    ]
+
+    function setPaymentShortcut(amount: number) {
+      setPaymentAmount(amount.toFixed(2).replace('.', ','))
+    }
 
     return (
       <li
@@ -369,7 +400,11 @@ const ComandaCard = memo(
                     borderColor: isOwnedByCurrentEmployee ? 'rgba(54,245,124,0.22)' : 'var(--border)',
                   }}
                 >
-                  {isOwnedByCurrentEmployee ? 'Sua mesa' : primaryWaiterName ? `Responsável ${primaryWaiterName}` : 'Sem responsável'}
+                  {isOwnedByCurrentEmployee
+                    ? 'Sua mesa'
+                    : primaryWaiterName
+                      ? `Responsável ${primaryWaiterName}`
+                      : 'Sem responsável'}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-soft,#7a8896)] flex items-center gap-1.5 opacity-80">
@@ -504,6 +539,91 @@ const ComandaCard = memo(
                   <span className="text-xl font-bold text-[var(--accent,#008cff)]">
                     {formatCurrency(adjustedTotal)}
                   </span>
+                </div>
+              )}
+
+              {onCreatePayment && (
+                <div className="mb-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+                  <div className="mb-3 grid grid-cols-2 gap-px overflow-hidden rounded-[13px] bg-[var(--border)]">
+                    <div className="bg-[var(--surface)] px-3 py-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-soft)]">Pago</p>
+                      <p className="mt-1 text-sm font-bold text-[#36f57c]">{formatCurrency(paidAmount)}</p>
+                    </div>
+                    <div className="bg-[var(--surface)] px-3 py-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+                        Restante
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                        {formatCurrency(remainingAmount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-3 grid grid-cols-4 gap-1">
+                    {paymentMethods.map((method) => {
+                      const selected = paymentMethod === method.value
+                      return (
+                        <button
+                          className="rounded-lg border px-1.5 py-2 text-[10px] font-bold transition-all active:scale-95 disabled:opacity-50"
+                          disabled={isBusy}
+                          key={method.value}
+                          style={{
+                            borderColor: selected ? 'rgba(0,140,255,0.45)' : 'var(--border)',
+                            background: selected ? 'rgba(0,140,255,0.14)' : 'var(--surface)',
+                            color: selected ? 'var(--accent,#008cff)' : 'var(--text-soft)',
+                          }}
+                          type="button"
+                          onClick={() => setPaymentMethod(method.value)}
+                        >
+                          {method.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <input
+                      className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.45)]"
+                      disabled={isBusy || remainingAmount <= 0}
+                      inputMode="decimal"
+                      placeholder="Valor parcial"
+                      type="text"
+                      value={paymentAmount}
+                      onChange={(event) => setPaymentAmount(event.target.value)}
+                    />
+                    <button
+                      className="min-h-11 rounded-xl bg-[var(--accent)] px-4 text-xs font-bold text-[var(--on-accent)] transition-all active:scale-95 disabled:opacity-40"
+                      disabled={isBusy || !canCreatePayment}
+                      type="button"
+                      onClick={() => {
+                        if (!canCreatePayment) {
+                          return
+                        }
+                        void onCreatePayment(activeComanda.id, parsedPaymentAmount, paymentMethod)
+                        setPaymentAmount('')
+                      }}
+                    >
+                      Parcial
+                    </button>
+                  </div>
+
+                  <div className="mt-2 grid grid-cols-3 gap-1">
+                    {[
+                      { label: 'Meia', value: remainingAmount / 2 },
+                      { label: 'Pessoa', value: remainingAmount / Math.max(1, activeComanda.participantCount ?? 1) },
+                      { label: 'Restante', value: remainingAmount },
+                    ].map((shortcut) => (
+                      <button
+                        className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-[10px] font-semibold text-[var(--text-soft)] active:scale-95 disabled:opacity-40"
+                        disabled={isBusy || remainingAmount <= 0}
+                        key={shortcut.label}
+                        type="button"
+                        onClick={() => setPaymentShortcut(shortcut.value)}
+                      >
+                        {shortcut.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 

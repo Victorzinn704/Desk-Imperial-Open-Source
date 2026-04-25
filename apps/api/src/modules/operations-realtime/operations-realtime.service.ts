@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
+import { recordOperationsRealtimePublishTelemetry } from '../../common/observability/business-telemetry.util'
 import type { WorkspaceScopedAuthContext } from '../auth/auth.types'
 import {
   buildWorkspaceChannel,
@@ -58,10 +59,32 @@ export class OperationsRealtimeService {
     event: TEvent,
     payload: OperationsRealtimeEventPayload<TEvent>,
   ): OperationsRealtimeEnvelope<TEvent> {
+    const startedAt = performance.now()
     const envelope = this.buildEnvelope(auth, event, payload)
+    const listenerCount = this.bus.listenerCount(envelope.workspaceChannel)
 
-    this.bus.emit(envelope.workspaceChannel, envelope)
-    this.namespace?.to(envelope.workspaceChannel).emit(event, envelope)
+    try {
+      this.bus.emit(envelope.workspaceChannel, envelope)
+      this.namespace?.to(envelope.workspaceChannel).emit(event, envelope)
+      recordOperationsRealtimePublishTelemetry(performance.now() - startedAt, {
+        'desk.operations.realtime.event': event,
+        'desk.operations.realtime.actor_role': auth.role,
+        'desk.operations.realtime.has_socket_namespace': Boolean(this.namespace),
+        'desk.operations.realtime.workspace_listener_count': listenerCount,
+        'desk.operations.realtime.publish_result': 'ok',
+      })
+    } catch (error) {
+      recordOperationsRealtimePublishTelemetry(performance.now() - startedAt, {
+        'desk.operations.realtime.event': event,
+        'desk.operations.realtime.actor_role': auth.role,
+        'desk.operations.realtime.has_socket_namespace': Boolean(this.namespace),
+        'desk.operations.realtime.workspace_listener_count': listenerCount,
+        'desk.operations.realtime.publish_result': 'error',
+      })
+      const reason = error instanceof Error ? error.message : String(error)
+      this.logger.error(`Falha ao publicar evento realtime ${event}: ${reason}`)
+      throw error
+    }
 
     return envelope
   }

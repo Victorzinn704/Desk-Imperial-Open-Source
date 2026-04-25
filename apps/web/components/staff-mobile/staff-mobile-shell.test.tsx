@@ -28,9 +28,11 @@ vi.mock('@/lib/api', () => ({
   fetchProducts: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
+  replaceComanda: vi.fn(),
   addComandaItem: vi.fn(),
   addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
+  createComandaPayment: vi.fn(),
   cancelComanda: vi.fn(),
   updateComandaStatus: vi.fn(),
   openCashSession: vi.fn(),
@@ -428,15 +430,54 @@ describe('StaffMobileShell', () => {
     })
   })
 
-  it('abre direto o builder ao tocar em uma mesa ocupada', async () => {
+  it('abre a comanda ao tocar em uma mesa ocupada e só depois edita itens', async () => {
     const user = userEvent.setup()
+    const scopedSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [
+            {
+              id: 'c-1',
+              status: 'OPEN',
+              tableLabel: '1',
+              totalAmount: 120,
+              openedAt: '2026-03-28T10:00:00.000Z',
+              items: [{ id: 'i-1', productName: 'Pão de queijo', quantity: 2, unitPrice: 20, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+      ],
+      unassigned: { comandas: [] },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-1',
+          currentEmployeeId: 'emp-1',
+        }),
+      ],
+    })
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(scopedSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], scopedSnapshot)
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
     await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
 
     await waitFor(() => {
-      expect(screen.getByText(/Retomar pedido/i)).toBeInTheDocument()
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+    })
+
+    await user.click(await screen.findByRole('button', { name: /itens/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Editar comanda/i)).toBeInTheDocument()
       expect(screen.getByText('Responsável')).toBeInTheDocument()
       expect(screen.getByText('Sua mesa')).toBeInTheDocument()
     })
@@ -612,7 +653,7 @@ describe('StaffMobileShell', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
-      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('1')
+      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('2')
     })
   })
 
@@ -722,8 +763,6 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    expect(
-      await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i)).toBeInTheDocument()
   })
 })

@@ -8,19 +8,22 @@ import {
   addComandaItem,
   addComandaItems,
   closeComanda,
+  createComandaPayment,
   logout,
   openCashSession,
   openComanda,
+  replaceComanda,
   updateComandaStatus,
 } from '@/lib/api'
 import {
+  appendOptimisticComandaPayment,
   appendOptimisticComandaItem,
   appendOptimisticComandaMutation,
   buildOptimisticComandaRecord,
-  invalidateOperationsWorkspace,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   rollbackOperationsSnapshot,
+  scheduleOperationsWorkspaceReconcile,
   setOptimisticComandaStatus,
 } from '@/lib/operations'
 
@@ -61,7 +64,7 @@ function useOpenComandaMutation(queryClient: QueryClient) {
       return { snapshot }
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
@@ -83,7 +86,7 @@ function useAddComandaItemMutation(queryClient: QueryClient) {
       return { snapshot }
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
       })
@@ -111,7 +114,7 @@ function useAddComandaItemsMutation(queryClient: QueryClient) {
       return { snapshot }
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
       })
@@ -121,6 +124,37 @@ function useAddComandaItemsMutation(queryClient: QueryClient) {
     onError: (_err, _vars, ctx) => {
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao adicionar itens')
+      haptic.error()
+    },
+  })
+}
+
+function useReplaceComandaMutation(queryClient: QueryClient) {
+  return useMutation({
+    mutationFn: ({
+      comandaId,
+      payload,
+    }: {
+      comandaId: string
+      payload: Parameters<typeof replaceComanda>[1]
+    }) => replaceComanda(comandaId, payload, { includeSnapshot: false }),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+      return { snapshot }
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeKitchen: true,
+        includeSummary: true,
+      })
+      toast.success('Comanda atualizada')
+      haptic.success()
+    },
+    onError: (err, _variables, ctx) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar comanda')
       haptic.error()
     },
   })
@@ -136,7 +170,7 @@ function useUpdateComandaStatusMutation(queryClient: QueryClient) {
       return { snapshot }
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
       })
       toast.success('Status atualizado')
@@ -155,19 +189,21 @@ function useCloseComandaMutation(queryClient: QueryClient) {
     mutationFn: ({
       comandaId,
       discountAmount,
+      paymentMethod,
       serviceFeeAmount,
     }: {
       comandaId: string
       discountAmount: number
+      paymentMethod?: Parameters<typeof closeComanda>[1]['paymentMethod']
       serviceFeeAmount: number
-    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount }, { includeSnapshot: false }),
+    }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount, paymentMethod }, { includeSnapshot: false }),
     onMutate: async ({ comandaId }) => {
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, 'CLOSED')
       return { snapshot }
     },
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeOrders: true,
         includeFinance: true,
       })
@@ -182,12 +218,46 @@ function useCloseComandaMutation(queryClient: QueryClient) {
   })
 }
 
+function useCreateComandaPaymentMutation(queryClient: QueryClient) {
+  return useMutation({
+    mutationFn: ({
+      amount,
+      comandaId,
+      method,
+    }: {
+      amount: number
+      comandaId: string
+      method: Parameters<typeof createComandaPayment>[1]['method']
+    }) => createComandaPayment(comandaId, { amount, method }, { includeSnapshot: false }),
+    onMutate: async ({ amount, comandaId, method }) => {
+      await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
+      const snapshot = appendOptimisticComandaPayment(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, {
+        amount,
+        method,
+      })
+      return { snapshot }
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeSummary: true,
+      })
+      toast.success('Pagamento registrado')
+      haptic.success()
+    },
+    onError: (err, _variables, ctx) => {
+      rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
+      toast.error(err instanceof Error ? err.message : 'Erro ao registrar pagamento')
+      haptic.error()
+    },
+  })
+}
+
 function useOpenCashSessionMutation(queryClient: QueryClient) {
   return useMutation({
-    mutationFn: (openingCashAmount: number) =>
-      openCashSession({ openingCashAmount }, { includeSnapshot: false }),
+    mutationFn: (openingCashAmount: number) => openCashSession({ openingCashAmount }, { includeSnapshot: false }),
     onSuccess: () => {
-      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeSummary: true,
       })
       toast.success('Caixa aberto')
@@ -205,9 +275,11 @@ export function useOwnerMobileShellMutations(queryClient: QueryClient, router: R
     addComandaItemMutation: useAddComandaItemMutation(queryClient),
     addComandaItemsMutation: useAddComandaItemsMutation(queryClient),
     closeComandaMutation: useCloseComandaMutation(queryClient),
+    createComandaPaymentMutation: useCreateComandaPaymentMutation(queryClient),
     logoutMutation: useLogoutMutation(queryClient, router),
     openCashSessionMutation: useOpenCashSessionMutation(queryClient),
     openComandaMutation: useOpenComandaMutation(queryClient),
+    replaceComandaMutation: useReplaceComandaMutation(queryClient),
     updateComandaStatusMutation: useUpdateComandaStatusMutation(queryClient),
   }
 }

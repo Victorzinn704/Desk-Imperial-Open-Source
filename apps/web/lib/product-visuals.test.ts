@@ -42,7 +42,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('nao inventa packshot para cerveja de marca sem foto real', () => {
+  it('usa packshot nacional para cerveja de marca sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Heineken 350ml',
       brand: 'Heineken',
@@ -53,7 +53,9 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual).toBeNull()
+    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.alt).toBe('Packshot de Heineken 350ml')
+    expect(visual?.src).toContain('data:image/svg+xml')
   })
 
   it('mantem foto real acima do packshot nacional quando os dois existem', () => {
@@ -87,18 +89,19 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('ignora url insegura e nao troca bebida embalada por imagem fake', () => {
+  it('ignora url insegura e usa packshot local quando a bebida é reconhecida', () => {
     const visual = resolveProductVisual({
-      name: 'Água',
+      name: 'Água Mineral 500ml',
       category: 'Bebidas',
+      packagingClass: 'Garrafa 500ml',
       imageUrl: 'http://insecure.example/image.jpg',
       isCombo: false,
     })
 
-    expect(visual).toBeNull()
+    expect(visual?.source).toBe('national-beverage-catalog')
   })
 
-  it('nao usa packshot local para Guaravita sem foto real', () => {
+  it('usa packshot local para Guaravita sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Guaravita',
       brand: 'Guaravita',
@@ -109,10 +112,10 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual).toBeNull()
+    expect(visual?.source).toBe('national-beverage-catalog')
   })
 
-  it('nao usa packshot local para Bohemia sem foto real', () => {
+  it('usa packshot local para Bohemia sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Bohemia 600ml',
       brand: 'Bohemia',
@@ -123,10 +126,10 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual).toBeNull()
+    expect(visual?.source).toBe('national-beverage-catalog')
   })
 
-  it('nao usa packshot local para cerveja generica sem foto real', () => {
+  it('usa packshot local para cerveja generica sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Cerveja sem Alcool 350ml',
       category: 'Cervejas',
@@ -136,6 +139,6 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual).toBeNull()
+    expect(visual?.source).toBe('national-beverage-catalog')
   })
 })

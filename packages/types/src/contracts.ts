@@ -357,6 +357,15 @@ export type CashSessionStatus = z.infer<typeof cashSessionStatusSchema>
 export const cashMovementTypeSchema = z.enum(['OPENING_FLOAT', 'SUPPLY', 'WITHDRAWAL', 'ADJUSTMENT'])
 export type CashMovementType = z.infer<typeof cashMovementTypeSchema>
 
+export const comandaPaymentMethodSchema = z.enum(['CASH', 'PIX', 'DEBIT', 'CREDIT', 'VOUCHER', 'OTHER'])
+export type ComandaPaymentMethod = z.infer<typeof comandaPaymentMethodSchema>
+
+export const comandaPaymentStatusSchema = z.enum(['CONFIRMED', 'VOIDED'])
+export type ComandaPaymentStatus = z.infer<typeof comandaPaymentStatusSchema>
+
+export const comandaPaymentStateSchema = z.enum(['UNPAID', 'PARTIAL', 'PAID'])
+export type ComandaPaymentState = z.infer<typeof comandaPaymentStateSchema>
+
 export const cashClosureStatusSchema = z.enum(['OPEN', 'PENDING_EMPLOYEE_CLOSE', 'CLOSED', 'FORCE_CLOSED'])
 export type CashClosureStatus = z.infer<typeof cashClosureStatusSchema>
 
@@ -410,6 +419,16 @@ export const comandaItemRecordSchema = z.object({
 })
 export type ComandaItemRecord = z.infer<typeof comandaItemRecordSchema>
 
+export const comandaPaymentRecordSchema = z.object({
+  id: z.string(),
+  method: comandaPaymentMethodSchema,
+  amount: z.number(),
+  note: z.string().nullable(),
+  status: comandaPaymentStatusSchema,
+  paidAt: isoDateStringSchema,
+})
+export type ComandaPaymentRecord = z.infer<typeof comandaPaymentRecordSchema>
+
 export const mesaStatusSchema = z.enum(['livre', 'ocupada', 'reservada'])
 export type MesaStatus = z.infer<typeof mesaStatusSchema>
 
@@ -443,10 +462,14 @@ export const comandaRecordSchema = z.object({
   discountAmount: z.number(),
   serviceFeeAmount: z.number(),
   totalAmount: z.number(),
+  paidAmount: z.number().optional(),
+  remainingAmount: z.number().optional(),
+  paymentStatus: comandaPaymentStateSchema.optional(),
   notes: z.string().nullable(),
   openedAt: isoDateStringSchema,
   closedAt: nullableIsoDateStringSchema,
   items: z.array(comandaItemRecordSchema),
+  payments: z.array(comandaPaymentRecordSchema).optional(),
 })
 export type ComandaRecord = z.infer<typeof comandaRecordSchema>
 

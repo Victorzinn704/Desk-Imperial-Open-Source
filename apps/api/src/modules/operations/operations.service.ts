@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -20,6 +27,7 @@ import type {
   CloseCashClosureDto,
   CloseCashSessionDto,
   CloseComandaDto,
+  CreateComandaPaymentDto,
   CreateCashMovementDto,
   CreateMesaDto,
   GetOperationsLiveQueryDto,
@@ -186,6 +194,16 @@ export class OperationsService {
 
   getComandaDetails(auth: AuthContext, comandaId: string) {
     return this.comanda.getComandaDetails(auth, comandaId)
+  }
+
+  createComandaPayment(
+    auth: AuthContext,
+    comandaId: string,
+    dto: CreateComandaPaymentDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.createComandaPayment(auth, comandaId, dto, context, options)
   }
 
   closeComanda(
