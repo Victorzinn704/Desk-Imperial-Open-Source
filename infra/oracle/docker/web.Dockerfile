@@ -14,6 +14,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
+COPY scripts/patch-next-postcss.mjs ./scripts/patch-next-postcss.mjs
 COPY packages/types/package.json ./packages/types/
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/

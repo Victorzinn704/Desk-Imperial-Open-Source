@@ -22,7 +22,9 @@ credentials.json
 .cache/
 .scannerwork
 .interface-design/
-scripts/
+scripts/*
+!scripts/
+!scripts/patch-next-postcss.mjs
 tests/
 .sandbox-home
 .sandbox-cache
