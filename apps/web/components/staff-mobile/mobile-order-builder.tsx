@@ -18,7 +18,6 @@ import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { ProductRecord } from '@contracts/contracts'
 import { OperationEmptyState } from '@/components/operations/operation-empty-state'
 import { ProductThumb } from '@/components/shared/product-thumb'
-import { useCatalogVisualSuggestions } from '@/components/shared/use-catalog-visual-suggestions'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import { Beer, Coffee, Minus, Package, Pizza, Plus, Search, ShoppingCart, UtensilsCrossed, Wine } from 'lucide-react'
@@ -485,7 +484,6 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
     () => filterProducts(activeProdutos, deferredSearch, selectedCategory),
     [activeProdutos, deferredSearch, selectedCategory],
   )
-  const { decorateProduct } = useCatalogVisualSuggestions(filtered.slice(0, 12))
 
   // Mapa de quantidades para lookup O(1)
   const qtyMap = useMemo(() => {
@@ -633,7 +631,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                       >
                         <ProductItem
                           busy={busy}
-                          produto={decorateProduct(produto)}
+                          produto={produto}
                           qty={qty}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}
@@ -647,7 +645,7 @@ export const MobileOrderBuilder = memo(function MobileOrderBuilder({
                       <div className="border-b border-[var(--border)]" key={produto.id}>
                         <ProductItem
                           busy={busy}
-                          produto={decorateProduct(produto)}
+                          produto={produto}
                           qty={qty}
                           onAdd={() => addItem(produto)}
                           onRemove={() => removeItem(produto.id)}

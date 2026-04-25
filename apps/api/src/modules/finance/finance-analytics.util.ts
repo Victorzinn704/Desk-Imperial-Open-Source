@@ -38,6 +38,20 @@ export type FinanceProductAnalyticsRecord = {
   marginPercent: number
 }
 
+export type FinanceSalesCategoryAggregationRecord = {
+  category: string
+  currency: CurrencyCode
+  _count: {
+    _all: number
+  }
+  _sum: {
+    quantity: number | null
+    lineRevenue: { toNumber(): number } | number | null
+    lineCost: { toNumber(): number } | number | null
+    lineProfit: { toNumber(): number } | number | null
+  }
+}
+
 type FinanceTopProduct = {
   id: string
   name: string
@@ -114,6 +128,63 @@ export function buildCategoryCollections(records: FinanceProductAnalyticsRecord[
     categoryBreakdown: [...categoryMap.values()].sort((left, right) => right.potentialProfit - left.potentialProfit),
     categoryTopProducts,
   }
+}
+
+export function buildSalesCategoryBreakdown(
+  rows: FinanceSalesCategoryAggregationRecord[],
+  options: FinanceAggregationOptions,
+) {
+  const categoryMap = new Map<
+    string,
+    {
+      category: string
+      products: number
+      units: number
+      inventoryCostValue: number
+      inventorySalesValue: number
+      potentialProfit: number
+    }
+  >()
+
+  for (const row of rows) {
+    const current = categoryMap.get(row.category) ?? {
+      category: row.category,
+      products: 0,
+      units: 0,
+      inventoryCostValue: 0,
+      inventorySalesValue: 0,
+      potentialProfit: 0,
+    }
+
+    current.products += row._count._all
+    current.units += row._sum.quantity ?? 0
+    current.inventoryCostValue = roundCurrency(
+      current.inventoryCostValue +
+        options.currencyService.convert(toNumber(row._sum.lineCost), row.currency, options.displayCurrency, options.snapshot),
+    )
+    current.inventorySalesValue = roundCurrency(
+      current.inventorySalesValue +
+        options.currencyService.convert(
+          toNumber(row._sum.lineRevenue),
+          row.currency,
+          options.displayCurrency,
+          options.snapshot,
+        ),
+    )
+    current.potentialProfit = roundCurrency(
+      current.potentialProfit +
+        options.currencyService.convert(
+          toNumber(row._sum.lineProfit),
+          row.currency,
+          options.displayCurrency,
+          options.snapshot,
+        ),
+    )
+
+    categoryMap.set(row.category, current)
+  }
+
+  return [...categoryMap.values()].sort((left, right) => right.inventorySalesValue - left.inventorySalesValue)
 }
 
 export function buildTopProducts(records: FinanceProductAnalyticsRecord[], limit = 5): FinanceTopProduct[] {

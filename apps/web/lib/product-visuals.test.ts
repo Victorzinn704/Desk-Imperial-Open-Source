@@ -42,7 +42,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('usa packshot nacional para cerveja de marca sem foto real', () => {
+  it('usa foto curada para cerveja de marca sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Heineken 350ml',
       brand: 'Heineken',
@@ -53,8 +53,23 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
+    expect(visual?.source).toBe('curated-beverage-photo')
+    expect(visual?.alt).toBe('Foto de Heineken 350ml')
+    expect(visual?.src).toContain('images.pexels.com')
+  })
+
+  it('usa packshot nacional para Brahma quando a foto curada nao representa o produto embalado', () => {
+    const visual = resolveProductVisual({
+      name: 'Brahma 350ml',
+      brand: 'Brahma',
+      category: 'Cervejas',
+      packagingClass: 'Lata 350ml',
+      quantityLabel: '350ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
     expect(visual?.source).toBe('national-beverage-catalog')
-    expect(visual?.alt).toBe('Packshot de Heineken 350ml')
     expect(visual?.src).toContain('data:image/svg+xml')
   })
 
@@ -115,7 +130,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.source).toBe('national-beverage-catalog')
   })
 
-  it('usa packshot local para Bohemia sem foto real', () => {
+  it('usa packshot nacional para Bohemia quando a foto curada mistura outras marcas', () => {
     const visual = resolveProductVisual({
       name: 'Bohemia 600ml',
       brand: 'Bohemia',
@@ -127,6 +142,22 @@ describe('resolveProductVisual', () => {
     })
 
     expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.src).toContain('data:image/svg+xml')
+  })
+
+  it('usa foto curada para Skol sem foto real', () => {
+    const visual = resolveProductVisual({
+      name: 'Skol 350ml',
+      brand: 'Skol',
+      category: 'Cervejas',
+      packagingClass: 'Lata 350ml',
+      quantityLabel: '350ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('curated-beverage-photo')
+    expect(visual?.src).toContain('images.pexels.com')
   })
 
   it('usa packshot local para cerveja generica sem foto real', () => {

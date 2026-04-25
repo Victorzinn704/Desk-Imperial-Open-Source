@@ -15,7 +15,7 @@ type ProductVisualInput = {
 type ProductVisual = {
   src: string
   alt: string
-  source: 'catalog' | 'combo-fallback' | 'national-beverage-catalog'
+  source: 'catalog' | 'combo-fallback' | 'curated-beverage-photo' | 'national-beverage-catalog'
 }
 
 const comboFallbacks = [
@@ -47,11 +47,6 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
     }
   }
 
-  const beverageVisual = resolveBrazilianPackagedBeverageVisual(product)
-  if (beverageVisual) {
-    return beverageVisual
-  }
-
   if (isComboLike(product)) {
     return {
       src: resolveComboFallback(product),
@@ -60,7 +55,70 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
     }
   }
 
+  const curatedBeveragePhoto = resolveCuratedBeveragePhoto(product)
+  if (curatedBeveragePhoto) {
+    return curatedBeveragePhoto
+  }
+
+  const beverageVisual = resolveBrazilianPackagedBeverageVisual(product)
+  if (beverageVisual) {
+    return beverageVisual
+  }
+
   return null
+}
+
+function resolveCuratedBeveragePhoto(product: ProductVisualInput): ProductVisual | null {
+  const haystack = normalizeVisualText(
+    `${product.name} ${product.brand ?? ''} ${product.category ?? ''} ${product.packagingClass ?? ''}`,
+  )
+  if (!looksLikeBeerOrCombo(haystack)) {
+    return null
+  }
+
+  const match = curatedBeveragePhotos.find((entry) => entry.keywords.some((keyword) => haystack.includes(keyword)))
+  if (!match) {
+    return null
+  }
+
+  return {
+    src: match.src,
+    alt: `Foto de ${product.name}`,
+    source: 'curated-beverage-photo',
+  }
+}
+
+const curatedBeveragePhotos = [
+  {
+    keywords: ['budweiser', 'bud'],
+    src: 'https://images.pexels.com/photos/16655780/pexels-photo-16655780.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    keywords: ['corona'],
+    src: 'https://images.pexels.com/photos/1089932/pexels-photo-1089932.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    keywords: ['heineken'],
+    src: 'https://images.pexels.com/photos/11098951/pexels-photo-11098951.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    keywords: ['stella artois', 'stella'],
+    src: 'https://images.pexels.com/photos/12940650/pexels-photo-12940650.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    keywords: ['skol'],
+    src: 'https://images.pexels.com/photos/19733808/pexels-photo-19733808.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    keywords: ['spaten'],
+    src: 'https://images.pexels.com/photos/30325819/pexels-photo-30325819.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+] as const
+
+function looksLikeBeerOrCombo(haystack: string) {
+  return ['cerveja', 'beer', 'chopp', 'long neck', 'litrao', 'litrão', 'combo', 'petisco'].some((keyword) =>
+    haystack.includes(normalizeVisualText(keyword)),
+  )
 }
 
 export function buildProductInitials(name: string) {
@@ -93,6 +151,13 @@ function isComboLike(product: ProductVisualInput) {
   return ['combo', 'combos', 'kit', 'balde', 'petisco', 'promocao', 'promoção'].some((keyword) =>
     haystack.includes(keyword),
   )
+}
+
+function normalizeVisualText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
 }
 
 function sanitizeVisualUrl(value: string | null | undefined) {

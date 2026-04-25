@@ -11,6 +11,7 @@ import {
   LabSignalRow,
   LabStatusPill,
 } from '@/components/design-lab/lab-primitives'
+import { buildDesignLabCozinhaKioskHref } from '@/components/design-lab/design-lab-navigation'
 import {
   buildKitchenSummary,
   CozinhaSummaryPanels,
@@ -41,6 +42,14 @@ export default function DesignLabCozinhaPage() {
   return (
     <section className="space-y-5">
       <LabPageHeader
+        actions={
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 text-sm font-medium text-[var(--lab-fg)] transition hover:border-[var(--lab-accent)] hover:text-[var(--lab-accent)]"
+            href={buildDesignLabCozinhaKioskHref()}
+          >
+            Abrir kiosk
+          </Link>
+        }
         description="Fila, preparo e pratos prontos."
         eyebrow="Operação da cozinha"
         title="Cozinha / KDS"

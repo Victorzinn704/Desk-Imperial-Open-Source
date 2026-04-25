@@ -59,11 +59,13 @@ export function FinanceOverviewTotal({ finance, isLoading, products = [] }: Prop
     return <CardSkeleton rows={1} />
   }
 
+  const financeMix = buildFinanceMixSummary(finance)
+
   return (
     <div className="imperial-card p-6 sm:p-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.95fr)] xl:items-start">
         <FinanceOverviewPrimary finance={finance} />
-        <FinanceCategoryFlowPanel finance={finance} products={products} />
+        <FinanceCategoryFlowPanel finance={financeMix} products={products} />
       </div>
     </div>
   )
@@ -71,13 +73,14 @@ export function FinanceOverviewTotal({ finance, isLoading, products = [] }: Prop
 
 function FinanceOverviewPrimary({ finance }: { finance: FinanceSummaryResponse }) {
   const { totals, categoryBreakdown, displayCurrency } = finance
+  const mixBreakdown = finance.salesCategoryBreakdown?.length ? finance.salesCategoryBreakdown : categoryBreakdown
   const growth = totals.revenueGrowthPercent
   const isPositive = growth >= 0
 
   return (
     <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
       <div className="flex justify-center pt-1 lg:justify-start">
-        <FinanceDoughnutChart categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
+        <FinanceDoughnutChart categoryBreakdown={mixBreakdown} displayCurrency={displayCurrency} />
       </div>
 
       <div className="flex min-w-0 flex-col gap-2">
@@ -86,7 +89,7 @@ function FinanceOverviewPrimary({ finance }: { finance: FinanceSummaryResponse }
         </p>
         <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
         <FinanceOverviewDelta
-          categoryCount={categoryBreakdown.length}
+          categoryCount={mixBreakdown.length}
           currency={displayCurrency}
           growth={growth}
           isPositive={isPositive}
@@ -95,6 +98,17 @@ function FinanceOverviewPrimary({ finance }: { finance: FinanceSummaryResponse }
       </div>
     </div>
   )
+}
+
+function buildFinanceMixSummary(finance: FinanceSummaryResponse): FinanceSummaryResponse {
+  const categoryBreakdown = finance.salesCategoryBreakdown?.length
+    ? finance.salesCategoryBreakdown
+    : finance.categoryBreakdown
+
+  return {
+    ...finance,
+    categoryBreakdown,
+  }
 }
 
 function FinanceOverviewDelta({

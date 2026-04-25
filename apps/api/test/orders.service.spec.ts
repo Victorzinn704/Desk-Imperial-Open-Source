@@ -245,7 +245,7 @@ describe('OrdersService', () => {
       const result = await ordersService.listForUser(mockContext, { limit: 10 })
 
       expect(result).toEqual(cachedResponse)
-      expect(mockCache.get).toHaveBeenCalledWith('orders:summary:user-1:completed:summary:10')
+      expect(mockCache.get).toHaveBeenCalledWith('orders:summary:user-1:workspace:completed:summary:10')
       expect(mockPrisma.order.findMany).not.toHaveBeenCalled()
     })
 
@@ -297,7 +297,42 @@ describe('OrdersService', () => {
 
       await ordersService.listForUser(mockContext, { limit: 10 })
 
-      expect(mockCache.set).toHaveBeenCalledWith('orders:summary:user-1:completed:summary:10', expect.any(Object), 90)
+      expect(mockCache.set).toHaveBeenCalledWith(
+        'orders:summary:user-1:workspace:completed:summary:10',
+        expect.any(Object),
+        90,
+      )
+    })
+
+    it('escopa histórico do funcionário ao próprio employeeId', async () => {
+      mockCache.get.mockResolvedValue(null)
+      mockPrisma.order.findMany.mockResolvedValue([])
+      mockPrisma.order.aggregate.mockResolvedValue({ _count: 0, _sum: {} })
+      mockPrisma.order.count.mockResolvedValue(0)
+      mockPrisma.orderItem.aggregate.mockResolvedValue({ _sum: {} })
+
+      await ordersService.listForUser(
+        makeAuthContext({
+          userId: 'staff-user-1',
+          role: 'STAFF',
+          employeeId: 'emp-1',
+          workspaceOwnerUserId: 'user-1',
+        }),
+        { includeCancelled: true, includeItems: true, limit: 50 },
+      )
+
+      expect(mockCache.get).toHaveBeenCalledWith('orders:summary:user-1:employee:emp-1:cancelled:full:50')
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1', employeeId: 'emp-1' },
+          take: 50,
+        }),
+      )
+      expect(mockPrisma.order.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1', employeeId: 'emp-1', status: OrderStatus.COMPLETED },
+        }),
+      )
     })
   })
 

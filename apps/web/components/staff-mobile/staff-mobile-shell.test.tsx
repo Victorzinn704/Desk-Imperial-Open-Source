@@ -25,6 +25,7 @@ const drainQueueMock = vi.fn()
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
   fetchOperationsKitchen: vi.fn(),
+  fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
@@ -87,6 +88,7 @@ describe('StaffMobileShell', () => {
     testQueryClient = createTestQueryClient()
     const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
     const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
+    const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
 
     const snapshot = buildOperationsSnapshot({
@@ -185,6 +187,68 @@ describe('StaffMobileShell', () => {
       },
     }
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
+    mockFetchOrders.mockResolvedValue({
+      items: [
+        {
+          id: 'ord-1',
+          comandaId: 'c-1',
+          customerName: null,
+          buyerType: null,
+          buyerDocument: null,
+          buyerDistrict: null,
+          buyerCity: null,
+          buyerState: null,
+          buyerCountry: null,
+          buyerLatitude: null,
+          buyerLongitude: null,
+          employeeId: 'emp-1',
+          sellerCode: 'E01',
+          sellerName: 'Marina',
+          channel: 'Mesa 1',
+          notes: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          status: 'COMPLETED',
+          totalRevenue: 120,
+          totalCost: 60,
+          totalProfit: 60,
+          originalTotalRevenue: 120,
+          originalTotalCost: 60,
+          originalTotalProfit: 60,
+          totalItems: 2,
+          createdAt: '2026-03-28T10:00:00.000Z',
+          updatedAt: '2026-03-28T10:30:00.000Z',
+          cancelledAt: null,
+          items: [
+            {
+              id: 'oi-1',
+              productId: 'p-1',
+              productName: 'Pão de queijo',
+              category: 'Comida',
+              quantity: 2,
+              currency: 'BRL',
+              unitPrice: 60,
+              unitCost: 30,
+              lineRevenue: 120,
+              lineCost: 60,
+              lineProfit: 60,
+              originalUnitPrice: 60,
+              originalUnitCost: 30,
+              originalLineRevenue: 120,
+              originalLineCost: 60,
+              originalLineProfit: 60,
+            },
+          ],
+        },
+      ],
+      totals: {
+        completedOrders: 1,
+        cancelledOrders: 0,
+        realizedRevenue: 120,
+        realizedProfit: 60,
+        soldUnits: 2,
+      },
+    })
 
     testQueryClient.setQueryData(['operations', 'live', 'compact'], snapshot)
     testQueryClient.setQueryData(['operations', 'kitchen'], {

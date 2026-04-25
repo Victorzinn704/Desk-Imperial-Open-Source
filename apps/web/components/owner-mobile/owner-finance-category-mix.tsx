@@ -12,7 +12,7 @@ export function OwnerFinanceCategoryMix({
   displayCurrency: FinanceSummaryResponse['displayCurrency']
   financeSummary?: FinanceSummaryResponse
 }>) {
-  const finance = financeSummary ?? buildFallbackFinance(categoryBreakdown, displayCurrency)
+  const finance = buildMobileMixFinance(financeSummary ?? buildFallbackFinance(categoryBreakdown, displayCurrency))
 
   if (finance.categoryBreakdown.length === 0) {
     return null
@@ -24,6 +24,17 @@ export function OwnerFinanceCategoryMix({
       title="Registro de fluxo por categoria"
     />
   )
+}
+
+function buildMobileMixFinance(finance: FinanceSummaryResponse): FinanceSummaryResponse {
+  const categoryBreakdown = finance.salesCategoryBreakdown?.length
+    ? finance.salesCategoryBreakdown
+    : finance.categoryBreakdown
+
+  return {
+    ...finance,
+    categoryBreakdown,
+  }
 }
 
 function buildFallbackFinance(

@@ -161,6 +161,10 @@ export function buildDesignLabFinanceiroHref(tab: DesignLabFinanceiroTabId = 'mo
   return buildDesignLabHref('financeiro', { tab })
 }
 
+export function buildDesignLabCozinhaKioskHref() {
+  return '/design-lab/cozinha/kiosk'
+}
+
 export function buildDesignLabPdvHref({
   comandaId,
   mesaId,

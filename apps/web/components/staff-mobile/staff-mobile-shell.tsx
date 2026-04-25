@@ -12,7 +12,7 @@ import {
   type ComandaStatus,
   type Mesa,
 } from '@/components/pdv/pdv-types'
-import type { OperationsLiveResponse } from '@contracts/contracts'
+import type { OperationsLiveResponse, OrderRecord } from '@contracts/contracts'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { ConnectionBanner } from '@/components/shared/connection-banner'
 import { usePullToRefresh } from '@/components/shared/use-pull-to-refresh'
@@ -39,6 +39,7 @@ import {
   createComandaPayment,
   fetchOperationsKitchen,
   fetchOperationsLive,
+  fetchOrders,
   fetchProducts,
   logout,
   openCashSession,
@@ -75,7 +76,6 @@ import {
   setOptimisticComandaStatus,
 } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
-
 function realtimeStatusColor(status: string): string {
   if (status === 'connected') {
     return '#34f27f'
@@ -99,6 +99,11 @@ interface StaffMobileShellProps {
   currentUser: { name?: string; fullName?: string; employeeId?: string | null } | null
 }
 
+type StaffMobileQueryScope = Readonly<{
+  activeTab: Tab
+  pendingAction: PendingAction | null
+}>
+
 function toApiItemPayload(item: ComandaItem) {
   const isManual = item.produtoId.startsWith('manual-')
   return {
@@ -120,6 +125,43 @@ function isNetworkError(error: unknown): boolean {
   return false
 }
 
+function orderToHistoricComanda(order: OrderRecord): Comanda {
+  const subtotal = order.items.reduce((sum, item) => sum + item.lineRevenue, 0)
+  const total = order.totalRevenue
+
+  return {
+    id: order.comandaId ?? order.id,
+    status: order.status === 'CANCELLED' ? 'cancelada' : 'fechada',
+    mesa: order.channel ?? 'Venda',
+    clienteNome: order.customerName ?? undefined,
+    clienteDocumento: order.buyerDocument ?? undefined,
+    garcomId: order.employeeId ?? undefined,
+    garcomNome: order.sellerName ?? order.sellerCode ?? undefined,
+    itens: order.items.map((item) => ({
+      produtoId: item.productId ?? item.id,
+      nome: item.productName,
+      quantidade: item.quantity,
+      precoUnitario: item.unitPrice,
+    })),
+    desconto: 0,
+    acrescimo: 0,
+    abertaEm: new Date(order.createdAt),
+    subtotalBackend: subtotal > 0 ? subtotal : total,
+    totalBackend: total,
+  }
+}
+
+function buildStaffQueryEnablement(enabled: boolean, scope: StaffMobileQueryScope) {
+  const isOrderFlowActive = scope.activeTab === 'pedido' || Boolean(scope.pendingAction)
+
+  return {
+    kitchen: enabled && (scope.activeTab === 'cozinha' || isOrderFlowActive),
+    operations: enabled,
+    ordersHistory: enabled && scope.activeTab === 'historico',
+    products: enabled && isOrderFlowActive,
+  }
+}
+
 export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -131,6 +173,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const { status: realtimeStatus } = useOperationsRealtime(Boolean(currentUser), queryClient)
   const { enqueue, drainQueue } = useOfflineQueue()
   const isOffline = realtimeStatus === 'disconnected'
+  const queryEnablement = buildStaffQueryEnablement(Boolean(currentUser), { activeTab, pendingAction })
 
   // Executor reutilizado pelos dois canais de drain (SW + fallback)
   const runDrain = useCallback(() => {
@@ -186,6 +229,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ['staff-orders-history'] }),
     ])
   }, [queryClient])
 
@@ -199,7 +243,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const operationsQuery = useQuery({
     queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
-    enabled: Boolean(currentUser),
+    enabled: queryEnablement.operations,
     placeholderData: keepPreviousData,
     // staleTime alinhado ao TTL do cache do backend (20s).
     // Socket.IO cuida de invalidar em qualquer mutação real.
@@ -211,7 +255,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const kitchenQuery = useQuery({
     queryKey: OPERATIONS_KITCHEN_QUERY_KEY,
     queryFn: () => fetchOperationsKitchen(),
-    enabled: Boolean(currentUser),
+    enabled: queryEnablement.kitchen,
     placeholderData: keepPreviousData,
     staleTime: 20_000,
     refetchOnWindowFocus: false,
@@ -221,10 +265,20 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
   const productsQuery = useQuery({
     queryKey: ['products'],
     queryFn: () => fetchProducts(),
-    enabled: Boolean(currentUser),
+    enabled: queryEnablement.products,
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+  })
+
+  const ordersHistoryQuery = useQuery({
+    queryKey: ['staff-orders-history', currentUser?.employeeId ?? 'none'],
+    queryFn: () => fetchOrders({ includeCancelled: true, includeItems: true, limit: 50 }),
+    enabled: Boolean(currentUser?.employeeId) && queryEnablement.ordersHistory,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   })
 
   const operationsLoading = operationsQuery.isLoading && !operationsQuery.data
@@ -465,10 +519,17 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       return []
     }
 
+    const orders = ordersHistoryQuery.data?.items ?? []
+    if (orders.length > 0) {
+      return orders
+        .filter((order) => order.employeeId === currentUser.employeeId)
+        .map(orderToHistoricComanda)
+    }
+
     return comandas.filter(
       (comanda) => comanda.garcomId === currentUser.employeeId && isEndedComandaStatus(comanda.status),
     )
-  }, [comandas, currentUser?.employeeId])
+  }, [comandas, currentUser?.employeeId, ordersHistoryQuery.data?.items])
   const displayName = currentUser?.fullName ?? currentUser?.name ?? 'Funcionário'
   const performerKpis = useMemo(
     () => buildPerformerKpis(operationsQuery.data, currentUser?.employeeId ?? null),
@@ -896,7 +957,7 @@ export function StaffMobileShell({ currentUser }: StaffMobileShellProps) {
       </main>
 
       <nav
-        className="shrink-0 bg-[var(--bg)] px-1 pb-1 pt-1 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
+        className="relative z-50 shrink-0 bg-[var(--bg)] px-1 pb-1 pt-1 shadow-[0_-8px_24px_rgba(0,0,0,0.6)] sm:px-2 sm:pb-2 sm:pt-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
       >
         <div className="relative grid min-h-[4.25rem] grid-cols-4 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">

@@ -15,6 +15,7 @@ import {
   buildCategoryCollections,
   buildRecentOrders,
   buildRevenueTimeline,
+  buildSalesCategoryBreakdown,
   buildSalesByChannel,
   buildSalesMap,
   buildTopCustomers,
@@ -196,6 +197,7 @@ export class FinanceService {
       customerOrders,
       employeeOrders,
       geographyOrders,
+      categorySalesOrders,
     ] = await Promise.all([
       this.prisma.product.findMany({
         where: { userId: params.workspaceUserId, active: true },
@@ -263,6 +265,22 @@ export class FinanceService {
         where: { userId: params.workspaceUserId, status: OrderStatus.COMPLETED, buyerLatitude: { not: null } },
         _count: { _all: true },
         _sum: { totalRevenue: true, totalProfit: true },
+      }),
+      this.prisma.orderItem.groupBy({
+        by: ['category', 'currency'],
+        where: {
+          order: {
+            userId: params.workspaceUserId,
+            status: OrderStatus.COMPLETED,
+          },
+        },
+        _count: { _all: true },
+        _sum: {
+          quantity: true,
+          lineRevenue: true,
+          lineCost: true,
+          lineProfit: true,
+        },
       }),
     ])
 
@@ -376,6 +394,11 @@ export class FinanceService {
       totals.inventoryCostValue > 0 ? roundPercent((totals.potentialProfit / totals.inventoryCostValue) * 100) : 0
 
     const { categoryBreakdown, categoryTopProducts } = buildCategoryCollections(records)
+    const salesCategoryBreakdown = buildSalesCategoryBreakdown(categorySalesOrders, {
+      currencyService: this.currencyService,
+      displayCurrency,
+      snapshot,
+    })
 
     const result: FinanceSummaryResponse = {
       displayCurrency,
@@ -384,6 +407,7 @@ export class FinanceService {
       ratesNotice: snapshot.notice,
       totals,
       categoryBreakdown,
+      salesCategoryBreakdown,
       categoryTopProducts,
       topProducts: buildTopProducts(records),
       recentOrders: buildRecentOrders(recentOrders, {

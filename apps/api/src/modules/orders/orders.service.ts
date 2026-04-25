@@ -114,7 +114,8 @@ export class OrdersService {
     const limit = query.limit ?? 10
     const includeCancelled = query.includeCancelled ?? false
     const includeItems = query.includeItems ?? false
-    const cacheKey = this.buildOrdersCacheKey(workspaceUserId, includeCancelled, limit, includeItems)
+    const employeeScope = auth.role === 'STAFF' ? auth.employeeId : null
+    const cacheKey = this.buildOrdersCacheKey(workspaceUserId, employeeScope, includeCancelled, limit, includeItems)
 
     const cached = await this.cache.get<{
       items: ReturnType<typeof toOrderRecord>[]
@@ -133,6 +134,7 @@ export class OrdersService {
     const snapshot = await this.currencyService.getSnapshot()
     const where = {
       userId: workspaceUserId,
+      ...(employeeScope ? { employeeId: employeeScope } : {}),
       ...(includeCancelled ? {} : { status: OrderStatus.COMPLETED }),
     }
 
@@ -148,6 +150,7 @@ export class OrdersService {
       this.prisma.order.aggregate({
         where: {
           userId: workspaceUserId,
+          ...(employeeScope ? { employeeId: employeeScope } : {}),
           status: OrderStatus.COMPLETED,
         },
         _count: true,
@@ -160,6 +163,7 @@ export class OrdersService {
       this.prisma.order.count({
         where: {
           userId: workspaceUserId,
+          ...(employeeScope ? { employeeId: employeeScope } : {}),
           status: OrderStatus.CANCELLED,
         },
       }),
@@ -167,6 +171,7 @@ export class OrdersService {
         where: {
           order: {
             userId: workspaceUserId,
+            ...(employeeScope ? { employeeId: employeeScope } : {}),
             status: OrderStatus.COMPLETED,
           },
         },
@@ -218,11 +223,13 @@ export class OrdersService {
 
   private buildOrdersCacheKey(
     workspaceUserId: string,
+    employeeScope: string | null,
     includeCancelled: boolean,
     limit: number,
     includeItems: boolean,
   ) {
-    return `${CacheService.ordersKey(workspaceUserId)}:${includeCancelled ? 'cancelled' : 'completed'}:${includeItems ? 'full' : 'summary'}:${limit}`
+    const scope = employeeScope ? `employee:${employeeScope}` : 'workspace'
+    return `${CacheService.ordersKey(workspaceUserId)}:${scope}:${includeCancelled ? 'cancelled' : 'completed'}:${includeItems ? 'full' : 'summary'}:${limit}`
   }
 
   async createForUser(auth: AuthContext, dto: CreateOrderDto, context: RequestContext, request: Request) {

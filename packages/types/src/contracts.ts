@@ -245,6 +245,7 @@ export const financeSummaryResponseSchema = z.object({
     lowStockItems: z.number(),
   }),
   categoryBreakdown: z.array(financeCategoryBreakdownSchema),
+  salesCategoryBreakdown: z.array(financeCategoryBreakdownSchema).optional(),
   topProducts: z.array(financeTopProductSchema),
   recentOrders: z.array(financeRecentOrderSchema),
   revenueTimeline: z.array(financeRevenueTimelineSchema),

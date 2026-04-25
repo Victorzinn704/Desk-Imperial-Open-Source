@@ -35,6 +35,9 @@ const mockPrisma = {
     findMany: jest.fn(),
     groupBy: jest.fn(),
   },
+  orderItem: {
+    groupBy: jest.fn(),
+  },
 }
 
 const mockCurrencyService = {
@@ -258,6 +261,7 @@ beforeEach(() => {
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
   mockCurrencyService.convert.mockImplementation((value: number) => value) // Pass-through para BRL
   mockCache.financeKey.mockReturnValue('finance:summary:user-1')
+  mockPrisma.orderItem.groupBy.mockResolvedValue([])
 })
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
