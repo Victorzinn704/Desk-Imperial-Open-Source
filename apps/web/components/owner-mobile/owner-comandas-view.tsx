@@ -18,6 +18,7 @@ export function OwnerComandasView({
   isBusy = false,
   isLoading = false,
   isOffline = false,
+  onAddItems,
   onCloseComanda,
 }: OwnerComandasViewProps) {
   const controller = useOwnerComandasController(comandas, focusedId)
@@ -30,6 +31,7 @@ export function OwnerComandasView({
       isBusy={isBusy}
       isLoading={isLoading}
       isOffline={isOffline}
+      onAddItems={onAddItems}
       onCloseComanda={onCloseComanda}
     />
   )
@@ -42,6 +44,7 @@ function OwnerComandasViewLayout({
   isBusy,
   isLoading,
   isOffline,
+  onAddItems,
   onCloseComanda,
 }: {
   controller: ReturnType<typeof useOwnerComandasController>
@@ -50,6 +53,7 @@ function OwnerComandasViewLayout({
   isBusy: boolean
   isLoading: boolean
   isOffline: boolean
+  onAddItems: OwnerComandasViewProps['onAddItems']
   onCloseComanda: OwnerComandasViewProps['onCloseComanda']
 }) {
   return (
@@ -62,6 +66,7 @@ function OwnerComandasViewLayout({
         isBusy={isBusy}
         isLoading={isLoading}
         isOffline={isOffline}
+        onAddItems={onAddItems}
         onCloseComanda={onCloseComanda}
       />
     </div>
@@ -111,6 +116,7 @@ function OwnerComandasViewContent({
   isBusy,
   isLoading,
   isOffline,
+  onAddItems,
   onCloseComanda,
 }: {
   controller: ReturnType<typeof useOwnerComandasController>
@@ -119,6 +125,7 @@ function OwnerComandasViewContent({
   isBusy: boolean
   isLoading: boolean
   isOffline: boolean
+  onAddItems: OwnerComandasViewProps['onAddItems']
   onCloseComanda: OwnerComandasViewProps['onCloseComanda']
 }) {
   return (
@@ -129,6 +136,7 @@ function OwnerComandasViewContent({
           defaultOpen={comanda.id === focusedId}
           isBusy={isBusy}
           key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
+          onAddItems={onAddItems}
           onCloseComanda={onCloseComanda}
         />
       ))}

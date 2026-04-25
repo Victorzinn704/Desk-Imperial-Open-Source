@@ -98,7 +98,7 @@ describe('OwnerMobileShell', () => {
           comandas: [
             {
               id: 'c-1',
-              status: 'CLOSED',
+              status: 'OPEN',
               tableLabel: '1',
               totalAmount: 120,
               openedAt: '2026-03-28T10:00:00.000Z',
@@ -665,12 +665,19 @@ describe('OwnerMobileShell', () => {
     expect(await screen.findByText(/O PDV pode estar desatualizado até a reconexão/i)).toBeInTheDocument()
   })
 
-  it('retoma a comanda de uma mesa ocupada direto no PDV', async () => {
+  it('abre primeiro a comanda ao tocar em uma mesa ocupada e só depois edita itens', async () => {
     const user = userEvent.setup()
 
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
     await user.click(screen.getByTestId('nav-pdv'))
     await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-comanda-card-c-1')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('nav-comandas')).toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: /editar \/ adicionar itens/i }))
 
     await waitFor(() => {
       expect(screen.getByText('Retomar pedido')).toBeInTheDocument()

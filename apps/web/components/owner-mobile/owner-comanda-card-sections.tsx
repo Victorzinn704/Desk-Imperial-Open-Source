@@ -1,5 +1,6 @@
 'use client'
 
+import { Edit2 } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
@@ -13,6 +14,7 @@ type OwnerComandaCardBodyProps = {
   isBusy: boolean
   isLoadingDetails: boolean
   itemCount: number
+  onAddItems?: (comanda: Comanda) => void
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
   subtotal: number
   total: number
@@ -28,6 +30,7 @@ export function OwnerComandaCardBody({
   isBusy,
   isLoadingDetails,
   itemCount,
+  onAddItems,
   onCloseComanda,
   subtotal,
   total,
@@ -35,6 +38,12 @@ export function OwnerComandaCardBody({
   return (
     <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
       <OwnerComandaCardSummaryGrid activeComanda={activeComanda} itemCount={itemCount} />
+      <OwnerComandaCardPrimaryActions
+        activeComanda={activeComanda}
+        canClose={canClose}
+        isBusy={isBusy}
+        onAddItems={onAddItems}
+      />
       {canClose && onCloseComanda ? (
         <OwnerComandaCardCloseAction
           acrescimoVal={acrescimoVal}
@@ -58,6 +67,35 @@ export function OwnerComandaCardBody({
         total={total}
       />
     </div>
+  )
+}
+
+function OwnerComandaCardPrimaryActions({
+  activeComanda,
+  canClose,
+  isBusy,
+  onAddItems,
+}: {
+  activeComanda: Comanda
+  canClose: boolean
+  isBusy: boolean
+  onAddItems?: (comanda: Comanda) => void
+}) {
+  if (!canClose || !onAddItems) {
+    return null
+  }
+
+  return (
+    <button
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition active:scale-[0.98] disabled:opacity-50"
+      disabled={isBusy}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+      type="button"
+      onClick={() => onAddItems(activeComanda)}
+    >
+      <Edit2 className="size-4" />
+      Editar / adicionar itens
+    </button>
   )
 }
 

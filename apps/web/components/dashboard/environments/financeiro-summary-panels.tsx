@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import {
   LabFactPill,
   LAB_NUMERIC_COMPACT_CLASS,
@@ -114,9 +114,11 @@ export function FinanceiroAuthState({ view }: Readonly<{ view: FinanceiroView }>
 
 export function FinanceiroLabSummary({
   finance,
+  products = [],
   snapshot,
 }: Readonly<{
   finance: FinanceSummaryResponse | undefined
+  products?: ProductRecord[]
   snapshot: FinanceSnapshot
 }>) {
   if (snapshot.view !== 'movimentacao') {
@@ -125,7 +127,7 @@ export function FinanceiroLabSummary({
 
   return (
     <div className="space-y-5">
-      {finance ? <FinanceOverviewTotal finance={finance} isLoading={false} /> : null}
+      {finance ? <FinanceOverviewTotal finance={finance} isLoading={false} products={products} /> : null}
       <FinanceRadarPanel finance={finance} snapshot={snapshot} />
     </div>
   )

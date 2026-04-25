@@ -17,6 +17,7 @@ export const STATUS_MAP: Record<string, { label: string; color: string; bg: stri
 export type OwnerComandasViewProps = Readonly<{
   comandas: Comanda[]
   focusedId?: string | null
+  onAddItems?: (comanda: Comanda) => void
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
   isLoading?: boolean
   isOffline?: boolean

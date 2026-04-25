@@ -9,6 +9,7 @@ export function OwnerFinanceView({
   categoryBreakdown = [],
   displayCurrency = 'BRL',
   errorMessage,
+  financeSummary,
   isOffline,
   lucroRealizado,
   onOpenCash,
@@ -27,7 +28,11 @@ export function OwnerFinanceView({
         todayOrderCount={todayOrderCount}
         todayRevenue={todayRevenue}
       />
-      <OwnerFinanceCategoryMix categoryBreakdown={categoryBreakdown} displayCurrency={displayCurrency} />
+      <OwnerFinanceCategoryMix
+        categoryBreakdown={categoryBreakdown}
+        displayCurrency={displayCurrency}
+        financeSummary={financeSummary}
+      />
       <OwnerFinanceActions onOpenCash={onOpenCash} onOpenFinanceiro={onOpenFinanceiro} />
     </div>
   )

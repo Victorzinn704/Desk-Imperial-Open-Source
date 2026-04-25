@@ -1,12 +1,13 @@
 'use client'
 
-import { BarChart3, ClipboardList, Cog, ShoppingCart, TrendingUp } from 'lucide-react'
+import { BarChart3, ClipboardList, Cog, Landmark, ShoppingCart, TrendingUp } from 'lucide-react'
 import type { OwnerMobileTab, PendingAction } from './owner-mobile-shell-types'
 
 const NAV_ITEMS = [
   { id: 'today', label: 'Hoje', Icon: BarChart3 },
   { id: 'comandas', label: 'Comandas', Icon: ClipboardList },
   { id: 'pdv', label: 'PDV', Icon: ShoppingCart },
+  { id: 'caixa', label: 'Caixa', Icon: Landmark },
   { id: 'financeiro', label: 'Financeiro', Icon: TrendingUp },
   { id: 'conta', label: 'Conta', Icon: Cog },
 ] as const
@@ -90,7 +91,7 @@ export function OwnerMobileShellBottomNav({
       style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom,0px))' }}
     >
       <nav className="pointer-events-auto rounded-[1.8rem] bg-[var(--bg)] shadow-[0_-8px_24px_rgba(0,0,0,0.6)]">
-        <div className="relative grid min-h-[4.25rem] grid-cols-5 gap-1 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
+        <div className="relative grid min-h-[4.25rem] grid-cols-6 gap-0.5 rounded-[1.6rem] border border-[var(--border)] bg-[var(--surface-muted)] p-1">
           {NAV_ITEMS.map((item) => (
             <OwnerMobileShellNavButton
               activeComandasCount={activeComandasCount}

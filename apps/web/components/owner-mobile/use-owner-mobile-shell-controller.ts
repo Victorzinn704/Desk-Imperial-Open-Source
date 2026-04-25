@@ -137,7 +137,7 @@ async function submitNewComanda(
   await mutateAsync(payload)
 }
 
-const OWNER_TABS = new Set<OwnerMobileTab>(['today', 'comandas', 'pdv', 'financeiro', 'conta'])
+const OWNER_TABS = new Set<OwnerMobileTab>(['today', 'comandas', 'pdv', 'caixa', 'financeiro', 'conta'])
 
 function resolveOwnerTab(value: string | null): OwnerMobileTab {
   return value && OWNER_TABS.has(value as OwnerMobileTab) ? (value as OwnerMobileTab) : 'today'
@@ -222,7 +222,11 @@ export function useOwnerMobileShellController(currentUser: OwnerCurrentUser | nu
   const initialTab = resolveOwnerTab(tabParam)
   const shellState = useOwnerMobileShellState(initialTab)
   const realtime = useRealtimeRefresh(Boolean(currentUser), queryClient)
-  const queries = useOwnerMobileShellQueries(currentUser)
+  const queries = useOwnerMobileShellQueries(currentUser, {
+    activeTab: shellState.activeTab,
+    pdvView: shellState.pdvView,
+    pendingAction: shellState.pendingAction,
+  })
   const mutations = useOwnerMobileShellMutations(queryClient, router)
   const metrics = useOwnerMetrics(queries)
   const handleSubmit = useOwnerHandleSubmit({ ...shellState, mutations, queryClient })

@@ -3,6 +3,7 @@ import {
   ChefHat,
   ClipboardList,
   Crown,
+  Landmark,
   type LucideIcon,
   Package,
   ShoppingCart,
@@ -26,6 +27,7 @@ export type OwnerTodayViewProps = Readonly<{
   mesasLivres: number
   mesasOcupadas: number
   onOpenComandas: () => void
+  onOpenCash: () => void
   onOpenFullDashboard: () => void
   onOpenKitchen: () => void
   onOpenPdv: () => void
@@ -204,10 +206,14 @@ export function buildOwnerTodayKpis({
 
 export function buildOwnerTodayActions({
   onOpenComandas,
+  onOpenCash,
   onOpenKitchen,
   onOpenPdv,
   onOpenQuickRegister,
-}: Pick<OwnerTodayViewProps, 'onOpenComandas' | 'onOpenKitchen' | 'onOpenPdv' | 'onOpenQuickRegister'>): TodayAction[] {
+}: Pick<
+  OwnerTodayViewProps,
+  'onOpenCash' | 'onOpenComandas' | 'onOpenKitchen' | 'onOpenPdv' | 'onOpenQuickRegister'
+>): TodayAction[] {
   return [
     {
       label: 'Abrir PDV',
@@ -215,6 +221,13 @@ export function buildOwnerTodayActions({
       onClick: onOpenPdv,
       icon: ShoppingCart,
       accent: '#008cff',
+    },
+    {
+      label: 'Caixa do turno',
+      sub: 'abrir e conferir caixa rápido',
+      onClick: onOpenCash,
+      icon: Landmark,
+      accent: '#36f57c',
     },
     {
       label: 'Comandas',
@@ -235,7 +248,7 @@ export function buildOwnerTodayActions({
       sub: 'scan de EAN e inclusão no catálogo',
       onClick: onOpenQuickRegister,
       icon: Package,
-      accent: '#36f57c',
+      accent: '#60a5fa',
     },
   ]
 }

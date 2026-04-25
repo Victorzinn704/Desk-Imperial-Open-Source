@@ -14,6 +14,7 @@ type OwnerComandaCardProps = {
   comanda: Comanda
   defaultOpen?: boolean
   isBusy?: boolean
+  onAddItems?: (comanda: Comanda) => void
   onCloseComanda?: (id: string, discountAmount: number, serviceFeeAmount: number) => Promise<unknown> | void
 }
 
@@ -21,6 +22,7 @@ export function OwnerComandaCard({
   comanda,
   defaultOpen = false,
   isBusy = false,
+  onAddItems,
   onCloseComanda,
 }: OwnerComandaCardProps) {
   const [open, setOpen] = useState(defaultOpen)
@@ -61,6 +63,7 @@ export function OwnerComandaCard({
           itemCount={derived.itemCount}
           subtotal={derived.subtotal}
           total={derived.total}
+          onAddItems={onAddItems}
           onCloseComanda={onCloseComanda}
         />
       ) : null}

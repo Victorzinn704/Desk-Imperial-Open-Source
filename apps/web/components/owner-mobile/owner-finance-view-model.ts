@@ -7,6 +7,7 @@ export type OwnerFinanceViewProps = Readonly<{
   categoryBreakdown?: FinanceSummaryResponse['categoryBreakdown']
   displayCurrency?: FinanceSummaryResponse['displayCurrency']
   errorMessage: string | null
+  financeSummary?: FinanceSummaryResponse
   isOffline: boolean
   lucroRealizado: number
   onOpenCash: () => void

@@ -119,7 +119,10 @@ function OwnerTodayHeroGrid({ isLoading, kpis }: { isLoading: boolean; kpis: Ret
 }
 
 export function OwnerTodayActions(
-  props: Pick<OwnerTodayViewProps, 'onOpenComandas' | 'onOpenKitchen' | 'onOpenPdv' | 'onOpenQuickRegister'>,
+  props: Pick<
+    OwnerTodayViewProps,
+    'onOpenCash' | 'onOpenComandas' | 'onOpenKitchen' | 'onOpenPdv' | 'onOpenQuickRegister'
+  >,
 ) {
   const actions = buildOwnerTodayActions(props)
 

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-navigation'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { OwnerAccountView } from './owner-account-view'
+import { OwnerCashView } from './owner-cash-view'
 import { OwnerFinanceView } from './owner-finance-view'
 import { buildOwnerMobileFullLabHref } from './owner-mobile-links'
 import { OwnerPdvTab } from './owner-mobile-pdv-tab'
@@ -51,6 +52,11 @@ function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShell
         controller.setPendingAction(null)
         controller.setActiveTab('comandas')
       }}
+      onOpenCash={() => {
+        controller.setFocusedComandaId(null)
+        controller.setPendingAction(null)
+        controller.setActiveTab('caixa')
+      }}
       onOpenFullDashboard={() => openFullLabSurface(FULL_DASHBOARD_HREF)}
       onOpenKitchen={() => {
         controller.setPendingAction(null)
@@ -90,14 +96,9 @@ function OwnerPdvPanel({ controller }: Readonly<{ controller: OwnerMobileShellCo
       onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
       onSelectMesa={(mesa) => {
         if (mesa.status === 'ocupada' && mesa.comandaId) {
-          controller.setPendingAction({
-            type: 'add',
-            comandaId: mesa.comandaId,
-            mesaLabel: normalizeTableLabel(mesa.numero),
-          })
-          controller.setFocusedComandaId(null)
-          controller.setPdvView('mesas')
-          controller.setActiveTab('pdv')
+          controller.setPendingAction(null)
+          controller.setFocusedComandaId(mesa.comandaId)
+          controller.setActiveTab('comandas')
           return
         }
 
@@ -121,9 +122,32 @@ function OwnerComandasPanel({ controller }: Readonly<{ controller: OwnerMobileSh
       isBusy={controller.isBusy}
       isLoading={controller.operationsLoading}
       isOffline={controller.isOffline}
+      onAddItems={(comanda) => {
+        controller.setPendingAction({
+          type: 'add',
+          comandaId: comanda.id,
+          mesaLabel: comanda.mesa ? normalizeTableLabel(comanda.mesa) : 'Comanda',
+        })
+        controller.setPdvView('mesas')
+        controller.setActiveTab('pdv')
+      }}
       onCloseComanda={(comandaId, discountAmount, serviceFeeAmount) =>
         controller.closeComandaMutation.mutateAsync({ comandaId, discountAmount, serviceFeeAmount })
       }
+    />
+  )
+}
+
+function OwnerCashPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
+  return (
+    <OwnerCashView
+      data={controller.operationsQuery.data}
+      errorMessage={controller.operationsErrorMessage}
+      isBusy={controller.openCashSessionMutation.isPending}
+      isLoading={controller.operationsLoading}
+      isOffline={controller.isOffline}
+      onOpenCash={() => controller.openCashSessionMutation.mutate(0)}
+      onOpenFullCash={() => openFullLabSurface(FULL_CASH_HREF)}
     />
   )
 }
@@ -135,6 +159,7 @@ function OwnerFinancePanel({ controller }: Readonly<{ controller: OwnerMobileShe
       categoryBreakdown={controller.financeQuery.data?.categoryBreakdown ?? []}
       displayCurrency={controller.financeQuery.data?.displayCurrency ?? 'BRL'}
       errorMessage={controller.financeErrorMessage}
+      financeSummary={controller.financeQuery.data}
       isOffline={controller.isOffline}
       lucroRealizado={controller.executiveKpis.lucroRealizado}
       ticketMedio={controller.ticketMedio}
@@ -170,6 +195,9 @@ export function OwnerMobileShellContent({ controller }: OwnerMobileShellContentP
   }
   if (controller.activeTab === 'comandas') {
     return <OwnerComandasPanel controller={controller} />
+  }
+  if (controller.activeTab === 'caixa') {
+    return <OwnerCashPanel controller={controller} />
   }
   if (controller.activeTab === 'financeiro') {
     return <OwnerFinancePanel controller={controller} />

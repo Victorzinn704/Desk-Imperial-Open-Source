@@ -33,6 +33,7 @@ export function OwnerTodayView(props: OwnerTodayViewProps) {
       />
       <OwnerTodayFootballWidget />
       <OwnerTodayActions
+        onOpenCash={props.onOpenCash}
         onOpenComandas={props.onOpenComandas}
         onOpenKitchen={props.onOpenKitchen}
         onOpenPdv={props.onOpenPdv}

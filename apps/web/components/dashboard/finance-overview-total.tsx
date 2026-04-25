@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { TrendingDown, TrendingUp } from 'lucide-react'
-import type { FinanceSummaryResponse } from '@contracts/contracts'
+import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts'
 import {
   LAB_NUMERIC_COMPACT_CLASS,
   LAB_NUMERIC_HERO_CLASS,
@@ -11,11 +11,12 @@ import {
 import { formatCurrency } from '@/lib/currency'
 import { CardSkeleton } from '@/components/shared/skeleton'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
-import { buildFinanceCategoryMixRows, type FinanceCategoryMixRow } from './finance-category-mix'
+import { FinanceCategoryFlowPanel } from './finance-category-flow-panel'
 
 type Props = {
   finance: FinanceSummaryResponse
   isLoading?: boolean
+  products?: ProductRecord[]
 }
 
 function AnimatedValue({ value, currency }: { value: number; currency: FinanceSummaryResponse['displayCurrency'] }) {
@@ -53,10 +54,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
   )
 }
 
-export function FinanceOverviewTotal({ finance, isLoading }: Props) {
-  const { categoryBreakdown, displayCurrency } = finance
-  const topCategories = buildFinanceCategoryMixRows(categoryBreakdown, 4)
-
+export function FinanceOverviewTotal({ finance, isLoading, products = [] }: Props) {
   if (isLoading) {
     return <CardSkeleton rows={1} />
   }
@@ -65,8 +63,7 @@ export function FinanceOverviewTotal({ finance, isLoading }: Props) {
     <div className="imperial-card p-6 sm:p-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.95fr)] xl:items-start">
         <FinanceOverviewPrimary finance={finance} />
-
-        <FinanceOverviewCategoryMixPanel categories={topCategories} displayCurrency={displayCurrency} />
+        <FinanceCategoryFlowPanel finance={finance} products={products} />
       </div>
     </div>
   )
@@ -158,81 +155,6 @@ function MetricTile({ label, value }: { label: string; value: string }) {
     <div className="bg-[var(--surface-soft)] px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-soft)]">{label}</p>
       <p className={`mt-1 text-[var(--text-primary)] ${LAB_NUMERIC_COMPACT_CLASS}`}>{value}</p>
-    </div>
-  )
-}
-
-function FinanceOverviewCategoryMixPanel({
-  categories,
-  displayCurrency,
-}: {
-  categories: FinanceCategoryMixRow[]
-  displayCurrency: FinanceSummaryResponse['displayCurrency']
-}) {
-  return (
-    <div className="space-y-4 xl:border-l xl:border-[var(--border)] xl:pl-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mix por categoria</p>
-          <p className="mt-1 text-sm text-[var(--text-primary)]">Peso comercial do período</p>
-        </div>
-        <span className="text-xs text-[var(--text-soft)]">{categories.length || 0} faixas</span>
-      </div>
-
-      {categories.length > 0 ? (
-        <div className="space-y-3">
-          {categories.map((category) => (
-            <CategoryShareRow
-              category={category.category}
-              color={category.color}
-              currency={displayCurrency}
-              key={category.category}
-              share={category.share}
-              value={category.inventorySalesValue}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-[16px] border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-soft)]">
-          O mix por categoria aparece quando houver leitura comercial suficiente no período.
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CategoryShareRow({
-  category,
-  color,
-  share,
-  value,
-  currency,
-}: {
-  category: string
-  color: string
-  share: number
-  value: number
-  currency: FinanceSummaryResponse['displayCurrency']
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="size-2 shrink-0 rounded-full" style={{ background: color }} />
-          <span className="truncate text-[var(--text-primary)]">{category}</span>
-        </span>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="text-[var(--text-soft)]">{share.toFixed(1)}%</span>
-          <span className="font-medium text-[var(--text-primary)]">{formatCurrency(value, currency)}</span>
-        </div>
-      </div>
-
-      <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-soft)]">
-        <div
-          className="h-full rounded-full"
-          style={{ background: color, width: `${Math.max(10, Math.min(share, 100))}%` }}
-        />
-      </div>
     </div>
   )
 }

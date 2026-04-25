@@ -4,7 +4,15 @@ import { type QueryClient, useMutation } from '@tanstack/react-query'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { toast } from 'sonner'
 import { haptic } from '@/components/shared/haptic'
-import { addComandaItem, addComandaItems, closeComanda, logout, openComanda, updateComandaStatus } from '@/lib/api'
+import {
+  addComandaItem,
+  addComandaItems,
+  closeComanda,
+  logout,
+  openCashSession,
+  openComanda,
+  updateComandaStatus,
+} from '@/lib/api'
 import {
   appendOptimisticComandaItem,
   appendOptimisticComandaMutation,
@@ -174,12 +182,31 @@ function useCloseComandaMutation(queryClient: QueryClient) {
   })
 }
 
+function useOpenCashSessionMutation(queryClient: QueryClient) {
+  return useMutation({
+    mutationFn: (openingCashAmount: number) =>
+      openCashSession({ openingCashAmount }, { includeSnapshot: false }),
+    onSuccess: () => {
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeSummary: true,
+      })
+      toast.success('Caixa aberto')
+      haptic.success()
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Erro ao abrir caixa')
+      haptic.error()
+    },
+  })
+}
+
 export function useOwnerMobileShellMutations(queryClient: QueryClient, router: RouterLike) {
   return {
     addComandaItemMutation: useAddComandaItemMutation(queryClient),
     addComandaItemsMutation: useAddComandaItemsMutation(queryClient),
     closeComandaMutation: useCloseComandaMutation(queryClient),
     logoutMutation: useLogoutMutation(queryClient, router),
+    openCashSessionMutation: useOpenCashSessionMutation(queryClient),
     openComandaMutation: useOpenComandaMutation(queryClient),
     updateComandaStatusMutation: useUpdateComandaStatusMutation(queryClient),
   }

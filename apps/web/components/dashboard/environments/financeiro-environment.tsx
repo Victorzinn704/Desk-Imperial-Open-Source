@@ -31,7 +31,9 @@ export function FinanceiroEnvironment({
     <section className="space-y-5">
       <FinanceiroHeader snapshot={snapshot} />
 
-      {!financeError && surface === 'lab' ? <FinanceiroLabSummary finance={finance} snapshot={snapshot} /> : null}
+      {!financeError && surface === 'lab' ? (
+        <FinanceiroLabSummary finance={finance} products={products} snapshot={snapshot} />
+      ) : null}
 
       {financeError ? (
         <LabPanel padding="md">

@@ -22,6 +22,7 @@ describe('OwnerTodayView', () => {
         todayOrderCount={9}
         todayRevenue={405}
         topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
+        onOpenCash={() => undefined}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={onOpenKitchen}
@@ -60,6 +61,7 @@ describe('OwnerTodayView', () => {
         todayOrderCount={0}
         todayRevenue={0}
         topProdutos={[]}
+        onOpenCash={() => undefined}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={() => undefined}
@@ -96,6 +98,7 @@ describe('OwnerTodayView', () => {
         todayOrderCount={9}
         todayRevenue={405}
         topProdutos={[{ nome: 'Cerveja 600', qtd: 8, valor: 240 }]}
+        onOpenCash={() => undefined}
         onOpenComandas={() => undefined}
         onOpenFullDashboard={() => undefined}
         onOpenKitchen={() => undefined}

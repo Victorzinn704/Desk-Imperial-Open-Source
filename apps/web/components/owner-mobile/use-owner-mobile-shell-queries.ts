@@ -1,7 +1,7 @@
 'use client'
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import type { OwnerCurrentUser } from './owner-mobile-shell-types'
+import type { OwnerCurrentUser, OwnerMobileTab, OwnerPdvView, PendingAction } from './owner-mobile-shell-types'
 import {
   fetchFinanceSummary,
   fetchOperationsKitchen,
@@ -31,6 +31,12 @@ function useOwnerOperationsQuery(enabled: boolean) {
     refetchOnReconnect: true,
   })
 }
+
+type OwnerMobileShellQueryScope = Readonly<{
+  activeTab: OwnerMobileTab
+  pdvView: OwnerPdvView
+  pendingAction: PendingAction | null
+}>
 
 function useOwnerProductsQuery(enabled: boolean) {
   return useQuery({
@@ -90,14 +96,27 @@ function useOwnerFinanceQuery(enabled: boolean) {
   })
 }
 
-export function useOwnerMobileShellQueries(currentUser: OwnerCurrentUser | null) {
+function buildOwnerQueryEnablement(enabled: boolean, scope: OwnerMobileShellQueryScope) {
+  const isPdvActive = scope.activeTab === 'pdv'
+  return {
+    finance: enabled && scope.activeTab === 'financeiro',
+    kitchen: enabled && isPdvActive && scope.pdvView === 'cozinha',
+    operations: enabled,
+    orders: enabled && scope.activeTab === 'today',
+    products: enabled && (isPdvActive || Boolean(scope.pendingAction)),
+    summary: enabled && scope.activeTab === 'today',
+  }
+}
+
+export function useOwnerMobileShellQueries(currentUser: OwnerCurrentUser | null, scope: OwnerMobileShellQueryScope) {
   const enabled = Boolean(currentUser)
-  const operationsQuery = useOwnerOperationsQuery(enabled)
-  const productsQuery = useOwnerProductsQuery(enabled)
-  const ordersQuery = useOwnerOrdersQuery(enabled)
-  const kitchenQuery = useOwnerKitchenQuery(enabled)
-  const summaryQuery = useOwnerSummaryQuery(enabled)
-  const financeQuery = useOwnerFinanceQuery(enabled)
+  const queryEnablement = buildOwnerQueryEnablement(enabled, scope)
+  const operationsQuery = useOwnerOperationsQuery(queryEnablement.operations)
+  const productsQuery = useOwnerProductsQuery(queryEnablement.products)
+  const ordersQuery = useOwnerOrdersQuery(queryEnablement.orders)
+  const kitchenQuery = useOwnerKitchenQuery(queryEnablement.kitchen)
+  const summaryQuery = useOwnerSummaryQuery(queryEnablement.summary)
+  const financeQuery = useOwnerFinanceQuery(queryEnablement.finance)
 
   return {
     financeQuery,
