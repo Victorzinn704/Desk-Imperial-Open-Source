@@ -55,6 +55,7 @@ import {
   resolveBusinessDate,
   toNumberOrZero,
 } from './operations-domain.utils'
+import { prepareComandaDraftFields } from './comanda-draft-fields.utils'
 import type {
   AddComandaItemDto,
   AddComandaItemsBatchDto,
@@ -258,31 +259,19 @@ export class ComandaService {
   ) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
-    const tableLabel = sanitizePlainText(dto.tableLabel, 'Mesa', {
-      allowEmpty: false,
-      rejectFormula: true,
-    })!
-    const customerName = sanitizePlainText(dto.customerName, 'Nome do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const customerDocument = sanitizePlainText(dto.customerDocument, 'Documento do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const participantCount = dto.participantCount ?? 1
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
-    const discountAmount = roundCurrency(dto.discountAmount ?? 0)
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? 0)
-    assertMonetaryAdjustmentsWithinSubtotal(calculateDraftItemsSubtotal(draftItems), discountAmount, serviceFeeAmount)
-
-    if (participantCount < 1) {
-      throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
-    }
+    const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
+      prepareComandaDraftFields({
+        customerDocument: dto.customerDocument,
+        customerName: dto.customerName,
+        discountAmount: dto.discountAmount,
+        fallbackParticipantCount: 1,
+        notes: dto.notes,
+        participantCount: dto.participantCount,
+        serviceFeeAmount: dto.serviceFeeAmount,
+        subtotal: calculateDraftItemsSubtotal(draftItems),
+        tableLabel: dto.tableLabel,
+      })
 
     const operationalBusinessDate = resolveBusinessDate()
     const sessionContext = await resolveComandaSessionContext(
@@ -716,31 +705,21 @@ export class ComandaService {
       throw new ConflictException('Nao e possivel editar uma comanda encerrada ou cancelada.')
     }
 
-    const tableLabel = sanitizePlainText(dto.tableLabel, 'Mesa', {
-      allowEmpty: false,
-      rejectFormula: true,
-    })!
-    const customerName = sanitizePlainText(dto.customerName, 'Nome do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const customerDocument = sanitizePlainText(dto.customerDocument, 'Documento do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const participantCount = dto.participantCount ?? comanda.participantCount
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
-    assertMonetaryAdjustmentsWithinSubtotal(calculateDraftItemsSubtotal(draftItems), discountAmount, serviceFeeAmount)
-
-    if (participantCount < 1) {
-      throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
-    }
+    const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
+      prepareComandaDraftFields({
+        customerDocument: dto.customerDocument,
+        customerName: dto.customerName,
+        discountAmount: dto.discountAmount,
+        fallbackDiscountAmount: toNumberOrZero(comanda.discountAmount),
+        fallbackParticipantCount: comanda.participantCount,
+        fallbackServiceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+        notes: dto.notes,
+        participantCount: dto.participantCount,
+        serviceFeeAmount: dto.serviceFeeAmount,
+        subtotal: calculateDraftItemsSubtotal(draftItems),
+        tableLabel: dto.tableLabel,
+      })
 
     const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId, comanda.id)
     const resolvedMesaId = mesaSelection.mesaId

@@ -78,6 +78,10 @@ describe('ComandaService branch happy paths', () => {
         updateMany: jest.fn(),
         create: jest.fn(),
       },
+      comandaPayment: {
+        aggregate: jest.fn(),
+        create: jest.fn(),
+      },
       cashSession: {
         findFirst: jest.fn(),
       },
@@ -92,6 +96,7 @@ describe('ComandaService branch happy paths', () => {
       comanda: typeof prisma.comanda
       comandaItem: typeof prisma.comandaItem
       comandaAssignment: typeof prisma.comandaAssignment
+      comandaPayment: typeof prisma.comandaPayment
     }
 
     prisma.$transaction.mockImplementation(async (callback: (tx: TransactionClient) => Promise<unknown>) =>
@@ -100,6 +105,7 @@ describe('ComandaService branch happy paths', () => {
         comanda: prisma.comanda,
         comandaItem: prisma.comandaItem,
         comandaAssignment: prisma.comandaAssignment,
+        comandaPayment: prisma.comandaPayment,
       }),
     )
 
@@ -542,11 +548,36 @@ describe('ComandaService branch happy paths', () => {
     const { service, prisma, helpers, realtime, cache, finance } = createSetup()
     helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda())
     helpers.recalculateComanda.mockResolvedValue(makeComanda({ totalAmount: 120 }))
+    prisma.comandaPayment.aggregate.mockResolvedValue({
+      _sum: {
+        amount: 0,
+      },
+    })
+    prisma.comandaPayment.create.mockResolvedValue({
+      id: 'payment-1',
+      amount: 120,
+      status: 'CONFIRMED',
+    })
     prisma.comanda.update.mockResolvedValue(
       makeComanda({
         status: ComandaStatus.CLOSED,
         totalAmount: 120,
         closedAt: new Date('2026-04-01T11:00:00.000Z'),
+      }),
+    )
+    prisma.comanda.findUnique.mockResolvedValue(
+      makeComanda({
+        status: ComandaStatus.CLOSED,
+        totalAmount: 120,
+        closedAt: new Date('2026-04-01T11:00:00.000Z'),
+        payments: [
+          {
+            id: 'payment-1',
+            amount: 120,
+            status: 'CONFIRMED',
+            paidAt: new Date('2026-04-01T11:00:00.000Z'),
+          },
+        ],
       }),
     )
     helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
