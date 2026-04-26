@@ -1,4 +1,5 @@
 import { resolveBrazilianPackagedBeverageVisual } from './brazilian-packaged-beverage-catalog'
+import { curatedPackagedBeveragePhotos } from './curated-packaged-beverage-photos'
 
 type ProductVisualInput = {
   name: string
@@ -72,11 +73,13 @@ function resolveCuratedBeveragePhoto(product: ProductVisualInput): ProductVisual
   const haystack = normalizeVisualText(
     `${product.name} ${product.brand ?? ''} ${product.category ?? ''} ${product.packagingClass ?? ''}`,
   )
-  if (!looksLikeBeerOrCombo(haystack)) {
+  if (!looksLikePackagedBeverage(haystack)) {
     return null
   }
 
-  const match = curatedBeveragePhotos.find((entry) => entry.keywords.some((keyword) => haystack.includes(keyword)))
+  const match = curatedPackagedBeveragePhotos.find((entry) =>
+    entry.keywords.some((keyword) => haystack.includes(normalizeVisualText(keyword))),
+  )
   if (!match) {
     return null
   }
@@ -88,37 +91,24 @@ function resolveCuratedBeveragePhoto(product: ProductVisualInput): ProductVisual
   }
 }
 
-const curatedBeveragePhotos = [
-  {
-    keywords: ['budweiser', 'bud'],
-    src: 'https://images.pexels.com/photos/16655780/pexels-photo-16655780.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    keywords: ['corona'],
-    src: 'https://images.pexels.com/photos/1089932/pexels-photo-1089932.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    keywords: ['heineken'],
-    src: 'https://images.pexels.com/photos/11098951/pexels-photo-11098951.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    keywords: ['stella artois', 'stella'],
-    src: 'https://images.pexels.com/photos/12940650/pexels-photo-12940650.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    keywords: ['skol'],
-    src: 'https://images.pexels.com/photos/19733808/pexels-photo-19733808.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    keywords: ['spaten'],
-    src: 'https://images.pexels.com/photos/30325819/pexels-photo-30325819.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-] as const
-
-function looksLikeBeerOrCombo(haystack: string) {
-  return ['cerveja', 'beer', 'chopp', 'long neck', 'litrao', 'litrão', 'combo', 'petisco'].some((keyword) =>
-    haystack.includes(normalizeVisualText(keyword)),
-  )
+function looksLikePackagedBeverage(haystack: string) {
+  return [
+    'cerveja',
+    'beer',
+    'chopp',
+    'long neck',
+    'litrao',
+    'litrão',
+    'refrigerante',
+    'agua',
+    'água',
+    'suco',
+    'energetico',
+    'energético',
+    'bebida',
+    'lata',
+    'garrafa',
+  ].some((keyword) => haystack.includes(normalizeVisualText(keyword)))
 }
 
 export function buildProductInitials(name: string) {

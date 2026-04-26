@@ -113,7 +113,7 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.source).toBe('curated-beverage-photo')
   })
 
   it('usa packshot local para Guaravita sem foto real', () => {
@@ -157,6 +157,38 @@ describe('resolveProductVisual', () => {
     })
 
     expect(visual?.source).toBe('curated-beverage-photo')
+    expect(visual?.src).toContain('images.pexels.com')
+  })
+
+  it('usa foto curada para Coca-Cola sem foto real', () => {
+    const visual = resolveProductVisual({
+      name: 'Coca-Cola Lata',
+      brand: 'Coca-Cola',
+      category: 'Refrigerantes',
+      packagingClass: 'Lata 350ml',
+      quantityLabel: '350ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('curated-beverage-photo')
+    expect(visual?.alt).toBe('Foto de Coca-Cola Lata')
+    expect(visual?.src).toContain('images.pexels.com')
+  })
+
+  it('usa foto curada para Guarana Antarctica sem foto real', () => {
+    const visual = resolveProductVisual({
+      name: 'Guaraná Antarctica Lata',
+      brand: 'Guaraná Antarctica',
+      category: 'Refrigerantes',
+      packagingClass: 'Lata 350ml',
+      quantityLabel: '350ml',
+      imageUrl: null,
+      isCombo: false,
+    })
+
+    expect(visual?.source).toBe('curated-beverage-photo')
+    expect(visual?.alt).toBe('Foto de Guaraná Antarctica Lata')
     expect(visual?.src).toContain('images.pexels.com')
   })
 

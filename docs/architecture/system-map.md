@@ -183,6 +183,7 @@ Document --> Spec : JSON gerado e commitado
 - fluxos operacionais: `docs/operations/flows.md`
 - realtime: `docs/architecture/realtime.md`
 - autenticacao e sessao: `docs/architecture/authentication-flow.md`
+- notificacoes externas: `docs/architecture/outbound-notifications.md`
 - contratos compartilhados: `packages/types/README.md`
 - artefato OpenAPI: `packages/api-contract/README.md`
 
