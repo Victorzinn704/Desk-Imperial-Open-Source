@@ -207,6 +207,71 @@ export class ComandaService {
     return comanda
   }
 
+  private async syncComandaCashState(
+    transaction: Prisma.TransactionClient,
+    workspaceOwnerUserId: string,
+    comanda: Parameters<OperationsHelpersService['resolveComandaBusinessDate']>[1] & {
+      cashSessionId?: string | null
+    },
+  ) {
+    const businessDate = await this.helpers.resolveComandaBusinessDate(transaction, comanda)
+    const refreshedSession = comanda.cashSessionId
+      ? await this.helpers.recalculateCashSession(transaction, comanda.cashSessionId)
+      : null
+    const closure = await this.helpers.syncCashClosure(transaction, workspaceOwnerUserId, businessDate)
+
+    return {
+      businessDate,
+      closure,
+      refreshedSession,
+    }
+  }
+
+  private async settleRemainingComandaBalance(
+    transaction: Prisma.TransactionClient,
+    workspaceOwnerUserId: string,
+    comanda: {
+      cashSessionId?: string | null
+      currentEmployeeId?: string | null
+      id: string
+      totalAmount: Prisma.Decimal | number | null
+    },
+    actorUserId: string,
+    paymentMethod: ComandaPaymentMethod,
+    actorEmployeeId?: string | null,
+  ) {
+    const confirmedPayments = await transaction.comandaPayment.aggregate({
+      where: {
+        comandaId: comanda.id,
+        status: ComandaPaymentStatus.CONFIRMED,
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+    const paidAmount = roundCurrency(toNumberOrZero(confirmedPayments._sum.amount))
+    const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(comanda.totalAmount) - paidAmount))
+
+    if (remainingAmount <= 0) {
+      return remainingAmount
+    }
+
+    await transaction.comandaPayment.create({
+      data: {
+        companyOwnerId: workspaceOwnerUserId,
+        comandaId: comanda.id,
+        cashSessionId: comanda.cashSessionId ?? null,
+        employeeId: comanda.currentEmployeeId ?? actorEmployeeId ?? null,
+        createdByUserId: actorUserId,
+        method: paymentMethod,
+        amount: remainingAmount,
+        note: 'Pagamento final da comanda',
+      },
+    })
+
+    return remainingAmount
+  }
+
   async getComandaDetails(auth: AuthContext, comandaId: string) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
 
@@ -1023,7 +1088,6 @@ export class ComandaService {
       rejectFormula: false,
     })
 
-    const helpers = this.helpers
     const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
       async (transaction) => {
         await transaction.comandaPayment.create({
@@ -1040,17 +1104,17 @@ export class ComandaService {
         })
 
         const updatedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
-        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
-        const updatedSession = updatedComanda.cashSessionId
-          ? await helpers.recalculateCashSession(transaction, updatedComanda.cashSessionId)
-          : null
-        const closureSnapshot = await helpers.syncCashClosure(transaction, workspaceOwnerUserId, resolvedBusinessDate)
+        const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
+          transaction,
+          workspaceOwnerUserId,
+          updatedComanda,
+        )
 
         return {
           refreshedComanda: updatedComanda,
-          refreshedSession: updatedSession,
-          closure: closureSnapshot,
-          businessDate: resolvedBusinessDate,
+          refreshedSession,
+          closure,
+          businessDate,
         }
       },
       {
@@ -1231,39 +1295,25 @@ export class ComandaService {
       serviceFeeAmount,
     )
 
-    const helpers = this.helpers
     const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
       async (transaction) => {
-        const recalculatedComanda = await helpers.recalculateComanda(transaction, comanda.id, {
+        const recalculatedComanda = await this.helpers.recalculateComanda(transaction, comanda.id, {
           discountAmount,
           serviceFeeAmount,
         })
-        const confirmedPayments = await transaction.comandaPayment.aggregate({
-          where: {
-            comandaId: comanda.id,
-            status: ComandaPaymentStatus.CONFIRMED,
+        await this.settleRemainingComandaBalance(
+          transaction,
+          workspaceOwnerUserId,
+          {
+            cashSessionId: comanda.cashSessionId,
+            currentEmployeeId: comanda.currentEmployeeId,
+            id: comanda.id,
+            totalAmount: recalculatedComanda.totalAmount,
           },
-          _sum: {
-            amount: true,
-          },
-        })
-        const paidAmount = roundCurrency(toNumberOrZero(confirmedPayments._sum.amount))
-        const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(recalculatedComanda.totalAmount) - paidAmount))
-
-        if (remainingAmount > 0) {
-          await transaction.comandaPayment.create({
-            data: {
-              companyOwnerId: workspaceOwnerUserId,
-              comandaId: comanda.id,
-              cashSessionId: comanda.cashSessionId,
-              employeeId: comanda.currentEmployeeId ?? actorEmployee?.id ?? null,
-              createdByUserId: auth.userId,
-              method: dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
-              amount: remainingAmount,
-              note: 'Pagamento final da comanda',
-            },
-          })
-        }
+          auth.userId,
+          dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
+          actorEmployee?.id ?? null,
+        )
 
         await transaction.comanda.update({
           where: { id: comanda.id },
@@ -1276,19 +1326,18 @@ export class ComandaService {
         })
         const closedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
 
-        await helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
-
-        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, closedComanda)
-        const updatedSession = closedComanda.cashSessionId
-          ? await helpers.recalculateCashSession(transaction, closedComanda.cashSessionId)
-          : null
-        const closureSnapshot = await helpers.syncCashClosure(transaction, workspaceOwnerUserId, resolvedBusinessDate)
+        await this.helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
+        const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
+          transaction,
+          workspaceOwnerUserId,
+          closedComanda,
+        )
 
         return {
           refreshedComanda: closedComanda,
-          refreshedSession: updatedSession,
-          closure: closureSnapshot,
-          businessDate: resolvedBusinessDate,
+          refreshedSession,
+          closure,
+          businessDate,
         }
       },
     )
