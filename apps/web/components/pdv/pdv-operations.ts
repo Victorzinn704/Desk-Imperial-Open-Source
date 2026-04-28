@@ -1,10 +1,22 @@
 import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
-import { calcSubtotal, isEndedComandaStatus, type Comanda, type Garcom, type Mesa } from './pdv-types'
+import { calcSubtotal, type Comanda, type Garcom, isEndedComandaStatus, type Mesa } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
 
 export const DEFAULT_TABLE_LABELS = [...Array.from({ length: 12 }, (_, index) => String(index + 1)), 'VIP']
+
+const pdvComandasCache = new WeakMap<OperationsLiveResponse, Comanda[]>()
+const pdvMesasCache = new WeakMap<OperationsLiveResponse, Mesa[]>()
+const pdvGarconsCache = new WeakMap<OperationsLiveResponse, Garcom[]>()
+const employeeMapsCache = new WeakMap<
+  OperationsLiveResponse,
+  { empMap: Map<string, string>; comandaOwnerName: Map<string, string> }
+>()
+
+function hasEmployeeId<T extends { employeeId?: string | null }>(employee: T): employee is T & { employeeId: string } {
+  return typeof employee.employeeId === 'string' && employee.employeeId.length > 0
+}
 
 function collectOperationGroups(snapshot: OperationsLiveResponse | undefined) {
   if (!snapshot) {
@@ -22,7 +34,12 @@ export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): 
     return []
   }
 
-  return collectOperationGroups(snapshot)
+  const cached = pdvComandasCache.get(snapshot)
+  if (cached) {
+    return cached
+  }
+
+  const comandas = collectOperationGroups(snapshot)
     .flatMap((group) =>
       group.comandas.map((c) => ({
         ...toPdvComanda(c),
@@ -31,6 +48,9 @@ export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): 
       })),
     )
     .sort((left, right) => right.abertaEm.getTime() - left.abertaEm.getTime())
+
+  pdvComandasCache.set(snapshot, comandas)
+  return comandas
 }
 
 export function toPdvComanda(comanda: ComandaRecord): Comanda {
@@ -75,16 +95,31 @@ export function buildPdvGarcons(snapshot: OperationsLiveResponse | undefined): G
     return []
   }
 
-  return collectOperationGroups(snapshot)
-    .filter((employee) => employee.employeeId)
+  const cached = pdvGarconsCache.get(snapshot)
+  if (cached) {
+    return cached
+  }
+
+  const garcons = collectOperationGroups(snapshot)
+    .filter(hasEmployeeId)
     .map((employee, index) => ({
-      id: employee.employeeId!,
+      id: employee.employeeId,
       nome: employee.displayName,
       cor: GARCOM_CORES[index % GARCOM_CORES.length],
     }))
+
+  pdvGarconsCache.set(snapshot, garcons)
+  return garcons
 }
 
 function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
+  if (snapshot) {
+    const cached = employeeMapsCache.get(snapshot)
+    if (cached) {
+      return cached
+    }
+  }
+
   const empMap = new Map<string, string>()
   const comandaOwnerName = new Map<string, string>()
 
@@ -104,7 +139,9 @@ function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
     }
   }
 
-  return { empMap, comandaOwnerName }
+  const maps = { empMap, comandaOwnerName }
+  employeeMapsCache.set(snapshot, maps)
+  return maps
 }
 
 function resolveGarcomNome(
@@ -143,10 +180,21 @@ function buildMesasFromComandas(
 }
 
 export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mesa[] {
+  if (snapshot) {
+    const cached = pdvMesasCache.get(snapshot)
+    if (cached) {
+      return cached
+    }
+  }
+
   const { empMap, comandaOwnerName } = buildEmployeeMaps(snapshot)
 
   if (!snapshot?.mesas?.length) {
-    return buildMesasFromComandas(snapshot, empMap, comandaOwnerName)
+    const mesas = buildMesasFromComandas(snapshot, empMap, comandaOwnerName)
+    if (snapshot) {
+      pdvMesasCache.set(snapshot, mesas)
+    }
+    return mesas
   }
 
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
@@ -157,7 +205,7 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
     }
   }
 
-  return snapshot.mesas
+  const mesas = snapshot.mesas
     .filter((mesa) => mesa.active)
     .map((mesa) => {
       const matchedComanda = comandaByTable.get(normalizeTableLabel(mesa.label))
@@ -173,6 +221,9 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
         garcomNome: resolveGarcomNome(empMap, comandaOwnerName, gId, matchedComanda),
       }
     })
+
+  pdvMesasCache.set(snapshot, mesas)
+  return mesas
 }
 
 export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada' | 'cancelada'>) {

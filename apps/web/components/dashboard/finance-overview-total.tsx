@@ -9,6 +9,7 @@ import {
   LAB_RESPONSIVE_FOUR_UP_GRID,
 } from '@/components/design-lab/lab-primitives'
 import { formatCurrency } from '@/lib/currency'
+import { useLowPerformanceMode } from '@/hooks/use-performance'
 import { CardSkeleton } from '@/components/shared/skeleton'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
 import { FinanceCategoryFlowPanel } from './finance-category-flow-panel'
@@ -20,10 +21,18 @@ type Props = {
 }
 
 function AnimatedValue({ value, currency }: { value: number; currency: FinanceSummaryResponse['displayCurrency'] }) {
+  const isLowPerformance = useLowPerformanceMode()
   const [displayed, setDisplayed] = useState(0)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
+    if (isLowPerformance) {
+      rafRef.current = requestAnimationFrame(() => {
+        setDisplayed(value)
+      })
+      return
+    }
+
     const duration = 900
     const start = performance.now()
     const from = 0
@@ -45,7 +54,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
         cancelAnimationFrame(rafRef.current)
       }
     }
-  }, [value])
+  }, [isLowPerformance, value])
 
   return (
     <span className={`inline-flex text-[var(--text-primary)] ${LAB_NUMERIC_HERO_CLASS}`}>
