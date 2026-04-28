@@ -248,14 +248,14 @@ describe('MobileOrderBuilder', () => {
         mesaLabel="21"
         mode="new"
         produtos={[makeProduct({ id: 'beer-1', category: 'Cerveja', name: 'Pilsen' })]}
-        onCancel={vi.fn()}
-        onSubmit={vi.fn()}
         secondaryAction={{ label: 'Cadastro rápido', onClick: onSecondaryAction }}
         summaryItems={[
           { label: 'Mesa', value: '21', tone: '#008cff' },
           { label: 'Livres', value: '4', tone: '#36f57c' },
           { label: 'Na fila', value: '2', tone: '#eab308' },
         ]}
+        onCancel={vi.fn()}
+        onSubmit={vi.fn()}
       />,
     )
 

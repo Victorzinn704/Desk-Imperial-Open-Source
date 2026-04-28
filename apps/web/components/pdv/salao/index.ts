@@ -11,6 +11,7 @@ export {
   type SalaoView,
   type FilterStatus,
 } from './constants'
+export { buildSalaoStats, matchesMesaFilter } from './helpers'
 
 // Hooks
 export { useUrgencyTick } from './hooks/use-urgency-tick'
@@ -23,3 +24,9 @@ export { FilterChip, type FilterChipProps } from './components/filter-chip'
 export { ViewBtn, type ViewBtnProps } from './components/view-btn'
 export { MesaCard, type MesaCardProps } from './components/mesa-card'
 export { MesaCompact, type MesaCompactProps } from './components/mesa-compact'
+export { GarcomStrip } from './components/garcom-strip'
+export { SalaoToolbar } from './components/salao-toolbar'
+export { SalaoContent } from './components/salao-content'
+export { SalaoInstructions } from './components/salao-instructions'
+export { SalaoBoardView } from './components/salao-view'
+export { EquipeView } from './components/equipe-view'

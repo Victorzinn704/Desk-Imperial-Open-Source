@@ -43,7 +43,7 @@ export default function LitePwaPage() {
           color: 'var(--lab-blue)',
         }}
       >
-        Dica: abra o menu do navegador e escolha "Instalar app" para usar a versao PWA Lite.
+        Dica: abra o menu do navegador e escolha &quot;Instalar app&quot; para usar a versao PWA Lite.
       </div>
 
       <LitePdvKanban mode="pwa" title="PDV Lite - PWA" />
