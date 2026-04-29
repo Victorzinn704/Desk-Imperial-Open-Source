@@ -37,6 +37,7 @@
     "quality:warnings:strict": "node ./scripts/quality-warning-map.mjs --fail-on-alert",
     "quality:preflight": "node ./scripts/quality-preflight.mjs",
     "quality:preflight:full": "node ./scripts/quality-preflight.mjs --full",
+    "quality:tooling:baseline": "node ./scripts/quality-tooling-baseline.mjs",
     "verify:owner-pwa": "npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-shell.test.tsx components/owner-mobile/owner-today-view.test.tsx components/owner-mobile/owner-comandas-view.test.tsx components/owner-mobile/owner-finance-view.test.tsx components/owner-mobile/owner-account-view.test.tsx components/owner-mobile/owner-mobile-pdv-tab.test.tsx components/owner-mobile/owner-quick-register-view.test.tsx components/staff-mobile/mobile-order-builder.test.tsx",
     "verify:current-phase": "npm run quality:scope && npm run quality:contracts && npm run test:critical && npm run verify:owner-pwa && npm run typecheck && npm --workspace @partner/api run build:verify && npm --workspace @partner/web run build",
     "verify:current-phase:strict": "npm run quality:preflight && npm run verify:current-phase",

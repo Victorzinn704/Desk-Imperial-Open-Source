@@ -25,7 +25,7 @@ export function LabShell({ children }: Readonly<{ children: React.ReactNode }>) 
       {model.mobileOpen ? (
         <button
           aria-label="Fechar menu"
-          className="fixed inset-0 z-40 bg-black/60 xl:hidden"
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           type="button"
           onClick={() => model.setMobileOpen(false)}
         />

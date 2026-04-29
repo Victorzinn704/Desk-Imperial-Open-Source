@@ -41,7 +41,7 @@ export function LabShellTopbar({
       <div className="lab-topbar__left">
         <button
           aria-label="Abrir menu"
-          className="lab-icon-btn xl:hidden"
+          className="lab-icon-btn lg:hidden"
           type="button"
           onClick={() => setMobileOpen(true)}
         >

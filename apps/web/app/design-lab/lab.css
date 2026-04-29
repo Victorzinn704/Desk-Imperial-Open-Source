@@ -957,12 +957,33 @@
 
 /* ─── Responsive helpers ──────────────────────────────────────────────────────── */
 @media (max-width: 1280px) {
+  [data-lab].lab-dark,
+  [data-lab].lab-light {
+    --lab-sidebar-w: 220px;
+    --lab-sidebar-w-collapsed: 60px;
+  }
+
   .lab-content {
     padding: 16px;
   }
 
   .lab-account-chip__text {
     display: none;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .lab-topbar {
+    gap: 12px;
+    padding: 0 16px;
+  }
+
+  .lab-topbar__right {
+    gap: 4px;
+  }
+
+  .lab-content {
+    padding: 14px;
   }
 }
 

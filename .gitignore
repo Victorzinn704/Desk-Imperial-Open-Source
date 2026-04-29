@@ -106,6 +106,7 @@ CON
 .netlify
 .aider*
 .scannerwork/
+.fallow/
 .local-tools/
 
 # ─── WIP / design drafts ────────────────────────────────────────────────────

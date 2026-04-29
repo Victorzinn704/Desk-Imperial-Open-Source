@@ -40,16 +40,16 @@ export function LabShellSidebar({
       className={cn(
         'lab-sidebar flex h-full flex-col transition-all duration-300',
         collapsed ? 'lab-sidebar--collapsed' : 'lab-sidebar--expanded',
-        'fixed xl:relative',
-        'z-50 xl:z-auto',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0',
+        'fixed lg:relative',
+        'z-50 lg:z-auto',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
       )}
     >
       <div className="lab-sidebar__header">
         <BrandMark href="/design-lab/overview" presentation="lab" wordmark={collapsed ? 'hidden' : 'always'} />
         {!collapsed ? (
           <button
-            className="lab-icon-btn hidden xl:flex"
+            className="lab-icon-btn hidden lg:flex"
             title="Recolher"
             type="button"
             onClick={() => setCollapsed(true)}
@@ -58,7 +58,7 @@ export function LabShellSidebar({
           </button>
         ) : (
           <button
-            className="lab-icon-btn hidden xl:flex"
+            className="lab-icon-btn hidden lg:flex"
             title="Expandir"
             type="button"
             onClick={() => setCollapsed(false)}
@@ -68,7 +68,7 @@ export function LabShellSidebar({
         )}
         <button
           aria-label="Fechar"
-          className="lab-icon-btn xl:hidden"
+          className="lab-icon-btn lg:hidden"
           type="button"
           onClick={() => setMobileOpen(false)}
         >
