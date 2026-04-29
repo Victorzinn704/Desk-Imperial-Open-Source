@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { usePathname, useRouter } from 'next/navigation'
@@ -72,6 +72,18 @@ export function useLabShellModel() {
     }
   }, [])
 
+  const toggleNavigation = useCallback(() => {
+    const isDesktopShell = typeof viewportWidth === 'number' && viewportWidth >= 1024
+
+    if (isDesktopShell) {
+      setCollapsed((current) => !current)
+      setMobileOpen(false)
+      return
+    }
+
+    setMobileOpen((current) => !current)
+  }, [viewportWidth])
+
   return useMemo(
     () => ({
       accountInitials,
@@ -92,6 +104,7 @@ export function useLabShellModel() {
       setMobileOpen,
       setTheme,
       shouldRedirectToMobileShell,
+      toggleNavigation,
     }),
     [
       accountInitials,
@@ -110,6 +123,7 @@ export function useLabShellModel() {
       pathname,
       setTheme,
       shouldRedirectToMobileShell,
+      toggleNavigation,
     ],
   )
 }

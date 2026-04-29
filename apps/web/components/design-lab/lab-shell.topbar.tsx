@@ -16,8 +16,8 @@ type LabShellTopbarProps = Readonly<{
   isDark: boolean
   isLoggingOut: boolean
   logout: () => void
-  setMobileOpen: (value: boolean) => void
   setTheme: (theme: string) => void
+  toggleNavigation: () => void
 }>
 
 // eslint-disable-next-line max-lines-per-function
@@ -33,18 +33,13 @@ export function LabShellTopbar({
   isDark,
   isLoggingOut,
   logout,
-  setMobileOpen,
   setTheme,
+  toggleNavigation,
 }: LabShellTopbarProps) {
   return (
     <header className="lab-topbar">
       <div className="lab-topbar__left">
-        <button
-          aria-label="Abrir menu"
-          className="lab-icon-btn lg:hidden"
-          type="button"
-          onClick={() => setMobileOpen(true)}
-        >
+        <button aria-label="Alternar menu" className="lab-icon-btn" type="button" onClick={toggleNavigation}>
           <Menu className="size-5" />
         </button>
         <div className="lab-topbar__context">

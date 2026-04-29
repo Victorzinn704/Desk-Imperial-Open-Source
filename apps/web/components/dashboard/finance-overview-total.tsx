@@ -11,8 +11,9 @@ import {
 import { formatCurrency } from '@/lib/currency'
 import { useLowPerformanceMode } from '@/hooks/use-performance'
 import { CardSkeleton } from '@/components/shared/skeleton'
+import { FinanceCategoryStructureChart } from './finance-category-structure-chart'
 import { FinanceDoughnutChart } from './finance-doughnut-chart'
-import { FinanceCategoryFlowPanel } from './finance-category-flow-panel'
+import { FinanceCategoryFlowPanel, type FinanceCategoryFlowTab } from './finance-category-flow-panel'
 
 type Props = {
   finance: FinanceSummaryResponse
@@ -64,6 +65,9 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
 }
 
 export function FinanceOverviewTotal({ finance, isLoading, products = [] }: Props) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<FinanceCategoryFlowTab>('products')
+
   if (isLoading) {
     return <CardSkeleton rows={1} />
   }
@@ -73,38 +77,74 @@ export function FinanceOverviewTotal({ finance, isLoading, products = [] }: Prop
   return (
     <div className="imperial-card p-6 sm:p-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.95fr)] xl:items-start">
-        <FinanceOverviewPrimary finance={finance} />
-        <FinanceCategoryFlowPanel finance={financeMix} products={products} />
+        <FinanceOverviewPrimary
+          activeCategory={selectedCategory}
+          finance={financeMix}
+          onSelectCategory={(category) => {
+            setSelectedCategory(category)
+            setSelectedCategoryTab('products')
+          }}
+        />
+        <FinanceCategoryFlowPanel
+          finance={financeMix}
+          products={products}
+          selectedCategory={selectedCategory}
+          selectedTab={selectedCategoryTab}
+          onSelectedCategoryChange={setSelectedCategory}
+          onSelectedTabChange={setSelectedCategoryTab}
+        />
       </div>
     </div>
   )
 }
 
-function FinanceOverviewPrimary({ finance }: { finance: FinanceSummaryResponse }) {
+function FinanceOverviewPrimary({
+  activeCategory,
+  finance,
+  onSelectCategory,
+}: {
+  activeCategory: string | null
+  finance: FinanceSummaryResponse
+  onSelectCategory: (category: string | null) => void
+}) {
   const { totals, categoryBreakdown, displayCurrency } = finance
   const mixBreakdown = finance.salesCategoryBreakdown?.length ? finance.salesCategoryBreakdown : categoryBreakdown
   const growth = totals.revenueGrowthPercent
   const isPositive = growth >= 0
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
-      <div className="flex justify-center pt-1 lg:justify-start">
-        <FinanceDoughnutChart categoryBreakdown={mixBreakdown} displayCurrency={displayCurrency} />
+    <div className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
+        <div className="flex justify-center pt-1 lg:justify-start">
+          <FinanceDoughnutChart
+            activeCategory={activeCategory}
+            categoryBreakdown={mixBreakdown}
+            displayCurrency={displayCurrency}
+            onSelectCategory={onSelectCategory}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Receita realizada total
+          </p>
+          <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
+          <FinanceOverviewDelta
+            categoryCount={mixBreakdown.length}
+            currency={displayCurrency}
+            growth={growth}
+            isPositive={isPositive}
+          />
+          <FinanceOverviewMetricStrip displayCurrency={displayCurrency} totals={totals} />
+        </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-          Receita realizada total
-        </p>
-        <AnimatedValue currency={displayCurrency} value={totals.realizedRevenue} />
-        <FinanceOverviewDelta
-          categoryCount={mixBreakdown.length}
-          currency={displayCurrency}
-          growth={growth}
-          isPositive={isPositive}
-        />
-        <FinanceOverviewMetricStrip displayCurrency={displayCurrency} totals={totals} />
-      </div>
+      <FinanceCategoryStructureChart
+        activeCategory={activeCategory}
+        categoryBreakdown={mixBreakdown}
+        displayCurrency={displayCurrency}
+        onSelectCategory={(category) => onSelectCategory(category)}
+      />
     </div>
   )
 }

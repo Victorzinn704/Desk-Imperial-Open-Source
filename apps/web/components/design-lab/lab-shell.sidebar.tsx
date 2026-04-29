@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { cn } from '@/lib/utils'
 import { LabShellAccountChip } from './lab-shell.account-chip'
@@ -17,11 +16,8 @@ type LabShellSidebarProps = Readonly<{
   mobileOpen: boolean
   navigation: readonly LabNavigationGroup[]
   pathname: string
-  setCollapsed: (value: boolean) => void
   setMobileOpen: (value: boolean) => void
 }>
-
-// eslint-disable-next-line max-lines-per-function
 export function LabShellSidebar({
   accountInitials,
   accountLabel,
@@ -32,7 +28,6 @@ export function LabShellSidebar({
   mobileOpen,
   navigation,
   pathname,
-  setCollapsed,
   setMobileOpen,
 }: LabShellSidebarProps) {
   return (
@@ -47,33 +42,6 @@ export function LabShellSidebar({
     >
       <div className="lab-sidebar__header">
         <BrandMark href="/design-lab/overview" presentation="lab" wordmark={collapsed ? 'hidden' : 'always'} />
-        {!collapsed ? (
-          <button
-            className="lab-icon-btn hidden lg:flex"
-            title="Recolher"
-            type="button"
-            onClick={() => setCollapsed(true)}
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-        ) : (
-          <button
-            className="lab-icon-btn hidden lg:flex"
-            title="Expandir"
-            type="button"
-            onClick={() => setCollapsed(false)}
-          >
-            <ChevronRight className="size-4" />
-          </button>
-        )}
-        <button
-          aria-label="Fechar"
-          className="lab-icon-btn lg:hidden"
-          type="button"
-          onClick={() => setMobileOpen(false)}
-        >
-          <X className="size-4" />
-        </button>
       </div>
 
       <nav className="lab-sidebar__nav">

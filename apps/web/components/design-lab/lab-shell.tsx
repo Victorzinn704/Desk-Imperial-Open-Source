@@ -41,7 +41,6 @@ export function LabShell({ children }: Readonly<{ children: React.ReactNode }>) 
         mobileOpen={model.mobileOpen}
         navigation={model.navigation}
         pathname={model.pathname}
-        setCollapsed={model.setCollapsed}
         setMobileOpen={model.setMobileOpen}
       />
 
@@ -58,8 +57,8 @@ export function LabShell({ children }: Readonly<{ children: React.ReactNode }>) 
           isDark={model.isDark}
           isLoggingOut={model.isLoggingOut}
           logout={model.logout}
-          setMobileOpen={model.setMobileOpen}
           setTheme={model.setTheme}
+          toggleNavigation={model.toggleNavigation}
         />
         <main className="lab-content">{children}</main>
       </div>
