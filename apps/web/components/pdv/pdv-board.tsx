@@ -1,13 +1,16 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { useEffect } from 'react'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import type { PdvMesaIntent } from './pdv-navigation-intent'
 import type { SimpleProduct } from './comanda-modal'
 import { PdvBoardError, PdvBoardHeader, PdvBoardKanban } from './pdv-board.sections'
 import { usePdvBoardController } from './use-pdv-board-controller'
 
-const LazyPdvComandaModal = dynamic(() => import('./pdv-comanda-modal').then((mod) => mod.PdvComandaModal), {
+const loadPdvComandaModal = () => import('./pdv-comanda-modal').then((mod) => mod.PdvComandaModal)
+
+const LazyPdvComandaModal = dynamic(loadPdvComandaModal, {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] px-4">
@@ -42,6 +45,30 @@ export function PdvBoard({
   products,
   variant = 'grid',
 }: Readonly<PdvBoardProps>) {
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let idleId: number | null = null
+
+    const preload = () => {
+      void loadPdvComandaModal()
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(preload, { timeout: 250 })
+    } else {
+      timeoutId = setTimeout(preload, 120)
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      if (idleId != null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId)
+      }
+    }
+  }, [])
+
   const controller = usePdvBoardController({
     mesaIntent,
     onConsumeMesaIntent,

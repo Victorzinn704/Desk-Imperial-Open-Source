@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import type { OperationsKitchenItemRecord } from '@contracts/contracts'
-import { MemoKitchenCard } from './kitchen-orders-view.card'
 import {
   BannerBox,
   KitchenEmptyError,
@@ -16,6 +15,7 @@ import {
   STATUS_CONFIG,
 } from './kitchen-orders-view.helpers'
 import type { KitchenTab } from './kitchen-orders-view.types'
+import { KitchenOrdersVirtualList } from './kitchen-orders-view.virtual-list'
 
 type KitchenStatusCounts = { IN_PREPARATION: number; QUEUED: number; READY: number }
 type KitchenSnapshot = {
@@ -307,17 +307,12 @@ function KitchenItemsList({
   onAdvance: (itemId: string, status: 'IN_PREPARATION' | 'READY' | 'DELIVERED') => void
 }>) {
   return (
-    <div className="flex flex-col gap-3">
-      {items.map((item) => (
-        <MemoKitchenCard
-          currentEmployeeId={currentEmployeeId}
-          isBusy={isPending}
-          item={item}
-          key={item.itemId}
-          onAdvance={onAdvance}
-        />
-      ))}
-    </div>
+    <KitchenOrdersVirtualList
+      currentEmployeeId={currentEmployeeId}
+      isPending={isPending}
+      items={items}
+      onAdvance={onAdvance}
+    />
   )
 }
 

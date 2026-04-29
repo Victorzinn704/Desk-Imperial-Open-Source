@@ -1,9 +1,10 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import type { OperationsKitchenResponse } from '@contracts/contracts'
 import { updateKitchenItemStatus } from '@/lib/api'
+import { useLowPerformanceMode } from '@/hooks/use-performance'
 import { buildKitchenSnapshot, buildStatusCounts } from './kitchen-orders-view.helpers'
 import type { KitchenOrdersViewProps, KitchenTab } from './kitchen-orders-view.types'
 
@@ -15,7 +16,10 @@ export function useKitchenOrdersController({
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<KitchenTab>('QUEUED')
   const [error, setError] = useState<string | null>(null)
-  const allItems = useMemo(() => data?.items ?? [], [data])
+  const isLowPerformance = useLowPerformanceMode()
+  const deferredData = useDeferredValue(data)
+  const snapshotData = isLowPerformance ? deferredData : data
+  const allItems = useMemo(() => snapshotData?.items ?? [], [snapshotData])
   const tabItems = useMemo(() => allItems.filter((item) => item.kitchenStatus === activeTab), [activeTab, allItems])
   const snapshot = useMemo(() => buildKitchenSnapshot(allItems, currentEmployeeId), [allItems, currentEmployeeId])
   const advanceMutation = useKitchenAdvanceMutation({ queryClient, queryKey, setError })
