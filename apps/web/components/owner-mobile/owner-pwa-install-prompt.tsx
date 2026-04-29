@@ -79,8 +79,8 @@ export function OwnerPwaInstallPrompt() {
 
   const label = installEvent ? 'Instalar app' : 'Adicionar à tela inicial'
   const description = installEvent
-    ? 'Use o Desk como app, com entrada direta no operacional.'
-    : 'No iPhone, toque em compartilhar e depois em Adicionar à Tela de Início.'
+    ? 'Abrir o Desk como app reduz atrito no uso diário.'
+    : 'No iPhone: Compartilhar > Adicionar à Tela de Início.'
 
   return (
     <OwnerPwaInstallPromptCard
@@ -111,16 +111,18 @@ function OwnerPwaInstallPromptCard({
       className="pointer-events-none fixed inset-x-0 z-40 px-3"
       style={{ bottom: 'calc(5.25rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      <section className="pointer-events-auto mx-auto max-w-[360px] rounded-[18px] border border-[rgba(0,140,255,0.24)] bg-[color-mix(in_srgb,var(--surface)_88%,rgba(0,140,255,0.12))] p-3 text-[var(--text-primary)] shadow-[0_14px_34px_rgba(0,0,0,0.28)] backdrop-blur">
-        <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,140,255,0.16)] text-[var(--accent,#008cff)]">
+      <section className="pointer-events-auto mx-auto max-w-[360px] rounded-[18px] border border-[rgba(0,140,255,0.2)] bg-[color-mix(in_srgb,var(--surface)_94%,rgba(0,140,255,0.08))] px-3 py-2.5 text-[var(--text-primary)] shadow-[0_10px_24px_rgba(0,0,0,0.18)] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,140,255,0.12)] text-[var(--accent,#008cff)]">
             <Download className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold">{label}</p>
-            <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{description}</p>
-            <InstallButton installEvent={installEvent} setInstallEvent={setInstallEvent} setVisible={setVisible} />
+            <p className="truncate text-[11px] font-semibold leading-5">{label}</p>
+            <p className="truncate text-[11px] leading-5 text-[var(--text-soft,#7a8896)]">{description}</p>
           </div>
+          {installEvent ? (
+            <InstallButton installEvent={installEvent} setInstallEvent={setInstallEvent} setVisible={setVisible} />
+          ) : null}
           <DismissButton setVisible={setVisible} />
         </div>
       </section>
@@ -143,11 +145,11 @@ function InstallButton({
 
   return (
     <button
-      className="mt-2 rounded-xl bg-[var(--accent,#008cff)] px-3 py-2 text-[11px] font-semibold text-white active:scale-[0.98]"
+      className="shrink-0 rounded-xl bg-[var(--accent,#008cff)] px-3 py-2 text-[11px] font-semibold text-white active:scale-[0.98]"
       type="button"
       onClick={() => void promptInstall(installEvent, setInstallEvent, setVisible)}
     >
-      Abrir como app
+      Instalar
     </button>
   )
 }

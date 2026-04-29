@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError, fetchCurrentUser } from '@/lib/api'
 import { isMobileViewport, resolveAuthenticatedRoute } from '@/lib/authenticated-route'
 import { LandingPage } from '@/components/marketing/landing-page'
+import { useClientViewportWidth } from '@/hooks/use-client-viewport-width'
 
 export function HomeRouteEntry() {
   const router = useRouter()
-  const [viewportWidth, setViewportWidth] = useState<number | null>(null)
+  const viewportWidth = useClientViewportWidth()
   const sessionQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
@@ -17,13 +18,6 @@ export function HomeRouteEntry() {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   })
-
-  useEffect(() => {
-    const syncViewport = () => setViewportWidth(window.innerWidth)
-    syncViewport()
-    window.addEventListener('resize', syncViewport)
-    return () => window.removeEventListener('resize', syncViewport)
-  }, [])
 
   const authError = sessionQuery.error instanceof ApiError ? sessionQuery.error : null
   const user = sessionQuery.data?.user
@@ -45,7 +39,9 @@ export function HomeRouteEntry() {
         <div className="flex flex-col items-center gap-4">
           <div className="size-10 animate-spin rounded-full border-2 border-[rgba(255,255,255,0.1)] border-t-[var(--accent,#008cff)]" />
           <p className="text-sm font-medium text-[#7a8896]">
-            {isMobileViewport(viewportWidth) ? 'Abrindo o app do Desk Imperial...' : 'Abrindo o painel do Desk Imperial...'}
+            {isMobileViewport(viewportWidth)
+              ? 'Abrindo o app do Desk Imperial...'
+              : 'Abrindo o painel do Desk Imperial...'}
           </p>
         </div>
       </div>
