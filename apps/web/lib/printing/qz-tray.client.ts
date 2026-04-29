@@ -5,33 +5,99 @@ import type { ThermalPrinter } from './thermal-print.types'
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 type QzTrayModule = typeof import('qz-tray')
 
+const QZ_QUEUE_PREFIX = 'qz-queue:'
+const QZ_SERIAL_PREFIX = 'qz-serial:'
+
+const DEFAULT_SERIAL_OPTIONS = {
+  baudRate: 9600,
+  dataBits: 8,
+  stopBits: 1,
+  parity: 'NONE',
+  flowControl: 'NONE',
+} as const
+
 let qzModulePromise: Promise<QzTrayModule> | null = null
 let securityConfigured = false
 
 export async function listQzTrayPrinters(): Promise<ThermalPrinter[]> {
   const qz = await ensureQzTrayConnection()
-  const [defaultPrinterName, foundPrinters] = await Promise.all([
-    qz.printers.getDefault().catch(() => ''),
+  const [defaultPrinterResult, printerResult, serialResult] = await Promise.allSettled([
+    qz.printers.getDefault(),
     qz.printers.find(),
+    qz.serial?.findPorts?.() ?? Promise.resolve([]),
   ])
 
-  const printerNames = normalizePrinterList(foundPrinters)
-  return printerNames.map((printerName) => ({
-    id: printerName,
+  const defaultPrinterName = defaultPrinterResult.status === 'fulfilled' ? defaultPrinterResult.value : ''
+  const printerNames = normalizeList(printerResult.status === 'fulfilled' ? printerResult.value : [])
+  const serialPorts = normalizeList(serialResult.status === 'fulfilled' ? serialResult.value : [])
+    .filter((port) => /^COM\d+$/i.test(port))
+    .sort(compareComPorts)
+
+  const queuePrinters = printerNames.map((printerName) => ({
+    id: toQueueId(printerName),
     name: printerName,
-    provider: 'QZ_TRAY',
+    provider: 'QZ_TRAY' as const,
     isDefault: printerName === defaultPrinterName,
+    transport: 'queue' as const,
+    target: printerName,
+    details: 'Fila do Windows via QZ Tray',
   }))
+
+  const serialPrinters = serialPorts.map((port, index) => ({
+    id: toSerialId(port),
+    name: `Porta serial ${port}`,
+    provider: 'QZ_TRAY' as const,
+    isDefault: queuePrinters.length === 0 && index === 0,
+    transport: 'serial' as const,
+    target: port,
+    details: 'Bluetooth/ESC-POS direto via QZ Tray',
+  }))
+
+  return [...queuePrinters, ...serialPrinters]
 }
 
-export async function printRawQzTrayJob(printerName: string, rawDocument: string) {
+export async function printRawQzTrayJob(printerId: string, rawDocument: string) {
   const qz = await ensureQzTrayConnection()
-  const config = qz.configs.create(printerName, {
+  const target = parsePrinterTarget(printerId)
+
+  if (target.transport === 'serial') {
+    if (!qz.serial) {
+      throw new Error('QZ Tray nao expoe suporte serial nesta maquina.')
+    }
+    await printViaSerial(qz, target.target, rawDocument)
+    return
+  }
+
+  const config = qz.configs.create(target.target, {
     encoding: 'CP437',
     copies: 1,
   })
 
-  await qz.print(config, [rawDocument])
+  await qz.print(config, [{ type: 'raw', format: 'command', flavor: 'plain', data: rawDocument }])
+}
+
+async function printViaSerial(qz: QzTrayModule, port: string, rawDocument: string) {
+  if (!qz.serial) {
+    throw new Error('QZ Tray nao expoe suporte serial nesta maquina.')
+  }
+
+  await qz.serial.closePort(port).catch(() => undefined)
+
+  await qz.serial.openPort(port, DEFAULT_SERIAL_OPTIONS)
+  try {
+    await qz.serial.sendData(port, {
+      type: 'HEX',
+      data: escPosToHex(rawDocument),
+    })
+  } finally {
+    await qz.serial.closePort(port).catch(() => undefined)
+  }
+}
+
+function escPosToHex(raw: string): string {
+  return Array.from(raw)
+    .map((char) => char.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
 }
 
 async function ensureQzTrayConnection() {
@@ -39,12 +105,20 @@ async function ensureQzTrayConnection() {
 
   if (!qz.websocket.isActive()) {
     await qz.websocket.connect({
-      retries: 1,
-      delay: 0,
+      host: getQzHost(),
+      retries: 5,
+      delay: 0.5,
     })
   }
 
   return qz
+}
+
+function getQzHost(): string {
+  if (typeof window === 'undefined') {
+    return 'localhost'
+  }
+  return window.localStorage.getItem('desk-imperial.qz-host') ?? 'localhost'
 }
 
 async function getQzTrayModule() {
@@ -70,10 +144,52 @@ function configureUnsignedQzSecurity(qz: QzTrayModule) {
   qz.security.setSignatureAlgorithm('SHA256')
 }
 
-function normalizePrinterList(printers: string[] | string) {
-  if (Array.isArray(printers)) {
-    return printers
+function parsePrinterTarget(printerId: string): Pick<ThermalPrinter, 'transport' | 'target'> {
+  if (printerId.startsWith(QZ_QUEUE_PREFIX)) {
+    return {
+      transport: 'queue',
+      target: printerId.slice(QZ_QUEUE_PREFIX.length),
+    }
   }
 
-  return printers ? [printers] : []
+  if (printerId.startsWith(QZ_SERIAL_PREFIX)) {
+    return {
+      transport: 'serial',
+      target: printerId.slice(QZ_SERIAL_PREFIX.length),
+    }
+  }
+
+  if (/^COM\d+$/i.test(printerId)) {
+    return {
+      transport: 'serial',
+      target: printerId,
+    }
+  }
+
+  return {
+    transport: 'queue',
+    target: printerId,
+  }
+}
+
+function normalizeList(items: string[] | string) {
+  if (Array.isArray(items)) {
+    return items.filter(Boolean)
+  }
+
+  return items ? [items] : []
+}
+
+function toQueueId(printerName: string) {
+  return `${QZ_QUEUE_PREFIX}${printerName}`
+}
+
+function toSerialId(port: string) {
+  return `${QZ_SERIAL_PREFIX}${port.toUpperCase()}`
+}
+
+function compareComPorts(left: string, right: string) {
+  const leftValue = Number(left.replace(/\D/g, ''))
+  const rightValue = Number(right.replace(/\D/g, ''))
+  return leftValue - rightValue
 }

@@ -30,10 +30,10 @@ type FormPaneProps = Readonly<{
   isEditing: boolean
   itensLength: number
   saveError: string | null
-  selectedPrinterName: string
+  selectedPrinterId: string
   statusMessage: string
   printers: ThermalPrinter[]
-  onChoosePrinter: (name: string) => void
+  onChoosePrinter: (printerId: string) => void
   onClose: () => void
   onRefreshPrinters: () => void
   requirePin: (action: () => void, title: string, description: string) => void
@@ -86,7 +86,7 @@ export const ComandaFormPane = memo(function ComandaFormPane(props: FormPaneProp
         isEditing={props.isEditing}
         printers={props.printers}
         saveError={props.saveError}
-        selectedPrinterName={props.selectedPrinterName}
+        selectedPrinterId={props.selectedPrinterId}
         statusMessage={props.statusMessage}
         onChoosePrinter={props.onChoosePrinter}
         onRefreshPrinters={props.onRefreshPrinters}
@@ -283,13 +283,13 @@ function ComandaFooter(
     hasItems: boolean
     isBusy: boolean
     isEditing: boolean
-    onChoosePrinter: (name: string) => void
+    onChoosePrinter: (printerId: string) => void
     onRefreshPrinters: () => void
     onSave: () => void
     onSaveAndPrint: () => void
     printers: ThermalPrinter[]
     saveError: string | null
-    selectedPrinterName: string
+    selectedPrinterId: string
     statusMessage: string
   }>,
 ) {
@@ -311,7 +311,7 @@ function ComandaFooter(
           connectionState={props.connectionState}
           isBusy={props.isBusy}
           printers={props.printers}
-          selectedPrinterName={props.selectedPrinterName}
+          selectedPrinterId={props.selectedPrinterId}
           statusMessage={props.statusMessage}
           onChoosePrinter={props.onChoosePrinter}
           onRefreshPrinters={props.onRefreshPrinters}

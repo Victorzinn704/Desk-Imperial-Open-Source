@@ -2,11 +2,16 @@ export type ThermalPrintProvider = 'QZ_TRAY' | 'PRINTNODE'
 
 export type ThermalPrinterConnectionState = 'idle' | 'discovering' | 'connected' | 'printing' | 'error'
 
+export type ThermalPrinterTransport = 'queue' | 'serial'
+
 export type ThermalPrinter = {
   id: string
   name: string
   provider: ThermalPrintProvider
   isDefault?: boolean
+  transport: ThermalPrinterTransport
+  target: string
+  details?: string
 }
 
 export type PrintableComandaItem = {

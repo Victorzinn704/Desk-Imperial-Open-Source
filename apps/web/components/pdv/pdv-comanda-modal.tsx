@@ -142,7 +142,7 @@ function ComandaFormColumn({
       printers={controller.printers}
       requirePin={controller.requirePin}
       saveError={controller.saveError}
-      selectedPrinterName={controller.selectedPrinterName}
+      selectedPrinterId={controller.selectedPrinterId}
       statusMessage={controller.statusMessage}
       total={controller.total}
       onChoosePrinter={controller.choosePrinter}

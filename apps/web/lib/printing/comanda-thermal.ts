@@ -93,12 +93,13 @@ function calcAdditional(comanda: PrintableComanda) {
 }
 
 function formatCurrency(amount: number, currency = 'BRL') {
-  return new Intl.NumberFormat('pt-BR', {
+  const raw = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency,
     currencyDisplay: 'symbol',
     minimumFractionDigits: 2,
   }).format(amount)
+  return raw.replace(/\u00A0/g, ' ')
 }
 
 function formatDateTime(iso: string) {

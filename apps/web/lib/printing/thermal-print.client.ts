@@ -19,14 +19,14 @@ export async function listThermalPrinters(provider: ThermalPrintProvider) {
 
 export async function printThermalComanda(input: {
   provider: ThermalPrintProvider
-  printerName: string
+  printerId: string
   comanda: PrintableComanda
 }) {
   const rawDocument = buildThermalComandaTicket(input.comanda)
 
   switch (input.provider) {
     case 'QZ_TRAY':
-      await printRawQzTrayJob(input.printerName, rawDocument)
+      await printRawQzTrayJob(input.printerId, rawDocument)
       return
     case 'PRINTNODE':
       throw new Error('PrintNode ainda nao foi configurado nesta etapa. QZ Tray e o fluxo principal.')
@@ -52,22 +52,24 @@ export function getPreferredThermalPrinter(provider: ThermalPrintProvider) {
   return globalThis.localStorage.getItem(`desk-imperial.thermal-printer.${provider}`)
 }
 
-export function setPreferredThermalPrinter(provider: ThermalPrintProvider, printerName: string) {
+export function setPreferredThermalPrinter(provider: ThermalPrintProvider, printerId: string) {
   if (typeof window === 'undefined') {
     return
   }
 
-  window.localStorage.setItem(`desk-imperial.thermal-printer.${provider}`, printerName)
+  window.localStorage.setItem(`desk-imperial.thermal-printer.${provider}`, printerId)
 }
 
-export function resolvePreferredPrinterName(provider: ThermalPrintProvider, printers: ThermalPrinter[]) {
+export function resolvePreferredPrinterId(provider: ThermalPrintProvider, printers: ThermalPrinter[]) {
   const storedPrinter = getPreferredThermalPrinter(provider)
-  const storedMatch = printers.find((printer) => printer.name === storedPrinter)
+  const storedMatch = printers.find(
+    (printer) => printer.id === storedPrinter || printer.name === storedPrinter || printer.target === storedPrinter,
+  )
   if (storedMatch) {
-    return storedMatch.name
+    return storedMatch.id
   }
 
-  return printers.find((printer) => printer.isDefault)?.name ?? printers[0]?.name ?? ''
+  return printers.find((printer) => printer.isDefault)?.id ?? printers[0]?.id ?? ''
 }
 
 function exhaustiveProvider(provider: never): never {
