@@ -1,26 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import { Edit2 } from 'lucide-react'
 import type { ComandaPaymentMethod } from '@contracts/contracts'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import { formatBRL as formatCurrency } from '@/lib/currency'
-
-const PAYMENT_METHODS: Array<{ id: ComandaPaymentMethod; label: string }> = [
-  { id: 'PIX', label: 'Pix' },
-  { id: 'CREDIT', label: 'Crédito' },
-  { id: 'DEBIT', label: 'Débito' },
-  { id: 'CASH', label: 'Dinheiro' },
-  { id: 'VOUCHER', label: 'Voucher' },
-  { id: 'OTHER', label: 'Outro' },
-]
-
-function roundInputMoney(value: number) {
-  if (!Number.isFinite(value)) {
-    return 0
-  }
-  return Math.round(Math.max(0, value) * 100) / 100
-}
+import { OwnerComandaCardCloseAction } from './owner-comanda-card-close-action'
+import { ComandaPrintButton } from '@/components/shared/comanda-print-button'
 
 type OwnerComandaCardBodyProps = {
   activeComanda: Comanda
@@ -63,7 +48,7 @@ export function OwnerComandaCardBody({
   return (
     <div className="border-t border-[var(--border)] px-4 pb-4 pt-4">
       <OwnerComandaCardSummaryGrid activeComanda={activeComanda} itemCount={itemCount} />
-      <OwnerComandaCardPrimaryActions
+      <OwnerComandaCardActions
         activeComanda={activeComanda}
         canClose={canClose}
         isBusy={isBusy}
@@ -75,11 +60,46 @@ export function OwnerComandaCardBody({
           activeComanda={activeComanda}
           descontoVal={descontoVal}
           isBusy={isBusy}
+          total={total}
           onCloseComanda={onCloseComanda}
           onCreatePayment={onCreatePayment}
-          total={total}
         />
       ) : null}
+      <OwnerComandaCardSecondarySections
+        acrescimoVal={acrescimoVal}
+        activeComanda={activeComanda}
+        badgeColor={badgeColor}
+        descontoVal={descontoVal}
+        detailHint={detailHint}
+        isLoadingDetails={isLoadingDetails}
+        subtotal={subtotal}
+        total={total}
+      />
+    </div>
+  )
+}
+
+function OwnerComandaCardSecondarySections({
+  activeComanda,
+  acrescimoVal,
+  badgeColor,
+  descontoVal,
+  detailHint,
+  isLoadingDetails,
+  subtotal,
+  total,
+}: {
+  activeComanda: Comanda
+  acrescimoVal: number
+  badgeColor: string
+  descontoVal: number
+  detailHint: string
+  isLoadingDetails: boolean
+  subtotal: number
+  total: number
+}) {
+  return (
+    <>
       <OwnerComandaCardItemsSection
         activeComanda={activeComanda}
         detailHint={detailHint}
@@ -93,11 +113,11 @@ export function OwnerComandaCardBody({
         subtotal={subtotal}
         total={total}
       />
-    </div>
+    </>
   )
 }
 
-function OwnerComandaCardPrimaryActions({
+function OwnerComandaCardActions({
   activeComanda,
   canClose,
   isBusy,
@@ -108,21 +128,24 @@ function OwnerComandaCardPrimaryActions({
   isBusy: boolean
   onAddItems?: (comanda: Comanda) => void
 }) {
-  if (!canClose || !onAddItems) {
-    return null
-  }
+  const canAddItems = canClose && onAddItems
 
   return (
-    <button
-      className="mb-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition active:scale-[0.98] disabled:opacity-50"
-      disabled={isBusy}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
-      type="button"
-      onClick={() => onAddItems(activeComanda)}
-    >
-      <Edit2 className="size-4" />
-      Editar / adicionar itens
-    </button>
+    <div className="mb-3 space-y-3">
+      {canAddItems ? (
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.1)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition active:scale-[0.98] disabled:opacity-50"
+          disabled={isBusy}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          type="button"
+          onClick={() => onAddItems(activeComanda)}
+        >
+          <Edit2 className="size-4" />
+          Editar / adicionar itens
+        </button>
+      ) : null}
+      <ComandaPrintButton comanda={activeComanda} />
+    </div>
   )
 }
 
@@ -151,142 +174,6 @@ function OwnerComandaCardSummaryGrid({ activeComanda, itemCount }: { activeComan
         ))}
       </div>
     </div>
-  )
-}
-
-function OwnerComandaCardCloseAction({
-  activeComanda,
-  acrescimoVal,
-  descontoVal,
-  isBusy,
-  onCloseComanda,
-  onCreatePayment,
-  total,
-}: {
-  activeComanda: Comanda
-  acrescimoVal: number
-  descontoVal: number
-  isBusy: boolean
-  onCloseComanda: (
-    id: string,
-    discountAmount: number,
-    serviceFeeAmount: number,
-    paymentMethod?: ComandaPaymentMethod,
-  ) => Promise<unknown> | void
-  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
-  total: number
-}) {
-  const [paymentMethod, setPaymentMethod] = useState<ComandaPaymentMethod>('PIX')
-  const paidAmount =
-    activeComanda.paidAmount ?? activeComanda.payments?.reduce((sum, payment) => sum + payment.amount, 0) ?? 0
-  const remainingAmount = Math.max(0, activeComanda.remainingAmount ?? total - paidAmount)
-  const defaultPartialAmount = roundInputMoney(remainingAmount > 0 ? remainingAmount : total)
-  const partialAmountKey = `${activeComanda.id}:${defaultPartialAmount}`
-  const [partialAmountState, setPartialAmountState] = useState(() => ({
-    key: partialAmountKey,
-    value: defaultPartialAmount,
-  }))
-  const partialAmount = partialAmountState.key === partialAmountKey ? partialAmountState.value : defaultPartialAmount
-  const normalizedPartialAmount = useMemo(
-    () => Math.min(roundInputMoney(partialAmount), remainingAmount),
-    [partialAmount, remainingAmount],
-  )
-  const canRegisterPartial =
-    Boolean(onCreatePayment) && normalizedPartialAmount > 0 && normalizedPartialAmount < remainingAmount
-
-  return (
-    <section className="mb-4 rounded-[16px] border border-[rgba(0,140,255,0.24)] bg-[rgba(0,140,255,0.06)] p-3">
-      <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Pago</p>
-          <p className="mt-1 text-base font-semibold text-[#36f57c]">{formatCurrency(paidAmount)}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Restante</p>
-          <p className="mt-1 text-base font-semibold text-[var(--text-primary)]">{formatCurrency(remainingAmount)}</p>
-        </div>
-      </div>
-      <div className="mb-3 grid grid-cols-3 gap-2">
-        {PAYMENT_METHODS.map((method) => (
-          <button
-            className={`rounded-[12px] border px-2 py-2 text-xs font-semibold transition active:scale-[0.98] ${
-              paymentMethod === method.id
-                ? 'border-[rgba(0,140,255,0.5)] bg-[rgba(0,140,255,0.18)] text-[var(--accent,#008cff)]'
-                : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)]'
-            }`}
-            disabled={isBusy}
-            key={method.id}
-            type="button"
-            onClick={() => setPaymentMethod(method.id)}
-          >
-            {method.label}
-          </button>
-        ))}
-      </div>
-      {onCreatePayment ? (
-        <>
-          <div className="mb-2 grid grid-cols-3 gap-2">
-            {[
-              { label: 'Meia', value: remainingAmount / 2 },
-              { label: '3 partes', value: remainingAmount / 3 },
-              {
-                label: `${activeComanda.participantCount ?? 1} pessoas`,
-                value: remainingAmount / Math.max(1, activeComanda.participantCount ?? 1),
-              },
-            ].map((split) => (
-              <button
-                className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-2 py-2 text-[11px] font-semibold text-[var(--text-soft)] disabled:opacity-45"
-                disabled={isBusy || remainingAmount <= 0}
-                key={split.label}
-                type="button"
-                onClick={() =>
-                  setPartialAmountState({
-                    key: partialAmountKey,
-                    value: roundInputMoney(split.value),
-                  })
-                }
-              >
-                {split.label}
-              </button>
-            ))}
-          </div>
-          <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <input
-              aria-label="Valor parcial"
-              className="min-h-11 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.5)]"
-              disabled={isBusy || remainingAmount <= 0}
-              inputMode="decimal"
-              min={0}
-              step="0.01"
-              type="number"
-              value={partialAmount}
-              onChange={(event) =>
-                setPartialAmountState({
-                  key: partialAmountKey,
-                  value: Number(event.target.value),
-                })
-              }
-            />
-            <button
-              className="min-h-11 rounded-[12px] border border-[rgba(0,140,255,0.28)] px-3 text-xs font-semibold text-[var(--accent,#008cff)] disabled:opacity-45"
-              disabled={isBusy || !canRegisterPartial}
-              type="button"
-              onClick={() => onCreatePayment(activeComanda.id, normalizedPartialAmount, paymentMethod)}
-            >
-              Parcial
-            </button>
-          </div>
-        </>
-      ) : null}
-      <button
-        className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-accent/20 bg-accent px-4 py-3 text-sm font-semibold text-[var(--on-accent)] shadow-sm transition active:scale-[0.98] disabled:opacity-50"
-        disabled={isBusy}
-        type="button"
-        onClick={() => onCloseComanda(activeComanda.id, descontoVal, acrescimoVal, paymentMethod)}
-      >
-        {remainingAmount > 0 ? 'Pagar restante e fechar' : 'Fechar comanda paga'}
-      </button>
-    </section>
   )
 }
 

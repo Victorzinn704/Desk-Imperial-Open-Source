@@ -5,6 +5,7 @@ import type { useMobileComandaCardController } from './mobile-comanda-card.contr
 import { MobileComandaItemsList } from './mobile-comanda-card.details'
 import { MobileComandaCardFinancialSection } from './mobile-comanda-card.financial'
 import { MobileComandaActionStrip } from './mobile-comanda-card.header'
+import { ComandaPrintButton } from '@/components/shared/comanda-print-button'
 
 export function MobileComandaCardExpandedContent({
   controller,
@@ -32,6 +33,7 @@ export function MobileComandaCardExpandedContent({
         onAddItems={onAddItems}
         onCancelComanda={onCancelComanda}
       />
+      <ComandaPrintButton comanda={controller.activeComanda} />
       <MobileComandaItemsList isLoadingDetails={controller.isLoadingDetails} items={controller.activeComanda.itens} />
       <MobileComandaCardFinancialSection
         controller={controller}

@@ -5,6 +5,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 const faroCollectorOrigin = resolveCollectorOrigin(process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL)
 const observabilityConnectOrigins = [faroCollectorOrigin].filter(Boolean).join(' ')
 const developmentScriptSources = isProduction ? '' : " 'unsafe-eval'"
+const qzTrayConnectOrigins = resolveQzTrayConnectOrigins(process.env.NEXT_PUBLIC_QZ_TRAY_CONNECT_ORIGINS)
 
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
@@ -24,7 +25,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://images.pexels.com https://*.openfoodfacts.org https://*.basemaps.cartocdn.com",
-      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
+      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 ${qzTrayConnectOrigins} https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
       "frame-src 'self' https://widget.api-futebol.com.br",
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -103,4 +104,27 @@ function resolveCollectorOrigin(value: string | undefined) {
   } catch {
     return ''
   }
+}
+
+function resolveQzTrayConnectOrigins(value: string | undefined) {
+  const hosts = ['localhost', 'localhost.qz.io', '127.0.0.1']
+  const securePorts = [8181, 8282, 8383, 8484]
+  const insecurePorts = [8182, 8283, 8384, 8485]
+  const defaults = [
+    ...hosts.flatMap((host) => securePorts.map((port) => `wss://${host}:${port}`)),
+    ...hosts.flatMap((host) => insecurePorts.map((port) => `ws://${host}:${port}`)),
+  ]
+
+  return [...defaults, ...parseConfiguredOrigins(value)].join(' ')
+}
+
+function parseConfiguredOrigins(value: string | undefined) {
+  if (!value?.trim()) {
+    return []
+  }
+
+  return value
+    .split(/[\s,]+/)
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.startsWith('ws://') || origin.startsWith('wss://'))
 }
