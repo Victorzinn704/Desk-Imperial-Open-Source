@@ -39,6 +39,8 @@ modules/
 ├── geocoding/             # Geocodificação de endereços via Nominatim
 ├── mailer/                # E-mails transacionais via Brevo
 ├── market-intelligence/   # Insight executivo com Gemini AI
+├── notifications/         # Entrega externa outbound (Telegram, e-mail, webhook)
+├── intelligence-platform/ # Boundary do agente, tools, RAG e políticas
 ├── monitoring/            # Health check e observabilidade
 └── cache/                 # Serviço Redis compartilhado
 ```
@@ -299,6 +301,39 @@ modules/
 - Rate limit: 6 requisições por 60 minutos por workspace
 - Endpoint protegido com CSRF e sessão
 - Timeout configurável (`GEMINI_TIMEOUT_MS=15000`)
+
+---
+
+## Módulo: notifications
+
+**Responsabilidade:** fronteira única de entrega externa outbound.
+
+**Canais previstos:**
+
+- Telegram
+- e-mail
+- webhook
+
+**Comportamento:**
+
+- nenhum módulo de domínio envia Telegram diretamente
+- entrega usa `idempotencyKey`
+- capability map por canal e configuração
+- trilho inicial é outbound-first, sem chatbot aberto
+
+---
+
+## Módulo: intelligence-platform
+
+**Responsabilidade:** boundary do agente para RAG, tools e políticas.
+
+**Comportamento:**
+
+- não contém regra de negócio transacional
+- resolve tools permitidas por papel (`OWNER`/`STAFF`)
+- expõe capabilities seguras para web/PWA/Telegram
+- usa `notifications` como canal externo, nunca integração direta
+- primeira fase opera com `ragMode = internal-docs-only`
 
 ---
 

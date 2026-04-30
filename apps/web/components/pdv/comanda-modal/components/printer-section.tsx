@@ -109,13 +109,29 @@ function QzHostInput({ onRefreshPrinters }: Readonly<{ onRefreshPrinters: () => 
     onRefreshPrinters()
   }
 
+  function resetToLocalhost() {
+    const trimmed = setQzHost('localhost')
+    setDraft(trimmed)
+    setHost(trimmed)
+    onRefreshPrinters()
+  }
+
   const isDirty = draft.trim() !== host
   const isLan = host !== 'localhost' && host !== '127.0.0.1'
 
   return (
     <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
       <QzHostSummary expanded={expanded} host={host} isLan={isLan} onToggle={() => setExpanded((v) => !v)} />
-      {expanded ? <QzHostEditor draft={draft} isDirty={isDirty} onApply={applyHost} onDraftChange={setDraft} /> : null}
+      {expanded ? (
+        <QzHostEditor
+          draft={draft}
+          isDirty={isDirty}
+          isLan={isLan}
+          onApply={applyHost}
+          onDraftChange={setDraft}
+          onResetToLocalhost={resetToLocalhost}
+        />
+      ) : null}
     </div>
   )
 }
@@ -153,26 +169,46 @@ function QzHostSummary({
 function QzHostEditor({
   draft,
   isDirty,
+  isLan,
   onApply,
   onDraftChange,
+  onResetToLocalhost,
 }: Readonly<{
   draft: string
   isDirty: boolean
+  isLan: boolean
   onApply: () => void
   onDraftChange: (value: string) => void
+  onResetToLocalhost: () => void
 }>) {
   return (
-    <div className="mt-2 flex gap-2">
-      <input
-        className="min-w-0 flex-1 rounded-[8px] border border-[var(--border)] bg-[var(--surface-soft)] px-2 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-        placeholder="ex: 192.168.1.10 ou localhost"
-        value={draft}
-        onChange={(e) => onDraftChange(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && onApply()}
-      />
-      <button className={resolveHostApplyClass(isDirty)} type="button" onClick={onApply}>
-        Aplicar
-      </button>
+    <div className="mt-2 grid gap-2">
+      <div className="flex gap-2">
+        <input
+          className="min-w-0 flex-1 rounded-[8px] border border-[var(--border)] bg-[var(--surface-soft)] px-2 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          placeholder="ex: 192.168.1.10 ou localhost"
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onApply()}
+        />
+        <button className={resolveHostApplyClass(isDirty)} type="button" onClick={onApply}>
+          Aplicar
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+          type="button"
+          onClick={onResetToLocalhost}
+        >
+          Usar neste PC
+        </button>
+        <p className="text-[10px] leading-4 text-[var(--text-soft)]">
+          {isLan
+            ? 'Se este modal estiver no PC da impressora, volte para localhost.'
+            : 'Use IP da rede local so quando o celular precisar imprimir via QZ Tray.'}
+        </p>
+      </div>
     </div>
   )
 }

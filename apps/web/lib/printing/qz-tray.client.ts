@@ -8,6 +8,7 @@ type QzTrayModule = typeof import('qz-tray')
 const QZ_QUEUE_PREFIX = 'qz-queue:'
 const QZ_SERIAL_PREFIX = 'qz-serial:'
 export const QZ_HOST_STORAGE_KEY = 'desk-imperial.qz-host'
+const LOCAL_QZ_HOSTS = ['localhost', '127.0.0.1', 'localhost.qz.io'] as const
 
 const DEFAULT_SERIAL_OPTIONS = {
   baudRate: 9600,
@@ -124,6 +125,7 @@ function escPosToHex(raw: string): string {
 async function ensureQzTrayConnection() {
   const qz = await getQzTrayModule()
   const host = getQzHost()
+  const hostCandidates = buildQzHostCandidates(host)
 
   if (qz.websocket.isActive() && !qzActiveHost) {
     qzActiveHost = host
@@ -135,12 +137,24 @@ async function ensureQzTrayConnection() {
   }
 
   if (!qz.websocket.isActive()) {
-    await qz.websocket.connect({
-      host,
-      retries: 5,
-      delay: 0.5,
-    })
-    qzActiveHost = host
+    let lastError: unknown = null
+
+    for (const candidate of hostCandidates) {
+      try {
+        await qz.websocket.connect({
+          host: candidate,
+          retries: candidate === host ? 5 : 2,
+          delay: 0.5,
+        })
+        qzActiveHost = candidate
+        return qz
+      } catch (error) {
+        lastError = error
+        await qz.websocket.disconnect().catch(() => undefined)
+      }
+    }
+
+    throw new Error(buildQzConnectionErrorMessage(host, lastError))
   }
 
   return qz
@@ -245,4 +259,32 @@ function compareComPorts(left: string, right: string) {
   const leftValue = Number(left.replace(/\D/g, ''))
   const rightValue = Number(right.replace(/\D/g, ''))
   return leftValue - rightValue
+}
+
+function buildQzHostCandidates(host: string) {
+  const normalized = normalizeQzHost(host)
+  if (LOCAL_QZ_HOSTS.includes(normalized as (typeof LOCAL_QZ_HOSTS)[number])) {
+    return [normalized]
+  }
+
+  return [normalized, 'localhost']
+}
+
+function buildQzConnectionErrorMessage(host: string, error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error ?? 'desconhecido')
+
+  if (!LOCAL_QZ_HOSTS.includes(host as (typeof LOCAL_QZ_HOSTS)[number])) {
+    return [
+      `Nao foi possivel conectar ao QZ Tray em ${host}.`,
+      'Se voce estiver neste PC, volte o host para localhost.',
+      `Se voce estiver no celular, confirme o IP do PC e aceite o certificado em https://${host}:8181.`,
+      `Detalhe: ${detail}`,
+    ].join(' ')
+  }
+
+  return [
+    `Nao foi possivel conectar ao QZ Tray em ${host}.`,
+    'Confirme se o QZ Tray esta aberto, autorizado e com a impressora pareada neste PC.',
+    `Detalhe: ${detail}`,
+  ].join(' ')
 }

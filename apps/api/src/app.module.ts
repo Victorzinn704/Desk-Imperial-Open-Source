@@ -16,8 +16,10 @@ import { CurrencyModule } from './modules/currency/currency.module'
 import { EmployeesModule } from './modules/employees/employees.module'
 import { FinanceModule } from './modules/finance/finance.module'
 import { GeocodingModule } from './modules/geocoding/geocoding.module'
+import { IntelligencePlatformModule } from './modules/intelligence-platform/intelligence-platform.module'
 import { MarketIntelligenceModule } from './modules/market-intelligence/market-intelligence.module'
 import { MonitoringModule } from './modules/monitoring/monitoring.module'
+import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OperationsModule } from './modules/operations/operations.module'
 import { OperationsRealtimeModule } from './modules/operations-realtime.module'
 import { OrdersModule } from './modules/orders/orders.module'
@@ -125,7 +127,9 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
     CurrencyModule,
     EmployeesModule,
     GeocodingModule,
+    NotificationsModule,
     MarketIntelligenceModule,
+    IntelligencePlatformModule,
     MonitoringModule,
     ConsentModule,
     AuthModule,

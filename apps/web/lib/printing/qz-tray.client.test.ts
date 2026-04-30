@@ -190,4 +190,28 @@ describe('qz-tray client', () => {
       }),
     )
   })
+
+  it('falls back to localhost when a remote host is stale on the desktop flow', async () => {
+    qzMock.websocket.connect
+      .mockRejectedValueOnce(new Error('remote host unreachable'))
+      .mockResolvedValueOnce(undefined)
+
+    const { listQzTrayPrinters, setQzHost } = await import('./qz-tray.client')
+
+    setQzHost('192.168.1.10')
+    await listQzTrayPrinters()
+
+    expect(qzMock.websocket.connect).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        host: '192.168.1.10',
+      }),
+    )
+    expect(qzMock.websocket.connect).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        host: 'localhost',
+      }),
+    )
+  })
 })

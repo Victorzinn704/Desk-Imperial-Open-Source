@@ -271,6 +271,12 @@ describe('CacheService', () => {
       expect(key).toBe('orders:summary:user-123')
     })
 
+    it('deve gerar chave de entrega outbound com idempotencia', () => {
+      const key = CacheService.notificationsDeliveryKey('owner-1', 'delivery-123')
+
+      expect(key).toBe('notifications:delivery:owner-1:delivery-123')
+    })
+
     it('deve gerar prefixo e chave de kitchen por workspace e escopo', () => {
       expect(CacheService.operationsKitchenPrefix('owner-1', '2026-03-30')).toBe(
         'operations:kitchen:owner-1:2026-03-30:',

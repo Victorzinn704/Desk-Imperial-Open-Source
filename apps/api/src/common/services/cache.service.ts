@@ -150,6 +150,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     return `gemini:insight:${userId}:${currency}:${focus.toLowerCase()}`
   }
 
+  static notificationsDeliveryKey(workspaceOwnerUserId: string, idempotencyKey: string): string {
+    return `notifications:delivery:${workspaceOwnerUserId}:${idempotencyKey}`
+  }
+
   static productsKey(userId: string, scope: 'active' | 'all' = 'active') {
     return `products:list:${userId}:${scope}`
   }
