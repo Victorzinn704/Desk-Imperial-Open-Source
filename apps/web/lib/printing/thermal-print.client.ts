@@ -35,6 +35,21 @@ export async function printThermalComanda(input: {
   }
 }
 
+export async function resolveThermalPrinterSelection(provider: ThermalPrintProvider) {
+  const printers = await listThermalPrinters(provider)
+  const printerId = resolvePreferredPrinterId(provider, printers)
+
+  if (printerId) {
+    setPreferredThermalPrinter(provider, printerId)
+  }
+
+  return {
+    printer: printers.find((printer) => printer.id === printerId),
+    printerId,
+    printers,
+  }
+}
+
 export function getPreferredThermalProvider() {
   if (typeof window === 'undefined') {
     return DEFAULT_THERMAL_PROVIDER
@@ -65,6 +80,17 @@ export function resolvePreferredPrinterId(provider: ThermalPrintProvider, printe
   const storedMatch = printers.find(
     (printer) => printer.id === storedPrinter || printer.name === storedPrinter || printer.target === storedPrinter,
   )
+  const serialPrinter = printers.find((printer) => printer.transport === 'serial' && printer.isDefault)
+  const firstSerialPrinter = printers.find((printer) => printer.transport === 'serial')
+
+  if (storedMatch?.transport === 'serial') {
+    return storedMatch.id
+  }
+
+  if (firstSerialPrinter) {
+    return serialPrinter?.id ?? firstSerialPrinter.id
+  }
+
   if (storedMatch) {
     return storedMatch.id
   }

@@ -5,10 +5,9 @@ import { Printer } from 'lucide-react'
 import type { Comanda } from '@/components/pdv/pdv-types'
 import {
   comandaToPrintable,
-  getPreferredThermalPrinter,
   getPreferredThermalProvider,
-  listThermalPrinters,
   printThermalComanda,
+  resolveThermalPrinterSelection,
 } from '@/lib/printing'
 
 type PrintState = 'idle' | 'printing' | 'done' | 'error'
@@ -22,27 +21,20 @@ function useComandaQuickPrint() {
     setMessage('')
     try {
       const provider = getPreferredThermalProvider()
-      let printerId = getPreferredThermalPrinter(provider) ?? ''
-      let printerLabel = formatPrinterLabel(printerId)
+      const selection = await resolveThermalPrinterSelection(provider)
 
-      if (!printerId) {
-        const printers = await listThermalPrinters(provider)
-        const defaultPrinter = printers.find((p) => p.isDefault) ?? printers[0]
-        if (!defaultPrinter) {
-          throw new Error('Nenhuma impressora configurada. Configure no PDV primeiro.')
-        }
-        printerId = defaultPrinter.id
-        printerLabel = defaultPrinter.name
+      if (!selection.printerId) {
+        throw new Error('Nenhuma impressora configurada. Configure no PDV primeiro.')
       }
 
       await printThermalComanda({
         provider,
-        printerId,
+        printerId: selection.printerId,
         comanda: comandaToPrintable(comanda),
       })
 
       setState('done')
-      setMessage(`Enviado para ${printerLabel}`)
+      setMessage(`Enviado para ${selection.printer?.name ?? formatPrinterLabel(selection.printerId)}`)
       setTimeout(() => setState('idle'), 3_000)
     } catch (error) {
       setState('error')
