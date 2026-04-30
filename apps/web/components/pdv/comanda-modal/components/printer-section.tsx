@@ -1,8 +1,8 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { Printer, RefreshCw } from 'lucide-react'
-import type { ThermalPrinter, ThermalPrinterConnectionState } from '@/lib/printing'
+import { getQzHost, setQzHost, type ThermalPrinter, type ThermalPrinterConnectionState } from '@/lib/printing'
 
 type PrinterSectionProps = {
   printers: ThermalPrinter[]
@@ -32,6 +32,7 @@ export const PrinterSection = memo(function PrinterSection({
         selectedPrinterId={selectedPrinterId}
         statusMessage={statusMessage}
         onChoosePrinter={onChoosePrinter}
+        onRefreshPrinters={onRefreshPrinters}
       />
     </div>
   )
@@ -96,18 +97,109 @@ function RefreshPrintersButton({
   )
 }
 
+function QzHostInput({ onRefreshPrinters }: Readonly<{ onRefreshPrinters: () => void }>) {
+  const [host, setHost] = useState(() => getQzHost())
+  const [draft, setDraft] = useState(() => getQzHost())
+  const [expanded, setExpanded] = useState(false)
+
+  function applyHost() {
+    const trimmed = setQzHost(draft)
+    setDraft(trimmed)
+    setHost(trimmed)
+    onRefreshPrinters()
+  }
+
+  const isDirty = draft.trim() !== host
+  const isLan = host !== 'localhost' && host !== '127.0.0.1'
+
+  return (
+    <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <QzHostSummary expanded={expanded} host={host} isLan={isLan} onToggle={() => setExpanded((v) => !v)} />
+      {expanded ? <QzHostEditor draft={draft} isDirty={isDirty} onApply={applyHost} onDraftChange={setDraft} /> : null}
+    </div>
+  )
+}
+
+function QzHostSummary({
+  expanded,
+  host,
+  isLan,
+  onToggle,
+}: Readonly<{
+  expanded: boolean
+  host: string
+  isLan: boolean
+  onToggle: () => void
+}>) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">QZ Tray Host</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--text-primary)]">
+          {isLan ? host : 'localhost (somente este PC)'}
+        </p>
+      </div>
+      <button
+        className="shrink-0 text-[10px] font-semibold text-[var(--accent,#008cff)] hover:underline"
+        type="button"
+        onClick={onToggle}
+      >
+        {expanded ? 'fechar' : 'editar'}
+      </button>
+    </div>
+  )
+}
+
+function QzHostEditor({
+  draft,
+  isDirty,
+  onApply,
+  onDraftChange,
+}: Readonly<{
+  draft: string
+  isDirty: boolean
+  onApply: () => void
+  onDraftChange: (value: string) => void
+}>) {
+  return (
+    <div className="mt-2 flex gap-2">
+      <input
+        className="min-w-0 flex-1 rounded-[8px] border border-[var(--border)] bg-[var(--surface-soft)] px-2 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        placeholder="ex: 192.168.1.10 ou localhost"
+        value={draft}
+        onChange={(e) => onDraftChange(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && onApply()}
+      />
+      <button className={resolveHostApplyClass(isDirty)} type="button" onClick={onApply}>
+        Aplicar
+      </button>
+    </div>
+  )
+}
+
+function resolveHostApplyClass(isDirty: boolean) {
+  return [
+    'shrink-0 rounded-[8px] border px-3 py-1.5 text-xs font-semibold transition-colors',
+    isDirty
+      ? 'border-[var(--accent)] bg-[rgba(0,140,255,0.1)] text-[var(--accent,#008cff)]'
+      : 'border-[var(--border)] text-[var(--text-soft)]',
+  ].join(' ')
+}
+
 function PrinterSectionBody({
   connectionState,
   printers,
   selectedPrinterId,
   statusMessage,
   onChoosePrinter,
+  onRefreshPrinters,
 }: Readonly<{
   connectionState: ThermalPrinterConnectionState
   printers: ThermalPrinter[]
   selectedPrinterId: string
   statusMessage: string
   onChoosePrinter: (printerId: string) => void
+  onRefreshPrinters: () => void
 }>) {
   return (
     <div className="mt-3 grid gap-3">
@@ -128,6 +220,7 @@ function PrinterSectionBody({
           Impressora Bluetooth (YYX0808)? Use <strong>Porta serial COM3</strong> ou COM4 - nao a fila do Windows.
         </p>
       ) : null}
+      <QzHostInput onRefreshPrinters={onRefreshPrinters} />
       <p
         className={`rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs leading-5 ${getPrinterToneClass(connectionState)}`}
       >

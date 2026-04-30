@@ -9,6 +9,7 @@ import {
   printThermalComanda,
   resolveThermalPrinterSelection,
 } from '@/lib/printing'
+import { ThermalPrintSettingsCard } from './thermal-print-settings-card'
 
 type PrintState = 'idle' | 'printing' | 'done' | 'error'
 
@@ -64,6 +65,11 @@ export function ComandaPrintButton({ comanda }: Readonly<{ comanda: Comanda }>) 
       </button>
       {message && state !== 'idle' ? (
         <p className={`mt-1.5 text-center text-xs ${resolveMessageClass(state)}`}>{message}</p>
+      ) : null}
+      {state === 'error' ? (
+        <div className="mt-3">
+          <ThermalPrintSettingsCard compact />
+        </div>
       ) : null}
     </div>
   )

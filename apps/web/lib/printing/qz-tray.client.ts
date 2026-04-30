@@ -7,6 +7,7 @@ type QzTrayModule = typeof import('qz-tray')
 
 const QZ_QUEUE_PREFIX = 'qz-queue:'
 const QZ_SERIAL_PREFIX = 'qz-serial:'
+export const QZ_HOST_STORAGE_KEY = 'desk-imperial.qz-host'
 
 const DEFAULT_SERIAL_OPTIONS = {
   baudRate: 9600,
@@ -18,6 +19,7 @@ const DEFAULT_SERIAL_OPTIONS = {
 
 let qzModulePromise: Promise<QzTrayModule> | null = null
 let securityConfigured = false
+let qzActiveHost: string | null = null
 
 export async function listQzTrayPrinters(): Promise<ThermalPrinter[]> {
   const qz = await ensureQzTrayConnection()
@@ -121,23 +123,55 @@ function escPosToHex(raw: string): string {
 
 async function ensureQzTrayConnection() {
   const qz = await getQzTrayModule()
+  const host = getQzHost()
+
+  if (qz.websocket.isActive() && !qzActiveHost) {
+    qzActiveHost = host
+  }
+
+  if (qz.websocket.isActive() && qzActiveHost !== host) {
+    await qz.websocket.disconnect().catch(() => undefined)
+    qzActiveHost = null
+  }
 
   if (!qz.websocket.isActive()) {
     await qz.websocket.connect({
-      host: getQzHost(),
+      host,
       retries: 5,
       delay: 0.5,
     })
+    qzActiveHost = host
   }
 
   return qz
 }
 
-function getQzHost(): string {
+export function getQzHost(): string {
   if (typeof window === 'undefined') {
     return 'localhost'
   }
-  return window.localStorage.getItem('desk-imperial.qz-host') ?? 'localhost'
+  return normalizeQzHost(window.localStorage.getItem(QZ_HOST_STORAGE_KEY) ?? 'localhost')
+}
+
+export function setQzHost(host: string): string {
+  const normalized = normalizeQzHost(host)
+
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(QZ_HOST_STORAGE_KEY, normalized)
+  }
+
+  return normalized
+}
+
+export function normalizeQzHost(host: string): string {
+  const trimmed = host
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^wss?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .replace(/:(8181|8182|8282|8283|8383|8384|8484|8485)$/i, '')
+
+  return trimmed || 'localhost'
 }
 
 async function getQzTrayModule() {

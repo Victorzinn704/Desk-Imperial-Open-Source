@@ -115,7 +115,12 @@ function resolveQzTrayConnectOrigins(value: string | undefined) {
     ...hosts.flatMap((host) => insecurePorts.map((port) => `ws://${host}:${port}`)),
   ]
 
-  return [...defaults, ...parseConfiguredOrigins(value)].join(' ')
+  const lanIp = process.env.NEXT_PUBLIC_QZ_TRAY_LAN_IP?.trim()
+  const lanOrigins = lanIp
+    ? [...securePorts.map((port) => `wss://${lanIp}:${port}`), ...insecurePorts.map((port) => `ws://${lanIp}:${port}`)]
+    : []
+
+  return [...defaults, ...lanOrigins, ...parseConfiguredOrigins(value)].join(' ')
 }
 
 function parseConfiguredOrigins(value: string | undefined) {

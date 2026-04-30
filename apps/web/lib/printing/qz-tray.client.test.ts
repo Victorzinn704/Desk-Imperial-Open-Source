@@ -4,6 +4,7 @@ const qzMock = vi.hoisted(() => {
   const websocket = {
     isActive: vi.fn(() => false),
     connect: vi.fn(async () => undefined),
+    disconnect: vi.fn(async () => undefined),
   }
 
   const printers = {
@@ -47,7 +48,10 @@ describe('qz-tray client', () => {
   beforeEach(() => {
     qzMock.websocket.isActive.mockReset()
     qzMock.websocket.isActive.mockReturnValue(false)
-    qzMock.websocket.connect.mockClear()
+    qzMock.websocket.connect.mockReset()
+    qzMock.websocket.connect.mockResolvedValue(undefined)
+    qzMock.websocket.disconnect.mockReset()
+    qzMock.websocket.disconnect.mockResolvedValue(undefined)
     qzMock.printers.getDefault.mockClear()
     qzMock.printers.find.mockClear()
     qzMock.configs.create.mockClear()
@@ -59,6 +63,7 @@ describe('qz-tray client', () => {
     qzMock.security.setCertificatePromise.mockClear()
     qzMock.security.setSignaturePromise.mockClear()
     qzMock.security.setSignatureAlgorithm.mockClear()
+    window.localStorage.clear()
     vi.resetModules()
   })
 
@@ -146,6 +151,43 @@ describe('qz-tray client', () => {
     expect(qzMock.serial.closePort).toHaveBeenCalledTimes(2)
     expect(qzMock.serial.closePort.mock.invocationCallOrder[0]).toBeLessThan(
       qzMock.serial.openPort.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('normalizes mobile QZ host input before connecting', async () => {
+    const { listQzTrayPrinters, setQzHost } = await import('./qz-tray.client')
+
+    setQzHost('https://192.168.1.10:8181/qz')
+    await listQzTrayPrinters()
+
+    expect(qzMock.websocket.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: '192.168.1.10',
+      }),
+    )
+  })
+
+  it('reconnects when the configured QZ host changes during the session', async () => {
+    let active = true
+    qzMock.websocket.isActive.mockImplementation(() => active)
+    qzMock.websocket.disconnect.mockImplementation(async () => {
+      active = false
+    })
+    qzMock.websocket.connect.mockImplementation(async () => {
+      active = true
+    })
+    const { listQzTrayPrinters, setQzHost } = await import('./qz-tray.client')
+
+    setQzHost('localhost')
+    await listQzTrayPrinters()
+    setQzHost('192.168.1.10')
+    await listQzTrayPrinters()
+
+    expect(qzMock.websocket.disconnect).toHaveBeenCalledTimes(1)
+    expect(qzMock.websocket.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: '192.168.1.10',
+      }),
     )
   })
 })
