@@ -123,6 +123,11 @@ function PrinterSectionBody({
           </option>
         ))}
       </select>
+      {printers.some((p) => p.transport === 'serial') ? (
+        <p className="rounded-[12px] border border-[rgba(0,140,255,0.2)] bg-[rgba(0,140,255,0.06)] px-3 py-2 text-xs leading-5 text-[var(--accent,#008cff)]">
+          Impressora Bluetooth (YYX0808)? Use <strong>Porta serial COM3</strong> ou COM4 - nao a fila do Windows.
+        </p>
+      ) : null}
       <p
         className={`rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs leading-5 ${getPrinterToneClass(connectionState)}`}
       >

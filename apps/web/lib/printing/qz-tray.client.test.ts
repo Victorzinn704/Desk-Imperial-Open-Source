@@ -78,27 +78,28 @@ describe('qz-tray client', () => {
     )
     expect(printers).toEqual([
       expect.objectContaining({
-        id: 'qz-queue:Caixa 01',
-        name: 'Caixa 01',
-        transport: 'queue',
-        isDefault: true,
-      }),
-      expect.objectContaining({
-        id: 'qz-queue:Cozinha',
-        name: 'Cozinha',
-        transport: 'queue',
-      }),
-      expect.objectContaining({
         id: 'qz-serial:COM3',
         name: 'Porta serial COM3',
         transport: 'serial',
         target: 'COM3',
+        isDefault: true,
       }),
       expect.objectContaining({
         id: 'qz-serial:COM4',
         name: 'Porta serial COM4',
         transport: 'serial',
         target: 'COM4',
+      }),
+      expect.objectContaining({
+        id: 'qz-queue:Caixa 01',
+        name: 'Caixa 01',
+        transport: 'queue',
+        isDefault: false,
+      }),
+      expect.objectContaining({
+        id: 'qz-queue:Cozinha',
+        name: 'Cozinha',
+        transport: 'queue',
       }),
     ])
   })

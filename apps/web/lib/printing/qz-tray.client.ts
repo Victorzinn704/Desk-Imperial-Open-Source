@@ -33,27 +33,30 @@ export async function listQzTrayPrinters(): Promise<ThermalPrinter[]> {
     .filter((port) => /^COM\d+$/i.test(port))
     .sort(compareComPorts)
 
-  const queuePrinters = printerNames.map((printerName) => ({
-    id: toQueueId(printerName),
-    name: printerName,
-    provider: 'QZ_TRAY' as const,
-    isDefault: printerName === defaultPrinterName,
-    transport: 'queue' as const,
-    target: printerName,
-    details: 'Fila do Windows via QZ Tray',
-  }))
-
   const serialPrinters = serialPorts.map((port, index) => ({
     id: toSerialId(port),
     name: `Porta serial ${port}`,
     provider: 'QZ_TRAY' as const,
-    isDefault: queuePrinters.length === 0 && index === 0,
+    isDefault: index === 0,
     transport: 'serial' as const,
     target: port,
-    details: 'Bluetooth/ESC-POS direto via QZ Tray',
+    details: 'Bluetooth/ESC-POS direto - recomendado para impressoras Bluetooth',
   }))
 
-  return [...queuePrinters, ...serialPrinters]
+  const hasSerial = serialPrinters.length > 0
+
+  const queuePrinters = printerNames.map((printerName) => ({
+    id: toQueueId(printerName),
+    name: printerName,
+    provider: 'QZ_TRAY' as const,
+    isDefault: !hasSerial && printerName === defaultPrinterName,
+    transport: 'queue' as const,
+    target: printerName,
+    details: 'Fila do Windows (requer Spooler ativo)',
+  }))
+
+  // Serial ports listed first because Bluetooth thermal printers must use the serial path.
+  return [...serialPrinters, ...queuePrinters]
 }
 
 export async function printRawQzTrayJob(printerId: string, rawDocument: string) {
@@ -83,7 +86,13 @@ async function printViaSerial(qz: QzTrayModule, port: string, rawDocument: strin
 
   await qz.serial.closePort(port).catch(() => undefined)
 
-  await qz.serial.openPort(port, DEFAULT_SERIAL_OPTIONS)
+  try {
+    await qz.serial.openPort(port, DEFAULT_SERIAL_OPTIONS)
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err)
+    throw new Error(buildSerialOpenErrorMessage(port, cause))
+  }
+
   try {
     await qz.serial.sendData(port, {
       type: 'HEX',
@@ -92,6 +101,16 @@ async function printViaSerial(qz: QzTrayModule, port: string, rawDocument: strin
   } finally {
     await qz.serial.closePort(port).catch(() => undefined)
   }
+}
+
+function buildSerialOpenErrorMessage(port: string, cause: string) {
+  return [
+    `Nao foi possivel abrir ${port}.`,
+    'Verifique: (1) QZ Tray rodando como Administrador,',
+    '(2) impressora ligada e pareada,',
+    '(3) tente a outra porta COM na lista.',
+    `Detalhe: ${cause}`,
+  ].join(' ')
 }
 
 function escPosToHex(raw: string): string {
