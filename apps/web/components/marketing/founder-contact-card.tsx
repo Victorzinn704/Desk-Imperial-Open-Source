@@ -36,7 +36,7 @@ export function FounderContactCard() {
     <aside className="pointer-events-auto relative z-20 mx-auto mt-3 w-fit lg:absolute lg:right-[22px] lg:top-[170px] lg:mt-0">
       <div className="pointer-events-none absolute -inset-4 rounded-[26px] bg-[radial-gradient(circle,rgba(155,132,96,0.24),transparent_66%)] blur-xl" />
 
-      <ul className="contact-bubbles" role="list">
+      <ul className="contact-bubbles">
         {socialLinks.map((social, index) => {
           const Icon = social.icon
           const motionSpec = floatingMotion[index] ?? floatingMotion[0]

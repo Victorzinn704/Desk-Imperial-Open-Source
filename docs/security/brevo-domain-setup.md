@@ -49,7 +49,7 @@ Observacao:
 
 ## Variaveis depois da validacao
 
-Na Railway:
+No runtime da API:
 
 ```env
 EMAIL_PROVIDER=brevo
@@ -69,7 +69,7 @@ Se o email nao sair, confira primeiro:
 - a chave configurada e realmente uma `API key` da Brevo, e nao login Brevo
 - `EMAIL_FROM_EMAIL` existe como sender valido no painel
 - o dominio do sender passou na validacao DNS
-- a API key foi atualizada na Railway
+- a API key foi atualizada no host/secret store correto
 
 ## Diferenca entre portal e email
 

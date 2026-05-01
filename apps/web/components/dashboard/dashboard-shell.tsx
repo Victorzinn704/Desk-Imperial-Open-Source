@@ -224,7 +224,10 @@ export function DashboardShell({
 
   const { logout, isPending: _isLoggingOut } = useDashboardLogout(rawLogoutMutation)
 
-  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
+  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient, {
+    currentUserId: sessionQuery.data?.user.userId ?? null,
+    notificationChannel: 'WEB_TOAST',
+  })
 
   // ── Derived data ──────────────────────────────────────────────────────────────
 

@@ -136,6 +136,7 @@ describe('ComandaService branch happy paths', () => {
       resolveComandaBusinessDate: jest.fn(),
       recalculateComanda: jest.fn(),
       resolveComandaDraftItems: jest.fn(),
+      assertDraftSelectionsStockAvailability: jest.fn(async () => {}),
       assertOpenTableAvailability: jest.fn(async () => {}),
       assertBusinessDayOpen: jest.fn(async () => {}),
       syncCashClosure: jest.fn(),
@@ -621,5 +622,74 @@ describe('ComandaService branch happy paths', () => {
     expect(realtime.publishCashClosureUpdated).toHaveBeenCalledTimes(1)
     expect(cache.del).toHaveBeenCalledTimes(1)
     expect(finance.invalidateAndWarmSummary).toHaveBeenCalledWith('owner-1')
+  })
+
+  it('fecha comanda sem criar pagamento final quando o saldo ja esta quitado', async () => {
+    const { service, prisma, helpers } = createSetup()
+    helpers.requireAuthorizedComanda.mockResolvedValue(makeComanda())
+    helpers.recalculateComanda.mockResolvedValue(makeComanda({ totalAmount: 120 }))
+    prisma.comandaPayment.aggregate.mockResolvedValue({
+      _sum: {
+        amount: 120,
+      },
+    })
+    prisma.comanda.update.mockResolvedValue(
+      makeComanda({
+        status: ComandaStatus.CLOSED,
+        totalAmount: 120,
+        closedAt: new Date('2026-04-01T11:00:00.000Z'),
+      }),
+    )
+    prisma.comanda.findUnique.mockResolvedValue(
+      makeComanda({
+        status: ComandaStatus.CLOSED,
+        totalAmount: 120,
+        closedAt: new Date('2026-04-01T11:00:00.000Z'),
+        payments: [
+          {
+            id: 'payment-1',
+            amount: 120,
+            status: 'CONFIRMED',
+            paidAt: new Date('2026-04-01T11:00:00.000Z'),
+          },
+        ],
+      }),
+    )
+    helpers.resolveComandaBusinessDate.mockResolvedValue(new Date('2026-04-01T00:00:00.000Z'))
+    helpers.recalculateCashSession.mockResolvedValue({
+      id: 'cash-1',
+      status: 'OPEN',
+      openingCashAmount: 200,
+      countedCashAmount: null,
+      expectedCashAmount: 320,
+      differenceAmount: null,
+      movements: [],
+    })
+    helpers.syncCashClosure.mockResolvedValue({
+      id: 'closure-1',
+      status: 'OPEN',
+      expectedCashAmount: 320,
+      countedCashAmount: null,
+      differenceAmount: null,
+      grossRevenueAmount: 320,
+      realizedProfitAmount: 120,
+      openComandasCount: 0,
+      openSessionsCount: 1,
+      createdAt: new Date('2026-04-01T08:00:00.000Z'),
+      closedAt: null,
+    })
+
+    await service.closeComanda(
+      makeOwnerAuthContext({ workspaceOwnerUserId: 'owner-1' }),
+      'comanda-1',
+      {
+        discountAmount: 5,
+        serviceFeeAmount: 10,
+      },
+      makeRequestContext(),
+      { includeSnapshot: false },
+    )
+
+    expect(prisma.comandaPayment.create).not.toHaveBeenCalled()
   })
 })

@@ -42,7 +42,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('images.pexels.com')
   })
 
-  it('usa foto curada para cerveja de marca sem foto real', () => {
+  it('prioriza packshot nacional para cerveja de marca quando a foto curada pode distorcer a embalagem', () => {
     const visual = resolveProductVisual({
       name: 'Heineken 350ml',
       brand: 'Heineken',
@@ -53,9 +53,9 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('curated-beverage-photo')
-    expect(visual?.alt).toBe('Foto de Heineken 350ml')
-    expect(visual?.src).toContain('images.pexels.com')
+    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.alt).toBe('Packshot de Heineken 350ml')
+    expect(visual?.src).toContain('data:image/svg+xml')
   })
 
   it('usa packshot nacional para Brahma quando a foto curada nao representa o produto embalado', () => {
@@ -145,7 +145,7 @@ describe('resolveProductVisual', () => {
     expect(visual?.src).toContain('data:image/svg+xml')
   })
 
-  it('usa foto curada para Skol sem foto real', () => {
+  it('usa packshot nacional para Skol sem foto real', () => {
     const visual = resolveProductVisual({
       name: 'Skol 350ml',
       brand: 'Skol',
@@ -156,8 +156,8 @@ describe('resolveProductVisual', () => {
       isCombo: false,
     })
 
-    expect(visual?.source).toBe('curated-beverage-photo')
-    expect(visual?.src).toContain('images.pexels.com')
+    expect(visual?.source).toBe('national-beverage-catalog')
+    expect(visual?.src).toContain('data:image/svg+xml')
   })
 
   it('usa foto curada para Coca-Cola sem foto real', () => {

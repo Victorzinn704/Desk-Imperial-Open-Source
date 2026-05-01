@@ -1,6 +1,6 @@
 import { ApiError } from '@/lib/api'
+import { resolveApiBaseUrl } from '@/lib/api-base-url'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
 const DEFAULT_ADMIN_PIN_HINT_TTL_MS = 10 * 60 * 1000
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
@@ -11,6 +11,10 @@ export type AdminPinVerificationResponse = {
   verifiedAt?: string
   verifiedUntil?: string
   message?: string
+}
+
+export type AdminPinStatusResponse = {
+  configured: boolean
 }
 
 type AdminPinHint = {
@@ -26,7 +30,7 @@ let __storageLock = false
 
 function buildUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${API_BASE_URL}/api${normalizedPath}`
+  return `${resolveApiBaseUrl()}/api${normalizedPath}`
 }
 
 function getCsrfToken(): string | null {
@@ -126,6 +130,10 @@ async function adminApiFetch<T>(
  */
 export async function verifyAdminPin(pin: string): Promise<AdminPinVerificationResponse> {
   return adminApiFetch<AdminPinVerificationResponse>('/admin/verify-pin', 'POST', { pin })
+}
+
+export async function fetchAdminPinStatus(): Promise<AdminPinStatusResponse> {
+  return adminApiFetch<AdminPinStatusResponse>('/admin/pin', 'GET')
 }
 
 /**

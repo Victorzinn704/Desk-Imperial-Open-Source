@@ -18,6 +18,26 @@ import type { ComandaDraftItemDto } from './operations.schemas'
 
 type TransactionClient = Prisma.TransactionClient
 
+function resolveProductUnitCost(
+  product: Parameters<typeof calculateEffectiveUnitCost>[0] | null | undefined,
+  currencyService: CurrencyService | null | undefined,
+  costSnapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>> | null,
+) {
+  if (!product) {
+    return 0
+  }
+
+  if (currencyService && costSnapshot) {
+    return calculateEffectiveUnitCost(product, {
+      currencyService,
+      displayCurrency: CurrencyCode.BRL,
+      snapshot: costSnapshot,
+    })
+  }
+
+  return calculateRawEffectiveUnitCost(product)
+}
+
 export async function resolveComandaBusinessDate(
   transaction: PrismaService | TransactionClient,
   comanda: {
@@ -103,6 +123,85 @@ export async function resolveComandaDraftItems(
   return normalizedItems
 }
 
+type DraftStockSelection = {
+  productId: string
+  quantity: number
+}
+
+type DraftInventoryProduct = {
+  id: string
+  name: string
+  stock: number
+  isCombo: boolean
+  comboComponents: Array<{
+    componentProductId: string
+    totalUnits: number
+    componentProduct: {
+      id: string
+      name: string
+      stock: number
+    }
+  }>
+}
+
+export async function assertDraftSelectionsStockAvailability(
+  transaction: PrismaService | TransactionClient,
+  workspaceOwnerUserId: string,
+  selections: DraftStockSelection[],
+) {
+  if (!selections.length) {
+    return
+  }
+
+  const uniqueProductIds = Array.from(new Set(selections.map((selection) => selection.productId)))
+  const products = await transaction.product.findMany({
+    where: {
+      id: {
+        in: uniqueProductIds,
+      },
+      userId: workspaceOwnerUserId,
+      active: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      stock: true,
+      isCombo: true,
+      comboComponents: {
+        select: {
+          componentProductId: true,
+          totalUnits: true,
+          componentProduct: {
+            select: {
+              id: true,
+              name: true,
+              stock: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const productsById = new Map(products.map((product) => [product.id, product]))
+  const missingProductId = uniqueProductIds.find((productId) => !productsById.has(productId))
+  if (missingProductId) {
+    throw new NotFoundException('Produto nao encontrado para esta conta.')
+  }
+
+  const requestedStockByProduct = buildDraftStockConsumptionMap(selections, productsById)
+  const inventoryProductsById = buildDraftInventoryProductsById(products)
+
+  for (const [productId, requestedUnits] of requestedStockByProduct.entries()) {
+    const inventoryProduct = inventoryProductsById.get(productId)
+    if (!inventoryProduct || inventoryProduct.stock < requestedUnits) {
+      throw new BadRequestException(
+        `Estoque insuficiente para ${inventoryProduct?.name ?? 'o produto selecionado'}. Disponível: ${Math.max(inventoryProduct?.stock ?? 0, 0)} und.`,
+      )
+    }
+  }
+}
+
 function resolveSingleDraftItem(
   item: ComandaDraftItemDto,
   productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
@@ -163,6 +262,54 @@ function resolveManualDraftItem(item: ComandaDraftItemDto) {
     productName,
     unitPrice: roundCurrency(item.unitPrice),
   }
+}
+
+function buildDraftStockConsumptionMap(
+  selections: DraftStockSelection[],
+  productsById: Map<string, DraftInventoryProduct>,
+) {
+  const requestedStockByProduct = new Map<string, number>()
+
+  for (const selection of selections) {
+    const product = productsById.get(selection.productId)
+    if (!product) {
+      continue
+    }
+
+    if (product.isCombo && product.comboComponents.length > 0) {
+      for (const component of product.comboComponents) {
+        requestedStockByProduct.set(
+          component.componentProductId,
+          (requestedStockByProduct.get(component.componentProductId) ?? 0) + component.totalUnits * selection.quantity,
+        )
+      }
+      continue
+    }
+
+    requestedStockByProduct.set(product.id, (requestedStockByProduct.get(product.id) ?? 0) + selection.quantity)
+  }
+
+  return requestedStockByProduct
+}
+
+function buildDraftInventoryProductsById(products: DraftInventoryProduct[]) {
+  const inventoryProductsById = new Map<string, { name: string; stock: number }>()
+
+  for (const product of products) {
+    inventoryProductsById.set(product.id, {
+      name: product.name,
+      stock: product.stock,
+    })
+
+    for (const component of product.comboComponents) {
+      inventoryProductsById.set(component.componentProduct.id, {
+        name: component.componentProduct.name,
+        stock: component.componentProduct.stock,
+      })
+    }
+  }
+
+  return inventoryProductsById
 }
 
 export async function assertOpenTableAvailability(
@@ -258,15 +405,7 @@ export async function ensureOrderForClosedComanda(
 
   const totalCost = roundCurrency(
     comanda.items.reduce((sum, item) => {
-      const unitCost = item.product
-        ? currencyService && costSnapshot
-          ? calculateEffectiveUnitCost(item.product, {
-              currencyService,
-              displayCurrency: CurrencyCode.BRL,
-              snapshot: costSnapshot,
-            })
-          : calculateRawEffectiveUnitCost(item.product)
-        : 0
+      const unitCost = resolveProductUnitCost(item.product, currencyService, costSnapshot)
       return sum + roundCurrency(unitCost * item.quantity)
     }, 0),
   )
@@ -333,15 +472,7 @@ export async function ensureOrderForClosedComanda(
       totalItems,
       items: {
         create: comanda.items.map((item) => {
-          const unitCost = item.product
-            ? currencyService && costSnapshot
-              ? calculateEffectiveUnitCost(item.product, {
-                  currencyService,
-                  displayCurrency: CurrencyCode.BRL,
-                  snapshot: costSnapshot,
-                })
-              : calculateRawEffectiveUnitCost(item.product)
-            : 0
+          const unitCost = resolveProductUnitCost(item.product, currencyService, costSnapshot)
           const lineRevenue = roundCurrency(toNumberOrZero(item.totalAmount))
           const lineCost = roundCurrency(unitCost * item.quantity)
 

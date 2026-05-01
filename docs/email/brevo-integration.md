@@ -30,7 +30,7 @@ This document covers the complete Brevo (formerly Sendinblue) email integration 
 
 ### 2. Environment Configuration
 
-**Location:** `.env` (local) or Railway/Vercel environment variables (production)
+**Location:** `.env` (local), `apps/api/.env` (execucao local da API) ou variaveis do runtime/CI (producao)
 
 ```env
 # Email Provider
@@ -712,8 +712,8 @@ View logs:
 # Development
 npm run dev
 
-# Production (Railway)
-railway logs --service api
+# Production (runtime da API)
+docker logs desk-api
 ```
 
 ## Production Checklist
@@ -744,7 +744,8 @@ Before going live:
 ✓ EMAIL_REPLY_TO=suporte@deskimperial.com
 ✓ EMAIL_SUPPORT_ADDRESS=suporte@deskimperial.com
 ✓ APP_NAME=DESK IMPERIAL
-✓ FRONTEND_URL=https://app.deskimperial.com
+✓ APP_URL=https://app.deskimperial.online
+✓ NEXT_PUBLIC_APP_URL=https://app.deskimperial.online
 ```
 
 ## Additional Resources

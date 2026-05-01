@@ -24,11 +24,13 @@ jest.mock('ioredis', () => {
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
-    unlink: jest.fn(),
-    scan: jest.fn(),
-    disconnect: jest.fn(),
-    on: jest.fn(),
-    connect: jest.fn().mockResolvedValue(undefined),
+      unlink: jest.fn(),
+      scan: jest.fn(),
+      incr: jest.fn(),
+      expire: jest.fn(),
+      disconnect: jest.fn(),
+      on: jest.fn(),
+      connect: jest.fn().mockResolvedValue(undefined),
     ping: jest.fn().mockResolvedValue('PONG'),
   }))
 })
@@ -149,6 +151,46 @@ describe('CacheService', () => {
 
       // Não deve lançar erro
       await expect(service.set('test-key', { foo: 'bar' }, 300)).resolves.toBeUndefined()
+    })
+  })
+
+  describe('setIfAbsent', () => {
+    it('retorna true em fail-open quando Redis está desabilitado', async () => {
+      const service = new CacheService()
+
+      await expect(service.setIfAbsent('telegram:update:1', { ok: true }, 60)).resolves.toBe(true)
+    })
+
+    it('retorna true quando a chave foi criada com NX', async () => {
+      const mockRedis = new Redis()
+      ;(mockRedis.set as jest.Mock).mockResolvedValue('OK')
+
+      const service = new CacheService()
+      ;(service as any).client = mockRedis
+      ;(service as any).enabled = true
+
+      const result = await service.setIfAbsent('telegram:update:1', { ok: true }, 60)
+
+      expect(result).toBe(true)
+      expect(mockRedis.set).toHaveBeenCalledWith('telegram:update:1', JSON.stringify({ ok: true }), 'EX', 60, 'NX')
+    })
+  })
+
+  describe('increment', () => {
+    it('incrementa chave e define TTL na primeira ocorrência', async () => {
+      const mockRedis = new Redis()
+      ;(mockRedis.incr as jest.Mock).mockResolvedValue(1)
+      ;(mockRedis.expire as jest.Mock).mockResolvedValue(1)
+
+      const service = new CacheService()
+      ;(service as any).client = mockRedis
+      ;(service as any).enabled = true
+
+      const count = await service.increment('telegram:ratelimit:555', 60)
+
+      expect(count).toBe(1)
+      expect(mockRedis.incr).toHaveBeenCalledWith('telegram:ratelimit:555')
+      expect(mockRedis.expire).toHaveBeenCalledWith('telegram:ratelimit:555', 60)
     })
   })
 

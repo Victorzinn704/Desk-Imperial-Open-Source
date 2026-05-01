@@ -2,13 +2,18 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { openComanda, replaceComanda, type ReplaceComandaPayload } from '@/lib/api'
-import { invalidateOperationsWorkspace } from '@/lib/operations'
+import {
+  appendOptimisticComanda,
+  patchOptimisticComanda,
+  scheduleOperationsWorkspaceReconcile,
+} from '@/lib/operations'
 import { buildOpenComandaPayload } from './pdv-board.helpers'
 import type { SaveComandaPayload } from './comanda-modal'
 import { toPdvComanda } from './pdv-operations'
 import type { Comanda, Mesa } from './pdv-types'
+import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
 
-const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
+const OPERATIONS_LIVE_QUERY_PREFIX = ['operations', 'live'] as const
 
 export function usePdvBoardDraftMutations({
   editingComanda,
@@ -26,12 +31,24 @@ export function usePdvBoardDraftMutations({
   const queryClient = useQueryClient()
   const openComandaMutation = useMutation({
     mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
+    onSuccess: (response) => {
+      upsertLiveComanda(queryClient, response.comanda)
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeOrders: true,
+        includeFinance: true,
+        delayMs: 700,
+      })
+    },
   })
   const replaceComandaMutation = useMutation({
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: ReplaceComandaPayload }) =>
       replaceComanda(comandaId, payload, { includeSnapshot: false }),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
+    onSuccess: (response) => {
+      upsertLiveComanda(queryClient, response.comanda)
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        delayMs: 700,
+      })
+    },
   })
 
   return {
@@ -59,5 +76,28 @@ export function usePdvBoardDraftMutations({
         throw error
       }
     },
+  }
+}
+
+function upsertLiveComanda(queryClient: ReturnType<typeof useQueryClient>, comanda: ComandaRecord) {
+  const liveQueries = queryClient.getQueriesData<OperationsLiveResponse>({
+    queryKey: OPERATIONS_LIVE_QUERY_PREFIX,
+  })
+
+  for (const [queryKey, snapshot] of liveQueries) {
+    if (!snapshot) {
+      continue
+    }
+
+    const hasComanda =
+      snapshot.unassigned.comandas.some((current) => current.id === comanda.id) ||
+      snapshot.employees.some((employee) => employee.comandas.some((current) => current.id === comanda.id))
+
+    if (hasComanda) {
+      patchOptimisticComanda(queryClient, queryKey, comanda.id, () => comanda)
+      continue
+    }
+
+    appendOptimisticComanda(queryClient, queryKey, comanda)
   }
 }

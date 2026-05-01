@@ -1,0 +1,177 @@
+# Performance Audit — Desk Imperial
+
+**Scope**: NestJS backend (`apps/api`), Next.js 16 frontend (`apps/web`), Redis cache, Socket.IO realtime.
+**Date**: 2026-04-26
+**Score**: **5.2 / 10** (Significant performance debt in backend DB patterns; frontend patching is clever but fragile and expensive.)
+
+---
+
+## PERF-001 — `recalculateCashSession` loads full comanda tree with nested product relations on every payment/close
+
+| Field | Value |
+|---|---|
+| Severity | **HIGH** |
+| Confidence | HIGH |
+| Score Impact | -1.5 |
+| Evidence | `apps/api/src/modules/operations/operations-cash.utils.ts:15-96` |
+| Impact | Every `createComandaPayment`, `closeComanda`, and `syncCashClosure` triggers a `findUnique` on the cash session that `include`s all comandas → all items → all products. With 50+ comandas each having 10+ items, this fetches hundreds of rows with nested joins. The result is repeated heavy DB load and serialization overhead on every write. |
+| Recommendation | Replace the full `include` tree with targeted `aggregate` queries for `grossRevenueAmount` and `realizedProfitAmount`. The comanda-level subtotals are already materialized on the comanda record — use them instead of crawling the item tree. The `paidRevenueAmount` + `legacyClosedRevenueAmount` split can be computed with two lightweight aggregates. |
+| Effort | **Medium** — Requires refactoring one core utility and verifying monetary calculations match. |
+
+## PERF-002 — `closeComanda` executes 8+ sequential DB operations inside a single transaction
+
+| Field | Value |
+|---|---|
+| Severity | **HIGH** |
+| Confidence | HIGH |
+| Evidence | `apps/api/src/modules/operations/comanda.service.ts:1298-1343` |
+| Impact | The `closeComanda` transaction performs: (1) `recalculateComanda` (findUnique + update), (2) `settleRemainingComandaBalance` (aggregate + optional create), (3) `comanda.update` (status + metadata), (4) `loadComandaWithPayments` (findUnique with includes), (5) `ensureOrderForClosedComanda` (separate insert), (6) `syncComandaCashState` → `resolveComandaBusinessDate` (query), (7) `recalculateCashSession` (heavy include tree), (8) `syncCashClosure` (3+ aggregation queries + upsert). All sequential within Serializable isolation. This is the critical path for the highest-frequency operation — closing tables. |
+| Recommendation | Consolidate steps 4-8 into parallel `Promise.all` calls after step 3. The cash recalculation and closure sync don't depend on `loadComandaWithPayments`. Pre-fetch businessDate once before the transaction and pass it through. Move `ensureOrderForClosedComanda` to fire-and-forget post-transaction. |
+| Effort | **Medium** — Requires careful analysis of data dependencies within the transaction. |
+
+## PERF-003 — `buildLiveSnapshot` has no pagination; loads all comandas for entire business day
+
+| Field | Value |
+|---|---|
+| Severity | **MEDIUM** |
+| Confidence | HIGH |
+| Evidence | `apps/api/src/modules/operations/operations-helpers.service.ts:300-308` |
+| Impact | The live snapshot fetches ALL comandas opened during the business day without any `take`/`skip` limit. For busy restaurants, this could mean 200+ comandas each with nested items and payments. The payload size grows linearly with business volume, and the `toComandaRecord` serialization on each comanda compounds this. The 30s Redis TTL partially masks this but the initial cache fill after mutation invalidation hits this path. |
+| Recommendation | Implement cursor-based or offset pagination with a reasonable page size (e.g., 50 comandas per page). Consider splitting the snapshot into a "recent" view (last 30 comandas) and an on-demand "load more" pattern, or implementing server-sent pagination with infinite scroll on the frontend. |
+| Effort | **Medium** — Requires contract changes (new cursor/pagination params) and frontend scroll handling. |
+
+## PERF-004 — `recalculateComanda` called from within transaction does redundant read-then-write
+
+| Field | Value |
+|---|---|
+| Severity | **MEDIUM** |
+| Confidence | HIGH |
+| Evidence | `apps/api/src/modules/operations/operations-cash.utils.ts:98-141` and callers in `comanda.service.ts:424-429, 569, 710, 844-847, 1300` |
+| Impact | `recalculateComanda` always does `findUnique` + computation + `update`. When called inside methods like `addComandaItem` or `addComandaItems`, the comanda was *already fetched* moments before (e.g., `requireAuthorizedComanda` at line 496). The `recalculateComanda` re-reads it, recalculates subtotals, then writes back. Each recalculate is an extra DB round trip. With 5-10 items being added, that's 10-20 unnecessary `findUnique` calls. |
+| Recommendation | Pass the already-fetched comanda (with items) into `recalculateComanda` as an optional input so it skips the initial read. Modify `recalculateComanda` signature to accept `{ existing?: ComandaWithItems }`. |
+| Effort | **Low** — Signature change + optional skip pattern. |
+
+## PERF-005 — `buildOperationsExecutiveKpis` and `buildTopProducts` recalculate from scratch on every Socket.IO patch
+
+| Field | Value |
+|---|---|
+| Severity | **MEDIUM** |
+| Confidence | HIGH |
+| Evidence | `apps/web/lib/operations/operations-realtime-patching.ts:87-103` → `apps/web/lib/operations/operations-kpis.ts:72-93, 219-237` |
+| Impact | `syncSummarySnapshotFromLive` is called externally and recomputes KPIs by iterating ALL groups and ALL comanda items. `buildTopProducts` does a triple-nested loop (groups → comandas → items) building a `Map` with full aggregation. These run on every Socket.IO-driven summary sync. For a restaurant with 50 open comandas, that's hundreds of item iterations per realtime event. |
+| Recommendation | Cache KPI computations in a derived state (useMemo or a simple dirty flag pattern). Only recompute when a comanda.opened/updated/closed event is received. Use incremental KPI adjustments (delta-based) rather than full recomputation — e.g., on comanda closed, subtract its total from `faturamentoAberto` and add to `receitaRealizada`. |
+| Effort | **Medium** — Requires incremental KPI update logic and careful state consistency management. |
+
+## PERF-006 — `upsertComandaRecord` creates excessive intermediate arrays on every realtime event
+
+| Field | Value |
+|---|---|
+| Severity | **MEDIUM** |
+| Confidence | MEDIUM |
+| Evidence | `apps/web/lib/operations/operations-realtime-patching.ts:889-929` |
+| Impact | Every Socket.IO comanda event triggers `upsertComandaRecord` which: (1) `.map()` + `.filter()` all employees to remove the comanda, (2) `.map()` all employees again to insert or skip, (3) `.filter()` + `.find()` in `findComandaInSnapshot` scanning all employee groups. For a restaurant with 30 employees, this creates 3 full array copies per event. With high-velocity operations (multiple items, payments, status changes per second), this adds measurable GC pressure. |
+| Recommendation | Use a mutable approach with a single pass over employee groups: find the target group index once, mutate a shallow copy at that position, and rebuild only the `comandas` array at that index. Avoid the double-filter-then-rebuild pattern that currently requires scanning all groups twice. |
+| Effort | **Low** — Local refactor within one function. |
+
+## PERF-007 — `buildComandaFromPayload` uses deeply nested fallback chains (up to 6 levels)
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | HIGH |
+| Evidence | `apps/web/lib/operations/operations-realtime-patching.ts:511-583` |
+| Impact | Each property on the reconstructed `ComandaRecord` evaluates a chain like `legacy?.field ?? existing?.field ?? rawField ?? defaultValue`. With ~20 properties, this creates ~120 property access checks per event. While individually cheap, this runs on every Socket.IO event and for multiple query cache entries. The `subtotalAmount` field (lines 554-562) is one of the worst offenders with a 5-level chain crossing 3 different payload shapes. |
+| Recommendation | Normalize the realtime payload on the backend before emitting. The Socket.IO envelope should carry a well-structured, predictable payload that doesn't require 3 different fallback paths (legacy comanda, flat fields, existing snapshot). Define a single `RealtimeComandaPayload` type and emit that consistently. |
+| Effort | **Medium** — Requires backend realtime payload standardization and coordinated frontend cleanup. |
+
+## PERF-008 — Kitchen status updates use `ReadCommitted` instead of `Serializable` but still do heavy comanda propagation
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | MEDIUM |
+| Evidence | `apps/api/src/modules/operations/comanda.service.ts:1173-1235` and `apps/api/src/modules/operations/comanda-kitchen.utils.ts:5-35` |
+| Impact | `updateKitchenItemStatus` uses `ReadCommitted` isolation (line 1233), which is good — kitchen updates are lower contention than payment writes. However, `propagateKitchenStatusToComanda` (line 1211) fetches ALL comanda items (line 13-16), filters kitchen items, derives a new status, and potentially updates the comanda. With 50+ items on a comanda, this fetches the full item list even when only one item's status changed. The `deriveComandaStatusFromKitchen` call is pure in-memory (cheap), but the `findMany` DB hit is the cost. |
+| Recommendation | Pass the already-known kitchen item counts from the calling context. The `updateKitchenItemStatus` method already has the item via `findUnique` — it knows the current status and the target status. Instead of re-querying all items, maintain a kitchen status counter on the comanda or compute the status transition in-memory. |
+| Effort | **Low** — Can be avoided by augmenting the comanda query in the same transaction to include kitchen status counts. |
+
+## PERF-009 — Multiple parallel HTTP requests on page load for related operations data
+
+| Field | Value |
+|---|---|
+| Severity | **MEDIUM** |
+| Confidence | HIGH |
+| Evidence | `apps/web/lib/operations/operations-query.ts:4-7` and `apps/web/lib/api-operations.ts:44-66` |
+| Impact | The operations page triggers 3 separate API calls: `/operations/live`, `/operations/kitchen`, `/operations/summary`. These hit 3 different endpoints with overlapping data requirements. The kitchen view queries comanda items, the live view queries comandas, and the summary queries comandas again. There's no server-side composition — the backend runs `buildLiveSnapshot`, `buildKitchenView`, and `buildSummaryView` independently, with overlapping DB queries (e.g., both live and summary query `cashClosure.findUnique` on the same business date). |
+| Recommendation | Implement a BFF-style composite endpoint that merges live + kitchen + summary into a single response. The backend can query all needed data in one `Promise.all` block and return a single payload. Alternatively, use HTTP/2 multiplexing with the existing endpoints (already available via Next.js). |
+| Effort | **Medium** — Requires new composite endpoint + frontend query refactor. |
+
+## PERF-010 — No request deduplication at HTTP transport layer
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | MEDIUM |
+| Evidence | `apps/web/lib/api-core.ts:50-129` |
+| Impact | `apiFetch` uses native `fetch` directly without any deduplication layer. If two React components mount simultaneously and both call `fetchOperationsLive` with the same params before TanStack Query's cache populates, two identical HTTP requests are sent. TanStack Query deduplicates by queryKey *after* the first response caches, but there's a small window of overlap. This is mitigated by TanStack's `staleTime: 15_000` on the frontend query config. |
+| Recommendation | Add a simple in-flight request map at the `apiFetch` level: track ongoing requests by `method + path + body hash`, and if a duplicate is detected, return the same promise. TanStack Query's `queryFn` is already stable (same function reference), but adding transport-level dedup is a defense-in-depth measure. |
+| Effort | **Low** — A `Map<string, Promise<T>>` with key = `${method}:${path}` would cover 90% of cases. |
+
+## PERF-011 — No ETag/If-None-Match for operations GET endpoints
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | MEDIUM |
+| Evidence | `apps/web/lib/api-core.ts` — no conditional request headers sent; backend controllers lack ETag generation. |
+| Impact | Every `fetchOperationsLive` call (even from background refetch) transfers the full JSON payload. The payload can be 50-200KB for busy restaurants. With ETag support, background refetches could return `304 Not Modified` and save both bandwidth and deserialization time. The Redis cache already holds the serialized snapshot — generating an ETag from its hash would be trivial. |
+| Recommendation | Generate ETag from the Redis cache key + a version/timestamp. Return `304` when `If-None-Match` matches. On the frontend, `apiFetch` should pass the ETag from the previous response. |
+| Effort | **Low** — NestJS interceptor + frontend header plumbing. |
+
+## PERF-012 — `react-big-calendar` and `leaflet` imported synchronously in dashboard shell
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | MEDIUM |
+| Evidence | `apps/web/components/dashboard/dashboard-shell.tsx:4` — uses `dynamic` for major environments but `react-big-calendar` (~180KB gzipped) is likely loaded synchronously in the Calendario environment. `leaflet` + `react-leaflet` (~120KB gzipped) likely loaded synchronously for map views. |
+| Impact | Increases initial dashboard chunk size for users who never access the calendar or map views. These libraries are specialized views used by a minority of sessions. |
+| Recommendation | Wrap `react-big-calendar`, `leaflet`, and `react-leaflet` in `next/dynamic` imports with `ssr: false` and loading skeletons. The `MapSkeleton` and `CalendarSkeleton` components already exist in `lazy-components.tsx`. |
+| Effort | **Low** — Add `dynamic()` wrappers around components that import these libraries. |
+
+## PERF-013 — `ag-grid-community` at ~500KB gzipped dominates vendor chunk
+
+| Field | Value |
+|---|---|
+| Severity | **LOW** |
+| Confidence | HIGH |
+| Evidence | `apps/web/package.json:27-28` (`ag-grid-community`, `ag-grid-react`) and `apps/web/components/shared/lazy-components.tsx:59-62` |
+| Impact | AG Grid is already lazy-loaded via `LazyAgGrid` with `ssr: false`. However, if it's used on a critical user journey (e.g., product management table), the lazy-load causes a layout shift and loading spinner delay. The `~500KB` network transfer for a table component is disproportionate for mobile users on slow connections. |
+| Recommendation | Evaluate whether AG Grid is overkill for the product/order tables. A lightweight virtualized table (e.g., `@tanstack/react-table` + `@tanstack/react-virtual`, already in dependencies) could replace AG Grid for simpler tables and reduce the bundle by ~450KB. Keep AG Grid only for the most complex spreadsheet-like views. |
+| Effort | **High** — Requires replacing AG Grid usage sites with TanStack Table. |
+
+---
+
+## Summary Scorecard
+
+| Category | Score | Notes |
+|---|---|---|
+| Backend DB Efficiency | 3/10 | N+1 patterns in recalculateCashSession; serial transaction chains; no pagination |
+| Realtime Patching | 5/10 | Functional but fragile (1088 lines, complexity 90); redundant recalculations |
+| Caching Strategy | 7/10 | Good Redis cache with 20-30s TTL; staleTime alignment on frontend; proper invalidation |
+| Bundle Size | 6/10 | Large deps (AG Grid 500KB, Recharts 250KB, Leaflet 120KB) partially lazy-loaded; optimizePackageImports active |
+| Data Fetching | 5/10 | 3 parallel requests on page load; no HTTP dedup; no conditional requests |
+| Perceived Performance | 7/10 | Socket.IO patches feel instant; cache hides DB latency; optimistic updates via setQueryData |
+| Serialization Overhead | 5/10 | Deeply nested includes in DB queries; full snapshot re-serialization after mutations |
+
+**Overall**: **5.2 / 10** — The architecture is sound (Redis + Socket.IO patching + TanStack Query) but the execution has significant debt: the backend DB layer does excessive loading (full comanda trees on every payment), the frontend patching engine recalculates from scratch on common events, and there's no pagination to bound response sizes. The perceived performance is good due to the realtime layer, but the actual backend cost per-operation is high and will degrade linearly with business volume.
+
+**Top 3 Quick Wins** (Low Effort, High Impact):
+1. **PERF-004**: Skip `recalculateComanda` DB read when comanda already in memory
+2. **PERF-006**: Single-pass array mutation in `upsertComandaRecord`
+3. **PERF-011**: Add ETag support to operations GET endpoints
+
+**Top 3 Strategic Investments** (Medium Effort, Critical Impact):
+1. **PERF-001**: Replace full comanda tree load in `recalculateCashSession` with aggregates
+2. **PERF-002**: Parallelize non-dependent DB ops in `closeComanda` transaction
+3. **PERF-003**: Add pagination to `buildLiveSnapshot`

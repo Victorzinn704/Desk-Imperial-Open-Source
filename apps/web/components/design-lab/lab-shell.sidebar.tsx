@@ -62,6 +62,7 @@ export function LabShellSidebar({
           accountInitials={accountInitials}
           accountLabel={accountLabel}
           accountMeta={accountMeta}
+          collapsed={collapsed}
           configHref={configHref}
           isActive={isConfigRoute}
         />

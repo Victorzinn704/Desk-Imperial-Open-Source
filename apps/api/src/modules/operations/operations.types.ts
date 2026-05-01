@@ -86,6 +86,11 @@ type MesaLike = Pick<
   'id' | 'label' | 'capacity' | 'section' | 'positionX' | 'positionY' | 'active' | 'reservedUntil'
 >
 
+type MesaOpenComandaLike = {
+  id: string
+  currentEmployeeId: string | null
+} | null
+
 export type ComandaLike = Pick<
   Comanda,
   | 'id'
@@ -111,6 +116,30 @@ export type ComandaLike = Pick<
 }
 
 type EmployeeLike = Pick<Employee, 'id' | 'employeeCode' | 'displayName' | 'active'>
+
+function resolveMesaStatus(mesa: MesaLike, openComanda: MesaOpenComandaLike) {
+  if (mesa.reservedUntil && mesa.reservedUntil > new Date()) {
+    return 'reservada' as const
+  }
+
+  if (openComanda) {
+    return 'ocupada' as const
+  }
+
+  return 'livre' as const
+}
+
+function resolveComandaPaymentStatus(paidAmount: number, remainingAmount: number) {
+  if (paidAmount <= 0) {
+    return 'UNPAID' as const
+  }
+
+  if (remainingAmount > 0.009) {
+    return 'PARTIAL' as const
+  }
+
+  return 'PAID' as const
+}
 
 export type CashClosureLike = Pick<
   CashClosure,
@@ -184,7 +213,7 @@ export function toComandaPaymentRecord(payment: ComandaPaymentLike): ComandaPaym
 
 export function toMesaRecord(
   mesa: MesaLike,
-  openComanda: Pick<Comanda, 'id' | 'currentEmployeeId'> | null,
+  openComanda: MesaOpenComandaLike,
 ): MesaRecord {
   return {
     id: mesa.id,
@@ -195,7 +224,7 @@ export function toMesaRecord(
     positionY: mesa.positionY,
     active: mesa.active,
     reservedUntil: mesa.reservedUntil?.toISOString() ?? null,
-    status: mesa.reservedUntil && mesa.reservedUntil > new Date() ? 'reservada' : openComanda ? 'ocupada' : 'livre',
+    status: resolveMesaStatus(mesa, openComanda),
     comandaId: openComanda?.id ?? null,
     currentEmployeeId: openComanda?.currentEmployeeId ?? null,
   }
@@ -208,7 +237,7 @@ export function toComandaRecord(comanda: ComandaLike): ComandaRecord {
     .reduce((sum, payment) => sum + payment.amount, 0)
   const totalAmount = toNumberOrNull(comanda.totalAmount) ?? 0
   const remainingAmount = Math.max(0, totalAmount - paidAmount)
-  const paymentStatus = paidAmount <= 0 ? 'UNPAID' : remainingAmount > 0.009 ? 'PARTIAL' : 'PAID'
+  const paymentStatus = resolveComandaPaymentStatus(paidAmount, remainingAmount)
 
   return {
     id: comanda.id,

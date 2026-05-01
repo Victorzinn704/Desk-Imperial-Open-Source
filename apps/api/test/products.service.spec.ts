@@ -175,7 +175,13 @@ beforeEach(() => {
   requestContext = makeRequestContext()
 
   // Defaults
-  mockPrisma.$transaction.mockImplementation(async (callback) => callback(mockPrisma))
+  mockPrisma.$transaction.mockImplementation(async (input) => {
+    if (typeof input === 'function') {
+      return input(mockPrisma)
+    }
+
+    return Promise.all(input)
+  })
   mockPrisma.product.findUniqueOrThrow.mockResolvedValue(makeProduct())
   mockPrisma.productComboItem.findMany.mockResolvedValue([])
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
@@ -1060,6 +1066,72 @@ describe('ProductsService', () => {
         'Combo da Casa',
       )
       expect(mockPrisma.product.delete).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('bulkRestockForUser', () => {
+    it('reabastece em massa produtos abaixo da meta operacional', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([
+        makeProduct({ id: 'product-low', name: 'Coca 350', stock: 3, lowStockThreshold: 8 }),
+        makeProduct({ id: 'product-zero', name: 'Agua', stock: 0, lowStockThreshold: null }),
+        makeProduct({ id: 'product-ok', name: 'Whisky', stock: 80, lowStockThreshold: 10 }),
+      ])
+      mockPrisma.product.update.mockImplementation(({ where, data }) =>
+        Promise.resolve(
+          makeProduct({
+            id: where.id,
+            stock: data.stock,
+          }),
+        ),
+      )
+
+      const result = await productsService.bulkRestockForUser(
+        mockContext,
+        { mode: 'low_stock', targetStock: 24 },
+        requestContext,
+      )
+
+      expect(mockPrisma.product.update).toHaveBeenCalledTimes(2)
+      expect(result.summary.updatedCount).toBe(2)
+      expect(result.products).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'product-low', nextStock: 24 }),
+          expect.objectContaining({ id: 'product-zero', nextStock: 24 }),
+        ]),
+      )
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'product.bulk_restocked',
+          metadata: expect.objectContaining({ updatedCount: 2, targetStock: 24 }),
+        }),
+      )
+    })
+
+    it('usa multiplicador do threshold quando a meta do alerta pede mais estoque', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([
+        makeProduct({ id: 'product-threshold', name: 'Batata', stock: 12, lowStockThreshold: 20 }),
+      ])
+      mockPrisma.product.update.mockResolvedValue(makeProduct({ id: 'product-threshold', stock: 40 }))
+
+      const result = await productsService.bulkRestockForUser(
+        mockContext,
+        { mode: 'all_active', targetStock: 24 },
+        requestContext,
+      )
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-threshold' },
+        data: { stock: 40 },
+      })
+      expect(result.products[0]).toEqual(expect.objectContaining({ nextStock: 40 }))
+    })
+
+    it('bloqueia reabastecimento em massa para STAFF', async () => {
+      const staffContext = makeAuthContext({ role: 'STAFF' })
+
+      await expect(
+        productsService.bulkRestockForUser(staffContext, { mode: 'low_stock', targetStock: 24 }, requestContext),
+      ).rejects.toThrow('Apenas o dono pode reabastecer produtos em massa.')
     })
   })
 

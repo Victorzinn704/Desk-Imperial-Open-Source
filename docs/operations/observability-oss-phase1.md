@@ -171,12 +171,13 @@ Prometheus e regras:
 - health da API via probe HTTP real (`desk-api-health`) com blackbox exporter
 - alertas para indisponibilidade de serviços de observabilidade
 - alerta para falha recorrente do probe de health da API
+- Sentry agora convive com essa trilha e cobre erro/tracing/sourcemaps em API e web; a stack OSS continua focada em OTEL, Faro e dashboards operacionais
 
 Limitacoes atuais:
 
 - dashboard provisionado hoje e mais forte em saude da infraestrutura do que em fluxo de produto
 - Alertmanager ainda nao sai para destino externo por padrao, a menos que `ALERTMANAGER_WEBHOOK_URL` seja definido no ambiente do compose
-- no stack Oracle, os probes `desk-api-health` e `desk-app-health` usam os endpoints publicos `https://api.deskimperial.online/api/health` e `https://app.deskimperial.online/`
+- no stack Oracle, os probes `desk-api-health` e `desk-app-health` usam os endpoints publicos `https://api.deskimperial.online/api/v1/health` e `https://app.deskimperial.online/`
 
 Arquivos de referencia:
 

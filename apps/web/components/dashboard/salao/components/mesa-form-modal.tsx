@@ -90,7 +90,6 @@ export const CreateMesaModal = memo(function CreateMesaModal({
           <>
             <Field label="Nome da mesa *">
               <input
-                autoFocus
                 className={inputClassName}
                 maxLength={40}
                 placeholder="Ex: Mesa 1, VIP, Varanda"
@@ -240,7 +239,6 @@ export const EditMesaModal = memo(function EditMesaModal({
       <form className="space-y-5" onSubmit={onSubmit}>
         <Field label="Nome da mesa *">
           <input
-            autoFocus
             className={inputClassName}
             maxLength={40}
             value={form.label}

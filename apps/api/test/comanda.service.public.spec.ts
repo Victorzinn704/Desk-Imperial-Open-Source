@@ -58,6 +58,7 @@ describe('ComandaService (public branches)', () => {
   const helpers = {
     resolveEmployeeForStaff: jest.fn(),
     resolveComandaDraftItems: jest.fn(),
+    assertDraftSelectionsStockAvailability: jest.fn(),
     requireAuthorizedComanda: jest.fn(),
     requireOwnedComanda: jest.fn(),
     resolveComandaBusinessDate: jest.fn(),

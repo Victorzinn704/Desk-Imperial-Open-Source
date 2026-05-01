@@ -179,12 +179,14 @@ function buildSaleInitialValues(
 export function PortfolioEnvironment() {
   const [surface, setSurface] = useState<PortfolioSurfaceState>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [bulkRestockFeedback, setBulkRestockFeedback] = useState<string | null>(null)
 
   const { financeQuery, productsQuery, employeesQuery, sessionQuery } = useDashboardQueries({ section: 'portfolio' })
   const {
     createProductMutation: _createProductMutation,
     updateProductMutation: _updateProductMutation,
     archiveProductMutation: _archiveProductMutation,
+    bulkRestockProductsMutation: _bulkRestockProductsMutation,
     restoreProductMutation,
     deleteProductMutation: _deleteProductMutation,
     createOrderMutation,
@@ -200,6 +202,7 @@ export function PortfolioEnvironment() {
     _createProductMutation.error,
     _updateProductMutation.error,
     _archiveProductMutation.error,
+    _bulkRestockProductsMutation.error,
     restoreProductMutation.error,
     _deleteProductMutation.error,
   ])
@@ -210,6 +213,23 @@ export function PortfolioEnvironment() {
   const archiveProductMutation = {
     isPending: _archiveProductMutation.isPending,
     mutate: (id: string) => _archiveProductMutation.mutate(id, { onSuccess: () => setSurface(null) }),
+  }
+
+  const bulkRestockProductsMutation = {
+    isPending: _bulkRestockProductsMutation.isPending,
+    mutate: () =>
+      _bulkRestockProductsMutation.mutate(
+        { mode: 'low_stock', targetStock: 24 },
+        {
+          onSuccess: (payload) => {
+            setBulkRestockFeedback(
+              payload.summary.updatedCount > 0
+                ? `${payload.summary.updatedCount} produto(s) reabastecido(s) para no mínimo ${payload.summary.targetStock} und base.`
+                : 'Nenhum produto precisava de reabastecimento nesta passada.',
+            )
+          },
+        },
+      ),
   }
 
   const updateProductMutation = {
@@ -323,6 +343,8 @@ export function PortfolioEnvironment() {
 
       <PortfolioProductsPanel
         busy={productBusy}
+        bulkRestockFeedback={bulkRestockFeedback}
+        bulkRestockPending={bulkRestockProductsMutation.isPending}
         currency={displayCurrency}
         filteredProducts={filteredProducts}
         mutationError={productMutationError}
@@ -331,6 +353,7 @@ export function PortfolioEnvironment() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onArchive={archiveProductMutation.mutate}
+        onBulkRestock={bulkRestockProductsMutation.mutate}
         onCreate={openNewProductSurface}
         onDelete={handleDeleteProduct}
         onEdit={handleEditProduct}
@@ -829,9 +852,12 @@ function PortfolioProductToolbar({
 
 function PortfolioProductsPanel({
   busy,
+  bulkRestockFeedback,
+  bulkRestockPending,
   currency,
   filteredProducts,
   mutationError,
+  onBulkRestock,
   onCreate,
   onArchive,
   onDelete,
@@ -844,9 +870,12 @@ function PortfolioProductsPanel({
   setSearchQuery,
 }: Readonly<{
   busy: boolean
+  bulkRestockFeedback: string | null
+  bulkRestockPending: boolean
   currency: string
   filteredProducts: ProductRecord[]
   mutationError: ProductMutationError
+  onBulkRestock: () => void
   onCreate: () => void
   onArchive: (id: string) => void
   onDelete: (id: string) => void
@@ -907,11 +936,22 @@ function PortfolioProductsPanel({
             Catálogo real com estoque, margem, EAN e ações operacionais sem encapsular a tabela em outro card.
           </p>
         </div>
-        <PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />
+        <div className="flex flex-col gap-3 xl:items-end">
+          <PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />
+          <button
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 text-sm font-medium text-[var(--lab-fg)] transition hover:bg-[var(--lab-surface-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={bulkRestockPending}
+            type="button"
+            onClick={onBulkRestock}
+          >
+            {bulkRestockPending ? 'Reabastecendo estoque...' : 'Reabastecer em massa'}
+          </button>
+        </div>
       </div>
 
       {productsError ? <AlertMessage message={productsError} tone="danger" /> : null}
       {mutationError ? <AlertMessage message={mutationError.message} tone="danger" /> : null}
+      {bulkRestockFeedback ? <AlertMessage message={bulkRestockFeedback} tone="success" /> : null}
 
       <div className="flex flex-wrap items-center gap-2">
         {filterOptions.map((option) => (

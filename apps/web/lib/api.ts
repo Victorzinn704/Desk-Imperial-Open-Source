@@ -40,14 +40,16 @@ export type {
 export {
   fetchProducts,
   createProduct,
+  generateSmartProductDraft,
   updateProduct,
+  bulkRestockProducts,
   archiveProduct,
   restoreProduct,
   deleteProductPermanently,
   importProducts,
 } from './api-products'
 
-export type { ProductPayload } from './api-products'
+export type { ProductPayload, BulkRestockProductsPayload, SmartProductDraftPayload, SmartProductDraftResponse } from './api-products'
 
 export { fetchFinanceSummary, fetchPillars, fetchMarketInsight } from './api-finance'
 
@@ -91,9 +93,24 @@ export type {
   OperationsLiveOptions,
 } from './api-operations'
 
-export { fetchEmployees, createEmployee, updateEmployee, archiveEmployee, restoreEmployee } from './api-employees'
+export {
+  fetchEmployees,
+  createEmployee,
+  updateEmployee,
+  archiveEmployee,
+  restoreEmployee,
+  issueEmployeeAccess,
+  rotateEmployeePassword,
+  revokeEmployeeAccess,
+} from './api-employees'
 
-export type { EmployeePayload, EmployeeRecord, EmployeesResponse, UpdateEmployeePayload } from './api-employees'
+export type {
+  EmployeeAccessCredentials,
+  EmployeePayload,
+  EmployeeRecord,
+  EmployeesResponse,
+  UpdateEmployeePayload,
+} from './api-employees'
 
 export {
   lookupBarcodeCatalog,
@@ -107,6 +124,28 @@ export {
   fetchActivityFeed,
   fetchLastLogins,
 } from './api-misc'
+export {
+  fetchTelegramIntegrationStatus,
+  createTelegramLinkToken,
+  fetchNotificationPreferences,
+  fetchWorkspaceNotificationPreferences,
+  fetchUserNotificationPreferences,
+  unlinkTelegramIntegration,
+  updateNotificationPreferences,
+  updateWorkspaceNotificationPreferences,
+  updateUserNotificationPreferences,
+  USER_NOTIFICATION_PREFERENCES_QUERY_KEY,
+  WORKSPACE_NOTIFICATION_PREFERENCES_QUERY_KEY,
+} from './api-notifications'
+export type {
+  NotificationPreferencesResponse,
+  TelegramIntegrationStatusResponse,
+  TelegramLinkTokenResponse,
+  TelegramUnlinkResponse,
+  UserNotificationPreference,
+  UserNotificationPreferencesResponse,
+  WorkspaceNotificationPreference,
+} from './api-notifications'
 export { searchCatalogImages } from './api-media'
 
 export type {

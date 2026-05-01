@@ -98,9 +98,13 @@ describe('OperationsHelpersService - branches', () => {
             { type: CashMovementType.WITHDRAWAL, amount: 10 },
             { type: CashMovementType.ADJUSTMENT, amount: 5 },
           ],
+          payments: [],
           comandas: [
             {
+              id: 'comanda-1',
+              status: ComandaStatus.CLOSED,
               totalAmount: 150,
+              payments: [],
               items: [
                 {
                   quantity: 2,
@@ -109,7 +113,10 @@ describe('OperationsHelpersService - branches', () => {
               ],
             },
             {
+              id: 'comanda-2',
+              status: ComandaStatus.CLOSED,
               totalAmount: 50,
+              payments: [],
               items: [
                 {
                   quantity: 1,
@@ -561,6 +568,56 @@ describe('OperationsHelpersService - branches', () => {
         { productName: '=CSV formula', quantity: 1, unitPrice: 10 } as ComandaDraftItemDto,
       ]),
     ).rejects.toThrow(BadRequestException)
+  })
+
+  it('assertDraftSelectionsStockAvailability bloqueia produto sem estoque no fluxo da comanda', async () => {
+    const transaction = {
+      product: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'prod-1',
+            name: 'Cerveja',
+            stock: 0,
+            isCombo: false,
+            comboComponents: [],
+          },
+        ]),
+      },
+    }
+
+    await expect(
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'prod-1', quantity: 1 }]),
+    ).rejects.toThrow('Estoque insuficiente para Cerveja')
+  })
+
+  it('assertDraftSelectionsStockAvailability considera consumo de componentes em combo', async () => {
+    const transaction = {
+      product: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'combo-1',
+            name: 'Combo Petisco',
+            stock: 99,
+            isCombo: true,
+            comboComponents: [
+              {
+                componentProductId: 'beer-1',
+                totalUnits: 2,
+                componentProduct: {
+                  id: 'beer-1',
+                  name: 'Cerveja Long Neck',
+                  stock: 1,
+                },
+              },
+            ],
+          },
+        ]),
+      },
+    }
+
+    await expect(
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'combo-1', quantity: 1 }]),
+    ).rejects.toThrow('Estoque insuficiente para Cerveja Long Neck')
   })
 
   it('assertOpenTableAvailability bloqueia mesa ocupada e permite mesa livre', async () => {

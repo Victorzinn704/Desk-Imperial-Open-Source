@@ -18,6 +18,8 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
   const [numero, setNumero] = useState('')
   const [capacidade, setCapacidade] = useState(4)
   const [status, setStatus] = useState<MesaStatus>('livre')
+  const numeroInputId = 'pdv-mesa-numero'
+  const capacidadeInputId = 'pdv-mesa-capacidade'
 
   function handleSave() {
     if (!numero.trim()) {return}
@@ -48,10 +50,12 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
         <div className="mt-6 space-y-4">
           {/* Número / label da mesa */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Número / Identificação</label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]" htmlFor={numeroInputId}>
+              Número / Identificação
+            </label>
             <input
-              autoFocus
               className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+              id={numeroInputId}
               maxLength={20}
               placeholder="Ex: 1, VIP, Balcão..."
               type="text"
@@ -62,7 +66,9 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
 
           {/* Capacidade */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Capacidade (pessoas)</label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]" htmlFor={capacidadeInputId}>
+              Capacidade (pessoas)
+            </label>
             <div className="flex items-center gap-3">
               <button
                 className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.08)]"
@@ -71,7 +77,22 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
               >
                 −
               </button>
-              <span className="w-8 text-center text-lg font-bold text-[var(--text-primary)]">{capacidade}</span>
+              <input
+                aria-label="Capacidade da mesa"
+                className="w-14 bg-transparent text-center text-lg font-bold text-[var(--text-primary)] outline-none"
+                id={capacidadeInputId}
+                max={30}
+                min={1}
+                type="number"
+                value={capacidade}
+                onChange={(event) => {
+                  const nextCapacity = Number(event.target.value)
+                  if (!Number.isFinite(nextCapacity)) {
+                    return
+                  }
+                  setCapacidade(Math.min(30, Math.max(1, Math.trunc(nextCapacity))))
+                }}
+              />
               <button
                 className="flex size-9 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] transition hover:bg-[rgba(255,255,255,0.08)]"
                 type="button"
@@ -84,7 +105,7 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
 
           {/* Status inicial */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Status inicial</label>
+            <p className="mb-1.5 block text-xs font-medium text-[var(--text-soft)]">Status inicial</p>
             <div className="flex gap-2">
               {STATUS_OPTIONS.map((opt) => (
                 <button

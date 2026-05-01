@@ -199,12 +199,7 @@ export async function syncCashClosure(
     sessions.reduce((sum, session) => sum + toNumberOrZero(session.realizedProfitAmount), 0),
   )
 
-  const status =
-    existingClosure?.status === CashClosureStatus.CLOSED || existingClosure?.status === CashClosureStatus.FORCE_CLOSED
-      ? existingClosure.status
-      : openSessionsCount > 0 || openComandasCount > 0
-        ? CashClosureStatus.PENDING_EMPLOYEE_CLOSE
-        : CashClosureStatus.OPEN
+  const status = resolveCashClosureStatus(existingClosure?.status, openSessionsCount, openComandasCount)
 
   return transaction.cashClosure.upsert({
     where: {
@@ -232,4 +227,20 @@ export async function syncCashClosure(
       openComandasCount,
     },
   })
+}
+
+function resolveCashClosureStatus(
+  currentStatus: CashClosureStatus | null | undefined,
+  openSessionsCount: number,
+  openComandasCount: number,
+) {
+  if (currentStatus === CashClosureStatus.CLOSED || currentStatus === CashClosureStatus.FORCE_CLOSED) {
+    return currentStatus
+  }
+
+  if (openSessionsCount > 0 || openComandasCount > 0) {
+    return CashClosureStatus.PENDING_EMPLOYEE_CLOSE
+  }
+
+  return CashClosureStatus.OPEN
 }

@@ -26,6 +26,10 @@ vi.mock('@/components/dashboard/overview-recent-orders', () => ({
   ),
 }))
 
+vi.mock('@/components/shared/football-widgets', () => ({
+  VascoNextMatchWidget: () => <div title="Próximo jogo do Vasco">vasco-widget</div>,
+}))
+
 describe('DesignLabOverviewEnvironment', () => {
   beforeEach(() => {
     vi.clearAllMocks()

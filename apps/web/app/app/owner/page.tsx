@@ -76,5 +76,5 @@ export default function OwnerAppPage() {
     )
   }
 
-  return <OwnerMobileShell currentUser={{ name: user.fullName, fullName: user.fullName }} />
+  return <OwnerMobileShell currentUser={{ userId: user.userId, name: user.fullName, fullName: user.fullName }} />
 }

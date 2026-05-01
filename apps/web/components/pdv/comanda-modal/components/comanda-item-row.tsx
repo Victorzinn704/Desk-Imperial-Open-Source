@@ -13,6 +13,7 @@ type ComandaItemRowProps = {
 
 export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, setItens }: ComandaItemRowProps) {
   const lineTotal = item.quantidade * item.precoUnitario
+  const noteInputId = `comanda-item-note-${item.produtoId}`
 
   return (
     <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
@@ -60,11 +61,12 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
       </div>
 
       <div className="mt-3 border-t border-dashed border-[var(--border)] pt-3">
-        <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+        <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]" htmlFor={noteInputId}>
           Observação do item
         </label>
         <input
           className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-soft)] focus:border-[var(--accent)]"
+          id={noteInputId}
           placeholder="Ex: sem gelo, retirar cebola, ponto da carne"
           type="text"
           value={item.observacao ?? ''}

@@ -2,6 +2,13 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactPlugin from 'eslint-plugin-react';
+import importPlugin from 'eslint-plugin-import';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import reactPerf from 'eslint-plugin-react-perf';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Root ESLint configuration for the Desk Imperial monorepo.
@@ -25,6 +32,12 @@ export default tseslint.config(
       '**/*.log',
       '**/generated/**',
     ],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -113,6 +126,7 @@ export default tseslint.config(
       'no-console': 'error', // Zero console.log in production API code
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/consistent-type-imports': 'off',
       'react/self-closing-comp': 'off',
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'off',
@@ -122,15 +136,22 @@ export default tseslint.config(
   // === WEB-SPECIFIC OVERRIDES ===
   {
     files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: {
+      'jsx-a11y': jsxA11y,
+      'react-perf': reactPerf,
+    },
     rules: {
       'react-hooks/exhaustive-deps': 'error',
-      '@next/next/no-html-link-for-pages': 'error',
-      '@next/next/no-img-element': 'warn',
       'react/jsx-sort-props': ['warn', {
         callbacksLast: true,
         shorthandFirst: true,
         noSortAlphabetically: false,
       }],
+      ...jsxA11y.flatConfigs.recommended.rules,
+      'react-perf/jsx-no-new-object-as-prop': 'warn',
+      'react-perf/jsx-no-new-array-as-prop': 'warn',
+      'react-perf/jsx-no-new-function-as-prop': 'warn',
+      'react-perf/jsx-no-jsx-as-prop': 'warn',
     },
   },
 
@@ -138,7 +159,7 @@ export default tseslint.config(
   {
     files: ['packages/**/*.ts'],
     rules: {
-      'max-lines': ['warn', { max: 200, skipComments: true, skipBlankLines: true, skipRegExp: true }],
+      'max-lines': ['warn', { max: 200, skipComments: true, skipBlankLines: true }],
       'max-lines-per-function': ['warn', { max: 40, skipComments: true, skipBlankLines: true }],
     },
   },
@@ -153,6 +174,22 @@ export default tseslint.config(
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
     },
   },
+
+  // === IMPORT PLUGIN (all TS/TSX) ===
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { import: importPlugin },
+    rules: {
+      'import/no-self-import': 'error',
+      'import/no-duplicates': 'error',
+      // no-cycle is expensive — covered by madge in CI, kept as warn here
+      'import/no-cycle': ['warn', { maxDepth: 5, ignoreExternal: true }],
+    },
+  },
+
 );

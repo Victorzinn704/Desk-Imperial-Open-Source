@@ -1,56 +1,16 @@
-import type { OrderStatus } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import type { CurrencyService } from '../currency/currency.service'
+import type {
+  CurrencyCode,
+  FinanceAggregationOptions,
+  FinanceProductAnalyticsRecord,
+  FinanceRecentOrder,
+  FinanceSalesCategoryAggregationRecord,
+} from './finance-analytics.types'
 
 // Re-export from split modules
 export { buildRevenueTimeline } from './finance-revenue-timeline.util'
 export { buildSalesByChannel } from './finance-channels.util'
 export { buildTopCustomers, buildTopEmployees, buildTopRegions, buildSalesMap } from './finance-top-analytics.util'
-
-type CurrencyCode = 'BRL' | 'USD' | 'EUR'
-type CurrencySnapshot = Awaited<ReturnType<CurrencyService['getSnapshot']>>
-
-export type FinanceAggregationOptions = {
-  currencyService: CurrencyService
-  displayCurrency: CurrencyCode
-  snapshot: CurrencySnapshot
-}
-
-export type FinanceProductAnalyticsRecord = {
-  id: string
-  name: string
-  brand: string | null
-  category: string
-  barcode: string | null
-  packagingClass: string
-  quantityLabel: string | null
-  imageUrl: string | null
-  catalogSource: string
-  isCombo: boolean
-  stock: number
-  currency: CurrencyCode
-  displayCurrency: CurrencyCode
-  originalInventorySalesValue: number
-  originalPotentialProfit: number
-  inventoryCostValue: number
-  inventorySalesValue: number
-  potentialProfit: number
-  marginPercent: number
-}
-
-export type FinanceSalesCategoryAggregationRecord = {
-  category: string
-  currency: CurrencyCode
-  _count: {
-    _all: number
-  }
-  _sum: {
-    quantity: number | null
-    lineRevenue: { toNumber(): number } | number | null
-    lineCost: { toNumber(): number } | number | null
-    lineProfit: { toNumber(): number } | number | null
-  }
-}
 
 type FinanceTopProduct = {
   id: string
@@ -216,17 +176,7 @@ export function buildTopProducts(records: FinanceProductAnalyticsRecord[], limit
 }
 
 export function buildRecentOrders(
-  orders: Array<{
-    id: string
-    customerName: string | null
-    channel: string | null
-    currency: CurrencyCode
-    status: Extract<OrderStatus, 'COMPLETED' | 'CANCELLED'>
-    totalRevenue: { toNumber(): number } | number
-    totalProfit: { toNumber(): number } | number
-    totalItems: number
-    createdAt: Date
-  }>,
+  orders: FinanceRecentOrder[],
   options: FinanceAggregationOptions,
 ) {
   return orders.map((order) => ({

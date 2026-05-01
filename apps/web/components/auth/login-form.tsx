@@ -87,7 +87,7 @@ function StaffIdentityFields({
       </div>
       <div className="space-y-2">
         <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-employee-code">
-          ID do Funcionário
+          ID de acesso
         </label>
         <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 focus-within:border-white/25 transition-colors duration-200">
           <UserRound className="size-4 shrink-0 text-[var(--text-primary)]/30" />
@@ -96,7 +96,7 @@ function StaffIdentityFields({
             autoComplete="username"
             className="w-full bg-transparent text-sm uppercase tracking-[0.16em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
             id="login-employee-code"
-            placeholder="VD-001"
+            placeholder="A7K2M9"
             type="text"
             {...registerField('employeeCode')}
           />
@@ -250,7 +250,7 @@ export function LoginForm() {
         </h2>
         <p className="text-sm text-[var(--text-primary)]/40">
           {isStaffMode
-            ? 'Use o e-mail da empresa, seu ID e o PIN de 6 dígitos configurado pelo dono.'
+            ? 'Use o e-mail da empresa, seu ID de acesso e a senha numérica de 8 dígitos emitida pelo dono.'
             : 'Inicie sua sessão corporativa preenchendo as credenciais vitais abaixo.'}
         </p>
       </div>
@@ -290,7 +290,7 @@ export function LoginForm() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-[var(--text-primary)]/50" htmlFor="login-password">
-              {isStaffMode ? 'PIN de acesso' : 'Senha de Acesso'}
+              Senha de acesso
             </label>
             {!isStaffMode && (
               <Link
@@ -309,8 +309,8 @@ export function LoginForm() {
                 className="w-full bg-transparent text-sm tracking-[0.3em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-primary)]/20"
                 id="login-password"
                 inputMode="numeric"
-                maxLength={6}
-                placeholder="••••••"
+                maxLength={8}
+                placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
                 {...registerField('password')}
               />

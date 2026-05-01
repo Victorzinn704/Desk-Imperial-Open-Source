@@ -195,6 +195,7 @@ export class AuthPasswordService {
     await Promise.all(
       revokedSessions.map((session) => Promise.all([this.sessionService.forgetSessionCache(session.id)])),
     )
+    await this.sessionService.disconnectTrackedSessions(revokedSessions.map((session) => session.id))
 
     await this.clearRateLimitKeys(rateLimitKeys)
 

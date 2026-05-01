@@ -1,6 +1,6 @@
 import { reportApiErrorToFaro, reportApiRequestMeasurementToFaro } from './observability/faro'
+import { resolveApiBaseUrl } from './api-base-url'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
 const CSRF_STORAGE_KEY = 'desk-imperial-csrf-token'
 const ADMIN_PIN_HINT_KEY = 'desk_imperial_admin_pin_hint'
@@ -153,7 +153,6 @@ export function resolveApiTimeoutMs(path: string) {
 }
 
 export {
-  API_BASE_URL,
   AUTH_API_TIMEOUT_MS,
   CSRF_COOKIE_NAMES,
   CSRF_STORAGE_KEY,
@@ -190,7 +189,7 @@ function buildFetchError(
   }
 
   const connectionApiError = new ApiError(
-    `Nao foi possivel conectar com a API em ${API_BASE_URL}. Verifique se o backend local esta ativo.`,
+    `Nao foi possivel conectar com a API em ${resolveApiBaseUrl()}. Verifique se o backend esta ativo.`,
     0,
     clientRequestId,
   )
@@ -205,7 +204,7 @@ function buildFetchError(
 
 function buildApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${API_BASE_URL}/api/v1${normalizedPath}`
+  return `${resolveApiBaseUrl()}/api/v1${normalizedPath}`
 }
 
 export function withOperationsOptions(path: string, options?: { includeSnapshot?: boolean }) {

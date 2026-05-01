@@ -592,7 +592,7 @@ describe('api client', () => {
         expectedMethod: 'PATCH',
       },
       {
-        run: () => api.createEmployee({ employeeCode: 'E10', displayName: 'Maria', temporaryPassword: '123' }),
+        run: () => api.createEmployee({ displayName: 'Maria' }),
         expectedPath: '/employees',
         expectedMethod: 'POST',
       },
@@ -605,6 +605,11 @@ describe('api client', () => {
         run: () => api.archiveEmployee('emp-10'),
         expectedPath: '/employees/emp-10',
         expectedMethod: 'DELETE',
+      },
+      {
+        run: () => api.rotateEmployeePassword('emp-10'),
+        expectedPath: '/employees/emp-10/access/password',
+        expectedMethod: 'PATCH',
       },
       {
         run: () => api.restoreEmployee('emp-10'),

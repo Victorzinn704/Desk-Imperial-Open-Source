@@ -50,7 +50,7 @@ function useStaffMobileShellModules(
   const router = useRouter()
   const queryClient = useQueryClient()
   const queue = useOfflineQueue()
-  const realtime = useRealtimeRefresh(Boolean(currentUser))
+  const realtime = useRealtimeRefresh(Boolean(currentUser), currentUser?.userId ?? null)
   const queries = useStaffMobileShellQueries(currentUser, {
     activeTab: shellState.activeTab,
     pendingAction: shellState.pendingAction,

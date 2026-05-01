@@ -1,9 +1,11 @@
+import './instrument'
 import 'reflect-metadata'
 import { context, trace } from '@opentelemetry/api'
 import { type INestApplication, Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { SwaggerModule } from '@nestjs/swagger'
+import * as Sentry from '@sentry/nestjs'
 import cookieParser from 'cookie-parser'
 import type { Express, NextFunction, Request, Response } from 'express'
 import helmet from 'helmet'
@@ -245,7 +247,7 @@ async function bootstrap() {
   const allowedOrigins = getAllowedOrigins(configService)
   const apiDocsEnabled = !isProduction || configService.get<string>('ENABLE_API_DOCS') === 'true'
   const trustProxy = configService.get<string>('TRUST_PROXY')
-  const otelEnabled = await initializeApiOpenTelemetry({
+  const otelStatus = await initializeApiOpenTelemetry({
     endpoint: configService.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT'),
     tracesEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
     metricsEndpoint: configService.get<string>('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
@@ -259,10 +261,24 @@ async function bootstrap() {
     diagnosticsEnabled: configService.get<string>('OTEL_DIAGNOSTICS') === 'true',
   })
 
-  if (otelEnabled) {
-    logger.log(
-      'OpenTelemetry da API habilitado para telemetria OTLP (traces, metricas e logs conforme endpoints configurados).',
-    )
+  if (otelStatus.enabled) {
+    const channels: string[] = []
+
+    if (otelStatus.sentryBridgeEnabled) {
+      channels.push('bridge do Sentry')
+    }
+
+    const otlpSignals = [
+      otelStatus.otlpTracesEnabled ? 'traces' : null,
+      otelStatus.otlpMetricsEnabled ? 'metricas' : null,
+      otelStatus.otlpLogsEnabled ? 'logs' : null,
+    ].filter((value): value is string => Boolean(value))
+
+    if (otlpSignals.length > 0) {
+      channels.push(`OTLP (${otlpSignals.join(', ')})`)
+    }
+
+    logger.log(`OpenTelemetry da API habilitado para ${channels.join(' + ')}.`)
   }
 
   registerProcessFailureHandlers(logger)
@@ -296,5 +312,8 @@ async function bootstrap() {
 void bootstrap().catch((error: unknown) => {
   const logger = new Logger('Bootstrap')
   logger.error('Falha ao iniciar a API.', error instanceof Error ? error.stack : String(error))
-  process.exit(1)
+  Sentry.captureException(error)
+  void Sentry.flush(2_000).finally(() => {
+    process.exit(1)
+  })
 })

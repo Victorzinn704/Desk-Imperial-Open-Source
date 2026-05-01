@@ -361,6 +361,10 @@
   justify-content: center;
 }
 
+.lab-user--compact-collapsed {
+  padding-inline: 0;
+}
+
 .lab-user__avatar {
   width: 32px;
   height: 32px;

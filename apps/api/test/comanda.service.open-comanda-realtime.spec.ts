@@ -30,6 +30,7 @@ describe('ComandaService - openComanda realtime', () => {
 
   const helpers = {
     resolveComandaDraftItems: jest.fn(),
+    assertDraftSelectionsStockAvailability: jest.fn(async () => {}),
     assertBusinessDayOpen: jest.fn(async () => {}),
     assertOpenTableAvailability: jest.fn(async () => {}),
     resolveEmployeeForStaff: jest.fn(async () => null),
@@ -223,6 +224,7 @@ describe('ComandaService - openComanda realtime', () => {
         kitchenReadyAt: null,
         businessDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       }),
+      undefined,
     )
   })
 })

@@ -167,6 +167,19 @@ describe('qz-tray client', () => {
     )
   })
 
+  it('normalizes ws host variants and known QZ ports safely', async () => {
+    const { listQzTrayPrinters, setQzHost } = await import('./qz-tray.client')
+
+    setQzHost('ws://localhost.qz.io:8485/path/to/socket')
+    await listQzTrayPrinters()
+
+    expect(qzMock.websocket.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: 'localhost.qz.io',
+      }),
+    )
+  })
+
   it('reconnects when the configured QZ host changes during the session', async () => {
     let active = true
     qzMock.websocket.isActive.mockImplementation(() => active)

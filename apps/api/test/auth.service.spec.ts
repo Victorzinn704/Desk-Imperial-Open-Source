@@ -250,6 +250,7 @@ function makeMockSession(configService?: any) {
     cacheAuthSession: jest.fn(async () => {}),
     validateSessionToken: jest.fn(async () => null),
     forgetSessionCache: jest.fn(async () => {}),
+    disconnectTrackedSessions: jest.fn(async () => {}),
     refreshWorkspaceSessionCaches: jest.fn(async () => {}),
     invalidateWorkspaceDerivedCaches: jest.fn(async () => {}),
     setSessionCookies: jest.fn(),
@@ -340,7 +341,11 @@ function buildService(
     geocodeAddressLocation: jest.fn(async () => null),
   }
 
-  const sessionService = overrides.session ?? new AuthSessionService(prisma, config, demo)
+  const sessionService =
+    overrides.session ??
+    new AuthSessionService(prisma, config, demo, {
+      disconnectSessions: jest.fn(),
+    } as any)
   const emailVerificationService =
     overrides.emailVerification ?? new AuthEmailVerificationService(prisma, config, mailer, audit, rateLimit)
   const registrationService =
@@ -774,5 +779,85 @@ describe('AuthService — isolamento de cookie names por ambiente', () => {
   it('o nome da sessão e o do CSRF token são sempre diferentes (sem colisão)', () => {
     const service = buildService()
     expect(service.getSessionCookieName()).not.toBe(service.getCsrfCookieName())
+  })
+})
+
+describe('AuthService.logout()', () => {
+  it('revoga a sessao, limpa cache e derruba sockets rastreados', async () => {
+    const prisma = {
+      session: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+      },
+    }
+    const session = makeMockSession()
+    const audit = makeMockAuditLog()
+    const demo = {
+      ...makeMockDemoAccess(),
+      closeGrantForSession: jest.fn(async () => {}),
+    }
+    const response = {
+      clearCookie: jest.fn(),
+    }
+    const service = buildService({
+      prisma,
+      session,
+      audit,
+      demo,
+    })
+
+    await service.logout(
+      {
+        userId: 'owner-1',
+        actorUserId: 'owner-1',
+        sessionId: 'session-1',
+        role: 'OWNER',
+        workspaceOwnerUserId: 'owner-1',
+        companyOwnerUserId: 'owner-1',
+        employeeId: null,
+        employeeCode: null,
+        email: 'owner@deskimperial.online',
+        fullName: 'Owner',
+        companyName: 'Desk Imperial',
+        companyLocation: {
+          streetLine1: null,
+          streetNumber: null,
+          addressComplement: null,
+          district: null,
+          city: null,
+          state: null,
+          postalCode: null,
+          country: null,
+          latitude: null,
+          longitude: null,
+          precision: 'city',
+        },
+        workforce: { hasEmployees: false, employeeCount: 0 },
+        emailVerified: true,
+        preferredCurrency: CurrencyCode.BRL,
+        status: UserStatus.ACTIVE,
+        evaluationAccess: null,
+        cookiePreferences: { necessary: true, analytics: false, marketing: false },
+      },
+      response as any,
+      makeRequestContext(),
+    )
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: { id: 'session-1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    })
+    expect(session.forgetSessionCache).toHaveBeenCalledWith('session-1')
+    expect(session.disconnectTrackedSessions).toHaveBeenCalledWith(['session-1'])
+    expect(session.refreshWorkspaceSessionCaches).toHaveBeenCalledWith('owner-1')
+    expect(session.invalidateWorkspaceDerivedCaches).toHaveBeenCalledWith('owner-1')
+    expect(demo.closeGrantForSession).toHaveBeenCalledWith('session-1')
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'auth.logout.succeeded',
+        resource: 'session',
+        resourceId: 'session-1',
+      }),
+    )
+    expect(response.clearCookie).toHaveBeenCalled()
   })
 })

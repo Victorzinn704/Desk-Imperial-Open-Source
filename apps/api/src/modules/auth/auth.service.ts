@@ -106,6 +106,8 @@ export class AuthService {
     })
 
     await Promise.all([
+      this.sessionService.forgetSessionCache(auth.sessionId),
+      this.sessionService.disconnectTrackedSessions([auth.sessionId]),
       this.sessionService.refreshWorkspaceSessionCaches(auth.workspaceOwnerUserId),
       this.sessionService.invalidateWorkspaceDerivedCaches(auth.workspaceOwnerUserId),
     ])

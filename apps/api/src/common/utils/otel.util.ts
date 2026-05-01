@@ -7,12 +7,14 @@ import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { NodeSDK, type NodeSDKConfiguration } from '@opentelemetry/sdk-node'
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
-import { ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
+import { BatchSpanProcessor, ParentBasedSampler, TraceIdRatioBasedSampler, type SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import {
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions'
+import * as Sentry from '@sentry/nestjs'
+import { SentryPropagator, SentrySampler, SentrySpanProcessor } from '@sentry/opentelemetry'
 
 type InitializeApiOpenTelemetryOptions = {
   endpoint?: string | undefined
@@ -28,20 +30,39 @@ type InitializeApiOpenTelemetryOptions = {
   diagnosticsEnabled?: boolean | undefined
 }
 
+export type InitializeApiOpenTelemetryResult = {
+  enabled: boolean
+  otlpTracesEnabled: boolean
+  otlpMetricsEnabled: boolean
+  otlpLogsEnabled: boolean
+  sentryBridgeEnabled: boolean
+}
+
 let apiOtelSdk: NodeSDK | null = null
 let apiOtelStarted = false
+let apiOtelStatus: InitializeApiOpenTelemetryResult = {
+  enabled: false,
+  otlpTracesEnabled: false,
+  otlpMetricsEnabled: false,
+  otlpLogsEnabled: false,
+  sentryBridgeEnabled: false,
+}
 
-export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelemetryOptions) {
+export async function initializeApiOpenTelemetry(
+  options: InitializeApiOpenTelemetryOptions,
+): Promise<InitializeApiOpenTelemetryResult> {
   if (apiOtelStarted) {
-    return true
+    return apiOtelStatus
   }
 
   const traceEndpoint = normalizeSignalEndpoint(options.tracesEndpoint ?? options.endpoint, 'traces')
   const metricsEndpoint = normalizeSignalEndpoint(options.metricsEndpoint ?? options.endpoint, 'metrics')
   const logsEndpoint = normalizeSignalEndpoint(options.logsEndpoint ?? options.endpoint, 'logs')
+  const sentryClient = getActiveSentryClient()
+  const sentryBridgeEnabled = Boolean(sentryClient)
 
-  if (!traceEndpoint && !metricsEndpoint && !logsEndpoint) {
-    return false
+  if (!traceEndpoint && !metricsEndpoint && !logsEndpoint && !sentryBridgeEnabled) {
+    return apiOtelStatus
   }
 
   if (options.diagnosticsEnabled) {
@@ -51,6 +72,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
   const parsedHeaders = parseOtlpHeaders(options.headers)
   const tracesSampleRate = parseSampleRate(options.tracesSampleRate, 0.03)
   const metricsExportIntervalMs = parsePositiveInteger(options.metricsExportIntervalMs, 15_000)
+  const spanProcessors: SpanProcessor[] = []
 
   const sdkConfiguration: Partial<NodeSDKConfiguration> = {
     resource: resourceFromAttributes({
@@ -70,11 +92,24 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
     ],
   }
 
-  if (traceEndpoint) {
-    sdkConfiguration.traceExporter = new OTLPTraceExporter(buildOtlpExporterConfig(traceEndpoint, parsedHeaders))
+  if (sentryClient) {
+    sdkConfiguration.contextManager = new Sentry.SentryContextManager()
+    sdkConfiguration.textMapPropagator = new SentryPropagator()
+    sdkConfiguration.sampler = new SentrySampler(sentryClient)
+    spanProcessors.push(new SentrySpanProcessor())
+  } else if (traceEndpoint) {
     sdkConfiguration.sampler = new ParentBasedSampler({
       root: new TraceIdRatioBasedSampler(tracesSampleRate),
     })
+  }
+
+  if (traceEndpoint) {
+    const traceExporter = new OTLPTraceExporter(buildOtlpExporterConfig(traceEndpoint, parsedHeaders))
+    spanProcessors.push(new BatchSpanProcessor(traceExporter))
+  }
+
+  if (spanProcessors.length > 0) {
+    sdkConfiguration.spanProcessors = spanProcessors
   }
 
   if (metricsEndpoint) {
@@ -99,7 +134,19 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   apiOtelSdk.start()
   apiOtelStarted = true
-  return true
+  apiOtelStatus = {
+    enabled: true,
+    otlpTracesEnabled: Boolean(traceEndpoint),
+    otlpMetricsEnabled: Boolean(metricsEndpoint),
+    otlpLogsEnabled: Boolean(logsEndpoint),
+    sentryBridgeEnabled,
+  }
+
+  if (sentryBridgeEnabled) {
+    Sentry.validateOpenTelemetrySetup()
+  }
+
+  return apiOtelStatus
 }
 
 export async function shutdownApiOpenTelemetry() {
@@ -112,7 +159,35 @@ export async function shutdownApiOpenTelemetry() {
   } finally {
     apiOtelSdk = null
     apiOtelStarted = false
+    apiOtelStatus = {
+      enabled: false,
+      otlpTracesEnabled: false,
+      otlpMetricsEnabled: false,
+      otlpLogsEnabled: false,
+      sentryBridgeEnabled: false,
+    }
   }
+}
+
+function getActiveSentryClient() {
+  const client = Sentry.getClient()
+  if (!client) {
+    return null
+  }
+
+  const options = client.getOptions()
+  const dsn =
+    typeof options.dsn === 'string'
+      ? options.dsn.trim()
+      : options.dsn && typeof options.dsn === 'object'
+        ? String(options.dsn).trim()
+        : ''
+
+  if (!dsn || options.enabled === false) {
+    return null
+  }
+
+  return client
 }
 
 function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' | 'metrics' | 'logs') {

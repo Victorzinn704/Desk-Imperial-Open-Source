@@ -1,6 +1,7 @@
 import type { KitchenItemStatus } from '@prisma/client'
 import type { AuthContext } from '../auth/auth.types'
 import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
 import {
   buildCashClosurePayload,
   buildCashUpdatedPayload,
@@ -28,6 +29,7 @@ export function publishComandaOpened(
   auth: AuthContext,
   comanda: ComandaLike,
   businessDate: Date,
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   realtimeService.publishComandaOpened(auth, {
     comandaId: comanda.id,
@@ -41,7 +43,7 @@ export function publishComandaOpened(
     totalAmount: toNumberOrZero(comanda.totalAmount),
     totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
     businessDate: formatBusinessDateKey(businessDate),
-  })
+  }, instrumentation)
 }
 
 export function publishComandaUpdated(
@@ -50,6 +52,7 @@ export function publishComandaUpdated(
   comanda: ComandaLike,
   businessDate: Date,
   options?: {
+    previousStatus?: 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED'
     requiresKitchenRefresh?: boolean
     replaceKitchenItems?: boolean
     kitchenItems?: Array<{
@@ -66,11 +69,13 @@ export function publishComandaUpdated(
       businessDate: string
     }>
   },
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   realtimeService.publishComandaUpdated(auth, {
     comandaId: comanda.id,
     mesaLabel: comanda.tableLabel,
     status: toRealtimeStatus(comanda.status),
+    ...(options?.previousStatus ? { previousStatus: options.previousStatus } : {}),
     employeeId: comanda.currentEmployeeId,
     subtotal: toNumberOrZero(comanda.subtotalAmount),
     discountAmount: toNumberOrZero(comanda.discountAmount),
@@ -81,7 +86,7 @@ export function publishComandaUpdated(
     ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
     ...(options?.replaceKitchenItems ? { replaceKitchenItems: true } : {}),
     ...(options?.kitchenItems ? { kitchenItems: options.kitchenItems } : {}),
-  })
+  }, instrumentation)
 }
 
 export function publishKitchenItemQueued(
@@ -98,13 +103,14 @@ export function publishKitchenItemQueued(
     kitchenReadyAt: Date | null
   },
   businessDate: Date,
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   const payload = buildKitchenItemRealtimeDelta(comanda, item, businessDate)
   realtimeService.publishKitchenItemQueued(auth, {
     ...payload,
     kitchenStatus: 'QUEUED',
     kitchenQueuedAt: payload.kitchenQueuedAt ?? new Date().toISOString(),
-  })
+  }, instrumentation)
 }
 
 export function publishKitchenItemUpdated(
@@ -121,13 +127,17 @@ export function publishKitchenItemUpdated(
     kitchenReadyAt: Date | null
   },
   businessDate: Date,
+  options?: {
+    previousKitchenStatus?: 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
+  },
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   const payload = buildKitchenItemRealtimeDelta(comanda, item, businessDate)
   realtimeService.publishKitchenItemUpdated(auth, {
     ...payload,
-    kitchenStatus:
-      item.kitchenStatus === 'DELIVERED' ? 'DELIVERED' : item.kitchenStatus === 'READY' ? 'READY' : 'IN_PREPARATION',
-  })
+    ...(options?.previousKitchenStatus ? { previousKitchenStatus: options.previousKitchenStatus } : {}),
+    kitchenStatus: resolveRealtimeUpdatedKitchenStatus(item.kitchenStatus),
+  }, instrumentation)
 }
 
 export function publishComandaClosed(
@@ -147,6 +157,7 @@ export function publishComandaClosed(
   refreshedSession: Parameters<typeof buildCashUpdatedPayload>[0] | null,
   closure: Parameters<typeof buildCashClosurePayload>[0],
   businessDate: Date,
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   realtimeService.publishComandaClosed(auth, {
     comandaId: comanda.id,
@@ -161,7 +172,7 @@ export function publishComandaClosed(
     totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
     paymentMethod: null,
     businessDate: formatBusinessDateKey(businessDate),
-  })
+  }, instrumentation)
 
   if (refreshedSession) {
     realtimeService.publishCashUpdated(auth, {
@@ -194,18 +205,9 @@ export function buildKitchenItemRealtimeDelta(
     productName: item.productName,
     quantity: item.quantity,
     notes: item.notes ?? null,
-    kitchenStatus:
-      item.kitchenStatus === 'DELIVERED'
-        ? 'DELIVERED'
-        : item.kitchenStatus === 'READY'
-          ? 'READY'
-          : item.kitchenStatus === 'IN_PREPARATION'
-            ? 'IN_PREPARATION'
-            : 'QUEUED',
-    kitchenQueuedAt:
-      item.kitchenQueuedAt instanceof Date ? item.kitchenQueuedAt.toISOString() : (item.kitchenQueuedAt ?? null),
-    kitchenReadyAt:
-      item.kitchenReadyAt instanceof Date ? item.kitchenReadyAt.toISOString() : (item.kitchenReadyAt ?? null),
+    kitchenStatus: resolveRealtimeKitchenStatus(item.kitchenStatus),
+    kitchenQueuedAt: toIsoStringOrNull(item.kitchenQueuedAt),
+    kitchenReadyAt: toIsoStringOrNull(item.kitchenReadyAt),
     businessDate: formatBusinessDateKey(businessDate),
   } as const
 }
@@ -228,4 +230,37 @@ export function buildKitchenItemRealtimeDeltas(
       } => 'id' in item && 'productName' in item && 'kitchenStatus' in item && item.kitchenStatus != null,
     )
     .map((item) => buildKitchenItemRealtimeDelta(comanda, item, businessDate))
+}
+
+function resolveRealtimeKitchenStatus(status: KitchenItemStatus | null) {
+  if (status === 'DELIVERED') {
+    return 'DELIVERED' as const
+  }
+
+  if (status === 'READY') {
+    return 'READY' as const
+  }
+
+  if (status === 'IN_PREPARATION') {
+    return 'IN_PREPARATION' as const
+  }
+
+  return 'QUEUED' as const
+}
+
+function resolveRealtimeUpdatedKitchenStatus(status: KitchenItemStatus | null) {
+  const realtimeStatus = resolveRealtimeKitchenStatus(status)
+  if (realtimeStatus === 'QUEUED') {
+    return 'IN_PREPARATION' as const
+  }
+
+  return realtimeStatus
+}
+
+function toIsoStringOrNull(value: Date | string | null) {
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return value ?? null
 }

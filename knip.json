@@ -1,0 +1,77 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "package.json",
+        "turbo.json",
+        "eslint.config.mjs",
+        "biome.json",
+        ".dependency-cruiser.cjs",
+        "knip.json",
+        "gulpfile.js",
+        "scripts/**/*.{mjs,js,ts}",
+        "tests/load/k6/**/*.{js,ts}"
+      ],
+      "ignore": ["infra/**", "docs/**", ".github/**", ".cache/**", ".venv-aider/**", ".gitleaks-target-tmp/**"],
+      "ignoreDependencies": ["k6", "jscpd", "madge"],
+      "ignoreBinaries": ["k6", "powershell"]
+    },
+    "apps/api": {
+      "entry": [
+        "src/main.ts",
+        "src/app.module.ts",
+        "src/**/*.module.ts",
+        "prisma/**/*.ts",
+        "test/**/*.ts"
+      ],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/**/*.spec.ts", "dist/**"],
+      "ignoreBinaries": ["prisma", "nest", "ts-node"],
+      "ignoreDependencies": [
+        "@nestjs/cli",
+        "ts-node",
+        "tsconfig-paths",
+        "source-map-support",
+        "@nestjs/schematics",
+        "ts-jest"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,error,loading,not-found,template}.{ts,tsx}",
+        "app/**/{route,middleware}.{ts,tsx}",
+        "public/sw*.js",
+        "next.config.ts",
+        "postcss.config.mjs",
+        "tailwind.config.{ts,js}",
+        "vitest.config.ts",
+        "playwright.config.ts"
+      ],
+      "project": ["**/*.{ts,tsx}", "!**/*.d.ts"],
+      "ignore": ["e2e/**", "test/**", ".next/**"],
+      "ignoreBinaries": ["next", "playwright", "vitest"],
+      "ignoreDependencies": ["@playwright/test", "sharp", "@testing-library/jest-dom", "tailwindcss"]
+    },
+    "packages/types": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/api-contract": {
+      "entry": ["openapi.json"],
+      "ignore": ["**"]
+    }
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/.turbo/**",
+    "**/prisma/migrations/**",
+    "**/*.d.ts",
+    "**/generated/**"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["apexcharts", "react-apexcharts"]
+}

@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { createHash } from 'node:crypto'
 import { CacheService } from '../../common/services/cache.service'
 
 type AttemptEntry = {
@@ -44,6 +45,10 @@ export class AuthRateLimitService {
     await this.assertAllowed(key, this.getEmailVerificationCodePolicy())
   }
 
+  async assertRealtimeSocketAllowed(key: string): Promise<void> {
+    await this.assertAllowedFailOpen(key, this.getRealtimeSocketPolicy())
+  }
+
   async recordFailure(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getLoginPolicy())
   }
@@ -62,6 +67,10 @@ export class AuthRateLimitService {
 
   async recordEmailVerificationCodeAttempt(key: string): Promise<AttemptEntry> {
     return this.recordAttempt(key, this.getEmailVerificationCodePolicy())
+  }
+
+  async recordRealtimeSocketAttempt(key: string): Promise<AttemptEntry> {
+    return this.recordAttemptFailOpen(key, this.getRealtimeSocketPolicy())
   }
 
   async clear(key: string): Promise<void> {
@@ -108,9 +117,31 @@ export class AuthRateLimitService {
     return this.buildEmailScopedKey('email-verification-code', email)
   }
 
+  buildRealtimeSocketKey(rawToken: string | null, ipAddress: string | null) {
+    const normalizedIp = this.normalizeIpAddress(ipAddress)
+    const tokenHash = rawToken ? createHash('sha256').update(rawToken.trim()).digest('hex').slice(0, 16) : 'anonymous'
+    return `realtime-socket:${normalizedIp}:${tokenHash}`
+  }
+
   private async assertAllowed(key: string, policy: AttemptPolicy): Promise<void> {
     await this.ensureCacheReady()
+    await this.assertAllowedWithPolicy(key, policy)
+  }
 
+  private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
+    await this.ensureCacheReady()
+    return this.recordAttemptWithPolicy(key, policy)
+  }
+
+  private async assertAllowedFailOpen(key: string, policy: AttemptPolicy): Promise<void> {
+    await this.assertAllowedWithPolicy(key, policy)
+  }
+
+  private async recordAttemptFailOpen(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
+    return this.recordAttemptWithPolicy(key, policy)
+  }
+
+  private async assertAllowedWithPolicy(key: string, policy: AttemptPolicy): Promise<void> {
     const redisKey = CacheService.ratelimitKey('auth', key)
     const entry = await this.cache.get<AttemptEntry>(redisKey)
 
@@ -133,9 +164,7 @@ export class AuthRateLimitService {
     }
   }
 
-  private async recordAttempt(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
-    await this.ensureCacheReady()
-
+  private async recordAttemptWithPolicy(key: string, policy: AttemptPolicy): Promise<AttemptEntry> {
     const redisKey = CacheService.ratelimitKey('auth', key)
     const now = Date.now()
 
@@ -220,6 +249,16 @@ export class AuthRateLimitService {
     )
   }
 
+  private getRealtimeSocketPolicy(): AttemptPolicy {
+    return this.buildAttemptPolicy(
+      'REALTIME_SOCKET',
+      24,
+      2,
+      1,
+      'Muitas tentativas de conexao realtime.',
+    )
+  }
+
   private normalizeKeyValue(value: string) {
     return value.trim().toLowerCase()
   }
@@ -230,6 +269,11 @@ export class AuthRateLimitService {
 
   private buildEmailScopedKey(prefix: string, email: string) {
     return `${prefix}:email:${this.normalizeKeyValue(email)}`
+  }
+
+  private normalizeIpAddress(ipAddress: string | null) {
+    const normalizedIp = ipAddress?.trim()
+    return normalizedIp && normalizedIp.length > 0 ? normalizedIp : 'unknown'
   }
 
   private buildAttemptPolicy(

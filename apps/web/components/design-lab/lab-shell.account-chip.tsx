@@ -9,6 +9,7 @@ export function LabShellAccountChip({
   accountLabel,
   accountMeta,
   compact = false,
+  collapsed = false,
   configHref,
   isActive = false,
 }: Readonly<{
@@ -16,9 +17,12 @@ export function LabShellAccountChip({
   accountLabel: string
   accountMeta: string
   compact?: boolean
+  collapsed?: boolean
   configHref: string
   isActive?: boolean
 }>) {
+  const compactCollapsed = compact && collapsed
+
   return (
     <Link
       aria-label="Abrir configurações"
@@ -27,6 +31,7 @@ export function LabShellAccountChip({
         compact && isActive && 'lab-user--active',
         compact && 'lab-user',
         compact && 'lab-user--compact',
+        compactCollapsed && 'lab-user--compact-collapsed',
         !compact && isActive && 'lab-account-chip--active',
       )}
       href={configHref}
@@ -34,14 +39,16 @@ export function LabShellAccountChip({
     >
       <span className={compact ? 'lab-user__avatar' : 'lab-account-chip__avatar'}>{accountInitials}</span>
       {compact ? (
-        <div className="lab-user__info">
-          <span className="lab-user__name">{accountLabel}</span>
-          <span className="lab-user__role">{accountMeta}</span>
-          <span className="lab-user__config">
-            <Settings className="size-3.5" />
-            Configurações
-          </span>
-        </div>
+        compactCollapsed ? null : (
+          <div className="lab-user__info">
+            <span className="lab-user__name">{accountLabel}</span>
+            <span className="lab-user__role">{accountMeta}</span>
+            <span className="lab-user__config">
+              <Settings className="size-3.5" />
+              Configurações
+            </span>
+          </div>
+        )
       ) : (
         <span className="lab-account-chip__text">
           <span className="lab-account-chip__name">{accountLabel}</span>

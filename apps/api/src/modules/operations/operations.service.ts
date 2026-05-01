@@ -290,7 +290,7 @@ export class OperationsService {
     assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
-    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) {
+    if (mesa?.companyOwnerId !== workspaceOwnerUserId) {
       throw new NotFoundException('Mesa não encontrada.')
     }
     await this.assertMesaLabelAvailable(workspaceOwnerUserId, mesa.label, dto.label)

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import * as api from '@/lib/api'
 import { buildComanda, buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import { OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
+import { getOperationsPerformanceEvents, resetOperationsPerformanceEvents } from '@/lib/operations/operations-performance-diagnostics'
 import { useOwnerMobileShellMutations } from './use-owner-mobile-shell-mutations'
 
 vi.mock('@/lib/api', () => ({
@@ -56,6 +57,7 @@ describe('useOwnerMobileShellMutations', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    resetOperationsPerformanceEvents()
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -111,6 +113,18 @@ describe('useOwnerMobileShellMutations', () => {
     await waitFor(() => {
       expect(result.current.openComandaMutation.isSuccess).toBe(true)
     })
+
+    expect(getOperationsPerformanceEvents()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'mutation-finished',
+          surface: 'owner-mobile',
+          action: 'open-comanda',
+          status: 'success',
+          durationMs: expect.any(Number),
+        }),
+      ]),
+    )
   })
 
   it('aplica item otimista ao adicionar itens em comanda existente', async () => {

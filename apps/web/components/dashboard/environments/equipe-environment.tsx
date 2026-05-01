@@ -1,5 +1,8 @@
 'use client'
 
+import { ApiError } from '@/lib/api'
+import { EmployeeManagementCard } from '@/components/dashboard/employee-management-card'
+import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { LAB_RESPONSIVE_FOUR_UP_GRID, LabMiniStat, LabPageHeader } from '@/components/design-lab/lab-primitives'
 import { PayrollEnvironment } from '@/components/dashboard/payroll-environment'
 import { EquipeCardsView } from './equipe-environment-cards'
@@ -14,7 +17,16 @@ export function EquipeEnvironment({
   employees,
   finance,
   surface = 'legacy',
+  userRole = 'OWNER',
 }: Readonly<EquipeEnvironmentProps>) {
+  const {
+    createEmployeeMutation,
+    archiveEmployeeMutation,
+    restoreEmployeeMutation,
+    issueEmployeeAccessMutation,
+    revokeEmployeeAccessMutation,
+    rotateEmployeePasswordMutation,
+  } = useDashboardMutations()
   const view = resolveEquipeView(activeTab)
   if (view === 'folha') {
     return <PayrollEnvironment employees={employees} finance={finance} />
@@ -23,6 +35,14 @@ export function EquipeEnvironment({
   const copy = equipeViewCopy[view]
   const currency = finance?.displayCurrency ?? 'BRL'
   const summary = buildEquipeSummary(employees, finance)
+  const employeeMutationError = [
+    createEmployeeMutation.error,
+    archiveEmployeeMutation.error,
+    restoreEmployeeMutation.error,
+    issueEmployeeAccessMutation.error,
+    revokeEmployeeAccessMutation.error,
+    rotateEmployeePasswordMutation.error,
+  ].find((error) => error instanceof ApiError)
 
   return (
     <section className="space-y-5">
@@ -43,14 +63,37 @@ export function EquipeEnvironment({
         <EquipeHeaderStats currency={currency} summary={summary} />
       </LabPageHeader>
       {view === 'cards' ? (
-        <EquipeCardsView
-          averageTicket={summary.averageTicket}
-          currency={currency}
-          highlightedRow={summary.highlightedRow}
-          rows={summary.activeRows}
-          surface={surface}
-          totalCommission={summary.totalCommission}
-        />
+        <div className="space-y-5">
+          <EquipeCardsView
+            averageTicket={summary.averageTicket}
+            currency={currency}
+            highlightedRow={summary.highlightedRow}
+            rows={summary.activeRows}
+            surface={surface}
+            totalCommission={summary.totalCommission}
+          />
+          {userRole === 'OWNER' ? (
+            <EmployeeManagementCard
+              busy={
+                createEmployeeMutation.isPending ||
+                archiveEmployeeMutation.isPending ||
+                restoreEmployeeMutation.isPending ||
+                issueEmployeeAccessMutation.isPending ||
+                revokeEmployeeAccessMutation.isPending ||
+                rotateEmployeePasswordMutation.isPending
+              }
+              employees={employees}
+              error={employeeMutationError?.message ?? null}
+              loading={createEmployeeMutation.isPending}
+              onArchive={archiveEmployeeMutation.mutate}
+              onCreate={createEmployeeMutation.mutateAsync}
+              onIssueAccess={issueEmployeeAccessMutation.mutateAsync}
+              onRestore={restoreEmployeeMutation.mutate}
+              onRevokeAccess={revokeEmployeeAccessMutation.mutateAsync}
+              onRotatePassword={rotateEmployeePasswordMutation.mutateAsync}
+            />
+          ) : null}
+        </div>
       ) : (
         <ProfileSpotlight currency={currency} row={summary.highlightedRow} />
       )}

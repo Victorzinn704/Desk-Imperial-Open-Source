@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { trimTrailingDecimalZeros } from '@contracts/contracts'
 import {
   getNationalPackagedBeverageSource,
   resolveBrazilianPackagedBeverageMatch,
 } from '@/lib/brazilian-packaged-beverage-catalog'
+import { resolveApiBaseUrl } from '@/lib/api-base-url'
 
 export const dynamic = 'force-dynamic'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const OPEN_FOOD_FACTS_API_URL = (
   process.env.OPEN_FOOD_FACTS_API_URL ?? 'https://world.openfoodfacts.org/api/v2'
 ).replace(/\/$/, '')
@@ -51,6 +52,38 @@ type OpenFoodFactsResponse = {
   status?: number
   product?: OpenFoodFactsProduct
 }
+
+type MeasurementUnit = 'ML' | 'L' | 'G' | 'KG' | 'UN'
+
+const quantityFallback = {
+  quantityLabel: null,
+  measurementUnit: null,
+  measurementValue: null,
+} as const
+
+const measurementUnitAliases: Array<{
+  aliases: string[]
+  label: string
+  unit: MeasurementUnit
+}> = [
+  { aliases: ['ml'], label: 'ml', unit: 'ML' },
+  { aliases: ['l', 'lt', 'lts'], label: 'L', unit: 'L' },
+  { aliases: ['g'], label: 'g', unit: 'G' },
+  { aliases: ['kg'], label: 'kg', unit: 'KG' },
+  { aliases: ['un', 'und', 'unid', 'unidade'], label: 'und', unit: 'UN' },
+]
+
+const packagingBaseMatchers: Array<{ label: string; matchers: string[] }> = [
+  { label: 'Long neck', matchers: ['long neck'] },
+  { label: 'Latao', matchers: ['latao', 'latão'] },
+  { label: 'Lata', matchers: ['lata'] },
+  { label: 'Garrafa', matchers: ['garrafa', 'pet'] },
+  { label: 'Frasco', matchers: ['frasco'] },
+  { label: 'Pacote', matchers: ['pacote'] },
+  { label: 'Caixa', matchers: ['caixa'] },
+  { label: 'Sache', matchers: ['sache', 'sachê'] },
+  { label: 'Dose', matchers: ['dose'] },
+]
 
 export async function POST(request: Request) {
   const sessionStatus = await resolveSessionStatus()
@@ -153,6 +186,7 @@ async function resolveSessionStatus(): Promise<'active' | 'invalid' | 'missing' 
   }
 
   try {
+    const API_BASE_URL = resolveApiBaseUrl()
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
       cache: 'no-store',
       headers: {
@@ -228,57 +262,25 @@ function extractCategory(rawCategories: string | undefined, tagCategories: strin
 function extractQuantity(rawQuantity: string | undefined) {
   const normalized = rawQuantity?.trim().toLowerCase().replace(',', '.').replace(/\s+/g, '')
   if (!normalized) {
-    return {
-      quantityLabel: null,
-      measurementUnit: null,
-      measurementValue: null,
-    }
+    return quantityFallback
   }
 
   const match = normalized.match(/^(\d+(?:\.\d+)?)(ml|l|lt|lts|g|kg|un|und|unid|unidade)s?$/i)
   if (!match) {
-    return {
-      quantityLabel: rawQuantity?.trim() ?? null,
-      measurementUnit: null,
-      measurementValue: null,
-    }
+    return buildUnknownQuantity(rawQuantity)
   }
 
   const rawValue = Number(match[1])
   if (!Number.isFinite(rawValue) || rawValue <= 0) {
-    return {
-      quantityLabel: rawQuantity?.trim() ?? null,
-      measurementUnit: null,
-      measurementValue: null,
-    }
+    return buildUnknownQuantity(rawQuantity)
   }
 
-  const rawUnit = match[2].toLowerCase()
-  const mappedUnit =
-    rawUnit === 'ml'
-      ? 'ML'
-      : rawUnit === 'l' || rawUnit === 'lt' || rawUnit === 'lts'
-        ? 'L'
-        : rawUnit === 'g'
-          ? 'G'
-          : rawUnit === 'kg'
-            ? 'KG'
-            : 'UN'
-  const formattedValue = Number.isInteger(rawValue) ? String(rawValue) : rawValue.toFixed(2).replace(/\.?0+$/, '')
-  const unitLabel =
-    mappedUnit === 'ML'
-      ? 'ml'
-      : mappedUnit === 'L'
-        ? 'L'
-        : mappedUnit === 'G'
-          ? 'g'
-          : mappedUnit === 'KG'
-            ? 'kg'
-            : 'und'
+  const unitMetadata = resolveMeasurementUnit(match[2].toLowerCase())
+  const formattedValue = Number.isInteger(rawValue) ? String(rawValue) : trimTrailingDecimalZeros(rawValue.toFixed(2))
 
   return {
-    quantityLabel: `${formattedValue}${unitLabel}`,
-    measurementUnit: mappedUnit,
+    quantityLabel: `${formattedValue}${unitMetadata.label}`,
+    measurementUnit: unitMetadata.unit,
     measurementValue: rawValue,
   }
 }
@@ -289,27 +291,7 @@ function inferPackagingClass(
   quantityLabel: string | null,
 ) {
   const source = `${packagingText ?? ''} ${name ?? ''}`.toLowerCase()
-
-  const packagingBase =
-    source.includes('long neck')
-      ? 'Long neck'
-      : source.includes('latao') || source.includes('latão')
-        ? 'Latao'
-        : source.includes('lata')
-          ? 'Lata'
-          : source.includes('garrafa') || source.includes('pet')
-            ? 'Garrafa'
-            : source.includes('frasco')
-              ? 'Frasco'
-              : source.includes('pacote')
-                ? 'Pacote'
-                : source.includes('caixa')
-                  ? 'Caixa'
-                  : source.includes('sache') || source.includes('sachê')
-                    ? 'Sache'
-                    : source.includes('dose')
-                      ? 'Dose'
-                      : null
+  const packagingBase = resolvePackagingBase(source)
 
   if (packagingBase && quantityLabel) {
     return `${packagingBase} ${quantityLabel}`
@@ -324,4 +306,27 @@ function inferPackagingClass(
   }
 
   return packagingText || null
+}
+
+function buildUnknownQuantity(rawQuantity: string | undefined) {
+  return {
+    quantityLabel: rawQuantity?.trim() ?? null,
+    measurementUnit: null,
+    measurementValue: null,
+  }
+}
+
+function resolveMeasurementUnit(rawUnit: string) {
+  const unitMetadata = measurementUnitAliases.find((entry) => entry.aliases.includes(rawUnit))
+  return unitMetadata ?? measurementUnitAliases.at(-1)!
+}
+
+function resolvePackagingBase(source: string) {
+  for (const candidate of packagingBaseMatchers) {
+    if (candidate.matchers.some((matcher) => source.includes(matcher))) {
+      return candidate.label
+    }
+  }
+
+  return null
 }

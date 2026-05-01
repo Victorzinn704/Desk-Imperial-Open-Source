@@ -138,7 +138,7 @@ describe('resolveWorkspaceOwnerUserId', () => {
       userId: 'staff-456',
       companyOwnerUserId: null,
     })
-    expect(resolveWorkspaceOwnerUserId(auth)).toBe('staff-456')
+    expect(resolveWorkspaceOwnerUserId(auth)).toBe('owner-1')
   })
 })
 

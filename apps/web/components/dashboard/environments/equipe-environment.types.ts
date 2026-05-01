@@ -11,6 +11,7 @@ export type EquipeEnvironmentProps = {
   employees: EmployeeRecord[]
   finance?: FinanceSummaryResponse
   surface?: EquipeSurface
+  userRole?: 'OWNER' | 'STAFF'
 }
 
 export type EquipeSummary = {

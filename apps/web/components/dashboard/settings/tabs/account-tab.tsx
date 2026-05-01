@@ -1,7 +1,9 @@
 import type { ProfileFormValues } from '@/lib/validation'
 import type { AuthUser } from '@/lib/api'
 import { AccountProfileCard } from '@/components/dashboard/account-profile-card'
+import { RealtimeNotificationCard } from '@/components/dashboard/settings/components/realtime-notification-card'
 import { SettingsInfoCard } from '@/components/dashboard/settings/components/settings-info-card'
+import { TelegramIntegrationCard } from '@/components/dashboard/settings/components/telegram-integration-card'
 
 type AccountTabProps = Readonly<{
   profileError?: string | null
@@ -46,6 +48,10 @@ export function AccountTab({ profileError, profileLoading, user, onProfileSubmit
           <SettingsInfoCard hint={companyLocation.helper} label="Localização" value={companyLocation.label} />
         </div>
       </section>
+
+      <TelegramIntegrationCard canManageWorkspacePreferences={user.role === 'OWNER'} />
+
+      <RealtimeNotificationCard />
 
       <AccountProfileCard error={profileError} loading={profileLoading} user={user} onSubmit={onProfileSubmit} />
     </div>

@@ -18,17 +18,19 @@ export const loginSchema = z
     password: z.string(),
   })
   .superRefine((values, context) => {
-    const minimumLength = values.loginMode === 'STAFF' ? 6 : 8
-    const passwordMessage =
-      values.loginMode === 'STAFF'
-        ? 'O PIN do funcionário precisa ter pelo menos 6 caracteres.'
-        : 'A senha da empresa precisa ter pelo menos 8 caracteres.'
-
-    if (values.password.length < minimumLength) {
+    if (values.loginMode === 'STAFF') {
+      if (!/^\d{8}$/.test(values.password)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['password'],
+          message: 'A senha do funcionário precisa ter exatamente 8 dígitos numéricos.',
+        })
+      }
+    } else if (values.password.length < 8) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['password'],
-        message: passwordMessage,
+        message: 'A senha da empresa precisa ter pelo menos 8 caracteres.',
       })
     }
 
@@ -291,17 +293,11 @@ export const profileSchema = z.object({
 })
 
 export const employeeSchema = z.object({
-  employeeCode: z
-    .string()
-    .trim()
-    .min(2, 'Informe um ID de funcionário.')
-    .max(32, 'O ID do funcionário ficou longo demais.'),
   displayName: z
     .string()
     .trim()
     .min(3, 'Digite o nome do funcionário.')
     .max(120, 'O nome do funcionário ficou longo demais.'),
-  temporaryPassword: z.string().regex(/^\d{6}$/, 'O PIN precisa ter exatamente 6 dígitos numéricos.'),
 })
 
 export const orderItemSchema = z.object({

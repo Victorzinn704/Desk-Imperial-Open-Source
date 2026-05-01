@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { AuditSeverity, Prisma } from '@prisma/client'
+import { recordAuditLogRecordTelemetry } from '../../common/observability/business-telemetry.util'
 import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
@@ -151,6 +152,7 @@ export class AuditLogService {
   }
 
   async record(input: AuditLogInput) {
+    const startedAt = performance.now()
     try {
       const data = {
         event: input.event,
@@ -166,7 +168,17 @@ export class AuditLogService {
       await this.prisma.auditLog.create({
         data,
       })
+      recordAuditLogRecordTelemetry(performance.now() - startedAt, {
+        'desk.audit.event': input.event,
+        'desk.audit.resource': input.resource,
+        'desk.audit.result': 'ok',
+      })
     } catch (error) {
+      recordAuditLogRecordTelemetry(performance.now() - startedAt, {
+        'desk.audit.event': input.event,
+        'desk.audit.resource': input.resource,
+        'desk.audit.result': 'error',
+      })
       this.logger.warn(`Nao foi possivel persistir audit log para o evento ${input.event}.`)
       this.logger.debug(error)
     }

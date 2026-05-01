@@ -49,6 +49,9 @@ const productWithComboInclude = Prisma.validator<Prisma.ProductInclude>()({
   },
 })
 
+const BULK_RESTOCK_TARGET_STOCK = 24
+const BULK_RESTOCK_THRESHOLD_MULTIPLIER = 2
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -367,6 +370,113 @@ export class ProductsService {
       }
     } catch (error) {
       handleProductConflict(error)
+    }
+  }
+
+  async bulkRestockForUser(
+    auth: AuthContext,
+    dto: {
+      mode?: 'low_stock' | 'all_active'
+      targetStock?: number
+    },
+    context: RequestContext,
+  ) {
+    assertOwnerRole(auth, 'Apenas o dono pode reabastecer produtos em massa.')
+    const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
+    const mode = dto.mode ?? 'low_stock'
+    const targetStock = Math.max(1, dto.targetStock ?? BULK_RESTOCK_TARGET_STOCK)
+
+    const activeProducts = await this.prisma.product.findMany({
+      where: {
+        userId: workspaceUserId,
+        active: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        stock: true,
+        lowStockThreshold: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    const selectedProducts = activeProducts.filter((product) => {
+      const desiredStock = Math.max(
+        targetStock,
+        product.lowStockThreshold != null ? product.lowStockThreshold * BULK_RESTOCK_THRESHOLD_MULTIPLIER : 0,
+      )
+
+      if (mode === 'all_active') {
+        return product.stock < desiredStock
+      }
+
+      return product.stock <= 0 || product.stock < targetStock || (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold)
+    })
+
+    if (selectedProducts.length === 0) {
+      return {
+        summary: {
+          mode,
+          targetStock,
+          matchedCount: 0,
+          updatedCount: 0,
+        },
+        products: [],
+      }
+    }
+
+    const updates = selectedProducts.map((product) => {
+      const desiredStock = Math.max(
+        targetStock,
+        product.lowStockThreshold != null ? product.lowStockThreshold * BULK_RESTOCK_THRESHOLD_MULTIPLIER : 0,
+      )
+
+      return {
+        id: product.id,
+        name: product.name,
+        previousStock: product.stock,
+        nextStock: desiredStock,
+      }
+    })
+
+    await this.prisma.$transaction(
+      updates.map((product) =>
+        this.prisma.product.update({
+          where: { id: product.id },
+          data: { stock: product.nextStock },
+        }),
+      ),
+    )
+
+    await this.auditLogService.record({
+      actorUserId: resolveAuthActorUserId(auth),
+      event: 'product.bulk_restocked',
+      resource: 'product',
+      resourceId: workspaceUserId,
+      metadata: {
+        mode,
+        targetStock,
+        updatedCount: updates.length,
+        productIds: updates.map((product) => product.id),
+      },
+      severity: AuditSeverity.INFO,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    this.refreshFinanceSummary(workspaceUserId)
+    void this.invalidateProductsCache(workspaceUserId)
+
+    return {
+      summary: {
+        mode,
+        targetStock,
+        matchedCount: selectedProducts.length,
+        updatedCount: updates.length,
+      },
+      products: updates,
     }
   }
 

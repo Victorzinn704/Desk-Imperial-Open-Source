@@ -20,6 +20,8 @@ import {
   appendOptimisticComandaItem,
   appendOptimisticComandaMutation,
   buildOptimisticComandaRecord,
+  finishOperationsMutationTrace,
+  startOperationsMutationTrace,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   rollbackOperationsSnapshot,
@@ -47,6 +49,7 @@ function useOpenComandaMutation(queryClient: QueryClient) {
   return useMutation({
     mutationFn: (payload: Parameters<typeof openComanda>[0]) => openComanda(payload, { includeSnapshot: false }),
     onMutate: async (vars) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'open-comanda')
       const snapshot = await appendOptimisticComandaMutation(
         queryClient,
         OPERATIONS_LIVE_COMPACT_QUERY_KEY,
@@ -61,14 +64,16 @@ function useOpenComandaMutation(queryClient: QueryClient) {
           items: vars.items,
         }),
       )
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX)
       toast.success('Comanda aberta com sucesso')
       haptic.success()
     },
     onError: (err, _vars, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error(err instanceof Error ? err.message : 'Erro ao abrir comanda')
       haptic.error()
@@ -81,11 +86,13 @@ function useAddComandaItemMutation(queryClient: QueryClient) {
     mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof addComandaItem>[1] }) =>
       addComandaItem(comandaId, payload, { includeSnapshot: false }),
     onMutate: async ({ comandaId, payload }) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'add-comanda-item')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, payload)
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
@@ -94,6 +101,7 @@ function useAddComandaItemMutation(queryClient: QueryClient) {
       haptic.light()
     },
     onError: (_err, _vars, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao adicionar item')
       haptic.error()
@@ -106,14 +114,16 @@ function useAddComandaItemsMutation(queryClient: QueryClient) {
     mutationFn: ({ comandaId, items }: { comandaId: string; items: Parameters<typeof addComandaItems>[1] }) =>
       addComandaItems(comandaId, items, { includeSnapshot: false }),
     onMutate: async ({ comandaId, items }) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'add-comanda-items')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
       for (const item of items) {
         appendOptimisticComandaItem(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, item)
       }
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
         includeSummary: false,
@@ -122,6 +132,7 @@ function useAddComandaItemsMutation(queryClient: QueryClient) {
       haptic.light()
     },
     onError: (_err, _vars, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error('Erro ao adicionar itens')
       haptic.error()
@@ -139,11 +150,13 @@ function useReplaceComandaMutation(queryClient: QueryClient) {
       payload: Parameters<typeof replaceComanda>[1]
     }) => replaceComanda(comandaId, payload, { includeSnapshot: false }),
     onMutate: async () => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'replace-comanda')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data, variables, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
@@ -153,6 +166,7 @@ function useReplaceComandaMutation(queryClient: QueryClient) {
       haptic.success()
     },
     onError: (err, _variables, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error(err instanceof Error ? err.message : 'Erro ao atualizar comanda')
       haptic.error()
@@ -165,18 +179,22 @@ function useUpdateComandaStatusMutation(queryClient: QueryClient) {
     mutationFn: ({ comandaId, status }: { comandaId: string; status: 'OPEN' | 'IN_PREPARATION' | 'READY' }) =>
       updateComandaStatus(comandaId, status, { includeSnapshot: false }),
     onMutate: async ({ comandaId, status }) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'update-comanda-status')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, status)
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeKitchen: true,
+        includeSummary: false,
       })
       toast.success('Status atualizado')
       haptic.medium()
     },
     onError: (err, _vars, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status')
       haptic.error()
@@ -198,11 +216,13 @@ function useCloseComandaMutation(queryClient: QueryClient) {
       serviceFeeAmount: number
     }) => closeComanda(comandaId, { discountAmount, serviceFeeAmount, paymentMethod }, { includeSnapshot: false }),
     onMutate: async ({ comandaId }) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'close-comanda')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = setOptimisticComandaStatus(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, 'CLOSED')
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeOrders: true,
         includeFinance: true,
@@ -211,6 +231,7 @@ function useCloseComandaMutation(queryClient: QueryClient) {
       haptic.heavy()
     },
     onError: (err, _vars, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error(err instanceof Error ? err.message : 'Erro ao fechar comanda')
       haptic.error()
@@ -230,22 +251,25 @@ function useCreateComandaPaymentMutation(queryClient: QueryClient) {
       method: Parameters<typeof createComandaPayment>[1]['method']
     }) => createComandaPayment(comandaId, { amount, method }, { includeSnapshot: false }),
     onMutate: async ({ amount, comandaId, method }) => {
+      const trace = startOperationsMutationTrace('owner-mobile', 'create-comanda-payment')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })
       const snapshot = appendOptimisticComandaPayment(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, comandaId, {
         amount,
         method,
       })
-      return { snapshot }
+      return { snapshot, trace }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data, variables, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       void queryClient.invalidateQueries({ queryKey: ['comanda-details', variables.comandaId] })
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-        includeSummary: true,
+        includeSummary: false,
       })
       toast.success('Pagamento registrado')
       haptic.success()
     },
     onError: (err, _variables, ctx) => {
+      finishOperationsMutationTrace(ctx?.trace, 'error')
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_COMPACT_QUERY_KEY, ctx?.snapshot)
       toast.error(err instanceof Error ? err.message : 'Erro ao registrar pagamento')
       haptic.error()
@@ -256,14 +280,17 @@ function useCreateComandaPaymentMutation(queryClient: QueryClient) {
 function useOpenCashSessionMutation(queryClient: QueryClient) {
   return useMutation({
     mutationFn: (openingCashAmount: number) => openCashSession({ openingCashAmount }, { includeSnapshot: false }),
-    onSuccess: () => {
+    onMutate: async () => ({ trace: startOperationsMutationTrace('owner-mobile', 'open-cash-session') }),
+    onSuccess: (_data, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'success')
       scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
         includeSummary: true,
       })
       toast.success('Caixa aberto')
       haptic.success()
     },
-    onError: (err) => {
+    onError: (err, _vars, context) => {
+      finishOperationsMutationTrace(context?.trace, 'error')
       toast.error(err instanceof Error ? err.message : 'Erro ao abrir caixa')
       haptic.error()
     },

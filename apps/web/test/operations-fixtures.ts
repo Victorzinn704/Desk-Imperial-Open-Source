@@ -35,6 +35,10 @@ type ComandaInput = {
   discountAmount?: number
   serviceFeeAmount?: number
   totalAmount?: number
+  paidAmount?: number
+  remainingAmount?: number
+  paymentStatus?: ComandaRecord['paymentStatus']
+  payments?: ComandaRecord['payments']
   notes?: string | null
   openedAt?: string
   closedAt?: string | null
@@ -109,6 +113,10 @@ export function buildComanda(overrides: ComandaInput = {}): ComandaRecord {
     discountAmount,
     serviceFeeAmount,
     totalAmount,
+    paidAmount: overrides.paidAmount,
+    remainingAmount: overrides.remainingAmount,
+    paymentStatus: overrides.paymentStatus,
+    payments: overrides.payments,
     notes: overrides.notes ?? null,
     openedAt: overrides.openedAt ?? DEFAULT_DATE,
     closedAt: overrides.closedAt ?? null,

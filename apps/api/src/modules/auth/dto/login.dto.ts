@@ -24,14 +24,17 @@ class LoginPasswordLengthConstraint implements ValidatorConstraintInterface {
     }
 
     const loginMode = (args.object as LoginDto).loginMode
-    const minimumLength = loginMode === LoginModeDto.STAFF ? 6 : 8
-    return value.length >= minimumLength
+    if (loginMode === LoginModeDto.STAFF) {
+      return /^\d{8}$/.test(value)
+    }
+
+    return value.length >= 8
   }
 
   defaultMessage(args: ValidationArguments) {
     const loginMode = (args.object as LoginDto).loginMode
     return loginMode === LoginModeDto.STAFF
-      ? 'PIN do funcionário deve ter no mínimo 6 caracteres'
+      ? 'A senha do funcionário deve ter exatamente 8 dígitos numéricos'
       : 'Senha da empresa deve ter no mínimo 8 caracteres'
   }
 }

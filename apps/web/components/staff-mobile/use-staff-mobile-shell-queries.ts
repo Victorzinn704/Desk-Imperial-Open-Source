@@ -17,7 +17,7 @@ function useStaffOperationsQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 20_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 
@@ -29,7 +29,7 @@ function useStaffKitchenQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 20_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 

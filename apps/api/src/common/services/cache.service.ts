@@ -88,6 +88,37 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async setIfAbsent(key: string, value: unknown, ttlSeconds: number): Promise<boolean> {
+    if (!this.enabled || !this.client) {
+      return true
+    }
+    try {
+      const result = await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds, 'NX')
+      this.failureCount = 0
+      return result === 'OK'
+    } catch {
+      this.handleFailure('setIfAbsent')
+      return false
+    }
+  }
+
+  async increment(key: string, ttlSeconds?: number): Promise<number> {
+    if (!this.enabled || !this.client) {
+      return 0
+    }
+    try {
+      const count = await this.client.incr(key)
+      if (count === 1 && ttlSeconds) {
+        await this.client.expire(key, ttlSeconds)
+      }
+      this.failureCount = 0
+      return count
+    } catch {
+      this.handleFailure('increment')
+      return 0
+    }
+  }
+
   async del(key: string): Promise<void> {
     if (!this.enabled || !this.client) {
       return
@@ -152,6 +183,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   static notificationsDeliveryKey(workspaceOwnerUserId: string, idempotencyKey: string): string {
     return `notifications:delivery:${workspaceOwnerUserId}:${idempotencyKey}`
+  }
+
+  static telegramUpdateKey(updateId: number) {
+    return `telegram:update:${updateId}`
+  }
+
+  static telegramRateLimitKey(chatId: string) {
+    return `telegram:ratelimit:${chatId}`
   }
 
   static productsKey(userId: string, scope: 'active' | 'all' = 'active') {

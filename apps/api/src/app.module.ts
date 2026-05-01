@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
+import { SentryModule } from '@sentry/nestjs/setup'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { LoggerModule } from 'nestjs-pino'
 import { resolve } from 'node:path'
@@ -84,6 +85,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
             'req.headers.cookie',
             'req.headers.x-csrf-token',
             'req.headers.x-admin-pin',
+            'req.headers.x-telegram-bot-api-secret-token',
             'req.body.fullName',
             'req.body.companyName',
             'req.body.email',
@@ -122,6 +124,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
         },
       },
     }),
+    SentryModule.forRoot(),
     PrismaModule,
     CacheModule,
     CurrencyModule,

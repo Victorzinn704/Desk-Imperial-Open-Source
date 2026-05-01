@@ -110,7 +110,7 @@ export async function resolveDemoOwnerActor(prisma: PrismaService, demoEmail: st
     select: { ...authSessionUserSelect, passwordHash: true, role: true },
   })
 
-  if (!user || user.role !== UserRole.OWNER || user.companyOwnerId) {
+  if (user?.role !== UserRole.OWNER || user.companyOwnerId) {
     return null
   }
 

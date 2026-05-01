@@ -27,6 +27,7 @@ import {
 import {
   recordOperationsKitchenTelemetry,
   recordOperationsLiveTelemetry,
+  recordOperationsRecalculateCashSessionTelemetry,
 } from '../../common/observability/business-telemetry.util'
 import { CurrencyService } from '../currency/currency.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -42,6 +43,7 @@ import {
   resolveEmployeeForStaff,
 } from './operations-auth.utils'
 import {
+  assertDraftSelectionsStockAvailability,
   assertBusinessDayOpen,
   assertOpenTableAvailability,
   ensureOrderForClosedComanda,
@@ -164,7 +166,15 @@ export class OperationsHelpersService {
 
   // ── Delegated helpers (pure utilities extracted to separate files) ──
 
-  recalculateCashSession = recalculateCashSession
+  async recalculateCashSession(transaction: TransactionClient, cashSessionId: string) {
+    const startedAt = performance.now()
+    const session = await recalculateCashSession(transaction, cashSessionId)
+    recordOperationsRecalculateCashSessionTelemetry(performance.now() - startedAt, {
+      'desk.operations.cash_session_id_present': Boolean(cashSessionId),
+      'desk.operations.cash_session_status': session.status,
+    })
+    return session
+  }
   recalculateComanda = recalculateComanda
   syncCashClosure = syncCashClosure
   requireOwnedCashSession = requireOwnedCashSession
@@ -173,6 +183,11 @@ export class OperationsHelpersService {
   resolveEmployeeForStaff = resolveEmployeeForStaff
   resolveComandaBusinessDate = resolveComandaBusinessDate
   resolveComandaDraftItems = resolveComandaDraftItems
+  assertDraftSelectionsStockAvailability = (
+    transaction: PrismaService | TransactionClient,
+    workspaceOwnerUserId: string,
+    selections: Array<{ productId: string; quantity: number }>,
+  ) => assertDraftSelectionsStockAvailability(transaction, workspaceOwnerUserId, selections)
   assertOpenTableAvailability = assertOpenTableAvailability
   buildOperationsComandaWhere = buildOperationsComandaWhere
   buildKitchenItemWhere = buildKitchenItemWhere
@@ -197,7 +212,7 @@ export class OperationsHelpersService {
 
     const employee = await this.resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth)
 
-    if (!employee || session.employeeId !== employee.id) {
+    if (employee?.id !== session.employeeId) {
       throw new ForbiddenException('Seu acesso nao pode operar o caixa de outro funcionario.')
     }
 

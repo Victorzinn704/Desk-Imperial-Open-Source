@@ -1,212 +1,233 @@
-# Riscos e Limitações — Desk Imperial
+# Riscos e Limitacoes — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
-**Honestidade:** este documento não suaviza os problemas reais.
+**Versao:** 1.1  
+**Ultima atualizacao:** 2026-05-01  
+**Honestidade:** este documento nao suaviza os problemas reais.
 
 ---
 
 ## Como ler este documento
 
-Cada item tem:
+Cada item traz:
 
-- **Severidade:** Alta / Média / Baixa
-- **Tipo:** Limitação de produto / Débito técnico / Risco operacional / Risco de segurança
-- **Status:** Conhecido e aceito / Em correção / Bloqueado / Planejado
-
----
-
-## Limitações de produto
-
-### L-01 — Sem integração com plataformas de entrega
-
-| Campo      | Valor                |
-| ---------- | -------------------- |
-| Severidade | Média                |
-| Tipo       | Limitação de produto |
-| Status     | Fora do escopo atual |
-
-O sistema não se integra com iFood, Rappi ou outras plataformas de delivery. Os pedidos precisam ser registrados manualmente.
-
-**Impacto:** negócios com alto volume de delivery precisam digitar os pedidos no sistema.
-
-**Decisão:** integração com delivery está fora do escopo da versão atual. O foco é o atendimento presencial.
+- **Severidade:** Alta / Media / Baixa
+- **Tipo:** Limitacao de produto / Debito tecnico / Risco operacional / Risco de seguranca
+- **Status:** Conhecido e aceito / Em correcao / Planejado / Fora do escopo
 
 ---
 
-### L-02 — Sem relatórios avançados ou dashboards customizáveis
+## Limitacoes de produto
 
-| Campo      | Valor                |
-| ---------- | -------------------- |
-| Severidade | Baixa                |
-| Tipo       | Limitação de produto |
-| Status     | Planejado            |
+### L-01 — Sem integracao com marketplaces de delivery
 
-Os KPIs financeiros são fixos. Não é possível criar relatórios customizados ou exportar dados em formatos além de CSV.
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Limitacao de produto |
+| Status | Fora do escopo atual |
 
----
+O Desk Imperial ainda nao integra iFood, Rappi ou agregadores parecidos. O produto continua mais forte em atendimento presencial e operacao local.
 
-### L-03 — Sem suporte a múltiplas unidades no mesmo workspace
+**Impacto:** negocios com alto volume de delivery ainda precisam registrar parte do fluxo manualmente.
 
-| Campo      | Valor                |
-| ---------- | -------------------- |
-| Severidade | Média                |
-| Tipo       | Limitação de produto |
-| Status     | Fora do escopo atual |
+### L-02 — Multiunidade continua fora do modelo principal
 
-Cada conta é um workspace independente. Um negócio com duas filiais precisa de duas contas separadas.
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Limitacao de produto |
+| Status | Fora do escopo atual |
 
----
+Cada workspace representa um negocio operacional unico. Filiais seguem exigindo contas ou separacao operacional externa.
 
-## Débito técnico
+### L-03 — Relatorios self-service ainda sao limitados
 
-### D-01 — Cobertura de testes frontend parcial
+| Campo | Valor |
+| --- | --- |
+| Severidade | Baixa |
+| Tipo | Limitacao de produto |
+| Status | Planejado |
 
-| Campo      | Valor              |
-| ---------- | ------------------ |
-| Severidade | Média              |
-| Tipo       | Débito técnico     |
-| Status     | Conhecido e aceito |
+O projeto ja tem schema `bi` e Metabase, mas o portal ainda nao oferece construcao self-service de relatorios dentro da propria UI.
 
-O backend tem 53+ testes cobrindo todos os módulos críticos. O frontend tem Playwright E2E e Vitest, mas a cobertura não abrange toda a superfície de componentes de negócio.
-
-**Impacto:** mudanças no frontend podem introduzir regressões que os testes atuais não detectam.
-
-**Mitigação:** os fluxos críticos (login, PDV, financeiro) têm cobertura E2E.
+**Impacto:** dashboards executivos existem, mas personalizacao profunda ainda nao e parte da superficie principal do produto.
 
 ---
 
-### D-02 — Hook de realtime no frontend com múltiplas responsabilidades
+## Debito tecnico
 
-| Campo      | Valor          |
-| ---------- | -------------- |
-| Severidade | Baixa          |
-| Tipo       | Débito técnico |
-| Status     | Conhecido      |
+### D-01 — Cobertura frontend ainda e parcial
 
-O hook `use-operations-realtime.ts` concentra lógica de conexão, reconexão, parsing de eventos e atualização de estado. Está funcional mas com custo de manutenção alto.
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Debito tecnico |
+| Status | Conhecido e aceito |
 
-**Impacto:** alterações no fluxo realtime exigem cuidado neste arquivo.
+O repo melhorou bastante em testes criticos, mas a superficie web/mobile ainda e maior do que a cobertura automatizada atual.
 
----
+**Impacto:** regressao visual e comportamental ainda pode escapar em areas menos quentes.
 
-### D-03 — Service Worker limitado ao módulo /app
+### D-02 — Consistencia realtime ainda esta em recuperacao
 
-| Campo      | Valor          |
-| ---------- | -------------- |
-| Severidade | Baixa          |
-| Tipo       | Débito técnico |
-| Status     | Conhecido      |
+| Campo | Valor |
+| --- | --- |
+| Severidade | Alta |
+| Tipo | Debito tecnico |
+| Status | Em correcao |
 
-O registro de Service Worker está limitado ao escopo `/app`. Rotas fora desse escopo não têm suporte a cache offline.
+A malha realtime ja recebeu:
 
-**Impacto:** o comportamento offline é inconsistente dependendo da rota.
+- rooms segmentadas
+- `operations.error`
+- reconnect/foreground mais explicito
+- negative cache de sessao
+
+Mesmo assim, ainda existe debito estrutural em:
+
+- correlacao optimistic -> real
+- ordering por entidade
+- replay/gap detection
+- custo do hot path antes do emit
+
+**Impacto:** latencia percebida e divergencia cliente/servidor ainda podem aparecer em operacao quente.
+
+### D-03 — Hotspots operacionais seguem caros para manutencao
+
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Debito tecnico |
+| Status | Conhecido e aceito |
+
+Arquivos como `comanda.service.ts` e parte do patching realtime ainda concentram regra demais.
+
+**Impacto:** mudancas em caixa, comanda e cozinha ainda exigem revisao cuidadosa e testes focados.
 
 ---
 
 ## Riscos operacionais
 
-### O-01 — Observabilidade OSS ainda em rollout parcial
+### O-01 — Runtime publico segue sem alta disponibilidade real
 
-| Campo      | Valor             |
-| ---------- | ----------------- |
-| Severidade | Alta              |
-| Tipo       | Risco operacional |
-| Status     | Planejado         |
+| Campo | Valor |
+| --- | --- |
+| Severidade | Alta |
+| Tipo | Risco operacional |
+| Status | Conhecido e aceito |
 
-O sistema está migrando para stack OSS (OpenTelemetry, Alloy, Tempo, Loki e Prometheus), mas a cobertura entre ambientes ainda não está homogênea.
+O projeto ainda nao opera em arquitetura ativa-ativa nem em multi-borda com failover automatico.
 
-**Impacto:** erros silenciosos podem passar despercebidos por horas.
+Estado atual:
 
-**Mitigação atual:** health check em `/api/health`, logging estruturado com request-id, audit log de eventos críticos.
+- `vm-free-01` segura a borda publica
+- `vm-free-02` segura builder/ops
+- Ampere segura o banco
 
-**Plano:** consolidar rollout da stack OSS em todos os ambientes com alertas operacionais padronizados.
+**Impacto:** falha grave em `vm-free-01` ainda derruba a superficie publica mesmo com o resto da malha em pe.
 
----
+### O-02 — Dependencias externas continuam sem fallback simetrico
 
-### O-02 — Dependência de serviços externos sem fallback completo
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Risco operacional |
+| Status | Parcialmente mitigado |
 
-| Campo      | Valor                 |
-| ---------- | --------------------- |
-| Severidade | Média                 |
-| Tipo       | Risco operacional     |
-| Status     | Parcialmente mitigado |
+Servicos externos atuais:
 
-O sistema depende de serviços externos:
+| Servico | Uso | Comportamento atual |
+| --- | --- | --- |
+| PostgreSQL + PgBouncer (Ampere) | Persistencia | Critico; sem fallback equivalente |
+| Redis | Cache, rate limit, parte do realtime | fail-open controlado, mas com perda de eficiencia e resiliencia |
+| Brevo | Email transacional | sem fallback automatico |
+| Gemini | smart draft e insight IA | erro controlado; nao bloqueia o core transacional |
+| Open Food Facts | lookup por EAN | erro controlado; cadastro continua manual |
+| Telegram API | bot oficial | degradacao localizada; operacao principal continua |
+| Sentry | observabilidade de erro/release | perda de visibilidade, nao de funcionalidade core |
 
-| Serviço           | Uso                 | Fallback                                                |
-| ----------------- | ------------------- | ------------------------------------------------------- |
-| Neon (PostgreSQL) | Persistência        | Nenhum — banco é crítico                                |
-| Redis             | Cache e rate limit  | Graceful degradation — sistema continua sem cache       |
-| Brevo             | E-mail transacional | Sem fallback — recuperação de senha e verificação param |
-| Gemini            | Insight IA          | Retorna erro controlado — não bloqueia o sistema        |
-| AwesomeAPI        | Cotações de moeda   | Valores de fallback configurados no `.env`              |
-| Nominatim         | Geocodificação      | Timeout curto, falha não bloqueia cadastro              |
+### O-03 — Observabilidade melhorou, mas ainda nao e "fim de jogo"
 
----
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Risco operacional |
+| Status | Em correcao |
 
-### O-03 — Deploy em instância única sem alta disponibilidade
+Hoje ja existem:
 
-| Campo      | Valor             |
-| ---------- | ----------------- |
-| Severidade | Média             |
-| Tipo       | Risco operacional |
-| Status     | Aceito para MVP   |
+- OpenTelemetry na API
+- Faro no frontend
+- Sentry em API e web
+- health checks publicos
+- probes e alertas no stack Oracle
 
-A infraestrutura atual é uma instância única no Railway. Não há redundância, load balancer ou failover automático.
+O risco residual nao e mais "zero observabilidade". O risco agora e governanca:
 
-**Impacto:** uma instabilidade no Railway afeta todos os usuários.
-
-**Mitigação:** Railway tem SLA e restart automático em caso de crash.
-
----
-
-## Riscos de segurança conhecidos
-
-### S-01 — Sem alertas de segurança automáticos em produção
-
-| Campo      | Valor              |
-| ---------- | ------------------ |
-| Severidade | Média              |
-| Tipo       | Risco de segurança |
-| Status     | Planejado          |
-
-Os eventos de segurança (tentativas de login excessivas, falhas de PIN) são registrados no audit log, mas não geram alertas automáticos.
-
-**Impacto:** um ataque em andamento pode não ser detectado rapidamente.
+- ruido demais em alguns sinais
+- runbooks ainda sendo consolidados
+- alertas e dashboards ainda mais fortes em infraestrutura do que em fluxo de produto
 
 ---
 
-### S-02 — Swagger desabilitado em produção mas configurável
+## Riscos de seguranca conhecidos
 
-| Campo      | Valor              |
-| ---------- | ------------------ |
-| Severidade | Baixa              |
-| Tipo       | Risco de segurança |
-| Status     | Controlado         |
+### S-01 — Alertas de seguranca ainda nao estao completos por evento de negocio
 
-O Swagger está desabilitado por padrão em produção (`ENABLE_SWAGGER=false`). Se habilitado acidentalmente em produção, expõe a documentação completa da API.
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Risco de seguranca |
+| Status | Planejado |
 
-**Mitigação:** variável de ambiente explícita obrigatória para habilitar.
+Tentativas de abuso e eventos sensiveis ja entram em audit log, mas a malha de notificacao/alerta ainda nao cobre todo o espectro de seguranca operacional.
+
+**Impacto:** um padrao anomalo pode ser percebido tarde demais sem revisao ativa dos logs e dashboards.
+
+### S-02 — Segredos de build exigem disciplina operacional forte
+
+| Campo | Valor |
+| --- | --- |
+| Severidade | Media |
+| Tipo | Risco de seguranca |
+| Status | Controlado com guardrails |
+
+O web agora usa `SENTRY_AUTH_TOKEN` no build para release/sourcemaps. Isso resolveu observabilidade, mas introduz um segredo de build que precisa de higiene real.
+
+**Impacto:** token exposto em conversa, host ou CI vira incidente de seguranca e deve ser rotacionado.
+
+### S-03 — API docs continuam configuraveis em producao
+
+| Campo | Valor |
+| --- | --- |
+| Severidade | Baixa |
+| Tipo | Risco de seguranca |
+| Status | Controlado |
+
+`/api/v1/docs` nao sobe por padrao em producao, mas pode ser habilitado por env.
+
+**Impacto:** exposicao acidental do contrato se a variavel operacional for mal configurada.
 
 ---
 
-## Débito de documentação
+## Debito de documentacao
 
-| Item                               | Status    |
-| ---------------------------------- | --------- |
-| Demo documentado                   | Planejado |
-| Roadmap público                    | Criado    |
-| Índice de documentação             | Criado    |
-| Módulos arquiteturais documentados | Criado    |
-| Schema do banco documentado        | Criado    |
+| Item | Status |
+| --- | --- |
+| Fontes canonicas de entrada | Corrigido |
+| Produto / realtime / auth / local dev | Corrigido |
+| Deploy / banco / user flows | Corrigido |
+| Troubleshooting residual | Em consolidacao |
+| Docs historicos de release | Mantidos como historico, nao como fonte primaria |
 
 ---
 
-## Política de atualização deste documento
+## Politica de atualizacao
 
-Este documento deve ser atualizado quando:
+Este documento deve ser revisado quando:
 
-- Uma limitação conhecida é resolvida
-- Um novo risco é identificado
-- O status de um item muda
+- um risco deixa de existir
+- um risco muda de severidade
+- um novo servico externo entra no caminho critico
+- o runtime muda de forma relevante
+- a malha realtime sair da fase atual de recuperacao estrutural

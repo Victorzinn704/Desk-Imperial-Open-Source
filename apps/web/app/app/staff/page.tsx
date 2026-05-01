@@ -77,6 +77,8 @@ export default function StaffAppPage() {
   }
 
   return (
-    <StaffMobileShell currentUser={{ name: user.fullName, fullName: user.fullName, employeeId: user.employeeId }} />
+    <StaffMobileShell
+      currentUser={{ userId: user.userId, name: user.fullName, fullName: user.fullName, employeeId: user.employeeId }}
+    />
   )
 }

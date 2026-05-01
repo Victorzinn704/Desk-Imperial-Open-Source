@@ -21,9 +21,12 @@ function useHandlePullRefresh(queryClient: QueryClient) {
   }, [queryClient])
 }
 
-export function useRealtimeRefresh(enabled: boolean) {
+export function useRealtimeRefresh(enabled: boolean, currentUserId?: string | null) {
   const queryClient = useQueryClient()
-  const { status: realtimeStatus } = useOperationsRealtime(enabled, queryClient)
+  const { status: realtimeStatus } = useOperationsRealtime(enabled, queryClient, {
+    currentUserId: currentUserId ?? null,
+    notificationChannel: 'MOBILE_TOAST',
+  })
   const handlePullRefresh = useHandlePullRefresh(queryClient)
 
   return {
@@ -43,20 +46,23 @@ interface OfflineDrainArgs {
 }
 
 export function useOfflineDrain(args: OfflineDrainArgs) {
+  const { addComandaItemMutation, drainQueue, openComandaMutation, realtimeStatus } = args
+  const addComandaItem = addComandaItemMutation.mutateAsync
+  const openComanda = openComandaMutation.mutateAsync
+
   const runDrain = useCallback(() => {
-    return args
-      .drainQueue(async (action) => {
+    return drainQueue(async (action) => {
         if (action.type === 'add-item') {
           const { comandaId, payload } = action.payload as {
             comandaId: string
             payload: AddComandaItemPayload
           }
-          await args.addComandaItemMutation.mutateAsync({ comandaId, payload })
+          await addComandaItem({ comandaId, payload })
           return
         }
 
         if (action.type === 'open-comanda') {
-          await args.openComandaMutation.mutateAsync(action.payload as OpenComandaPayload)
+          await openComanda(action.payload as OpenComandaPayload)
         }
       })
       .then((result) => {
@@ -70,7 +76,7 @@ export function useOfflineDrain(args: OfflineDrainArgs) {
 
         return result
       })
-  }, [args])
+  }, [addComandaItem, drainQueue, openComanda])
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
@@ -88,10 +94,10 @@ export function useOfflineDrain(args: OfflineDrainArgs) {
   }, [runDrain])
 
   useEffect(() => {
-    if (args.realtimeStatus !== 'connected') {
+    if (realtimeStatus !== 'connected') {
       return
     }
 
     void runDrain()
-  }, [args.realtimeStatus, runDrain])
+  }, [realtimeStatus, runDrain])
 }

@@ -1,7 +1,5 @@
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import type { FinanceAggregationOptions } from './finance-analytics.util'
-
-type CurrencyCode = 'BRL' | 'USD' | 'EUR'
+import type { CurrencyCode, FinanceAggregationOptions } from './finance-analytics.types'
 
 export function buildSalesByChannel(
   orders: Array<{

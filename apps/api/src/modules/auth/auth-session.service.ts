@@ -4,8 +4,10 @@ import { UserRole, UserStatus } from '@prisma/client'
 import { createHash, createHmac, randomBytes } from 'node:crypto'
 import type { Response } from 'express'
 import { CacheService } from '../../common/services/cache.service'
+import { recordAuthSessionCacheLookup } from '../../common/observability/business-telemetry.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
+import { OperationsRealtimeSessionsService } from '../operations-realtime/operations-realtime-sessions.service'
 import {
   DEV_CSRF_COOKIE_NAME,
   DEV_SESSION_COOKIE_NAME,
@@ -23,6 +25,7 @@ import {
 
 export const SESSION_CACHE_TTL_SECONDS = 300
 export const SESSION_LAST_SEEN_UPDATE_MS = 15 * 60_000
+export const NEGATIVE_SESSION_CACHE_TTL_SECONDS = 30
 
 export type CachedAuthSession = {
   tokenHash: string
@@ -33,6 +36,12 @@ export type CachedAuthSession = {
 export type SessionCacheEntry = {
   id: string
   tokenHash: string
+}
+
+type NegativeAuthSessionCacheEntry = {
+  tokenHash: string
+  reason: 'missing' | 'revoked' | 'expired' | 'inactive' | 'orphaned'
+  negative: true
 }
 
 function hashToken(rawToken: string) {
@@ -54,6 +63,8 @@ export class AuthSessionService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ConfigService) private readonly configService: ConfigService,
     @Inject(DemoAccessService) private readonly demoAccessService: DemoAccessService,
+    @Inject(OperationsRealtimeSessionsService)
+    private readonly realtimeSessions: OperationsRealtimeSessionsService,
     @Inject(CacheService) cache?: CacheService,
   ) {
     this.cache = cache ?? new CacheService()
@@ -125,9 +136,15 @@ export class AuthSessionService {
     if (cached?.auth) {
       const cachedExpiresAt = cached.expiresAt ? new Date(cached.expiresAt) : null
       if (!cachedExpiresAt || Number.isNaN(cachedExpiresAt.getTime()) || cachedExpiresAt.getTime() > Date.now()) {
+        recordAuthSessionCacheLookup('hit', {
+          'desk.auth.session.cache_scope': 'token',
+        })
         return cached.auth
       }
 
+      recordAuthSessionCacheLookup('expired', {
+        'desk.auth.session.cache_scope': 'token',
+      })
       await Promise.all([
         this.cache.del(this.sessionTokenCacheKey(cached.tokenHash)),
         this.cache.del(this.sessionIdCacheKey(cached.auth.sessionId)),
@@ -135,6 +152,19 @@ export class AuthSessionService {
 
       return null
     }
+
+    const cachedNegative = await this.cache.get<NegativeAuthSessionCacheEntry>(this.negativeSessionTokenCacheKey(tokenHash))
+    if (cachedNegative?.negative) {
+      recordAuthSessionCacheLookup('negative_hit', {
+        'desk.auth.session.cache_scope': 'token',
+        'desk.auth.session.negative_reason': cachedNegative.reason,
+      })
+      return null
+    }
+
+    recordAuthSessionCacheLookup(this.cache.isReady() ? 'miss' : 'bypass', {
+      'desk.auth.session.cache_scope': 'token',
+    })
 
     const session = await this.prisma.session.findUnique({
       where: { tokenHash },
@@ -151,6 +181,7 @@ export class AuthSessionService {
     })
 
     if (!session) {
+      await this.cacheNegativeSessionToken(tokenHash, 'missing')
       return null
     }
 
@@ -160,6 +191,10 @@ export class AuthSessionService {
         : UserStatus.DISABLED
       : session.user?.status
     if (session.revokedAt || session.expiresAt <= new Date() || sessionUserStatus !== UserStatus.ACTIVE) {
+      await this.cacheNegativeSessionToken(
+        tokenHash,
+        session.revokedAt ? 'revoked' : session.expiresAt <= new Date() ? 'expired' : 'inactive',
+      )
       await this.demoAccessService.closeGrantForSession(session.id)
       return null
     }
@@ -211,9 +246,11 @@ export class AuthSessionService {
         : null
 
     if (!auth) {
+      await this.cacheNegativeSessionToken(tokenHash, 'orphaned')
       return null
     }
 
+    await this.cache.del(this.negativeSessionTokenCacheKey(tokenHash))
     await this.cacheAuthSession({ tokenHash: session.tokenHash, auth }, session.expiresAt)
 
     return auth
@@ -273,6 +310,7 @@ export class AuthSessionService {
         data: { revokedAt: new Date() },
       }),
       this.invalidateSessionCacheEntries(sessions),
+      this.disconnectTrackedSessions(sessions.map((session) => session.id)),
       ...sessions.map((session) => this.demoAccessService.closeGrantForSession(session.id)),
     ])
   }
@@ -297,6 +335,7 @@ export class AuthSessionService {
       await Promise.all([
         this.cache.del(this.sessionTokenCacheKey(cached.tokenHash)),
         this.cache.del(this.sessionIdCacheKey(sessionId)),
+        this.cache.del(this.negativeSessionTokenCacheKey(cached.tokenHash)),
       ])
       return
     }
@@ -312,7 +351,12 @@ export class AuthSessionService {
     await Promise.all([
       this.cache.del(this.sessionTokenCacheKey(session.tokenHash)),
       this.cache.del(this.sessionIdCacheKey(sessionId)),
+      this.cache.del(this.negativeSessionTokenCacheKey(session.tokenHash)),
     ])
+  }
+
+  async disconnectTrackedSessions(sessionIds: string[]) {
+    this.realtimeSessions.disconnectSessions(sessionIds)
   }
 
   setSessionCookies(response: Response, token: string, sessionId: string, expiresAt: Date) {
@@ -414,12 +458,40 @@ export class AuthSessionService {
     return `auth:session:id:${sessionId}`
   }
 
+  private negativeSessionTokenCacheKey(tokenHash: string) {
+    return `auth:session:negative:${tokenHash}`
+  }
+
   private async invalidateSessionCacheEntries(sessions: SessionCacheEntry[]) {
     await Promise.all(
       sessions.flatMap((session) => [
         this.cache.del(this.sessionTokenCacheKey(session.tokenHash)),
         this.cache.del(this.sessionIdCacheKey(session.id)),
+        this.cache.set(
+          this.negativeSessionTokenCacheKey(session.tokenHash),
+          {
+            tokenHash: session.tokenHash,
+            reason: 'revoked',
+            negative: true,
+          } satisfies NegativeAuthSessionCacheEntry,
+          NEGATIVE_SESSION_CACHE_TTL_SECONDS,
+        ),
       ]),
+    )
+  }
+
+  private async cacheNegativeSessionToken(
+    tokenHash: string,
+    reason: NegativeAuthSessionCacheEntry['reason'],
+  ) {
+    await this.cache.set(
+      this.negativeSessionTokenCacheKey(tokenHash),
+      {
+        tokenHash,
+        reason,
+        negative: true,
+      } satisfies NegativeAuthSessionCacheEntry,
+      NEGATIVE_SESSION_CACHE_TTL_SECONDS,
     )
   }
 }

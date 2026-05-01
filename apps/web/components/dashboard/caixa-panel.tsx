@@ -210,7 +210,6 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         <div>
           <FieldLabel>Valor inicial no caixa (R$)</FieldLabel>
           <FieldInput
-            autoFocus
             inputMode="decimal"
             placeholder="0,00"
             type="text"
@@ -339,7 +338,6 @@ function FecharCaixaModal({
         <div>
           <FieldLabel>Valor contado no caixa (R$)</FieldLabel>
           <FieldInput
-            autoFocus
             inputMode="decimal"
             placeholder="0,00"
             type="text"

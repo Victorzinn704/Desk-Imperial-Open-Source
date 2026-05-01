@@ -67,8 +67,8 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /funcionário/i }))
 
     expect(screen.getByLabelText(/email da empresa/i)).toHaveAttribute('id', 'login-company-email')
-    expect(screen.getByLabelText(/id do funcionário/i)).toHaveAttribute('id', 'login-employee-code')
-    expect(screen.getByLabelText(/pin de acesso/i)).toHaveAttribute('id', 'login-password')
+    expect(screen.getByLabelText(/id de acesso/i)).toHaveAttribute('id', 'login-employee-code')
+    expect(screen.getAllByLabelText(/senha de acesso/i)[0]).toHaveAttribute('id', 'login-password')
   })
 
   it('envia credenciais do owner e aciona o fluxo demo do staff', async () => {

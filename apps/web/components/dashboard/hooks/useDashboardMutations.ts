@@ -2,13 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   archiveEmployee,
   archiveProduct,
+  bulkRestockProducts,
   cancelOrder,
   createEmployee,
   createOrder,
   createProduct,
   deleteProductPermanently,
   importProducts,
+  issueEmployeeAccess,
   logout,
+  rotateEmployeePassword,
+  revokeEmployeeAccess,
   restoreEmployee,
   restoreProduct,
   updateCookiePreferences,
@@ -89,6 +93,11 @@ export function useDashboardMutations() {
     onSuccess: () => invalidateCatalog(),
   })
 
+  const bulkRestockProductsMutation = useMutation({
+    mutationFn: bulkRestockProducts,
+    onSuccess: () => invalidateCatalog(),
+  })
+
   const restoreProductMutation = useMutation({
     mutationFn: restoreProduct,
     onSuccess: () => invalidateCatalog(),
@@ -129,6 +138,21 @@ export function useDashboardMutations() {
     onSuccess: () => invalidateEmployees(),
   })
 
+  const issueEmployeeAccessMutation = useMutation({
+    mutationFn: issueEmployeeAccess,
+    onSuccess: () => invalidateEmployees(),
+  })
+
+  const revokeEmployeeAccessMutation = useMutation({
+    mutationFn: revokeEmployeeAccess,
+    onSuccess: () => invalidateEmployees(),
+  })
+
+  const rotateEmployeePasswordMutation = useMutation({
+    mutationFn: rotateEmployeePassword,
+    onSuccess: () => invalidateEmployees(),
+  })
+
   return {
     logoutMutation,
     preferenceMutation,
@@ -136,6 +160,7 @@ export function useDashboardMutations() {
     createProductMutation,
     updateProductMutation,
     archiveProductMutation,
+    bulkRestockProductsMutation,
     restoreProductMutation,
     deleteProductMutation,
     importProductsMutation,
@@ -144,6 +169,9 @@ export function useDashboardMutations() {
     createEmployeeMutation,
     archiveEmployeeMutation,
     restoreEmployeeMutation,
+    issueEmployeeAccessMutation,
+    revokeEmployeeAccessMutation,
+    rotateEmployeePasswordMutation,
     queryClient,
   }
 }

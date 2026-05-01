@@ -29,8 +29,15 @@ import {
 import { useOwnerMobileShellMutations } from './use-owner-mobile-shell-mutations'
 import { useOwnerMobileShellQueries } from './use-owner-mobile-shell-queries'
 
-function useRealtimeRefresh(enabled: boolean, queryClient: ReturnType<typeof useQueryClient>) {
-  const { status: realtimeStatus } = useOperationsRealtime(enabled, queryClient)
+function useRealtimeRefresh(
+  enabled: boolean,
+  queryClient: ReturnType<typeof useQueryClient>,
+  currentUserId?: string | null,
+) {
+  const { status: realtimeStatus } = useOperationsRealtime(enabled, queryClient, {
+    currentUserId: currentUserId ?? null,
+    notificationChannel: 'MOBILE_TOAST',
+  })
   const isOffline = realtimeStatus === 'disconnected'
   const handlePullRefresh = useCallback(async () => {
     haptic.light()
@@ -246,7 +253,7 @@ export function useOwnerMobileShellController(currentUser: OwnerCurrentUser | nu
   const queryClient = useQueryClient()
   const initialTab = resolveOwnerTab(tabParam)
   const shellState = useOwnerMobileShellState(initialTab)
-  const realtime = useRealtimeRefresh(Boolean(currentUser), queryClient)
+  const realtime = useRealtimeRefresh(Boolean(currentUser), queryClient, currentUser?.userId ?? null)
   const queries = useOwnerMobileShellQueries(currentUser, {
     activeTab: shellState.activeTab,
     pdvView: shellState.pdvView,

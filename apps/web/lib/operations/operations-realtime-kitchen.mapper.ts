@@ -42,7 +42,6 @@ export function extractKitchenItemsFromPayload(payload: Record<string, unknown>)
       .map((rawItem) =>
         buildKitchenItemFromPayload(
           rawItem && typeof rawItem === 'object' ? (rawItem as Record<string, unknown>) : {},
-          undefined,
         ),
       )
       .filter((item): item is ResolvedKitchenItemPatch => Boolean(item))

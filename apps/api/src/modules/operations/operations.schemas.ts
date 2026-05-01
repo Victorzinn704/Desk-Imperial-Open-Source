@@ -174,15 +174,15 @@ export const closeCashClosureBodySchema = z
   .strict()
 export type CloseCashClosureDto = z.infer<typeof closeCashClosureBodySchema>
 
-export const comandaDraftItemSchema = z
-  .object({
-    productId: z.string().optional(),
-    productName: z.string().max(120).optional(),
-    quantity: createRequiredIntegerSchema(1),
-    unitPrice: createOptionalMoneySchema(0),
-    notes: z.string().max(200).optional(),
-  })
-  .strict()
+const comandaDraftItemSchemaShape = {
+  productId: z.string().optional(),
+  productName: z.string().max(120).optional(),
+  quantity: createRequiredIntegerSchema(1),
+  unitPrice: createOptionalMoneySchema(0),
+  notes: z.string().max(200).optional(),
+} as const
+
+export const comandaDraftItemSchema = z.object(comandaDraftItemSchemaShape).strict()
 export type ComandaDraftItemDto = z.infer<typeof comandaDraftItemSchema>
 
 export const openComandaBodySchema = z
@@ -202,7 +202,7 @@ export const openComandaBodySchema = z
   .strict()
 export type OpenComandaDto = z.infer<typeof openComandaBodySchema>
 
-export const addComandaItemBodySchema = comandaDraftItemSchema
+export const addComandaItemBodySchema = z.object(comandaDraftItemSchemaShape).strict()
 export type AddComandaItemDto = z.infer<typeof addComandaItemBodySchema>
 
 export const addComandaItemsBatchBodySchema = z

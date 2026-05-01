@@ -1,6 +1,7 @@
 import { CashMovementType, CashSessionStatus } from '@prisma/client'
 import type { AuthContext } from '../auth/auth.types'
 import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
 import {
   buildCashClosurePayload,
   buildCashUpdatedPayload,
@@ -15,12 +16,13 @@ export function publishCashRealtime(
   session: Parameters<typeof buildCashUpdatedPayload>[0],
   closure: Parameters<typeof buildCashClosurePayload>[0],
   businessDate?: Date,
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   operationsRealtimeService.publishCashUpdated(auth, {
     ...buildCashUpdatedPayload(session),
     ...(businessDate ? { businessDate: formatBusinessDateKey(businessDate) } : {}),
     cashSession: toRealtimeCashSessionRecord(session),
-  })
+  }, instrumentation)
   publishCashClosureRealtime(operationsRealtimeService, auth, closure)
 }
 
@@ -53,6 +55,7 @@ export function publishCashOpenedRealtime(
     }>
   },
   closure: Parameters<typeof buildCashClosurePayload>[0],
+  instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   operationsRealtimeService.publishCashOpened(auth, {
     cashSessionId: session.id,
@@ -62,7 +65,7 @@ export function publishCashOpenedRealtime(
     employeeId: session.employeeId,
     businessDate: formatBusinessDateKey(session.businessDate),
     cashSession: toRealtimeCashSessionRecord(session),
-  })
+  }, instrumentation)
   publishCashClosureRealtime(operationsRealtimeService, auth, closure)
 }
 

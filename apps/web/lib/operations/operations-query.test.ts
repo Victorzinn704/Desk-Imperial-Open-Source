@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { OperationsLiveResponse } from '@contracts/contracts'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
@@ -8,9 +8,16 @@ import {
   invalidateOperationsWorkspace,
   patchComandaInSnapshot,
   patchOperationsSnapshot,
+  scheduleOperationsWorkspaceReconcile,
+  settleScheduledOperationsWorkspaceReconcile,
 } from './operations-query'
+import { getOperationsPerformanceEvents, resetOperationsPerformanceEvents } from './operations-performance-diagnostics'
 
 describe('operations query helpers', () => {
+  beforeEach(() => {
+    resetOperationsPerformanceEvents()
+  })
+
   it('invalidates default operations workspace queries', async () => {
     const invalidateQueries = vi.fn().mockResolvedValue(undefined)
     const queryClient = { invalidateQueries } as unknown as QueryClient
@@ -21,6 +28,21 @@ describe('operations query helpers', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY })
+    expect(getOperationsPerformanceEvents()).toEqual([
+      {
+        type: 'workspace-invalidated',
+        at: expect.any(Number),
+        queryKey: JSON.stringify(OPERATIONS_LIVE_QUERY_PREFIX),
+        scopes: {
+          includeLive: true,
+          includeKitchen: true,
+          includeSummary: true,
+          includeOrders: false,
+          includeFinance: false,
+        },
+        invalidateCount: 3,
+      },
+    ])
   })
 
   it('respects include options when invalidating workspace', async () => {
@@ -38,6 +60,94 @@ describe('operations query helpers', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['operations', 'live', 'compact'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['finance', 'summary'] })
+  })
+
+  it('coalesces repeated scheduled reconciles for the same workspace and merges refresh scopes', () => {
+    vi.useFakeTimers()
+    const invalidateQueries = vi.fn().mockResolvedValue(undefined)
+    const queryClient = { invalidateQueries } as unknown as QueryClient
+
+    scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeSummary: false,
+      delayMs: 700,
+    })
+    scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeOrders: true,
+      delayMs: 200,
+    })
+    scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeFinance: true,
+      delayMs: 400,
+    })
+
+    vi.advanceTimersByTime(199)
+    expect(invalidateQueries).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(1)
+    expect(invalidateQueries).toHaveBeenCalledTimes(5)
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['finance', 'summary'] })
+    expect(getOperationsPerformanceEvents().map((entry) => entry.type)).toEqual([
+      'reconcile-scheduled',
+      'reconcile-merged',
+      'reconcile-merged',
+      'workspace-invalidated',
+    ])
+
+    vi.advanceTimersByTime(1_000)
+    expect(invalidateQueries).toHaveBeenCalledTimes(5)
+    vi.useRealTimers()
+  })
+
+  it('cancels a pending reconcile when realtime already satisfied the scheduled scopes', () => {
+    vi.useFakeTimers()
+    const invalidateQueries = vi.fn().mockResolvedValue(undefined)
+    const queryClient = { invalidateQueries } as unknown as QueryClient
+
+    scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeKitchen: true,
+      includeSummary: true,
+      delayMs: 300,
+    })
+
+    settleScheduledOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeLive: true,
+      includeKitchen: true,
+      includeSummary: true,
+    })
+
+    vi.advanceTimersByTime(500)
+    expect(invalidateQueries).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('preserves only residual scopes when partially settling a pending reconcile', () => {
+    vi.useFakeTimers()
+    const invalidateQueries = vi.fn().mockResolvedValue(undefined)
+    const queryClient = { invalidateQueries } as unknown as QueryClient
+
+    scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeKitchen: true,
+      includeSummary: true,
+      includeOrders: true,
+      includeFinance: true,
+      delayMs: 300,
+    })
+
+    settleScheduledOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+      includeLive: true,
+      includeKitchen: true,
+      includeSummary: true,
+    })
+
+    vi.advanceTimersByTime(300)
+    expect(invalidateQueries).toHaveBeenCalledTimes(2)
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['finance', 'summary'] })
+    vi.useRealTimers()
   })
 
   it('patches whole snapshot with updater', () => {

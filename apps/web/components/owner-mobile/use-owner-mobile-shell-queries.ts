@@ -28,7 +28,7 @@ function useOwnerOperationsQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 
@@ -57,6 +57,7 @@ function useOwnerOrdersQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 }
 
@@ -68,7 +69,7 @@ function useOwnerKitchenQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 
@@ -80,7 +81,7 @@ function useOwnerSummaryQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 
@@ -92,7 +93,7 @@ function useOwnerFinanceQuery(enabled: boolean) {
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   })
 }
 

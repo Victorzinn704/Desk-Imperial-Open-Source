@@ -1,8 +1,9 @@
-import { forwardRef, Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { ConsentModule } from '../consent/consent.module'
 import { GeocodingModule } from '../geocoding/geocoding.module'
 import { MailerModule } from '../mailer/mailer.module'
 import { MonitoringModule } from '../monitoring/monitoring.module'
+import { OperationsRealtimeSessionsModule } from '../operations-realtime-sessions.module'
 import { AuthRateLimitService } from './auth-rate-limit.service'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
@@ -15,8 +16,9 @@ import { DemoAccessService } from './demo-access.service'
 import { CsrfGuard } from './guards/csrf.guard'
 import { SessionGuard } from './guards/session.guard'
 
+@Global()
 @Module({
-  imports: [forwardRef(() => ConsentModule), forwardRef(() => GeocodingModule), MonitoringModule, MailerModule],
+  imports: [ConsentModule, GeocodingModule, MonitoringModule, MailerModule, OperationsRealtimeSessionsModule],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -34,6 +36,6 @@ import { SessionGuard } from './guards/session.guard'
     SessionGuard,
     CsrfGuard,
   ],
-  exports: [AuthService, SessionGuard, CsrfGuard],
+  exports: [AuthService, AuthRateLimitService, DemoAccessService, SessionGuard, CsrfGuard],
 })
 export class AuthModule {}

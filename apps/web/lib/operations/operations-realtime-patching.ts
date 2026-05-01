@@ -60,8 +60,9 @@ export function requiresKitchenRefresh(envelope: OperationsRealtimeEnvelope) {
   }
 
   return (
-    envelope.event === 'comanda.updated' &&
-    (envelope.payload.requiresKitchenRefresh === true || envelope.payload.replaceKitchenItems === true)
+    envelope.event === 'comanda.closed' ||
+    (envelope.event === 'comanda.updated' &&
+      (envelope.payload.requiresKitchenRefresh === true || envelope.payload.replaceKitchenItems === true))
   )
 }
 

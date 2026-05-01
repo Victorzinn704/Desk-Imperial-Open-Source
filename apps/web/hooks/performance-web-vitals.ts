@@ -17,8 +17,6 @@ const THRESHOLDS = {
   INP: { good: 200, poor: 500 },
 }
 
-export type WebVitalsMetricPayload = WebVitalsMetric
-
 function getRating(name: keyof typeof THRESHOLDS, value: number): WebVitalsMetric['rating'] {
   const threshold = THRESHOLDS[name]
   if (value <= threshold.good) {
@@ -57,7 +55,9 @@ function observeFCP(onMetric: VitalsCallback | undefined) {
   })
   try {
     observer.observe({ type: 'paint', buffered: true })
-  } catch {}
+  } catch {
+    // Browser sem suporte para a métrica.
+  }
 }
 
 function observeLCP(onMetric: VitalsCallback | undefined) {
@@ -84,7 +84,9 @@ function observeLCP(onMetric: VitalsCallback | undefined) {
     }
     document.addEventListener('visibilitychange', finalize, { once: true })
     document.addEventListener('pointerdown', finalize, { once: true })
-  } catch {}
+  } catch {
+    // Browser sem suporte para a métrica.
+  }
 }
 
 function observeCLS(onMetric: VitalsCallback | undefined) {
@@ -139,7 +141,9 @@ function observeCLS(onMetric: VitalsCallback | undefined) {
       },
       { once: true },
     )
-  } catch {}
+  } catch {
+    // Browser sem suporte para a métrica.
+  }
 }
 
 function observeFID(onMetric: VitalsCallback | undefined) {
@@ -158,7 +162,9 @@ function observeFID(onMetric: VitalsCallback | undefined) {
   })
   try {
     observer.observe({ type: 'first-input', buffered: true })
-  } catch {}
+  } catch {
+    // Browser sem suporte para a métrica.
+  }
 }
 
 function observeTTFB(onMetric: VitalsCallback | undefined) {

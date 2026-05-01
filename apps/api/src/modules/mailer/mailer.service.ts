@@ -7,6 +7,7 @@ import {
   buildLoginAlertEmailContent,
   buildPasswordChangedEmailContent,
   buildPasswordResetEmailContent,
+  buildTelegramLinkedEmailContent,
 } from './mailer.templates'
 
 type DeliveryMode = 'brevo-api' | 'log'
@@ -168,6 +169,32 @@ export class MailerService {
       html: content.html,
       tags: content.tags,
       fallbackLogMessage: `Email nao configurado. Feedback recebido para ${params.to}, protocolo ${params.ticketId}.`,
+    })
+  }
+
+  async sendTelegramLinkedEmail(params: {
+    to: string
+    fullName: string
+    linkedAt: Date
+    telegramUsername?: string | null
+    telegramChatId: string
+  }) {
+    const content = buildTelegramLinkedEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      linkedAt: params.linkedAt,
+      telegramChatId: params.telegramChatId,
+      ...(params.telegramUsername !== undefined ? { telegramUsername: params.telegramUsername } : {}),
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Telegram vinculado para ${params.to}.`,
     })
   }
 

@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const localApiOrigin = 'http://localhost:4000'
 const isProduction = process.env.NODE_ENV === 'production'
@@ -79,7 +80,19 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG?.trim() || 'desk-imperial',
+  project: process.env.SENTRY_PROJECT_WEB?.trim() || process.env.SENTRY_PROJECT?.trim() || 'javascript-nextjs',
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  tunnelRoute: '/sentry-tunnel',
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  errorHandler: (error) => {
+    console.warn('[Sentry/Next build]', error.message)
+  },
+})
 
 function resolveCollectorOrigin(value: string | undefined) {
   if (!value?.trim()) {

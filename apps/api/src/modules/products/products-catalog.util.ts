@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common'
+import { trimTrailingDecimalZeros } from '@contracts/contracts'
 
 type DecimalLike = { toNumber(): number } | number | null | undefined
 
@@ -110,7 +111,7 @@ export function resolveProductQuantityLabel(
 
   const formattedValue = Number.isInteger(numericValue)
     ? String(numericValue)
-    : numericValue.toFixed(2).replace(/\.?0+$/, '')
+    : trimTrailingDecimalZeros(numericValue.toFixed(2))
 
   switch (normalizedUnit) {
     case 'ML':

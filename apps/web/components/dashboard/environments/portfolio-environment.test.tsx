@@ -147,6 +147,7 @@ describe('PortfolioEnvironment', () => {
       createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: updateMutate },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
@@ -232,6 +233,7 @@ describe('PortfolioEnvironment', () => {
       createProductMutation: { isPending: false, error: null, mutate: createMutate },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
@@ -328,6 +330,7 @@ describe('PortfolioEnvironment', () => {
       createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       createOrderMutation: { isPending: false, error: null, mutate: createOrderMutate },
@@ -434,6 +437,7 @@ describe('PortfolioEnvironment', () => {
       createProductMutation: { isPending: false, error: new ApiError('Produto inválido', 400), mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
@@ -515,6 +519,7 @@ describe('PortfolioEnvironment', () => {
       createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: archiveMutate },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: restoreMutate },
       deleteProductMutation: { isPending: false, error: null, mutate: deleteMutate },
       createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
@@ -556,6 +561,61 @@ describe('PortfolioEnvironment', () => {
     })
 
     confirmSpy.mockRestore()
+  })
+
+  it('aciona o reabastecimento em massa pelo painel do portfólio', async () => {
+    const user = userEvent.setup()
+    const bulkRestockMutate = vi.fn()
+
+    mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
+      financeQuery: {
+        data: {
+          displayCurrency: 'BRL',
+          totals: {
+            lowStockItems: 1,
+          },
+          categoryBreakdown: [],
+        },
+      },
+      productsQuery: {
+        data: {
+          items: [makeProduct({ id: 'product-low', stock: 2, stockBaseUnits: 2, isLowStock: true })],
+          totals: {
+            totalProducts: 1,
+            activeProducts: 1,
+            inactiveProducts: 0,
+            stockUnits: 2,
+            stockPackages: 0,
+            stockLooseUnits: 2,
+            stockBaseUnits: 2,
+            inventoryCostValue: 40,
+            inventorySalesValue: 80,
+            potentialProfit: 40,
+            averageMarginPercent: 50,
+            categories: ['Pizzas'],
+          },
+        },
+        error: null,
+      },
+      employeesQuery: buildEmployeesQuery(),
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: bulkRestockMutate },
+      restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+
+    renderWithQueryClient(<PortfolioEnvironment />)
+
+    await user.click(screen.getByRole('button', { name: /reabastecer em massa/i }))
+
+    expect(bulkRestockMutate).toHaveBeenCalled()
   })
 })
 

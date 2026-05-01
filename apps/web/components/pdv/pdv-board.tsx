@@ -2,11 +2,15 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import type { PdvMesaIntent } from './pdv-navigation-intent'
 import type { SimpleProduct } from './comanda-modal'
 import { PdvBoardError, PdvBoardHeader, PdvBoardKanban } from './pdv-board.sections'
+import { PdvComandaPreviewModal } from './pdv-comanda-preview-modal'
+import { toPdvComanda } from './pdv-operations'
 import { usePdvBoardController } from './use-pdv-board-controller'
+import { fetchComandaDetails } from '@/lib/api'
 
 const loadPdvComandaModal = () => import('./pdv-comanda-modal').then((mod) => mod.PdvComandaModal)
 
@@ -75,6 +79,26 @@ export function PdvBoard({
     operations,
     variant,
   })
+  const previewDetailsQuery = useQuery({
+    queryKey: ['comanda-details', 'pdv-preview', controller.previewComandaId],
+    queryFn: async () => {
+      const response = await fetchComandaDetails(controller.previewComandaId!)
+      return toPdvComanda(response.comanda)
+    },
+    enabled: Boolean(controller.previewComandaId),
+    staleTime: 5_000,
+  })
+  const editingDetailsQuery = useQuery({
+    queryKey: ['comanda-details', 'pdv-edit', controller.editingComanda?.id],
+    queryFn: async () => {
+      const response = await fetchComandaDetails(controller.editingComanda!.id)
+      return toPdvComanda(response.comanda)
+    },
+    enabled: Boolean(controller.editingComanda?.id),
+    staleTime: 5_000,
+  })
+  const previewComanda = previewDetailsQuery.data ?? controller.previewComanda
+  const editingComanda = editingDetailsQuery.data ?? controller.editingComanda
 
   return (
     <div className="space-y-5">
@@ -89,10 +113,20 @@ export function PdvBoard({
         />
         <PdvBoardKanban
           comandasByStatus={controller.comandasByStatus}
-          onCardClick={(comanda) => controller.openEditingModal(comanda.id)}
+          onCardClick={(comanda) => controller.openPreviewModal(comanda.id)}
           onDragEnd={(result) => void controller.handleDragEnd(result)}
         />
       </section>
+
+      {controller.previewComandaId && previewComanda ? (
+        <PdvComandaPreviewModal
+          busy={previewDetailsQuery.isLoading}
+          comanda={previewComanda}
+          onCharge={() => controller.openEditingModal(controller.previewComandaId!)}
+          onClose={controller.closePreviewModal}
+          onEdit={() => controller.openEditingModal(controller.previewComandaId!)}
+        />
+      ) : null}
 
       {controller.isNewModalOpen ? (
         <LazyPdvComandaModal
@@ -104,10 +138,10 @@ export function PdvBoard({
         />
       ) : null}
 
-      {controller.editingComanda ? (
+      {editingComanda ? (
         <LazyPdvComandaModal
           busy={controller.mutationBusy}
-          comanda={controller.editingComanda}
+          comanda={editingComanda}
           products={products}
           onClose={controller.closeEditingModal}
           onSave={controller.persistComandaDraft}

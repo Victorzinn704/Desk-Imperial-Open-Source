@@ -14,6 +14,7 @@ type UsePdvBoardIntentArgs = Readonly<{
   onConsumeMesaIntent?: () => void
   operationsSnapshot?: OperationsLiveResponse
   setEditingComandaId: (value: string | null) => void
+  setPreviewComandaId: (value: string | null) => void
   setMesaPreSelected: (value: Mesa | null) => void
   setMesaPreSelectedLabel: (value: string | null) => void
   setShowNewModal: (value: boolean) => void
@@ -28,6 +29,7 @@ export function usePdvBoardIntent({
   onConsumeMesaIntent,
   operationsSnapshot,
   setEditingComandaId,
+  setPreviewComandaId,
   setMesaPreSelected,
   setMesaPreSelectedLabel,
   setShowNewModal,
@@ -57,11 +59,13 @@ export function usePdvBoardIntent({
         setShowNewModal(false)
         setMesaPreSelected(null)
         setMesaPreSelectedLabel(null)
-        setEditingComandaId(comandaFromIntent.id)
+        setEditingComandaId(null)
+        setPreviewComandaId(comandaFromIntent.id)
         onConsumeMesaIntent?.()
         return
       }
 
+      setPreviewComandaId(null)
       setEditingComandaId(null)
       setMesaPreSelected(mesaFromIntent)
       setMesaPreSelectedLabel(mesaFromIntent?.numero ?? mesaIntent.mesaLabel)
@@ -78,6 +82,7 @@ export function usePdvBoardIntent({
     onConsumeMesaIntent,
     operationsSnapshot,
     setEditingComandaId,
+    setPreviewComandaId,
     setMesaPreSelected,
     setMesaPreSelectedLabel,
     setShowNewModal,

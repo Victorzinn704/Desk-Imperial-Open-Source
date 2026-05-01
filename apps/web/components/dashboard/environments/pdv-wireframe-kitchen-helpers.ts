@@ -55,7 +55,7 @@ function resolveKitchenElapsedMinutes(items: OperationsKitchenItemRecord[]) {
   const queuedAt = items
     .map((item) => item.kitchenQueuedAt)
     .filter((value): value is string => Boolean(value))
-    .sort()[0]
+    .sort((left, right) => left.localeCompare(right))[0]
 
   return queuedAt ? Math.max(0, Math.floor((Date.now() - new Date(queuedAt).getTime()) / 60000)) : 0
 }

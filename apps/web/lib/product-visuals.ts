@@ -56,17 +56,31 @@ export function resolveProductVisual(product: ProductVisualInput): ProductVisual
     }
   }
 
+  const nationalBeverageVisual = resolveBrazilianPackagedBeverageVisual(product)
+  if (nationalBeverageVisual && looksLikeBeerProduct(product)) {
+    return nationalBeverageVisual
+  }
+
   const curatedBeveragePhoto = resolveCuratedBeveragePhoto(product)
   if (curatedBeveragePhoto) {
     return curatedBeveragePhoto
   }
 
-  const beverageVisual = resolveBrazilianPackagedBeverageVisual(product)
-  if (beverageVisual) {
-    return beverageVisual
+  if (nationalBeverageVisual) {
+    return nationalBeverageVisual
   }
 
   return null
+}
+
+function looksLikeBeerProduct(product: ProductVisualInput) {
+  const haystack = normalizeVisualText(
+    `${product.name} ${product.brand ?? ''} ${product.category ?? ''} ${product.packagingClass ?? ''}`,
+  )
+
+  return ['cerveja', 'beer', 'lager', 'pilsen', 'puro malte', 'long neck', 'chopp'].some((keyword) =>
+    haystack.includes(normalizeVisualText(keyword)),
+  )
 }
 
 function resolveCuratedBeveragePhoto(product: ProductVisualInput): ProductVisual | null {

@@ -121,9 +121,23 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
       if (props.activeTab === 'escala') {
         return <CalendarioEnvironment />
       }
-      return <EquipeEnvironment activeTab={props.activeTab} employees={props.employees} finance={props.finance} />
+      return (
+        <EquipeEnvironment
+          activeTab={props.activeTab}
+          employees={props.employees}
+          finance={props.finance}
+          userRole={props.user.role}
+        />
+      )
     case 'payroll':
-      return <EquipeEnvironment activeTab="folha" employees={props.employees} finance={props.finance} />
+      return (
+        <EquipeEnvironment
+          activeTab="folha"
+          employees={props.employees}
+          finance={props.finance}
+          userRole={props.user.role}
+        />
+      )
     case 'salao':
       return (
         <SalaoEnvironment

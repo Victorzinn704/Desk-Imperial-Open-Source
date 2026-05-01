@@ -23,8 +23,8 @@ import {
   buildTopProducts,
   buildTopRegions,
   calculateGrowthPercent,
-  type FinanceProductAnalyticsRecord,
 } from './finance-analytics.util'
+import type { FinanceProductAnalyticsRecord } from './finance-analytics.types'
 
 const FINANCE_SUMMARY_FRESH_TTL_SECONDS = 120
 const FINANCE_SUMMARY_STALE_TTL_SECONDS = 300

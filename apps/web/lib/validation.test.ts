@@ -117,12 +117,12 @@ describe('loginSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('validates STAFF login with companyEmail, employeeCode and PIN', () => {
+  it('validates STAFF login with companyEmail, employeeCode and 8-digit password', () => {
     const result = loginSchema.safeParse({
       loginMode: 'STAFF',
       companyEmail: 'company@test.com',
       employeeCode: 'EMP01',
-      password: '123456',
+      password: '12345678',
     })
     expect(result.success).toBe(true)
   })
@@ -132,7 +132,7 @@ describe('loginSchema', () => {
       loginMode: 'STAFF',
       companyEmail: '',
       employeeCode: 'EMP01',
-      password: '123456',
+      password: '12345678',
     })
     expect(result.success).toBe(false)
   })
@@ -142,7 +142,7 @@ describe('loginSchema', () => {
       loginMode: 'STAFF',
       companyEmail: 'bad-email',
       employeeCode: 'EMP01',
-      password: '123456',
+      password: '12345678',
     })
     expect(result.success).toBe(false)
   })
@@ -152,7 +152,7 @@ describe('loginSchema', () => {
       loginMode: 'STAFF',
       companyEmail: 'company@test.com',
       employeeCode: '',
-      password: '123456',
+      password: '12345678',
     })
     expect(result.success).toBe(false)
   })
@@ -162,17 +162,27 @@ describe('loginSchema', () => {
       loginMode: 'STAFF',
       companyEmail: 'company@test.com',
       employeeCode: 'A',
-      password: '123456',
+      password: '12345678',
     })
     expect(result.success).toBe(false)
   })
 
-  it('rejects STAFF login with short password (< 6)', () => {
+  it('rejects STAFF login with short password (< 8)', () => {
     const result = loginSchema.safeParse({
       loginMode: 'STAFF',
       companyEmail: 'company@test.com',
       employeeCode: 'EMP01',
-      password: '12345',
+      password: '1234567',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects STAFF login with non-numeric password', () => {
+    const result = loginSchema.safeParse({
+      loginMode: 'STAFF',
+      companyEmail: 'company@test.com',
+      employeeCode: 'EMP01',
+      password: 'AB123456',
     })
     expect(result.success).toBe(false)
   })
@@ -594,59 +604,15 @@ describe('profileSchema', () => {
 describe('employeeSchema', () => {
   it('accepts valid employee', () => {
     const result = employeeSchema.safeParse({
-      employeeCode: 'EMP01',
       displayName: 'Alice Silva',
-      temporaryPassword: '123456',
     })
     expect(result.success).toBe(true)
-  })
-
-  it('rejects non-6-digit PIN (5 digits)', () => {
-    expect(
-      employeeSchema.safeParse({
-        employeeCode: 'EMP01',
-        displayName: 'Alice Silva',
-        temporaryPassword: '12345',
-      }).success,
-    ).toBe(false)
-  })
-
-  it('rejects non-numeric PIN', () => {
-    expect(
-      employeeSchema.safeParse({
-        employeeCode: 'EMP01',
-        displayName: 'Alice Silva',
-        temporaryPassword: 'abcdef',
-      }).success,
-    ).toBe(false)
-  })
-
-  it('rejects short employeeCode', () => {
-    expect(
-      employeeSchema.safeParse({
-        employeeCode: 'E',
-        displayName: 'Alice Silva',
-        temporaryPassword: '123456',
-      }).success,
-    ).toBe(false)
   })
 
   it('rejects short displayName', () => {
     expect(
       employeeSchema.safeParse({
-        employeeCode: 'EMP01',
         displayName: 'AB',
-        temporaryPassword: '123456',
-      }).success,
-    ).toBe(false)
-  })
-
-  it('rejects too long employeeCode', () => {
-    expect(
-      employeeSchema.safeParse({
-        employeeCode: 'A'.repeat(33),
-        displayName: 'Alice Silva',
-        temporaryPassword: '123456',
       }).success,
     ).toBe(false)
   })

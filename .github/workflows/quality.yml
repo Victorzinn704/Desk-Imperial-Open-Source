@@ -1,0 +1,328 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+# ── Estágio 1: Checks rápidos (segundos) ───────────────────────────────────────
+jobs:
+  fast-checks:
+    name: Biome + Prettier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Biome lint
+        run: npm run lint:biome
+
+      - name: Prettier format check
+        run: npm run format:check
+
+  lint-repo:
+    name: ESLint Cross-Cutting (Root)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [fast-checks]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Lint repo-wide rules
+        run: npm run lint:repo
+
+# ── Estágio 2: ESLint + TypeCheck por workspace (paralelo) ────────────────────
+  lint-api:
+    name: ESLint + TypeCheck (API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Lint API
+        run: npm --workspace @partner/api run lint
+      - name: TypeCheck API
+        run: npm --workspace @partner/api run typecheck
+
+  lint-web:
+    name: ESLint + TypeCheck (Web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Lint Web
+        run: npm --workspace @partner/web run lint
+      - name: TypeCheck Web
+        run: npm --workspace @partner/web run typecheck
+
+# ── Estágio 3: Fronteiras arquiteturais + código morto + duplicação ────────────
+  architecture:
+    name: Boundaries + Dead Code + Duplication
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    needs: [fast-checks, lint-repo]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: dependency-cruiser
+        run: npm run lint:deps
+
+      - name: Madge circular imports
+        run: npm run lint:cycles
+
+      - name: Knip dead code
+        run: npm run lint:dead
+
+      - name: jscpd duplication
+        run: npm run lint:dup
+
+# ── Estágio 4: Detecção de segredos ───────────────────────────────────────────
+  secrets:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Necessário para repos privados no tier pago
+
+# ── Estágio 5: SAST (Semgrep) ──────────────────────────────────────────────────
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep — regras customizadas Desk Imperial
+        run: semgrep scan --config .semgrep/desk-imperial.yml --sarif-output desk-imperial.sarif apps/api/src packages/types/src
+        continue-on-error: true
+
+      - name: Semgrep — regras auto (OWASP + CWE)
+        run: semgrep scan --config auto --sarif-output semgrep-auto.sarif apps/api/src
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Merge SARIFs
+        run: |
+          jq -s '{
+            version: .[0].version,
+            "$schema": .[0]["$schema"],
+            runs: [.[].runs[]] }' desk-imperial.sarif semgrep-auto.sarif > semgrep.sarif 2>/dev/null || cp desk-imperial.sarif semgrep.sarif
+
+      - name: Upload SARIF ao GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+# ── Estágio 6: SCA — npm audit + OSV-Scanner + Trivy ─────────────────────────
+  sca:
+    name: SCA (npm audit + OSV + Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: OSV-Scanner
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
+        continue-on-error: true
+
+      - name: Trivy — filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          skip-dirs: node_modules,dist,.next,coverage
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+
+# ── Estágio 7: Testes + Cobertura ─────────────────────────────────────────────
+  tests:
+    name: Tests + Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: desk_imperial_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/desk_imperial_test
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      TZ: America/Sao_Paulo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: API — tests + coverage
+        run: npm --workspace @partner/api run test -- --coverage --passWithNoTests
+
+      - name: Web — tests + coverage
+        run: npm --workspace @partner/web run test:coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            apps/api/coverage/lcov.info
+            apps/web/coverage/lcov.info
+          retention-days: 7
+
+# ── Estágio 8: Qodana Community JS ────────────────────────────────────────────
+  qodana:
+    name: Qodana Community JS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint-api, lint-web]
+    # continue-on-error: falha silenciosa se QODANA_TOKEN não estiver configurado em Secrets
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Qodana scan
+        uses: JetBrains/qodana-action@v2024.3
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          args: --fail-threshold,0
+
+# ── Estágio 9: SonarQube ──────────────────────────────────────────────────────
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [tests]
+    if: vars.SONAR_HOST_URL != ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v7.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+# ── Estágio 10: Lighthouse CI (apenas PRs que tocam apps/web) ─────────────────
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detectar mudanças em apps/web
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+
+      - uses: ./.github/actions/setup-node-workspace
+        if: steps.changes.outputs.web == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build web
+        if: steps.changes.outputs.web == 'true'
+        run: npm --workspace @partner/web run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NODE_ENV: production
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Lighthouse CI
+        if: steps.changes.outputs.web == 'true'
+        run: npx @lhci/cli autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

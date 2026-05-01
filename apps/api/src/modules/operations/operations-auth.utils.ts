@@ -20,7 +20,7 @@ export async function requireAuthorizedCashSession(
 
   const employee = await resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth)
 
-  if (!employee || session.employeeId !== employee.id) {
+  if (employee?.id !== session.employeeId) {
     throw new ForbiddenException('Seu acesso nao pode operar o caixa de outro funcionario.')
   }
 

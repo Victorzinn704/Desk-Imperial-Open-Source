@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable max-lines */
 
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { maskDocument } from '@/lib/document-validation'
 import { formatCurrency } from '@/lib/currency'
@@ -127,15 +127,17 @@ function ComandaDocumentField({
   docValidation: { valid: boolean; message?: string }
   onSetClienteDocumento: (value: string) => void
 }>) {
+  const documentInputId = 'comanda-cliente-documento'
   return (
     <div className="px-4 pb-3">
-      <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+      <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={documentInputId}>
         CPF / CNPJ
         {clienteDocumento ? <DocumentValidationChip docLabel={docLabel} docValidation={docValidation} /> : null}
       </label>
       <div className="flex gap-2">
         <input
           className="flex-1 rounded-[12px] border bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors"
+          id={documentInputId}
           inputMode="numeric"
           placeholder="000.000.000-00 ou 00.000.000/0001-00"
           style={{ borderColor: documentBorderColor(clienteDocumento, docValidation.valid) }}
@@ -185,13 +187,15 @@ function ComandaNotesField({
   notes: string
   onSetNotes: (value: string) => void
 }>) {
+  const notesInputId = 'comanda-notes'
   return (
     <div className="px-4 pb-3">
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={notesInputId}>
         Observação da comanda
       </label>
       <textarea
         className="min-h-[84px] w-full resize-none rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-soft)] focus:border-[var(--accent)]"
+        id={notesInputId}
         placeholder="Ex: cliente na varanda, entregar junto, prioridade alta"
         value={notes}
         onChange={(event) => onSetNotes(event.target.value)}
@@ -327,18 +331,21 @@ function InputField({
   value,
   onChange,
 }: Readonly<{
+  inputId?: string
   label: string
   placeholder: string
   value: string
   onChange: (value: string) => void
 }>) {
+  const inputId = `comanda-input-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={inputId}>
         {label}
       </label>
       <input
         className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        id={inputId}
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -356,18 +363,40 @@ function PercentField({
   value: number
   onChange: (value: number) => void
 }>) {
+  const [draftValue, setDraftValue] = useState(String(value))
+  const inputId = `comanda-percent-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
+
+  useEffect(() => {
+    setDraftValue(String(value))
+  }, [value])
+
+  const commitValue = () => {
+    const numericValue = Number(draftValue)
+    const normalizedValue = Number.isFinite(numericValue) ? Math.min(100, Math.max(0, numericValue)) : 0
+    setDraftValue(String(normalizedValue))
+    onChange(normalizedValue)
+  }
+
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={inputId}>
         {label}
       </label>
       <input
         className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        id={inputId}
         max="100"
         min="0"
         type="number"
-        value={value}
-        onChange={(event) => onChange(Math.min(100, Math.max(0, Number(event.target.value))))}
+        value={draftValue}
+        onBlur={commitValue}
+        onChange={(event) => setDraftValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            commitValue()
+          }
+        }}
       />
     </div>
   )

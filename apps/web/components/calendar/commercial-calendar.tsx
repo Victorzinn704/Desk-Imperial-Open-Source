@@ -774,7 +774,6 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
             Nome
           </label>
           <input
-            autoFocus
             className={fieldClassName}
             id={titleInputId}
             placeholder="Ex: Happy Hour, jogo do Flamengo..."

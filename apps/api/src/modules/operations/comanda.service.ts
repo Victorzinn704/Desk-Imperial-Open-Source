@@ -16,6 +16,7 @@ import {
   Prisma,
 } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
+import { recordOperationsCloseComandaTelemetry } from '../../common/observability/business-telemetry.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CacheService } from '../../common/services/cache.service'
@@ -25,6 +26,7 @@ import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
@@ -45,6 +47,7 @@ import {
   publishKitchenItemQueued,
   publishKitchenItemUpdated,
 } from './comanda-realtime-publish.utils'
+import { toRealtimeStatus } from './comanda-realtime-status.utils'
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import { assertMesaAvailability, resolveMesaSelection } from './comanda-mesa.utils'
 import {
@@ -120,8 +123,9 @@ export class ComandaService {
     auth: AuthContext,
     comanda: Parameters<typeof publishComandaOpened>[2],
     businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishComandaOpened(this.operationsRealtimeService, auth, comanda, businessDate)
+    publishComandaOpened(this.operationsRealtimeService, auth, comanda, businessDate, instrumentation)
   }
 
   private publishComandaUpdatedRealtime(
@@ -129,8 +133,9 @@ export class ComandaService {
     comanda: Parameters<typeof publishComandaUpdated>[2],
     businessDate: Date,
     options?: Parameters<typeof publishComandaUpdated>[4],
+    instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishComandaUpdated(this.operationsRealtimeService, auth, comanda, businessDate, options)
+    publishComandaUpdated(this.operationsRealtimeService, auth, comanda, businessDate, options, instrumentation)
   }
 
   private publishComandaCloseRealtime(
@@ -139,8 +144,9 @@ export class ComandaService {
     refreshedSession: Parameters<typeof publishComandaClosed>[3],
     closure: Parameters<typeof publishComandaClosed>[4],
     businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishComandaClosed(this.operationsRealtimeService, auth, comanda, refreshedSession, closure, businessDate)
+    publishComandaClosed(this.operationsRealtimeService, auth, comanda, refreshedSession, closure, businessDate, instrumentation)
   }
 
   private publishKitchenItemQueuedRealtime(
@@ -148,8 +154,9 @@ export class ComandaService {
     comanda: Parameters<typeof publishKitchenItemQueued>[2],
     item: Parameters<typeof publishKitchenItemQueued>[3],
     businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, item, businessDate)
+    publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, item, businessDate, instrumentation)
   }
 
   private publishKitchenItemUpdatedRealtime(
@@ -157,8 +164,10 @@ export class ComandaService {
     comanda: Parameters<typeof publishKitchenItemUpdated>[2],
     item: Parameters<typeof publishKitchenItemUpdated>[3],
     businessDate: Date,
+    options?: Parameters<typeof publishKitchenItemUpdated>[5],
+    instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishKitchenItemUpdated(this.operationsRealtimeService, auth, comanda, item, businessDate)
+    publishKitchenItemUpdated(this.operationsRealtimeService, auth, comanda, item, businessDate, options, instrumentation)
   }
 
   private refreshFinanceSummary(workspaceOwnerUserId: string) {
@@ -253,7 +262,10 @@ export class ComandaService {
     const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(comanda.totalAmount) - paidAmount))
 
     if (remainingAmount <= 0) {
-      return remainingAmount
+      return {
+        createdPayment: false,
+        remainingAmount,
+      }
     }
 
     await transaction.comandaPayment.create({
@@ -269,7 +281,10 @@ export class ComandaService {
       },
     })
 
-    return remainingAmount
+    return {
+      createdPayment: true,
+      remainingAmount,
+    }
   }
 
   async getComandaDetails(auth: AuthContext, comandaId: string) {
@@ -322,9 +337,20 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      draftItems
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
+    )
     const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
       prepareComandaDraftFields({
         customerDocument: dto.customerDocument,
@@ -473,7 +499,10 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaOpenedRealtime(auth, comanda, businessDate)
+    this.publishComandaOpenedRealtime(auth, comanda, businessDate, {
+      mutationName: 'open-comanda',
+      mutationStartedAtMs,
+    })
 
     for (const kitchenItem of kitchenItems) {
       if (kitchenItem.kitchenStatus === KitchenItemStatus.QUEUED && kitchenItem.kitchenQueuedAt) {
@@ -491,6 +520,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -511,6 +541,13 @@ export class ComandaService {
     let requiresKitchen = false
 
     if (dto.productId) {
+      await this.helpers.assertDraftSelectionsStockAvailability(this.prisma, workspaceOwnerUserId, [
+        {
+          productId: dto.productId,
+          quantity: dto.quantity,
+        },
+      ])
+
       const product = await this.prisma.product.findFirst({
         where: {
           id: dto.productId,
@@ -597,7 +634,10 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'add-comanda-item',
+      mutationStartedAtMs,
+    })
 
     if (requiresKitchen && kitchenQueuedAt) {
       this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
@@ -613,6 +653,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -626,6 +667,17 @@ export class ComandaService {
     if (!isOpenComandaStatus(comanda.status)) {
       throw new ConflictException('Nao e possivel adicionar itens em uma comanda encerrada ou cancelada.')
     }
+
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      dto.items
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
+    )
 
     const uniqueProductIds = Array.from(
       new Set(dto.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
@@ -738,6 +790,9 @@ export class ComandaService {
     this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    }, {
+      mutationName: 'add-comanda-items',
+      mutationStartedAtMs,
     })
 
     for (const item of createdItems) {
@@ -756,6 +811,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -771,6 +827,16 @@ export class ComandaService {
     }
 
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      draftItems
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
+    )
     const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
       prepareComandaDraftFields({
         customerDocument: dto.customerDocument,
@@ -871,6 +937,9 @@ export class ComandaService {
     this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    }, {
+      mutationName: 'replace-comanda',
+      mutationStartedAtMs,
     })
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
@@ -883,6 +952,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     assertOwnerRole(auth, 'Somente o dono pode redistribuir mesas entre funcionarios.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const comanda = await this.helpers.requireOwnedComanda(this.prisma, workspaceOwnerUserId, comandaId)
@@ -966,7 +1036,10 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'assign-comanda',
+      mutationStartedAtMs,
+    })
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
@@ -978,6 +1051,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -1047,7 +1121,12 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+      ...(comanda.status !== dto.status ? { previousStatus: toRealtimeStatus(comanda.status) } : {}),
+    }, {
+      mutationName: 'update-comanda-status',
+      mutationStartedAtMs,
+    })
     if (closure) {
       this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     }
@@ -1062,6 +1141,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -1142,7 +1222,10 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'create-comanda-payment',
+      mutationStartedAtMs,
+    })
     if (refreshedSession) {
       this.operationsRealtimeService.publishCashUpdated(auth, {
         ...buildCashUpdatedPayload(refreshedSession),
@@ -1162,6 +1245,7 @@ export class ComandaService {
     dto: UpdateKitchenItemStatusDto,
     context: RequestContext,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     if (auth.role === 'STAFF') {
       const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
@@ -1172,7 +1256,8 @@ export class ComandaService {
 
     const helpers = this.helpers
 
-    const { updatedItem, refreshedComanda, businessDate, comandaId } = await this.prisma.$transaction(
+    const { updatedItem, refreshedComanda, businessDate, comandaId, previousKitchenStatus, previousComandaStatus } =
+      await this.prisma.$transaction(
       async (tx) => {
         const item = await tx.comandaItem.findUnique({
           where: { id: itemId },
@@ -1190,7 +1275,7 @@ export class ComandaService {
           },
         })
 
-        if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
+        if (item?.comanda.companyOwnerId !== workspaceOwnerUserId) {
           throw new NotFoundException('Item de comanda nao encontrado.')
         }
 
@@ -1227,6 +1312,8 @@ export class ComandaService {
           refreshedComanda: txRefreshedComanda,
           businessDate: resolvedBusinessDate,
           comandaId: item.comanda.id,
+          previousKitchenStatus: item.kitchenStatus,
+          previousComandaStatus: item.comanda.status,
         }
       },
       {
@@ -1247,8 +1334,17 @@ export class ComandaService {
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
 
     if (refreshedComanda) {
-      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
-      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate, {
+        previousKitchenStatus: resolvePreviousKitchenStatus(previousKitchenStatus),
+      }, {
+        mutationName: 'update-kitchen-item-status',
+        mutationStartedAtMs,
+      })
+      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+        ...(refreshedComanda.status !== previousComandaStatus
+          ? { previousStatus: toRealtimeStatus(previousComandaStatus) }
+          : {}),
+      })
     }
 
     return { itemId, status: dto.status }
@@ -1261,117 +1357,145 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const closeStartedAt = performance.now()
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-    const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(
-      this.prisma,
-      workspaceOwnerUserId,
-      auth,
-      comandaId,
-      actorEmployee,
-    )
+    try {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      const comanda = await this.helpers.requireAuthorizedComanda(
+        this.prisma,
+        workspaceOwnerUserId,
+        auth,
+        comandaId,
+        actorEmployee,
+      )
 
-    if (comanda.status === ComandaStatus.CLOSED) {
-      throw new ConflictException('Esta comanda ja foi encerrada.')
-    }
+      if (comanda.status === ComandaStatus.CLOSED) {
+        throw new ConflictException('Esta comanda ja foi encerrada.')
+      }
 
-    if (comanda.status === ComandaStatus.CANCELLED) {
-      throw new ConflictException('Comandas canceladas nao podem ser encerradas novamente.')
-    }
+      if (comanda.status === ComandaStatus.CANCELLED) {
+        throw new ConflictException('Comandas canceladas nao podem ser encerradas novamente.')
+      }
 
-    if (comanda.items.length === 0) {
-      throw new ConflictException('Adicione itens antes de fechar a comanda.')
-    }
+      if (comanda.items.length === 0) {
+        throw new ConflictException('Adicione itens antes de fechar a comanda.')
+      }
 
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
-    assertMonetaryAdjustmentsWithinSubtotal(
-      calculateDraftItemsSubtotal(comanda.items),
-      discountAmount,
-      serviceFeeAmount,
-    )
-
-    const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
-      async (transaction) => {
-        const recalculatedComanda = await this.helpers.recalculateComanda(transaction, comanda.id, {
-          discountAmount,
-          serviceFeeAmount,
-        })
-        await this.settleRemainingComandaBalance(
-          transaction,
-          workspaceOwnerUserId,
-          {
-            cashSessionId: comanda.cashSessionId,
-            currentEmployeeId: comanda.currentEmployeeId,
-            id: comanda.id,
-            totalAmount: recalculatedComanda.totalAmount,
-          },
-          auth.userId,
-          dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
-          actorEmployee?.id ?? null,
-        )
-
-        await transaction.comanda.update({
-          where: { id: comanda.id },
-          data: {
-            status: ComandaStatus.CLOSED,
-            closedAt: new Date(),
-            closedByUserId: auth.userId,
-            notes: notes ?? recalculatedComanda.notes,
-          },
-        })
-        const closedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
-
-        await this.helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
-        const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
-          transaction,
-          workspaceOwnerUserId,
-          closedComanda,
-        )
-
-        return {
-          refreshedComanda: closedComanda,
-          refreshedSession,
-          closure,
-          businessDate,
-        }
-      },
-    )
-
-    await this.auditLogService.record({
-      actorUserId: resolveAuthActorUserId(auth),
-      event: 'operations.comanda.closed',
-      resource: 'comanda',
-      resourceId: comanda.id,
-      metadata: {
+      const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
+        allowEmpty: true,
+        rejectFormula: false,
+      })
+      const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
+      const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
+      assertMonetaryAdjustmentsWithinSubtotal(
+        calculateDraftItemsSubtotal(comanda.items),
         discountAmount,
         serviceFeeAmount,
-        totalAmount: toNumberOrZero(refreshedComanda.totalAmount),
-      },
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-    })
+      )
 
-    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
-    void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
-    this.refreshFinanceSummary(workspaceOwnerUserId)
-    void checkLowStockAfterClose(
-      this.prisma,
-      this.auditLogService,
-      auth.userId,
-      workspaceOwnerUserId,
-      refreshedComanda.items,
-    )
+      const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
+        async (transaction) => {
+          const recalculatedComanda = await this.helpers.recalculateComanda(transaction, comanda.id, {
+            discountAmount,
+            serviceFeeAmount,
+          })
+          await this.settleRemainingComandaBalance(
+            transaction,
+            workspaceOwnerUserId,
+            {
+              cashSessionId: comanda.cashSessionId,
+              currentEmployeeId: comanda.currentEmployeeId,
+              id: comanda.id,
+              totalAmount: recalculatedComanda.totalAmount,
+            },
+            auth.userId,
+            dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
+            actorEmployee?.id ?? null,
+          )
 
-    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
+          await transaction.comanda.update({
+            where: { id: comanda.id },
+            data: {
+              status: ComandaStatus.CLOSED,
+              closedAt: new Date(),
+              closedByUserId: auth.userId,
+              notes: notes ?? recalculatedComanda.notes,
+            },
+          })
+          const closedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
+
+          await this.helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
+          const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
+            transaction,
+            workspaceOwnerUserId,
+            closedComanda,
+          )
+
+          return {
+            refreshedComanda: closedComanda,
+            refreshedSession,
+            closure,
+            businessDate,
+          }
+        },
+      )
+
+      await this.auditLogService.record({
+        actorUserId: resolveAuthActorUserId(auth),
+        event: 'operations.comanda.closed',
+        resource: 'comanda',
+        resourceId: comanda.id,
+        metadata: {
+          discountAmount,
+          serviceFeeAmount,
+          totalAmount: toNumberOrZero(refreshedComanda.totalAmount),
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+
+      invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+      this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate, {
+        mutationName: 'close-comanda',
+        mutationStartedAtMs,
+      })
+      void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
+      this.refreshFinanceSummary(workspaceOwnerUserId)
+      void checkLowStockAfterClose(
+        this.prisma,
+        this.auditLogService,
+        auth.userId,
+        workspaceOwnerUserId,
+        refreshedComanda.items,
+      )
+
+      return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    } finally {
+      recordOperationsCloseComandaTelemetry(performance.now() - closeStartedAt, {
+        'desk.operations.actor_role': auth.role,
+        'desk.operations.comanda_id_present': Boolean(comandaId),
+      })
+    }
   }
 
   private resolveActorEmployee(workspaceOwnerUserId: string, auth: AuthContext) {
     return this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
   }
+}
+
+function resolvePreviousKitchenStatus(status: KitchenItemStatus | null) {
+  if (status === 'DELIVERED') {
+    return 'DELIVERED' as const
+  }
+
+  if (status === 'READY') {
+    return 'READY' as const
+  }
+
+  if (status === 'IN_PREPARATION') {
+    return 'IN_PREPARATION' as const
+  }
+
+  return 'QUEUED' as const
 }

@@ -94,10 +94,23 @@ function applyLookupValues(
     ['name', lookup.name],
     ['brand', lookup.brand],
     ['category', lookup.category],
+    ['packagingClass', lookup.packagingClass],
+    ['measurementUnit', lookup.measurementUnit],
+    ['measurementValue', lookup.measurementValue],
+    ['description', lookup.description],
+    ['quantityLabel', lookup.quantityLabel],
+    ['servingSize', lookup.servingSize],
   ] as const
   return fields.reduce((count, [field, value]) => {
-    const currentValue = (formApi.getValues(field) ?? '').trim()
-    if (!value || (!shouldOverwrite && currentValue.length > 0)) {
+    const currentRawValue = formApi.getValues(field)
+    const hasCurrentValue =
+      typeof currentRawValue === 'string'
+        ? currentRawValue.trim().length > 0
+        : typeof currentRawValue === 'number'
+          ? Number.isFinite(currentRawValue) && currentRawValue > 0
+          : Boolean(currentRawValue)
+
+    if (value === null || value === undefined || value === '' || (!shouldOverwrite && hasCurrentValue)) {
       return count
     }
     formApi.setValue(field, value, { shouldDirty: shouldOverwrite, shouldTouch: true })

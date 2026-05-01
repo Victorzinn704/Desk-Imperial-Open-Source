@@ -185,24 +185,20 @@ async function discoverThermalPrinters(
   setConnectionState: (state: ThermalPrinterConnectionState) => void,
   setStatusMessage: (message: string) => void,
 ) {
-  try {
-    const discoveredPrinters = await listThermalPrinters(provider)
-    const resolvedPrinterId = resolvePreferredPrinterId(provider, discoveredPrinters)
+  const discoveredPrinters = await listThermalPrinters(provider)
+  const resolvedPrinterId = resolvePreferredPrinterId(provider, discoveredPrinters)
 
-    setPrinters(discoveredPrinters)
-    setSelectedPrinterId(resolvedPrinterId)
-    if (resolvedPrinterId) {
-      setPreferredThermalPrinter(provider, resolvedPrinterId)
-    }
+  setPrinters(discoveredPrinters)
+  setSelectedPrinterId(resolvedPrinterId)
+  if (resolvedPrinterId) {
+    setPreferredThermalPrinter(provider, resolvedPrinterId)
+  }
 
-    setConnectionState('connected')
-    setStatusMessage(describeDiscoveredPrinters(discoveredPrinters))
-    return {
-      printers: discoveredPrinters,
-      selectedPrinterId: resolvedPrinterId,
-    }
-  } catch (error) {
-    throw error
+  setConnectionState('connected')
+  setStatusMessage(describeDiscoveredPrinters(discoveredPrinters))
+  return {
+    printers: discoveredPrinters,
+    selectedPrinterId: resolvedPrinterId,
   }
 }
 

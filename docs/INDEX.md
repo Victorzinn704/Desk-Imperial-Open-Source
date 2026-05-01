@@ -16,6 +16,29 @@ Navegação central de toda a documentação do projeto.
 
 ---
 
+## Fontes canonicas agora
+
+Leia primeiro quando precisar entender o estado atual do projeto:
+
+- [README](../README.md)
+- [architecture/overview.md](./architecture/overview.md)
+- [architecture/modules.md](./architecture/modules.md)
+- [architecture/authentication-flow.md](./architecture/authentication-flow.md)
+- [architecture/local-development.md](./architecture/local-development.md)
+- [product/overview.md](./product/overview.md)
+- [product/requirements.md](./product/requirements.md)
+- [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)
+- [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)
+- [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)
+- [security/security-baseline.md](./security/security-baseline.md)
+- [security/security-testing-workflow-2026-04-30.md](./security/security-testing-workflow-2026-04-30.md)
+- [testing/testing-guide.md](./testing/testing-guide.md)
+- [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md)
+
+`DOCS_DESK_IMPERIAL.md` e `release/` permanecem uteis, mas hoje entram como material historico.
+
+---
+
 ## Produto
 
 | Documento                                                              | O que cobre                                                  |
@@ -35,7 +58,7 @@ Navegação central de toda a documentação do projeto.
 | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [architecture/overview.md](./architecture/overview.md)                       | Visão geral da arquitetura e decisões técnicas            |
 | [architecture/system-map.md](./architecture/system-map.md)                   | Mapa atual do monorepo com diagramas PlantUML             |
-| [architecture/modules.md](./architecture/modules.md)                         | Responsabilidade de cada um dos 16 módulos de domínio     |
+| [architecture/modules.md](./architecture/modules.md)                         | Responsabilidade dos módulos de domínio ativos            |
 | [architecture/database.md](./architecture/database.md)                       | Schema do banco documentado por entidade e relacionamento |
 | [architecture/realtime.md](./architecture/realtime.md)                       | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
 | [architecture/authentication-flow.md](./architecture/authentication-flow.md) | Fluxo completo de autenticação, sessão e CSRF             |
@@ -65,7 +88,10 @@ Navegação central de toda a documentação do projeto.
 | [operations/flows.md](./operations/flows.md)                                       | Fluxos operacionais do sistema       |
 | [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)         | Mapeamento de KPIs em tempo real     |
 | [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
+| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md) | Runbook de rollout do Sentry em API e web |
+| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md) | Runbook da malha realtime e sua instrumentação |
 | [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback |
+| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md) | Runbook do bot Telegram oficial |
 
 ---
 
@@ -82,7 +108,20 @@ Navegação central de toda a documentação do projeto.
 
 ---
 
-## Release e diagnóstico
+## Waves ativas
+
+| Documento | O que cobre |
+| --------- | ----------- |
+| [waves/realtime-wave-0-inventory-2026-05-01.md](./waves/realtime-wave-0-inventory-2026-05-01.md) | Inventário real da malha realtime antes das mudanças |
+| [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md) | Plano executável de recuperação do realtime |
+| [waves/realtime-validation-checklist-2026-05-01.md](./waves/realtime-validation-checklist-2026-05-01.md) | Checklist de validação por wave |
+| [waves/dead-code-verification-2026-05-01.md](./waves/dead-code-verification-2026-05-01.md) | Verificação do backlog real de dead code |
+
+---
+
+## Release e diagnóstico histórico
+
+Material importante para contexto, mas não é a fonte primária do estado atual.
 
 | Documento                                                                                        | O que cobre                             |
 | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
@@ -130,7 +169,7 @@ docs/
 ├── architecture/
 │   ├── overview.md
 │   ├── system-map.md
-│   ├── modules.md            # 16 módulos de domínio
+│   ├── modules.md            # módulos de domínio ativos
 │   ├── database.md           # Schema documentado
 │   ├── realtime.md           # Socket.IO
 │   ├── authentication-flow.md
@@ -147,7 +186,14 @@ docs/
 │   ├── flows.md
 │   ├── kpi-realtime-mapping.md
 │   ├── observability-oss-phase1.md
+│   ├── sentry-rollout-2026-05-01.md
+│   ├── realtime-performance-runbook.md
+│   ├── telegram-bot-rollout.md
 │   └── staging-incident-rollback-runbook.md
+├── waves/
+│   ├── realtime-wave-0-inventory-2026-05-01.md
+│   ├── realtime-recovery-plan-2026-05-01.md
+│   └── realtime-validation-checklist-2026-05-01.md
 ├── testing/
 │   ├── testing-guide.md
 │   └── AUDITORIA_TESTES_COMPLETA.md

@@ -18,6 +18,12 @@ enum UserRole {
   STAFF
 }
 
+enum TelegramAccountStatus {
+  ACTIVE
+  REVOKED
+  BLOCKED
+}
+
 enum ConsentKind {
   LEGAL
   COOKIE
@@ -155,6 +161,12 @@ model User {
   companyComandaAssignments ComandaAssignment[]  @relation("CompanyComandaAssignments")
   comandaAssignmentsGranted ComandaAssignment[]  @relation("ComandaAssignmentGrantedBy")
   workspaceSessions         Session[]            @relation("WorkspaceSessions")
+  telegramAccounts          TelegramAccount[]    @relation("TelegramAccountUser")
+  telegramWorkspaceAccounts TelegramAccount[]    @relation("TelegramAccountWorkspaceOwner")
+  telegramLinkTokens        TelegramLinkToken[]  @relation("TelegramLinkTokenUser")
+  telegramWorkspaceTokens   TelegramLinkToken[]  @relation("TelegramLinkTokenWorkspaceOwner")
+  notificationPreferences   NotificationPreference[]
+  userNotificationPreferences UserNotificationPreference[]
 
   @@index([companyOwnerId, role])
   @@index([companyCity, companyState])
@@ -294,6 +306,71 @@ model AuditLog {
   @@index([event, createdAt])
   @@index([actorUserId, createdAt])
   @@index([resourceId, event])
+}
+
+model TelegramAccount {
+  id                   String                @id @default(cuid())
+  userId               String
+  workspaceOwnerUserId String
+  telegramChatId       BigInt
+  telegramUserId       BigInt
+  telegramUsername     String?
+  status               TelegramAccountStatus @default(ACTIVE)
+  linkedAt             DateTime              @default(now())
+  lastActiveAt         DateTime              @default(now())
+  revokedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  user                 User                  @relation("TelegramAccountUser", fields: [userId], references: [id], onDelete: Cascade)
+  workspaceOwner       User                  @relation("TelegramAccountWorkspaceOwner", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([workspaceOwnerUserId, status])
+  @@index([telegramChatId, status])
+}
+
+model TelegramLinkToken {
+  token                String   @id
+  userId               String
+  workspaceOwnerUserId String
+  expiresAt            DateTime
+  usedAt               DateTime?
+  ipAddress            String?
+  createdAt            DateTime @default(now())
+  user                 User     @relation("TelegramLinkTokenUser", fields: [userId], references: [id], onDelete: Cascade)
+  workspaceOwner       User     @relation("TelegramLinkTokenWorkspaceOwner", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([workspaceOwnerUserId, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  workspaceOwnerUserId String
+  channel              String
+  eventType            String
+  enabled              Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  workspaceOwner       User     @relation(fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceOwnerUserId, channel, eventType])
+  @@index([workspaceOwnerUserId, channel])
+}
+
+model UserNotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  channel   String
+  eventType String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, eventType])
+  @@index([userId, channel])
 }
 
 model Product {

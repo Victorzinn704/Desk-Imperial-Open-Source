@@ -49,6 +49,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(dto.businessDate)
     const openingCashAmount = roundCurrency(dto.openingCashAmount)
@@ -130,7 +131,10 @@ export class CashSessionService {
     })
 
     invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, businessDate)
-    publishCashOpenedRealtime(this.operationsRealtimeService, auth, session, closure)
+    publishCashOpenedRealtime(this.operationsRealtimeService, auth, session, closure, {
+      mutationName: 'open-cash-session',
+      mutationStartedAtMs,
+    })
 
     return buildCashSessionResponse(this.helpers, workspaceOwnerUserId, businessDate, session, options)
   }
@@ -142,6 +146,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     if (dto.type === CashMovementType.OPENING_FLOAT) {
       throw new BadRequestException('O tipo OPENING_FLOAT e reservado para a abertura do caixa.')
     }
@@ -203,7 +208,10 @@ export class CashSessionService {
     })
 
     invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, session.businessDate)
-    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate)
+    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate, {
+      mutationName: 'create-cash-movement',
+      mutationStartedAtMs,
+    })
 
     return buildCashMovementResponse(
       this.helpers,
@@ -222,6 +230,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const session = await this.helpers.requireAuthorizedCashSession(
       this.prisma,
@@ -298,7 +307,10 @@ export class CashSessionService {
     })
 
     invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, session.businessDate)
-    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate)
+    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate, {
+      mutationName: 'close-cash-session',
+      mutationStartedAtMs,
+    })
 
     return buildCashSessionResponse(this.helpers, workspaceOwnerUserId, session.businessDate, refreshedSession, options)
   }
@@ -309,6 +321,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     assertOwnerRole(auth, 'Somente o dono pode fechar o caixa consolidado da empresa.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(dto.businessDate)
@@ -377,7 +390,10 @@ export class CashSessionService {
     })
 
     invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(syncedClosure))
+    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(syncedClosure), {
+      mutationName: 'close-cash-closure',
+      mutationStartedAtMs,
+    })
 
     return buildCashClosureResponse(this.helpers, workspaceOwnerUserId, businessDate, closure, options)
   }

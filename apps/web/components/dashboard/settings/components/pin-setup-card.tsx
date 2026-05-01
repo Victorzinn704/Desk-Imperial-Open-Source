@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { type ActivityFeedEntry, ApiError } from '@/lib/api'
-import { removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
+import { fetchAdminPinStatus, removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
 import { getLastDigit, parseRetryAfterSeconds } from '@/lib/pin-input'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/shared/button'
@@ -214,6 +214,26 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
   ]
+
+  useEffect(() => {
+    let mounted = true
+
+    void fetchAdminPinStatus()
+      .then((response) => {
+        if (mounted) {
+          setPinActive(response.configured)
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setPinActive(false)
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!removeBlocked) {

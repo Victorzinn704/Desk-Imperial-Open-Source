@@ -17,6 +17,7 @@ vi.mock('@/lib/api', () => ({
   fetchProducts: vi.fn(),
   lookupBarcodeCatalog: vi.fn(),
   searchCatalogImages: vi.fn(),
+  generateSmartProductDraft: vi.fn(),
   ApiError: class ApiError extends Error {
     status: number
     constructor(message: string, status: number) {
@@ -121,6 +122,25 @@ describe('OwnerQuickRegisterView', () => {
       imageUrl: 'https://images.example/brahma.jpg',
       source: 'open_food_facts',
     })
+    vi.mocked(api.generateSmartProductDraft).mockResolvedValue({
+      generatedAt: '2026-05-01T10:00:00.000Z',
+      model: 'gemini-2.5-flash',
+      cached: false,
+      summary: 'Padronizei embalagem, medida e fluxo operacional.',
+      suggestion: {
+        name: 'Brahma Duplo Malte 350ml',
+        brand: 'Brahma',
+        category: 'Cervejas',
+        packagingClass: 'Lata 350ml',
+        measurementUnit: 'ML',
+        measurementValue: 350,
+        unitsPerPackage: 1,
+        description: 'Cerveja lager em lata pronta para venda.',
+        quantityLabel: '350ml',
+        servingSize: '350ml',
+        requiresKitchen: false,
+      },
+    })
     enqueueMock.mockResolvedValue('offline-product-1')
     drainQueueMock.mockResolvedValue({
       expiredCount: 0,
@@ -207,7 +227,7 @@ describe('OwnerQuickRegisterView', () => {
       expect(screen.getByLabelText('Categoria')).toHaveValue('Cervejas')
     })
 
-    expect(screen.getByText('Lata 350ml')).toBeInTheDocument()
+    expect(screen.getAllByText('Lata 350ml').length).toBeGreaterThan(0)
     expect(screen.getByText('Medida 350ml')).toBeInTheDocument()
   })
 
@@ -294,5 +314,31 @@ describe('OwnerQuickRegisterView', () => {
 
     expect(await screen.findByRole('dialog', { name: /Ler código pela câmera/i })).toBeInTheDocument()
     expect(screen.getAllByText(/A câmera não está disponível neste dispositivo/i).length).toBeGreaterThan(0)
+  })
+
+  it('refina o cadastro com IA sem mexer no fluxo de estoque e venda', async () => {
+    const api = await import('@/lib/api')
+    renderView()
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'brahma' } })
+    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'bebidas' } })
+    fireEvent.click(screen.getByRole('button', { name: /Refinar com IA/i }))
+
+    await waitFor(() => {
+      expect(vi.mocked(api.generateSmartProductDraft).mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          name: 'brahma',
+          category: 'bebidas',
+          packagingClass: 'Cadastro rápido móvel',
+          measurementUnit: 'UN',
+        }),
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Nome')).toHaveValue('Brahma Duplo Malte 350ml')
+      expect(screen.getByText('Lata 350ml')).toBeInTheDocument()
+      expect(screen.getByText('350 ML')).toBeInTheDocument()
+    })
   })
 })

@@ -1,11 +1,9 @@
-import { forwardRef, Global, Module } from '@nestjs/common'
-import { AuthModule } from '../auth/auth.module'
+import { Global, Module } from '@nestjs/common'
 import { GeocodingController } from './geocoding.controller'
 import { GeocodingService } from './geocoding.service'
 
 @Global()
 @Module({
-  imports: [forwardRef(() => AuthModule)],
   controllers: [GeocodingController],
   providers: [GeocodingService],
   exports: [GeocodingService],

@@ -1,6 +1,6 @@
 # Quality Warning Map
 
-**Generated at:** 2026-04-14T12:57:55.242Z
+**Generated at:** 2026-04-26T19:43:42.297Z
 **Scope:** current local workspace
 **Status:** alert active
 
@@ -10,7 +10,7 @@
 
 | Level | Source | Message |
 | --- | --- | --- |
-| warning | eslint | 493 ESLint warning(s) found |
+| warning | eslint | 855 ESLint warning(s) found |
 | warning | coverage:web | line coverage is 69.11% |
 | warning | sonar | fetch failed |
 
@@ -18,44 +18,45 @@
 
 ## ESLint Baseline
 
-- Files analyzed: 528
+- Files analyzed: 712
 - Errors: 0
-- Warnings: 493
-- Fixable warnings: 28
+- Warnings: 855
+- Fixable warnings: 160
 
 ### Top ESLint Rules
 
 | Rule | Count |
 | --- | --- |
-| max-lines-per-function | 208 |
-| @typescript-eslint/no-non-null-assertion | 79 |
-| no-nested-ternary | 65 |
-| complexity | 51 |
-| max-lines | 48 |
-| sort-imports | 16 |
-| max-params | 14 |
-| react/jsx-sort-props | 11 |
+| max-lines-per-function | 320 |
+| no-nested-ternary | 124 |
+| react/jsx-sort-props | 106 |
+| complexity | 95 |
+| @typescript-eslint/no-non-null-assertion | 77 |
+| max-lines | 63 |
+| sort-imports | 53 |
+| max-params | 15 |
+| react-hooks/incompatible-library | 1 |
 | unknown | 1 |
 
 ### Top ESLint Files
 
 | File | Count |
 | --- | --- |
-| apps/api/src/modules/operations/comanda.service.ts | 16 |
-| apps/api/src/modules/products/products.service.ts | 15 |
-| apps/web/components/owner-mobile/owner-comandas-view.tsx | 13 |
-| apps/web/components/owner-mobile/owner-mobile-shell.tsx | 13 |
+| apps/web/components/dashboard/environments/pedidos-environment.tsx | 25 |
+| apps/web/components/dashboard/salao-environment.tsx | 23 |
+| apps/web/components/calendar/commercial-calendar.tsx | 20 |
+| apps/web/app/api/barcode/lookup/route.ts | 19 |
+| apps/web/components/dashboard/environments/overview-environment.tsx | 18 |
+| apps/api/src/modules/operations/comanda.service.ts | 17 |
+| apps/web/components/design-lab/lab-primitives.tsx | 17 |
+| apps/web/components/design-lab/lab-shell.tsx | 15 |
+| apps/api/src/modules/products/products.service.ts | 14 |
+| apps/web/components/ai/ai-consultant-workspace.tsx | 14 |
+| apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx | 14 |
+| apps/web/components/dashboard/environments/equipe-environment.tsx | 12 |
+| apps/web/components/dashboard/overview-recent-orders.tsx | 12 |
+| apps/web/components/staff-mobile/kitchen-orders-view.tsx | 12 |
 | apps/api/src/modules/auth/auth-registration.service.ts | 11 |
-| apps/api/src/modules/orders/orders.service.ts | 11 |
-| apps/web/components/dashboard/salao-environment.tsx | 11 |
-| apps/web/components/staff-mobile/mobile-order-builder.tsx | 11 |
-| apps/web/components/operations/kitchen-patching.test.ts | 10 |
-| apps/api/src/modules/auth/auth-login.service.ts | 9 |
-| apps/api/src/modules/operations/operations-comanda-helpers.utils.ts | 8 |
-| apps/web/components/dashboard/hooks/useDashboardQueries.test.ts | 8 |
-| apps/web/components/staff-mobile/mobile-comanda-list.tsx | 8 |
-| apps/web/components/staff-mobile/staff-mobile-shell.tsx | 8 |
-| apps/api/src/modules/operations/cash-session.service.ts | 7 |
 
 ---
 
@@ -156,7 +157,7 @@ Large files need behavior tests before extraction.
 
 Warnings should become a managed budget instead of terminal noise.
 
-- Current ESLint baseline: 493 warning(s), 0 error(s).
+- Current ESLint baseline: 855 warning(s), 0 error(s).
 - Reduce by cluster and update this report after each cleanup.
 - Do not enable fail-on-alert until the baseline is intentionally accepted.
 

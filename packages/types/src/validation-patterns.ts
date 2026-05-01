@@ -52,8 +52,12 @@ export function sanitizeDocument(value: string) {
 
 export function detectDocumentType(raw: string): DocumentType {
   const digits = sanitizeDocument(raw)
-  if (digits.length === 11) return 'cpf'
-  if (digits.length === 14) return 'cnpj'
+  if (digits.length === 11) {
+    return 'cpf'
+  }
+  if (digits.length === 14) {
+    return 'cnpj'
+  }
   return 'unknown'
 }
 
@@ -75,8 +79,12 @@ export function maskDocument(raw: string): string {
 
 export function validateCpf(raw: string): boolean {
   const cpf = sanitizeDocument(raw)
-  if (cpf.length !== 11) return false
-  if (/^(\d)\1{10}$/.test(cpf)) return false
+  if (cpf.length !== 11) {
+    return false
+  }
+  if (/^(\d)\1{10}$/.test(cpf)) {
+    return false
+  }
 
   let sum = 0
   for (let index = 0; index < 9; index += 1) {
@@ -107,8 +115,12 @@ export function validateCpf(raw: string): boolean {
 
 export function validateCnpj(raw: string): boolean {
   const cnpj = sanitizeDocument(raw)
-  if (cnpj.length !== 14) return false
-  if (/^(\d)\1{13}$/.test(cnpj)) return false
+  if (cnpj.length !== 14) {
+    return false
+  }
+  if (/^(\d)\1{13}$/.test(cnpj)) {
+    return false
+  }
 
   const weightsFirst = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
   const weightsSecond = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
@@ -149,11 +161,17 @@ export function validateCnpj(raw: string): boolean {
 
 export function validateDocument(raw: string): { valid: boolean; type: DocumentType; message?: string } {
   const digits = sanitizeDocument(raw)
-  if (digits.length === 0) return { valid: true, type: 'unknown' }
-  if (digits.length < 11) return { valid: false, type: 'unknown', message: 'CPF incompleto (11 dígitos)' }
+  if (digits.length === 0) {
+    return { valid: true, type: 'unknown' }
+  }
+  if (digits.length < 11) {
+    return { valid: false, type: 'unknown', message: 'CPF incompleto (11 dígitos)' }
+  }
   if (digits.length === 11) {
     return validateCpf(digits) ? { valid: true, type: 'cpf' } : { valid: false, type: 'cpf', message: 'CPF inválido' }
   }
-  if (digits.length < 14) return { valid: false, type: 'unknown', message: 'CNPJ incompleto (14 dígitos)' }
+  if (digits.length < 14) {
+    return { valid: false, type: 'unknown', message: 'CNPJ incompleto (14 dígitos)' }
+  }
   return validateCnpj(digits) ? { valid: true, type: 'cnpj' } : { valid: false, type: 'cnpj', message: 'CNPJ inválido' }
 }

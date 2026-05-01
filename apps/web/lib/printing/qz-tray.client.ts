@@ -178,14 +178,46 @@ export function setQzHost(host: string): string {
 }
 
 export function normalizeQzHost(host: string): string {
-  const trimmed = host
-    .trim()
-    .replace(/^https?:\/\//i, '')
-    .replace(/^wss?:\/\//i, '')
-    .replace(/\/.*$/, '')
-    .replace(/:(8181|8182|8282|8283|8383|8384|8484|8485)$/i, '')
+  let trimmed = host.trim()
+
+  const lowerTrimmed = trimmed.toLowerCase()
+  if (lowerTrimmed.startsWith('https://')) {
+    trimmed = trimmed.slice('https://'.length)
+  } else if (lowerTrimmed.startsWith('http://')) {
+    trimmed = trimmed.slice('http://'.length)
+  } else if (lowerTrimmed.startsWith('wss://')) {
+    trimmed = trimmed.slice('wss://'.length)
+  } else if (lowerTrimmed.startsWith('ws://')) {
+    trimmed = trimmed.slice('ws://'.length)
+  }
+
+  const pathSeparatorIndex = trimmed.indexOf('/')
+  if (pathSeparatorIndex !== -1) {
+    trimmed = trimmed.slice(0, pathSeparatorIndex)
+  }
+
+  const lastColonIndex = trimmed.lastIndexOf(':')
+  if (lastColonIndex !== -1) {
+    const port = trimmed.slice(lastColonIndex + 1)
+    if (isKnownQzPort(port)) {
+      trimmed = trimmed.slice(0, lastColonIndex)
+    }
+  }
 
   return trimmed || 'localhost'
+}
+
+function isKnownQzPort(port: string) {
+  return (
+    port === '8181' ||
+    port === '8182' ||
+    port === '8282' ||
+    port === '8283' ||
+    port === '8383' ||
+    port === '8384' ||
+    port === '8484' ||
+    port === '8485'
+  )
 }
 
 async function getQzTrayModule() {

@@ -14,21 +14,38 @@ type ProductCardProps = {
 
 export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd, onDragStart }: ProductCardProps) {
   const available = product.stock - inCartQty
+  const isSoldOut = available <= 0
   const stockColor =
-    available <= 0
+    isSoldOut
       ? '#f87171' // vermelho — esgotado
       : product.isLowStock || available <= 5
         ? '#f59e0b' // âmbar — baixo
         : 'var(--text-soft)' // cinza normal
-  const stockLabel = available <= 0 ? 'Esgotado' : `${available} und`
+  const stockLabel = isSoldOut ? 'Esgotado' : `${available} und`
 
   return (
     <button
-      draggable
-      className="group flex min-h-[96px] w-full cursor-grab flex-col justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-left transition-all hover:border-[color-mix(in_srgb,var(--accent)_24%,var(--border))] hover:bg-[var(--surface-soft)] active:cursor-grabbing xl:min-h-0 xl:flex-row xl:items-center"
+      draggable={!isSoldOut}
+      aria-disabled={isSoldOut}
+      className={`group flex min-h-[96px] w-full flex-col justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-left transition-all xl:min-h-0 xl:flex-row xl:items-center ${
+        isSoldOut
+          ? 'cursor-not-allowed opacity-60'
+          : 'cursor-grab hover:border-[color-mix(in_srgb,var(--accent)_24%,var(--border))] hover:bg-[var(--surface-soft)] active:cursor-grabbing'
+      }`}
       type="button"
-      onClick={onAdd}
-      onDragStart={onDragStart}
+      onClick={() => {
+        if (isSoldOut) {
+          return
+        }
+        onAdd()
+      }}
+      onDragStart={(event) => {
+        if (isSoldOut) {
+          event.preventDefault()
+          return
+        }
+        onDragStart(event)
+      }}
     >
       <div className="flex items-start gap-3">
         <ProductThumb product={product} size="md" />

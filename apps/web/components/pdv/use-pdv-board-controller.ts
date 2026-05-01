@@ -24,12 +24,14 @@ export function usePdvBoardController({
   variant = 'grid',
 }: UsePdvBoardControllerArgs) {
   const [showNewModal, setShowNewModal] = useState(false)
+  const [previewComandaId, setPreviewComandaId] = useState<string | null>(null)
   const [editingComandaId, setEditingComandaId] = useState<string | null>(null)
   const [mesaPreSelected, setMesaPreSelected] = useState<Mesa | null>(null)
   const [mesaPreSelectedLabel, setMesaPreSelectedLabel] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const runtime = usePdvBoardRuntime(operations, variant)
   const editingComanda = (editingComandaId ? runtime.comandasById.get(editingComandaId) : null) ?? null
+  const previewComanda = (previewComandaId ? runtime.comandasById.get(previewComandaId) : null) ?? null
 
   usePdvBoardIntent({
     comandasById: runtime.comandasById,
@@ -39,6 +41,7 @@ export function usePdvBoardController({
     onConsumeMesaIntent,
     operationsSnapshot: runtime.operationsSnapshot,
     setEditingComandaId,
+    setPreviewComandaId,
     setMesaPreSelected,
     setMesaPreSelectedLabel,
     setShowNewModal,
@@ -60,6 +63,8 @@ export function usePdvBoardController({
     actionError,
     comandasByStatus: runtime.comandasByStatus,
     editingComanda,
+    previewComanda,
+    previewComandaId,
     handleDragEnd: (result: DropResult) => handleDragEnd(result, runtime.comandasById, mutations.transitionComanda),
     handleStatusChange: (comanda: Comanda, status: Comanda['status']) =>
       isEndedComandaStatus(comanda.status) ? Promise.resolve() : mutations.transitionComanda(comanda, status),
@@ -67,6 +72,7 @@ export function usePdvBoardController({
     mesaPreSelectedLabel,
     mutationBusy: mutations.mutationBusy,
     openNewModal: (mesa?: Mesa | null, label?: string | null) => {
+      setPreviewComandaId(null)
       setEditingComandaId(null)
       setMesaPreSelected(mesa ?? null)
       setMesaPreSelectedLabel(label ?? mesa?.numero ?? null)
@@ -77,9 +83,18 @@ export function usePdvBoardController({
       setMesaPreSelected(null)
       setMesaPreSelectedLabel(null)
     },
+    closePreviewModal: () => setPreviewComandaId(null),
     closeEditingModal: () => setEditingComandaId(null),
+    openPreviewModal: (comandaId: string) => {
+      setShowNewModal(false)
+      setMesaPreSelected(null)
+      setMesaPreSelectedLabel(null)
+      setEditingComandaId(null)
+      setPreviewComandaId(comandaId)
+    },
     openEditingModal: (comandaId: string) => {
       setShowNewModal(false)
+      setPreviewComandaId(null)
       setMesaPreSelected(null)
       setMesaPreSelectedLabel(null)
       setEditingComandaId(comandaId)

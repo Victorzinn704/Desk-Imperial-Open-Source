@@ -8,20 +8,27 @@ const BOOLEAN_KEYS = [
   'COOKIE_SECURE',
   'REGISTRATION_GEOCODING_STRICT',
   'OTEL_DIAGNOSTICS',
+  'TELEGRAM_BOT_ENABLED',
+  'SENTRY_ENABLED',
+  'SENTRY_ENABLE_LOGS',
+  'SENTRY_SEND_DEFAULT_PII',
 ] as const
 const URL_KEYS = ['DATABASE_URL', 'DIRECT_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL'] as const
 const OPTIONAL_URL_KEYS = ['RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL'] as const
+const OPTIONAL_TELEGRAM_URL_KEYS = ['TELEGRAM_WEBHOOK_URL'] as const
 const OPTIONAL_OBSERVABILITY_URL_KEYS = [
   'OTEL_EXPORTER_OTLP_ENDPOINT',
   'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
   'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
   'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT',
+  'SENTRY_DSN',
 ] as const
 const POSITIVE_NUMBER_KEYS = [
   'REGISTRATION_GEOCODING_TIMEOUT_MS',
   'REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS',
   'OTEL_METRICS_EXPORT_INTERVAL_MS',
 ]
+const SAMPLE_RATE_KEYS = ['OTEL_TRACES_SAMPLE_RATE', 'SENTRY_TRACES_SAMPLE_RATE', 'SENTRY_PROFILE_SESSION_SAMPLE_RATE'] as const
 const REDIS_URL_CANDIDATE_KEYS = getRedisUrlKeys()
 const PRODUCTION_DEFAULT_SECRET_VALUES: Record<string, string[]> = {
   COOKIE_SECRET: ['change-me', 'replace-with-a-long-random-cookie-secret'],
@@ -44,16 +51,20 @@ export function validateEnvironment(config: EnvShape) {
   validateUrlGroup(env, URL_KEYS, issues)
   validateUrlGroup(env, REDIS_URL_CANDIDATE_KEYS, issues)
   validateUrlGroup(env, OPTIONAL_URL_KEYS, issues, isValidOriginLikeValue)
+  validateUrlGroup(env, OPTIONAL_TELEGRAM_URL_KEYS, issues)
   validateUrlGroup(env, OPTIONAL_OBSERVABILITY_URL_KEYS, issues)
   validateBooleanGroup(env, BOOLEAN_KEYS, issues)
   validatePositiveNumberGroup(env, POSITIVE_NUMBER_KEYS, issues)
+  validateSampleRateGroup(env, SAMPLE_RATE_KEYS, issues)
   validateCookieSameSite(env, nodeEnv, issues)
   validatePort(env.PORT, issues)
   validateTrustProxy(env.TRUST_PROXY, issues)
+  validateSentryProfileLifecycle(env.SENTRY_PROFILE_LIFECYCLE, issues)
 
   validateSecretLength(env.COOKIE_SECRET, 16, 'COOKIE_SECRET', issues)
   validateSecretLength(env.CSRF_SECRET, 32, 'CSRF_SECRET', issues)
   validateSecretLength(env.ENCRYPTION_KEY, 32, 'ENCRYPTION_KEY', issues)
+  validateSecretLength(env.TELEGRAM_WEBHOOK_SECRET, 24, 'TELEGRAM_WEBHOOK_SECRET', issues)
   validateProductionRequirements(env, nodeEnv, issues)
 
   if (issues.length > 0) {
@@ -107,6 +118,15 @@ function validatePositiveNumberGroup(env: EnvShape, keys: readonly string[], iss
   }
 }
 
+function validateSampleRateGroup(env: EnvShape, keys: readonly string[], issues: string[]) {
+  for (const key of keys) {
+    const value = env[key]
+    if (value !== undefined && !isValidSampleRate(value)) {
+      issues.push(`${key} deve ser um numero entre 0 e 1.`)
+    }
+  }
+}
+
 function validateCookieSameSite(env: EnvShape, nodeEnv: string, issues: string[]) {
   if (env.COOKIE_SAME_SITE === undefined) {
     return
@@ -145,6 +165,16 @@ function validateTrustProxy(trustProxyValue: string | undefined, issues: string[
   }
 }
 
+function validateSentryProfileLifecycle(profileLifecycleValue: string | undefined, issues: string[]) {
+  if (
+    profileLifecycleValue !== undefined &&
+    profileLifecycleValue !== 'manual' &&
+    profileLifecycleValue !== 'trace'
+  ) {
+    issues.push('SENTRY_PROFILE_LIFECYCLE deve ser "manual" ou "trace".')
+  }
+}
+
 function validateProductionRequirements(env: EnvShape, nodeEnv: string, issues: string[]) {
   if (nodeEnv !== 'production') {
     return
@@ -165,6 +195,18 @@ function validateProductionRequirements(env: EnvShape, nodeEnv: string, issues: 
     issues.push(
       `Uma URL Redis é obrigatória em produção para cache e sincronização realtime entre instâncias (${REDIS_URL_CANDIDATE_KEYS.join(' | ')}).`,
     )
+  }
+
+  if (env.TELEGRAM_BOT_ENABLED === 'true') {
+    if (!env.TELEGRAM_BOT_TOKEN?.trim()) {
+      issues.push('TELEGRAM_BOT_TOKEN é obrigatório em produção quando TELEGRAM_BOT_ENABLED=true.')
+    }
+    if (!env.TELEGRAM_BOT_USERNAME?.trim()) {
+      issues.push('TELEGRAM_BOT_USERNAME é obrigatório em produção quando TELEGRAM_BOT_ENABLED=true.')
+    }
+    if (!env.TELEGRAM_WEBHOOK_SECRET?.trim()) {
+      issues.push('TELEGRAM_WEBHOOK_SECRET é obrigatório em produção quando TELEGRAM_BOT_ENABLED=true.')
+    }
   }
 }
 
@@ -215,6 +257,11 @@ function isValidOriginLikeValue(value: string) {
 function isPositiveNumber(value: string) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) && numericValue > 0
+}
+
+function isValidSampleRate(value: string) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) && numericValue >= 0 && numericValue <= 1
 }
 
 function validateConnectionUrlPassword(

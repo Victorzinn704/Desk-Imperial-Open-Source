@@ -8,6 +8,7 @@ export type PendingAction =
   | { type: 'edit'; comandaId: string; mesaLabel: string; comanda: Comanda }
 
 export type StaffMobileCurrentUser = {
+  userId?: string | null
   name?: string
   fullName?: string
   employeeId?: string | null

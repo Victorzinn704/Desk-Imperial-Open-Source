@@ -73,7 +73,7 @@ O Desk Imperial deixou de ser só um exercício de CRUD. Para manter o sistema r
 | --- | --- |
 | **Cloud e runtime** | Oracle Cloud, Google Cloud, Azure, Linux, Docker |
 | **Observabilidade e qualidade** | Grafana, Prometheus, SonarQube, OpenTelemetry, stack OSS |
-| **Dados e backend** | Redis, Neon, Prisma |
+| **Dados e backend** | PostgreSQL 17, Redis, Prisma |
 | **Experiência do produto** | PWA, tempo real com Socket.IO, CI/CD com GitHub Actions |
 
 Essa parte importa porque ela mostra uma coisa simples: o projeto não foi construído só para “parecer software”. Ele exigiu contato com infraestrutura, auditoria, deploy, telemetria, runtime e problemas reais de estabilidade.

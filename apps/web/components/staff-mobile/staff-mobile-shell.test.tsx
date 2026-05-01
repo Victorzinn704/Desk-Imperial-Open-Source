@@ -301,6 +301,24 @@ describe('StaffMobileShell', () => {
     })
   })
 
+  it('não reexecuta o drain offline apenas por rerender do shell conectado', async () => {
+    const { rerender } = renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await waitFor(() => {
+      expect(drainQueueMock).toHaveBeenCalledTimes(1)
+    })
+
+    rerender(
+      <QueryClientProvider client={testQueryClient}>
+        <StaffMobileShell currentUser={mockUser} />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(drainQueueMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('mostra o resumo individual do funcionário na aba de histórico', async () => {
     const user = userEvent.setup()
 

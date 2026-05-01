@@ -24,7 +24,7 @@ export async function resolveMesaSelection(
       },
     })
 
-    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId || !mesa.active) {
+    if (!mesa?.active || mesa.companyOwnerId !== workspaceOwnerUserId) {
       throw new NotFoundException('Mesa nao encontrada ou inativa.')
     }
 

@@ -2,7 +2,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cancelComanda, closeComanda, updateComandaStatus } from '@/lib/api'
-import { invalidateOperationsWorkspace, rollbackOperationsSnapshot, setOptimisticComandaStatus } from '@/lib/operations'
+import {
+  rollbackOperationsSnapshot,
+  scheduleOperationsWorkspaceReconcile,
+  setOptimisticComandaStatus,
+} from '@/lib/operations'
 import { buildOpenComandaPayload } from './pdv-board.helpers'
 import { normalizeTableLabel } from './normalize-table-label'
 import { toOperationsStatus } from './pdv-operations'
@@ -31,7 +35,10 @@ export function usePdvBoardStatusMutations({
     },
     onError: (_error, _vars, context) =>
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot),
-    onSuccess: () => invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY),
+    onSuccess: () =>
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
+        delayMs: 700,
+      }),
   })
   const closeComandaMutation = useMutation({
     mutationFn: ({
@@ -49,9 +56,10 @@ export function usePdvBoardStatusMutations({
     onError: (_error, _vars, context) =>
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot),
     onSuccess: () =>
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
         includeOrders: true,
         includeFinance: true,
+        delayMs: 700,
       }),
   })
   const cancelComandaMutation = useMutation({
@@ -64,9 +72,10 @@ export function usePdvBoardStatusMutations({
     onError: (_error, _vars, context) =>
       rollbackOperationsSnapshot(queryClient, OPERATIONS_LIVE_QUERY_KEY, context?.snapshot),
     onSuccess: () =>
-      invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
+      scheduleOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_KEY, {
         includeKitchen: true,
         includeSummary: true,
+        delayMs: 700,
       }),
   })
 

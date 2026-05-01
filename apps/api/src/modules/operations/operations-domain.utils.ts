@@ -163,14 +163,7 @@ export function buildComandaUpdatedPayload(comanda: {
   return {
     comandaId: comanda.id,
     mesaLabel: comanda.tableLabel,
-    status:
-      comanda.status === ComandaStatus.OPEN
-        ? 'OPEN'
-        : comanda.status === ComandaStatus.IN_PREPARATION
-          ? 'IN_PREPARATION'
-          : comanda.status === ComandaStatus.READY
-            ? 'READY'
-            : 'CLOSED',
+    status: resolveRealtimeComandaStatus(comanda.status),
     employeeId: comanda.currentEmployeeId,
     subtotal: toNumberOrZero(comanda.subtotalAmount),
     discountAmount: toNumberOrZero(comanda.discountAmount),
@@ -182,12 +175,7 @@ export function buildComandaUpdatedPayload(comanda: {
 export function buildCashClosurePayload(closure: CashClosure) {
   return {
     closureId: closure.id,
-    status:
-      closure.status === CashClosureStatus.CLOSED || closure.status === CashClosureStatus.FORCE_CLOSED
-        ? 'CLOSED'
-        : closure.status === CashClosureStatus.PENDING_EMPLOYEE_CLOSE
-          ? 'PENDING'
-          : 'OPEN',
+    status: resolveRealtimeCashClosureStatus(closure.status),
     openedAt: closure.createdAt.toISOString(),
     closedAt: closure.closedAt?.toISOString() ?? null,
     expectedAmount: toNumberOrZero(closure.expectedCashAmount),
@@ -198,4 +186,32 @@ export function buildCashClosurePayload(closure: CashClosure) {
     openComandasCount: closure.openComandasCount,
     pendingCashSessions: closure.openSessionsCount,
   } as const
+}
+
+function resolveRealtimeComandaStatus(status: ComandaStatus) {
+  if (status === ComandaStatus.OPEN) {
+    return 'OPEN' as const
+  }
+
+  if (status === ComandaStatus.IN_PREPARATION) {
+    return 'IN_PREPARATION' as const
+  }
+
+  if (status === ComandaStatus.READY) {
+    return 'READY' as const
+  }
+
+  return 'CLOSED' as const
+}
+
+function resolveRealtimeCashClosureStatus(status: CashClosureStatus) {
+  if (status === CashClosureStatus.CLOSED || status === CashClosureStatus.FORCE_CLOSED) {
+    return 'CLOSED' as const
+  }
+
+  if (status === CashClosureStatus.PENDING_EMPLOYEE_CLOSE) {
+    return 'PENDING' as const
+  }
+
+  return 'OPEN' as const
 }

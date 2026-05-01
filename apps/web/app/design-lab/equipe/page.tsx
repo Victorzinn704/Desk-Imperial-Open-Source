@@ -51,6 +51,7 @@ export default function DesignLabEquipePage() {
       employees={employeesQuery.data?.items ?? []}
       finance={financeQuery.data}
       surface="lab"
+      userRole={user.role}
     />
   )
 }
