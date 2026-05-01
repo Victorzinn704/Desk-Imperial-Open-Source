@@ -42,7 +42,7 @@ test.describe('Critical Flows E2E - Chromium', () => {
     await page.getByRole('button', { name: 'Entrar no portal' }).click()
 
     await expect(page).toHaveURL(/\/login$/)
-    await expect(page.getByText(/inval|erro|incorret/i)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Credenciais invalidas.', { exact: true })).toBeVisible({ timeout: 10_000 })
 
     await assertNoSilentFailures(page, watch)
   })
@@ -123,6 +123,9 @@ function isIgnorableConsoleError(message: string) {
     normalized.includes('favicon.ico') ||
     normalized.includes('chrome-extension://') ||
     normalized.includes('source map') ||
+    normalized.includes('eval() is not supported in this environment') ||
+    normalized.includes('react requires eval() in development mode') ||
+    normalized.includes('react will never use eval() in production mode') ||
     normalized.includes('failed to load resource: the server responded with a status of 401') ||
     normalized.includes('failed to load resource: net::err_connection_refused')
   )

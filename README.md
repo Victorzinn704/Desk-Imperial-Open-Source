@@ -5,83 +5,88 @@
 [![Node.js](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
 [![Open Source](https://img.shields.io/badge/open%20source-yes-blue)](./LICENSE)
 
-**Sistema gratuito de gestão para pequenos e médios comerciantes brasileiros.**
+**Sistema gratuito de gestao para pequenos e medios comerciantes brasileiros.**
 
-PDV ao vivo, controle financeiro, folha de pagamento automática, mapa de vendas e muito mais — tudo no mesmo painel, sem pagar nada.
+PDV ao vivo, controle financeiro, folha de pagamento automatica, mapa de vendas, trilhas mobile e documentacao tecnica real de operacao no mesmo projeto.
 
 > Feito para tirar o comerciante brasileiro da planilha.  
-> Código aberto. Licença MIT. Construído e mantido por uma pessoa só.
+> Codigo aberto. Licenca MIT. Construido e mantido por uma pessoa so.
+
+> **Nota sobre este repositorio aberto**
+>
+> O Desk Imperial hoje evolui em waves. Este mirror publico recebe documentacao e syncs de codigo por etapas. Por isso, alguns documentos abaixo podem refletir o estado operacional mais novo do projeto antes do sync completo de toda a arvore de codigo para o mirror aberto.
 
 ---
 
-## Demonstração rápida
+## Demonstracao rapida
 
 Quer ver o sistema antes de instalar?
 
-Acesse **[app.deskimperial.online](https://app.deskimperial.online)** com a conta demo — sem cadastro, sem cartão.
+Acesse **[app.deskimperial.online](https://app.deskimperial.online)** com a conta demo.
 
-Veja [docs/DEMO.md](./docs/DEMO.md) para instruções de acesso.
+Veja [docs/DEMO.md](./docs/DEMO.md) para instrucoes de acesso.
 
 ---
 
-## O que é
+## O que e
 
 O Desk Imperial resolve dois problemas que costumam ficar separados:
 
-**Operação ao vivo** — abrir comanda, acompanhar pedidos, controlar caixa, ver o salão em tempo real, tudo atualizado para toda a equipe sem precisar recarregar nada.
+**Operacao ao vivo**: abrir comanda, acompanhar pedidos, controlar caixa, ver o salao em tempo real e coordenar cozinha e atendimento sem recarregar a tela.
 
-**Gestão do negócio** — financeiro por período, folha de pagamento calculada automaticamente, ranking de vendedores, mapa de onde vêm os pedidos, calendário de eventos e promoções.
+**Gestao do negocio**: financeiro por periodo, folha automatica, ranking de vendedores, mapa de pedidos, eventos comerciais, trilhas de auditoria e observabilidade.
 
-Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
+Tudo no mesmo sistema. Sem planilha. Sem mensalidade.
 
-**Para quem é:**
+**Para quem e:**
 
-- Dono de restaurante, lanchonete, bar ou comércio com atendimento
-- Funcionário que precisa de PDV e atendimento no celular
-- Desenvolvedor que quer contribuir, estudar ou usar como base
+- dono de restaurante, lanchonete, bar ou comercio com atendimento
+- funcionario que precisa de PDV e atendimento no celular
+- desenvolvedor que quer contribuir, estudar ou usar como base
 
 ---
 
 ## Funcionalidades
 
-| Módulo                   | O que faz                                                                                |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| **PDV / Comandas**       | Kanban 4 colunas, arrastar e soltar, CPF/CNPJ, desconto e acréscimo por comanda          |
-| **Tempo real**           | Toda equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                      |
-| **Financeiro**           | Receita, custo, margem, top produtos e top vendedores por período                        |
-| **Folha de pagamento**   | Salário fixo + comissão sobre vendas calculada por funcionário                           |
-| **Mapa de vendas**       | Pedidos plotados por bairro e região com geocodificação real                             |
-| **Calendário comercial** | Planeje eventos e correlacione com as vendas do período                                  |
-| **Mobile — dono**        | Painel executivo otimizado para celular                                                  |
-| **Mobile — funcionário** | PDV e atendimento completo pelo celular                                                  |
-| **Admin PIN**            | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                    |
-| **Export CSV**           | Baixe pedidos para Excel ou Google Planilhas                                             |
-| **Insight IA**           | Resumo executivo gerado pelo Gemini com cache e controle de uso                          |
-| **LGPD**                 | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio |
+| Modulo                      | O que faz                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| **PDV / Comandas**          | Kanban operacional, CPF/CNPJ, desconto, acrescimo e fechamento de comanda            |
+| **Tempo real**              | Atualizacao de operacao ao vivo via Socket.IO com reconciliacao e trilha de recovery |
+| **Financeiro**              | Receita, custo, margem, top produtos e top vendedores por periodo                    |
+| **Folha de pagamento**      | Salario fixo + comissao por funcionario                                              |
+| **Mapa de vendas**          | Pedidos plotados por bairro e regiao com geocodificacao                              |
+| **Mobile - dono**           | Painel executivo otimizado para celular                                              |
+| **Mobile - funcionario**    | PDV e atendimento completos no celular                                               |
+| **Admin PIN**               | Challenge de 4 digitos com bloqueio anti-forca-bruta para acoes sensiveis            |
+| **Notificacoes / Telegram** | Canal empresarial de notificacoes e comandos com rollout documentado                 |
+| **IA / Gemini**             | Resumo executivo e trilhas de cadastro inteligente documentadas no mainline          |
+| **Observabilidade**         | OpenTelemetry, Faro e Sentry em waves de rollout                                     |
+| **LGPD**                    | Consentimento, versionamento legal e dados isolados por negocio                      |
 
 ---
 
 ## Stack
 
-| Camada             | Tecnologia                    |
-| ------------------ | ----------------------------- |
-| Backend            | NestJS 11 + TypeScript        |
-| Frontend           | Next.js 16 + React 19         |
-| Banco de dados     | PostgreSQL 16 + Prisma ORM    |
-| Cache / Rate limit | Redis                         |
-| Tempo real         | Socket.IO                     |
-| Autenticação       | Cookies HttpOnly + CSRF duplo |
-| Monorepo           | Turborepo + npm workspaces    |
-| Deploy             | Railway                       |
-| Testes backend     | Jest + 53+ arquivos de spec   |
-| Testes frontend    | Vitest + Playwright           |
-| Load tests         | K6                            |
+| Camada             | Tecnologia                                        |
+| ------------------ | ------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                            |
+| Frontend           | Next.js 16 + React 19                             |
+| Banco de dados     | PostgreSQL 16 + Prisma ORM                        |
+| Cache / Rate limit | Redis                                             |
+| Tempo real         | Socket.IO                                         |
+| Autenticacao       | Cookies HttpOnly + CSRF duplo                     |
+| Monorepo           | Turborepo + npm workspaces                        |
+| Deploy             | Docker Compose + Oracle Cloud (producao atual)    |
+| Monitoramento      | OpenTelemetry + Faro + Sentry em rollout por wave |
+| Testes backend     | Jest                                              |
+| Testes frontend    | Vitest + Playwright                               |
+| Load tests         | K6                                                |
 
 ---
 
 ## Quick start
 
-### Pré-requisitos
+### Pre-requisitos
 
 - Node.js 22+
 - Docker (para banco e Redis local)
@@ -100,7 +105,7 @@ npm ci
 cp .env.example .env
 ```
 
-Variáveis mínimas para rodar localmente:
+Variaveis minimas para rodar localmente:
 
 ```env
 DATABASE_URL=postgresql://desk_imperial:desk_imperial_change_me@localhost:5432/partner_portal
@@ -113,7 +118,7 @@ CSRF_SECRET=troque-por-um-csrf-secret-longo-e-aleatorio
 ENCRYPTION_KEY=troque-por-uma-chave-de-32-caracteres-ou-mais
 ```
 
-Integrações externas (Brevo, Gemini, AwesomeAPI) são **opcionais** em desenvolvimento.  
+Integracoes externas como Brevo, Gemini, AwesomeAPI e Sentry sao opcionais em desenvolvimento.  
 Veja [docs/architecture/local-development.md](./docs/architecture/local-development.md) para o guia completo.
 
 ### 3. Suba o banco e o Redis
@@ -139,14 +144,14 @@ npm run seed
 ### 5. Rode o projeto
 
 ```bash
-# Terminal 1 — API
+# Terminal 1 - API
 npm --workspace @partner/api run dev
 
-# Terminal 2 — Frontend
+# Terminal 2 - Frontend
 npm --workspace @partner/web run dev
 ```
 
-| Serviço      | URL                              |
+| Servico      | URL                              |
 | ------------ | -------------------------------- |
 | Frontend     | http://localhost:3000            |
 | API          | http://localhost:4000/api        |
@@ -173,165 +178,105 @@ npm --workspace @partner/api run test:e2e
 npm --workspace @partner/web run test
 npm --workspace @partner/web run test:e2e
 
-# Fluxos críticos (E2E)
+# Fluxos criticos (E2E)
 npm run test:e2e:critical
 
-# Carga crítica com metas de latência (K6)
+# Carga critica com metas de latencia (K6)
 npm run test:load:critical
 
-# Gate de latência para CI (K6)
+# Gate de latencia para CI (K6)
 npm run test:load:ci
 ```
 
-> Para `test:load:critical`, instale o CLI do k6 no ambiente (local/runner) antes da execução.
+> Para `test:load:critical`, instale o CLI do k6 no ambiente antes da execucao.
 
-**O que está coberto:**
+**Cobertura do pipeline publico**
 
-- 53+ testes unitários e de integração no backend (todos os módulos críticos)
-- Testes E2E com Playwright no frontend
-- Load tests com K6 (health, login web/API e cenário crítico com metas p95/p99)
-- CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
+- lint e typecheck no monorepo
+- testes de backend
+- testes unitarios do frontend
+- baseline E2E do frontend
+- checks de seguranca do repositorio publico
+- gate de latencia com K6
+- build final das workspaces
 
 ---
 
 ## Arquitetura
 
-```
+```text
 desk-imperial/
 ├── apps/
-│   ├── api/          # NestJS — 16 módulos de domínio
-│   └── web/          # Next.js — 10 domínios de componentes
+│   ├── api/          # NestJS
+│   └── web/          # Next.js
 ├── packages/
-│   ├── types/        # Contratos compartilhados API ↔ frontend
-│   ├── config/       # ESLint e TypeScript compartilhados
-│   └── ui/           # Componentes reutilizáveis
-├── docs/             # 70+ arquivos de documentação técnica
+│   └── types/        # Contratos compartilhados API <-> frontend
+├── docs/             # Documentacao tecnica, rollout e waves
 ├── infra/            # Docker Compose + scripts de deploy
 └── tests/load/k6/    # Load tests
 ```
 
-**Módulos da API (16):**
+**Dominios principais**
 
-`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `users` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring` · `cache`
+`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring`
 
-Veja [docs/architecture/modules.md](./docs/architecture/modules.md) para a responsabilidade de cada um.
+Veja [docs/architecture/modules.md](./docs/architecture/modules.md) para a responsabilidade de cada dominio documentado no mirror aberto.
 
 ---
 
-## Segurança
+## Seguranca
 
-- Cookies HttpOnly + CSRF token duplo (cookie + header) em todas as mutações
-- Rate limit por domínio em Redis (login, reset de senha, PIN, verificação de e-mail)
-- Isolamento por workspace — dados de cada negócio completamente separados
-- Audit log de eventos sensíveis de autenticação e operação
-- Admin PIN com challenge efêmero e bloqueio automático por tentativas
+- Cookies HttpOnly + CSRF token duplo nas mutacoes
+- Rate limit por dominio em Redis
+- Isolamento por workspace
+- Audit log de eventos sensiveis
+- Admin PIN com challenge efemero e bloqueio por tentativas
+- Trilha documentada de testes de seguranca e superficie publicada
 
 Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ---
 
-## Documentação
+## Documentacao
 
-| Área                                   | Link                                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
-| Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
+| Area                                   | Link                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Indice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                                                   |
+| Guia de documentacao                   | [docs/README.md](./docs/README.md)                                                                                 |
+| O produto e para quem e                | [docs/product/overview.md](./docs/product/overview.md)                                                             |
+| Requisitos funcionais e nao-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                                                     |
+| Riscos e limitacoes                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)                                   |
+| Arquitetura - modulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                                                     |
+| Arquitetura - tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                                                   |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)                                 |
+| Rollout Telegram                       | [docs/operations/telegram-bot-rollout.md](./docs/operations/telegram-bot-rollout.md)                               |
+| Rollout Sentry                         | [docs/operations/sentry-rollout-2026-05-01.md](./docs/operations/sentry-rollout-2026-05-01.md)                     |
+| Workflow de testes de seguranca        | [docs/security/security-testing-workflow-2026-04-30.md](./docs/security/security-testing-workflow-2026-04-30.md)   |
+| Realtime Wave 0                        | [docs/waves/realtime-wave-0-inventory-2026-05-01.md](./docs/waves/realtime-wave-0-inventory-2026-05-01.md)         |
+| Realtime Recovery Plan                 | [docs/waves/realtime-recovery-plan-2026-05-01.md](./docs/waves/realtime-recovery-plan-2026-05-01.md)               |
+| Checklist de validacao realtime        | [docs/waves/realtime-validation-checklist-2026-05-01.md](./docs/waves/realtime-validation-checklist-2026-05-01.md) |
 
 ---
 
-## Limitações conhecidas
+## Limitacoes conhecidas
 
-- Importação CSV de produtos está desativada (HTTP 410) — lógica existe, endpoint bloqueado
-- Cobertura de testes frontend ainda parcial em relação à superfície total
-- Observabilidade OSS em transição: OpenTelemetry (fase 1 no backend) e Faro (fase 2 no frontend) habilitáveis por env; stack completa de produção em implantação progressiva
-- Projeto em evolução — funcional e rodando em produção, mas não finalizado 100%
+- O mirror aberto e atualizado por waves; alguns syncs de codigo chegam depois da documentacao
+- Importacao CSV de produtos segue desativada no fluxo publico atual
+- Cobertura de testes frontend ainda e parcial diante da superficie total
+- Observabilidade e realtime continuam em refinamento ativo
+- Projeto funcional e em producao, mas ainda em evolucao pesada
 
 Veja o detalhamento completo em [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md).
 
 ---
 
-## Higiene do repositório
-
-Scripts úteis para manter o projeto publicável, rastreável e sem surpresa entre o estado local e o remoto:
-
-```bash
-# procura riscos públicos óbvios antes de publicar no GitHub
-npm run repo:scan-public
-
-# mostra a diferença entre sua branch local, a working tree e a base remota
-npm run repo:drift
-
-# roda o gate de segurança usado no CI público
-npm run security:audit-runtime
-```
-
-`npm run repo:drift` separa duas coisas que costumam confundir:
-
-- **arquivos não commitados**: o que ainda está só no seu disco local
-- **diferença da branch para `origin/main`**: tudo que mudou na sua branch em relação ao remoto, mesmo que já esteja commitado
-
----
-
-## Contribuição
+## Contribuicao
 
 Leia [CONTRIBUTING.md](./CONTRIBUTING.md) para o fluxo completo.
 
-Neste projeto, mudanças entram por **pull request revisado**.  
-O repositório é aberto para colaboração, mas a direção do produto continua centralizada para preservar a identidade e a qualidade do Desk Imperial.
-
-Checklist mínimo antes de abrir PR:
+Checklist minimo antes de abrir PR:
 
 - [ ] `npm run lint` passa sem erros
 - [ ] `npm run typecheck` passa
-- [ ] Testes da área alterada passam
+- [ ] testes da area alterada passam
 - [ ] `npm run build` passa
-
----
-
-## Primeira contribuição
-
-Se você quer contribuir pela primeira vez, este é o melhor caminho:
-
-1. Leia [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)
-2. Escolha uma issue pequena de documentação, teste ou bug isolado
-3. Confirme o escopo em uma issue antes de começar algo maior
-4. Abra PR pequeno, focado e fácil de revisar
-
-Boas primeiras contribuições para este repositório:
-
-- correções de documentação desatualizada
-- testes faltantes em fluxos já existentes
-- melhorias de acessibilidade e feedback de UI
-- correções pontuais de bugs com reprodução clara
-
----
-
-## Roadmap
-
-Veja [ROADMAP.md](./ROADMAP.md) para o que está feito, o que está em andamento e o que vem a seguir.
-
----
-
-## Quem fez
-
-**João Victor de Moraes da Cruz** — estudante de Engenharia de Software.
-
-Construído e mantido sozinho, com foco em segurança, lógica e produto real para quem precisa.  
-Leia a história completa em [docs/CREATOR.md](./docs/CREATOR.md).
-
----
-
-## Licença
-
-MIT — use, modifique e distribua livremente. Veja [LICENSE](./LICENSE).
