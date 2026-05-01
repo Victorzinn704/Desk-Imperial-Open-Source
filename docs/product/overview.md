@@ -72,7 +72,7 @@ O Desk Imperial oferece o que esses comerciantes precisam, sem mensalidade.
 - Módulos de domínio separados para auth, operação, produtos, pedidos, finanças, notificações e realtime
 - Padrões de segurança: CSRF, cookies HttpOnly, rate limit, isolamento de workspace
 - Testes, CI e load tests nos fluxos críticos
-- CI completo com 6 estágios
+- CI full-stack com gates de qualidade, testes, segurança, build e Sonar pronto para ativação
 - Código aberto com licença MIT
 
 ---

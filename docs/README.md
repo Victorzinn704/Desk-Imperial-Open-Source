@@ -46,21 +46,23 @@ Estes grupos continuam uteis, mas nao sao a fonte primaria do estado atual:
 - `../README.md`
 - `./INDEX.md`
 - `architecture/overview.md`
+- `architecture/realtime.md`
 - `architecture/authentication-flow.md`
 - `architecture/local-development.md`
+- `product/overview.md`
+- `product/requirements.md`
 - `testing/testing-guide.md`
 - `operations/telegram-bot-rollout.md`
 - `operations/sentry-rollout-2026-05-01.md`
+- `operations/realtime-performance-runbook.md`
 - `security/security-testing-workflow-2026-04-30.md`
 - `waves/realtime-*`
 
 ### 4.2 Parcialmente atual
 
-- `architecture/realtime.md`
 - `security/security-baseline.md`
 - `operations/kpi-realtime-mapping.md`
-- `product/overview.md`
-- `product/requirements.md`
+- `DOC-PLAN.md`
 
 ### 4.3 Historico, nao canonico
 
