@@ -213,7 +213,7 @@ export function resolveBrazilianPackagedBeverageMatch(
       ' ',
     ),
   )
-  if (!haystack || !looksLikePackagedBeverage(haystack)) {
+  if (!(haystack && looksLikePackagedBeverage(haystack))) {
     return null
   }
 
@@ -462,5 +462,12 @@ function normalizeText(value: string) {
 }
 
 function escapeXml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  // Escape all XML special characters including single quotes for full attribute safety.
+  // See: https://www.w3.org/TR/xml/#syntax (AttValue production)
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
