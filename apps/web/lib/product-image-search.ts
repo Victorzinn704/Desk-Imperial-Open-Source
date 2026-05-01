@@ -109,8 +109,5 @@ function containsAny(haystack: string, keywords: readonly string[]) {
 }
 
 function normalize(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }

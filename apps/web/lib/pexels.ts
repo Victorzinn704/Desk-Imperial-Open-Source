@@ -120,10 +120,7 @@ function scorePexelsPhoto(query: string, photo: PexelsPhoto) {
 }
 
 function normalize(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }
 
 async function safeReadText(response: Response) {

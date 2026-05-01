@@ -158,10 +158,7 @@ function isComboLike(product: ProductVisualInput) {
 }
 
 function normalizeVisualText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }
 
 function sanitizeVisualUrl(value: string | null | undefined) {

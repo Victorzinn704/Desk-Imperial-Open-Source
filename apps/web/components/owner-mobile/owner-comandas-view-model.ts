@@ -49,7 +49,7 @@ export function resolveResponsibleLabel(comanda: Comanda) {
 export function slugify(value: string) {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
 }

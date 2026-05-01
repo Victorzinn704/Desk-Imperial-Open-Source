@@ -79,5 +79,17 @@
       "**/prisma/migrations/**",
       "**/*.d.ts"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["apps/api/src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    }
+  ]
 }
