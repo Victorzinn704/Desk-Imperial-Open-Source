@@ -13,7 +13,7 @@ import {
   type UpdateUserNotificationPreferencesDto,
   type UpdateWorkspaceNotificationPreferencesDto,
 } from './notification-preferences.schemas'
-import type { NotificationPreferencesService } from './notification-preferences.service'
+import { NotificationPreferencesService } from './notification-preferences.service'
 
 const workspaceNotificationPreferencesBodyPipe = new ZodValidationPipe(updateWorkspaceNotificationPreferencesBodySchema)
 const userNotificationPreferencesBodyPipe = new ZodValidationPipe(updateUserNotificationPreferencesBodySchema)

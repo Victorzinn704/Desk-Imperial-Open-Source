@@ -30,7 +30,7 @@ import type { OperationsRealtimePublishInstrumentation } from '../operations-rea
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
-import type { FinanceService } from '../finance/finance.service'
+import { FinanceService } from '../finance/finance.service'
 import { assertMonetaryAdjustmentsWithinSubtotal, calculateDraftItemsSubtotal } from './comanda-validation.utils'
 import {
   deriveComandaStatusFromKitchen,

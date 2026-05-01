@@ -1,7 +1,7 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import type { Request } from 'express'
 import type { AuthContext } from '../auth/auth.types'
-import type { AdminPinService } from './admin-pin.service'
+import { AdminPinService } from './admin-pin.service'
 
 @Injectable()
 export class AdminPinGuard implements CanActivate {

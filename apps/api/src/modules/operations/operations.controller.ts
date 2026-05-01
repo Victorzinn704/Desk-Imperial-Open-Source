@@ -7,7 +7,7 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import type { OperationsService } from './operations.service'
+import { OperationsService } from './operations.service'
 import {
   addComandaItemBodySchema,
   addComandaItemsBatchBodySchema,

@@ -5,7 +5,7 @@ import { extractRequestContext } from '../../common/utils/request-context.util'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { SessionGuard } from '../auth/guards/session.guard'
-import type { IntelligencePlatformService } from './intelligence-platform.service'
+import { IntelligencePlatformService } from './intelligence-platform.service'
 
 @ApiTags('intelligence-platform')
 @UseGuards(SessionGuard)

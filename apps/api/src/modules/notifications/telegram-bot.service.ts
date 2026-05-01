@@ -5,18 +5,18 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { CacheService } from '../../common/services/cache.service'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
-import type { EmployeesService } from '../employees/employees.service'
-import type { FinanceService } from '../finance/finance.service'
-import type { AuditLogService } from '../monitoring/audit-log.service'
-import type { OperationsService } from '../operations/operations.service'
-import type { NotificationsService } from './notifications.service'
-import type { TelegramAuthService } from './telegram-auth.service'
-import type {
+import { EmployeesService } from '../employees/employees.service'
+import { FinanceService } from '../finance/finance.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
+import { OperationsService } from '../operations/operations.service'
+import { NotificationsService } from './notifications.service'
+import { TelegramAuthService } from './telegram-auth.service'
+import {
   TelegramAdapter,
-  TelegramInlineKeyboardMarkup,
-  TelegramMessageOptions,
+  type TelegramInlineKeyboardMarkup,
+  type TelegramMessageOptions,
 } from './infra/telegram/telegram.adapter'
-import type { TelegramLinkService } from './telegram-link.service'
+import { TelegramLinkService } from './telegram-link.service'
 
 type SupportedCommand =
   | 'start'

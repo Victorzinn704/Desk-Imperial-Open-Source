@@ -28,7 +28,7 @@ import type { DemoLoginDto } from './dto/demo-login.dto'
 import { type LoginDto, LoginModeDto } from './dto/login.dto'
 import { DemoAccessService } from './demo-access.service'
 import { AuthSessionService } from './auth-session.service'
-import type { AuthEmailVerificationService } from './auth-email-verification.service'
+import { AuthEmailVerificationService } from './auth-email-verification.service'
 import { resolveLoginActor, resolveDemoOwnerActor, resolveDemoStaffActor } from './auth-login-actor.utils'
 import { sendLoginAlertIfEnabled, sendFailedLoginAlertIfEnabled } from './auth-login-alerts.utils'
 import {

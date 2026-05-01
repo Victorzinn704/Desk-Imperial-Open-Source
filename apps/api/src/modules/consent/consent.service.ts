@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { CacheService } from '../../common/services/cache.service'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import type { PrismaService } from '../../database/prisma.service'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { PrismaService } from '../../database/prisma.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 import { COOKIE_DOCUMENT_KEYS, DEFAULT_CONSENT_DOCUMENTS } from './consent.constants'
 import type { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
 

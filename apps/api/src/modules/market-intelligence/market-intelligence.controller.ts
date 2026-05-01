@@ -6,8 +6,8 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import type { GetMarketInsightBodyDto } from './dto/get-market-insight.body.dto'
-import type { MarketIntelligenceService } from './market-intelligence.service'
+import { GetMarketInsightBodyDto } from './dto/get-market-insight.body.dto'
+import { MarketIntelligenceService } from './market-intelligence.service'
 
 @ApiTags('market-intelligence')
 @Controller('market-intelligence')

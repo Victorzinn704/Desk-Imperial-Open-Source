@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
 import { CacheService } from '../../common/services/cache.service'
 

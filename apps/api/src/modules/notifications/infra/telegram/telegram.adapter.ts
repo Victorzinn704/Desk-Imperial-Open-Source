@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { Api } from 'grammy'
 import type { NotificationChannelCapability } from '../../notifications.types'
 import { normalizeOrigin } from '../../../../common/utils/origin.util'

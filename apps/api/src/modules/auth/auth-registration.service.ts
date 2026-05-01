@@ -11,7 +11,7 @@ import { AuditLogService } from '../monitoring/audit-log.service'
 import type { RegisterDto } from './dto/register.dto'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { parseBoolean, publicUserSelect, sanitizePostalCode, withTimeout } from './auth-shared.util'
-import type { AuthEmailVerificationService } from './auth-email-verification.service'
+import { AuthEmailVerificationService } from './auth-email-verification.service'
 
 @Injectable()
 export class AuthRegistrationService {

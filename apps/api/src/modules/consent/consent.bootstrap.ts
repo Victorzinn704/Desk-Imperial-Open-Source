@@ -1,6 +1,6 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
-import type { ConsentService } from './consent.service'
+import { ConfigService } from '@nestjs/config'
+import { ConsentService } from './consent.service'
 
 @Injectable()
 export class ConsentBootstrap implements OnModuleInit {

@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, Optional } from '@nestjs/common'
 import { trace } from '@opentelemetry/api'
 import { type $Enums, CashSessionStatus, KitchenItemStatus, type Prisma } from '@prisma/client'
 import { CacheService } from '../../common/services/cache.service'
-import type { PrismaService } from '../../database/prisma.service'
+import { PrismaService } from '../../database/prisma.service'
 import {
   buildEmployeeOperationsRecord,
   type OperationsLiveResponse,
@@ -29,7 +29,7 @@ import {
   recordOperationsLiveTelemetry,
   recordOperationsRecalculateCashSessionTelemetry,
 } from '../../common/observability/business-telemetry.util'
-import type { CurrencyService } from '../currency/currency.service'
+import { CurrencyService } from '../currency/currency.service'
 import type { AuthContext } from '../auth/auth.types'
 import { recalculateCashSession, recalculateComanda, syncCashClosure } from './operations-cash.utils'
 import {

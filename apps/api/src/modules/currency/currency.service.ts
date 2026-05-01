@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import type { CurrencyCode } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import {

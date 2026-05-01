@@ -7,14 +7,14 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
 import { CacheService } from '../../common/services/cache.service'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
-import type { AuditLogService } from '../monitoring/audit-log.service'
+import { AuditLogService } from '../monitoring/audit-log.service'
 import type { SmartProductDraftDto } from './dto/smart-product-draft.dto'
 
 type SmartProductDraftSuggestion = {

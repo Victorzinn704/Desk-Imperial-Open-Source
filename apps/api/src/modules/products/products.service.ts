@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { AuditSeverity, type CurrencyCode, Prisma } from '@prisma/client'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
@@ -16,7 +16,7 @@ import type { UpdateProductDto } from './dto/update-product.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
-import type { FinanceService } from '../finance/finance.service'
+import { FinanceService } from '../finance/finance.service'
 import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayload } from './products-combo.utils'
 import { validateImportRow, upsertImportRow } from './products-import.utils'
 import { buildProductUpdateData } from './products-update.utils'
