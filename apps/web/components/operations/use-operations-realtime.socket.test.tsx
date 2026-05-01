@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query'
+﻿import { QueryClient } from '@tanstack/react-query'
 import { act, render, waitFor } from '@testing-library/react'
 import { useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,6 +26,88 @@ const { mockSocket, ioMock } = vi.hoisted(() => {
     mockSocket: socket,
     ioMock: vi.fn(() => socket),
   }
+  // ── Fase 2 — Idempotência de patch (C4) ───────────────────────────────────
+  it('(C4) envelope com mesmo id e descartado na segunda entrega sem aplicar patch duplo', () => {
+    render(<RealtimeHarness />)
+
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    const envelope = {
+      id: 'evt-dedup-c4',
+      event: 'comanda.updated',
+      actorUserId: 'user-other',
+      createdAt: '2026-05-01T14:00:00.000Z',
+      payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
+    }
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterFirst = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterSecond = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    expect(processedAfterSecond).toBe(processedAfterFirst)
+
+    expect(getOperationsPerformanceEvents()).toContainEqual({
+      type: 'realtime-envelope-dropped',
+      at: expect.any(Number),
+      event: 'comanda.updated',
+      entityKey: 'comanda.updated:c-dup-c4',
+      reason: 'duplicate-id',
+    })
+  })
+
+  // ── Fase 2 — Buffer overflow (C1) ─────────────────────────────────────────
+  it('(C1) envelopes acima do limite durante reidratacao sao descartados com buffer-overflow', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    let resolveInvalidate!: () => void
+    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
+      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
+    )
+
+    render(<RealtimeHarness queryClient={queryClient} />)
+
+    const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
+      | (() => void)
+      | undefined
+    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
+      | (() => void)
+      | undefined
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    await act(async () => { disconnectHandler?.() })
+    ;(mockSocket as { connected?: boolean }).connected = true
+    act(() => { connectHandler?.() })
+
+    act(() => {
+      for (let i = 0; i < 110; i++) {
+        updatedHandler?.({
+          id: `evt-ovf-${i}`,
+          event: 'comanda.updated',
+          createdAt: '2026-05-01T15:00:00.000Z',
+          payload: { comandaId: `c-ovf-${i}`, mesaLabel: `Mesa ${i}`, status: 'OPEN', businessDate: '2026-05-01' },
+        })
+      }
+    })
+
+    const overflowDrops = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-dropped' && (e as { reason: string }).reason === 'buffer-overflow',
+    )
+    expect(overflowDrops.length).toBe(10)
+
+    await act(async () => { resolveInvalidate() })
+  })
 })
 
 vi.mock('socket.io-client', () => ({
@@ -69,6 +151,88 @@ vi.mock('@/lib/api', async () => {
     ...actual,
     fetchUserNotificationPreferences: fetchUserNotificationPreferencesMock,
   }
+  // ── Fase 2 — Idempotência de patch (C4) ───────────────────────────────────
+  it('(C4) envelope com mesmo id e descartado na segunda entrega sem aplicar patch duplo', () => {
+    render(<RealtimeHarness />)
+
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    const envelope = {
+      id: 'evt-dedup-c4',
+      event: 'comanda.updated',
+      actorUserId: 'user-other',
+      createdAt: '2026-05-01T14:00:00.000Z',
+      payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
+    }
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterFirst = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterSecond = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    expect(processedAfterSecond).toBe(processedAfterFirst)
+
+    expect(getOperationsPerformanceEvents()).toContainEqual({
+      type: 'realtime-envelope-dropped',
+      at: expect.any(Number),
+      event: 'comanda.updated',
+      entityKey: 'comanda.updated:c-dup-c4',
+      reason: 'duplicate-id',
+    })
+  })
+
+  // ── Fase 2 — Buffer overflow (C1) ─────────────────────────────────────────
+  it('(C1) envelopes acima do limite durante reidratacao sao descartados com buffer-overflow', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    let resolveInvalidate!: () => void
+    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
+      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
+    )
+
+    render(<RealtimeHarness queryClient={queryClient} />)
+
+    const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
+      | (() => void)
+      | undefined
+    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
+      | (() => void)
+      | undefined
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    await act(async () => { disconnectHandler?.() })
+    ;(mockSocket as { connected?: boolean }).connected = true
+    act(() => { connectHandler?.() })
+
+    act(() => {
+      for (let i = 0; i < 110; i++) {
+        updatedHandler?.({
+          id: `evt-ovf-${i}`,
+          event: 'comanda.updated',
+          createdAt: '2026-05-01T15:00:00.000Z',
+          payload: { comandaId: `c-ovf-${i}`, mesaLabel: `Mesa ${i}`, status: 'OPEN', businessDate: '2026-05-01' },
+        })
+      }
+    })
+
+    const overflowDrops = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-dropped' && (e as { reason: string }).reason === 'buffer-overflow',
+    )
+    expect(overflowDrops.length).toBe(10)
+
+    await act(async () => { resolveInvalidate() })
+  })
 })
 
 function RealtimeHarness({
@@ -153,7 +317,7 @@ describe('useOperationsRealtime socket wiring', () => {
     )
   })
 
-  it('não refaz summary quando o patch local já sincroniza o resumo a partir do live snapshot', () => {
+  it('nÃ£o refaz summary quando o patch local jÃ¡ sincroniza o resumo a partir do live snapshot', () => {
     vi.useFakeTimers()
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -168,7 +332,7 @@ describe('useOperationsRealtime socket wiring', () => {
         unassigned: {
           employeeId: null,
           employeeCode: null,
-          displayName: 'Operação',
+          displayName: 'OperaÃ§Ã£o',
           active: true,
           cashSession: null,
           comandas: [],
@@ -191,7 +355,7 @@ describe('useOperationsRealtime socket wiring', () => {
           {
             id: 'i-99',
             productId: 'p-99',
-            productName: 'Café',
+            productName: 'CafÃ©',
             quantity: 1,
             unitPrice: 10,
             totalAmount: 10,
@@ -249,7 +413,7 @@ describe('useOperationsRealtime socket wiring', () => {
     })
   })
 
-  it('não duplica toast para a própria mutação do usuário atual', () => {
+  it('nÃ£o duplica toast para a prÃ³pria mutaÃ§Ã£o do usuÃ¡rio atual', () => {
     render(<RealtimeHarness currentUserId="user-1" />)
 
     const updatedSubscription = mockSocket.on.mock.calls.find(([eventName]) => eventName === 'comanda.updated')
@@ -272,7 +436,7 @@ describe('useOperationsRealtime socket wiring', () => {
     expect(toast.success).not.toHaveBeenCalled()
   })
 
-  it('respeita a preferência do usuário e suprime toast web desabilitado', () => {
+  it('respeita a preferÃªncia do usuÃ¡rio e suprime toast web desabilitado', () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -498,7 +662,7 @@ describe('useOperationsRealtime socket wiring', () => {
     })
   })
 
-  it('marca descarte local quando há snapshot ativo mas o evento não se aplica a nenhuma slice carregada', () => {
+  it('marca descarte local quando hÃ¡ snapshot ativo mas o evento nÃ£o se aplica a nenhuma slice carregada', () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -531,5 +695,87 @@ describe('useOperationsRealtime socket wiring', () => {
       entityKey: 'mesa.upserted:m-9',
       reason: 'no-applicable-snapshot',
     })
+  })
+  // ── Fase 2 — Idempotência de patch (C4) ───────────────────────────────────
+  it('(C4) envelope com mesmo id e descartado na segunda entrega sem aplicar patch duplo', () => {
+    render(<RealtimeHarness />)
+
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    const envelope = {
+      id: 'evt-dedup-c4',
+      event: 'comanda.updated',
+      actorUserId: 'user-other',
+      createdAt: '2026-05-01T14:00:00.000Z',
+      payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
+    }
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterFirst = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    act(() => { updatedHandler?.(envelope) })
+    const processedAfterSecond = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-processed',
+    ).length
+
+    expect(processedAfterSecond).toBe(processedAfterFirst)
+
+    expect(getOperationsPerformanceEvents()).toContainEqual({
+      type: 'realtime-envelope-dropped',
+      at: expect.any(Number),
+      event: 'comanda.updated',
+      entityKey: 'comanda.updated:c-dup-c4',
+      reason: 'duplicate-id',
+    })
+  })
+
+  // ── Fase 2 — Buffer overflow (C1) ─────────────────────────────────────────
+  it('(C1) envelopes acima do limite durante reidratacao sao descartados com buffer-overflow', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    let resolveInvalidate!: () => void
+    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
+      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
+    )
+
+    render(<RealtimeHarness queryClient={queryClient} />)
+
+    const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
+      | (() => void)
+      | undefined
+    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
+      | (() => void)
+      | undefined
+    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
+      | ((env: unknown) => void)
+      | undefined
+
+    await act(async () => { disconnectHandler?.() })
+    ;(mockSocket as { connected?: boolean }).connected = true
+    act(() => { connectHandler?.() })
+
+    act(() => {
+      for (let i = 0; i < 110; i++) {
+        updatedHandler?.({
+          id: `evt-ovf-${i}`,
+          event: 'comanda.updated',
+          createdAt: '2026-05-01T15:00:00.000Z',
+          payload: { comandaId: `c-ovf-${i}`, mesaLabel: `Mesa ${i}`, status: 'OPEN', businessDate: '2026-05-01' },
+        })
+      }
+    })
+
+    const overflowDrops = getOperationsPerformanceEvents().filter(
+      (e) => e.type === 'realtime-envelope-dropped' && (e as { reason: string }).reason === 'buffer-overflow',
+    )
+    expect(overflowDrops.length).toBe(10)
+
+    await act(async () => { resolveInvalidate() })
   })
 })

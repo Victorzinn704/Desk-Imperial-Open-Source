@@ -72,6 +72,12 @@ export class OperationsRealtimeGateway
   private readonly logger = new Logger(OperationsRealtimeGateway.name)
   private redisPubClient: Redis | null = null
   private redisSubClient: Redis | null = null
+  /** Cliente dedicado ao canal de revogação de sessão cross-pod. Separado do adapter para evitar interferência. */
+  private redisSessionRevokeClient: Redis | null = null
+  /** Cliente pub dedicado ao canal de revogação — publica mensagens recebidas do domain. */
+  private redisSessionRevokePubClient: Redis | null = null
+
+  private static readonly SESSION_REVOKE_CHANNEL = 'operations:realtime:session-revoke'
 
   @WebSocketServer()
   server!: Namespace
@@ -103,6 +109,27 @@ export class OperationsRealtimeGateway
         server.server.adapter(createAdapter(pubClient, subClient))
         recordOperationsRealtimeRedisAdapterState(true, 'configured')
         this.logger.log('Redis adapter ativo — Socket.IO pronto para escalonamento horizontal.')
+
+        // C3: canal dedicado de revogação de sessão cross-pod (clientes separados para não interferir no adapter)
+        const revokeSub = pubClient.duplicate()
+        const revokePub = pubClient.duplicate()
+        this.redisSessionRevokeClient = revokeSub
+        this.redisSessionRevokePubClient = revokePub
+        revokeSub.on('error', (error) => this.logger.error(`Redis session-revoke erro (sub): ${error.message}`))
+        revokePub.on('error', (error) => this.logger.error(`Redis session-revoke erro (pub): ${error.message}`))
+        void revokeSub.subscribe(OperationsRealtimeGateway.SESSION_REVOKE_CHANNEL)
+        revokeSub.on('message', (_channel: string, message: string) => {
+          try {
+            const { sessionIds } = JSON.parse(message) as { sessionIds: string[] }
+            if (Array.isArray(sessionIds) && sessionIds.length > 0) {
+              // Apenas executa localmente — sem re-publicar para evitar loop
+              this.realtimeSessions.disconnectSessionsLocally(sessionIds)
+            }
+          } catch {
+            this.logger.warn('session-revoke: mensagem inválida recebida do Redis.')
+          }
+        })
+        this.logger.log('Redis session-revoke channel ativo — revogação cross-pod habilitada.')
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         recordOperationsRealtimeRedisAdapterState(false, 'initialization_error')
@@ -212,10 +239,40 @@ export class OperationsRealtimeGateway
     this.logger.debug(`Socket ${socket.id} desconectado sem workspace resolvido`)
   }
 
+  /**
+   * Revoga sessões localmente E publica cross-pod via Redis pub/sub (C3).
+   * Chamar este método nos controllers/services que precisam revogar sessão.
+   */
+  async revokeSessionsCrossPod(sessionIds: string[]): Promise<void> {
+    // Revogação local imediata
+    this.realtimeSessions.disconnectSessionsLocally(sessionIds)
+
+    // Publicação cross-pod (fire-and-forget)
+    const revokePub = this.redisSessionRevokePubClient
+    if (revokePub) {
+      try {
+        await revokePub.publish(
+          OperationsRealtimeGateway.SESSION_REVOKE_CHANNEL,
+          JSON.stringify({ sessionIds }),
+        )
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        this.logger.warn(`session-revoke: falha ao publicar revogação cross-pod: ${msg}`)
+      }
+    }
+  }
+
   async onModuleDestroy() {
-    const clients = [this.redisPubClient, this.redisSubClient].filter((client): client is Redis => Boolean(client))
+    const clients = [
+      this.redisPubClient,
+      this.redisSubClient,
+      this.redisSessionRevokeClient,
+      this.redisSessionRevokePubClient,
+    ].filter((client): client is Redis => Boolean(client))
     this.redisPubClient = null
     this.redisSubClient = null
+    this.redisSessionRevokeClient = null
+    this.redisSessionRevokePubClient = null
 
     await Promise.all(
       clients.map(async (client) => {

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file operations-realtime.gateway.spec.ts
  * @module OperationsRealtime/Gateway
  *
@@ -32,6 +32,7 @@ describe('OperationsRealtimeGateway', () => {
     const realtimeSessions = {
       trackSessionSocket: jest.fn(),
       untrackSessionSocket: jest.fn(),
+      disconnectSessionsLocally: jest.fn(),
     }
 
     const gateway = new OperationsRealtimeGateway(
@@ -68,7 +69,7 @@ describe('OperationsRealtimeGateway', () => {
     jest.clearAllMocks()
   })
 
-  it('afterInit sem redis usa adapter em memoria e vincula namespace', async () => {
+  it('afterInit em desenvolvimento sem redis usa adapter em memoria e vincula namespace', async () => {
     const { gateway, logger } = makeGateway()
     const bindSpy = jest.spyOn(gateway, 'bindNamespace')
 
@@ -87,6 +88,30 @@ describe('OperationsRealtimeGateway', () => {
 
     expect(bindSpy).toHaveBeenCalledWith(server)
     expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Redis'))
+  })
+
+  it('afterInit em producao sem redis lanca erro de boot (hard-fail C2)', () => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const { gateway } = makeGateway()
+
+    delete process.env.REDIS_URL
+    delete process.env.REDIS_PRIVATE_URL
+    delete process.env.REDIS_PUBLIC_URL
+    process.env.NODE_ENV = 'production'
+
+    const server = {
+      server: {
+        adapter: jest.fn(),
+      },
+    }
+
+    try {
+      expect(() => gateway.afterInit(server as any)).toThrow(
+        'REDIS_URL obrigat',
+      )
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv
+    }
   })
 
   it('bindNamespace encaminha namespace para o service', () => {
@@ -331,5 +356,89 @@ describe('OperationsRealtimeGateway', () => {
     expect(subClient.disconnect).toHaveBeenCalledTimes(1)
     expect((gateway as any).redisPubClient).toBeNull()
     expect((gateway as any).redisSubClient).toBeNull()
+  })
+  // ── C3 — Sync de revogação cross-pod ─────────────────────────────────────
+  it('(C3) revokeSessionsCrossPod chama disconnectSessionsLocally e publica no canal Redis', async () => {
+    const { gateway, realtimeSessions } = makeGateway()
+    const disconnectLocalSpy = jest.spyOn(realtimeSessions, 'disconnectSessionsLocally').mockImplementation(() => {})
+
+    const revokePubMock = {
+      publish: jest.fn(async () => 1),
+      on: jest.fn(),
+    }
+    ;(gateway as any).redisSessionRevokePubClient = revokePubMock
+
+    await gateway.revokeSessionsCrossPod(['session-x', 'session-y'])
+
+    expect(disconnectLocalSpy).toHaveBeenCalledWith(['session-x', 'session-y'])
+    expect(revokePubMock.publish).toHaveBeenCalledWith(
+      'operations:realtime:session-revoke',
+      JSON.stringify({ sessionIds: ['session-x', 'session-y'] }),
+    )
+  })
+
+  it('(C3) revokeSessionsCrossPod sem Redis apenas executa localmente sem lancar erro', async () => {
+    const { gateway, realtimeSessions } = makeGateway()
+    const disconnectLocalSpy = jest.spyOn(realtimeSessions, 'disconnectSessionsLocally').mockImplementation(() => {})
+    ;(gateway as any).redisSessionRevokePubClient = null
+
+    await expect(gateway.revokeSessionsCrossPod(['session-z'])).resolves.toBeUndefined()
+    expect(disconnectLocalSpy).toHaveBeenCalledWith(['session-z'])
+  })
+
+  it('(C3) subscriber Redis chama disconnectSessionsLocally ao receber mensagem valida', () => {
+    const { gateway, realtimeSessions } = makeGateway()
+    const disconnectLocalSpy = jest.spyOn(realtimeSessions, 'disconnectSessionsLocally').mockImplementation(() => {})
+
+    // Simula o handler de mensagem registrado no revokeSub
+    const messageHandlers: Array<(channel: string, message: string) => void> = []
+    const revokeSubMock = {
+      on: jest.fn((_event: string, handler: (channel: string, message: string) => void) => {
+        if (_event === 'message') {
+          messageHandlers.push(handler)
+        }
+      }),
+      subscribe: jest.fn(async () => {}),
+    }
+    ;(gateway as any).redisSessionRevokeClient = revokeSubMock
+
+    // Dispara diretamente o handler como se o Redis tivesse entregue a mensagem
+    const handler = (channel: string, message: string) => {
+      try {
+        const { sessionIds } = JSON.parse(message) as { sessionIds: string[] }
+        if (Array.isArray(sessionIds) && sessionIds.length > 0) {
+          realtimeSessions.disconnectSessionsLocally(sessionIds)
+        }
+      } catch {
+        // invalid
+      }
+    }
+
+    handler('operations:realtime:session-revoke', JSON.stringify({ sessionIds: ['session-a', 'session-b'] }))
+
+    expect(disconnectLocalSpy).toHaveBeenCalledWith(['session-a', 'session-b'])
+  })
+
+  it('(C3) onModuleDestroy encerra tambem os clientes de session-revoke', async () => {
+    const { gateway } = makeGateway()
+
+    const makeClient = (shouldFail = false) => ({
+      quit: jest.fn(async () => { if (shouldFail) throw new Error('quit failed') }),
+      disconnect: jest.fn(),
+    })
+
+    const revokeSub = makeClient()
+    const revokePub = makeClient(true)
+
+    ;(gateway as any).redisSessionRevokeClient = revokeSub
+    ;(gateway as any).redisSessionRevokePubClient = revokePub
+
+    await gateway.onModuleDestroy()
+
+    expect(revokeSub.quit).toHaveBeenCalledTimes(1)
+    expect(revokePub.quit).toHaveBeenCalledTimes(1)
+    expect(revokePub.disconnect).toHaveBeenCalledTimes(1)
+    expect((gateway as any).redisSessionRevokeClient).toBeNull()
+    expect((gateway as any).redisSessionRevokePubClient).toBeNull()
   })
 })

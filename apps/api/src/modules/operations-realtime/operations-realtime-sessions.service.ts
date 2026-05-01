@@ -29,6 +29,14 @@ export class OperationsRealtimeSessionsService {
   }
 
   disconnectSessions(sessionIds: string[]) {
+    this.disconnectSessionsLocally(sessionIds)
+  }
+
+  /**
+   * Variante local-only de disconnectSessions — chamada pelo subscriber Redis (C3) para evitar loop.
+   * Não deve ser chamada diretamente por código de domínio; use revokeSessionsCrossPod no gateway.
+   */
+  disconnectSessionsLocally(sessionIds: string[]) {
     for (const sessionId of new Set(sessionIds)) {
       const sessionSockets = this.disconnectorsBySessionId.get(sessionId)
       if (!sessionSockets) {
