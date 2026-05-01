@@ -425,7 +425,11 @@ describe('OperationsRealtimeGateway', () => {
     const { gateway } = makeGateway()
 
     const makeClient = (shouldFail = false) => ({
-      quit: jest.fn(async () => { if (shouldFail) throw new Error('quit failed') }),
+      quit: jest.fn(async () => {
+        if (shouldFail) {
+          throw new Error('quit failed')
+        }
+      }),
       disconnect: jest.fn(),
     })
 

@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: read
   contents: read
   security-events: write
 
@@ -62,6 +63,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           generate-prisma: 'true'
+          install-native-bindings: 'true'
       - name: Lint API
         run: npm --workspace @partner/api run lint
       - name: TypeCheck API

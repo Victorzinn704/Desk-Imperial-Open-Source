@@ -197,7 +197,9 @@ export class OperationsRealtimeGateway
 
   /** Invalida a entrada de cache de um token após disconnect (evita servir contexto obsoleto). */
   private invalidateTokenAuthCache(rawToken: string | null | undefined) {
-    if (!rawToken) return
+    if (!rawToken) {
+      return
+    }
     const normalizedToken = rawToken.replace(/^Bearer\s+/i, '').trim()
     const cached = this.tokenAuthCache.get(normalizedToken)
     if (cached) {

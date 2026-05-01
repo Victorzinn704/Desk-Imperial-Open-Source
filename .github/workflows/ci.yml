@@ -85,7 +85,7 @@ jobs:
           generate-prisma: 'true'
 
       - name: Run API tests
-        run: npm --workspace @partner/api run test -- --coverage --ci --forceExit
+        run: npm --workspace @partner/api run test:coverage:sonar
 
       - name: Upload API coverage
         if: always()
