@@ -5,10 +5,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { timingSafeEqual } from 'node:crypto'
 import type { SessionRequest } from '../auth.types'
-import type { AuthService } from '../auth.service'
+import { AuthService } from '../auth.service'
 import { getAllowedOrigins, isAllowedOrigin } from '../../../common/utils/origin.util'
 
 @Injectable()

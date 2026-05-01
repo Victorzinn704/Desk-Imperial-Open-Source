@@ -19,10 +19,10 @@
     "smoke:local:bootstrap": "node ./scripts/local-bootstrap-smoke.mjs",
     "smoke:operations:performance": "node ./scripts/operations-performance-smoke.mjs",
     "smoke:operations:status-notifications": "node ./scripts/operations-status-notification-smoke.mjs",
-    "dev": "turbo run dev --parallel",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ./scripts/run-with-sanitized-node-options.mjs turbo run test",
+    "dev": "node ./node_modules/turbo/bin/turbo run dev --parallel",
+    "build": "node ./node_modules/turbo/bin/turbo run build",
+    "lint": "node ./node_modules/turbo/bin/turbo run lint",
+    "test": "cross-env NODE_OPTIONS=--localstorage-file=./.cache/node-localstorage node ./scripts/run-with-sanitized-node-options.mjs node ./node_modules/turbo/bin/turbo run test",
     "test:critical": "npm --workspace @partner/api run test:critical && npm --workspace @partner/web run test:critical",
     "test:coverage": "npm --workspace @partner/api run test -- --coverage && npm --workspace @partner/web run test:coverage && npm run coverage:normalize",
     "test:e2e:critical": "npm --workspace @partner/web run test:e2e:critical",
@@ -42,10 +42,10 @@
     "verify:owner-pwa": "npm --workspace @partner/web run test -- components/owner-mobile/owner-mobile-shell.test.tsx components/owner-mobile/owner-today-view.test.tsx components/owner-mobile/owner-comandas-view.test.tsx components/owner-mobile/owner-finance-view.test.tsx components/owner-mobile/owner-account-view.test.tsx components/owner-mobile/owner-mobile-pdv-tab.test.tsx components/owner-mobile/owner-quick-register-view.test.tsx components/staff-mobile/mobile-order-builder.test.tsx",
     "verify:current-phase": "npm run quality:scope && npm run quality:contracts && npm run test:critical && npm run verify:owner-pwa && npm run typecheck && npm --workspace @partner/api run build:verify && npm --workspace @partner/web run build",
     "verify:current-phase:strict": "npm run quality:preflight && npm run verify:current-phase",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "node ./node_modules/turbo/bin/turbo run typecheck",
     "openapi:generate": "npm --workspace @partner/api run openapi:generate",
     "openapi:check": "npm run openapi:generate && git diff --exit-code -- packages/api-contract/openapi.json",
-    "lint-staged": "lint-staged",
+    "lint-staged": "node ./node_modules/lint-staged/bin/lint-staged.js",
     "seed": "npm --workspace @partner/api run prisma:seed",
     "gulp:images": "gulp images",
     "gulp:clean": "gulp clean",
@@ -57,7 +57,7 @@
     "format:check": "node ./node_modules/prettier/bin/prettier.cjs --check .",
     "lint:biome": "npm exec --package=@biomejs/biome@1.9.4 -- biome lint .",
     "lint:repo": "npm exec -- eslint --no-config-lookup --config eslint.config.mjs apps/api/src apps/api/test apps/web/app apps/web/components apps/web/lib apps/web/hooks apps/web/providers packages",
-    "lint:types": "turbo run typecheck",
+    "lint:types": "node ./node_modules/turbo/bin/turbo run typecheck",
     "lint:deps": "npm exec -- depcruise apps/api/src packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.api.json && npm exec -- depcruise apps/web/app apps/web/components apps/web/lib apps/web/hooks apps/web/providers packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.web.json",
     "lint:cycles": "npm exec -- madge --circular --extensions ts,tsx apps/api/src apps/web",
     "lint:dead": "npm exec -- knip",
@@ -82,15 +82,15 @@
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
-      "prettier --write",
-      "eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix --max-warnings 0"
+      "node ./node_modules/prettier/bin/prettier.cjs --write",
+      "npm exec -- eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix --max-warnings 0"
     ],
     "apps/api/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
-      "prettier --write",
-      "eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix --max-warnings 0"
+      "node ./node_modules/prettier/bin/prettier.cjs --write",
+      "npm exec -- eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix --max-warnings 0"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "node ./node_modules/prettier/bin/prettier.cjs --write"
     ]
   },
   "devDependencies": {

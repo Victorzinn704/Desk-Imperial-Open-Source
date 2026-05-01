@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import type { CacheService } from './common/services/cache.service'
-import type { PrismaService } from './database/prisma.service'
+import { CacheService } from './common/services/cache.service'
+import { PrismaService } from './database/prisma.service'
 
 @Injectable()
 export class AppService {

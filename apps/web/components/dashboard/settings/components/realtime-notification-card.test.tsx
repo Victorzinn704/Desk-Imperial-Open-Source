@@ -9,7 +9,7 @@ import {
 } from '@/lib/api'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual('@/lib/api')
   return {
     ...actual,
     fetchUserNotificationPreferences: vi.fn(),

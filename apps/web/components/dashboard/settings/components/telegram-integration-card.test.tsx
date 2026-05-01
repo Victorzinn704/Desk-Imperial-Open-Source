@@ -1,20 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TelegramIntegrationCard } from './telegram-integration-card'
 import {
   createTelegramLinkToken,
   fetchTelegramIntegrationStatus,
   fetchWorkspaceNotificationPreferences,
-  unlinkTelegramIntegration,
-  updateWorkspaceNotificationPreferences,
   type NotificationPreferencesResponse,
   type TelegramIntegrationStatusResponse,
   type TelegramLinkTokenResponse,
+  unlinkTelegramIntegration,
+  updateWorkspaceNotificationPreferences,
 } from '@/lib/api'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual('@/lib/api')
   return {
     ...actual,
     fetchTelegramIntegrationStatus: vi.fn(),
