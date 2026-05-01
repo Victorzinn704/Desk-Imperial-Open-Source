@@ -1,7 +1,6 @@
 import type { OperationsKitchenItemRecord } from '@contracts/contracts'
 import type { AuthUser } from '@/lib/api'
 import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
-import type { Comanda } from '@/components/pdv/pdv-types'
 import type { formatCurrency } from '@/lib/currency'
 
 export type PdvVariant = 'grid' | 'comandas' | 'kds' | 'cobranca'
@@ -45,5 +44,3 @@ export type PdvComandaGroupOption = {
   label: string
   count: number
 }
-
-export type PdvResolvedComanda = Comanda | null

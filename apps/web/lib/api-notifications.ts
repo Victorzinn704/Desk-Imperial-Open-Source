@@ -87,18 +87,10 @@ export async function unlinkTelegramIntegration() {
   })
 }
 
-export async function fetchNotificationPreferences() {
-  return fetchWorkspaceNotificationPreferences()
-}
-
 export async function fetchWorkspaceNotificationPreferences() {
   return apiFetch<NotificationPreferencesResponse>('/notifications/preferences/workspace', {
     method: 'GET',
   })
-}
-
-export async function updateNotificationPreferences(preferences: WorkspaceNotificationPreference[]) {
-  return updateWorkspaceNotificationPreferences(preferences)
 }
 
 export async function updateWorkspaceNotificationPreferences(preferences: WorkspaceNotificationPreference[]) {

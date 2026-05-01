@@ -8,7 +8,6 @@ import {
   Package,
   ShoppingCart,
   TrendingUp,
-  Users,
 } from 'lucide-react'
 import { formatBRL as formatCurrency } from '@/lib/currency'
 
@@ -301,8 +300,4 @@ export function getTodayLiveCaption(mesasOcupadas: number) {
 
 export function getPerformerLeadLabel(index: number) {
   return index === 0 ? Crown : null
-}
-
-export function getRadarIcon() {
-  return Users
 }

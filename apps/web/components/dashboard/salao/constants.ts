@@ -1,4 +1,3 @@
-import type { MesaRecord } from '@contracts/contracts'
 import { formatBRL } from '@/lib/currency'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
@@ -69,18 +68,4 @@ export function getAutoPosition(index: number): { x: number; y: number } {
 
 export function clamp(value: number, min: number, maxValue: number): number {
   return Math.max(min, Math.min(maxValue, value))
-}
-
-export function getMesaPositionStatic(
-  mesa: MesaRecord,
-  autoIndex: number,
-  dragOverrides: Record<string, { x: number; y: number }>,
-): { x: number; y: number } {
-  if (dragOverrides[mesa.id]) {
-    return dragOverrides[mesa.id]
-  }
-  if (mesa.positionX !== null && mesa.positionY !== null) {
-    return { x: mesa.positionX, y: mesa.positionY }
-  }
-  return getAutoPosition(autoIndex)
 }

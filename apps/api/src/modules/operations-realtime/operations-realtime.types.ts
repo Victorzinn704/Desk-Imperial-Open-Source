@@ -100,22 +100,6 @@ export type OperationsRealtimePublishInstrumentation = {
   mutationStartedAtMs: number
 }
 
-export type OperationsRealtimeComandaDelta = {
-  comandaId: string
-  mesaLabel: string
-  openedAt?: string
-  closedAt?: string
-  employeeId: string | null
-  status: OperationsRealtimeComandaStatus
-  subtotal: number
-  discountAmount: number
-  serviceFeeAmount: number
-  totalAmount: number
-  totalItems: number
-  businessDate: string
-  paymentMethod?: string | null
-}
-
 export type OperationsRealtimeKitchenItemDelta = {
   itemId: string
   comandaId: string

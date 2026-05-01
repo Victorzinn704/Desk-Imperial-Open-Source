@@ -132,11 +132,9 @@ export {
 export {
   fetchTelegramIntegrationStatus,
   createTelegramLinkToken,
-  fetchNotificationPreferences,
   fetchWorkspaceNotificationPreferences,
   fetchUserNotificationPreferences,
   unlinkTelegramIntegration,
-  updateNotificationPreferences,
   updateWorkspaceNotificationPreferences,
   updateUserNotificationPreferences,
   USER_NOTIFICATION_PREFERENCES_QUERY_KEY,

@@ -6,7 +6,7 @@ import { haptic } from '@/components/shared/haptic'
 import { calcSubtotal, type ComandaItem } from '@/components/pdv/pdv-types'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { ApiError, openCashSession } from '@/lib/api'
-import type { CreateComandaPaymentPayload, OpenComandaPayload } from '@/lib/api-operations'
+import type { OpenComandaPayload } from '@/lib/api-operations'
 import { OPERATIONS_LIVE_QUERY_PREFIX, scheduleOperationsWorkspaceReconcile } from '@/lib/operations'
 import { isCashSessionRequiredError } from '@/lib/operations/operations-error-utils'
 import type { useStaffMobileShellMutations } from './use-staff-mobile-shell-mutations'
@@ -131,5 +131,3 @@ export async function closeComandaWithDiscount(args: {
   const serviceFeeAmount = Math.round(subtotal * args.surchargePercent) / 100
   await args.mutateAsync({ comandaId: args.comandaId, discountAmount, serviceFeeAmount })
 }
-
-export type CreatePaymentMethod = CreateComandaPaymentPayload['method']

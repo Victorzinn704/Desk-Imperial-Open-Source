@@ -6,7 +6,7 @@ npm run lint:secrets:staged
 # 2. Biome lint rápido nos arquivos staged
 STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | head -50)
 if [ -n "$STAGED_TS" ]; then
-  npm exec -- biome lint --no-errors-on-unmatched $STAGED_TS
+  npm exec --package=@biomejs/biome@1.9.4 -- biome lint --no-errors-on-unmatched $STAGED_TS
 fi
 
 # 3. Prettier + ESLint via lint-staged (comportamento existente)

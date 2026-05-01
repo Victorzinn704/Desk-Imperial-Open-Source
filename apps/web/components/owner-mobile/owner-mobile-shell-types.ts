@@ -1,4 +1,4 @@
-import type { Comanda, ComandaItem, Mesa } from '@/components/pdv/pdv-types'
+import type { Comanda, Mesa } from '@/components/pdv/pdv-types'
 
 export type OwnerMobileTab = 'today' | 'comandas' | 'pdv' | 'caixa' | 'financeiro' | 'conta'
 export type OwnerPdvView = 'mesas' | 'cozinha'
@@ -18,5 +18,3 @@ export type OwnerCurrentUser = {
 export type OwnerMobileShellProps = Readonly<{
   currentUser: OwnerCurrentUser | null
 }>
-
-export type OwnerSubmitComandaItems = (items: ComandaItem[]) => Promise<void> | void

@@ -10,7 +10,6 @@ export {
   defaultCreateForm,
   getAutoPosition,
   clamp,
-  getMesaPositionStatic,
   type View,
   type CreateForm,
   type EditForm,
@@ -21,14 +20,7 @@ export {
 export { useMesaDrag } from './hooks/use-mesa-drag'
 
 // Theme
-export {
-  getComandaStatusMeta,
-  getMesaStatusMeta,
-  getOccupancyTone,
-  getSalaoToneStyle,
-  getUrgencyTone,
-  type SalaoTone,
-} from './theme'
+export { getComandaStatusMeta, getMesaStatusMeta, getSalaoToneStyle, getUrgencyTone, type SalaoTone } from './theme'
 
 // Components
 export { Field } from './components/field'

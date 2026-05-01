@@ -45,17 +45,6 @@ export function buildKitchenSummary(data: OperationsKitchenResponse | undefined)
   }
 }
 
-export function CozinhaKpiStrip({ summary }: Readonly<{ summary: KitchenSummary }>) {
-  return (
-    <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-      <KitchenMiniStat label="na fila" value={String(summary.queued)} />
-      <KitchenMiniStat label="em preparo" value={String(summary.inPreparation)} />
-      <KitchenMiniStat label="prontos" value={String(summary.ready)} />
-      <KitchenMiniStat label="mesas ativas" value={String(summary.activeMesas)} />
-    </div>
-  )
-}
-
 export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSummary }>) {
   return (
     <LabPanel
@@ -225,21 +214,6 @@ function KitchenMetaRow({
     <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3 last:border-b-0 last:pb-0">
       <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
       <LabStatusPill tone={tone}>{value}</LabStatusPill>
-    </div>
-  )
-}
-
-function KitchenMiniStat({
-  label,
-  value,
-}: Readonly<{
-  label: string
-  value: string
-}>) {
-  return (
-    <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4">
-      <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{value}</p>
     </div>
   )
 }

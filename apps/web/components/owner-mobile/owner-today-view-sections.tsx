@@ -217,15 +217,3 @@ export function OwnerTodayLiveMap({
     </section>
   )
 }
-
-export function OwnerTodayDashboardButton({ onOpenFullDashboard }: Pick<OwnerTodayViewProps, 'onOpenFullDashboard'>) {
-  return (
-    <button
-      className="w-full rounded-2xl border border-[rgba(0,140,255,0.3)] bg-[rgba(0,140,255,0.08)] px-4 py-3 text-sm font-semibold text-[var(--accent,#008cff)] transition-opacity active:opacity-70"
-      type="button"
-      onClick={onOpenFullDashboard}
-    >
-      Painel completo →
-    </button>
-  )
-}

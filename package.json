@@ -58,10 +58,10 @@
     "lint:biome": "npm exec --package=@biomejs/biome@1.9.4 -- biome lint .",
     "lint:repo": "npm exec -- eslint --no-config-lookup --config eslint.config.mjs apps/api/src apps/api/test apps/web/app apps/web/components apps/web/lib apps/web/hooks apps/web/providers packages",
     "lint:types": "node ./node_modules/turbo/bin/turbo run typecheck",
-    "lint:deps": "npm exec -- depcruise apps/api/src packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.api.json && npm exec -- depcruise apps/web/app apps/web/components apps/web/lib apps/web/hooks apps/web/providers packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.web.json",
-    "lint:cycles": "npm exec -- madge --circular --extensions ts,tsx apps/api/src apps/web",
-    "lint:dead": "npm exec -- knip",
-    "lint:dup": "npm exec -- jscpd --config .jscpd.json",
+    "lint:deps": "node ./node_modules/dependency-cruiser/bin/dependency-cruise.mjs apps/api/src packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.api.json && node ./node_modules/dependency-cruiser/bin/dependency-cruise.mjs apps/web/app apps/web/components apps/web/lib apps/web/hooks apps/web/providers packages --config .dependency-cruiser.cjs --ts-config tsconfig.depcruise.web.json",
+    "lint:cycles": "node ./node_modules/madge/bin/cli.js --circular --extensions ts,tsx apps/api/src apps/web",
+    "lint:dead": "node ./node_modules/knip/bin/knip.js",
+    "lint:dup": "node ./node_modules/jscpd/bin/jscpd --config .jscpd.json",
     "lint:secrets": "node ./scripts/scan-repo-secrets.mjs",
     "lint:secrets:staged": "node ./scripts/run-gitleaks.mjs protect --staged --config .gitleaks.toml --redact",
     "lint:sast": "node ./scripts/run-semgrep.mjs scan --config .semgrep/desk-imperial.yml --config auto apps/api/src",
@@ -83,18 +83,17 @@
   "lint-staged": {
     "apps/web/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
       "node ./node_modules/prettier/bin/prettier.cjs --write",
-      "npm exec -- eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix --max-warnings 0"
+      "npm exec -- eslint --no-config-lookup --config apps/web/eslint.config.mjs --fix"
     ],
     "apps/api/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
       "node ./node_modules/prettier/bin/prettier.cjs --write",
-      "npm exec -- eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix --max-warnings 0"
+      "npm exec -- eslint --no-config-lookup --config apps/api/eslint.config.mjs --fix"
     ],
     "*.{json,md,yml,yaml}": [
       "node ./node_modules/prettier/bin/prettier.cjs --write"
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
     "@eslint/js": "^9.39.1",
     "cross-env": "^10.1.0",
     "del": "^8.0.1",
@@ -114,6 +113,7 @@
     "madge": "^8.0.0",
     "prettier": "^3.8.1",
     "sharp": "^0.34.5",
+    "socket.io-client": "^4.8.3",
     "turbo": "^2.5.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1"

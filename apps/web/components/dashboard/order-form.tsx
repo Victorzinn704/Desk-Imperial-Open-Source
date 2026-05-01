@@ -6,8 +6,6 @@ import { OrderBuyerSection, OrderFormIntro, OrderFormSubmitBar, OrderOperationSe
 import type { OrderFormProps } from './order-form.types'
 import { useOrderFormController } from './use-order-form-controller'
 
-export type OrderFormController = ReturnType<typeof useOrderFormController>
-
 export function OrderForm(props: Readonly<OrderFormProps>) {
   const controller = useOrderFormController(props)
   const documentLabel = controller.buyerType === 'COMPANY' ? 'CNPJ do comprador' : 'CPF do comprador'

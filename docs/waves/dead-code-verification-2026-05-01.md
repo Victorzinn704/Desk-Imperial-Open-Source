@@ -43,6 +43,56 @@ Fechar o restante do backlog de `lint:dead` sem remover legado congelado, entryp
 10. `apps/web/public/sw-lite.js` — registrado em `app/lite/layout.tsx`
 11. `apps/web/components/dashboard/employee-management-card.tsx` — usado por `EquipeEnvironment`
 
+### Segunda passada de cleanup estrutural
+
+Depois do alinhamento do `main` com o estado atual do projeto, a trilha `Boundaries + Dead Code + Duplication` do GitHub ainda falhava por dois motivos misturados:
+
+1. `knip` com cluster morto real no dashboard/design-lab/operations antigo
+2. scripts de qualidade apontando para binários que neste host resolviam de forma inconsistente
+
+#### Removidos como mortos reais nesta passada
+
+1. `apps/api/src/common/results/result.ts`
+2. `apps/api/src/modules/operations/comanda-realtime.utils.ts`
+3. `apps/api/src/modules/operations/operations-snapshot.utils.ts`
+4. `apps/web/hooks/use-activity-timeline.ts`
+5. `apps/web/hooks/use-pillars.ts`
+6. `apps/web/hooks/performance-web-vitals.ts`
+7. `apps/web/components/design-lab/desk-command-center-prototype.tsx`
+8. `apps/web/components/dashboard/dashboard-sidebar.tsx`
+9. `apps/web/components/dashboard/dashboard-topbar.tsx`
+10. `apps/web/components/dashboard/employee-ranking-card.tsx`
+11. `apps/web/components/dashboard/finance-categories-sidebar.tsx`
+12. `apps/web/components/dashboard/finance-channels-panel.tsx`
+13. `apps/web/components/dashboard/finance-chart.tsx`
+14. `apps/web/components/dashboard/pillars-executive-card.tsx`
+15. `apps/web/components/dashboard/sales-map-canvas.tsx`
+16. `apps/web/components/operations/index.ts`
+17. `apps/web/components/operations/operations-timeline.tsx`
+18. `apps/web/components/owner-mobile/index.ts`
+19. `apps/web/components/shared/spotlight-button.tsx`
+20. `apps/web/components/shared/theme-toggle.tsx`
+21. `apps/web/components/shared/tooltip.tsx`
+
+#### Ajustes de tooling para parar drift falso
+
+1. `knip.json`
+   - ruído redundante removido
+   - hints de configuração zerados
+2. `package.json`
+   - `lint:dead`, `lint:deps`, `lint:cycles` e `lint:dup` passaram a usar caminhos locais estáveis
+3. `.husky/pre-commit`
+   - `biome` alinhado ao runner explícito já usado no projeto
+
+#### Validação local desta passada
+
+1. `npm run lint:dead`
+2. `npm run lint:deps`
+3. `npm run lint:cycles`
+4. `npm run lint:dup`
+5. `npm run typecheck`
+6. `npm run format:check`
+
 ## Ajustes feitos para reduzir drift futuro
 
 1. `knip.json`

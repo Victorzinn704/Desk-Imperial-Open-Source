@@ -28,7 +28,3 @@ export function sanitizeProductBarcode(value: unknown, label = 'Codigo de barras
 
   return normalized
 }
-
-export function isValidProductBarcode(value: string) {
-  return productBarcodeLengths.has(value.length)
-}

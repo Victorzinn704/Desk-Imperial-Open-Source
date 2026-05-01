@@ -67,7 +67,3 @@ const TOOL_CATALOG: IntelligenceToolDefinition[] = [
 export function resolveIntelligenceToolsForRole(role: AuthContext['role']) {
   return TOOL_CATALOG.filter((tool) => tool.allowedRoles.includes(role))
 }
-
-export function getIntelligenceToolCatalog() {
-  return TOOL_CATALOG
-}

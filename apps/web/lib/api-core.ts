@@ -14,18 +14,6 @@ const REQUEST_ID_FORWARD_HEADER = 'X-Request-Id'
 export type JsonBody = Record<string, unknown>
 export type ApiBody = JsonBody | FormData
 
-export type CookiePreferences = {
-  necessary: boolean
-  analytics: boolean
-  marketing: boolean
-}
-
-export type EvaluationAccess = {
-  dailyLimitMinutes: number
-  remainingSeconds: number
-  sessionExpiresAt: string
-}
-
 export class ApiError extends Error {
   constructor(
     message: string,

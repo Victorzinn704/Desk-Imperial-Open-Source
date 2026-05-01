@@ -1,27 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { startWebVitalsObservers, type VitalsCallback } from './performance-web-vitals'
+import { useEffect, useState } from 'react'
 
 /**
  * Hook para monitoramento de Web Vitals em mobile
  * Coleta métricas de performance e pode enviar para analytics
  */
-
-/**
- * Hook para coletar Web Vitals
- *
- * @example
- * useWebVitals((metric) => {
- *   console.log(metric.name, metric.value, metric.rating)
- *   // Enviar para analytics
- * })
- */
-export function useWebVitals(onMetric?: VitalsCallback) {
-  useEffect(() => {
-    startWebVitalsObservers(onMetric)
-  }, [onMetric])
-}
 
 /**
  * Detecta se o dispositivo é de baixa performance (função pura, sem hooks)
@@ -102,53 +86,4 @@ export function useDeferredRender(options: UseDeferredRenderOptions = {}): boole
   }, [delayMs, disabled])
 
   return disabled || isReady
-}
-
-/**
- * Hook para debounce de callbacks com cleanup automático
- */
-export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>(callback: T, delay: number): T {
-  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current)
-      }
-    }
-  }, [])
-
-  const debouncedFn = useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current)
-      }
-      timeoutIdRef.current = setTimeout(() => {
-        callback(...args)
-      }, delay)
-    },
-    [callback, delay],
-  ) as T
-
-  return debouncedFn
-}
-
-/**
- * Hook para throttle de callbacks
- */
-export function useThrottledCallback<T extends (...args: Parameters<T>) => void>(callback: T, delay: number): T {
-  const lastCallRef = useRef(0)
-
-  const throttledFn = useCallback(
-    (...args: Parameters<T>) => {
-      const now = Date.now()
-      if (now - lastCallRef.current >= delay) {
-        lastCallRef.current = now
-        callback(...args)
-      }
-    },
-    [callback, delay],
-  ) as T
-
-  return throttledFn
 }

@@ -1,31 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 
 type TransactionClient = Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => unknown ? T : never
-
-export async function requireAuthorizedCashSession(
-  transaction: PrismaService | TransactionClient,
-  workspaceOwnerUserId: string,
-  auth: AuthContext,
-  cashSessionId: string,
-) {
-  const session = await requireOwnedCashSession(transaction, workspaceOwnerUserId, cashSessionId, {
-    includeMovements: true,
-  })
-
-  if (auth.role === 'OWNER') {
-    return session
-  }
-
-  const employee = await resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth)
-
-  if (employee?.id !== session.employeeId) {
-    throw new ForbiddenException('Seu acesso nao pode operar o caixa de outro funcionario.')
-  }
-
-  return session
-}
 
 export async function requireOwnedCashSession(
   transaction: PrismaService | TransactionClient,
@@ -60,28 +37,6 @@ export async function requireOwnedCashSession(
   }
 
   return session
-}
-
-export async function requireAuthorizedComanda(
-  transaction: PrismaService | TransactionClient,
-  workspaceOwnerUserId: string,
-  auth: AuthContext,
-  comandaId: string,
-  actorEmployee?: { id: string } | null,
-) {
-  const comanda = await requireOwnedComanda(transaction, workspaceOwnerUserId, comandaId)
-
-  if (auth.role === 'OWNER') {
-    return comanda
-  }
-
-  const employee = actorEmployee ?? (await resolveEmployeeForStaff(transaction, workspaceOwnerUserId, auth))
-
-  if (!employee) {
-    throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para operar comandas.')
-  }
-
-  return comanda
 }
 
 export async function requireOwnedComanda(

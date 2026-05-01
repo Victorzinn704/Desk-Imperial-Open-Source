@@ -7,23 +7,6 @@
 
 import dynamic from 'next/dynamic'
 
-// Loading skeletons for lazy components
-function MapSkeleton() {
-  return (
-    <div className="w-full h-full bg-[var(--surface,#0d1014)] animate-pulse rounded-xl flex items-center justify-center">
-      <span className="text-[var(--text-soft,#7a8896)] text-sm">Carregando mapa...</span>
-    </div>
-  )
-}
-
-function ChartSkeleton() {
-  return (
-    <div className="w-full h-full bg-[var(--surface,#0d1014)] animate-pulse rounded-xl flex items-center justify-center min-h-[200px]">
-      <span className="text-[var(--text-soft,#7a8896)] text-sm">Carregando gráfico...</span>
-    </div>
-  )
-}
-
 function TableSkeleton() {
   return (
     <div className="w-full bg-[var(--surface,#0d1014)] animate-pulse rounded-xl p-4">
@@ -81,4 +64,4 @@ export const LazyAnimatePresence = dynamic(() => import('framer-motion').then((m
 // UTILITY EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export { MapSkeleton, ChartSkeleton, TableSkeleton, CalendarSkeleton }
+export { TableSkeleton, CalendarSkeleton }

@@ -78,7 +78,6 @@ export type DashboardQuickAction = {
 }
 
 export const dashboardDefaultSection: DashboardProductSectionId = 'overview'
-export const dashboardDefaultTab: DashboardTabId = 'principal'
 export const dashboardDefaultSettingsSection: DashboardSettingsSectionId = 'account'
 
 const DASHBOARD_PRODUCT_SECTIONS: DashboardProductSectionId[] = [
@@ -425,15 +424,6 @@ export function getDashboardDisplaySection(sectionId: DashboardSectionId): Dashb
   }
 
   return sectionId
-}
-
-export function getDashboardDefaultTab(sectionId: DashboardSectionId | DashboardProductSectionId) {
-  const displaySection = getDashboardDisplaySection(sectionId as DashboardSectionId)
-  if (displaySection === 'settings') {
-    return null
-  }
-
-  return dashboardSectionTabs[displaySection][0].id
 }
 
 export function getDashboardDisplayTab(sectionId: DashboardSectionId, tabId?: DashboardTabId | null) {

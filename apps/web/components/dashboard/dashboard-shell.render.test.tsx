@@ -130,10 +130,6 @@ vi.mock('@/components/operations/use-operations-realtime', () => ({
   useOperationsRealtime: vi.fn(),
 }))
 
-vi.mock('@/components/dashboard/dashboard-sidebar', () => ({
-  DashboardSidebar: ({ companyName }: { companyName: string }) => <aside>Sidebar {companyName}</aside>,
-}))
-
 import { DashboardShell } from './dashboard-shell'
 
 describe('DashboardShell render path', () => {

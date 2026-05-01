@@ -105,14 +105,6 @@ export function patchOptimisticComanda(
   return snapshot
 }
 
-export function appendOptimisticComandaRecord(
-  queryClient: QueryClient,
-  queryKey: readonly unknown[],
-  input: Parameters<typeof buildOptimisticComandaRecord>[0],
-) {
-  return appendOptimisticComanda(queryClient, queryKey, buildOptimisticComandaRecord(input))
-}
-
 export function appendOptimisticComandaItem(
   queryClient: QueryClient,
   queryKey: readonly unknown[],
@@ -185,16 +177,6 @@ function resolveOptimisticPaymentStatus(remainingAmount: number, paidAmount: num
   }
 
   return 'UNPAID'
-}
-
-export async function patchOptimisticComandaMutation(
-  queryClient: QueryClient,
-  queryKey: readonly unknown[],
-  comandaId: string,
-  patcher: (comanda: ComandaRecord) => ComandaRecord,
-) {
-  await queryClient.cancelQueries({ queryKey })
-  return patchOptimisticComanda(queryClient, queryKey, comandaId, patcher)
 }
 
 export function rollbackOperationsSnapshot(

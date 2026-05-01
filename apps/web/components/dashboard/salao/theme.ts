@@ -75,15 +75,3 @@ export function getUrgencyTone(urgency: 0 | 1 | 2 | 3): SalaoTone {
 
   return 'neutral'
 }
-
-export function getOccupancyTone(occupancy: number): SalaoTone {
-  if (occupancy >= 75) {
-    return 'danger'
-  }
-
-  if (occupancy >= 40) {
-    return 'warning'
-  }
-
-  return 'success'
-}
