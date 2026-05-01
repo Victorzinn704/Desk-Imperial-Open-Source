@@ -21,27 +21,32 @@ Migrações são momentos de alto risco técnico. Este memorando garante que nen
 ## Processo obrigatório
 
 ### 1. Justificar o valor
+
 - Por que migrar? Qual problema atual isso resolve?
 - O ganho compensa o risco e o custo de execução?
 - Existe alternativa menos disruptiva?
 
 ### 2. Mapear o risco
+
 - Quais contratos críticos podem quebrar?
 - Quais testes cobrem as áreas migradas?
 - Qual é o impacto em produção durante a transição?
 
 ### 3. Definir estratégia de migração
+
 - **Big bang:** tudo de uma vez — risco alto, recomendado apenas para sistemas pequenos ou isolados
 - **Strangler fig:** substituição gradual, mantendo o antigo funcionando enquanto o novo cresce
 - **Branch por abstração:** criar camada de abstração primeiro, depois migrar implementação
 - **Feature flag:** novo e antigo coexistem, controlados por flag — rollback instantâneo
 
 ### 4. Preservar contratos críticos
+
 - Interfaces públicas, tipos exportados e respostas de API devem ser preservados
 - Testes de contrato devem ser escritos antes da migração começar
 - Documentar o antes e o depois para rastreabilidade
 
 ### 5. Estratégia de rollback
+
 - Como reverter se a migração falhar em produção?
 - Quanto tempo leva o rollback?
 - Quem precisa ser notificado?

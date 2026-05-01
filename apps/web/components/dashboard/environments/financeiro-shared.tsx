@@ -1,6 +1,6 @@
 'use client'
 
-import { type LabStatusTone } from '@/components/design-lab/lab-primitives'
+import type { LabStatusTone } from '@/components/design-lab/lab-primitives'
 
 export function FinanceSummaryRow({
   label,

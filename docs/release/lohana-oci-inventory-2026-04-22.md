@@ -1,4 +1,5 @@
 # Lohana OCI Inventory
+
 ## 2026-04-22
 
 Inventario validado diretamente na tenancy da Lohana via OCI API e por SSH.
@@ -7,25 +8,26 @@ Inventario validado diretamente na tenancy da Lohana via OCI API e por SSH.
 
 ### Instancias ativas
 
-| Label operacional | Display name OCI | Shape | CPU / RAM | IP publico | IP privado | Estado |
-| --- | --- | --- | --- | --- | --- | --- |
-| `lohana-a1-01` | `vm-free-01` | `VM.Standard.A1.Flex` | `2 OCPU / 12 GB` | `167.126.17.2` | `10.0.0.223` | `RUNNING` |
-| `lohana-a1-02` | `vm-free-02` | `VM.Standard.A1.Flex` | `2 OCPU / 12 GB` | `134.65.240.222` | `10.0.0.176` | `RUNNING` |
-| `lohana-e2-runner-01` | `lohana-e2-micro-01` | `VM.Standard.E2.1.Micro` | `1 OCPU / 1 GB` | `134.65.19.53` | `10.0.0.132` | `RUNNING` |
+| Label operacional     | Display name OCI     | Shape                    | CPU / RAM        | IP publico       | IP privado   | Estado    |
+| --------------------- | -------------------- | ------------------------ | ---------------- | ---------------- | ------------ | --------- |
+| `lohana-a1-01`        | `vm-free-01`         | `VM.Standard.A1.Flex`    | `2 OCPU / 12 GB` | `167.126.17.2`   | `10.0.0.223` | `RUNNING` |
+| `lohana-a1-02`        | `vm-free-02`         | `VM.Standard.A1.Flex`    | `2 OCPU / 12 GB` | `134.65.240.222` | `10.0.0.176` | `RUNNING` |
+| `lohana-e2-runner-01` | `lohana-e2-micro-01` | `VM.Standard.E2.1.Micro` | `1 OCPU / 1 GB`  | `134.65.19.53`   | `10.0.0.132` | `RUNNING` |
 
 ## Storage real
 
 ### Boot volumes
 
-| Boot volume | Tamanho |
-| --- | --- |
+| Boot volume                        | Tamanho |
+| ---------------------------------- | ------- |
 | `lohana-e2-micro-01 (Boot Volume)` | `50 GB` |
-| `vm-free-01 (Boot Volume)` | `70 GB` |
-| `vm-free-02 (Boot Volume)` | `70 GB` |
+| `vm-free-01 (Boot Volume)`         | `70 GB` |
+| `vm-free-02 (Boot Volume)`         | `70 GB` |
 
 **Total atual:** `190 GB`
 
 Leitura pratica:
+
 - o limite free de storage esta praticamente fechado;
 - hoje sobraram **10 GB**, nao `60 GB`;
 - **nao cabe criar outra micro free** sem destruir volume existente ou sair do envelope free.
@@ -35,6 +37,7 @@ Leitura pratica:
 As duas A1 e a micro existente aceitaram SSH com a chave local da pasta `Oracle-Lohana`.
 
 Validacoes feitas:
+
 - conexao SSH ok;
 - SO Ubuntu 24.04;
 - A1s limpas, sem Docker e com cerca de `64 GB` livres em `/`;
@@ -64,6 +67,7 @@ Nos documentos e comandos, usar:
 - `lohana-e2-runner-01` para `lohana-e2-micro-01`
 
 Motivo:
+
 - ja existe colisao de nomes com outras VMs do projeto;
 - operar por nome generico aqui aumenta risco de cutover no host errado.
 

@@ -73,7 +73,7 @@ export function OwnerPwaInstallPrompt() {
     }
   }, [])
 
-  if (!visible || (!installEvent && !showIosHint)) {
+  if (!visible || !(installEvent || showIosHint)) {
     return null
   }
 

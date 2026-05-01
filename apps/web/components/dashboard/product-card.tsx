@@ -10,32 +10,37 @@ import { Button } from '@/components/shared/button'
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function calcMarginPct(unitPrice: number, unitCost: number): number | null {
-  if (unitPrice <= 0) {return null}
+  if (unitPrice <= 0) {
+    return null
+  }
   return ((unitPrice - unitCost) / unitPrice) * 100
 }
 
 function marginTone(pct: number) {
-  if (pct >= 50)
-    {return {
+  if (pct >= 50) {
+    return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#34f27f]',
       borderClass: 'border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)]',
       accentColor: '#34f27f',
-    }}
-  if (pct >= 30)
-    {return {
+    }
+  }
+  if (pct >= 30) {
+    return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[var(--accent)]',
       borderClass: 'border-accent/25 bg-accent/[0.07]',
       accentColor: 'var(--accent)',
-    }}
-  if (pct >= 15)
-    {return {
+    }
+  }
+  if (pct >= 15) {
+    return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#fbbf24]',
       borderClass: 'border-[rgba(251,191,36,0.22)] bg-[rgba(251,191,36,0.07)]',
       accentColor: '#fbbf24',
-    }}
+    }
+  }
   return {
     label: `${pct.toFixed(0)}%`,
     textClass: 'text-[#f87171]',
@@ -45,8 +50,12 @@ function marginTone(pct: number) {
 }
 
 function stockTone(stock: number) {
-  if (stock === 0) {return { dot: '#f87171', label: 'Sem estoque' }}
-  if (stock < 10) {return { dot: '#fbbf24', label: 'Estoque baixo' }}
+  if (stock === 0) {
+    return { dot: '#f87171', label: 'Sem estoque' }
+  }
+  if (stock < 10) {
+    return { dot: '#fbbf24', label: 'Estoque baixo' }
+  }
   return { dot: '#34f27f', label: 'Em estoque' }
 }
 

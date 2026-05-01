@@ -88,7 +88,7 @@ export function upsertKitchenItem(
     existing,
     payload,
   })
-  if (!nextItem && !nextComanda) {
+  if (!(nextItem || nextComanda)) {
     return null
   }
 
@@ -160,7 +160,7 @@ export function patchMesa(snapshot: OperationsLiveResponse, payload: Record<stri
   const mesaId = asNullableString(payload.mesaId)
   const mesaLabel = asNullableString(payload.label) ?? asNullableString(payload.mesaLabel)
   const status = mapMesaStatus(asNullableString(payload.status))
-  if (!status || (!mesaId && !mesaLabel)) {
+  if (!status || !(mesaId || mesaLabel)) {
     return null
   }
 

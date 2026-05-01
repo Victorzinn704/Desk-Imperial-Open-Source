@@ -6,7 +6,12 @@ import { LabPanel } from '@/components/design-lab/lab-primitives'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { ApiError } from '@/lib/api'
 import { type FinanceiroSurface, type FinanceiroView, resolveFinanceView } from './financeiro-model'
-import { FinanceiroAuthState, FinanceiroHeader, FinanceiroLabSummary, type FinanceSnapshot } from './financeiro-summary-panels'
+import {
+  FinanceiroAuthState,
+  FinanceiroHeader,
+  FinanceiroLabSummary,
+  type FinanceSnapshot,
+} from './financeiro-summary-panels'
 import { FinanceiroTabBody } from './financeiro-tab-panels'
 
 export function FinanceiroEnvironment({
@@ -22,7 +27,8 @@ export function FinanceiroEnvironment({
   }
 
   const finance = financeQuery.data
-  const displayCurrency = (finance?.displayCurrency ?? user.preferredCurrency) as FinanceSummaryResponse['displayCurrency']
+  const displayCurrency = (finance?.displayCurrency ??
+    user.preferredCurrency) as FinanceSummaryResponse['displayCurrency']
   const products = productsQuery.data?.items ?? []
   const snapshot = buildFinanceSnapshot(finance, displayCurrency, view)
   const financeError = financeQuery.error instanceof ApiError ? financeQuery.error.message : null

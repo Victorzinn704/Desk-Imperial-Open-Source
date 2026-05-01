@@ -25,6 +25,7 @@ Garantir deteccao rapida de erros e falhas silenciosas sem degradar desempenho d
   - `global-error.tsx` capturando falha de renderização no App Router
 
 Leitura correta:
+
 - **Sentry é o caminho principal para erro e tracing distribuído**
 - **Faro continua útil**, mas não substitui o pipeline principal de captura de exceção
 

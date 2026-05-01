@@ -73,7 +73,6 @@ export function toneLabel(tone: 'info' | 'success' | 'warning' | 'danger' | 'neu
       return 'atencao'
     case 'neutral':
       return 'base'
-    case 'info':
     default:
       return 'foco'
   }

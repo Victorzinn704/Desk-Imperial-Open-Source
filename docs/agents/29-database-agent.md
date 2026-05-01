@@ -12,6 +12,7 @@ O banco de dados é o ativo mais crítico e mais difícil de reverter do sistema
 ## Contexto do projeto
 
 O `test1` utiliza:
+
 - **PostgreSQL** como banco relacional principal
 - **Prisma ORM** para modelagem, migrations e acesso a dados
 - **NestJS** como camada de aplicação consumidora
@@ -48,6 +49,7 @@ Todo trabalho deste agente deve ser coerente com essa stack. Perspectivas mais a
 ## Domínios técnicos — aplicados ao projeto
 
 ### Modelagem com Prisma
+
 - Definição de models, relações (1:1, 1:N, N:M) e tipos corretos
 - Uso de `@unique`, `@@index`, `@default`, `@relation` com intenção
 - Campos opcionais vs obrigatórios refletindo regras reais de negócio
@@ -55,6 +57,7 @@ Todo trabalho deste agente deve ser coerente com essa stack. Perspectivas mais a
 - Enums para estados com conjunto finito e conhecido
 
 ### Migrations com Prisma
+
 - `prisma migrate dev` — desenvolvimento, gera migration e aplica
 - `prisma migrate deploy` — produção, aplica migrations pendentes sem gerar nova
 - Nunca editar arquivo de migration gerado — criar nova migration para correção
@@ -62,6 +65,7 @@ Todo trabalho deste agente deve ser coerente com essa stack. Perspectivas mais a
 - Verificar `prisma migrate status` antes de qualquer deploy
 
 ### Performance no PostgreSQL
+
 - Índices em colunas usadas em `WHERE`, `ORDER BY`, `JOIN` frequentes
 - Índice composto quando filtro combina múltiplas colunas
 - Evitar `SELECT *` em queries que retornam para o cliente
@@ -70,6 +74,7 @@ Todo trabalho deste agente deve ser coerente com essa stack. Perspectivas mais a
 - Evitar N+1: usar `include` com critério ou `select` específico no Prisma
 
 ### Integridade e segurança de dados
+
 - Foreign keys com `onDelete` e `onUpdate` definidos explicitamente
 - Soft delete (`deletedAt`) para dados que precisam de histórico ou auditoria
 - Campos sensíveis (senha, token, PII) nunca retornados em query padrão de listagem
@@ -77,6 +82,7 @@ Todo trabalho deste agente deve ser coerente com essa stack. Perspectivas mais a
 - Backup antes de qualquer migration destrutiva em produção
 
 ### Observabilidade de banco
+
 - Log de queries lentas configurado no PostgreSQL (Railway permite configuração)
 - Monitoramento de tamanho de tabela e índice ao longo do tempo
 - Pool de conexões configurado adequadamente (Prisma connection pool)
@@ -92,6 +98,7 @@ Para mudanças que podem impactar produção:
 4. **Remover por último:** só remover coluna antiga após confirmar que não é mais usada
 
 Exemplo de sequência segura para renomear coluna:
+
 ```
 Migration 1: adicionar nova coluna (nullable)
 Deploy 1: código usa nova coluna, mas ainda lê antiga
@@ -125,19 +132,20 @@ Redis e PostgreSQL têm responsabilidades distintas — confundi-las gera custo 
 
 ### Regra de divisão de responsabilidade
 
-| O que vai no **PostgreSQL (Neon)** | O que vai no **Redis** |
-|-----------------------------------|------------------------|
-| Dados de negócio permanentes | Dados temporários com TTL |
-| Histórico e auditoria | Cache de leitura frequente |
-| Relações e integridade referencial | Rate limiting e throttle |
-| Dados que precisam de query complexa | Sessões e tokens de curta duração |
-| Fonte de verdade | Resultado cacheado da fonte de verdade |
+| O que vai no **PostgreSQL (Neon)**   | O que vai no **Redis**                 |
+| ------------------------------------ | -------------------------------------- |
+| Dados de negócio permanentes         | Dados temporários com TTL              |
+| Histórico e auditoria                | Cache de leitura frequente             |
+| Relações e integridade referencial   | Rate limiting e throttle               |
+| Dados que precisam de query complexa | Sessões e tokens de curta duração      |
+| Fonte de verdade                     | Resultado cacheado da fonte de verdade |
 
 ### Oportunidades identificadas no projeto
 
 #### 1. Rate limiting de autenticação — hoje no PostgreSQL, deveria estar no Redis
 
 O `AuthRateLimitService` usa `prisma.authRateLimit` (tabela no Neon) para:
+
 - Controlar tentativas de login, reset de senha, verificação de email
 - Queries de `findUnique`, `upsert`, `deleteMany` a cada tentativa de autenticação
 

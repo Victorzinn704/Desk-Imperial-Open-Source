@@ -46,11 +46,7 @@ export const KpiCard = memo(function KpiCard({ label, value, tone, isHighlight, 
         {hint ? <p className="text-xs leading-5 text-[var(--text-soft)]">{hint}</p> : null}
       </div>
       <div className="flex items-center justify-between gap-2">
-        {percentage !== null && (
-          <p className="text-xs font-medium text-[var(--text-soft)]">
-            {percentage}% do total
-          </p>
-        )}
+        {percentage !== null && <p className="text-xs font-medium text-[var(--text-soft)]">{percentage}% do total</p>}
         {isHighlight ? <p className="text-xs font-medium text-[var(--text-soft)]">leitura principal</p> : null}
       </div>
     </div>

@@ -320,7 +320,7 @@ function patchMesaCollection(
     const matchesMesaId = Boolean(comanda.mesaId) && mesa.id === comanda.mesaId
     const matchesLabel = normalizeMesaKey(mesa.label) === normalizeMesaKey(comanda.tableLabel)
 
-    if (!matchesMesaId && !matchesLabel && mesa.comandaId !== comanda.id) {
+    if (!(matchesMesaId || matchesLabel) && mesa.comandaId !== comanda.id) {
       return mesa
     }
 

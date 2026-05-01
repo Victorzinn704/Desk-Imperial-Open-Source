@@ -26,24 +26,26 @@ export function buildPayrollRows(
   finance: FinanceSummaryResponse | undefined,
   savedOverrides: Record<string, { salarioBase?: number; percentualVendas?: number }>,
 ): PayrollRow[] {
-  return employees.filter((employee) => employee.active).map((emp) => {
-    const config = getConfig(emp, savedOverrides)
-    const salarioBaseReais = config.salarioBase / 100
-    const topEntry = finance?.topEmployees.find(
-      (employee) => employee.employeeId === emp.id || employee.employeeCode === emp.employeeCode,
-    )
-    const vendasDoMes = topEntry?.revenue ?? 0
-    const comissao = (vendasDoMes * config.percentualVendas) / 100
+  return employees
+    .filter((employee) => employee.active)
+    .map((emp) => {
+      const config = getConfig(emp, savedOverrides)
+      const salarioBaseReais = config.salarioBase / 100
+      const topEntry = finance?.topEmployees.find(
+        (employee) => employee.employeeId === emp.id || employee.employeeCode === emp.employeeCode,
+      )
+      const vendasDoMes = topEntry?.revenue ?? 0
+      const comissao = (vendasDoMes * config.percentualVendas) / 100
 
-    return {
-      emp,
-      config,
-      salarioBaseReais,
-      vendasDoMes,
-      comissao,
-      totalAPagar: salarioBaseReais + comissao,
-    }
-  })
+      return {
+        emp,
+        config,
+        salarioBaseReais,
+        vendasDoMes,
+        comissao,
+        totalAPagar: salarioBaseReais + comissao,
+      }
+    })
 }
 
 export function buildPayrollTotals(rows: PayrollRow[], paidIds: Set<string>) {
@@ -66,7 +68,12 @@ export function buildPayrollTotals(rows: PayrollRow[], paidIds: Set<string>) {
   }
 }
 
-export function downloadPayrollCsv(rows: PayrollRow[], paidIds: Set<string>, selectedMonth: number, selectedYear: number) {
+export function downloadPayrollCsv(
+  rows: PayrollRow[],
+  paidIds: Set<string>,
+  selectedMonth: number,
+  selectedYear: number,
+) {
   const header = 'Nome,Codigo,Salario Base (R$),Vendas (R$),Comissao (R$),Total (R$),Status'
   const csvRows = rows.map((row) =>
     [

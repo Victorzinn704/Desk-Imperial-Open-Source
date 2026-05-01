@@ -54,17 +54,17 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 
 ## Arquitetura
 
-| Documento                                                                    | O que cobre                                               |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [architecture/overview.md](./architecture/overview.md)                       | Visão geral da arquitetura e decisões técnicas            |
-| [architecture/system-map.md](./architecture/system-map.md)                   | Mapa atual do monorepo com diagramas PlantUML             |
-| [architecture/modules.md](./architecture/modules.md)                         | Responsabilidade dos módulos de domínio ativos            |
-| [architecture/database.md](./architecture/database.md)                       | Schema do banco documentado por entidade e relacionamento |
-| [architecture/realtime.md](./architecture/realtime.md)                       | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
-| [architecture/authentication-flow.md](./architecture/authentication-flow.md) | Fluxo completo de autenticação, sessão e CSRF             |
-| [architecture/local-development.md](./architecture/local-development.md)     | Guia de setup do ambiente de desenvolvimento local        |
-| [architecture/coding-standards.md](./architecture/coding-standards.md)       | Padrões de código do projeto                              |
-| [architecture/multi-surface-platform-strategy.md](./architecture/multi-surface-platform-strategy.md) | Estratégia oficial para web, PWA, Kotlin e React Native |
+| Documento                                                                                            | O que cobre                                               |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [architecture/overview.md](./architecture/overview.md)                                               | Visão geral da arquitetura e decisões técnicas            |
+| [architecture/system-map.md](./architecture/system-map.md)                                           | Mapa atual do monorepo com diagramas PlantUML             |
+| [architecture/modules.md](./architecture/modules.md)                                                 | Responsabilidade dos módulos de domínio ativos            |
+| [architecture/database.md](./architecture/database.md)                                               | Schema do banco documentado por entidade e relacionamento |
+| [architecture/realtime.md](./architecture/realtime.md)                                               | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
+| [architecture/authentication-flow.md](./architecture/authentication-flow.md)                         | Fluxo completo de autenticação, sessão e CSRF             |
+| [architecture/local-development.md](./architecture/local-development.md)                             | Guia de setup do ambiente de desenvolvimento local        |
+| [architecture/coding-standards.md](./architecture/coding-standards.md)                               | Padrões de código do projeto                              |
+| [architecture/multi-surface-platform-strategy.md](./architecture/multi-surface-platform-strategy.md) | Estratégia oficial para web, PWA, Kotlin e React Native   |
 
 ---
 
@@ -83,39 +83,39 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 
 ## Operações
 
-| Documento                                                                          | O que cobre                          |
-| ---------------------------------------------------------------------------------- | ------------------------------------ |
-| [operations/flows.md](./operations/flows.md)                                       | Fluxos operacionais do sistema       |
-| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)         | Mapeamento de KPIs em tempo real     |
-| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
-| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md) | Runbook de rollout do Sentry em API e web |
-| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md) | Runbook da malha realtime e sua instrumentação |
-| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback |
-| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md) | Runbook do bot Telegram oficial |
+| Documento                                                                                            | O que cobre                                    |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [operations/flows.md](./operations/flows.md)                                                         | Fluxos operacionais do sistema                 |
+| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)                           | Mapeamento de KPIs em tempo real               |
+| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md)                   | Rollout inicial de OpenTelemetry OSS           |
+| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)                 | Runbook de rollout do Sentry em API e web      |
+| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)           | Runbook da malha realtime e sua instrumentação |
+| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback  |
+| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)                           | Runbook do bot Telegram oficial                |
 
 ---
 
 ## Testes
 
-| Documento                                                                            | O que cobre                                   |
-| ------------------------------------------------------------------------------------ | --------------------------------------------- |
-| [testing/testing-guide.md](./testing/testing-guide.md)                               | Guia completo de testes do projeto            |
-| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md) | Snapshot de cobertura atual por area e global |
-| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md) | Relatorio detalhado da sessao de upgrade para metas 90/85 |
-| [testing/load-testing.md](./testing/load-testing.md)                                 | Estratégia e comandos de testes de carga      |
-| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)       | Auditoria completa da cobertura de testes     |
-| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint |
+| Documento                                                                                                    | O que cobre                                               |
+| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [testing/testing-guide.md](./testing/testing-guide.md)                                                       | Guia completo de testes do projeto                        |
+| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md)                         | Snapshot de cobertura atual por area e global             |
+| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md)           | Relatorio detalhado da sessao de upgrade para metas 90/85 |
+| [testing/load-testing.md](./testing/load-testing.md)                                                         | Estratégia e comandos de testes de carga                  |
+| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)                               | Auditoria completa da cobertura de testes                 |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint         |
 
 ---
 
 ## Waves ativas
 
-| Documento | O que cobre |
-| --------- | ----------- |
-| [waves/realtime-wave-0-inventory-2026-05-01.md](./waves/realtime-wave-0-inventory-2026-05-01.md) | Inventário real da malha realtime antes das mudanças |
-| [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md) | Plano executável de recuperação do realtime |
-| [waves/realtime-validation-checklist-2026-05-01.md](./waves/realtime-validation-checklist-2026-05-01.md) | Checklist de validação por wave |
-| [waves/dead-code-verification-2026-05-01.md](./waves/dead-code-verification-2026-05-01.md) | Verificação do backlog real de dead code |
+| Documento                                                                                                | O que cobre                                          |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [waves/realtime-wave-0-inventory-2026-05-01.md](./waves/realtime-wave-0-inventory-2026-05-01.md)         | Inventário real da malha realtime antes das mudanças |
+| [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md)               | Plano executável de recuperação do realtime          |
+| [waves/realtime-validation-checklist-2026-05-01.md](./waves/realtime-validation-checklist-2026-05-01.md) | Checklist de validação por wave                      |
+| [waves/dead-code-verification-2026-05-01.md](./waves/dead-code-verification-2026-05-01.md)               | Verificação do backlog real de dead code             |
 
 ---
 
@@ -123,19 +123,19 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 
 Material importante para contexto, mas não é a fonte primária do estado atual.
 
-| Documento                                                                                        | O que cobre                             |
-| ------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                   | Gaps e riscos identificados pré-release |
-| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)               | Critérios de release                    |
-| [release/multi-surface-delivery-workflow.md](./release/multi-surface-delivery-workflow.md)       | Workflow oficial para entrega entre web, PWA e apps        |
-| [release/web-pwa-closure-workflow-2026-04-21.md](./release/web-pwa-closure-workflow-2026-04-21.md) | Workflow executável da fase atual para fechar PWA, web, APIs, backend local e banco |
-| [release/route-closure-matrix-2026-04-21.md](./release/route-closure-matrix-2026-04-21.md)     | Matriz oficial de rotas canônicas, aliases, congeladas e superfícies removidas |
-| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)     | Parecer técnico final                   |
-| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md) | Plano de lapidação para release         |
-| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints        |
-| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json) | Resumo bruto do primeiro scan local     |
-| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json) | Export completo das issues do scan      |
-| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json) | Export completo dos security hotspots   |
+| Documento                                                                                                    | O que cobre                                                                         |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                               | Gaps e riscos identificados pré-release                                             |
+| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)                           | Critérios de release                                                                |
+| [release/multi-surface-delivery-workflow.md](./release/multi-surface-delivery-workflow.md)                   | Workflow oficial para entrega entre web, PWA e apps                                 |
+| [release/web-pwa-closure-workflow-2026-04-21.md](./release/web-pwa-closure-workflow-2026-04-21.md)           | Workflow executável da fase atual para fechar PWA, web, APIs, backend local e banco |
+| [release/route-closure-matrix-2026-04-21.md](./release/route-closure-matrix-2026-04-21.md)                   | Matriz oficial de rotas canônicas, aliases, congeladas e superfícies removidas      |
+| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)                 | Parecer técnico final                                                               |
+| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md)             | Plano de lapidação para release                                                     |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints                                                    |
+| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json)               | Resumo bruto do primeiro scan local                                                 |
+| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json)           | Export completo das issues do scan                                                  |
+| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json)       | Export completo dos security hotspots                                               |
 
 ---
 

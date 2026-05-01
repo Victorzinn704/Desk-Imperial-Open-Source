@@ -16,23 +16,27 @@
 ## Checklist
 
 ### Qualidade
+
 - [ ] `npm run lint` — zero erros
 - [ ] `npm run typecheck` — zero erros
 - [ ] `npm run test` — todos passando
 - [ ] `npm run build` — build limpo
 
 ### Segurança
+
 - [ ] Nenhum secret ou credencial foi adicionado ao código
 - [ ] Inputs de usuário são sanitizados com `sanitizePlainText()` ou equivalente
 - [ ] Endpoints novos têm `SessionGuard` e `CsrfGuard` aplicados
 - [ ] Queries filtram por `companyOwnerId` (workspace isolation)
 
 ### Banco de dados (se aplicável)
+
 - [ ] Migration criada com `prisma migrate dev`
 - [ ] Migration é reversível ou tem plano de rollback documentado
 - [ ] Indexes foram revisados para os novos campos
 
 ### Cache (se aplicável)
+
 - [ ] Mutações chamam `invalidate*Cache(userId)` correspondente
 - [ ] Novos dados cacheáveis foram adicionados ao `CacheService`
 

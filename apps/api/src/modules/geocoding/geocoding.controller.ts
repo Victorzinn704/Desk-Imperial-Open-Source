@@ -1,8 +1,8 @@
 import { Body, Controller, NotFoundException, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { LookupPostalCodeDto } from './dto/lookup-postal-code.dto'
-import { GeocodingService } from './geocoding.service'
+import type { LookupPostalCodeDto } from './dto/lookup-postal-code.dto'
+import type { GeocodingService } from './geocoding.service'
 
 @ApiTags('geocoding')
 @Controller('geocoding')

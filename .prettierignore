@@ -3,6 +3,10 @@ dist/
 .next/
 coverage/
 .turbo/
+.cache/
+.gitleaks-target-tmp/
+.playwright-cli/
+.venv-aider/
 pnpm-lock.yaml
 package-lock.json
 apps/api/prisma/migrations/

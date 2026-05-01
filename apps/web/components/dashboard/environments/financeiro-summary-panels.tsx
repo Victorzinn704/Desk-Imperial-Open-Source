@@ -85,7 +85,10 @@ export function FinanceiroAuthState({ view }: Readonly<{ view: FinanceiroView }>
           <LabMiniStat label="receita" value="R$ 0,00" />
           <LabMiniStat label="custo estimado" value="R$ 0,00" />
           <LabMiniStat label="lucro" value="R$ 0,00" />
-          <LabMiniStat label={view === 'contas' ? 'ticket médio' : 'margem'} value={view === 'contas' ? 'R$ 0,00' : '0%'} />
+          <LabMiniStat
+            label={view === 'contas' ? 'ticket médio' : 'margem'}
+            value={view === 'contas' ? 'R$ 0,00' : '0%'}
+          />
         </div>
       </LabPageHeader>
 
@@ -214,7 +217,10 @@ function FinanceChannelList({
   return (
     <div className="space-y-1">
       {channels.map((channel) => (
-        <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0" key={channel.channel}>
+        <div
+          className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0"
+          key={channel.channel}
+        >
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--lab-fg)]">{channel.channel}</p>
             <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{channel.orders} pedidos no período</p>
@@ -248,9 +254,7 @@ function FinanceStripStat({
   return (
     <div className="bg-[var(--lab-surface)] px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
-      <p className={`mt-2 text-[var(--lab-fg)] ${LAB_NUMERIC_COMPACT_CLASS}`}>
-        {value}
-      </p>
+      <p className={`mt-2 text-[var(--lab-fg)] ${LAB_NUMERIC_COMPACT_CLASS}`}>{value}</p>
     </div>
   )
 }
@@ -299,7 +303,9 @@ function FinanceSignalRow({
   return (
     <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-4 last:border-b-0 last:pb-0">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
-      <LabStatusPill size="md" tone={tone}>{value}</LabStatusPill>
+      <LabStatusPill size="md" tone={tone}>
+        {value}
+      </LabStatusPill>
     </div>
   )
 }
@@ -316,9 +322,7 @@ function FinanceHeaderMetric({
   return (
     <article className="min-w-0 bg-[var(--lab-surface-raised)] px-5 py-5">
       <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{label}</p>
-      <p className={`mt-3 text-[var(--lab-fg)] ${LAB_NUMERIC_SECTION_CLASS}`}>
-        {value}
-      </p>
+      <p className={`mt-3 text-[var(--lab-fg)] ${LAB_NUMERIC_SECTION_CLASS}`}>{value}</p>
       <p className="mt-3 text-xs leading-5 text-[var(--lab-fg-soft)]">{description}</p>
     </article>
   )
@@ -395,7 +399,6 @@ function buildFinanceHeaderMetrics(snapshot: FinanceSnapshot) {
           description: 'cliente com maior concentração de receita',
         },
       ]
-    case 'movimentacao':
     default:
       return [
         {
@@ -442,7 +445,6 @@ function buildFinanceHeaderFacts(snapshot: FinanceSnapshot) {
         { label: 'canal líder', value: snapshot.topChannel },
         { label: 'cliente líder', value: snapshot.topCustomer },
       ]
-    case 'movimentacao':
     default:
       return [
         { label: 'visão ativa', value: viewLabel(snapshot.view) },
@@ -466,8 +468,16 @@ function buildFinanceMetaItems(snapshot: FinanceSnapshot) {
       ]
     case 'dre':
       return [
-        { label: 'lucro líquido', value: formatCurrency(snapshot.profit, snapshot.displayCurrency), tone: snapshot.profit >= 0 ? ('success' as const) : ('danger' as const) },
-        { label: 'markup médio', value: formatPercent(snapshot.averageMarkup), tone: snapshot.averageMarkup >= 60 ? ('success' as const) : ('warning' as const) },
+        {
+          label: 'lucro líquido',
+          value: formatCurrency(snapshot.profit, snapshot.displayCurrency),
+          tone: snapshot.profit >= 0 ? ('success' as const) : ('danger' as const),
+        },
+        {
+          label: 'markup médio',
+          value: formatPercent(snapshot.averageMarkup),
+          tone: snapshot.averageMarkup >= 60 ? ('success' as const) : ('warning' as const),
+        },
         { label: 'categoria líder', value: snapshot.topCategory, tone: 'neutral' as const },
       ]
     case 'contas':
@@ -480,11 +490,14 @@ function buildFinanceMetaItems(snapshot: FinanceSnapshot) {
           tone: snapshot.cancelledOrders > 0 ? ('warning' as const) : ('success' as const),
         },
       ]
-    case 'movimentacao':
     default:
       return [
         { label: 'pedidos concluídos', value: String(snapshot.completedOrders), tone: 'neutral' as const },
-        { label: 'ticket médio', value: formatCurrency(snapshot.averageTicket, snapshot.displayCurrency), tone: 'info' as const },
+        {
+          label: 'ticket médio',
+          value: formatCurrency(snapshot.averageTicket, snapshot.displayCurrency),
+          tone: 'info' as const,
+        },
         {
           label: 'estoque em alerta',
           value: String(snapshot.lowStockItems),

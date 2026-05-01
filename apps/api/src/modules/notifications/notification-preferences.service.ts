@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import type {
   UpdateUserNotificationPreferencesDto,
   UpdateWorkspaceNotificationPreferencesDto,
@@ -25,10 +25,7 @@ function buildPreferenceKey(channel: NotificationChannel, eventType: Notificatio
   return `${channel}:${eventType}`
 }
 
-function buildUserPreferenceKey(
-  channel: UserNotificationChannel,
-  eventType: NotificationEventType,
-): UserPreferenceKey {
+function buildUserPreferenceKey(channel: UserNotificationChannel, eventType: NotificationEventType): UserPreferenceKey {
   return `${channel}:${eventType}`
 }
 

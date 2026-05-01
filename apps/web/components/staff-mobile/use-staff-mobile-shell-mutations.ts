@@ -1,5 +1,4 @@
 'use client'
- 
 
 import { type QueryClient, useMutation } from '@tanstack/react-query'
 import type { OperationsLiveResponse } from '@contracts/contracts'

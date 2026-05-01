@@ -308,124 +308,128 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
     <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
       <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
-        <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-            <KeyRound className="size-5" />
-          </span>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">PIN administrativo</p>
-            <h3 className="text-xl font-semibold text-[var(--text-primary)]">Controle fino das ações sensíveis</h3>
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-[var(--border)] pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Estado atual</p>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-                {pinActive
-                  ? 'O fluxo sensível do PDV está protegido por confirmação administrativa.'
-                  : 'Ative o PIN para endurecer desconto, exclusão e ações críticas do ambiente.'}
-              </p>
-            </div>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]',
-                pinActive
-                  ? 'border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
-                  : 'border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]',
-              )}
-            >
-              <ShieldCheck className="size-3" />
-              {pinActive ? 'Ativo' : 'Inativo'}
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
+              <KeyRound className="size-5" />
             </span>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                PIN administrativo
+              </p>
+              <h3 className="text-xl font-semibold text-[var(--text-primary)]">Controle fino das ações sensíveis</h3>
+            </div>
           </div>
 
-          {!pinActive ? (
-            <PinSetupForm
-              pinDigits={pinDigits}
-              pinSaveError={pinSaveError}
-              pinSaved={pinSaved}
-              pinSaving={pinSaving}
-              setPinDigits={setPinDigits}
-              setPinSaveError={setPinSaveError}
-              onSave={() => void handleSavePin()}
-            />
-          ) : (
-            <div className="mt-5 space-y-3">
-              {!showConfirmRemove ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-sm text-[var(--text-soft)]">
-                    O PIN está valendo para o fluxo sensível do workspace.
-                  </p>
-                  <button
-                    className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-2 text-xs font-semibold text-[#fca5a5] transition hover:bg-[rgba(239,68,68,0.14)]"
-                    type="button"
-                    onClick={() => {
-                      setShowConfirmRemove(true)
-                      setConfirmRemoveDigits(['', '', '', ''])
-                      setConfirmRemoveError('')
-                      setRemoveBlocked(false)
-                    }}
-                  >
-                    Remover PIN
-                  </button>
-                </div>
-              ) : (
-                <div className="rounded-[16px] border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.05)] p-4">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">
-                    Confirme o PIN atual para desativar
-                  </p>
-
-                  {removeBlocked ? (
-                    <div className="mt-4 rounded-[14px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-4 text-center">
-                      <ShieldAlert className="mx-auto mb-2 size-5 text-[#fca5a5]" />
-                      <p className="text-sm font-semibold text-[#fca5a5]">Tentativas bloqueadas</p>
-                      <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
-                        {formatCountdown(removeSecondsLeft)}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <fieldset>
-                        <legend className="sr-only">Confirmar PIN atual</legend>
-                        <div className="mt-4 flex gap-2">
-                          {confirmRemoveDigits.map((digit, index) => (
-                            <input
-                              aria-label={`Confirmacao do digito ${index + 1}`}
-                              className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
-                              disabled={removing}
-                              inputMode="numeric"
-                              key={index}
-                              maxLength={1}
-                              ref={removeInputRefs[index]}
-                              type="password"
-                              value={digit}
-                              onChange={(event) => void handleConfirmRemoveDigitChange(index, event.target.value)}
-                            />
-                          ))}
-                        </div>
-                      </fieldset>
-                      {confirmRemoveError ? <p className="mt-3 text-xs text-[#fca5a5]">{confirmRemoveError}</p> : null}
-                    </>
-                  )}
-
-                  <button
-                    className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-[var(--text-primary)]"
-                    type="button"
-                    onClick={() => {
-                      setShowConfirmRemove(false)
-                      setConfirmRemoveDigits(['', '', '', ''])
-                      setConfirmRemoveError('')
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              )}
+          <div className="mt-6 border-t border-[var(--border)] pt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Estado atual</p>
+                <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+                  {pinActive
+                    ? 'O fluxo sensível do PDV está protegido por confirmação administrativa.'
+                    : 'Ative o PIN para endurecer desconto, exclusão e ações críticas do ambiente.'}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]',
+                  pinActive
+                    ? 'border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
+                    : 'border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]',
+                )}
+              >
+                <ShieldCheck className="size-3" />
+                {pinActive ? 'Ativo' : 'Inativo'}
+              </span>
             </div>
-          )}
-        </div>
+
+            {!pinActive ? (
+              <PinSetupForm
+                pinDigits={pinDigits}
+                pinSaveError={pinSaveError}
+                pinSaved={pinSaved}
+                pinSaving={pinSaving}
+                setPinDigits={setPinDigits}
+                setPinSaveError={setPinSaveError}
+                onSave={() => void handleSavePin()}
+              />
+            ) : (
+              <div className="mt-5 space-y-3">
+                {!showConfirmRemove ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm text-[var(--text-soft)]">
+                      O PIN está valendo para o fluxo sensível do workspace.
+                    </p>
+                    <button
+                      className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-3 py-2 text-xs font-semibold text-[#fca5a5] transition hover:bg-[rgba(239,68,68,0.14)]"
+                      type="button"
+                      onClick={() => {
+                        setShowConfirmRemove(true)
+                        setConfirmRemoveDigits(['', '', '', ''])
+                        setConfirmRemoveError('')
+                        setRemoveBlocked(false)
+                      }}
+                    >
+                      Remover PIN
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-[16px] border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.05)] p-4">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
+                      Confirme o PIN atual para desativar
+                    </p>
+
+                    {removeBlocked ? (
+                      <div className="mt-4 rounded-[14px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-4 text-center">
+                        <ShieldAlert className="mx-auto mb-2 size-5 text-[#fca5a5]" />
+                        <p className="text-sm font-semibold text-[#fca5a5]">Tentativas bloqueadas</p>
+                        <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                          {formatCountdown(removeSecondsLeft)}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <fieldset>
+                          <legend className="sr-only">Confirmar PIN atual</legend>
+                          <div className="mt-4 flex gap-2">
+                            {confirmRemoveDigits.map((digit, index) => (
+                              <input
+                                aria-label={`Confirmacao do digito ${index + 1}`}
+                                className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
+                                disabled={removing}
+                                inputMode="numeric"
+                                key={index}
+                                maxLength={1}
+                                ref={removeInputRefs[index]}
+                                type="password"
+                                value={digit}
+                                onChange={(event) => void handleConfirmRemoveDigitChange(index, event.target.value)}
+                              />
+                            ))}
+                          </div>
+                        </fieldset>
+                        {confirmRemoveError ? (
+                          <p className="mt-3 text-xs text-[#fca5a5]">{confirmRemoveError}</p>
+                        ) : null}
+                      </>
+                    )}
+
+                    <button
+                      className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-[var(--text-primary)]"
+                      type="button"
+                      onClick={() => {
+                        setShowConfirmRemove(false)
+                        setConfirmRemoveDigits(['', '', '', ''])
+                        setConfirmRemoveError('')
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </article>
 
         <aside className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">

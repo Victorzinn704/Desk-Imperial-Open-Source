@@ -30,7 +30,7 @@ import type { OperationsRealtimePublishInstrumentation } from '../operations-rea
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
-import { FinanceService } from '../finance/finance.service'
+import type { FinanceService } from '../finance/finance.service'
 import { assertMonetaryAdjustmentsWithinSubtotal, calculateDraftItemsSubtotal } from './comanda-validation.utils'
 import {
   deriveComandaStatusFromKitchen,
@@ -146,7 +146,15 @@ export class ComandaService {
     businessDate: Date,
     instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishComandaClosed(this.operationsRealtimeService, auth, comanda, refreshedSession, closure, businessDate, instrumentation)
+    publishComandaClosed(
+      this.operationsRealtimeService,
+      auth,
+      comanda,
+      refreshedSession,
+      closure,
+      businessDate,
+      instrumentation,
+    )
   }
 
   private publishKitchenItemQueuedRealtime(
@@ -167,7 +175,15 @@ export class ComandaService {
     options?: Parameters<typeof publishKitchenItemUpdated>[5],
     instrumentation?: OperationsRealtimePublishInstrumentation,
   ) {
-    publishKitchenItemUpdated(this.operationsRealtimeService, auth, comanda, item, businessDate, options, instrumentation)
+    publishKitchenItemUpdated(
+      this.operationsRealtimeService,
+      auth,
+      comanda,
+      item,
+      businessDate,
+      options,
+      instrumentation,
+    )
   }
 
   private refreshFinanceSummary(workspaceOwnerUserId: string) {
@@ -787,13 +803,19 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
-      replaceKitchenItems: true,
-      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
-    }, {
-      mutationName: 'add-comanda-items',
-      mutationStartedAtMs,
-    })
+    this.publishComandaUpdatedRealtime(
+      auth,
+      refreshedComanda,
+      businessDate,
+      {
+        replaceKitchenItems: true,
+        kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+      },
+      {
+        mutationName: 'add-comanda-items',
+        mutationStartedAtMs,
+      },
+    )
 
     for (const item of createdItems) {
       if (item.kitchenStatus === KitchenItemStatus.QUEUED && item.kitchenQueuedAt) {
@@ -934,13 +956,19 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
-      replaceKitchenItems: true,
-      kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
-    }, {
-      mutationName: 'replace-comanda',
-      mutationStartedAtMs,
-    })
+    this.publishComandaUpdatedRealtime(
+      auth,
+      refreshedComanda,
+      businessDate,
+      {
+        replaceKitchenItems: true,
+        kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+      },
+      {
+        mutationName: 'replace-comanda',
+        mutationStartedAtMs,
+      },
+    )
 
     return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
@@ -1121,12 +1149,18 @@ export class ComandaService {
     })
 
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
-      ...(comanda.status !== dto.status ? { previousStatus: toRealtimeStatus(comanda.status) } : {}),
-    }, {
-      mutationName: 'update-comanda-status',
-      mutationStartedAtMs,
-    })
+    this.publishComandaUpdatedRealtime(
+      auth,
+      refreshedComanda,
+      businessDate,
+      {
+        ...(comanda.status !== dto.status ? { previousStatus: toRealtimeStatus(comanda.status) } : {}),
+      },
+      {
+        mutationName: 'update-comanda-status',
+        mutationStartedAtMs,
+      },
+    )
     if (closure) {
       this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     }
@@ -1258,68 +1292,68 @@ export class ComandaService {
 
     const { updatedItem, refreshedComanda, businessDate, comandaId, previousKitchenStatus, previousComandaStatus } =
       await this.prisma.$transaction(
-      async (tx) => {
-        const item = await tx.comandaItem.findUnique({
-          where: { id: itemId },
-          include: {
-            comanda: {
-              select: {
-                id: true,
-                companyOwnerId: true,
-                tableLabel: true,
-                status: true,
-                cashSessionId: true,
-                openedAt: true,
+        async (tx) => {
+          const item = await tx.comandaItem.findUnique({
+            where: { id: itemId },
+            include: {
+              comanda: {
+                select: {
+                  id: true,
+                  companyOwnerId: true,
+                  tableLabel: true,
+                  status: true,
+                  cashSessionId: true,
+                  openedAt: true,
+                },
               },
             },
-          },
-        })
+          })
 
-        if (item?.comanda.companyOwnerId !== workspaceOwnerUserId) {
-          throw new NotFoundException('Item de comanda nao encontrado.')
-        }
+          if (item?.comanda.companyOwnerId !== workspaceOwnerUserId) {
+            throw new NotFoundException('Item de comanda nao encontrado.')
+          }
 
-        if (!item.kitchenStatus) {
-          throw new BadRequestException('Este item nao esta na fila da cozinha.')
-        }
+          if (!item.kitchenStatus) {
+            throw new BadRequestException('Este item nao esta na fila da cozinha.')
+          }
 
-        const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
+          const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
 
-        const txUpdatedItem = await tx.comandaItem.update({
-          where: { id: itemId },
-          data: {
-            kitchenStatus: dto.status as KitchenItemStatus,
-            kitchenReadyAt: kitchenReadyAt ?? null,
-          },
-        })
+          const txUpdatedItem = await tx.comandaItem.update({
+            where: { id: itemId },
+            data: {
+              kitchenStatus: dto.status as KitchenItemStatus,
+              kitchenReadyAt: kitchenReadyAt ?? null,
+            },
+          })
 
-        const txRefreshedComanda = await propagateKitchenStatusToComanda(
-          tx,
-          item.comanda,
-          deriveComandaStatusFromKitchen,
-        )
+          const txRefreshedComanda = await propagateKitchenStatusToComanda(
+            tx,
+            item.comanda,
+            deriveComandaStatusFromKitchen,
+          )
 
-        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(
-          tx,
-          txRefreshedComanda ?? {
-            cashSessionId: item.comanda.cashSessionId,
-            openedAt: item.comanda.openedAt,
-          },
-        )
+          const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(
+            tx,
+            txRefreshedComanda ?? {
+              cashSessionId: item.comanda.cashSessionId,
+              openedAt: item.comanda.openedAt,
+            },
+          )
 
-        return {
-          updatedItem: txUpdatedItem,
-          refreshedComanda: txRefreshedComanda,
-          businessDate: resolvedBusinessDate,
-          comandaId: item.comanda.id,
-          previousKitchenStatus: item.kitchenStatus,
-          previousComandaStatus: item.comanda.status,
-        }
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-      },
-    )
+          return {
+            updatedItem: txUpdatedItem,
+            refreshedComanda: txRefreshedComanda,
+            businessDate: resolvedBusinessDate,
+            comandaId: item.comanda.id,
+            previousKitchenStatus: item.kitchenStatus,
+            previousComandaStatus: item.comanda.status,
+          }
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        },
+      )
 
     await this.auditLogService.record({
       actorUserId: resolveAuthActorUserId(auth),
@@ -1334,12 +1368,19 @@ export class ComandaService {
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
 
     if (refreshedComanda) {
-      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate, {
-        previousKitchenStatus: resolvePreviousKitchenStatus(previousKitchenStatus),
-      }, {
-        mutationName: 'update-kitchen-item-status',
-        mutationStartedAtMs,
-      })
+      this.publishKitchenItemUpdatedRealtime(
+        auth,
+        refreshedComanda,
+        updatedItem,
+        businessDate,
+        {
+          previousKitchenStatus: resolvePreviousKitchenStatus(previousKitchenStatus),
+        },
+        {
+          mutationName: 'update-kitchen-item-status',
+          mutationStartedAtMs,
+        },
+      )
       this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
         ...(refreshedComanda.status !== previousComandaStatus
           ? { previousStatus: toRealtimeStatus(previousComandaStatus) }

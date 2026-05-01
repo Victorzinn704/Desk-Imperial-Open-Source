@@ -52,7 +52,9 @@ export function ConnectionBanner({ status }: ConnectionBannerProps) {
     )
   }
 
-  if (!showBanner) {return null}
+  if (!showBanner) {
+    return null
+  }
 
   return (
     <div

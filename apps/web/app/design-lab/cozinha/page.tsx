@@ -12,10 +12,7 @@ import {
   LabStatusPill,
 } from '@/components/design-lab/lab-primitives'
 import { buildDesignLabCozinhaKioskHref } from '@/components/design-lab/design-lab-navigation'
-import {
-  buildKitchenSummary,
-  CozinhaSummaryPanels,
-} from '@/components/design-lab/sections/cozinha-summary-panels'
+import { buildKitchenSummary, CozinhaSummaryPanels } from '@/components/design-lab/sections/cozinha-summary-panels'
 import { useDashboardSessionQuery } from '@/components/dashboard/hooks/useDashboardQueries'
 import { KitchenOrdersView } from '@/components/staff-mobile/kitchen-orders-view'
 import { ApiError, fetchOperationsKitchen } from '@/lib/api'
@@ -61,7 +58,7 @@ export default function DesignLabCozinhaPage() {
         </LabPanel>
       ) : null}
 
-      {!sessionQuery.isLoading && !user ? <KitchenLockedState /> : null}
+      {!(sessionQuery.isLoading || user) ? <KitchenLockedState /> : null}
 
       {errorMessage ? (
         <LabPanel padding="md">
@@ -78,7 +75,10 @@ export default function DesignLabCozinhaPage() {
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div className="h-12 animate-pulse rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]" key={index} />
+                <div
+                  className="h-12 animate-pulse rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)]"
+                  key={index}
+                />
               ))}
             </div>
 
@@ -128,7 +128,10 @@ function KitchenLockedState() {
               { label: 'em preparo', value: '2', note: 'já assumidos' },
               { label: 'prontos', value: '1', note: 'saída pendente' },
             ].map((item) => (
-              <div className="rounded-[16px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4" key={item.label}>
+              <div
+                className="rounded-[16px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4"
+                key={item.label}
+              >
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{item.label}</p>
                 <p className="mt-2 text-lg font-semibold text-[var(--lab-fg)]">{item.value}</p>
                 <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{item.note}</p>
@@ -137,9 +140,24 @@ function KitchenLockedState() {
           </div>
 
           <div className="space-y-0">
-            <LabSignalRow label="fila viva" note="o login libera tickets reais por mesa e produto" tone="warning" value="bloqueada" />
-            <LabSignalRow label="próxima ação" note="a cozinha volta a mostrar avanço de status ao autenticar" tone="info" value="ao entrar" />
-            <LabSignalRow label="item do topo" note="produto, observação e tempo de espera entram na mesma leitura" tone="neutral" value="ao entrar" />
+            <LabSignalRow
+              label="fila viva"
+              note="o login libera tickets reais por mesa e produto"
+              tone="warning"
+              value="bloqueada"
+            />
+            <LabSignalRow
+              label="próxima ação"
+              note="a cozinha volta a mostrar avanço de status ao autenticar"
+              tone="info"
+              value="ao entrar"
+            />
+            <LabSignalRow
+              label="item do topo"
+              note="produto, observação e tempo de espera entram na mesma leitura"
+              tone="neutral"
+              value="ao entrar"
+            />
           </div>
 
           <div className="pt-1">
@@ -153,15 +171,26 @@ function KitchenLockedState() {
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">preview</LabStatusPill>}
-        padding="md"
-        title="O que abre no KDS"
-      >
+      <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title="O que abre no KDS">
         <div className="space-y-0">
-          <LabSignalRow label="mesa do topo" note="define qual ticket pede atenção primeiro" tone="neutral" value="sim" />
-          <LabSignalRow label="tempo de fila" note="mostra pressão do turno com leitura rápida" tone="info" value="sim" />
-          <LabSignalRow label="avanço de status" note="na fila, preparo e pronto no mesmo fluxo" tone="success" value="sim" />
+          <LabSignalRow
+            label="mesa do topo"
+            note="define qual ticket pede atenção primeiro"
+            tone="neutral"
+            value="sim"
+          />
+          <LabSignalRow
+            label="tempo de fila"
+            note="mostra pressão do turno com leitura rápida"
+            tone="info"
+            value="sim"
+          />
+          <LabSignalRow
+            label="avanço de status"
+            note="na fila, preparo e pronto no mesmo fluxo"
+            tone="success"
+            value="sim"
+          />
           <LabSignalRow label="saída da cozinha" note="entrega limpa o ticket do quadro" tone="neutral" value="sim" />
         </div>
       </LabPanel>
@@ -195,22 +224,38 @@ function KitchenIdleState() {
 
           <div className="space-y-0 rounded-[18px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
             <LabSignalRow label="status" note="nenhum pedido aguardando execução agora" tone="success" value="livre" />
-            <LabSignalRow label="próxima ação" note="manter monitoramento até o próximo ticket" tone="neutral" value="aguardar entrada" />
-            <LabSignalRow label="turno" note="a leitura volta a ficar viva quando houver item de cozinha" tone="info" value="sem pressão" />
+            <LabSignalRow
+              label="próxima ação"
+              note="manter monitoramento até o próximo ticket"
+              tone="neutral"
+              value="aguardar entrada"
+            />
+            <LabSignalRow
+              label="turno"
+              note="a leitura volta a ficar viva quando houver item de cozinha"
+              tone="info"
+              value="sem pressão"
+            />
           </div>
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">checklist</LabStatusPill>}
-        padding="md"
-        title="Quando a fila volta"
-      >
+      <LabPanel action={<LabStatusPill tone="info">checklist</LabStatusPill>} padding="md" title="Quando a fila volta">
         <div className="space-y-0">
-          <LabSignalRow label="na fila" note="novo item entrou e ainda não iniciou preparo" tone="warning" value="0 agora" />
+          <LabSignalRow
+            label="na fila"
+            note="novo item entrou e ainda não iniciou preparo"
+            tone="warning"
+            value="0 agora"
+          />
           <LabSignalRow label="em preparo" note="ticket assumido por alguém da cozinha" tone="info" value="0 agora" />
           <LabSignalRow label="prontos" note="itens liberados para sair da cozinha" tone="success" value="0 agora" />
-          <LabSignalRow label="operação" note="o KDS assume o topo da leitura assim que a fila reaparecer" tone="neutral" value="em espera" />
+          <LabSignalRow
+            label="operação"
+            note="o KDS assume o topo da leitura assim que a fila reaparecer"
+            tone="neutral"
+            value="em espera"
+          />
         </div>
       </LabPanel>
     </div>

@@ -5,6 +5,7 @@
 Congelar o estado atual da malha realtime antes de qualquer intervenção estrutural.
 
 Este documento existe para impedir:
+
 - remoção por suposição
 - refactor sem prova de uso
 - troca de contrato sem saber quem consome
@@ -37,6 +38,7 @@ Este documento existe para impedir:
 ### Não encontrei rooms adicionais confirmadas
 
 Não há, na árvore auditada, `join()` adicional para:
+
 - cozinha
 - caixa
 - mesa
@@ -67,12 +69,15 @@ Evento de transporte fora da lista tipada:
 ### Comanda
 
 Arquivo principal:
+
 - `apps/api/src/modules/operations/comanda.service.ts`
 
 Helpers de publish:
+
 - `apps/api/src/modules/operations/comanda-realtime-publish.utils.ts`
 
 Fluxos confirmados:
+
 - abrir comanda
 - adicionar item
 - adicionar lote de itens
@@ -85,14 +90,17 @@ Fluxos confirmados:
 ### Caixa
 
 Arquivo principal:
+
 - `apps/api/src/modules/operations/cash-session.service.ts`
 
 Helpers de publish:
+
 - `apps/api/src/modules/operations/cash-realtime-publish.utils.ts`
 
 ### Mesa
 
 Arquivo principal:
+
 - `apps/api/src/modules/operations/operations.service.ts`
 
 ## Consumers confirmados
@@ -100,12 +108,15 @@ Arquivo principal:
 ### Cliente web/mobile
 
 Hook base:
+
 - `apps/web/components/operations/use-operations-realtime.ts`
 
 Socket hook:
+
 - `apps/web/components/operations/hooks/use-operations-socket.ts`
 
 Patchers:
+
 - `apps/web/lib/operations/operations-realtime-patching.ts`
 - `apps/web/lib/operations/operations-realtime-live.patchers.ts`
 - `apps/web/lib/operations/operations-realtime-kitchen.patchers.ts`
@@ -114,9 +125,11 @@ Patchers:
 ### Backend interno
 
 Consumer global confirmado:
+
 - `apps/api/src/modules/notifications/notifications.service.ts`
 
 Ponto de acoplamento:
+
 - `OperationsRealtimeService.subscribeAll()`
 
 ## Cruzamentos WS <-> REST/HTTP
@@ -134,6 +147,7 @@ Ponto de acoplamento:
 Ao reconectar, o cliente invalida baseline e depende de HTTP para se realinhar.
 
 Arquivos:
+
 - `apps/web/components/operations/hooks/use-operations-socket.ts`
 - `apps/web/components/operations/use-operations-realtime.ts`
 - `apps/web/lib/operations/operations-query.ts`
@@ -154,6 +168,7 @@ Arquivos:
 - `apps/web/app/dashboard-wireframe/page.tsx`
 
 Observação:
+
 - `apps/web/app/dashboard/page.tsx` hoje redireciona e não monta o shell diretamente.
 
 ## Fluxos críticos que dependem de realtime
@@ -200,6 +215,7 @@ Artefatos já existentes:
 - `.cache/perf/operations-mobile-browser-smoke-20260501.json`
 
 Leitura correta desses smokes:
+
 - eles não provaram storm de invalidation no observer path
 - eles não eliminam os problemas de topologia, payload e consistência
 - eles servem como baseline para comparar mudanças futuras

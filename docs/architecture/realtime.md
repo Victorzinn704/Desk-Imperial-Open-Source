@@ -129,17 +129,17 @@ Objetivo prático:
 
 ### Servidor -> cliente
 
-| Evento | Uso principal | Canal atual |
-| --- | --- | --- |
-| `cash.opened` | abertura de caixa | `cash` |
-| `cash.updated` | atualização de sessão de caixa | `cash` |
-| `cash.closure.updated` | consolidação/fechamento de caixa | `cash` |
-| `comanda.opened` | nova comanda | `workspace` |
-| `comanda.updated` | mudança de status ou conteúdo da comanda | `workspace` |
-| `comanda.closed` | fechamento de comanda | `workspace` |
-| `kitchen.item.queued` | entrada de item na cozinha | `kitchen` |
-| `kitchen.item.updated` | avanço de item na cozinha | `kitchen` |
-| `mesa.upserted` | mudança de mesa/planta operacional | `mesa` |
+| Evento                 | Uso principal                            | Canal atual |
+| ---------------------- | ---------------------------------------- | ----------- |
+| `cash.opened`          | abertura de caixa                        | `cash`      |
+| `cash.updated`         | atualização de sessão de caixa           | `cash`      |
+| `cash.closure.updated` | consolidação/fechamento de caixa         | `cash`      |
+| `comanda.opened`       | nova comanda                             | `workspace` |
+| `comanda.updated`      | mudança de status ou conteúdo da comanda | `workspace` |
+| `comanda.closed`       | fechamento de comanda                    | `workspace` |
+| `kitchen.item.queued`  | entrada de item na cozinha               | `kitchen`   |
+| `kitchen.item.updated` | avanço de item na cozinha                | `kitchen`   |
+| `mesa.upserted`        | mudança de mesa/planta operacional       | `mesa`      |
 
 ### Cliente -> servidor
 
@@ -258,9 +258,9 @@ Validação mínima:
 
 Problemas comuns:
 
-| Sintoma | Causa provável | Ação recomendada |
-| --- | --- | --- |
-| conexão cai logo ao abrir a tela | sessão inválida, origem rejeitada ou rate limit de churn | revisar cookies, origem e logs do gateway |
-| staff recebe dado financeiro | regressão de room scoping | auditar `resolveOperationsRealtimeEventChannels` e joins por role |
-| reconnect volta “conectado” mas com estado velho | patch não fechou o estado e baseline não refrescou | revisar `onReconnect` e reconcile |
-| funciona em instância única e falha em scale | Redis adapter ausente ou degradado | validar `REDIS_URL` e telemetria do adapter |
+| Sintoma                                          | Causa provável                                           | Ação recomendada                                                  |
+| ------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| conexão cai logo ao abrir a tela                 | sessão inválida, origem rejeitada ou rate limit de churn | revisar cookies, origem e logs do gateway                         |
+| staff recebe dado financeiro                     | regressão de room scoping                                | auditar `resolveOperationsRealtimeEventChannels` e joins por role |
+| reconnect volta “conectado” mas com estado velho | patch não fechou o estado e baseline não refrescou       | revisar `onReconnect` e reconcile                                 |
+| funciona em instância única e falha em scale     | Redis adapter ausente ou degradado                       | validar `REDIS_URL` e telemetria do adapter                       |

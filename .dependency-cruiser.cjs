@@ -20,8 +20,7 @@ module.exports = {
     {
       name: 'no-db-in-controllers',
       severity: 'error',
-      comment:
-        'Controllers must not access database or ORM directly. Use repository injection via DI.',
+      comment: 'Controllers must not access database or ORM directly. Use repository injection via DI.',
       from: {
         path: '\\.controller\\.ts$',
       },
@@ -66,8 +65,7 @@ module.exports = {
     {
       name: 'no-bcrypt-outside-auth',
       severity: 'error',
-      comment:
-        'bcrypt and password hashing must only occur inside the auth module infrastructure layer.',
+      comment: 'bcrypt and password hashing must only occur inside the auth module infrastructure layer.',
       from: {
         path: '^apps/api/src/',
         pathNot: '^apps/api/src/modules/auth/',
@@ -105,9 +103,8 @@ module.exports = {
         collapsePattern: 'node_modules/[^/]+',
       },
       archi: {
-        collapsePattern:
-          '^(node_modules|packages|apps/api/src/modules|apps/web/app)/[^/]+',
+        collapsePattern: '^(node_modules|packages|apps/api/src/modules|apps/web/app)/[^/]+',
       },
     },
   },
-};
+}

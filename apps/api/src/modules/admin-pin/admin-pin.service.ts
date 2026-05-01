@@ -90,7 +90,7 @@ export class AdminPinService {
       select: { adminPinHash: true },
     })
 
-    if (!user || !user.adminPinHash) {
+    if (!user?.adminPinHash) {
       throw new NotFoundException('Nenhum PIN configurado.')
     }
 
@@ -138,7 +138,7 @@ export class AdminPinService {
       select: { adminPinHash: true },
     })
 
-    if (!owner || !owner.adminPinHash) {
+    if (!owner?.adminPinHash) {
       throw new NotFoundException('Nenhum PIN configurado.')
     }
 
@@ -184,7 +184,7 @@ export class AdminPinService {
       return true
     }
 
-    if (!proof?.trim() || !auth.sessionId) {
+    if (!(proof?.trim() && auth.sessionId)) {
       return false
     }
 

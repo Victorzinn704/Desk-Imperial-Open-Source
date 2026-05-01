@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyRealtimeEnvelope } from './use-operations-realtime'
-import {
-  mesa, liveSnapshot, createQueryClientMock, qc,
-} from './__fixtures__/operations-realtime.fixtures'
+import { mesa, liveSnapshot, createQueryClientMock, qc } from './__fixtures__/operations-realtime.fixtures'
 
 // ---------------------------------------------------------------------------
 // mesa.upserted
@@ -51,7 +49,10 @@ describe('mesa.upserted', () => {
   it('maps all mesa statuses correctly', () => {
     const mock = createQueryClientMock(liveSnapshot({ mesas: [mesa()] }))
     for (const status of ['livre', 'ocupada', 'reservada']) {
-      applyRealtimeEnvelope(qc(mock), { event: 'mesa.upserted', payload: { businessDate: '2026-03-30', mesaId: 'm-1', status } })
+      applyRealtimeEnvelope(qc(mock), {
+        event: 'mesa.upserted',
+        payload: { businessDate: '2026-03-30', mesaId: 'm-1', status },
+      })
       expect(mock.getLiveSnapshot().mesas[0]?.status).toBe(status)
     }
   })
@@ -64,7 +65,10 @@ describe('mesa.upserted', () => {
 
   it('returns liveNeedsRefresh when status is invalid', () => {
     const mock = createQueryClientMock(liveSnapshot({ mesas: [mesa()] }))
-    const result = applyRealtimeEnvelope(qc(mock), { event: 'mesa.upserted', payload: { businessDate: '2026-03-30', mesaId: 'm-1', status: 'INVALID' } })
+    const result = applyRealtimeEnvelope(qc(mock), {
+      event: 'mesa.upserted',
+      payload: { businessDate: '2026-03-30', mesaId: 'm-1', status: 'INVALID' },
+    })
     expect(result.liveNeedsRefresh).toBe(true)
   })
 })
@@ -76,19 +80,68 @@ describe('mesa.upserted', () => {
 describe('withGroupMetrics (computed via patches)', () => {
   it('counts open and closed tables after comanda update', () => {
     const live = liveSnapshot({
-      employees: [{
-        employeeId: 'emp-1', employeeCode: 'E01', displayName: 'Joao', active: true,
-        cashSession: null,
-        comandas: [
-          { id: 'c-1', companyOwnerId: 'owner-1', cashSessionId: null, mesaId: 'm-1', currentEmployeeId: 'emp-1', tableLabel: 'Mesa 1', customerName: null, customerDocument: null, participantCount: 1, status: 'OPEN', subtotalAmount: 50, discountAmount: 0, serviceFeeAmount: 0, totalAmount: 50, notes: null, openedAt: '2026-03-30T10:00:00.000Z', closedAt: null, items: [] },
-          { id: 'c-2', companyOwnerId: 'owner-1', cashSessionId: null, mesaId: 'm-2', currentEmployeeId: 'emp-1', tableLabel: 'Mesa 2', customerName: null, customerDocument: null, participantCount: 2, status: 'CLOSED', subtotalAmount: 30, discountAmount: 0, serviceFeeAmount: 0, totalAmount: 30, notes: null, openedAt: '2026-03-30T09:00:00.000Z', closedAt: '2026-03-30T11:00:00.000Z', items: [] },
-        ],
-      }],
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Joao',
+          active: true,
+          cashSession: null,
+          comandas: [
+            {
+              id: 'c-1',
+              companyOwnerId: 'owner-1',
+              cashSessionId: null,
+              mesaId: 'm-1',
+              currentEmployeeId: 'emp-1',
+              tableLabel: 'Mesa 1',
+              customerName: null,
+              customerDocument: null,
+              participantCount: 1,
+              status: 'OPEN',
+              subtotalAmount: 50,
+              discountAmount: 0,
+              serviceFeeAmount: 0,
+              totalAmount: 50,
+              notes: null,
+              openedAt: '2026-03-30T10:00:00.000Z',
+              closedAt: null,
+              items: [],
+            },
+            {
+              id: 'c-2',
+              companyOwnerId: 'owner-1',
+              cashSessionId: null,
+              mesaId: 'm-2',
+              currentEmployeeId: 'emp-1',
+              tableLabel: 'Mesa 2',
+              customerName: null,
+              customerDocument: null,
+              participantCount: 2,
+              status: 'CLOSED',
+              subtotalAmount: 30,
+              discountAmount: 0,
+              serviceFeeAmount: 0,
+              totalAmount: 30,
+              notes: null,
+              openedAt: '2026-03-30T09:00:00.000Z',
+              closedAt: '2026-03-30T11:00:00.000Z',
+              items: [],
+            },
+          ],
+        },
+      ],
     })
     const mock = createQueryClientMock(live)
     applyRealtimeEnvelope(qc(mock), {
       event: 'comanda.updated',
-      payload: { comandaId: 'c-1', mesaId: 'm-1', tableLabel: 'Mesa 1', status: 'IN_PREPARATION', businessDate: '2026-03-30' },
+      payload: {
+        comandaId: 'c-1',
+        mesaId: 'm-1',
+        tableLabel: 'Mesa 1',
+        status: 'IN_PREPARATION',
+        businessDate: '2026-03-30',
+      },
     })
     // After patch, emp-1 should have 1 open (c-1 IN_PREPARATION) and 1 closed (c-2)
     const emp = mock.getLiveSnapshot().employees[0]

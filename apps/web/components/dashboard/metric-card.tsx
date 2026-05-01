@@ -21,7 +21,9 @@ export function MetricCard({
   loading?: boolean
   trend?: number[]
 }>) {
-  if (loading) {return <MetricCardSkeleton />}
+  if (loading) {
+    return <MetricCardSkeleton />
+  }
 
   const hasTrend = trend && trend.length >= 2
   let resolvedDelta: string | null = null

@@ -9,35 +9,35 @@
 
 ## Backend Quality Score: **7.5 / 10**
 
-| Dimension | Score | Rationale |
-|---|---|---|
-| Transaction discipline | 9/10 | All multi-table writes wrapped in `$transaction`; Serializable isolation used consistently |
-| Input validation / sanitization | 9/10 | Zod `.strict()` schemas on all DTOs; `sanitizePlainText` on all user strings |
-| Error handling / null safety | 9/10 | Null checks after all `findUnique`/`findFirst`; appropriate HTTP exceptions |
-| Cache architecture | 8/10 | Fail-open Redis, stale-while-revalidate for finance, prefix-based invalidation |
-| Audit trail / observability | 8/10 | `resolveAuthActorUserId` for all audit log entries; OpenTelemetry traces |
-| Idempotency / concurrency | 5/10 | TOCTOU in payment gate; no idempotency keys; non-atomic closeCashClosure |
-| Query efficiency | 7/10 | Good groupBy/aggregate usage in finance; N sequential stock updates in orders |
-| Test coverage | 3/10 | 0 co-located tests across 131 API module source files |
+| Dimension                       | Score | Rationale                                                                                  |
+| ------------------------------- | ----- | ------------------------------------------------------------------------------------------ |
+| Transaction discipline          | 9/10  | All multi-table writes wrapped in `$transaction`; Serializable isolation used consistently |
+| Input validation / sanitization | 9/10  | Zod `.strict()` schemas on all DTOs; `sanitizePlainText` on all user strings               |
+| Error handling / null safety    | 9/10  | Null checks after all `findUnique`/`findFirst`; appropriate HTTP exceptions                |
+| Cache architecture              | 8/10  | Fail-open Redis, stale-while-revalidate for finance, prefix-based invalidation             |
+| Audit trail / observability     | 8/10  | `resolveAuthActorUserId` for all audit log entries; OpenTelemetry traces                   |
+| Idempotency / concurrency       | 5/10  | TOCTOU in payment gate; no idempotency keys; non-atomic closeCashClosure                   |
+| Query efficiency                | 7/10  | Good groupBy/aggregate usage in finance; N sequential stock updates in orders              |
+| Test coverage                   | 3/10  | 0 co-located tests across 131 API module source files                                      |
 
 ---
 
 ## Quantitative Evidence
 
-| Metric | Value |
-|---|---|
-| API module source files | 131 (.ts) |
-| Largest service file | `comanda.service.ts` — 1,377 lines |
-| Services audited | 6 core services + cache + 8 utility modules |
-| `$transaction` call sites | 13 (11 Serializable + 2 ReadCommitted) |
-| `$transaction` with correct isolation | 12 of 13 |
-| Null-checked `findUnique`/`findFirst` calls | 17 of 17 |
-| Zod schemas with `.strict()` | 22 of 22 |
-| Idempotency keys on write endpoints | 0 |
-| N+1-style loops in transactions | 3 (stock updates in orders/comanda-helpers) |
-| TOCTOU vulnerabilities identified | 2 |
-| Cache invalidation calls (fire-and-forget) | 15 `void` cache operations |
-| Audit log `record()` calls | 17 across audited services |
+| Metric                                      | Value                                       |
+| ------------------------------------------- | ------------------------------------------- |
+| API module source files                     | 131 (.ts)                                   |
+| Largest service file                        | `comanda.service.ts` — 1,377 lines          |
+| Services audited                            | 6 core services + cache + 8 utility modules |
+| `$transaction` call sites                   | 13 (11 Serializable + 2 ReadCommitted)      |
+| `$transaction` with correct isolation       | 12 of 13                                    |
+| Null-checked `findUnique`/`findFirst` calls | 17 of 17                                    |
+| Zod schemas with `.strict()`                | 22 of 22                                    |
+| Idempotency keys on write endpoints         | 0                                           |
+| N+1-style loops in transactions             | 3 (stock updates in orders/comanda-helpers) |
+| TOCTOU vulnerabilities identified           | 2                                           |
+| Cache invalidation calls (fire-and-forget)  | 15 `void` cache operations                  |
+| Audit log `record()` calls                  | 17 across audited services                  |
 
 ---
 
@@ -92,6 +92,7 @@
 - **Confidence:** Medium
 - **Evidence:**
   - `cash-session.service.ts:322-362`:
+
     ```typescript
     const syncedClosure = await this.prisma.$transaction(async (transaction) =>
       helpers.syncCashClosure(transaction, workspaceOwnerUserId, businessDate),  // L323-325
@@ -105,7 +106,9 @@
 
     const closure = await this.prisma.cashClosure.update({ ... })  // L347 — OUTSIDE transaction
     ```
+
   - The `syncCashClosure` runs in an isolated transaction, but its result (`syncedClosure`) is consumed by two subsequent `update` calls that are NOT in a transaction. Between L325 and L347, another request could modify the same `CashClosure` row (e.g., a session closing and triggering `syncCashClosure` to recalculate `expectedCashAmount`).
+
 - **Impact:** The `differenceAmount` computed at L345 uses `syncedClosure.expectedCashAmount` which may be stale. The final `update` at L347 silently overwrites any concurrent modification to the closure row — no optimistic lock check. Could produce an incorrect `differenceAmount` if the closure's `expectedCashAmount` changed between the sync and the write.
 - **Recommendation:** Wrap the entire check-and-update in a single `$transaction` with `Serializable` isolation so that the sync read, business rule check, and final status update are atomic.
 - **Effort:** S (30-60 min — wrap L322-362 in a single transaction)
@@ -205,9 +208,12 @@
 All 13 `$transaction` call sites in `comanda.service.ts` (11 × Serializable), `orders.service.ts` (2 × Serializable), and `cash-session.service.ts` (2 × Serializable + 1 ReadCommitted) correctly scope multi-table writes. The pattern is consistent:
 
 ```typescript
-const { result } = await this.prisma.$transaction(async (transaction) => {
-  // writes + reads inside transaction
-}, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+const { result } = await this.prisma.$transaction(
+  async (transaction) => {
+    // writes + reads inside transaction
+  },
+  { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+)
 ```
 
 No mixed `this.prisma` / `transaction` access patterns — the `transaction` client is passed through consistently.
@@ -218,11 +224,17 @@ Every `findUnique`/`findFirst`/`findFirst` call across audited services includes
 
 ```typescript
 // comanda.service.ts:203-205
-if (!comanda) { throw new NotFoundException('Comanda nao encontrada.') }
+if (!comanda) {
+  throw new NotFoundException('Comanda nao encontrada.')
+}
 // operations-auth.utils.ts:114-116
-if (!comanda) { throw new NotFoundException('Comanda nao encontrada para esta empresa.') }
+if (!comanda) {
+  throw new NotFoundException('Comanda nao encontrada para esta empresa.')
+}
 // orders.service.ts:503-505
-if (!order) { throw new NotFoundException('Pedido nao encontrado para esta conta.') }
+if (!order) {
+  throw new NotFoundException('Pedido nao encontrado para esta conta.')
+}
 ```
 
 ### PF-03 — Zod Validation Completeness
@@ -232,9 +244,11 @@ All 22 DTO schemas in `operations.schemas.ts` use `.strict()` to reject unknown 
 ### PF-04 — Finance Service Query Optimization
 
 `finance.service.ts:187-285` uses `Promise.all` with 11 parallel queries, including `groupBy` aggregations that push computation to the database:
+
 ```typescript
 this.prisma.order.groupBy({ by: ['currency'], where: {...}, _sum: { totalRevenue: true, ... } })
 ```
+
 This reduces per-currency aggregation from O(N orders) in application memory to O(3 currencies) from the database — a significant optimization for workspaces with thousands of orders.
 
 ### PF-05 — Stale-While-Revalidate for Finance Cache
@@ -256,6 +270,7 @@ All 17 mutation endpoints across audited services call `auditLogService.record()
 ### PF-07 — Well-Isolated Utility Extraction
 
 Heavy service logic is extracted into focused utility modules:
+
 - `comanda-kitchen.utils.ts` — kitchen status propagation logic
 - `comanda-validation.utils.ts` — monetary adjustment validation
 - `comanda-mesa.utils.ts` — table selection/reservation logic

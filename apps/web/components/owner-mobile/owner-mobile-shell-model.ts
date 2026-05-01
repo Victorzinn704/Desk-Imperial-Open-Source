@@ -1,6 +1,6 @@
 import type React from 'react'
 import type { RealtimeStatus } from '@/components/operations/use-operations-realtime'
-import { type buildPdvComandas, type buildPdvMesas } from '@/components/pdv/pdv-operations'
+import type { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { OwnerCurrentUser, OwnerMobileTab, OwnerPdvView, PendingAction } from './owner-mobile-shell-types'
 import type { useOwnerMobileShellMutations } from './use-owner-mobile-shell-mutations'

@@ -40,12 +40,15 @@ export function PdvComandaPreviewModal({
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-panel-strong)]">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Resumo da comanda</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+              Resumo da comanda
+            </p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
               {comanda.mesa ? `Mesa ${comanda.mesa}` : `Comanda ${comanda.id.slice(-6).toUpperCase()}`}
             </h2>
             <p className="mt-2 text-sm text-[var(--text-soft)]">
-              {comanda.clienteNome?.trim() ? comanda.clienteNome : 'Sem cliente identificado'} · {formatElapsed(comanda.abertaEm)}
+              {comanda.clienteNome?.trim() ? comanda.clienteNome : 'Sem cliente identificado'} ·{' '}
+              {formatElapsed(comanda.abertaEm)}
             </p>
           </div>
           <button
@@ -71,7 +74,9 @@ export function PdvComandaPreviewModal({
           <div className="space-y-3">
             {comanda.notes?.trim() ? (
               <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Observação</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+                  Observação
+                </p>
                 <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">{comanda.notes}</p>
               </div>
             ) : null}
@@ -104,15 +109,28 @@ export function PdvComandaPreviewModal({
                 ))
               ) : (
                 <div className="rounded-[16px] border border-dashed border-[var(--border)] px-4 py-6 text-sm text-[var(--text-soft)]">
-                  Esta comanda ainda não carregou itens detalhados. Abra a edição para revisar ou aguarde a sincronização.
+                  Esta comanda ainda não carregou itens detalhados. Abra a edição para revisar ou aguarde a
+                  sincronização.
                 </div>
               )}
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <InlineFact icon={<Package className="size-3.5" />} label="Status" value={resolveStatusLabel(comanda.status)} />
-              <InlineFact icon={<Clock className="size-3.5" />} label="Abertura" value={comanda.abertaEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} />
-              <InlineFact icon={<Wallet className="size-3.5" />} label="Pagamento" value={resolvePaymentLabel(comanda)} />
+              <InlineFact
+                icon={<Package className="size-3.5" />}
+                label="Status"
+                value={resolveStatusLabel(comanda.status)}
+              />
+              <InlineFact
+                icon={<Clock className="size-3.5" />}
+                label="Abertura"
+                value={comanda.abertaEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              />
+              <InlineFact
+                icon={<Wallet className="size-3.5" />}
+                label="Pagamento"
+                value={resolvePaymentLabel(comanda)}
+              />
             </div>
           </div>
         </div>
@@ -178,7 +196,6 @@ function resolveStatusLabel(status: Comanda['status']) {
       return 'Cancelada'
     case 'fechada':
       return 'Fechada'
-    case 'aberta':
     default:
       return 'Aberta'
   }

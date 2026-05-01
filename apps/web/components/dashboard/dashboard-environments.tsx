@@ -3,7 +3,11 @@
 import dynamic from 'next/dynamic'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { SettingsEnvironment } from './environments/settings-environment'
-import type { DashboardSectionId, DashboardSettingsSectionId, DashboardTabId } from '@/components/dashboard/dashboard-navigation'
+import type {
+  DashboardSectionId,
+  DashboardSettingsSectionId,
+  DashboardTabId,
+} from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser, EmployeeRecord } from '@/lib/api'
 import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
 
@@ -58,13 +62,10 @@ const PedidosEnvironment = dynamic(
   },
 )
 
-const EquipeEnvironment = dynamic(
-  () => import('./environments/equipe-environment').then((m) => m.EquipeEnvironment),
-  {
-    loading: () => <EnvironmentSkeleton rows={5} />,
-    ssr: false,
-  },
-)
+const EquipeEnvironment = dynamic(() => import('./environments/equipe-environment').then((m) => m.EquipeEnvironment), {
+  loading: () => <EnvironmentSkeleton rows={5} />,
+  ssr: false,
+})
 
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId

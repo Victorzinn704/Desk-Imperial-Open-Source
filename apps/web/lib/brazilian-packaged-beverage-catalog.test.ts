@@ -18,7 +18,9 @@ import {
 
 describe('resolveBrazilianPackagedBeverageVisual — escapeXml hardening', () => {
   function extractDecodedSvg(visual: { src: string } | null): string {
-    if (!visual) throw new Error('visual is null')
+    if (!visual) {
+      throw new Error('visual is null')
+    }
     const encoded = visual.src.replace('data:image/svg+xml;charset=UTF-8,', '')
     return decodeURIComponent(encoded)
   }
@@ -105,7 +107,6 @@ describe('resolveBrazilianPackagedBeverageVisual — escapeXml hardening', () =>
     expect(svg.trim()).toMatch(/<\/svg>\s*$/)
   })
 })
-
 
 // ── resolveBrazilianPackagedBeverageMatch ─────────────────────────────────────
 

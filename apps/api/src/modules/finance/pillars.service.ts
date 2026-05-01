@@ -2,10 +2,10 @@ import { CurrencyCode, type Order } from '@prisma/client'
 import { Injectable } from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import { PrismaService } from '../../database/prisma.service'
-import { CacheService } from '../../common/services/cache.service'
+import type { PrismaService } from '../../database/prisma.service'
+import type { CacheService } from '../../common/services/cache.service'
 import type { AuthContext } from '../auth/auth.types'
-import { CurrencyService } from '../currency/currency.service'
+import type { CurrencyService } from '../currency/currency.service'
 
 export interface PillarMetric {
   label: string
@@ -239,7 +239,7 @@ export class PillarsService {
 
       const diffMs = orderDate.getTime() - sevenDaysAgoStart.getTime()
       const dayIndex = Math.min(Math.floor(diffMs / 86_400_000), 6)
-      buckets.get(dayIndex)!.push(order)
+      buckets.get(dayIndex)?.push(order)
     }
 
     return buckets

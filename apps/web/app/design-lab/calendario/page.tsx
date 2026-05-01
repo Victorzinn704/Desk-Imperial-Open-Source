@@ -30,7 +30,7 @@ export default function DesignLabCalendarioPage() {
         </LabPanel>
       ) : null}
 
-      {!sessionQuery.isLoading && !user ? <CalendarioLockedState /> : null}
+      {!(sessionQuery.isLoading || user) ? <CalendarioLockedState /> : null}
 
       {user ? <CommercialCalendar /> : null}
     </section>
@@ -54,9 +54,24 @@ function CalendarioLockedState() {
           </div>
 
           <div className="space-y-0">
-            <LabSignalRow label="janelas do período" note="o login libera agenda completa por mês, semana, dia e lista" tone="info" value="ao entrar" />
-            <LabSignalRow label="picos comerciais" note="jogos, promoções e eventos voltam a aparecer no mesmo calendário" tone="success" value="bloqueado" />
-            <LabSignalRow label="planejamento" note="a leitura da próxima janela volta com impacto e tipo líder" tone="neutral" value="ao entrar" />
+            <LabSignalRow
+              label="janelas do período"
+              note="o login libera agenda completa por mês, semana, dia e lista"
+              tone="info"
+              value="ao entrar"
+            />
+            <LabSignalRow
+              label="picos comerciais"
+              note="jogos, promoções e eventos voltam a aparecer no mesmo calendário"
+              tone="success"
+              value="bloqueado"
+            />
+            <LabSignalRow
+              label="planejamento"
+              note="a leitura da próxima janela volta com impacto e tipo líder"
+              tone="neutral"
+              value="ao entrar"
+            />
           </div>
 
           <div className="pt-1">
@@ -70,16 +85,27 @@ function CalendarioLockedState() {
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">preview</LabStatusPill>}
-        padding="md"
-        title="O que abre na agenda"
-      >
+      <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title="O que abre na agenda">
         <div className="space-y-0">
-          <LabSignalRow label="mês, semana e dia" note="muda densidade conforme o tipo de leitura" tone="neutral" value="sim" />
-          <LabSignalRow label="atividades do topo" note="próxima atividade, maior pico e tipo líder" tone="success" value="sim" />
+          <LabSignalRow
+            label="mês, semana e dia"
+            note="muda densidade conforme o tipo de leitura"
+            tone="neutral"
+            value="sim"
+          />
+          <LabSignalRow
+            label="atividades do topo"
+            note="próxima atividade, maior pico e tipo líder"
+            tone="success"
+            value="sim"
+          />
           <LabSignalRow label="filtros" note="eventos, jogos, promoções, reuniões e outros" tone="info" value="sim" />
-          <LabSignalRow label="agenda esportiva" note="janelas de jogo entram como leitura comercial do negócio" tone="warning" value="sim" />
+          <LabSignalRow
+            label="agenda esportiva"
+            note="janelas de jogo entram como leitura comercial do negócio"
+            tone="warning"
+            value="sim"
+          />
         </div>
       </LabPanel>
     </div>

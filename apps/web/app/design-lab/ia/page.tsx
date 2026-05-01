@@ -35,7 +35,7 @@ export default function DesignLabIaPage() {
         </LabPanel>
       ) : null}
 
-      {!sessionQuery.isLoading && !user ? <AiLockedState /> : null}
+      {!(sessionQuery.isLoading || user) ? <AiLockedState /> : null}
 
       {user ? <AIConsultantWorkspace embedded /> : null}
     </section>
@@ -58,9 +58,24 @@ function AiLockedState() {
           </div>
 
           <div className="space-y-0">
-            <LabSignalRow label="consulta guiada" note="o login libera perguntas sobre caixa, vendas, estoque, equipe e agenda" tone="info" value="ao entrar" />
-            <LabSignalRow label="análise" note="a resposta volta com resumo, riscos, oportunidades e próximos passos" tone="neutral" value="bloqueada" />
-            <LabSignalRow label="foco ativo" note="a lateral passa a guiar leitura por margem, canais, risco e demanda" tone="success" value="pronta" />
+            <LabSignalRow
+              label="consulta guiada"
+              note="o login libera perguntas sobre caixa, vendas, estoque, equipe e agenda"
+              tone="info"
+              value="ao entrar"
+            />
+            <LabSignalRow
+              label="análise"
+              note="a resposta volta com resumo, riscos, oportunidades e próximos passos"
+              tone="neutral"
+              value="bloqueada"
+            />
+            <LabSignalRow
+              label="foco ativo"
+              note="a lateral passa a guiar leitura por margem, canais, risco e demanda"
+              tone="success"
+              value="pronta"
+            />
           </div>
 
           <div className="pt-1">
@@ -80,10 +95,20 @@ function AiLockedState() {
         title="O que abre no consultor"
       >
         <div className="space-y-0">
-          <LabSignalRow label="resumo executivo" note="sintetiza o foco em uma leitura curta" tone="success" value="sim" />
+          <LabSignalRow
+            label="resumo executivo"
+            note="sintetiza o foco em uma leitura curta"
+            tone="success"
+            value="sim"
+          />
           <LabSignalRow label="riscos" note="sinaliza exceções e pontos de atenção" tone="warning" value="sim" />
           <LabSignalRow label="oportunidades" note="aponta ganho comercial e operacional" tone="info" value="sim" />
-          <LabSignalRow label="próximos passos" note="transforma análise em ação dentro do app" tone="neutral" value="sim" />
+          <LabSignalRow
+            label="próximos passos"
+            note="transforma análise em ação dentro do app"
+            tone="neutral"
+            value="sim"
+          />
         </div>
       </LabPanel>
     </div>

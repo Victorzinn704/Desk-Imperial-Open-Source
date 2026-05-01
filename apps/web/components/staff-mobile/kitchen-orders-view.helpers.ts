@@ -66,7 +66,6 @@ export function getTonePanelStyle(tone: LabStatusTone) {
         backgroundColor: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
         borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--border))',
       }
-    case 'neutral':
     default:
       return {
         backgroundColor: 'color-mix(in srgb, var(--surface-muted) 34%, var(--surface))',

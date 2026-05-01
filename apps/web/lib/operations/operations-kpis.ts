@@ -122,7 +122,7 @@ export function buildPerformerStanding(
   snapshot: OperationsLiveResponse | null | undefined,
   performerId?: string | null,
 ): OperationPerformerStanding {
-  if (!snapshot || !performerId) {
+  if (!(snapshot && performerId)) {
     return {
       position: null,
       totalPerformers: 0,
@@ -167,7 +167,9 @@ export function buildKitchenQueueCount(snapshot: OperationsLiveResponse | null |
   let count = 0
   for (const group of collectOperationGroups(snapshot)) {
     for (const comanda of group.comandas) {
-      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') {continue}
+      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') {
+        continue
+      }
       for (const item of comanda.items) {
         if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') {
           count += 1
@@ -193,7 +195,9 @@ export function buildPerformerRanking(
 
   const map = new Map<string, OperationsPerformerRankingEntry>()
   for (const employee of collectOperationGroups(snapshot)) {
-    if (!employee.employeeId) {continue}
+    if (!employee.employeeId) {
+      continue
+    }
 
     let valor = 0
     let comandas = 0

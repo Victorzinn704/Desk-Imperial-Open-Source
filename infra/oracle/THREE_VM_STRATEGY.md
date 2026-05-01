@@ -4,13 +4,13 @@ Este documento registra a separação operacional adotada para manter o Desk Imp
 
 ## Distribuição
 
-| VM                        | Papel            | Responsabilidade                                                                                                             |
-| ------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `vm-free-01`              | Produção         | `nginx`, `web`, `api`, `redis`, `certbot` e runtime público                                                                  |
-| `vm-free-02`              | Ops/Builder/BI   | build das imagens Docker, registry privado, Grafana, Prometheus, Loki, Tempo, Alloy, Alertmanager, Blackbox, SonarQube e Metabase |
-| `vm-amd-micro-01`         | Sentinela        | healthcheck externo, bastion e tarefas pequenas de ops                                                                      |
-| `lohana-ampere-01`        | Banco            | `PostgreSQL 17`, `PgBouncer`, `pgBackRest`, `postgres_exporter`, `node-exporter`                                            |
-| `lohana-amd-micro-01`     | Runner           | restore drill, `pgBadger`, jobs leves de backup/checagem                                                                    |
+| VM                    | Papel          | Responsabilidade                                                                                                                  |
+| --------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `vm-free-01`          | Produção       | `nginx`, `web`, `api`, `redis`, `certbot` e runtime público                                                                       |
+| `vm-free-02`          | Ops/Builder/BI | build das imagens Docker, registry privado, Grafana, Prometheus, Loki, Tempo, Alloy, Alertmanager, Blackbox, SonarQube e Metabase |
+| `vm-amd-micro-01`     | Sentinela      | healthcheck externo, bastion e tarefas pequenas de ops                                                                            |
+| `lohana-ampere-01`    | Banco          | `PostgreSQL 17`, `PgBouncer`, `pgBackRest`, `postgres_exporter`, `node-exporter`                                                  |
+| `lohana-amd-micro-01` | Runner         | restore drill, `pgBadger`, jobs leves de backup/checagem                                                                          |
 
 ## Decisão
 

@@ -1,4 +1,5 @@
 # Oracle Hardening Status
+
 ## 2026-04-22
 
 Status real da passada de endurecimento e malha privada entre as VMs do Desk Imperial.

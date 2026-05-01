@@ -40,12 +40,14 @@ Infraestrutura é a fundação silenciosa do produto. Quando está funcionando, 
 O agente deve dominar os conceitos independente da stack atual:
 
 ### Containerização e ambientes
+
 - Isolamento de ambiente (dev, staging, produção) sem vazamento de config
 - Variáveis de ambiente: nunca hardcoded, sempre documentadas
 - Docker: imagens leves, layers cacheados, healthcheck configurado
 - Reprodução local fiel ao ambiente de produção
 
 ### Observabilidade
+
 - Logs estruturados (JSON) com nível correto (info, warn, error)
 - Health checks expostos e funcionando
 - Métricas de sistema: CPU, memória, latência, error rate
@@ -53,12 +55,14 @@ O agente deve dominar os conceitos independente da stack atual:
 - Rastreabilidade de requests (correlation ID)
 
 ### Disponibilidade e resiliência
+
 - Restart automático em falha configurado
 - Timeout e retry configurados para dependências externas
 - Graceful shutdown para deploys sem downtime
 - Estratégia de backup para dados críticos
 
 ### Segurança de infra
+
 - Princípio de menor privilégio em permissões
 - Segredos em vault ou variável de ambiente segura — nunca em código
 - Rede: exposição mínima de portas e serviços

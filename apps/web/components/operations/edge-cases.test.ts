@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { applyRealtimeEnvelope } from './use-operations-realtime'
 import {
-  comanda, liveSnapshot, kitchenSnapshot, summarySnapshot,
-  createQueryClientMock, qc,
+  comanda,
+  liveSnapshot,
+  kitchenSnapshot,
+  summarySnapshot,
+  createQueryClientMock,
+  qc,
 } from './__fixtures__/operations-realtime.fixtures'
 import { requiresSummaryRefresh, syncSummarySnapshotFromLive } from '@/lib/operations/operations-realtime-patching'
 
@@ -15,7 +19,13 @@ describe('business date mismatch', () => {
     const mock = createQueryClientMock(liveSnapshot())
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'comanda.opened',
-      payload: { comandaId: 'c-1', tableLabel: 'Mesa 1', status: 'OPEN', openedAt: '2026-03-30T10:00:00.000Z', businessDate: '2026-03-29' },
+      payload: {
+        comandaId: 'c-1',
+        tableLabel: 'Mesa 1',
+        status: 'OPEN',
+        openedAt: '2026-03-30T10:00:00.000Z',
+        businessDate: '2026-03-29',
+      },
     })
     expect(result.livePatched).toBe(false)
     expect(result.liveNeedsRefresh).toBe(true)
@@ -25,7 +35,16 @@ describe('business date mismatch', () => {
     const mock = createQueryClientMock(liveSnapshot(), kitchenSnapshot())
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'kitchen.item.queued',
-      payload: { itemId: 'i-1', comandaId: 'c-1', productName: 'P', mesaLabel: 'M1', quantity: 1, employeeId: null, employeeName: 'Op', businessDate: '2026-03-29' },
+      payload: {
+        itemId: 'i-1',
+        comandaId: 'c-1',
+        productName: 'P',
+        mesaLabel: 'M1',
+        quantity: 1,
+        employeeId: null,
+        employeeName: 'Op',
+        businessDate: '2026-03-29',
+      },
     })
     expect(result.kitchenPatched).toBe(false)
   })
@@ -55,10 +74,30 @@ describe('business date mismatch', () => {
 
 describe('patch result flags', () => {
   it('returns all false when no cache data exists', () => {
-    const mock = createQueryClientMock(liveSnapshot({ unassigned: { employeeId: null, employeeCode: null, displayName: 'Op', active: true, cashSession: null, comandas: [] }, closure: null, employees: [], mesas: [] }))
+    const mock = createQueryClientMock(
+      liveSnapshot({
+        unassigned: {
+          employeeId: null,
+          employeeCode: null,
+          displayName: 'Op',
+          active: true,
+          cashSession: null,
+          comandas: [],
+        },
+        closure: null,
+        employees: [],
+        mesas: [],
+      }),
+    )
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'comanda.closed',
-      payload: { comandaId: 'nonexistent', mesaLabel: 'X', status: 'CLOSED', totalAmount: 10, businessDate: '2026-03-30' },
+      payload: {
+        comandaId: 'nonexistent',
+        mesaLabel: 'X',
+        status: 'CLOSED',
+        totalAmount: 10,
+        businessDate: '2026-03-30',
+      },
     })
     expect(result.livePatched).toBe(false)
     expect(result.kitchenPatched).toBe(false)
@@ -70,7 +109,13 @@ describe('patch result flags', () => {
     const mock = createQueryClientMock(liveSnapshot(), undefined, summarySnapshot())
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'comanda.opened',
-      payload: { comandaId: 'c-1', tableLabel: 'M1', status: 'OPEN', openedAt: '2026-03-30T10:00:00.000Z', businessDate: '2026-03-30' },
+      payload: {
+        comandaId: 'c-1',
+        tableLabel: 'M1',
+        status: 'OPEN',
+        openedAt: '2026-03-30T10:00:00.000Z',
+        businessDate: '2026-03-30',
+      },
     })
     expect(result.summaryPatched).toBe(false)
   })
@@ -79,7 +124,16 @@ describe('patch result flags', () => {
     const mock = createQueryClientMock(liveSnapshot())
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'kitchen.item.queued',
-      payload: { itemId: 'i-1', comandaId: 'c-1', productName: 'P', mesaLabel: 'M1', quantity: 1, employeeId: null, employeeName: 'Op', businessDate: '2026-03-30' },
+      payload: {
+        itemId: 'i-1',
+        comandaId: 'c-1',
+        productName: 'P',
+        mesaLabel: 'M1',
+        quantity: 1,
+        employeeId: null,
+        employeeName: 'Op',
+        businessDate: '2026-03-30',
+      },
     })
     expect(result.kitchenPatched).toBe(false)
   })
@@ -142,7 +196,16 @@ describe('requiresSummaryRefresh', () => {
     for (const event of ['kitchen.item.queued', 'kitchen.item.updated', 'mesa.upserted']) {
       applyRealtimeEnvelope(qc(mock), {
         event: event as never,
-        payload: { businessDate: '2026-03-30', itemId: 'i-1', comandaId: 'c-1', productName: 'P', mesaLabel: 'M1', quantity: 1, employeeId: null, employeeName: 'Op' },
+        payload: {
+          businessDate: '2026-03-30',
+          itemId: 'i-1',
+          comandaId: 'c-1',
+          productName: 'P',
+          mesaLabel: 'M1',
+          quantity: 1,
+          employeeId: null,
+          employeeName: 'Op',
+        },
       })
     }
     expect(mock.getSummarySnapshot()?.kpis.projecaoTotal).toBe(150) // unchanged
@@ -177,7 +240,18 @@ describe('requiresSummaryRefresh', () => {
             id: 'c-1',
             totalAmount: 60,
             items: [
-              { id: 'item-1', productId: 'p-1', productName: 'Pizza', quantity: 2, unitPrice: 30, totalAmount: 60, notes: null, kitchenStatus: null, kitchenQueuedAt: null, kitchenReadyAt: null },
+              {
+                id: 'item-1',
+                productId: 'p-1',
+                productName: 'Pizza',
+                quantity: 2,
+                unitPrice: 30,
+                totalAmount: 60,
+                notes: null,
+                kitchenStatus: null,
+                kitchenQueuedAt: null,
+                kitchenReadyAt: null,
+              },
             ],
           }),
         ],
@@ -216,7 +290,16 @@ describe('requiresKitchenRefresh', () => {
     const mock = createQueryClientMock(liveSnapshot(), kitchenSnapshot())
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'kitchen.item.queued',
-      payload: { itemId: 'i-1', comandaId: 'c-1', productName: 'P', mesaLabel: 'M1', quantity: 1, employeeId: null, employeeName: 'Op', businessDate: '2026-03-30' },
+      payload: {
+        itemId: 'i-1',
+        comandaId: 'c-1',
+        productName: 'P',
+        mesaLabel: 'M1',
+        quantity: 1,
+        employeeId: null,
+        employeeName: 'Op',
+        businessDate: '2026-03-30',
+      },
     })
     expect(result.kitchenNeedsRefresh || result.kitchenPatched).toBe(true)
   })
@@ -227,7 +310,13 @@ describe('requiresKitchenRefresh', () => {
     const mock = createQueryClientMock(live)
     const result = applyRealtimeEnvelope(qc(mock), {
       event: 'comanda.updated',
-      payload: { comandaId: 'c-1', tableLabel: 'M1', status: 'IN_PREPARATION', businessDate: '2026-03-30', requiresKitchenRefresh: true },
+      payload: {
+        comandaId: 'c-1',
+        tableLabel: 'M1',
+        status: 'IN_PREPARATION',
+        businessDate: '2026-03-30',
+        requiresKitchenRefresh: true,
+      },
     })
     expect(result.livePatched).toBe(true)
   })

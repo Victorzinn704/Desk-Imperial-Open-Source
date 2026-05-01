@@ -5,18 +5,18 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { CacheService } from '../../common/services/cache.service'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
-import { EmployeesService } from '../employees/employees.service'
-import { FinanceService } from '../finance/finance.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
-import { OperationsService } from '../operations/operations.service'
-import { NotificationsService } from './notifications.service'
-import { TelegramAuthService } from './telegram-auth.service'
-import {
+import type { EmployeesService } from '../employees/employees.service'
+import type { FinanceService } from '../finance/finance.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
+import type { OperationsService } from '../operations/operations.service'
+import type { NotificationsService } from './notifications.service'
+import type { TelegramAuthService } from './telegram-auth.service'
+import type {
   TelegramAdapter,
-  type TelegramInlineKeyboardMarkup,
-  type TelegramMessageOptions,
+  TelegramInlineKeyboardMarkup,
+  TelegramMessageOptions,
 } from './infra/telegram/telegram.adapter'
-import { TelegramLinkService } from './telegram-link.service'
+import type { TelegramLinkService } from './telegram-link.service'
 
 type SupportedCommand =
   | 'start'
@@ -213,7 +213,7 @@ export class TelegramBotService {
   private async handleStart(ctx: Context) {
     const chatId = ctx.chat?.id
     const from = ctx.from
-    if (!chatId || !from) {
+    if (!(chatId && from)) {
       return
     }
 
@@ -286,7 +286,8 @@ export class TelegramBotService {
     }
 
     const common = ['/ajuda', '/menu', '/vendas', '/status', '/portal', '/desvincular']
-    const ownerExtras = resolution.auth.role === 'OWNER' ? ['/caixa', '/relatorio', '/equipe', '/alertas'] : ['/alertas']
+    const ownerExtras =
+      resolution.auth.role === 'OWNER' ? ['/caixa', '/relatorio', '/equipe', '/alertas'] : ['/alertas']
     await this.safeSendInteractive(
       { chatId, accountId: resolution.accountId },
       [
@@ -311,7 +312,8 @@ export class TelegramBotService {
       return
     }
 
-    const enabledChannels = this.notificationsService.getChannelCapabilities()
+    const enabledChannels = this.notificationsService
+      .getChannelCapabilities()
       .filter((channel) => channel.enabled)
       .map((channel) => channel.channel)
 
@@ -491,7 +493,8 @@ export class TelegramBotService {
       return
     }
 
-    const deliveryChannels = this.notificationsService.getChannelCapabilities()
+    const deliveryChannels = this.notificationsService
+      .getChannelCapabilities()
       .filter((channel) => channel.enabled)
       .map((channel) => `- ${channel.channel}`)
 
@@ -552,7 +555,11 @@ export class TelegramBotService {
     }
 
     if (resolution.status === 'workspace_disabled') {
-      await this.safeSend(chatId, '🔒 O bot do Telegram ainda não foi liberado para este workspace.', resolution.accountId)
+      await this.safeSend(
+        chatId,
+        '🔒 O bot do Telegram ainda não foi liberado para este workspace.',
+        resolution.accountId,
+      )
       await this.recordCommandDenied(command, null, chatId, 'workspace_disabled')
       return null
     }
@@ -691,7 +698,9 @@ export class TelegramBotService {
         return
       }
 
-      this.logger.warn(`Falha ao enviar mensagem Telegram para ${chatId}: ${error instanceof Error ? error.message : 'unknown'}`)
+      this.logger.warn(
+        `Falha ao enviar mensagem Telegram para ${chatId}: ${error instanceof Error ? error.message : 'unknown'}`,
+      )
     }
   }
 
@@ -741,9 +750,7 @@ export class TelegramBotService {
     try {
       await this.telegramAdapter.answerCallbackQuery(callbackQueryId, text)
     } catch (error) {
-      this.logger.warn(
-        `Falha ao responder callback do Telegram: ${error instanceof Error ? error.message : 'unknown'}`,
-      )
+      this.logger.warn(`Falha ao responder callback do Telegram: ${error instanceof Error ? error.message : 'unknown'}`)
     }
   }
 

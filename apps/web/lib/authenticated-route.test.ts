@@ -13,18 +13,16 @@ describe('authenticated-route', () => {
   })
 
   it('força shell mobile em dispositivo com user agent móvel mesmo com viewport maior', () => {
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-      ((query: string) => ({
-        matches: query === '(pointer: coarse)',
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })) as typeof window.matchMedia,
-    )
+    vi.spyOn(window, 'matchMedia').mockImplementation(((query: string) => ({
+      matches: query === '(pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as typeof window.matchMedia)
     vi.stubGlobal(
       'navigator',
       Object.create(navigator, {
@@ -41,18 +39,16 @@ describe('authenticated-route', () => {
   })
 
   it('mantém desktop no design-lab quando não há sinais reais de dispositivo móvel', () => {
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-      ((query: string) => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })) as typeof window.matchMedia,
-    )
+    vi.spyOn(window, 'matchMedia').mockImplementation(((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as typeof window.matchMedia)
 
     expect(resolveAuthenticatedRoute('OWNER', 1366)).toBe('/design-lab/overview')
     expect(resolveAuthenticatedRoute('STAFF', 1366)).toBe('/design-lab/pdv')

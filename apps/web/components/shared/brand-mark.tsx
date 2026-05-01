@@ -41,35 +41,20 @@ export function BrandMark({
       : presentation === 'wireframe'
         ? 'wireframe-brand__name'
         : `${wordmarkClass} min-w-0 truncate`
-  const frameSize =
-    presentation === 'default'
-      ? size === 'sm'
-        ? 34
-        : 40
-      : undefined
-  const iconSize =
-    presentation === 'wireframe'
-      ? size === 'sm'
-        ? 15
-        : 16
-      : size === 'sm'
-        ? 15
-        : 18
+  const frameSize = presentation === 'default' ? (size === 'sm' ? 34 : 40) : undefined
+  const iconSize = presentation === 'wireframe' ? (size === 'sm' ? 15 : 16) : size === 'sm' ? 15 : 18
 
   return (
-    <Link
-      aria-label={ariaLabel}
-      className={rootClass}
-      href={href}
-      title={title}
-      onClick={onClick}
-    >
-      <span
-        className={iconClass}
-        style={frameSize ? { width: frameSize, height: frameSize } : undefined}
-      >
+    <Link aria-label={ariaLabel} className={rootClass} href={href} title={title} onClick={onClick}>
+      <span className={iconClass} style={frameSize ? { width: frameSize, height: frameSize } : undefined}>
         <Crown
-          className={presentation === 'lab' ? 'lab-brand__glyph' : presentation === 'wireframe' ? 'wireframe-brand__glyph' : undefined}
+          className={
+            presentation === 'lab'
+              ? 'lab-brand__glyph'
+              : presentation === 'wireframe'
+                ? 'wireframe-brand__glyph'
+                : undefined
+          }
           style={{ width: iconSize, height: iconSize }}
         />
       </span>

@@ -53,9 +53,12 @@ export async function restoreEmployee(employeeId: string) {
 }
 
 export async function issueEmployeeAccess(employeeId: string) {
-  return apiFetch<{ employee: EmployeeRecord; credentials: EmployeeAccessCredentials }>(`/employees/${employeeId}/access`, {
-    method: 'POST',
-  })
+  return apiFetch<{ employee: EmployeeRecord; credentials: EmployeeAccessCredentials }>(
+    `/employees/${employeeId}/access`,
+    {
+      method: 'POST',
+    },
+  )
 }
 
 export async function rotateEmployeePassword(employeeId: string) {

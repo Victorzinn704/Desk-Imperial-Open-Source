@@ -13,7 +13,11 @@ type OperationsMutationAction =
 
 type OperationsSocketLifecyclePhase = 'opened' | 'closed' | 'connect' | 'disconnect' | 'connect_error'
 
-type OperationsRealtimeDropReason = 'no-applicable-snapshot' | 'duplicate-id' | 'buffer-overflow' | 'stale-business-date'
+type OperationsRealtimeDropReason =
+  | 'no-applicable-snapshot'
+  | 'duplicate-id'
+  | 'buffer-overflow'
+  | 'stale-business-date'
 
 type OperationsPerformanceEvent =
   | {

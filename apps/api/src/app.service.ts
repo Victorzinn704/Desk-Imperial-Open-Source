@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { CacheService } from './common/services/cache.service'
-import { PrismaService } from './database/prisma.service'
+import type { CacheService } from './common/services/cache.service'
+import type { PrismaService } from './database/prisma.service'
 
 @Injectable()
 export class AppService {
@@ -17,7 +17,7 @@ export class AppService {
     const redisHealthy = await this.cacheService.ping()
     const elapsedMs = Date.now() - start
 
-    if (!dbHealthy || !redisHealthy) {
+    if (!(dbHealthy && redisHealthy)) {
       const message = `healthcheck failed: db=${dbHealthy} redis=${redisHealthy}`
       this.logger.warn(message)
       return {

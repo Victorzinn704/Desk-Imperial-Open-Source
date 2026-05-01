@@ -224,9 +224,9 @@ export function reportApiRequestMeasurementToFaro(context: ApiRequestMeasurement
 
   const isSlowRequest = durationMs >= slowApiThresholdMs
   const isServerError = status >= 500
-  const sampledHealthyRequest = !isSlowRequest && !isServerError && sampleUnit() <= slowApiSampleRate
+  const sampledHealthyRequest = !(isSlowRequest || isServerError) && sampleUnit() <= slowApiSampleRate
 
-  if (!isSlowRequest && !isServerError && !sampledHealthyRequest) {
+  if (!(isSlowRequest || isServerError || sampledHealthyRequest)) {
     return
   }
 
@@ -331,7 +331,7 @@ function resolveCollectorUrl(options: {
       return null
     }
 
-    if (!productionMode && !isSecureTransport && !isLocalDevelopmentCollector && !options.allowInsecureCollector) {
+    if (!(productionMode || isSecureTransport || isLocalDevelopmentCollector || options.allowInsecureCollector)) {
       return null
     }
 
@@ -404,8 +404,8 @@ function sanitizeTransportItemInPlace(item: unknown) {
     return
   }
 
-  sanitizeRecordObject(transportItem.payload['context'])
-  sanitizeRecordObject(transportItem.payload['attributes'])
+  sanitizeRecordObject(transportItem.payload.context)
+  sanitizeRecordObject(transportItem.payload.attributes)
 }
 
 function sanitizeRecordObject(value: unknown) {

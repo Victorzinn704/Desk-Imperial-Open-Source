@@ -187,16 +187,14 @@ describe('OperationsHelpersService - branches', () => {
   it('syncCashClosure preserva status CLOSED existente', async () => {
     const transaction = {
       cashSession: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              status: CashSessionStatus.OPEN,
-              expectedCashAmount: 100,
-              grossRevenueAmount: 30,
-              realizedProfitAmount: 10,
-            },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            status: CashSessionStatus.OPEN,
+            expectedCashAmount: 100,
+            grossRevenueAmount: 30,
+            realizedProfitAmount: 10,
+          },
+        ]),
       },
       comanda: {
         count: jest.fn().mockResolvedValue(2),
@@ -219,16 +217,14 @@ describe('OperationsHelpersService - branches', () => {
   it('syncCashClosure seta PENDING quando ha sessoes ou comandas abertas', async () => {
     const transaction = {
       cashSession: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              status: CashSessionStatus.OPEN,
-              expectedCashAmount: 120,
-              grossRevenueAmount: 40,
-              realizedProfitAmount: 15,
-            },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            status: CashSessionStatus.OPEN,
+            expectedCashAmount: 120,
+            grossRevenueAmount: 40,
+            realizedProfitAmount: 15,
+          },
+        ]),
       },
       comanda: {
         count: jest.fn().mockResolvedValue(0),
@@ -586,7 +582,9 @@ describe('OperationsHelpersService - branches', () => {
     }
 
     await expect(
-      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'prod-1', quantity: 1 }]),
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [
+        { productId: 'prod-1', quantity: 1 },
+      ]),
     ).rejects.toThrow('Estoque insuficiente para Cerveja')
   })
 
@@ -616,7 +614,9 @@ describe('OperationsHelpersService - branches', () => {
     }
 
     await expect(
-      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'combo-1', quantity: 1 }]),
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [
+        { productId: 'combo-1', quantity: 1 },
+      ]),
     ).rejects.toThrow('Estoque insuficiente para Cerveja Long Neck')
   })
 

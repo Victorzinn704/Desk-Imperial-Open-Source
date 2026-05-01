@@ -1,8 +1,8 @@
-language: "pt-BR"
+language: 'pt-BR'
 early_access: false
 
 reviews:
-  profile: "chill"
+  profile: 'chill'
   request_changes_workflow: false
   high_level_summary: true
   poem: false
@@ -15,7 +15,7 @@ reviews:
   review_status: true
 
   path_instructions:
-    - path: "apps/api/src/modules/auth/**"
+    - path: 'apps/api/src/modules/auth/**'
       instructions: |
         Revisar com atenção máxima.
         - Autenticação: tokens JWT, cookies HttpOnly, expiração, revogação
@@ -24,7 +24,7 @@ reviews:
         - LGPD: dados pessoais (e-mail, CPF, telefone) não devem aparecer em logs ou respostas de erro
         - Secrets: nenhum segredo hardcoded, sempre process.env
 
-    - path: "apps/api/src/modules/consent/**"
+    - path: 'apps/api/src/modules/consent/**'
       instructions: |
         Verificar conformidade LGPD:
         - Registro de consentimento com timestamp imutável
@@ -32,7 +32,7 @@ reviews:
         - Opt-out deve revogar processamentos dependentes
         - Nenhum dado pessoal processado sem consentimento registrado
 
-    - path: "apps/api/src/**/*.controller.ts"
+    - path: 'apps/api/src/**/*.controller.ts'
       instructions: |
         Verificar padrões de API:
         - ValidationPipe presente (global em main.ts ou @UsePipes na rota)
@@ -41,7 +41,7 @@ reviews:
         - Códigos HTTP corretos (201 para criação, 204 para delete sem corpo)
         - Nenhum acesso direto ao PrismaService — sempre via service injetado
 
-    - path: "apps/api/src/**/*.service.ts"
+    - path: 'apps/api/src/**/*.service.ts'
       instructions: |
         Verificar lógica de negócio:
         - Queries Prisma sem N+1 óbvio (usar include em vez de loops de await)
@@ -49,7 +49,7 @@ reviews:
         - Logger injetado (não console.log)
         - Erros tipados (HttpException ou exceções do domínio), nunca throw string
 
-    - path: "apps/web/**/*.tsx"
+    - path: 'apps/web/**/*.tsx'
       instructions: |
         Verificar Next.js App Router:
         - Server Components não importam código marcado 'use client'
@@ -58,14 +58,14 @@ reviews:
         - Loading states explícitos para operações assíncronas
         - React Query: queries com staleTime configurado, sem refetch desnecessário
 
-    - path: "apps/web/app/api/**"
+    - path: 'apps/web/app/api/**'
       instructions: |
         Route Handlers Next.js:
         - CSRF protection (verificar origin/referer header)
         - Autenticação verificada antes de qualquer operação
         - Nenhuma lógica de negócio aqui — delegar para apps/api
 
-    - path: "**/*.test.{ts,tsx}"
+    - path: '**/*.test.{ts,tsx}'
       instructions: |
         Qualidade de testes:
         - Cobrir caminho feliz E casos de borda (input inválido, erros de rede, permissão negada)
@@ -73,7 +73,7 @@ reviews:
         - Descrições legíveis: "deve X quando Y" ou "returns X given Y"
         - Sem testes que só verificam que o mock foi chamado sem validar o efeito
 
-    - path: "packages/**"
+    - path: 'packages/**'
       instructions: |
         Pacotes compartilhados:
         - Mudanças breaking em packages/types afetam API e Web — documentar

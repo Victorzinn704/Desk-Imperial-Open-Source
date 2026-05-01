@@ -5,7 +5,20 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Building2, Eye, EyeOff, Globe2, Hash, LockKeyhole, type LucideIcon, Mail, MapPin, User, Users } from 'lucide-react'
+import {
+  ArrowLeft,
+  Building2,
+  Eye,
+  EyeOff,
+  Globe2,
+  Hash,
+  LockKeyhole,
+  type LucideIcon,
+  Mail,
+  MapPin,
+  User,
+  Users,
+} from 'lucide-react'
 import { ApiError, fetchConsentDocuments, lookupPostalCode, register } from '@/lib/api'
 import { readCookieConsentChoice } from '@/lib/cookie-consent'
 import {

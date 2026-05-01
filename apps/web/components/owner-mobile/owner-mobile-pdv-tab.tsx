@@ -1,7 +1,7 @@
 'use client'
 
 import { OwnerPdvBuilder, OwnerPdvOverview } from './owner-mobile-pdv-tab-sections'
-import { type OwnerPdvTabProps } from './owner-mobile-pdv-tab-model'
+import type { OwnerPdvTabProps } from './owner-mobile-pdv-tab-model'
 
 export function OwnerPdvTab(props: OwnerPdvTabProps) {
   if (props.pendingAction) {

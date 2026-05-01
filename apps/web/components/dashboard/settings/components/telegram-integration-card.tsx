@@ -22,7 +22,9 @@ type TelegramIntegrationCardProps = {
   canManageWorkspacePreferences?: boolean
 }
 
-export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }: Readonly<TelegramIntegrationCardProps>) {
+export function TelegramIntegrationCard({
+  canManageWorkspacePreferences = true,
+}: Readonly<TelegramIntegrationCardProps>) {
   const queryClient = useQueryClient()
   const [pendingLink, setPendingLink] = useState<TelegramLinkTokenResponse | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
@@ -71,10 +73,13 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
     }
 
     const expiresAt = new Date(pendingLink.expiresAt).getTime()
-    const timeout = globalThis.setTimeout(() => {
-      setPendingLink(null)
-      setCopyState('idle')
-    }, Math.max(0, expiresAt - Date.now()))
+    const timeout = globalThis.setTimeout(
+      () => {
+        setPendingLink(null)
+        setCopyState('idle')
+      },
+      Math.max(0, expiresAt - Date.now()),
+    )
 
     return () => globalThis.clearTimeout(timeout)
   }, [pendingLink])
@@ -89,7 +94,7 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
     statusQuery.error,
   )
   const preferences = preferencesQuery.data?.preferences ?? []
-  const preferencesDisabled = !status?.enabled || !status?.workspaceEnabled || preferencesMutation.isPending
+  const preferencesDisabled = !(status?.enabled && status?.workspaceEnabled) || preferencesMutation.isPending
   const linkStatusValue = resolveLinkStatusValue(status?.linked ?? false, activeLink)
   const chatHint = resolveChatHint(status?.linked ?? false)
   const chatValue = resolveChatValue(status)
@@ -114,7 +119,9 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: statusTone.accent }}>
               Telegram oficial
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">Conecte sua conta ao bot do Desk Imperial.</h3>
+            <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
+              Conecte sua conta ao bot do Desk Imperial.
+            </h3>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{resolveDescription(status)}</p>
           </div>
         </div>
@@ -148,7 +155,8 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
       <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
         <p className="text-sm font-semibold text-[var(--text-primary)]">Canal oficial único.</p>
         <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">
-          O Telegram do Desk Imperial é definido no servidor e permanece fixo no portal. O usuário só vincula este chat ao bot oficial; não existe troca manual para outro bot.
+          O Telegram do Desk Imperial é definido no servidor e permanece fixo no portal. O usuário só vincula este chat
+          ao bot oficial; não existe troca manual para outro bot.
         </p>
       </div>
 
@@ -165,7 +173,11 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
         }
       />
 
-      <PendingTelegramLinkSection activeLink={activeLink} copyButtonLabel={copyButtonLabel} onCopyStateChange={setCopyState} />
+      <PendingTelegramLinkSection
+        activeLink={activeLink}
+        copyButtonLabel={copyButtonLabel}
+        onCopyStateChange={setCopyState}
+      />
 
       {errorMessage ? <p className="mt-5 text-sm text-[var(--danger)]">{errorMessage}</p> : null}
 
@@ -175,13 +187,19 @@ export function TelegramIntegrationCard({ canManageWorkspacePreferences = true }
           size="sm"
           type="button"
           variant="primary"
-          disabled={!status?.enabled || !status?.workspaceEnabled}
+          disabled={!(status?.enabled && status?.workspaceEnabled)}
           onClick={() => createLinkMutation.mutate()}
         >
           <CheckCircle2 className="size-4" />
           {primaryButtonLabel}
         </Button>
-        <Button loading={statusQuery.isFetching} size="sm" type="button" variant="secondary" onClick={() => void statusQuery.refetch()}>
+        <Button
+          loading={statusQuery.isFetching}
+          size="sm"
+          type="button"
+          variant="secondary"
+          onClick={() => void statusQuery.refetch()}
+        >
           <RefreshCw className="size-4" />
           Atualizar status
         </Button>
@@ -222,7 +240,7 @@ function LinkedTelegramAccountSection({
       }
     | undefined
 }>) {
-  if (!status?.linked || !status.account) {
+  if (!(status?.linked && status.account)) {
     return null
   }
 
@@ -302,15 +320,20 @@ function PendingTelegramLinkSection({
     <div className="mt-5 rounded-2xl border border-[rgba(0,140,255,0.18)] bg-[rgba(0,140,255,0.08)] p-4">
       <p className="text-sm font-semibold text-[var(--text-primary)]">Link de conexão pronto.</p>
       <p className="mt-1 text-sm leading-6 text-[var(--text-soft)]">
-        Abra o Telegram, confirme o <span className="font-semibold text-[var(--text-primary)]">/start</span> e volte ao portal. O link expira em{' '}
-        {formatDateTime(activeLink.expiresAt)}.
+        Abra o Telegram, confirme o <span className="font-semibold text-[var(--text-primary)]">/start</span> e volte ao
+        portal. O link expira em {formatDateTime(activeLink.expiresAt)}.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" type="button" onClick={() => openLink(activeLink.deeplink)}>
           <ExternalLink className="size-4" />
           Abrir Telegram
         </Button>
-        <Button size="sm" type="button" variant="secondary" onClick={() => void copyLink(activeLink.deeplink, onCopyStateChange)}>
+        <Button
+          size="sm"
+          type="button"
+          variant="secondary"
+          onClick={() => void copyLink(activeLink.deeplink, onCopyStateChange)}
+        >
           <Copy className="size-4" />
           {copyButtonLabel}
         </Button>

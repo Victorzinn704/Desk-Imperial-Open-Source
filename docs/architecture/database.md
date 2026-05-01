@@ -33,13 +33,13 @@ Referencias internas:
 
 O schema Prisma atual tem **26 modelos**:
 
-| Grupo | Modelos |
-| --- | --- |
+| Grupo               | Modelos                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Identidade e acesso | `User`, `Session`, `DemoAccessGrant`, `PasswordResetToken`, `OneTimeCode`, `ConsentDocument`, `UserConsent`, `CookiePreference`, `AuditLog` |
-| Notificacoes | `TelegramAccount`, `TelegramLinkToken`, `NotificationPreference`, `UserNotificationPreference` |
-| Catalogo | `Product`, `ProductComboItem` |
-| Operacao | `Employee`, `CashSession`, `CashMovement`, `CashClosure`, `Mesa`, `Comanda`, `ComandaItem`, `ComandaAssignment`, `ComandaPayment` |
-| Vendas | `Order`, `OrderItem` |
+| Notificacoes        | `TelegramAccount`, `TelegramLinkToken`, `NotificationPreference`, `UserNotificationPreference`                                              |
+| Catalogo            | `Product`, `ProductComboItem`                                                                                                               |
+| Operacao            | `Employee`, `CashSession`, `CashMovement`, `CashClosure`, `Mesa`, `Comanda`, `ComandaItem`, `ComandaAssignment`, `ComandaPayment`           |
+| Vendas              | `Order`, `OrderItem`                                                                                                                        |
 
 O documento antigo falava em 22 modelos e em uma migracao "em curso" do Neon. Isso driftou.
 

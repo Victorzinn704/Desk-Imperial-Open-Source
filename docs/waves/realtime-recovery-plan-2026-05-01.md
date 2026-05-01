@@ -47,6 +47,7 @@ Transformar hipótese em métrica.
 ### Status local em 2026-05-01
 
 Implementado neste corte:
+
 - `connect -> auth_ok`
 - `connect -> auth_fail`
 - `mutation -> first_emit` para:
@@ -86,6 +87,7 @@ Implementado neste corte:
 ### Servidor
 
 Medir:
+
 - `connect -> auth_ok`
 - `connect -> auth_fail`
 - `mutation -> first_emit`
@@ -103,6 +105,7 @@ Medir:
 ### Cliente
 
 Medir:
+
 - `active_socket_instances`
 - `listener_count`
 - `event_receive -> patch_applied`
@@ -149,6 +152,7 @@ Eliminar bugs confirmados sem redesenhar o protocolo inteiro.
 ### Status local em 2026-05-01
 
 Implementado neste corte:
+
 - disconnect explícito de sockets realtime por:
   - logout
   - revogação de sessões de employee
@@ -168,6 +172,7 @@ Implementado neste corte:
   - staff: `operations`, `kitchen`
 
 Ainda pendente nesta wave:
+
 - smoke real de reconnect/mobile em produção após deploy deste corte
 
 ### Entradas
@@ -213,6 +218,7 @@ Reduzir ruído e exposição dentro do workspace.
 ### Status local em 2026-05-01
 
 Implementado neste corte:
+
 - novas rooms server-side adicionadas em paralelo:
   - `workspace:{id}:kitchen`
   - `workspace:{id}:cash`
@@ -228,6 +234,7 @@ Implementado neste corte:
   - `comanda.*` permanece em `workspace:{id}` por compatibilidade
 
 Ainda não feito nesta wave:
+
 - remover a room legada `workspace:{id}`
 - migrar `comanda.*` para segmentação mais fina
 - substituir `subscribeAll()` por barramento tenant-aware
@@ -236,6 +243,7 @@ Ainda não feito nesta wave:
 ### Estratégia
 
 Adicionar rooms novas em paralelo:
+
 - `workspace:{id}`
 - `workspace:{id}:kitchen`
 - `workspace:{id}:cash`

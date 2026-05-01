@@ -6,10 +6,10 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { AdminPinService } from './admin-pin.service'
-import { RemovePinDto } from './dto/remove-pin.dto'
-import { SetupPinDto } from './dto/setup-pin.dto'
-import { VerifyPinDto } from './dto/verify-pin.dto'
+import type { AdminPinService } from './admin-pin.service'
+import type { RemovePinDto } from './dto/remove-pin.dto'
+import type { SetupPinDto } from './dto/setup-pin.dto'
+import type { VerifyPinDto } from './dto/verify-pin.dto'
 
 @ApiTags('admin')
 @Controller('admin')

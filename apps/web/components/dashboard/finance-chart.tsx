@@ -318,8 +318,12 @@ function renderChart({
   displayCurrency: CurrencyCode
   isDark: boolean
 }) {
-  if (isLoading) {return <Skeleton className="h-full w-full rounded-xl" />}
-  if (error) {return <div className="text-red-500 p-6">{error}</div>}
+  if (isLoading) {
+    return <Skeleton className="h-full w-full rounded-xl" />
+  }
+  if (error) {
+    return <div className="text-red-500 p-6">{error}</div>
+  }
 
   const ctx: ChartContext = {
     textColor: isDark ? '#9ca3af' : '#6b7280',

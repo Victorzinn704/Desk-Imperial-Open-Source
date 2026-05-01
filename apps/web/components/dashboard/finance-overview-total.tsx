@@ -42,7 +42,7 @@ function AnimatedValue({ value, currency }: { value: number; currency: FinanceSu
     const tick = (now: number) => {
       const elapsed = now - start
       const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
+      const eased = 1 - (1 - progress) ** 3
       setDisplayed(from + (to - from) * eased)
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick)

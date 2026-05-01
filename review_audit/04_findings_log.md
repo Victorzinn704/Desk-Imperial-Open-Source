@@ -7,13 +7,13 @@
 
 ## Resumo por Prioridade
 
-| Prioridade | Qtde | Critério |
-|---|---|---|
-| **P0** — Crítico, atacar hoje | 3 | Risco de dados, instabilidade, segurança |
-| **P1** — Alto, próximos 7 dias | 12 | Degradação de UX, débito estrutural pesado |
-| **P2** — Importante, 30 dias | 15 | Qualidade, cobertura, manutenibilidade |
-| **P3** — Evolutivo, 60-90 dias | 10 | Melhorias incrementais |
-| **P4** — Oportunidade, backlog | 5 | Nice-to-have |
+| Prioridade                     | Qtde | Critério                                   |
+| ------------------------------ | ---- | ------------------------------------------ |
+| **P0** — Crítico, atacar hoje  | 3    | Risco de dados, instabilidade, segurança   |
+| **P1** — Alto, próximos 7 dias | 12   | Degradação de UX, débito estrutural pesado |
+| **P2** — Importante, 30 dias   | 15   | Qualidade, cobertura, manutenibilidade     |
+| **P3** — Evolutivo, 60-90 dias | 10   | Melhorias incrementais                     |
+| **P4** — Oportunidade, backlog | 5    | Nice-to-have                               |
 
 **Total:** 45 achados ativos
 

@@ -18,20 +18,20 @@ Enquanto este gate estiver ativo:
 
 ## 2. Checklist Obrigatorio por Lote
 
-| Area | Criterio | Estado atual |
-| --- | --- | --- |
-| Escopo | `npm run quality:scope:strict` verde | atendido anteriormente |
-| Contrato | `npm run quality:contracts` verde | atendido em preflight |
-| Preflight | `npm run quality:preflight` verde | atendido |
-| Coverage Sonar | `npm --workspace @partner/web run test:coverage:sonar` verde | atendido |
-| Authz | `PATCH /auth/profile` blindado contra `STAFF` | atendido |
-| Integridade | cancelamento com `comandaId` restaurando estoque | atendido |
-| Auditoria | ator real separado do owner | atendido |
-| Frontend operacional | reconnect + estados `loading/error/offline/empty` corrigidos | atendido no baseline atual |
-| Sonar | reduzir `new_violations` e subir `new_coverage` | pendente; servidor local indisponivel nesta rodada |
-| Coverage | owner/staff mobile cobertos por gate real | parcial; superficie entrou no baseline, mas web segue em `69.11%` |
-| Observabilidade | alerta com entrega validada + dashboards/SLO funcional | parcial; dashboards e alertas de latencia foram versionados |
-| Docs operacionais | release + staging + incidente + restore publicados | parcial; release/staging/incidente/rollback publicados, restore pendente |
+| Area                 | Criterio                                                     | Estado atual                                                             |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Escopo               | `npm run quality:scope:strict` verde                         | atendido anteriormente                                                   |
+| Contrato             | `npm run quality:contracts` verde                            | atendido em preflight                                                    |
+| Preflight            | `npm run quality:preflight` verde                            | atendido                                                                 |
+| Coverage Sonar       | `npm --workspace @partner/web run test:coverage:sonar` verde | atendido                                                                 |
+| Authz                | `PATCH /auth/profile` blindado contra `STAFF`                | atendido                                                                 |
+| Integridade          | cancelamento com `comandaId` restaurando estoque             | atendido                                                                 |
+| Auditoria            | ator real separado do owner                                  | atendido                                                                 |
+| Frontend operacional | reconnect + estados `loading/error/offline/empty` corrigidos | atendido no baseline atual                                               |
+| Sonar                | reduzir `new_violations` e subir `new_coverage`              | pendente; servidor local indisponivel nesta rodada                       |
+| Coverage             | owner/staff mobile cobertos por gate real                    | parcial; superficie entrou no baseline, mas web segue em `69.11%`        |
+| Observabilidade      | alerta com entrega validada + dashboards/SLO funcional       | parcial; dashboards e alertas de latencia foram versionados              |
+| Docs operacionais    | release + staging + incidente + restore publicados           | parcial; release/staging/incidente/rollback publicados, restore pendente |
 
 ---
 

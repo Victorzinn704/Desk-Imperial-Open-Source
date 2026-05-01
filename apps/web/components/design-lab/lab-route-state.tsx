@@ -57,11 +57,7 @@ export function LabRouteLockedState({
 }: Readonly<LabRouteLockedStateProps>) {
   return (
     <section className="space-y-6">
-      <LabPageHeader
-        description={description}
-        eyebrow={eyebrow}
-        title={title}
-      />
+      <LabPageHeader description={description} eyebrow={eyebrow} title={title} />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <LabPanel
@@ -97,11 +93,7 @@ export function LabRouteLockedState({
           </div>
         </LabPanel>
 
-        <LabPanel
-          action={<LabStatusPill tone="info">preview</LabStatusPill>}
-          padding="md"
-          title={previewTitle}
-        >
+        <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title={previewTitle}>
           <div className="space-y-0">
             {previewSignals.map((signal) => (
               <LabSignalRow

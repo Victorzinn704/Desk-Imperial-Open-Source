@@ -2,17 +2,11 @@ import type { AuthRateLimitService } from './auth-rate-limit.service'
 
 type RateLimitState = Awaited<ReturnType<AuthRateLimitService['recordFailure']>>
 
-export async function assertAllowedForKeys(
-  keys: string[],
-  assertion: (key: string) => Promise<void>,
-) {
+export async function assertAllowedForKeys(keys: string[], assertion: (key: string) => Promise<void>) {
   await Promise.all(keys.map((key) => assertion(key)))
 }
 
-export async function recordAttemptsForKeys(
-  keys: string[],
-  recorder: (key: string) => Promise<RateLimitState>,
-) {
+export async function recordAttemptsForKeys(keys: string[], recorder: (key: string) => Promise<RateLimitState>) {
   return Promise.all(keys.map((key) => recorder(key)))
 }
 

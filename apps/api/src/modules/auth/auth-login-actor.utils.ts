@@ -1,4 +1,4 @@
-import { Prisma, UserStatus, UserRole } from '@prisma/client'
+import { type Prisma, UserStatus, UserRole } from '@prisma/client'
 import type { PrismaService } from '../../database/prisma.service'
 import {
   authSessionUserSelect,
@@ -164,7 +164,8 @@ export async function resolveDemoStaffActor(prisma: PrismaService, demoEmail: st
     },
     ownerUser,
     fallbackPasswordHash:
-      resolveEmployeePasswordHash(employee) ?? hashToken(`demo-session:${ownerUser.id}:${employee.id}:${employee.employeeCode}`),
+      resolveEmployeePasswordHash(employee) ??
+      hashToken(`demo-session:${ownerUser.id}:${employee.id}:${employee.employeeCode}`),
   })
 
   return {
@@ -216,31 +217,35 @@ export function buildSyntheticStaffEmail(employeeId: string) {
   return `staff-${employeeId}@desk-imperial.local`
 }
 
-type EmployeeLoginActorUser = Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
-  ? T extends { user: infer U }
-    ? U
+type EmployeeLoginActorUser =
+  Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
+    ? T extends { user: infer U }
+      ? U
+      : never
     : never
-  : never
 
-type EmployeeLoginActorRecord = Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
-  ? T extends {
-      id: string
-      active: boolean
-      displayName: string
-      passwordHash: string | null
-      loginUser: infer L
-    }
-    ? {
+type EmployeeLoginActorRecord =
+  Awaited<ReturnType<typeof findActiveEmployeeLoginActor>> extends infer T
+    ? T extends {
         id: string
         active: boolean
         displayName: string
         passwordHash: string | null
-        loginUser: L
+        loginUser: infer L
       }
+      ? {
+          id: string
+          active: boolean
+          displayName: string
+          passwordHash: string | null
+          loginUser: L
+        }
+      : never
     : never
-  : never
 
-type StaffLoginUserWriter = Pick<PrismaService, 'user' | 'employee'> | Pick<Prisma.TransactionClient, 'user' | 'employee'>
+type StaffLoginUserWriter =
+  | Pick<PrismaService, 'user' | 'employee'>
+  | Pick<Prisma.TransactionClient, 'user' | 'employee'>
 
 export async function ensureEmployeeLoginUser(
   prisma: StaffLoginUserWriter,

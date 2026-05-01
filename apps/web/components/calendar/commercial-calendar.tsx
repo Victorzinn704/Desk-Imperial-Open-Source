@@ -3,7 +3,19 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Calendar, dateFnsLocalizer, type View } from 'react-big-calendar'
 import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { addDays, endOfDay, endOfMonth, endOfWeek, format, getDay, isWithinInterval, parse, startOfDay, startOfMonth, startOfWeek } from 'date-fns'
+import {
+  addDays,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDay,
+  isWithinInterval,
+  parse,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarDays, Plus, Trophy } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -417,9 +429,9 @@ const fieldClassName =
 
 function isSameCalendarDay(left: Date, right: Date) {
   return (
-    left.getFullYear() === right.getFullYear()
-    && left.getMonth() === right.getMonth()
-    && left.getDate() === right.getDate()
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
   )
 }
 
@@ -543,9 +555,10 @@ function compareActivities(left: CommercialActivity, right: CommercialActivity) 
 }
 
 function ActivityEventContent({ event }: Readonly<{ event: CommercialActivity }>) {
-  const label = event.type === 'jogo'
-    ? [footballClubBadge(event), event.homeTeam, event.visitorTeam].filter(Boolean).join(' ')
-    : event.title
+  const label =
+    event.type === 'jogo'
+      ? [footballClubBadge(event), event.homeTeam, event.visitorTeam].filter(Boolean).join(' ')
+      : event.title
 
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -618,7 +631,9 @@ function FootballGameRail({
             O mesmo dia pode concentrar mais de um jogo e abrir duas ondas comerciais.
           </p>
         </div>
-        <LabStatusPill tone="info">{gameDays.length} dia{gameDays.length === 1 ? '' : 's'} com jogo</LabStatusPill>
+        <LabStatusPill tone="info">
+          {gameDays.length} dia{gameDays.length === 1 ? '' : 's'} com jogo
+        </LabStatusPill>
       </div>
 
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
@@ -630,13 +645,15 @@ function FootballGameRail({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
-                  {format(gameDay.date, "EEE dd/MM", { locale: ptBR })}
+                  {format(gameDay.date, 'EEE dd/MM', { locale: ptBR })}
                 </p>
                 <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
                   {gameDay.games.length === 1 ? 'Jogo do dia' : 'Jogos empilhados'}
                 </p>
               </div>
-              <LabStatusPill tone="neutral">{gameDay.games.length} jogo{gameDay.games.length === 1 ? '' : 's'}</LabStatusPill>
+              <LabStatusPill tone="neutral">
+                {gameDay.games.length} jogo{gameDay.games.length === 1 ? '' : 's'}
+              </LabStatusPill>
             </div>
 
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -770,7 +787,10 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
     >
       <div className="space-y-5">
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={titleInputId}>
+          <label
+            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+            htmlFor={titleInputId}
+          >
             Nome
           </label>
           <input
@@ -827,9 +847,7 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
                       background: isActive
                         ? 'color-mix(in srgb, var(--warning) 10%, var(--surface))'
                         : 'var(--surface)',
-                      borderColor: isActive
-                        ? 'color-mix(in srgb, var(--warning) 22%, var(--border))'
-                        : 'var(--border)',
+                      borderColor: isActive ? 'color-mix(in srgb, var(--warning) 22%, var(--border))' : 'var(--border)',
                       color: isActive ? 'var(--warning)' : 'var(--text-soft)',
                     }}
                     type="button"
@@ -848,7 +866,10 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={startInputId}>
+            <label
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+              htmlFor={startInputId}
+            >
               Início
             </label>
             <input
@@ -861,7 +882,10 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={endInputId}>
+            <label
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+              htmlFor={endInputId}
+            >
               Fim
             </label>
             <input
@@ -876,7 +900,10 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={descriptionInputId}>
+          <label
+            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+            htmlFor={descriptionInputId}
+          >
             Descrição opcional
           </label>
           <textarea
@@ -890,7 +917,10 @@ export function ActivityModal({ activity, initialStart, onSave, onDelete, onClos
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={impactInputId}>
+          <label
+            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+            htmlFor={impactInputId}
+          >
             Impacto esperado em vendas %
           </label>
           <input
@@ -1026,7 +1056,9 @@ function PlanningRadar({
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
               Proxima fila
             </p>
-            {nextSevenDaysActivities.length > 0 ? <LabStatusPill tone="info">{nextSevenDaysActivities.length} itens</LabStatusPill> : null}
+            {nextSevenDaysActivities.length > 0 ? (
+              <LabStatusPill tone="info">{nextSevenDaysActivities.length} itens</LabStatusPill>
+            ) : null}
           </div>
 
           {nextSevenDaysActivities.length === 0 ? (
@@ -1048,7 +1080,9 @@ function PlanningRadar({
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{activity.title}</p>
                       <p className="mt-1 text-xs text-[var(--text-soft)]">{formatDateTime(activity.start)}</p>
                     </div>
-                    {activity.impactoEsperado ? <LabStatusPill tone="success">+{activity.impactoEsperado}%</LabStatusPill> : null}
+                    {activity.impactoEsperado ? (
+                      <LabStatusPill tone="success">+{activity.impactoEsperado}%</LabStatusPill>
+                    ) : null}
                   </div>
                 )
               })}
@@ -1072,11 +1106,9 @@ export function CommercialCalendar() {
   const onEventDrop = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventDrop']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((activity) => (
-          activity.id === event.id
-            ? { ...activity, start: new Date(start), end: new Date(end) }
-            : activity
-        )),
+        prev.map((activity) =>
+          activity.id === event.id ? { ...activity, start: new Date(start), end: new Date(end) } : activity,
+        ),
       )
     },
     [],
@@ -1085,11 +1117,9 @@ export function CommercialCalendar() {
   const onEventResize = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventResize']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((activity) => (
-          activity.id === event.id
-            ? { ...activity, start: new Date(start), end: new Date(end) }
-            : activity
-        )),
+        prev.map((activity) =>
+          activity.id === event.id ? { ...activity, start: new Date(start), end: new Date(end) } : activity,
+        ),
       )
     },
     [],
@@ -1102,9 +1132,9 @@ export function CommercialCalendar() {
 
   function handleSave(data: Omit<CommercialActivity, 'id'>) {
     if (editingActivity) {
-      setActivities((prev) => prev.map((activity) => (
-        activity.id === editingActivity.id ? { ...activity, ...data } : activity
-      )))
+      setActivities((prev) =>
+        prev.map((activity) => (activity.id === editingActivity.id ? { ...activity, ...data } : activity)),
+      )
       setEditingActivity(null)
       return
     }
@@ -1152,7 +1182,10 @@ export function CommercialCalendar() {
   )
   const periodFootballGameDays = groupFootballGameDays(periodActivities)
   const periodImpacto = periodActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
-  const nextSevenDaysImpact = nextSevenDaysActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
+  const nextSevenDaysImpact = nextSevenDaysActivities.reduce(
+    (sum, activity) => sum + (activity.impactoEsperado ?? 0),
+    0,
+  )
 
   const summaryRows = (Object.keys(ACTIVITY_LABELS) as ActivityType[])
     .map((type) => {
@@ -1166,12 +1199,15 @@ export function CommercialCalendar() {
     })
     .filter((row) => row.count > 0)
 
-  const leadingType = (Object.keys(ACTIVITY_LABELS) as ActivityType[]).reduce<ActivityType | undefined>((leader, type) => {
-    const leaderCount = leader ? periodActivities.filter((activity) => activity.type === leader).length : -1
-    const typeCount = periodActivities.filter((activity) => activity.type === type).length
+  const leadingType = (Object.keys(ACTIVITY_LABELS) as ActivityType[]).reduce<ActivityType | undefined>(
+    (leader, type) => {
+      const leaderCount = leader ? periodActivities.filter((activity) => activity.type === leader).length : -1
+      const typeCount = periodActivities.filter((activity) => activity.type === type).length
 
-    return typeCount > leaderCount ? type : leader
-  }, undefined)
+      return typeCount > leaderCount ? type : leader
+    },
+    undefined,
+  )
   const calendarHeight =
     view === 'month'
       ? 'clamp(520px, 66vh, 610px)'
@@ -1185,9 +1221,11 @@ export function CommercialCalendar() {
         <LabMetricStripItem
           label="Hoje"
           value={
-            todayActivities.length > 0
-              ? String(todayActivities.length)
-              : <span className="text-[var(--lab-fg-muted)]">0</span>
+            todayActivities.length > 0 ? (
+              String(todayActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
           }
           description={
             todayActivities.length > 0
@@ -1203,9 +1241,11 @@ export function CommercialCalendar() {
         <LabMetricStripItem
           label="7 dias"
           value={
-            nextSevenDaysActivities.length > 0
-              ? String(nextSevenDaysActivities.length)
-              : <span className="text-[var(--lab-fg-muted)]">0</span>
+            nextSevenDaysActivities.length > 0 ? (
+              String(nextSevenDaysActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
           }
           description={
             nextSevenDaysActivities.length > 0
@@ -1216,9 +1256,11 @@ export function CommercialCalendar() {
         <LabMetricStripItem
           label="Recorte atual"
           value={
-            periodActivities.length > 0
-              ? String(periodActivities.length)
-              : <span className="text-[var(--lab-fg-muted)]">0</span>
+            periodActivities.length > 0 ? (
+              String(periodActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
           }
           description={`${VIEW_LABELS[view]} aberta em ${periodRange.label}.`}
         />
@@ -1226,7 +1268,12 @@ export function CommercialCalendar() {
 
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <LabFilterChip active={filter === 'all'} count={activities.length} label="Todas" onClick={() => setFilter('all')} />
+          <LabFilterChip
+            active={filter === 'all'}
+            count={activities.length}
+            label="Todas"
+            onClick={() => setFilter('all')}
+          />
           {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((type) => (
             <LabFilterChip
               active={filter === type}
@@ -1239,7 +1286,9 @@ export function CommercialCalendar() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {filter !== 'all' ? <LabStatusPill tone={ACTIVITY_STYLES[filter].tone}>Filtro: {ACTIVITY_LABELS[filter]}</LabStatusPill> : null}
+          {filter !== 'all' ? (
+            <LabStatusPill tone={ACTIVITY_STYLES[filter].tone}>Filtro: {ACTIVITY_LABELS[filter]}</LabStatusPill>
+          ) : null}
           {periodImpacto > 0 ? <LabStatusPill tone="success">+{periodImpacto}% no recorte</LabStatusPill> : null}
           <Button
             size="md"
@@ -1305,7 +1354,11 @@ export function CommercialCalendar() {
 
           {filter === 'all' || filter === 'jogo' ? (
             <LabPanel
-              action={<LabStatusPill icon={<Trophy className="size-3" />} tone="info">vasco</LabStatusPill>}
+              action={
+                <LabStatusPill icon={<Trophy className="size-3" />} tone="info">
+                  vasco
+                </LabStatusPill>
+              }
               contentClassName="p-0"
               padding="none"
               title="Widget oficial do Vasco"

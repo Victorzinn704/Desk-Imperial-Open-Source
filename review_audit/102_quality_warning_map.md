@@ -8,11 +8,11 @@
 
 ## Executive Alert
 
-| Level | Source | Message |
-| --- | --- | --- |
-| warning | eslint | 855 ESLint warning(s) found |
-| warning | coverage:web | line coverage is 69.11% |
-| warning | sonar | fetch failed |
+| Level   | Source       | Message                     |
+| ------- | ------------ | --------------------------- |
+| warning | eslint       | 855 ESLint warning(s) found |
+| warning | coverage:web | line coverage is 69.11%     |
+| warning | sonar        | fetch failed                |
 
 ---
 
@@ -25,38 +25,38 @@
 
 ### Top ESLint Rules
 
-| Rule | Count |
-| --- | --- |
-| max-lines-per-function | 320 |
-| no-nested-ternary | 124 |
-| react/jsx-sort-props | 106 |
-| complexity | 95 |
-| @typescript-eslint/no-non-null-assertion | 77 |
-| max-lines | 63 |
-| sort-imports | 53 |
-| max-params | 15 |
-| react-hooks/incompatible-library | 1 |
-| unknown | 1 |
+| Rule                                     | Count |
+| ---------------------------------------- | ----- |
+| max-lines-per-function                   | 320   |
+| no-nested-ternary                        | 124   |
+| react/jsx-sort-props                     | 106   |
+| complexity                               | 95    |
+| @typescript-eslint/no-non-null-assertion | 77    |
+| max-lines                                | 63    |
+| sort-imports                             | 53    |
+| max-params                               | 15    |
+| react-hooks/incompatible-library         | 1     |
+| unknown                                  | 1     |
 
 ### Top ESLint Files
 
-| File | Count |
-| --- | --- |
-| apps/web/components/dashboard/environments/pedidos-environment.tsx | 25 |
-| apps/web/components/dashboard/salao-environment.tsx | 23 |
-| apps/web/components/calendar/commercial-calendar.tsx | 20 |
-| apps/web/app/api/barcode/lookup/route.ts | 19 |
-| apps/web/components/dashboard/environments/overview-environment.tsx | 18 |
-| apps/api/src/modules/operations/comanda.service.ts | 17 |
-| apps/web/components/design-lab/lab-primitives.tsx | 17 |
-| apps/web/components/design-lab/lab-shell.tsx | 15 |
-| apps/api/src/modules/products/products.service.ts | 14 |
-| apps/web/components/ai/ai-consultant-workspace.tsx | 14 |
-| apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx | 14 |
-| apps/web/components/dashboard/environments/equipe-environment.tsx | 12 |
-| apps/web/components/dashboard/overview-recent-orders.tsx | 12 |
-| apps/web/components/staff-mobile/kitchen-orders-view.tsx | 12 |
-| apps/api/src/modules/auth/auth-registration.service.ts | 11 |
+| File                                                                     | Count |
+| ------------------------------------------------------------------------ | ----- |
+| apps/web/components/dashboard/environments/pedidos-environment.tsx       | 25    |
+| apps/web/components/dashboard/salao-environment.tsx                      | 23    |
+| apps/web/components/calendar/commercial-calendar.tsx                     | 20    |
+| apps/web/app/api/barcode/lookup/route.ts                                 | 19    |
+| apps/web/components/dashboard/environments/overview-environment.tsx      | 18    |
+| apps/api/src/modules/operations/comanda.service.ts                       | 17    |
+| apps/web/components/design-lab/lab-primitives.tsx                        | 17    |
+| apps/web/components/design-lab/lab-shell.tsx                             | 15    |
+| apps/api/src/modules/products/products.service.ts                        | 14    |
+| apps/web/components/ai/ai-consultant-workspace.tsx                       | 14    |
+| apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx | 14    |
+| apps/web/components/dashboard/environments/equipe-environment.tsx        | 12    |
+| apps/web/components/dashboard/overview-recent-orders.tsx                 | 12    |
+| apps/web/components/staff-mobile/kitchen-orders-view.tsx                 | 12    |
+| apps/api/src/modules/auth/auth-registration.service.ts                   | 11    |
 
 ---
 
@@ -70,48 +70,47 @@ Sonar unavailable: fetch failed
 
 ### api
 
-| Metric | Pct |
-| --- | --- |
-| lines | 90.54% |
-| branches | 75.21% |
-| functions | 91.96% |
+| Metric     | Pct    |
+| ---------- | ------ |
+| lines      | 90.54% |
+| branches   | 75.21% |
+| functions  | 91.96% |
 | statements | 90.72% |
 
-| File | Lines pct | Uncovered lines |
-| --- | --- | --- |
-| apps/api/src/modules/admin-pin/admin-pin.service.ts | 79.69% | 27 |
-| apps/api/src/common/services/cache.service.ts | 71.76% | 24 |
-| apps/api/src/modules/auth/auth-login.service.ts | 76% | 24 |
-| apps/api/src/modules/operations/operations-helpers.service.ts | 85% | 24 |
-| apps/api/src/modules/auth/auth-session.service.ts | 80.18% | 22 |
-| apps/api/src/modules/employees/employees.service.ts | 75% | 22 |
-| apps/api/src/modules/finance/finance.service.ts | 83.07% | 22 |
-| apps/api/src/modules/market-intelligence/market-intelligence.service.ts | 83.01% | 18 |
-| apps/api/src/modules/auth/auth-login-actor.utils.ts | 63.63% | 16 |
-| apps/api/src/modules/operations/operations-auth.utils.ts | 55.55% | 16 |
+| File                                                                    | Lines pct | Uncovered lines |
+| ----------------------------------------------------------------------- | --------- | --------------- |
+| apps/api/src/modules/admin-pin/admin-pin.service.ts                     | 79.69%    | 27              |
+| apps/api/src/common/services/cache.service.ts                           | 71.76%    | 24              |
+| apps/api/src/modules/auth/auth-login.service.ts                         | 76%       | 24              |
+| apps/api/src/modules/operations/operations-helpers.service.ts           | 85%       | 24              |
+| apps/api/src/modules/auth/auth-session.service.ts                       | 80.18%    | 22              |
+| apps/api/src/modules/employees/employees.service.ts                     | 75%       | 22              |
+| apps/api/src/modules/finance/finance.service.ts                         | 83.07%    | 22              |
+| apps/api/src/modules/market-intelligence/market-intelligence.service.ts | 83.01%    | 18              |
+| apps/api/src/modules/auth/auth-login-actor.utils.ts                     | 63.63%    | 16              |
+| apps/api/src/modules/operations/operations-auth.utils.ts                | 55.55%    | 16              |
 
 ### web
 
-| Metric | Pct |
-| --- | --- |
-| lines | 69.11% |
-| branches | 60% |
-| functions | 66.18% |
+| Metric     | Pct    |
+| ---------- | ------ |
+| lines      | 69.11% |
+| branches   | 60%    |
+| functions  | 66.18% |
 | statements | 68.47% |
 
-| File | Lines pct | Uncovered lines |
-| --- | --- | --- |
-| apps/web/components/staff-mobile/staff-mobile-shell.tsx | 44.72% | 131 |
-| apps/web/components/dashboard/settings/components/pin-setup-card.tsx | 0.84% | 118 |
-| apps/web/components/dashboard/order-form.tsx | 2.4% | 81 |
-| apps/web/components/calendar/commercial-calendar.tsx | 37.61% | 68 |
-| apps/web/components/owner-mobile/owner-mobile-shell.tsx | 55.33% | 67 |
-| apps/web/lib/admin-pin.ts | 44.31% | 49 |
-| apps/web/components/dashboard/caixa-panel.tsx | 46.25% | 43 |
-| apps/web/components/dashboard/dashboard-sidebar.tsx | 4.65% | 41 |
-| apps/web/components/dashboard/settings/tabs/session-tab.tsx | 0% | 36 |
-| apps/web/lib/operations/operations-realtime-patching.ts | 90.24% | 36 |
-
+| File                                                                 | Lines pct | Uncovered lines |
+| -------------------------------------------------------------------- | --------- | --------------- |
+| apps/web/components/staff-mobile/staff-mobile-shell.tsx              | 44.72%    | 131             |
+| apps/web/components/dashboard/settings/components/pin-setup-card.tsx | 0.84%     | 118             |
+| apps/web/components/dashboard/order-form.tsx                         | 2.4%      | 81              |
+| apps/web/components/calendar/commercial-calendar.tsx                 | 37.61%    | 68              |
+| apps/web/components/owner-mobile/owner-mobile-shell.tsx              | 55.33%    | 67              |
+| apps/web/lib/admin-pin.ts                                            | 44.31%    | 49              |
+| apps/web/components/dashboard/caixa-panel.tsx                        | 46.25%    | 43              |
+| apps/web/components/dashboard/dashboard-sidebar.tsx                  | 4.65%     | 41              |
+| apps/web/components/dashboard/settings/tabs/session-tab.tsx          | 0%        | 36              |
+| apps/web/lib/operations/operations-realtime-patching.ts              | 90.24%    | 36              |
 
 ---
 
@@ -161,7 +160,6 @@ Warnings should become a managed budget instead of terminal noise.
 - Reduce by cluster and update this report after each cleanup.
 - Do not enable fail-on-alert until the baseline is intentionally accepted.
 
-
 ---
 
 ## Commands
@@ -174,4 +172,3 @@ npm run quality:preflight
 ```
 
 The complete warning list is stored in `review_audit/generated/quality-warning-map.json`.
-

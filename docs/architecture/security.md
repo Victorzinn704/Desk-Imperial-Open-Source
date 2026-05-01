@@ -33,11 +33,11 @@ A autenticação usa uma **sessão opaca** com cookie HttpOnly. O browser não a
 
 **Cookies emitidos no login:**
 
-| Cookie                                                     | Flags                                   | Conteúdo                                                       |
-| ---------------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------- |
-| `partner_session` (dev) / `__Host-partner_session` (prod) | HttpOnly, Secure em prod, SameSite=Lax  | Token opaco aleatório da sessão                                |
-| `partner_csrf` (dev) / `__Host-partner_csrf` (prod)       | Secure em prod, SameSite=Lax            | Token CSRF legível pelo cliente para mutações                  |
-| `partner_admin_pin` / `__Host-partner_admin_pin`          | HttpOnly, Secure em prod, SameSite=Lax  | Prova curta de verificação do Admin PIN para ações sensíveis   |
+| Cookie                                                    | Flags                                  | Conteúdo                                                     |
+| --------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| `partner_session` (dev) / `__Host-partner_session` (prod) | HttpOnly, Secure em prod, SameSite=Lax | Token opaco aleatório da sessão                              |
+| `partner_csrf` (dev) / `__Host-partner_csrf` (prod)       | Secure em prod, SameSite=Lax           | Token CSRF legível pelo cliente para mutações                |
+| `partner_admin_pin` / `__Host-partner_admin_pin`          | HttpOnly, Secure em prod, SameSite=Lax | Prova curta de verificação do Admin PIN para ações sensíveis |
 
 O token opaco da sessão é persistido na entidade `Session` com `tokenHash` no banco. A cada requisição autenticada, o `SessionGuard` e o `AuthSessionService` validam:
 
@@ -221,13 +221,13 @@ O sistema usa `sanitizePlainText` e redação explícita antes de qualquer outpu
 
 ## 9. Variáveis de ambiente críticas para segurança
 
-| Variável         | Uso                                                | Risco se vazar                                 |
-| ---------------- | -------------------------------------------------- | ---------------------------------------------- |
-| `COOKIE_SECRET`  | Endurece derivação e integridade de cookies        | Enfraquece a proteção de sessão/CSRF           |
-| `CSRF_SECRET`    | Deriva tokens CSRF por sessão                      | Permite bypass de CSRF                         |
-| `ENCRYPTION_KEY` | Cifra campos sensíveis protegidos no backend       | Exposição de dados criptografados em repouso   |
-| `DATABASE_URL`   | Conexão direta ao banco                            | Acesso total aos dados                         |
-| `REDIS_URL`      | Conexão ao Redis                                   | Acesso ao cache, rate limit e provas efêmeras  |
+| Variável         | Uso                                          | Risco se vazar                                |
+| ---------------- | -------------------------------------------- | --------------------------------------------- |
+| `COOKIE_SECRET`  | Endurece derivação e integridade de cookies  | Enfraquece a proteção de sessão/CSRF          |
+| `CSRF_SECRET`    | Deriva tokens CSRF por sessão                | Permite bypass de CSRF                        |
+| `ENCRYPTION_KEY` | Cifra campos sensíveis protegidos no backend | Exposição de dados criptografados em repouso  |
+| `DATABASE_URL`   | Conexão direta ao banco                      | Acesso total aos dados                        |
+| `REDIS_URL`      | Conexão ao Redis                             | Acesso ao cache, rate limit e provas efêmeras |
 
 Nenhuma dessas variáveis vai para o cliente. O `.env.example` contém apenas valores de placeholder.
 

@@ -76,7 +76,9 @@ describe('NotificationPreferencesService', () => {
     prisma.userNotificationPreference.findUnique.mockResolvedValue(null)
     prisma.userNotificationPreference.upsert.mockResolvedValue(undefined)
     prisma.userNotificationPreference.deleteMany.mockResolvedValue({ count: 0 })
-    prisma.$transaction.mockImplementation(async (operations: unknown[]) => Promise.all(operations as Promise<unknown>[]))
+    prisma.$transaction.mockImplementation(async (operations: unknown[]) =>
+      Promise.all(operations as Promise<unknown>[]),
+    )
     service = new NotificationPreferencesService(
       prisma as unknown as PrismaService,
       auditLogService as unknown as AuditLogService,
@@ -186,18 +188,18 @@ describe('NotificationPreferencesService', () => {
 
     expect(result.preferences).toEqual(
       expect.arrayContaining([
-      expect.objectContaining({
-        channel: 'WEB_TOAST',
-        eventType: 'operations.comanda.status_changed',
-        enabled: true,
-        inherited: true,
-      }),
-      expect.objectContaining({
-        channel: 'MOBILE_TOAST',
-        eventType: 'operations.kitchen_item.status_changed',
-        enabled: true,
-        inherited: true,
-      }),
+        expect.objectContaining({
+          channel: 'WEB_TOAST',
+          eventType: 'operations.comanda.status_changed',
+          enabled: true,
+          inherited: true,
+        }),
+        expect.objectContaining({
+          channel: 'MOBILE_TOAST',
+          eventType: 'operations.kitchen_item.status_changed',
+          enabled: true,
+          inherited: true,
+        }),
       ]),
     )
   })

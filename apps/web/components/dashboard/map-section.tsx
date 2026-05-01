@@ -37,83 +37,72 @@ export function MapSection({
   const regionCount = points.length
   const hasPoints = points.length > 0
   const coveragePct =
-    totalOrderCount && totalOrderCount > 0
-      ? Math.min(100, Math.round((mappedOrders / totalOrderCount) * 100))
-      : null
+    totalOrderCount && totalOrderCount > 0 ? Math.min(100, Math.round((mappedOrders / totalOrderCount) * 100)) : null
   const topChannel = finance?.salesByChannel[0]
   const topCustomer = finance?.topCustomers[0]
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
-        <LabPanel
-          action={
-            <LabStatusPill tone={hasPoints ? 'info' : 'neutral'}>
-              {tab === 'revenue' ? 'receita' : tab === 'orders' ? 'pedidos' : 'lucro'}
-            </LabStatusPill>
-          }
-          contentClassName="p-0"
-          padding="none"
-          subtitle="Leitura geográfica da receita, volume e resultado por região."
-          title="Cobertura geográfica"
-        >
-          <div className={hasPoints ? 'h-[520px]' : ''}>
-            {isLoading ? (
-              <div className="flex min-h-[360px] items-center justify-center">
-                <p className="text-sm text-[var(--lab-fg-soft)]">Carregando dados geográficos...</p>
-              </div>
-            ) : error ? (
-              <div className="flex min-h-[360px] items-center justify-center px-6 text-center">
-                <p className="text-sm text-[var(--lab-danger)]">{error}</p>
-              </div>
-            ) : !hasPoints ? (
-              <div className="grid gap-5 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-                <div className="space-y-5">
-                  <LabEmptyState
-                    compact
-                    description="Os pedidos já existem, mas ainda não carregam cidade e estado suficientes para ligar a camada territorial."
-                    title="Nenhuma venda mapeada"
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <LabFactPill label="pedidos na base" value={String(totalOrderCount ?? 0)} />
-                    <LabFactPill label="cobertura atual" value={coveragePct !== null ? `${coveragePct}%` : '0%'} />
-                    <LabFactPill label="regiões lidas" value={String(regionCount)} />
-                  </div>
+      <LabPanel
+        action={
+          <LabStatusPill tone={hasPoints ? 'info' : 'neutral'}>
+            {tab === 'revenue' ? 'receita' : tab === 'orders' ? 'pedidos' : 'lucro'}
+          </LabStatusPill>
+        }
+        contentClassName="p-0"
+        padding="none"
+        subtitle="Leitura geográfica da receita, volume e resultado por região."
+        title="Cobertura geográfica"
+      >
+        <div className={hasPoints ? 'h-[520px]' : ''}>
+          {isLoading ? (
+            <div className="flex min-h-[360px] items-center justify-center">
+              <p className="text-sm text-[var(--lab-fg-soft)]">Carregando dados geográficos...</p>
+            </div>
+          ) : error ? (
+            <div className="flex min-h-[360px] items-center justify-center px-6 text-center">
+              <p className="text-sm text-[var(--lab-danger)]">{error}</p>
+            </div>
+          ) : !hasPoints ? (
+            <div className="grid gap-5 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+              <div className="space-y-5">
+                <LabEmptyState
+                  compact
+                  description="Os pedidos já existem, mas ainda não carregam cidade e estado suficientes para ligar a camada territorial."
+                  title="Nenhuma venda mapeada"
+                />
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <LabFactPill label="pedidos na base" value={String(totalOrderCount ?? 0)} />
+                  <LabFactPill label="cobertura atual" value={coveragePct !== null ? `${coveragePct}%` : '0%'} />
+                  <LabFactPill label="regiões lidas" value={String(regionCount)} />
                 </div>
+              </div>
 
-                <div className="rounded-2xl border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">
-                    Como ativar
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    <MapSignalRow label="estado e cidade" value="obrigatórios no pedido" />
-                    <MapSignalRow
-                      label="canal líder"
-                      value={topChannel?.channel ?? 'sem leitura'}
-                    />
-                    <MapSignalRow
-                      label="cliente líder"
-                      value={topCustomer?.customerName ?? 'sem leitura'}
-                    />
-                    <MapSignalRow
-                      label="próximo passo"
-                      value="capturar localização no checkout"
-                    />
-                  </div>
+              <div className="rounded-2xl border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">
+                  Como ativar
+                </p>
+                <div className="mt-4 space-y-3">
+                  <MapSignalRow label="estado e cidade" value="obrigatórios no pedido" />
+                  <MapSignalRow label="canal líder" value={topChannel?.channel ?? 'sem leitura'} />
+                  <MapSignalRow label="cliente líder" value={topCustomer?.customerName ?? 'sem leitura'} />
+                  <MapSignalRow label="próximo passo" value="capturar localização no checkout" />
                 </div>
               </div>
-            ) : (
-              <MapCanvas displayCurrency={displayCurrency} points={points} tab={tab} />
-            )}
-          </div>
+            </div>
+          ) : (
+            <MapCanvas displayCurrency={displayCurrency} points={points} tab={tab} />
+          )}
+        </div>
+      </LabPanel>
+
+      {finance ? (
+        <MapRankingPanel displayCurrency={displayCurrency} finance={finance} tab={tab} onTabChange={setTab} />
+      ) : (
+        <LabPanel padding="md" title="Ranking territorial">
+          <div className="h-48 animate-pulse rounded-2xl bg-[var(--lab-surface-hover)]" />
         </LabPanel>
-
-        {finance ? (
-          <MapRankingPanel displayCurrency={displayCurrency} finance={finance} tab={tab} onTabChange={setTab} />
-        ) : (
-          <LabPanel padding="md" title="Ranking territorial">
-            <div className="h-48 animate-pulse rounded-2xl bg-[var(--lab-surface-hover)]" />
-          </LabPanel>
-        )}
+      )}
     </div>
   )
 }

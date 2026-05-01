@@ -49,7 +49,9 @@ export function EmployeeManagementCard({
   error?: string | null
   loading?: boolean
   onArchive: (employeeId: string) => void
-  onCreate: (values: EmployeeFormValues) => Promise<{ employee: EmployeeRecord; credentials: EmployeeAccessCredentials }>
+  onCreate: (
+    values: EmployeeFormValues,
+  ) => Promise<{ employee: EmployeeRecord; credentials: EmployeeAccessCredentials }>
   onIssueAccess: (employeeId: string) => Promise<{ employee: EmployeeRecord; credentials: EmployeeAccessCredentials }>
   onRotatePassword: (
     employeeId: string,
@@ -118,13 +120,10 @@ export function EmployeeManagementCard({
 
   async function handleProtectedCreate(values: EmployeeFormValues) {
     try {
-      const response = await runProtectedAction(
-        () => onCreate(values),
-        {
-          title: 'Emitir acesso do funcionário',
-          description: 'Confirme o PIN para cadastrar o funcionário e liberar o acesso operacional.',
-        },
-      )
+      const response = await runProtectedAction(() => onCreate(values), {
+        title: 'Emitir acesso do funcionário',
+        description: 'Confirme o PIN para cadastrar o funcionário e liberar o acesso operacional.',
+      })
       setIssuedAccess({
         displayName: response.employee.displayName,
         credentials: response.credentials,
@@ -201,14 +200,20 @@ export function EmployeeManagementCard({
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-soft)]">ID de acesso</p>
-              <p className="mt-1 font-mono text-base text-[var(--text-primary)]">{issuedAccess.credentials.employeeCode}</p>
+              <p className="mt-1 font-mono text-base text-[var(--text-primary)]">
+                {issuedAccess.credentials.employeeCode}
+              </p>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-soft)]">Senha inicial</p>
-              <p className="mt-1 font-mono text-base text-[var(--text-primary)]">{issuedAccess.credentials.temporaryPassword}</p>
+              <p className="mt-1 font-mono text-base text-[var(--text-primary)]">
+                {issuedAccess.credentials.temporaryPassword}
+              </p>
             </div>
           </div>
-          <p className="mt-3 text-xs text-[var(--text-soft)]">Mostre isso ao funcionário agora. A senha não volta a ser exibida depois.</p>
+          <p className="mt-3 text-xs text-[var(--text-soft)]">
+            Mostre isso ao funcionário agora. A senha não volta a ser exibida depois.
+          </p>
         </div>
       ) : null}
 
@@ -250,21 +255,20 @@ export function EmployeeManagementCard({
                         variant="secondary"
                         onClick={async () => {
                           try {
-                            const response = await runProtectedAction(
-                              () => onIssueAccess(employee.id),
-                              {
-                                title: employee.hasLogin ? 'Reemitir acesso completo' : 'Gerar acesso do funcionário',
-                                description: employee.hasLogin
-                                  ? 'Confirme o PIN para trocar o ID de acesso e a senha do funcionário.'
-                                  : 'Confirme o PIN para gerar o ID operacional e a senha inicial do funcionário.',
-                              },
-                            )
+                            const response = await runProtectedAction(() => onIssueAccess(employee.id), {
+                              title: employee.hasLogin ? 'Reemitir acesso completo' : 'Gerar acesso do funcionário',
+                              description: employee.hasLogin
+                                ? 'Confirme o PIN para trocar o ID de acesso e a senha do funcionário.'
+                                : 'Confirme o PIN para gerar o ID operacional e a senha inicial do funcionário.',
+                            })
                             setIssuedAccess({
                               displayName: response.employee.displayName,
                               credentials: response.credentials,
                             })
                           } catch (error) {
-                            if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {return}
+                            if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {
+                              return
+                            }
                           }
                         }}
                       >
@@ -279,19 +283,18 @@ export function EmployeeManagementCard({
                             variant="ghost"
                             onClick={async () => {
                               try {
-                                const response = await runProtectedAction(
-                                  () => onRotatePassword(employee.id),
-                                  {
-                                    title: 'Rotacionar senha',
-                                    description: 'Confirme o PIN para trocar só a senha, mantendo o mesmo ID de acesso.',
-                                  },
-                                )
+                                const response = await runProtectedAction(() => onRotatePassword(employee.id), {
+                                  title: 'Rotacionar senha',
+                                  description: 'Confirme o PIN para trocar só a senha, mantendo o mesmo ID de acesso.',
+                                })
                                 setIssuedAccess({
                                   displayName: response.employee.displayName,
                                   credentials: response.credentials,
                                 })
                               } catch (error) {
-                                if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {return}
+                                if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {
+                                  return
+                                }
                               }
                             }}
                           >
@@ -304,15 +307,14 @@ export function EmployeeManagementCard({
                             variant="ghost"
                             onClick={async () => {
                               try {
-                                await runProtectedAction(
-                                  () => onRevokeAccess(employee.id),
-                                  {
-                                    title: 'Revogar acesso',
-                                    description: 'Confirme o PIN para desativar o acesso individual deste funcionário.',
-                                  },
-                                )
+                                await runProtectedAction(() => onRevokeAccess(employee.id), {
+                                  title: 'Revogar acesso',
+                                  description: 'Confirme o PIN para desativar o acesso individual deste funcionário.',
+                                })
                               } catch (error) {
-                                if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {return}
+                                if (!(error instanceof Error) || error.message !== 'PIN_VERIFICATION_CANCELLED') {
+                                  return
+                                }
                               }
                             }}
                           >

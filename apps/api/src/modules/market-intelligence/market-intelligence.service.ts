@@ -7,13 +7,13 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
-import { FinanceService } from '../finance/finance.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { FinanceService } from '../finance/finance.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import type { AuthContext } from '../auth/auth.types'
 
 type RateLimitEntry = {
@@ -395,7 +395,7 @@ function normalizeInsightPayload(rawText: string) {
   const risks = normalizeStringArray(parsed.risks, 3)
   const nextActions = normalizeStringArray(parsed.nextActions, 4)
 
-  if (!summary || !forecast || !opportunities.length || !risks.length || !nextActions.length) {
+  if (!(summary && forecast && opportunities.length && risks.length && nextActions.length)) {
     throw new BadGatewayException('A resposta da IA veio incompleta para o dashboard executivo.')
   }
 

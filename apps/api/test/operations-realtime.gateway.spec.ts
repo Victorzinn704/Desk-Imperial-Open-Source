@@ -106,9 +106,7 @@ describe('OperationsRealtimeGateway', () => {
     }
 
     try {
-      expect(() => gateway.afterInit(server as any)).toThrow(
-        'REDIS_URL obrigat',
-      )
+      expect(() => gateway.afterInit(server as any)).toThrow('REDIS_URL obrigat')
     } finally {
       process.env.NODE_ENV = originalNodeEnv
     }

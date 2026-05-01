@@ -1,8 +1,5 @@
 import { UserRole, UserStatus } from '@prisma/client'
-import {
-  resolveDemoOwnerActor,
-  resolveEmployeePasswordHash,
-} from '../src/modules/auth/auth-login-actor.utils'
+import { resolveDemoOwnerActor, resolveEmployeePasswordHash } from '../src/modules/auth/auth-login-actor.utils'
 
 describe('auth-login-actor utils', () => {
   it('retorna null para demo owner quando o usuario nao e owner raiz', async () => {

@@ -62,7 +62,12 @@ function PayrollCompositionSummary({
   return (
     <div className="space-y-4">
       <CompositionBar label="base salarial" tone="info" value={formatCurrency(totalBase, currency)} width={baseShare} />
-      <CompositionBar label="comissões" tone={totalComissoes > 0 ? 'success' : 'neutral'} value={formatCurrency(totalComissoes, currency)} width={commissionShare} />
+      <CompositionBar
+        label="comissões"
+        tone={totalComissoes > 0 ? 'success' : 'neutral'}
+        value={formatCurrency(totalComissoes, currency)}
+        width={commissionShare}
+      />
       <div className="rounded-[16px] border border-dashed border-[var(--lab-border)] px-4 py-4">
         <div className="flex items-center gap-3">
           <span className="inline-flex size-10 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-blue)]">
@@ -88,7 +93,9 @@ function PayrollTopPayouts({
   rows: PayrollRow[]
 }>) {
   if (rows.length === 0) {
-    return <LabEmptyState compact description="Cadastre funcionários ativos para montar a folha." title="Sem distribuição" />
+    return (
+      <LabEmptyState compact description="Cadastre funcionários ativos para montar a folha." title="Sem distribuição" />
+    )
   }
 
   return (
@@ -120,7 +127,9 @@ function PayrollPayoutBar({
             {formatCurrency(row.salarioBaseReais, currency)} base · {formatCurrency(row.comissao, currency)} comissão
           </p>
         </div>
-        <span className="shrink-0 text-sm font-semibold text-[var(--lab-fg)]">{formatCurrency(row.totalAPagar, currency)}</span>
+        <span className="shrink-0 text-sm font-semibold text-[var(--lab-fg)]">
+          {formatCurrency(row.totalAPagar, currency)}
+        </span>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
         <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(width, 4)}%` }} />
@@ -147,7 +156,10 @@ function CompositionBar({
         <LabStatusPill tone={tone}>{value}</LabStatusPill>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
-        <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(0, Math.min(width, 100))}%` }} />
+        <div
+          className="h-full rounded-full bg-[var(--lab-blue)]"
+          style={{ width: `${Math.max(0, Math.min(width, 100))}%` }}
+        />
       </div>
     </div>
   )

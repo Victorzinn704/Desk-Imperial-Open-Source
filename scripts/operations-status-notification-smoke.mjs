@@ -61,7 +61,13 @@ class ApiSession {
 
     const contentType = response.headers.get('content-type') ?? ''
     const payload = contentType.includes('application/json') ? await response.json() : await response.text()
-    if (payload && typeof payload === 'object' && payload !== null && 'csrfToken' in payload && typeof payload.csrfToken === 'string') {
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'csrfToken' in payload &&
+      typeof payload.csrfToken === 'string'
+    ) {
       this.csrfToken = payload.csrfToken
     }
 
@@ -183,15 +189,18 @@ async function main() {
     const originalUserPreferences = await owner.request('/notifications/preferences/me')
     const userPreferences = originalUserPreferences.preferences ?? []
     const ownerWebToastPreference = userPreferences.find(
-      (entry) =>
-        entry.channel === 'WEB_TOAST' && entry.eventType === COMANDA_STATUS_EVENT,
+      (entry) => entry.channel === 'WEB_TOAST' && entry.eventType === COMANDA_STATUS_EVENT,
     )
 
     if (!ownerWebToastPreference) {
       throw new Error('Preferência esperada de WEB_TOAST não foi encontrada para o usuário owner.')
     }
 
-    restoredUserPreferences = userPreferences.map(({ channel, eventType, enabled }) => ({ channel, eventType, enabled }))
+    restoredUserPreferences = userPreferences.map(({ channel, eventType, enabled }) => ({
+      channel,
+      eventType,
+      enabled,
+    }))
 
     const toggledUserPreferences = userPreferences.map((entry) =>
       entry.channel === 'WEB_TOAST' && entry.eventType === COMANDA_STATUS_EVENT
@@ -301,7 +310,9 @@ async function main() {
     )
 
     const kitchenView = await owner.request('/operations/kitchen')
-    const kitchenItem = kitchenView.items.find((item) => item.comandaId === createdComandaId || item.itemId === openedItemId)
+    const kitchenItem = kitchenView.items.find(
+      (item) => item.comandaId === createdComandaId || item.itemId === openedItemId,
+    )
     if (!kitchenItem) {
       throw new Error(`Item de cozinha não encontrado para a comanda ${createdComandaId}.`)
     }
@@ -420,7 +431,10 @@ async function main() {
           }),
         })
       } catch (error) {
-        console.error(`Falha no cleanup da comanda ${createdComandaId}:`, error instanceof Error ? error.message : error)
+        console.error(
+          `Falha no cleanup da comanda ${createdComandaId}:`,
+          error instanceof Error ? error.message : error,
+        )
       }
     }
 

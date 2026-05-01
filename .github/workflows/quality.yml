@@ -16,7 +16,7 @@ permissions:
   security-events: write
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: '22'
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
@@ -52,7 +52,7 @@ jobs:
       - name: Lint repo-wide rules
         run: npm run lint:repo
 
-# ── Estágio 2: ESLint + TypeCheck por workspace (paralelo) ────────────────────
+  # ── Estágio 2: ESLint + TypeCheck por workspace (paralelo) ────────────────────
   lint-api:
     name: ESLint + TypeCheck (API)
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
       - name: TypeCheck Web
         run: npm --workspace @partner/web run typecheck
 
-# ── Estágio 3: Fronteiras arquiteturais + código morto + duplicação ────────────
+  # ── Estágio 3: Fronteiras arquiteturais + código morto + duplicação ────────────
   architecture:
     name: Boundaries + Dead Code + Duplication
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
       - name: jscpd duplication
         run: npm run lint:dup
 
-# ── Estágio 4: Detecção de segredos ───────────────────────────────────────────
+  # ── Estágio 4: Detecção de segredos ───────────────────────────────────────────
   secrets:
     name: Secret Scanning (Gitleaks)
     runs-on: ubuntu-latest
@@ -121,7 +121,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Necessário para repos privados no tier pago
 
-# ── Estágio 5: SAST (Semgrep) ──────────────────────────────────────────────────
+  # ── Estágio 5: SAST (Semgrep) ──────────────────────────────────────────────────
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
@@ -131,6 +131,10 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Detect GitHub code scanning availability
+        id: code-scanning
+        uses: ./.github/actions/detect-code-scanning
 
       - name: Semgrep — regras customizadas Desk Imperial
         run: semgrep scan --config .semgrep/desk-imperial.yml --sarif-output desk-imperial.sarif apps/api/src packages/types/src
@@ -144,19 +148,29 @@ jobs:
 
       - name: Upload SARIF custom ao GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.code-scanning.outputs.enabled == 'true'
         with:
           sarif_file: desk-imperial.sarif
           category: semgrep-custom
 
       - name: Upload SARIF auto ao GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.code-scanning.outputs.enabled == 'true'
         with:
           sarif_file: semgrep-auto.sarif
           category: semgrep-auto
 
-# ── Estágio 6: SCA — npm audit + OSV-Scanner + Trivy ─────────────────────────
+      - name: Upload Semgrep SARIF artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-sarif
+          path: |
+            desk-imperial.sarif
+            semgrep-auto.sarif
+          retention-days: 7
+
+  # ── Estágio 6: SCA — npm audit + OSV-Scanner + Trivy ─────────────────────────
   sca:
     name: SCA (npm audit + OSV + Trivy)
     runs-on: ubuntu-latest
@@ -166,6 +180,10 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Detect GitHub code scanning availability
+        id: code-scanning
+        uses: ./.github/actions/detect-code-scanning
 
       - name: npm audit
         run: npm audit --audit-level=high
@@ -191,12 +209,20 @@ jobs:
 
       - name: Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.code-scanning.outputs.enabled == 'true'
         with:
           sarif_file: trivy.sarif
           category: trivy
 
-# ── Estágio 7: Testes + Cobertura ─────────────────────────────────────────────
+      - name: Upload Trivy SARIF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-sarif
+          path: trivy.sarif
+          retention-days: 7
+
+  # ── Estágio 7: Testes + Cobertura ─────────────────────────────────────────────
   tests:
     name: Tests + Coverage
     runs-on: ubuntu-latest
@@ -235,6 +261,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           generate-prisma: 'true'
+          install-native-bindings: 'true'
 
       - name: API — tests + coverage
         run: npm --workspace @partner/api run test:coverage:sonar
@@ -252,7 +279,7 @@ jobs:
             apps/web/coverage/lcov.info
           retention-days: 7
 
-# ── Estágio 8: Qodana Community JS ────────────────────────────────────────────
+  # ── Estágio 8: Qodana Community JS ────────────────────────────────────────────
   qodana:
     name: Qodana Community JS
     runs-on: ubuntu-latest
@@ -272,7 +299,7 @@ jobs:
         with:
           args: --fail-threshold,0
 
-# ── Estágio 9: SonarQube ──────────────────────────────────────────────────────
+  # ── Estágio 9: SonarQube ──────────────────────────────────────────────────────
   sonarqube:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
@@ -299,7 +326,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-# ── Estágio 10: Lighthouse CI (apenas PRs que tocam apps/web) ─────────────────
+  # ── Estágio 10: Lighthouse CI (apenas PRs que tocam apps/web) ─────────────────
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest

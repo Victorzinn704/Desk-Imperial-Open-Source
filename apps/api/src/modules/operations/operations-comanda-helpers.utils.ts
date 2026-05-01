@@ -4,11 +4,7 @@ import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { PrismaService } from '../../database/prisma.service'
 import type { CurrencyService } from '../currency/currency.service'
-import {
-  OPEN_COMANDA_STATUSES,
-  resolveBuyerTypeFromDocument,
-  toNumberOrZero,
-} from './operations-domain.utils'
+import { OPEN_COMANDA_STATUSES, resolveBuyerTypeFromDocument, toNumberOrZero } from './operations-domain.utils'
 import {
   buildProductConsumptionMap,
   calculateEffectiveUnitCost,
@@ -418,11 +414,11 @@ export async function ensureOrderForClosedComanda(
     .filter((product): product is NonNullable<(typeof comanda.items)[number]['product']> => Boolean(product))
   const comboAwareProductsById = new Map(comboAwareProducts.map((product) => [product.id, product]))
   const inventoryProductsById = new Map(
-    comboAwareProducts.flatMap((product) =>
-      product.isCombo
-        ? product.comboComponents.map((component) => component.componentProduct)
-        : [product],
-    ).map((product) => [product.id, product]),
+    comboAwareProducts
+      .flatMap((product) =>
+        product.isCombo ? product.comboComponents.map((component) => component.componentProduct) : [product],
+      )
+      .map((product) => [product.id, product]),
   )
   const stockByProduct = buildProductConsumptionMap(
     comanda.items
@@ -494,11 +490,7 @@ export async function ensureOrderForClosedComanda(
   })
 }
 
-export async function assertBusinessDayOpen(
-  prisma: PrismaService,
-  workspaceOwnerUserId: string,
-  businessDate: Date,
-) {
+export async function assertBusinessDayOpen(prisma: PrismaService, workspaceOwnerUserId: string, businessDate: Date) {
   const closure = await prisma.cashClosure.findUnique({
     where: {
       companyOwnerId_businessDate: {

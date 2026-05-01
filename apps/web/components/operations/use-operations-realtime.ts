@@ -24,7 +24,12 @@ import {
   recordOperationsRealtimeEnvelopeOutOfOrder,
   recordOperationsReconnectRefreshEvent,
 } from '@/lib/operations/operations-performance-diagnostics'
-import { OPERATIONS_EVENTS, type OperationsRealtimeEnvelope, type RealtimeStatus, useOperationsSocket } from './hooks/use-operations-socket'
+import {
+  OPERATIONS_EVENTS,
+  type OperationsRealtimeEnvelope,
+  type RealtimeStatus,
+  useOperationsSocket,
+} from './hooks/use-operations-socket'
 import {
   applyRealtimeEnvelope,
   requiresKitchenRefresh,
@@ -85,7 +90,7 @@ export function useOperationsRealtime(
   )
 
   useEffect(() => {
-    if (!enabled || !notificationChannel) {
+    if (!(enabled && notificationChannel)) {
       return
     }
 
@@ -138,7 +143,9 @@ export function useOperationsRealtime(
   }, [queryClient])
 
   const queueOperationsRefresh = useCallback(() => {
-    if (operationsTimerRef.current) {clearTimeout(operationsTimerRef.current)}
+    if (operationsTimerRef.current) {
+      clearTimeout(operationsTimerRef.current)
+    }
     operationsTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_LIVE_QUERY_PREFIX })
       queryClient.invalidateQueries({ queryKey: ['mesas'] })
@@ -146,7 +153,9 @@ export function useOperationsRealtime(
   }, [queryClient])
 
   const queueCommercialRefresh = useCallback(() => {
-    if (commercialTimerRef.current) {clearTimeout(commercialTimerRef.current)}
+    if (commercialTimerRef.current) {
+      clearTimeout(commercialTimerRef.current)
+    }
     commercialTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['finance', 'summary'] })
@@ -154,14 +163,18 @@ export function useOperationsRealtime(
   }, [queryClient])
 
   const queueKitchenRefresh = useCallback(() => {
-    if (kitchenTimerRef.current) {clearTimeout(kitchenTimerRef.current)}
+    if (kitchenTimerRef.current) {
+      clearTimeout(kitchenTimerRef.current)
+    }
     kitchenTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_KITCHEN_QUERY_KEY })
     }, OPERATIONS_DEBOUNCE_MS)
   }, [queryClient])
 
   const queueSummaryRefresh = useCallback(() => {
-    if (summaryTimerRef.current) {clearTimeout(summaryTimerRef.current)}
+    if (summaryTimerRef.current) {
+      clearTimeout(summaryTimerRef.current)
+    }
     summaryTimerRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: OPERATIONS_SUMMARY_QUERY_KEY })
     }, SUMMARY_DEBOUNCE_MS)
@@ -219,7 +232,7 @@ export function useOperationsRealtime(
       const envelopeBusinessDate = asString(envelope.payload.businessDate)
       if (envelopeBusinessDate) {
         const liveSnapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-        if (liveSnapshot && liveSnapshot.businessDate && liveSnapshot.businessDate !== envelopeBusinessDate) {
+        if (liveSnapshot?.businessDate && liveSnapshot.businessDate !== envelopeBusinessDate) {
           recordOperationsRealtimeEnvelopeDropped({
             event: envelope.event,
             entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
@@ -242,9 +255,7 @@ export function useOperationsRealtime(
         })
       }
 
-      const isSelfEvent = Boolean(
-        currentUserId && envelope.actorUserId && currentUserId === envelope.actorUserId,
-      )
+      const isSelfEvent = Boolean(currentUserId && envelope.actorUserId && currentUserId === envelope.actorUserId)
 
       maybeNotifyRealtimeStatusChange(
         envelope,
@@ -380,9 +391,11 @@ function shouldRecordDroppedRealtimeEnvelope(
     return false
   }
 
-  const hasActiveLiveSnapshot = queryClient.getQueriesData<OperationsLiveResponse>({
-    queryKey: OPERATIONS_LIVE_QUERY_PREFIX,
-  }).some(([, snapshot]) => Boolean(snapshot))
+  const hasActiveLiveSnapshot = queryClient
+    .getQueriesData<OperationsLiveResponse>({
+      queryKey: OPERATIONS_LIVE_QUERY_PREFIX,
+    })
+    .some(([, snapshot]) => Boolean(snapshot))
   const hasActiveKitchenSnapshot = Boolean(queryClient.getQueryData(OPERATIONS_KITCHEN_QUERY_KEY))
   const hasActiveSummarySnapshot = Boolean(queryClient.getQueryData(OPERATIONS_SUMMARY_QUERY_KEY))
 
@@ -433,14 +446,14 @@ function resolveRealtimeStatusNotification(envelope: OperationsRealtimeEnvelope)
     case 'comanda.updated': {
       const previousStatus = mapComandaStatus(asString(envelope.payload.previousStatus))
       const nextStatus = mapComandaStatus(asString(envelope.payload.status))
-      if (!previousStatus || !nextStatus || previousStatus === nextStatus) {
+      if (!(previousStatus && nextStatus) || previousStatus === nextStatus) {
         return null
       }
 
       const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
       return {
         eventType: 'operations.comanda.status_changed' as const,
-        tone: nextStatus === 'READY' ? 'success' as const : 'info' as const,
+        tone: nextStatus === 'READY' ? ('success' as const) : ('info' as const),
         message: `${mesaLabel} mudou para ${formatComandaStatus(nextStatus)}.`,
       }
     }
@@ -462,7 +475,7 @@ function resolveRealtimeStatusNotification(envelope: OperationsRealtimeEnvelope)
       const productName = asString(envelope.payload.productName) ?? 'Item'
       return {
         eventType: 'operations.kitchen_item.status_changed' as const,
-        tone: nextStatus === 'READY' || nextStatus === 'DELIVERED' ? 'success' as const : 'info' as const,
+        tone: nextStatus === 'READY' || nextStatus === 'DELIVERED' ? ('success' as const) : ('info' as const),
         message: `${mesaLabel} · ${productName} -> ${formatKitchenStatus(nextStatus)}.`,
       }
     }

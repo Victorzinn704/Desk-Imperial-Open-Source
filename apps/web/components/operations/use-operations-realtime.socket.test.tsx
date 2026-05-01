@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
 import type * as ApiModule from '@/lib/api'
 import { USER_NOTIFICATION_PREFERENCES_QUERY_KEY } from '@/lib/api'
-import { getOperationsPerformanceEvents, resetOperationsPerformanceEvents } from '@/lib/operations/operations-performance-diagnostics'
+import {
+  getOperationsPerformanceEvents,
+  resetOperationsPerformanceEvents,
+} from '@/lib/operations/operations-performance-diagnostics'
 import { useOperationsRealtime } from './use-operations-realtime'
 import {
   OPERATIONS_KITCHEN_QUERY_KEY,
@@ -13,7 +16,13 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
   scheduleOperationsWorkspaceReconcile,
 } from '@/lib/operations'
-import { comanda, kitchenItem, kitchenSnapshot, liveSnapshot, summarySnapshot } from './__fixtures__/operations-realtime.fixtures'
+import {
+  comanda,
+  kitchenItem,
+  kitchenSnapshot,
+  liveSnapshot,
+  summarySnapshot,
+} from './__fixtures__/operations-realtime.fixtures'
 
 const { mockSocket, ioMock } = vi.hoisted(() => {
   const socket = {
@@ -26,88 +35,6 @@ const { mockSocket, ioMock } = vi.hoisted(() => {
     mockSocket: socket,
     ioMock: vi.fn(() => socket),
   }
-  // ── Fase 2 — Idempotência de patch (C4) ───────────────────────────────────
-  it('(C4) envelope com mesmo id e descartado na segunda entrega sem aplicar patch duplo', () => {
-    render(<RealtimeHarness />)
-
-    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
-
-    const envelope = {
-      id: 'evt-dedup-c4',
-      event: 'comanda.updated',
-      actorUserId: 'user-other',
-      createdAt: '2026-05-01T14:00:00.000Z',
-      payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
-    }
-
-    act(() => { updatedHandler?.(envelope) })
-    const processedAfterFirst = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-processed',
-    ).length
-
-    act(() => { updatedHandler?.(envelope) })
-    const processedAfterSecond = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-processed',
-    ).length
-
-    expect(processedAfterSecond).toBe(processedAfterFirst)
-
-    expect(getOperationsPerformanceEvents()).toContainEqual({
-      type: 'realtime-envelope-dropped',
-      at: expect.any(Number),
-      event: 'comanda.updated',
-      entityKey: 'comanda.updated:c-dup-c4',
-      reason: 'duplicate-id',
-    })
-  })
-
-  // ── Fase 2 — Buffer overflow (C1) ─────────────────────────────────────────
-  it('(C1) envelopes acima do limite durante reidratacao sao descartados com buffer-overflow', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    })
-
-    let resolveInvalidate!: () => void
-    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
-      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
-    )
-
-    render(<RealtimeHarness queryClient={queryClient} />)
-
-    const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
-      | (() => void)
-      | undefined
-    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
-      | (() => void)
-      | undefined
-    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
-
-    await act(async () => { disconnectHandler?.() })
-    ;(mockSocket as { connected?: boolean }).connected = true
-    act(() => { connectHandler?.() })
-
-    act(() => {
-      for (let i = 0; i < 110; i++) {
-        updatedHandler?.({
-          id: `evt-ovf-${i}`,
-          event: 'comanda.updated',
-          createdAt: '2026-05-01T15:00:00.000Z',
-          payload: { comandaId: `c-ovf-${i}`, mesaLabel: `Mesa ${i}`, status: 'OPEN', businessDate: '2026-05-01' },
-        })
-      }
-    })
-
-    const overflowDrops = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-dropped' && (e as { reason: string }).reason === 'buffer-overflow',
-    )
-    expect(overflowDrops.length).toBe(10)
-
-    await act(async () => { resolveInvalidate() })
-  })
 })
 
 vi.mock('socket.io-client', () => ({
@@ -151,88 +78,6 @@ vi.mock('@/lib/api', async () => {
     ...actual,
     fetchUserNotificationPreferences: fetchUserNotificationPreferencesMock,
   }
-  // ── Fase 2 — Idempotência de patch (C4) ───────────────────────────────────
-  it('(C4) envelope com mesmo id e descartado na segunda entrega sem aplicar patch duplo', () => {
-    render(<RealtimeHarness />)
-
-    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
-
-    const envelope = {
-      id: 'evt-dedup-c4',
-      event: 'comanda.updated',
-      actorUserId: 'user-other',
-      createdAt: '2026-05-01T14:00:00.000Z',
-      payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
-    }
-
-    act(() => { updatedHandler?.(envelope) })
-    const processedAfterFirst = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-processed',
-    ).length
-
-    act(() => { updatedHandler?.(envelope) })
-    const processedAfterSecond = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-processed',
-    ).length
-
-    expect(processedAfterSecond).toBe(processedAfterFirst)
-
-    expect(getOperationsPerformanceEvents()).toContainEqual({
-      type: 'realtime-envelope-dropped',
-      at: expect.any(Number),
-      event: 'comanda.updated',
-      entityKey: 'comanda.updated:c-dup-c4',
-      reason: 'duplicate-id',
-    })
-  })
-
-  // ── Fase 2 — Buffer overflow (C1) ─────────────────────────────────────────
-  it('(C1) envelopes acima do limite durante reidratacao sao descartados com buffer-overflow', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    })
-
-    let resolveInvalidate!: () => void
-    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
-      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
-    )
-
-    render(<RealtimeHarness queryClient={queryClient} />)
-
-    const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
-      | (() => void)
-      | undefined
-    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
-      | (() => void)
-      | undefined
-    const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
-
-    await act(async () => { disconnectHandler?.() })
-    ;(mockSocket as { connected?: boolean }).connected = true
-    act(() => { connectHandler?.() })
-
-    act(() => {
-      for (let i = 0; i < 110; i++) {
-        updatedHandler?.({
-          id: `evt-ovf-${i}`,
-          event: 'comanda.updated',
-          createdAt: '2026-05-01T15:00:00.000Z',
-          payload: { comandaId: `c-ovf-${i}`, mesaLabel: `Mesa ${i}`, status: 'OPEN', businessDate: '2026-05-01' },
-        })
-      }
-    })
-
-    const overflowDrops = getOperationsPerformanceEvents().filter(
-      (e) => e.type === 'realtime-envelope-dropped' && (e as { reason: string }).reason === 'buffer-overflow',
-    )
-    expect(overflowDrops.length).toBe(10)
-
-    await act(async () => { resolveInvalidate() })
-  })
 })
 
 function RealtimeHarness({
@@ -248,12 +93,12 @@ function RealtimeHarness({
     () =>
       providedQueryClient ??
       new QueryClient({
-          defaultOptions: {
-            queries: {
-              retry: false,
-            },
+        defaultOptions: {
+          queries: {
+            retry: false,
           },
-        }),
+        },
+      }),
     [providedQueryClient],
   )
 
@@ -563,7 +408,9 @@ describe('useOperationsRealtime socket wiring', () => {
 
     await act(async () => {
       disconnectHandler?.()
-      await connectHandler?.()
+      if (connectHandler) {
+        connectHandler()
+      }
     })
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['mesas'] })
@@ -712,12 +559,16 @@ describe('useOperationsRealtime socket wiring', () => {
       payload: { comandaId: 'c-dup-c4', mesaLabel: 'Mesa 7', status: 'READY', businessDate: '2026-05-01' },
     }
 
-    act(() => { updatedHandler?.(envelope) })
+    act(() => {
+      updatedHandler?.(envelope)
+    })
     const processedAfterFirst = getOperationsPerformanceEvents().filter(
       (e) => e.type === 'realtime-envelope-processed',
     ).length
 
-    act(() => { updatedHandler?.(envelope) })
+    act(() => {
+      updatedHandler?.(envelope)
+    })
     const processedAfterSecond = getOperationsPerformanceEvents().filter(
       (e) => e.type === 'realtime-envelope-processed',
     ).length
@@ -741,7 +592,10 @@ describe('useOperationsRealtime socket wiring', () => {
 
     let resolveInvalidate!: () => void
     vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(
-      () => new Promise<undefined>((resolve) => { resolveInvalidate = () => resolve(undefined) }),
+      () =>
+        new Promise<undefined>((resolve) => {
+          resolveInvalidate = () => resolve(undefined)
+        }),
     )
 
     render(<RealtimeHarness queryClient={queryClient} />)
@@ -749,16 +603,18 @@ describe('useOperationsRealtime socket wiring', () => {
     const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
       | (() => void)
       | undefined
-    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as
-      | (() => void)
-      | undefined
+    const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as (() => void) | undefined
     const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
       | ((env: unknown) => void)
       | undefined
 
-    await act(async () => { disconnectHandler?.() })
+    await act(async () => {
+      disconnectHandler?.()
+    })
     ;(mockSocket as { connected?: boolean }).connected = true
-    act(() => { connectHandler?.() })
+    act(() => {
+      connectHandler?.()
+    })
 
     act(() => {
       for (let i = 0; i < 110; i++) {
@@ -776,6 +632,8 @@ describe('useOperationsRealtime socket wiring', () => {
     )
     expect(overflowDrops.length).toBe(10)
 
-    await act(async () => { resolveInvalidate() })
+    await act(async () => {
+      resolveInvalidate()
+    })
   })
 })

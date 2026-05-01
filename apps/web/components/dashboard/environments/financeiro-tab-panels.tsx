@@ -28,7 +28,6 @@ export function FinanceiroTabBody({
       return <DreView displayCurrency={displayCurrency} finance={finance} products={products} />
     case 'contas':
       return <ContasView displayCurrency={displayCurrency} finance={finance} />
-    case 'movimentacao':
     default:
       return <MovimentacaoView displayCurrency={displayCurrency} finance={finance} isLoading={isLoading} />
   }

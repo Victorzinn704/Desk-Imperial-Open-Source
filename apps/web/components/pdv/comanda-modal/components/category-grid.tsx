@@ -12,16 +12,21 @@ type CategoryGridProps = {
 
 function getCategoryIcon(cat: string) {
   const low = cat.toLowerCase()
-  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-    {return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('vinho'))
-    {return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-    {return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('combo') || low.includes('kit'))
-    {return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
-  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-    {return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />}
+  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) {
+    return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('vinho')) {
+    return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) {
+    return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('combo') || low.includes('kit')) {
+    return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
+  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) {
+    return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  }
   return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
 }
 
@@ -31,7 +36,9 @@ export const CategoryGrid = memo(function CategoryGrid({
   onSelectCategory,
   showAllOption = true,
 }: CategoryGridProps) {
-  if (categories.length === 0) {return null}
+  if (categories.length === 0) {
+    return null
+  }
 
   return (
     <>
@@ -69,7 +76,9 @@ export const CategoryGrid = memo(function CategoryGrid({
               onClick={() => onSelectCategory(cat)}
             >
               {getCategoryIcon(cat)}
-              <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[var(--accent)]' : ''}`}>
+              <span
+                className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[var(--accent)]' : ''}`}
+              >
                 {cat.length > 10 ? `${cat.substring(0, 10)}...` : cat}
               </span>
             </button>

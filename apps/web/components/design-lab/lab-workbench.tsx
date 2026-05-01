@@ -56,9 +56,15 @@ export function LabWorkbench({
           <div className="mx-auto flex w-full max-w-[1360px] flex-col gap-4 px-4 py-4 sm:px-5 lg:px-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lab-blue)]">Superficie acionada</p>
-                <h2 className="mt-2 text-xl font-semibold leading-tight text-[var(--lab-fg)]" id={titleId}>{title}</h2>
-                {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--lab-fg-soft)]">{description}</p> : null}
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lab-blue)]">
+                  Superficie acionada
+                </p>
+                <h2 className="mt-2 text-xl font-semibold leading-tight text-[var(--lab-fg)]" id={titleId}>
+                  {title}
+                </h2>
+                {description ? (
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--lab-fg-soft)]">{description}</p>
+                ) : null}
               </div>
               <button
                 aria-label={closeLabel}
@@ -75,9 +81,7 @@ export function LabWorkbench({
         </div>
 
         <div className="lab-workbench__body min-h-0 flex-1 overflow-y-auto bg-[var(--lab-bg)]">
-          <div className="mx-auto w-full max-w-[1360px] px-4 py-5 sm:px-5 sm:py-6 lg:px-8">
-            {children}
-          </div>
+          <div className="mx-auto w-full max-w-[1360px] px-4 py-5 sm:px-5 sm:py-6 lg:px-8">{children}</div>
         </div>
       </div>
     </div>

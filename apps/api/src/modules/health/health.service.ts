@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { CacheService } from '../../common/services/cache.service'
-import { PrismaService } from '../../database/prisma.service'
+import type { CacheService } from '../../common/services/cache.service'
+import type { PrismaService } from '../../database/prisma.service'
 
 type HealthCheckStatus = 'up' | 'down'
 

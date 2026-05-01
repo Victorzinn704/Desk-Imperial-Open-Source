@@ -2,13 +2,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Lock,
-  Unlock,
-  X,
-} from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Lock, Unlock, X } from 'lucide-react'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import { ApiError, closeCashClosure, openCashSession } from '@/lib/api'
 import { buildOperationsExecutiveKpis } from '@/lib/operations'
@@ -20,8 +14,8 @@ const fmtBRL = formatBRL
 
 function parseAmount(raw: string): number {
   const normalized = raw.replace(/\./g, '').replace(',', '.')
-  const n = parseFloat(normalized)
-  return isNaN(n) ? 0 : n
+  const n = Number.parseFloat(normalized)
+  return Number.isNaN(n) ? 0 : n
 }
 
 function getToneClasses(tone: LabStatusTone) {
@@ -58,7 +52,6 @@ function getToneClasses(tone: LabStatusTone) {
           backgroundColor: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
         },
       }
-    case 'neutral':
     default:
       return {
         icon: 'text-[var(--text-soft)]',
@@ -70,11 +63,7 @@ function getToneClasses(tone: LabStatusTone) {
   }
 }
 
-function SurfaceButton({
-  children,
-  className,
-  ...props
-}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+function SurfaceButton({ children, className, ...props }: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
   return (
     <button
       className={cn(
@@ -88,11 +77,7 @@ function SurfaceButton({
   )
 }
 
-function PrimaryButton({
-  children,
-  className,
-  ...props
-}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+function PrimaryButton({ children, className, ...props }: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
   return (
     <button
       className={cn(
@@ -106,11 +91,7 @@ function PrimaryButton({
   )
 }
 
-function DangerButton({
-  children,
-  className,
-  ...props
-}: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
+function DangerButton({ children, className, ...props }: Readonly<React.ButtonHTMLAttributes<HTMLButtonElement>>) {
   return (
     <button
       className={cn(
@@ -129,7 +110,11 @@ function DangerButton({
 }
 
 function FieldLabel({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">{children}</label>
+  return (
+    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+      {children}
+    </label>
+  )
 }
 
 function FieldInput(props: Readonly<React.InputHTMLAttributes<HTMLInputElement>>) {
@@ -223,7 +208,12 @@ function AbrirCaixaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
         <div>
           <FieldLabel>Observacoes (opcional)</FieldLabel>
-          <FieldTextarea placeholder="Troco separado, conferencia inicial..." rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <FieldTextarea
+            placeholder="Troco separado, conferencia inicial..."
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
 
         {error ? <MessageBox tone="danger">{error}</MessageBox> : null}
@@ -310,14 +300,21 @@ function FecharCaixaModal({
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="size-4 shrink-0 text-[var(--warning)]" />
             <p className="text-sm font-semibold text-[var(--warning)]">
-              {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta{openComandasCount > 1 ? 's' : ''}
+              {openComandasCount} comanda{openComandasCount > 1 ? 's' : ''} ainda aberta
+              {openComandasCount > 1 ? 's' : ''}
             </p>
           </div>
           <p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">
-            O caixa so pode ser fechado apos todas as comandas serem pagas. Ative o fechamento forcado apenas em caso de emergencia.
+            O caixa so pode ser fechado apos todas as comandas serem pagas. Ative o fechamento forcado apenas em caso de
+            emergencia.
           </p>
           <label className="mt-3 flex cursor-pointer items-center gap-2.5">
-            <input checked={forceClose} className="size-4 accent-[var(--accent)]" type="checkbox" onChange={(e) => setForceClose(e.target.checked)} />
+            <input
+              checked={forceClose}
+              className="size-4 accent-[var(--accent)]"
+              type="checkbox"
+              onChange={(e) => setForceClose(e.target.checked)}
+            />
             <span className="text-xs font-semibold text-[var(--warning)]">Fechar mesmo com comandas abertas</span>
           </label>
         </div>
@@ -357,7 +354,12 @@ function FecharCaixaModal({
 
         <div>
           <FieldLabel>Observacoes (opcional)</FieldLabel>
-          <FieldTextarea placeholder="Quebra de caixa, sangria, ajuste..." rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <FieldTextarea
+            placeholder="Quebra de caixa, sangria, ajuste..."
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
 
         {error ? <MessageBox tone="danger">{error}</MessageBox> : null}
@@ -490,7 +492,11 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
     <>
       <LabPanel
         action={
-          <CaixaHeaderActions caixaAberto={caixaAberto} onCloseModal={() => setShowFecharModal(true)} onOpenModal={() => setShowAbrirModal(true)} />
+          <CaixaHeaderActions
+            caixaAberto={caixaAberto}
+            onCloseModal={() => setShowFecharModal(true)}
+            onOpenModal={() => setShowAbrirModal(true)}
+          />
         }
         padding="md"
         subtitle={formatCaixaSubtitle(caixaAberto, openSessionsCount, openComandasCount)}
@@ -516,21 +522,35 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
 
         <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--surface-muted)]">
           <div className="grid gap-px bg-[var(--border)] sm:grid-cols-2 xl:grid-cols-5">
-            <CaixaHeadlineMetric hint="Comandas fechadas hoje" label="Receita realizada" value={fmtBRL(receitaRealizada)} />
-            <CaixaHeadlineMetric hint="Resultado líquido já capturado" label="Lucro realizado" value={fmtBRL(lucroRealizado)} />
+            <CaixaHeadlineMetric
+              hint="Comandas fechadas hoje"
+              label="Receita realizada"
+              value={fmtBRL(receitaRealizada)}
+            />
+            <CaixaHeadlineMetric
+              hint="Resultado líquido já capturado"
+              label="Lucro realizado"
+              value={fmtBRL(lucroRealizado)}
+            />
             <CaixaHeadlineMetric
               hint={`${openComandasCount} comanda${openComandasCount !== 1 ? 's' : ''} pendente${openComandasCount !== 1 ? 's' : ''}`}
               label="Em aberto"
               value={fmtBRL(faturamentoAberto)}
             />
             <CaixaHeadlineMetric hint="Realizado + em aberto" label="Projeção total" value={fmtBRL(projecaoTotal)} />
-            <CaixaHeadlineMetric hint="Leitura provisória do fechamento" label="Lucro esperado" value={fmtBRL(lucroEsperado)} />
+            <CaixaHeadlineMetric
+              hint="Leitura provisória do fechamento"
+              label="Lucro esperado"
+              value={fmtBRL(lucroEsperado)}
+            />
           </div>
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
           <div className="rounded-[18px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_34%,var(--surface))] px-5 py-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Fechamento do turno</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Fechamento do turno
+            </p>
             <p className="mt-2 text-[clamp(1.7rem,2.2vw,2.3rem)] font-semibold leading-none tracking-[-0.04em] text-[var(--text-primary)] tabular-nums">
               {fmtBRL(caixaEsperado)}
             </p>
@@ -552,7 +572,8 @@ export function CaixaPanel({ operations }: { operations: OperationsLiveResponse 
                   >
                     <AlertTriangle className="size-3.5 shrink-0 text-[var(--warning)]" />
                     <span className="font-semibold text-[var(--warning)]">
-                      {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta{openComandasCount !== 1 ? 's' : ''}
+                      {openComandasCount} comanda{openComandasCount !== 1 ? 's' : ''} ainda aberta
+                      {openComandasCount !== 1 ? 's' : ''}
                     </span>
                   </div>
                 ) : (

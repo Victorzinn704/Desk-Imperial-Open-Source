@@ -186,7 +186,9 @@ function ExecutiveHeader({
     <>
       <header className="flex flex-col gap-4 border-b border-white/6 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Sprint operacional</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Sprint operacional
+          </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{description}</p>
         </div>
@@ -614,18 +616,34 @@ function EmptyPanelState({ title, body }: Readonly<{ title: string; body: string
 }
 
 function formatRole(role: OperationRole) {
-  if (role === 'OWNER') {return 'Dono'}
-  if (role === 'MANAGER') {return 'Gerência'}
-  if (role === 'CASHIER') {return 'Caixa'}
+  if (role === 'OWNER') {
+    return 'Dono'
+  }
+  if (role === 'MANAGER') {
+    return 'Gerência'
+  }
+  if (role === 'CASHIER') {
+    return 'Caixa'
+  }
   return 'Atendimento'
 }
 
 function formatMovementTypeLabel(type: OperationGridRow['movements'][number]['type']) {
-  if (type === 'opening') {return 'Abertura de caixa'}
-  if (type === 'supply') {return 'Suprimento de caixa'}
-  if (type === 'withdrawal') {return 'Sangria / retirada'}
-  if (type === 'sale') {return 'Venda registrada'}
-  if (type === 'refund') {return 'Estorno operacional'}
+  if (type === 'opening') {
+    return 'Abertura de caixa'
+  }
+  if (type === 'supply') {
+    return 'Suprimento de caixa'
+  }
+  if (type === 'withdrawal') {
+    return 'Sangria / retirada'
+  }
+  if (type === 'sale') {
+    return 'Venda registrada'
+  }
+  if (type === 'refund') {
+    return 'Estorno operacional'
+  }
   return 'Ajuste manual'
 }
 

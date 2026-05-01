@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { type Comanda, type ComandaStatus } from '@/components/pdv/pdv-types'
+import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
 import { toOperationAmounts, toOperationsStatus } from '@/components/pdv/pdv-operations'
 import type { CreateComandaPaymentPayload } from '@/lib/api'
 import type { useStaffMobileShellMutations } from './use-staff-mobile-shell-mutations'

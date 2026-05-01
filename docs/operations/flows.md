@@ -76,12 +76,12 @@ OWNER
 
 ### 1.4 Regras de negocio
 
-| Regra | Estado atual |
-| --- | --- |
-| Apenas OWNER gerencia equipe | Confirmado |
-| Criacao exige validacao administrativa quando houver PIN | Confirmado |
-| STAFF real usa `User` vinculado ao `Employee` | Confirmado |
-| Desativar/revogar acesso invalida ou refresca sessao | Confirmado |
+| Regra                                                    | Estado atual |
+| -------------------------------------------------------- | ------------ |
+| Apenas OWNER gerencia equipe                             | Confirmado   |
+| Criacao exige validacao administrativa quando houver PIN | Confirmado   |
+| STAFF real usa `User` vinculado ao `Employee`            | Confirmado   |
+| Desativar/revogar acesso invalida ou refresca sessao     | Confirmado   |
 
 ---
 
@@ -362,15 +362,15 @@ Em producao, o gateway exige `REDIS_URL` valido para nao operar com adapter em m
 
 ### 5.1 Chaves importantes
 
-| Chave | TTL / padrao |
-| --- | --- |
-| `finance:summary:{userId}` | 120s |
-| `products:list:{userId}:{scope}` | 300s |
-| `employees:list:{userId}` | 600s |
-| `orders:summary:{userId}` | 90s |
-| `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` | 30s |
-| `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}` | curto, por view |
-| `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}` | curto, por view |
+| Chave                                                                  | TTL / padrao    |
+| ---------------------------------------------------------------------- | --------------- |
+| `finance:summary:{userId}`                                             | 120s            |
+| `products:list:{userId}:{scope}`                                       | 300s            |
+| `employees:list:{userId}`                                              | 600s            |
+| `orders:summary:{userId}`                                              | 90s             |
+| `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` | 30s             |
+| `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}`     | curto, por view |
+| `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}`     | curto, por view |
 
 ### 5.2 Estrategia de invalidacao
 
@@ -386,17 +386,17 @@ Em producao, o gateway exige `REDIS_URL` valido para nao operar com adapter em m
 
 ### 6.1 Matriz resumida
 
-| Operacao | OWNER | STAFF |
-| --- | --- | --- |
-| Gerir funcionarios | ✅ | ❌ |
-| Gerir produtos | ✅ | ❌ |
-| Importar produtos | ✅ | ❌ |
-| Abrir/editar comanda | ✅ | ✅ |
-| Operar cozinha | ✅ | ✅ |
-| Registrar pedido | ✅ | ✅ |
-| Cancelar pedido | ✅ | restrito por politica |
-| Acessar financeiro | ✅ | ❌ |
-| Configurar/Admin PIN | ✅ | ❌ |
+| Operacao             | OWNER | STAFF                 |
+| -------------------- | ----- | --------------------- |
+| Gerir funcionarios   | ✅    | ❌                    |
+| Gerir produtos       | ✅    | ❌                    |
+| Importar produtos    | ✅    | ❌                    |
+| Abrir/editar comanda | ✅    | ✅                    |
+| Operar cozinha       | ✅    | ✅                    |
+| Registrar pedido     | ✅    | ✅                    |
+| Cancelar pedido      | ✅    | restrito por politica |
+| Acessar financeiro   | ✅    | ❌                    |
+| Configurar/Admin PIN | ✅    | ❌                    |
 
 ### 6.2 Fluxo do Admin PIN
 
@@ -416,15 +416,15 @@ O fluxo atual **nao** devolve JWT para o browser.
 
 ### 7.1 Eventos rastreados com mais frequencia
 
-| Recurso | Exemplos |
-| --- | --- |
-| Produto | `product.created`, `product.updated`, `product.archived`, `product.restored`, `product.imported` |
-| Pedido | `order.created`, `order.cancelled` |
-| Funcionario | `employee.created`, `employee.updated`, `employee.access_issued`, `employee.access_revoked` |
-| Comanda | `comanda.opened`, `comanda.closed`, `comanda.cancelled` |
-| Auth | `auth.login.succeeded`, `auth.password-reset.requested` |
-| Admin PIN | `admin-pin.verified`, `admin-pin.failed`, `admin-pin.removed` |
-| Notificacoes | `telegram.linked`, `telegram.unlinked`, `notifications.preferences.updated` |
+| Recurso      | Exemplos                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| Produto      | `product.created`, `product.updated`, `product.archived`, `product.restored`, `product.imported` |
+| Pedido       | `order.created`, `order.cancelled`                                                               |
+| Funcionario  | `employee.created`, `employee.updated`, `employee.access_issued`, `employee.access_revoked`      |
+| Comanda      | `comanda.opened`, `comanda.closed`, `comanda.cancelled`                                          |
+| Auth         | `auth.login.succeeded`, `auth.password-reset.requested`                                          |
+| Admin PIN    | `admin-pin.verified`, `admin-pin.failed`, `admin-pin.removed`                                    |
+| Notificacoes | `telegram.linked`, `telegram.unlinked`, `notifications.preferences.updated`                      |
 
 ### 7.2 Estrutura resumida
 
@@ -446,15 +446,15 @@ AuditLog {
 
 ## 8. Erros comuns
 
-| Erro | HTTP | Exemplo de mensagem |
-| --- | --- | --- |
-| Produto nao encontrado | 404 | `Produto nao encontrado para esta conta.` |
-| Estoque insuficiente | 400 | `Estoque insuficiente para X.` |
-| Documento invalido | 400 | `Informe um CPF/CNPJ valido.` |
-| Sem permissao | 403 | `Apenas o dono pode ...` |
-| Mesa ocupada | 409 | `Essa mesa ja possui uma comanda aberta.` |
-| Caixa fechado | 409 | `Abra o caixa do funcionario antes.` |
-| PIN ausente/invalido | 403 | `Validacao administrativa ausente, invalida ou expirada.` |
+| Erro                   | HTTP | Exemplo de mensagem                                       |
+| ---------------------- | ---- | --------------------------------------------------------- |
+| Produto nao encontrado | 404  | `Produto nao encontrado para esta conta.`                 |
+| Estoque insuficiente   | 400  | `Estoque insuficiente para X.`                            |
+| Documento invalido     | 400  | `Informe um CPF/CNPJ valido.`                             |
+| Sem permissao          | 403  | `Apenas o dono pode ...`                                  |
+| Mesa ocupada           | 409  | `Essa mesa ja possui uma comanda aberta.`                 |
+| Caixa fechado          | 409  | `Abra o caixa do funcionario antes.`                      |
+| PIN ausente/invalido   | 403  | `Validacao administrativa ausente, invalida ou expirada.` |
 
 Padrao de erro HTTP:
 

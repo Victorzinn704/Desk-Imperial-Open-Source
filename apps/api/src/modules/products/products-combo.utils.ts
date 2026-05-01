@@ -1,19 +1,20 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 
-export function normalizeComboItemsInput(items: Array<{
-  productId: string
-  quantityPackages?: number
-  quantityUnits?: number
-}> | undefined) {
+export function normalizeComboItemsInput(
+  items:
+    | Array<{
+        productId: string
+        quantityPackages?: number
+        quantityUnits?: number
+      }>
+    | undefined,
+) {
   if (!items?.length) {
     return []
   }
 
-  const groupedByProduct = new Map<
-    string,
-    { productId: string; quantityPackages: number; quantityUnits: number }
-  >()
+  const groupedByProduct = new Map<string, { productId: string; quantityPackages: number; quantityUnits: number }>()
 
   for (const item of items) {
     const productId = item.productId.trim()

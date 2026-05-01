@@ -49,7 +49,6 @@ export function viewLabel(view: FinanceiroView) {
       return 'dre'
     case 'contas':
       return 'contas'
-    case 'movimentacao':
     default:
       return 'movimentação'
   }

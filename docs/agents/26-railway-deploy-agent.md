@@ -37,26 +37,31 @@ Deploy não é upload — é transição controlada de estado do sistema em prod
 ## Checklist pré-deploy
 
 ### Código e build
+
 - [ ] Branch correta, sem commits pendentes de merge
 - [ ] Build passou localmente e no CI
 - [ ] Lint e typecheck sem erros
 - [ ] Testes relevantes passando
 
 ### Variáveis e configuração
+
 - [ ] Variáveis de ambiente de produção verificadas no Railway
 - [ ] Nenhuma variável nova sem valor configurado
 - [ ] Segredos atualizados se necessário
 
 ### Banco de dados
+
 - [ ] Migrations foram executadas ou serão executadas no deploy?
 - [ ] Migration é retrocompatível? (nova coluna nullable, não remoção direta)
 - [ ] Backup recente existe antes de migration destrutiva?
 
 ### Serviços dependentes
+
 - [ ] Email, IA, cache, third-party APIs estão apontando para produção?
 - [ ] Rate limits e quotas de serviços externos estão dentro do esperado?
 
 ### Health e observabilidade
+
 - [ ] Health check endpoint respondendo?
 - [ ] Logs configurados para aparecer no Railway?
 - [ ] Alertas de erro configurados?

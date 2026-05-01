@@ -2,11 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { openComanda, replaceComanda, type ReplaceComandaPayload } from '@/lib/api'
-import {
-  appendOptimisticComanda,
-  patchOptimisticComanda,
-  scheduleOperationsWorkspaceReconcile,
-} from '@/lib/operations'
+import { appendOptimisticComanda, patchOptimisticComanda, scheduleOperationsWorkspaceReconcile } from '@/lib/operations'
 import { buildOpenComandaPayload } from './pdv-board.helpers'
 import type { SaveComandaPayload } from './comanda-modal'
 import { toPdvComanda } from './pdv-operations'

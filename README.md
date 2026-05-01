@@ -44,41 +44,41 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 
 ## Funcionalidades
 
-| Módulo                   | O que faz                                                                                |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| **PDV / Comandas**            | Kanban 4 colunas, CPF/CNPJ, desconto e acréscimo por comanda                                   |
-| **Tempo real**                | Toda a equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                           |
-| **Financeiro**                | Receita, custo, margem, top produtos e top vendedores por período                               |
-| **Folha de pagamento**        | Salário fixo + comissão sobre vendas calculada por funcionário                                  |
-| **Mapa de vendas**            | Pedidos plotados por bairro e região com geocodificação real                                    |
-| **Calendário comercial**      | Planeje eventos e correlacione com as vendas do período                                         |
-| **Mobile — dono**             | Painel executivo otimizado para celular                                                         |
-| **Mobile — funcionário**      | PDV e atendimento completo pelo celular                                                         |
-| **Admin PIN**                 | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                           |
-| **Cadastro inteligente**      | Barcode, Open Food Facts, Gemini e heurísticas de catálogo para acelerar cadastro de produtos   |
-| **Telegram e notificações**   | Vínculo do bot oficial, preferências por workspace e usuário, entregas operacionais filtradas   |
-| **Observabilidade e erros**   | OpenTelemetry, Grafana Faro e Sentry integrados ao ciclo de operação                            |
-| **Export CSV**                | Baixe pedidos para Excel ou Google Planilhas                                                    |
-| **Insight IA**                | Resumo executivo gerado pelo Gemini com cache e controle de uso                                 |
-| **LGPD**                      | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio        |
+| Módulo                      | O que faz                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| **PDV / Comandas**          | Kanban 4 colunas, CPF/CNPJ, desconto e acréscimo por comanda                                  |
+| **Tempo real**              | Toda a equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                         |
+| **Financeiro**              | Receita, custo, margem, top produtos e top vendedores por período                             |
+| **Folha de pagamento**      | Salário fixo + comissão sobre vendas calculada por funcionário                                |
+| **Mapa de vendas**          | Pedidos plotados por bairro e região com geocodificação real                                  |
+| **Calendário comercial**    | Planeje eventos e correlacione com as vendas do período                                       |
+| **Mobile — dono**           | Painel executivo otimizado para celular                                                       |
+| **Mobile — funcionário**    | PDV e atendimento completo pelo celular                                                       |
+| **Admin PIN**               | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                         |
+| **Cadastro inteligente**    | Barcode, Open Food Facts, Gemini e heurísticas de catálogo para acelerar cadastro de produtos |
+| **Telegram e notificações** | Vínculo do bot oficial, preferências por workspace e usuário, entregas operacionais filtradas |
+| **Observabilidade e erros** | OpenTelemetry, Grafana Faro e Sentry integrados ao ciclo de operação                          |
+| **Export CSV**              | Baixe pedidos para Excel ou Google Planilhas                                                  |
+| **Insight IA**              | Resumo executivo gerado pelo Gemini com cache e controle de uso                               |
+| **LGPD**                    | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio      |
 
 ---
 
 ## Stack
 
-| Camada             | Tecnologia                                   |
-| ------------------ | -------------------------------------------- |
-| Backend            | NestJS 11 + TypeScript                       |
-| Frontend           | Next.js 16 + React 19                        |
-| Banco de dados     | PostgreSQL 16 + Prisma ORM                   |
-| Cache / Rate limit | Redis                                        |
-| Tempo real         | Socket.IO                                    |
-| Autenticação       | Cookies HttpOnly + CSRF duplo                |
-| Monorepo           | Turborepo + npm workspaces                   |
+| Camada             | Tecnologia                                                      |
+| ------------------ | --------------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                          |
+| Frontend           | Next.js 16 + React 19                                           |
+| Banco de dados     | PostgreSQL 16 + Prisma ORM                                      |
+| Cache / Rate limit | Redis                                                           |
+| Tempo real         | Socket.IO                                                       |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                                   |
+| Monorepo           | Turborepo + npm workspaces                                      |
 | Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |
-| Testes backend     | Jest + 53+ arquivos de spec                  |
-| Testes frontend    | Vitest + Playwright                          |
-| Load tests         | K6                                           |
+| Testes backend     | Jest + 53+ arquivos de spec                                     |
+| Testes frontend    | Vitest + Playwright                                             |
+| Load tests         | K6                                                              |
 
 ---
 
@@ -149,12 +149,12 @@ npm --workspace @partner/api run dev
 npm --workspace @partner/web run dev
 ```
 
-| Serviço      | URL                              |
-| ------------ | -------------------------------- |
+| Serviço      | URL                                 |
+| ------------ | ----------------------------------- |
 | Frontend     | http://localhost:3000               |
-| API          | http://localhost:4000/api/v1       |
+| API          | http://localhost:4000/api/v1        |
 | Health check | http://localhost:4000/api/v1/health |
-| Swagger      | http://localhost:4000/api/v1/docs  |
+| Swagger      | http://localhost:4000/api/v1/docs   |
 
 ---
 

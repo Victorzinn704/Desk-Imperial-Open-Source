@@ -81,7 +81,11 @@ export function SalaoEnvironment({
     refetchOnWindowFocus: false,
   })
 
-  const { data: compactLiveData, isLoading: compactLiveLoading, dataUpdatedAt: compactLiveUpdatedAt } = useQuery({
+  const {
+    data: compactLiveData,
+    isLoading: compactLiveLoading,
+    dataUpdatedAt: compactLiveUpdatedAt,
+  } = useQuery({
     queryKey: LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
     refetchInterval: 15_000,
@@ -90,7 +94,11 @@ export function SalaoEnvironment({
     refetchOnWindowFocus: false,
   })
 
-  const { data: detailedLiveData, isLoading: detailedLiveLoading, dataUpdatedAt: detailedLiveUpdatedAt } = useQuery({
+  const {
+    data: detailedLiveData,
+    isLoading: detailedLiveLoading,
+    dataUpdatedAt: detailedLiveUpdatedAt,
+  } = useQuery({
     queryKey: FULL_LIVE_QUERY_KEY,
     queryFn: () => fetchOperationsLive({ includeCashMovements: false }),
     refetchInterval: 15_000,
@@ -111,7 +119,9 @@ export function SalaoEnvironment({
     }
 
     return Object.fromEntries(
-      liveData.employees.filter((employee) => employee.employeeId).map((employee) => [employee.employeeId!, employee.displayName]),
+      liveData.employees
+        .filter((employee) => employee.employeeId)
+        .map((employee) => [employee.employeeId!, employee.displayName]),
     )
   }, [liveData])
 
@@ -133,8 +143,7 @@ export function SalaoEnvironment({
   const freeMesas = useMemo(() => liveMesas.filter((mesa) => mesa.status === 'livre'), [liveMesas])
   const occupiedRate = liveMesas.length > 0 ? Math.round((occupiedMesas.length / liveMesas.length) * 100) : 0
   const activeWaiters = useMemo(
-    () =>
-      new Set(occupiedMesas.map((mesa) => mesa.garcomId).filter((value): value is string => Boolean(value))).size,
+    () => new Set(occupiedMesas.map((mesa) => mesa.garcomId).filter((value): value is string => Boolean(value))).size,
     [occupiedMesas],
   )
   const averageOpenTicket = occupiedMesas.length > 0 ? openRevenue / occupiedMesas.length : 0
@@ -311,8 +320,16 @@ export function SalaoEnvironment({
           meta={
             <div className="space-y-3">
               <SalaoMetaRow label="mesas ativas" tone="info" value={String(liveMesas.length)} />
-              <SalaoMetaRow label="ocupadas" tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'} value={String(occupiedMesas.length)} />
-              <SalaoMetaRow label="atendentes" tone={activeWaiters > 0 ? 'success' : 'neutral'} value={String(activeWaiters)} />
+              <SalaoMetaRow
+                label="ocupadas"
+                tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'}
+                value={String(occupiedMesas.length)}
+              />
+              <SalaoMetaRow
+                label="atendentes"
+                tone={activeWaiters > 0 ? 'success' : 'neutral'}
+                value={String(activeWaiters)}
+              />
             </div>
           }
           title="Salão"
@@ -446,10 +463,30 @@ export function SalaoEnvironment({
             title="Leitura do salão"
           >
             <div className="space-y-0">
-              <SalaoSignalRow label="receita em aberto" note="valor vivo nas mesas ocupadas" tone="info" value={fmtBRL(openRevenue)} />
-              <SalaoSignalRow label="ocupação" note="pressão atual do salão" tone={occupiedRate >= 75 ? 'danger' : occupiedRate >= 40 ? 'warning' : 'success'} value={`${occupiedRate}%`} />
-              <SalaoSignalRow label="ticket aberto" note="média por mesa ocupada" tone={averageOpenTicket > 0 ? 'info' : 'neutral'} value={fmtBRL(averageOpenTicket)} />
-              <SalaoSignalRow label="atendentes" note="garçons com mesa em giro" tone={activeWaiters > 0 ? 'success' : 'neutral'} value={String(activeWaiters)} />
+              <SalaoSignalRow
+                label="receita em aberto"
+                note="valor vivo nas mesas ocupadas"
+                tone="info"
+                value={fmtBRL(openRevenue)}
+              />
+              <SalaoSignalRow
+                label="ocupação"
+                note="pressão atual do salão"
+                tone={occupiedRate >= 75 ? 'danger' : occupiedRate >= 40 ? 'warning' : 'success'}
+                value={`${occupiedRate}%`}
+              />
+              <SalaoSignalRow
+                label="ticket aberto"
+                note="média por mesa ocupada"
+                tone={averageOpenTicket > 0 ? 'info' : 'neutral'}
+                value={fmtBRL(averageOpenTicket)}
+              />
+              <SalaoSignalRow
+                label="atendentes"
+                note="garçons com mesa em giro"
+                tone={activeWaiters > 0 ? 'success' : 'neutral'}
+                value={String(activeWaiters)}
+              />
             </div>
           </LabPanel>
 
@@ -470,12 +507,19 @@ export function SalaoEnvironment({
                 {sectionStats.length > 0 ? (
                   <div className="space-y-1">
                     {sectionStats.slice(0, 4).map((section) => (
-                      <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0" key={section.label}>
+                      <div
+                        className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0"
+                        key={section.label}
+                      >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-[var(--lab-fg)]">{section.label}</p>
-                          <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{section.occupied}/{section.total} ocupadas</p>
+                          <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                            {section.occupied}/{section.total} ocupadas
+                          </p>
                         </div>
-                        <LabStatusPill tone={section.occupancy >= 75 ? 'danger' : section.occupancy >= 40 ? 'warning' : 'success'}>
+                        <LabStatusPill
+                          tone={section.occupancy >= 75 ? 'danger' : section.occupancy >= 40 ? 'warning' : 'success'}
+                        >
                           {section.occupancy}%
                         </LabStatusPill>
                       </div>
@@ -485,13 +529,31 @@ export function SalaoEnvironment({
               </div>
 
               <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
-                <SalaoMetaRow label="ocupadas" tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'} value={String(occupiedMesas.length)} />
-                <SalaoMetaRow label="reservadas" tone={reservedMesas.length > 0 ? 'info' : 'neutral'} value={String(reservedMesas.length)} />
-                <SalaoMetaRow label="livres" tone={freeMesas.length > 0 ? 'success' : 'warning'} value={String(freeMesas.length)} />
+                <SalaoMetaRow
+                  label="ocupadas"
+                  tone={occupiedMesas.length > 0 ? 'warning' : 'neutral'}
+                  value={String(occupiedMesas.length)}
+                />
+                <SalaoMetaRow
+                  label="reservadas"
+                  tone={reservedMesas.length > 0 ? 'info' : 'neutral'}
+                  value={String(reservedMesas.length)}
+                />
+                <SalaoMetaRow
+                  label="livres"
+                  tone={freeMesas.length > 0 ? 'success' : 'warning'}
+                  value={String(freeMesas.length)}
+                />
                 <SalaoMetaRow
                   label="próxima ação"
                   tone={occupiedRate >= 75 ? 'warning' : reservedMesas.length > 0 ? 'info' : 'success'}
-                  value={occupiedRate >= 75 ? 'girar mesas' : reservedMesas.length > 0 ? 'preparar reserva' : 'manter cadência'}
+                  value={
+                    occupiedRate >= 75
+                      ? 'girar mesas'
+                      : reservedMesas.length > 0
+                        ? 'preparar reserva'
+                        : 'manter cadência'
+                  }
                 />
               </div>
             </div>
@@ -560,7 +622,7 @@ function SalaoSignalRow({
   value: string
 }>) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0" >
+    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0">
       <div className="min-w-0">
         <p className="text-sm font-medium text-[var(--lab-fg)]">{label}</p>
         <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">{note}</p>
@@ -819,7 +881,9 @@ function ComandasTableView({
 
           {sorted.map((comanda) => {
             const badge = getComandaStatusMeta(comanda.status)
-            const mesa = liveMesas.find((candidate) => candidate.numero === comanda.mesa || candidate.id === comanda.mesa)
+            const mesa = liveMesas.find(
+              (candidate) => candidate.numero === comanda.mesa || candidate.id === comanda.mesa,
+            )
             const itemCount = comanda.itens.reduce((sum, item) => sum + item.quantidade, 0)
 
             return (
@@ -836,14 +900,8 @@ function ComandasTableView({
                     className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
                     style={{
                       color: `var(--${badge.tone === 'accent' ? 'accent' : badge.tone})`,
-                      background:
-                        badge.tone === 'accent'
-                          ? 'var(--accent-soft)'
-                          : `var(--${badge.tone}-soft)`,
-                      borderColor:
-                        badge.tone === 'accent'
-                          ? 'var(--accent)'
-                          : `var(--${badge.tone})`,
+                      background: badge.tone === 'accent' ? 'var(--accent-soft)' : `var(--${badge.tone}-soft)`,
+                      borderColor: badge.tone === 'accent' ? 'var(--accent)' : `var(--${badge.tone})`,
                     }}
                   >
                     {badge.text}
@@ -859,7 +917,9 @@ function ComandasTableView({
                   })}
                 </span>
                 <span className="text-center text-[var(--text-soft)]">{itemCount}</span>
-                <span className="text-right font-semibold text-[var(--text-primary)]">{fmtBRL(calcTotal(comanda))}</span>
+                <span className="text-right font-semibold text-[var(--text-primary)]">
+                  {fmtBRL(calcTotal(comanda))}
+                </span>
                 <div className="flex justify-end">
                   {mesa && onOpenPdvFromMesa ? (
                     <button
@@ -995,7 +1055,8 @@ function PlantaView({
         ref={canvasRef}
         style={{
           height: CANVAS_H,
-          backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px)',
+          backgroundImage:
+            'radial-gradient(circle, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       >
@@ -1033,7 +1094,9 @@ function PlantaView({
                 height: CARD_H,
                 zIndex: isDraggingThis ? 50 : 1,
                 transform: isDraggingThis ? 'scale(1.07)' : 'scale(1)',
-                transition: isDraggingThis ? 'none' : 'left 0.14s ease-out, top 0.14s ease-out, transform 0.14s ease-out',
+                transition: isDraggingThis
+                  ? 'none'
+                  : 'left 0.14s ease-out, top 0.14s ease-out, transform 0.14s ease-out',
                 cursor: isDraggingThis ? 'grabbing' : 'grab',
                 willChange: isDraggingThis ? 'transform,left,top' : undefined,
                 touchAction: 'none',

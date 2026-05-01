@@ -77,10 +77,7 @@ export function decryptFieldValue(encryptedValue: string, rawKey: string, aad?: 
   decipher.setAuthTag(Buffer.from(tagSegment, 'base64url'))
 
   try {
-    const plaintext = Buffer.concat([
-      decipher.update(Buffer.from(dataSegment, 'base64url')),
-      decipher.final(),
-    ])
+    const plaintext = Buffer.concat([decipher.update(Buffer.from(dataSegment, 'base64url')), decipher.final()])
     return plaintext.toString('utf8')
   } catch {
     throw new FieldEncryptionError('Nao foi possivel descriptografar o payload.')

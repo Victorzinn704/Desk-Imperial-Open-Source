@@ -34,7 +34,9 @@ function buildUrl(path: string) {
 }
 
 function getCsrfToken(): string | null {
-  if (typeof globalThis.window === 'undefined') {return null}
+  if (typeof globalThis.window === 'undefined') {
+    return null
+  }
 
   const CSRF_COOKIE_NAMES = ['__Host-partner_csrf', 'partner_csrf']
   const cookie = document.cookie
@@ -42,10 +44,14 @@ function getCsrfToken(): string | null {
     .find((entry) => CSRF_COOKIE_NAMES.some((name) => entry.startsWith(`${name}=`)))
 
   const cookieToken = cookie ? (cookie.split('=')[1] ?? null) : null
-  if (cookieToken) {return cookieToken}
+  if (cookieToken) {
+    return cookieToken
+  }
 
   const persisted = globalThis.sessionStorage.getItem(CSRF_STORAGE_KEY)
-  if (persisted) {return persisted}
+  if (persisted) {
+    return persisted
+  }
 
   return null
 }
@@ -163,17 +169,25 @@ export async function removeAdminPin(pin: string): Promise<void> {
  * This is UX only and does not carry authorization.
  */
 function resolveExpiryDate(verifiedUntil: string | Date | null | undefined): Date {
-  if (verifiedUntil instanceof Date) {return verifiedUntil}
+  if (verifiedUntil instanceof Date) {
+    return verifiedUntil
+  }
   if (typeof verifiedUntil === 'string') {
     const parsed = new Date(verifiedUntil)
-    if (!Number.isNaN(parsed.getTime())) {return parsed}
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed
+    }
   }
   return new Date(Date.now() + DEFAULT_ADMIN_PIN_HINT_TTL_MS)
 }
 
 export function rememberAdminPinVerification(verifiedUntil?: string | Date | null): void {
-  if (typeof globalThis.window === 'undefined') {return}
-  if (__storageLock) {return}
+  if (typeof globalThis.window === 'undefined') {
+    return
+  }
+  if (__storageLock) {
+    return
+  }
 
   try {
     __storageLock = true
@@ -189,8 +203,12 @@ export function rememberAdminPinVerification(verifiedUntil?: string | Date | nul
 }
 
 export function clearAdminPinVerification(): void {
-  if (typeof globalThis.window === 'undefined') {return}
-  if (__storageLock) {return}
+  if (typeof globalThis.window === 'undefined') {
+    return
+  }
+  if (__storageLock) {
+    return
+  }
 
   try {
     __storageLock = true
@@ -201,25 +219,35 @@ export function clearAdminPinVerification(): void {
 }
 
 function isValidTimestamp(value: string | undefined): number | null {
-  if (!value) {return null}
+  if (!value) {
+    return null
+  }
   const ts = new Date(value).getTime()
   return Number.isNaN(ts) ? null : ts
 }
 
 export function hasRecentAdminPinVerification(ttlMs = DEFAULT_ADMIN_PIN_HINT_TTL_MS): boolean {
-  if (typeof globalThis.window === 'undefined') {return false}
+  if (typeof globalThis.window === 'undefined') {
+    return false
+  }
 
   const rawHint = globalThis.sessionStorage.getItem(ADMIN_PIN_HINT_KEY)
-  if (!rawHint) {return false}
+  if (!rawHint) {
+    return false
+  }
 
   try {
     const hint = JSON.parse(rawHint) as Partial<AdminPinHint>
     const now = Date.now()
     const verifiedUntil = isValidTimestamp(hint.verifiedUntil)
-    if (verifiedUntil !== null && now < verifiedUntil) {return true}
+    if (verifiedUntil !== null && now < verifiedUntil) {
+      return true
+    }
 
     const verifiedAt = isValidTimestamp(hint.verifiedAt)
-    if (verifiedAt !== null && now - verifiedAt < ttlMs) {return true}
+    if (verifiedAt !== null && now - verifiedAt < ttlMs) {
+      return true
+    }
   } catch {
     globalThis.sessionStorage.removeItem(ADMIN_PIN_HINT_KEY)
   }

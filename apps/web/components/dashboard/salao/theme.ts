@@ -52,10 +52,12 @@ export function getMesaStatusMeta(status: string) {
 }
 
 export function getComandaStatusMeta(status: string) {
-  return COMANDA_STATUS_META[status as keyof typeof COMANDA_STATUS_META] ?? {
-    text: status,
-    tone: 'neutral' as const,
-  }
+  return (
+    COMANDA_STATUS_META[status as keyof typeof COMANDA_STATUS_META] ?? {
+      text: status,
+      tone: 'neutral' as const,
+    }
+  )
 }
 
 export function getUrgencyTone(urgency: 0 | 1 | 2 | 3): SalaoTone {

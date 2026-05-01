@@ -10,9 +10,7 @@ type FinanceiroShortcutPageProps = {
   }>
 }
 
-export default async function FinanceiroShortcutPage({
-  searchParams,
-}: Readonly<FinanceiroShortcutPageProps>) {
+export default async function FinanceiroShortcutPage({ searchParams }: Readonly<FinanceiroShortcutPageProps>) {
   const params = (await searchParams) ?? {}
   redirect(buildDesignLabFinanceiroHref(parseDesignLabFinanceiroTab(params.tab)))
 }

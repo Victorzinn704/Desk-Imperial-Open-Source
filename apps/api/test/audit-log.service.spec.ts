@@ -177,7 +177,11 @@ describe('AuditLogService', () => {
   it('traz feed do STAFF restrito ao proprio actorUserId', async () => {
     prisma.auditLog.findMany.mockResolvedValue([])
 
-    const auth = makeStaffAuthContext({ userId: 'staff-1', actorUserId: 'staff-actor-1', companyOwnerUserId: 'owner-1' })
+    const auth = makeStaffAuthContext({
+      userId: 'staff-1',
+      actorUserId: 'staff-actor-1',
+      companyOwnerUserId: 'owner-1',
+    })
     await service.getActivityFeedForAuth(auth, 20)
 
     expect(prisma.auditLog.findMany).toHaveBeenCalledWith(

@@ -1,5 +1,5 @@
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common'
-import { CurrencyCode, UserRole, UserStatus } from '@prisma/client'
+import { type CurrencyCode, UserRole, type UserStatus } from '@prisma/client'
 import { createHash, randomInt } from 'node:crypto'
 import type { AuthContext } from './auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'

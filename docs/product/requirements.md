@@ -33,12 +33,12 @@
 
 ### RF-02 — Controle de acesso por papel
 
-| ID      | Requisito                                               | Status       |
-| ------- | ------------------------------------------------------- | ------------ |
-| RF-02.1 | O sistema deve suportar dois papéis: OWNER e STAFF      | Implementado |
+| ID      | Requisito                                                                                     | Status       |
+| ------- | --------------------------------------------------------------------------------------------- | ------------ |
+| RF-02.1 | O sistema deve suportar dois papéis: OWNER e STAFF                                            | Implementado |
 | RF-02.2 | OWNER deve ter acesso às superfícies administrativas, financeiras e operacionais do workspace | Implementado |
-| RF-02.3 | STAFF deve ter acesso apenas às superfícies operacionais permitidas para sua conta             | Implementado |
-| RF-02.4 | Dados de um workspace nunca devem ser visíveis em outro | Implementado |
+| RF-02.3 | STAFF deve ter acesso apenas às superfícies operacionais permitidas para sua conta            | Implementado |
+| RF-02.4 | Dados de um workspace nunca devem ser visíveis em outro                                       | Implementado |
 
 ---
 
@@ -73,27 +73,27 @@
 
 ### RF-05 — Operação em tempo real
 
-| ID      | Requisito                                                                                   | Status       |
-| ------- | ------------------------------------------------------------------------------------------- | ------------ |
-| RF-05.1 | O sistema deve propagar mudanças de comanda para todos os clientes conectados via Socket.IO | Implementado |
+| ID      | Requisito                                                                                                | Status       |
+| ------- | -------------------------------------------------------------------------------------------------------- | ------------ |
+| RF-05.1 | O sistema deve propagar mudanças de comanda para todos os clientes conectados via Socket.IO              | Implementado |
 | RF-05.2 | Cada workspace deve ter canais isolados por domínio operacional (`workspace`, `kitchen`, `mesa`, `cash`) | Implementado |
-| RF-05.3 | A conexão Socket.IO deve ser autenticada — sessão inválida deve ser rejeitada                              | Implementado |
-| RF-05.4 | O frontend deve aplicar patch local e refresh controlado sem recarregar a página                           | Implementado |
-| RF-05.5 | O sistema deve limitar eventos financeiros aos clientes autorizados                                          | Implementado |
+| RF-05.3 | A conexão Socket.IO deve ser autenticada — sessão inválida deve ser rejeitada                            | Implementado |
+| RF-05.4 | O frontend deve aplicar patch local e refresh controlado sem recarregar a página                         | Implementado |
+| RF-05.5 | O sistema deve limitar eventos financeiros aos clientes autorizados                                      | Implementado |
 
 ---
 
 ### RF-06 — Gestão de produtos e portfólio
 
-| ID      | Requisito                                                                | Status       |
-| ------- | ------------------------------------------------------------------------ | ------------ |
-| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade | Implementado |
-| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado    | Implementado |
-| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão             | Implementado |
-| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)       | Implementado |
-| RF-06.5 | Importação de produtos via CSV                                           | Implementado |
-| RF-06.6 | OWNER deve poder cadastrar e buscar produtos por código de barras        | Implementado |
-| RF-06.7 | O sistema deve sugerir rascunho inteligente de produto via Gemini        | Implementado |
+| ID      | Requisito                                                                                           | Status       |
+| ------- | --------------------------------------------------------------------------------------------------- | ------------ |
+| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade                            | Implementado |
+| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado                               | Implementado |
+| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão                                        | Implementado |
+| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)                                  | Implementado |
+| RF-06.5 | Importação de produtos via CSV                                                                      | Implementado |
+| RF-06.6 | OWNER deve poder cadastrar e buscar produtos por código de barras                                   | Implementado |
+| RF-06.7 | O sistema deve sugerir rascunho inteligente de produto via Gemini                                   | Implementado |
 | RF-06.8 | O cadastro rápido deve consultar catálogo auxiliar via Open Food Facts quando houver barcode válido | Implementado |
 
 ---
@@ -185,13 +185,13 @@
 
 ### RF-15 — Telegram e preferências de notificação
 
-| ID       | Requisito                                                                                     | Status       |
-| -------- | --------------------------------------------------------------------------------------------- | ------------ |
-| RF-15.1  | O sistema deve permitir vincular a conta do usuário ao bot oficial do Telegram                | Implementado |
-| RF-15.2  | O sistema deve permitir desvincular o chat vinculado                                          | Implementado |
-| RF-15.3  | O workspace deve poder configurar preferências de entrega por tipo de evento                  | Implementado |
-| RF-15.4  | O usuário deve poder configurar preferências pessoais de ruído operacional                    | Implementado |
-| RF-15.5  | O webhook do Telegram deve validar segredo compartilhado antes de processar eventos recebidos | Implementado |
+| ID      | Requisito                                                                                     | Status       |
+| ------- | --------------------------------------------------------------------------------------------- | ------------ |
+| RF-15.1 | O sistema deve permitir vincular a conta do usuário ao bot oficial do Telegram                | Implementado |
+| RF-15.2 | O sistema deve permitir desvincular o chat vinculado                                          | Implementado |
+| RF-15.3 | O workspace deve poder configurar preferências de entrega por tipo de evento                  | Implementado |
+| RF-15.4 | O usuário deve poder configurar preferências pessoais de ruído operacional                    | Implementado |
+| RF-15.5 | O webhook do Telegram deve validar segredo compartilhado antes de processar eventos recebidos | Implementado |
 
 ---
 
@@ -208,10 +208,10 @@
 
 ### RF-17 — Mobile
 
-| ID      | Requisito                                                                    | Status       |
-| ------- | ---------------------------------------------------------------------------- | ------------ |
-| RF-17.1 | OWNER deve ter painel executivo otimizado para celular                       | Implementado |
-| RF-17.2 | STAFF deve ter PDV e atendimento funcionais pelo celular                     | Implementado |
+| ID      | Requisito                                                                          | Status       |
+| ------- | ---------------------------------------------------------------------------------- | ------------ |
+| RF-17.1 | OWNER deve ter painel executivo otimizado para celular                             | Implementado |
+| RF-17.2 | STAFF deve ter PDV e atendimento funcionais pelo celular                           | Implementado |
 | RF-17.3 | A interface mobile deve usar componentes e listas ajustados para operação contínua | Implementado |
 
 ---
@@ -234,13 +234,13 @@
 
 ### RNF-02 — Performance
 
-| ID       | Requisito                                                                      | Status       |
-| -------- | ------------------------------------------------------------------------------ | ------------ |
-| RNF-02.1 | Cache Redis com TTL por domínio de dados (finanças, produtos, employees)       | Implementado |
+| ID       | Requisito                                                                                           | Status       |
+| -------- | --------------------------------------------------------------------------------------------------- | ------------ |
+| RNF-02.1 | Cache Redis com TTL por domínio de dados (finanças, produtos, employees)                            | Implementado |
 | RNF-02.2 | Snapshot de operações ao vivo com patch local, reconcile seletivo e fallback por refresh controlado | Implementado |
-| RNF-02.3 | Consultas críticas com índices compostos no banco (companyOwnerId + openedAt)  | Implementado |
-| RNF-02.4 | Virtualização de listas longas no frontend com TanStack Virtual                | Implementado |
-| RNF-02.5 | Build com code splitting e lazy loading por rota                               | Implementado |
+| RNF-02.3 | Consultas críticas com índices compostos no banco (companyOwnerId + openedAt)                       | Implementado |
+| RNF-02.4 | Virtualização de listas longas no frontend com TanStack Virtual                                     | Implementado |
+| RNF-02.5 | Build com code splitting e lazy loading por rota                                                    | Implementado |
 
 ---
 
@@ -250,7 +250,7 @@
 | -------- | -------------------------------------------------------------------------------- | ------------ |
 | RNF-03.1 | Health check principal em `/api/v1/health` com estado de DB e Redis              | Implementado |
 | RNF-03.2 | Degradação graciosa quando Redis está indisponível (sem cache, sistema continua) | Implementado |
-| RNF-03.3 | Runtime de produção hospedado em Oracle Cloud com banco PostgreSQL dedicado       | Implementado |
+| RNF-03.3 | Runtime de produção hospedado em Oracle Cloud com banco PostgreSQL dedicado      | Implementado |
 
 ---
 
@@ -277,9 +277,9 @@
 
 ### RNF-06 — Observabilidade
 
-| ID       | Requisito                                         | Status       |
-| -------- | ------------------------------------------------- | ------------ |
-| RNF-06.1 | Logging estruturado com request-id por requisição | Implementado |
+| ID       | Requisito                                                                 | Status       |
+| -------- | ------------------------------------------------------------------------- | ------------ |
+| RNF-06.1 | Logging estruturado com request-id por requisição                         | Implementado |
 | RNF-06.2 | Monitoramento de erros, traces e runtime com OpenTelemetry, Faro e Sentry | Implementado |
 
 ---

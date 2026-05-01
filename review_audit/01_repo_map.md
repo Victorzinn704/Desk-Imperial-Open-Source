@@ -39,14 +39,14 @@ desk-imperial/
 
 ## 3. Stack Tecnico Confirmado
 
-| Camada | Stack | Evidencia |
-| --- | --- | --- |
-| Backend | NestJS 11, Prisma, Redis, Socket.IO, OTel | `apps/api/package.json`, `apps/api/src/common/utils/otel.util.ts` |
-| Frontend | Next.js 16, React 19, Vitest, Playwright, Faro | `apps/web/package.json`, `apps/web/lib/observability/faro.ts` |
-| Contratos | pacote compartilhado de tipos | `packages/types/src/contracts.ts` |
-| Infra local | Docker compose app + observabilidade | `infra/docker/*.yml` |
-| Infra ops | Alloy, Loki, Tempo, Prometheus, Grafana, Alertmanager | `infra/oracle/ops/compose.yaml` |
-| CI | lint, typecheck, testes, seguranca, k6 latency gate, build | `.github/workflows/ci.yml` |
+| Camada      | Stack                                                      | Evidencia                                                         |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| Backend     | NestJS 11, Prisma, Redis, Socket.IO, OTel                  | `apps/api/package.json`, `apps/api/src/common/utils/otel.util.ts` |
+| Frontend    | Next.js 16, React 19, Vitest, Playwright, Faro             | `apps/web/package.json`, `apps/web/lib/observability/faro.ts`     |
+| Contratos   | pacote compartilhado de tipos                              | `packages/types/src/contracts.ts`                                 |
+| Infra local | Docker compose app + observabilidade                       | `infra/docker/*.yml`                                              |
+| Infra ops   | Alloy, Loki, Tempo, Prometheus, Grafana, Alertmanager      | `infra/oracle/ops/compose.yaml`                                   |
+| CI          | lint, typecheck, testes, seguranca, k6 latency gate, build | `.github/workflows/ci.yml`                                        |
 
 ---
 

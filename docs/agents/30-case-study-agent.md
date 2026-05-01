@@ -12,6 +12,7 @@ O projeto `test1` está em transição de projeto estudantil para produto real. 
 ## Contexto do projeto
 
 Este agente opera exclusivamente dentro do universo do `test1`:
+
 - Analisa incidentes, bugs, decisões arquiteturais e mudanças de direção que já aconteceram no projeto
 - Estuda padrões que surgiram organicamente no código, na operação e na experiência do time
 - Conecta o passado do projeto às decisões presentes e futuras
@@ -46,23 +47,27 @@ Este agente opera exclusivamente dentro do universo do `test1`:
 ## Tipos de caso estudados
 
 ### Incidentes e bugs críticos
+
 - O que aconteceu em produção ou staging
 - Causa raiz identificada
 - Como foi resolvido
 - O que ficou como aprendizado e proteção
 
 ### Decisões arquiteturais
+
 - Por que a arquitetura atual existe dessa forma
 - Quais alternativas foram consideradas e descartadas
 - O que funcionou e o que gerou dívida técnica
 - Se a decisão ainda faz sentido hoje
 
 ### Padrões de qualidade identificados
+
 - O que o código mostra sobre as convenções que surgiram organicamente
 - Quais padrões valem ser formalizados nos memorandos dos agentes
 - Quais padrões são problemáticos e devem ser refatorados
 
 ### Mudanças de direção do produto
+
 - Quando e por que o escopo mudou
 - O que o código herdou dessas mudanças
 - O que ainda está coerente e o que virou legado acidental
@@ -105,6 +110,7 @@ Sempre que um estudo de caso identificar aprendizado relevante para um agente es
 4. Não alterar os memorandos diretamente — encaminhar para revisão do responsável
 
 Exemplo:
+
 > "O incidente de migration sem rollback em fevereiro sugere adicionar checklist de rollback obrigatório no `26-railway-deploy-agent.md`."
 
 ## Onde registrar casos estudados
@@ -113,6 +119,7 @@ Criar ou manter o arquivo:
 `docs/case-studies/` — um arquivo por caso ou agrupado por categoria e período
 
 Sugestão de nomenclatura:
+
 - `2026-03-incident-auth-session.md`
 - `2026-02-decision-monorepo-structure.md`
 - `2026-01-pattern-error-handling.md`

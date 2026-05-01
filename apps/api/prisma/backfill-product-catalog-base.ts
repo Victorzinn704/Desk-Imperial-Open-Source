@@ -185,5 +185,5 @@ function formatScriptError(error: unknown) {
     return `Nao foi possivel conectar ao banco para o backfill. Verifique DATABASE_URL e suba o Postgres local antes de rodar o script.\nDetalhe: ${error.message}`
   }
 
-  return error instanceof Error ? error.stack ?? error.message : String(error)
+  return error instanceof Error ? (error.stack ?? error.message) : String(error)
 }

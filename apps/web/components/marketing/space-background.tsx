@@ -245,7 +245,7 @@ export function SpaceBackground() {
         const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r + p.glow)
         grad.addColorStop(0, `rgba(255,255,255,${a})`)
         grad.addColorStop(0.4, `rgba(195,164,111,${a * 0.5})`)
-        grad.addColorStop(1, `rgba(92,110,200,0)`)
+        grad.addColorStop(1, 'rgba(92,110,200,0)')
 
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r + p.glow, 0, Math.PI * 2)

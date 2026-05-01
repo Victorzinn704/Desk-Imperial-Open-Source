@@ -15,22 +15,45 @@ export function buildTopCustomers(
 ) {
   const customers = new Map<
     string,
-    { customerName: string; buyerType: BuyerType | null; buyerDocument: string | null; orders: number; revenue: number; profit: number }
+    {
+      customerName: string
+      buyerType: BuyerType | null
+      buyerDocument: string | null
+      orders: number
+      revenue: number
+      profit: number
+    }
   >()
 
   for (const group of orders) {
     const customerName = group.customerName?.trim() || 'Cliente nao informado'
     const key = `${customerName}:${group.buyerType ?? 'unknown'}:${group.buyerDocument ?? ''}`
     const current = customers.get(key) ?? {
-      customerName, buyerType: group.buyerType, buyerDocument: group.buyerDocument,
-      orders: 0, revenue: 0, profit: 0,
+      customerName,
+      buyerType: group.buyerType,
+      buyerDocument: group.buyerDocument,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
     }
     current.orders += group._count._all
     current.revenue = roundCurrency(
-      current.revenue + options.currencyService.convert(toNumber(group._sum.totalRevenue), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.revenue +
+        options.currencyService.convert(
+          toNumber(group._sum.totalRevenue),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     current.profit = roundCurrency(
-      current.profit + options.currencyService.convert(toNumber(group._sum.totalProfit), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.profit +
+        options.currencyService.convert(
+          toNumber(group._sum.totalProfit),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     customers.set(key, current)
   }
@@ -51,31 +74,57 @@ export function buildTopEmployees(
 ) {
   const employees = new Map<
     string,
-    { employeeId: string | null; employeeCode: string | null; employeeName: string; orders: number; revenue: number; profit: number }
+    {
+      employeeId: string | null
+      employeeCode: string | null
+      employeeName: string
+      orders: number
+      revenue: number
+      profit: number
+    }
   >()
 
   for (const group of orders) {
-    if (!group.employeeId && !group.sellerCode && !group.sellerName) {
+    if (!(group.employeeId || group.sellerCode || group.sellerName)) {
       continue
     }
     const employeeName = group.sellerName?.trim() || 'Funcionario nao identificado'
     const employeeKey = group.employeeId ?? group.sellerCode ?? employeeName
     const current = employees.get(employeeKey) ?? {
-      employeeId: group.employeeId, employeeCode: group.sellerCode, employeeName,
-      orders: 0, revenue: 0, profit: 0,
+      employeeId: group.employeeId,
+      employeeCode: group.sellerCode,
+      employeeName,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
     }
     current.orders += group._count._all
     current.revenue = roundCurrency(
-      current.revenue + options.currencyService.convert(toNumber(group._sum.totalRevenue), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.revenue +
+        options.currencyService.convert(
+          toNumber(group._sum.totalRevenue),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     current.profit = roundCurrency(
-      current.profit + options.currencyService.convert(toNumber(group._sum.totalProfit), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.profit +
+        options.currencyService.convert(
+          toNumber(group._sum.totalProfit),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     employees.set(employeeKey, current)
   }
 
   return [...employees.values()]
-    .map((employee) => ({ ...employee, averageTicket: employee.orders ? roundCurrency(employee.revenue / employee.orders) : 0 }))
+    .map((employee) => ({
+      ...employee,
+      averageTicket: employee.orders ? roundCurrency(employee.revenue / employee.orders) : 0,
+    }))
     .sort((left, right) => right.revenue - left.revenue)
     .slice(0, 6)
 }
@@ -94,24 +143,49 @@ export function buildTopRegions(
 ) {
   const regions = new Map<
     string,
-    { label: string; city: string | null; state: string | null; country: string | null; orders: number; revenue: number; profit: number }
+    {
+      label: string
+      city: string | null
+      state: string | null
+      country: string | null
+      orders: number
+      revenue: number
+      profit: number
+    }
   >()
 
   for (const group of orders) {
-    if (!group.buyerCity && !group.buyerState && !group.buyerCountry) {
+    if (!(group.buyerCity || group.buyerState || group.buyerCountry)) {
       continue
     }
     const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
     const current = regions.get(label) ?? {
-      label, city: group.buyerCity, state: group.buyerState, country: group.buyerCountry,
-      orders: 0, revenue: 0, profit: 0,
+      label,
+      city: group.buyerCity,
+      state: group.buyerState,
+      country: group.buyerCountry,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
     }
     current.orders += group._count._all
     current.revenue = roundCurrency(
-      current.revenue + options.currencyService.convert(toNumber(group._sum.totalRevenue), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.revenue +
+        options.currencyService.convert(
+          toNumber(group._sum.totalRevenue),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     current.profit = roundCurrency(
-      current.profit + options.currencyService.convert(toNumber(group._sum.totalProfit), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.profit +
+        options.currencyService.convert(
+          toNumber(group._sum.totalProfit),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     regions.set(label, current)
   }
@@ -135,7 +209,18 @@ export function buildSalesMap(
 ) {
   const points = new Map<
     string,
-    { label: string; district: string | null; city: string | null; state: string | null; country: string | null; latitude: number; longitude: number; orders: number; revenue: number; profit: number }
+    {
+      label: string
+      district: string | null
+      city: string | null
+      state: string | null
+      country: string | null
+      latitude: number
+      longitude: number
+      orders: number
+      revenue: number
+      profit: number
+    }
   >()
 
   for (const group of orders) {
@@ -145,16 +230,35 @@ export function buildSalesMap(
     const label = buildRegionLabel(group.buyerDistrict, group.buyerCity, group.buyerState, group.buyerCountry)
     const key = `${label}:${group.buyerLatitude.toFixed(4)}:${group.buyerLongitude.toFixed(4)}`
     const current = points.get(key) ?? {
-      label, district: group.buyerDistrict, city: group.buyerCity, state: group.buyerState, country: group.buyerCountry,
-      latitude: group.buyerLatitude, longitude: group.buyerLongitude,
-      orders: 0, revenue: 0, profit: 0,
+      label,
+      district: group.buyerDistrict,
+      city: group.buyerCity,
+      state: group.buyerState,
+      country: group.buyerCountry,
+      latitude: group.buyerLatitude,
+      longitude: group.buyerLongitude,
+      orders: 0,
+      revenue: 0,
+      profit: 0,
     }
     current.orders += group._count._all
     current.revenue = roundCurrency(
-      current.revenue + options.currencyService.convert(toNumber(group._sum.totalRevenue), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.revenue +
+        options.currencyService.convert(
+          toNumber(group._sum.totalRevenue),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     current.profit = roundCurrency(
-      current.profit + options.currencyService.convert(toNumber(group._sum.totalProfit), group.currency as CurrencyCode, options.displayCurrency, options.snapshot),
+      current.profit +
+        options.currencyService.convert(
+          toNumber(group._sum.totalProfit),
+          group.currency as CurrencyCode,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     points.set(key, current)
   }

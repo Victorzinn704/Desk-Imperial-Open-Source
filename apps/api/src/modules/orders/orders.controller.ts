@@ -6,9 +6,9 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { CreateOrderDto } from './dto/create-order.dto'
-import { ListOrdersQueryDto } from './dto/list-orders.query'
-import { OrdersService } from './orders.service'
+import type { CreateOrderDto } from './dto/create-order.dto'
+import type { ListOrdersQueryDto } from './dto/list-orders.query'
+import type { OrdersService } from './orders.service'
 
 @ApiTags('orders')
 @Controller('orders')

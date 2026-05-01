@@ -43,18 +43,18 @@ Reduzir superfície de ataque e bloquear riscos técnicos antes que virem proble
 
 ## Foco técnico — OWASP Top 10 aplicado
 
-| Categoria | O que verificar |
-|-----------|-----------------|
-| **Injeção** | SQL, NoSQL, command injection, LDAP — toda entrada validada e parametrizada? |
-| **Autenticação falha** | Senhas fracas, brute force sem rate limit, tokens expirados corretamente? |
-| **Exposição de dados** | HTTPS em todo tráfego, dados sensíveis em log, PII em resposta desnecessária? |
-| **XXE / Entidades externas** | Parsers XML seguros, upload de arquivo validado? |
-| **Controle de acesso falho** | RBAC implementado no backend, não apenas no frontend? |
-| **Configuração insegura** | Headers de segurança, CORS restrito, modo debug desabilitado em prod? |
-| **XSS** | Output sanitizado, CSP configurado, React/framework protege por padrão? |
-| **Deserialização insegura** | Dados de entrada não são deserializados sem validação? |
-| **Componentes vulneráveis** | Dependências atualizadas, audit sem CVE crítico? |
-| **Logging insuficiente** | Eventos de segurança (login, falha, permissão negada) são logados? |
+| Categoria                    | O que verificar                                                               |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| **Injeção**                  | SQL, NoSQL, command injection, LDAP — toda entrada validada e parametrizada?  |
+| **Autenticação falha**       | Senhas fracas, brute force sem rate limit, tokens expirados corretamente?     |
+| **Exposição de dados**       | HTTPS em todo tráfego, dados sensíveis em log, PII em resposta desnecessária? |
+| **XXE / Entidades externas** | Parsers XML seguros, upload de arquivo validado?                              |
+| **Controle de acesso falho** | RBAC implementado no backend, não apenas no frontend?                         |
+| **Configuração insegura**    | Headers de segurança, CORS restrito, modo debug desabilitado em prod?         |
+| **XSS**                      | Output sanitizado, CSP configurado, React/framework protege por padrão?       |
+| **Deserialização insegura**  | Dados de entrada não são deserializados sem validação?                        |
+| **Componentes vulneráveis**  | Dependências atualizadas, audit sem CVE crítico?                              |
+| **Logging insuficiente**     | Eventos de segurança (login, falha, permissão negada) são logados?            |
 
 ## Regras de execução
 

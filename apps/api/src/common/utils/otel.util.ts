@@ -7,7 +7,12 @@ import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { NodeSDK, type NodeSDKConfiguration } from '@opentelemetry/sdk-node'
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
-import { BatchSpanProcessor, ParentBasedSampler, TraceIdRatioBasedSampler, type SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import {
+  BatchSpanProcessor,
+  ParentBasedSampler,
+  TraceIdRatioBasedSampler,
+  type SpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
 import {
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
   SEMRESATTRS_SERVICE_NAME,
@@ -61,7 +66,7 @@ export async function initializeApiOpenTelemetry(
   const sentryClient = getActiveSentryClient()
   const sentryBridgeEnabled = Boolean(sentryClient)
 
-  if (!traceEndpoint && !metricsEndpoint && !logsEndpoint && !sentryBridgeEnabled) {
+  if (!(traceEndpoint || metricsEndpoint || logsEndpoint || sentryBridgeEnabled)) {
     return apiOtelStatus
   }
 
@@ -150,7 +155,7 @@ export async function initializeApiOpenTelemetry(
 }
 
 export async function shutdownApiOpenTelemetry() {
-  if (!apiOtelSdk || !apiOtelStarted) {
+  if (!(apiOtelSdk && apiOtelStarted)) {
     return
   }
 
@@ -232,7 +237,7 @@ function parseOtlpHeaders(headers: string | undefined) {
 
       const key = entry.slice(0, separatorIndex).trim()
       const value = entry.slice(separatorIndex + 1).trim()
-      if (!key || !value) {
+      if (!(key && value)) {
         return null
       }
 

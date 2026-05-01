@@ -253,10 +253,7 @@ describe('NotificationsService', () => {
     })
 
     expect(result).toEqual(expect.objectContaining({ state: 'sent' }))
-    expect(telegramAdapter.sendTextMessage).toHaveBeenCalledWith(
-      123n,
-      expect.stringContaining('Mesa 7'),
-    )
+    expect(telegramAdapter.sendTextMessage).toHaveBeenCalledWith(123n, expect.stringContaining('Mesa 7'))
     expect(auditLogService.record).toHaveBeenCalledWith(
       expect.objectContaining({ event: 'notifications.delivery.sent' }),
     )

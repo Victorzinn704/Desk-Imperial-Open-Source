@@ -211,10 +211,7 @@ export function toComandaPaymentRecord(payment: ComandaPaymentLike): ComandaPaym
   }
 }
 
-export function toMesaRecord(
-  mesa: MesaLike,
-  openComanda: MesaOpenComandaLike,
-): MesaRecord {
+export function toMesaRecord(mesa: MesaLike, openComanda: MesaOpenComandaLike): MesaRecord {
   return {
     id: mesa.id,
     label: mesa.label,

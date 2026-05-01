@@ -96,16 +96,32 @@ function PayrollLockedState() {
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">preview</LabStatusPill>}
-        padding="md"
-        title="O que abre na folha"
-      >
+      <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title="O que abre na folha">
         <div className="space-y-0">
-          <LabSignalRow label="período e recorte" note="mês, colaboradores ativos e ritmo de fechamento" tone="neutral" value="sim" />
-          <LabSignalRow label="pagamentos" note="status individual, marcação em lote e pendências" tone="success" value="sim" />
-          <LabSignalRow label="comissões" note="leitura salarial nasce da mesma base da equipe e do financeiro" tone="info" value="sim" />
-          <LabSignalRow label="exportação" note="CSV do período volta como saída operacional do fechamento" tone="warning" value="sim" />
+          <LabSignalRow
+            label="período e recorte"
+            note="mês, colaboradores ativos e ritmo de fechamento"
+            tone="neutral"
+            value="sim"
+          />
+          <LabSignalRow
+            label="pagamentos"
+            note="status individual, marcação em lote e pendências"
+            tone="success"
+            value="sim"
+          />
+          <LabSignalRow
+            label="comissões"
+            note="leitura salarial nasce da mesma base da equipe e do financeiro"
+            tone="info"
+            value="sim"
+          />
+          <LabSignalRow
+            label="exportação"
+            note="CSV do período volta como saída operacional do fechamento"
+            tone="warning"
+            value="sim"
+          />
         </div>
       </LabPanel>
     </div>

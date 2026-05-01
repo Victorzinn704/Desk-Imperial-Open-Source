@@ -9,9 +9,5 @@
       "@contracts/contracts": ["packages/types/src/index"]
     }
   },
-  "include": [
-    "apps/api/src/**/*.ts",
-    "apps/api/test/**/*.ts",
-    "packages/types/src/**/*.ts"
-  ]
+  "include": ["apps/api/src/**/*.ts", "apps/api/test/**/*.ts", "packages/types/src/**/*.ts"]
 }

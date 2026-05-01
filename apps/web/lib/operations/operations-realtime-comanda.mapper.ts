@@ -30,7 +30,7 @@ export function buildComandaFromPayload({
   const comandaId = legacy?.id ?? asString(payload.comandaId)
   const openedAt = resolveComandaOpenedAt(legacy, existing, payload)
 
-  if (!comandaId || !openedAt) {
+  if (!(comandaId && openedAt)) {
     return null
   }
 

@@ -161,7 +161,9 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
 
         <article className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Sessão atual</p>
-          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">Estado da identidade ativa e encerramento manual da sessão.</p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+            Estado da identidade ativa e encerramento manual da sessão.
+          </p>
           <div className="mt-6 space-y-4">
             <SettingsInfoCard hint="Conta autenticada neste dispositivo" label="Usuário" value={user.fullName} />
             <SettingsInfoCard

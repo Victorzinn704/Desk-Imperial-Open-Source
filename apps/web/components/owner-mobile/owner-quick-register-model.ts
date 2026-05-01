@@ -18,7 +18,12 @@ export const ownerQuickRegisterSchema = z
     measurementValue: z.coerce.number().min(0.01, 'A medida precisa ser positiva.'),
     unitsPerPackage: z.coerce.number().int('Use um inteiro.').min(1, 'O pacote precisa ter ao menos 1 unidade.'),
     description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
-    quantityLabel: z.string().trim().max(64, 'A leitura de quantidade ficou longa demais.').optional().or(z.literal('')),
+    quantityLabel: z
+      .string()
+      .trim()
+      .max(64, 'A leitura de quantidade ficou longa demais.')
+      .optional()
+      .or(z.literal('')),
     servingSize: z.string().trim().max(64, 'A porção ficou longa demais.').optional().or(z.literal('')),
     requiresKitchen: z.boolean().default(false),
     unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),

@@ -120,7 +120,12 @@ export function buildSalesCategoryBreakdown(
     current.units += row._sum.quantity ?? 0
     current.inventoryCostValue = roundCurrency(
       current.inventoryCostValue +
-        options.currencyService.convert(toNumber(row._sum.lineCost), row.currency, options.displayCurrency, options.snapshot),
+        options.currencyService.convert(
+          toNumber(row._sum.lineCost),
+          row.currency,
+          options.displayCurrency,
+          options.snapshot,
+        ),
     )
     current.inventorySalesValue = roundCurrency(
       current.inventorySalesValue +
@@ -175,10 +180,7 @@ export function buildTopProducts(records: FinanceProductAnalyticsRecord[], limit
     }))
 }
 
-export function buildRecentOrders(
-  orders: FinanceRecentOrder[],
-  options: FinanceAggregationOptions,
-) {
+export function buildRecentOrders(orders: FinanceRecentOrder[], options: FinanceAggregationOptions) {
   return orders.map((order) => ({
     id: order.id,
     customerName: order.customerName,

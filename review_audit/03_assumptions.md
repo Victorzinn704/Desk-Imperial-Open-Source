@@ -33,6 +33,7 @@
 ## Contexto do Dev Solo
 
 O repositório é mantido por um único desenvolvedor. Isso informa a calibração de severidade e esforço:
+
 - Um achado "médio" num time de 5 pode ser "alto" num time de 1 (não há par para revisar)
 - Refatorações grandes custam mais porque não há ninguém para tocar outras entregas
 - Consistência de código é mais difícil porque não há code review externo

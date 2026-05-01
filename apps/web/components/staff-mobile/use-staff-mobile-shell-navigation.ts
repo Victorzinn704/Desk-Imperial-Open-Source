@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { type Comanda, type Mesa } from '@/components/pdv/pdv-types'
+import type { Comanda, Mesa } from '@/components/pdv/pdv-types'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import type { PendingAction, StaffMobileTab } from './staff-mobile-shell-types'
 

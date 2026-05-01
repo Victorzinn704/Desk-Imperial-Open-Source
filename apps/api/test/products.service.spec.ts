@@ -1263,7 +1263,8 @@ describe('ProductsService', () => {
     })
 
     it('deve derivar base canônica no upsert de importação quando o CSV não traz metadados externos', async () => {
-      const csv = makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
+      const csv =
+        makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
     Brahma 350ml,Cervejas,Lata,ML,350,1,Desc,4.50,6.90,BRL,12`)
 
       mockPrisma.product.findUnique.mockResolvedValue(null)

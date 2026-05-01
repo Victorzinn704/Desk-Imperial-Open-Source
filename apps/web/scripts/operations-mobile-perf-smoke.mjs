@@ -56,7 +56,13 @@ class ApiSession {
 
     const contentType = response.headers.get('content-type') ?? ''
     const payload = contentType.includes('application/json') ? await response.json() : await response.text()
-    if (payload && typeof payload === 'object' && payload !== null && 'csrfToken' in payload && typeof payload.csrfToken === 'string') {
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'csrfToken' in payload &&
+      typeof payload.csrfToken === 'string'
+    ) {
       this.csrfToken = payload.csrfToken
     }
 
@@ -88,7 +94,9 @@ async function main() {
 
   const productsResponse = await ownerApi.request('/products?includeInactive=true')
   const anyActiveProduct = productsResponse.items.find((product) => product.active && product.stock > 0)
-  const kitchenProduct = productsResponse.items.find((product) => product.active && product.stock > 0 && product.requiresKitchen)
+  const kitchenProduct = productsResponse.items.find(
+    (product) => product.active && product.stock > 0 && product.requiresKitchen,
+  )
 
   if (!anyActiveProduct) {
     throw new Error('Nenhum produto ativo com estoque disponivel para o smoke.')
@@ -287,12 +295,7 @@ async function bootstrapAuthenticatedPage(context, page, session, path, readySel
   )
 
   await page.addInitScript(
-    ({
-      csrfToken,
-      consentCookieName,
-      consentStorageKey,
-      consentVersion,
-    }) => {
+    ({ csrfToken, consentCookieName, consentStorageKey, consentVersion }) => {
       window.localStorage.setItem(
         consentStorageKey,
         JSON.stringify({
@@ -318,7 +321,10 @@ async function bootstrapAuthenticatedPage(context, page, session, path, readySel
   try {
     await page.locator(readySelector).waitFor({ state: 'visible', timeout: EVENT_TIMEOUT_MS })
   } catch (error) {
-    const text = await page.locator('body').innerText().catch(() => '')
+    const text = await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')
     throw new Error(
       `Bootstrap da pagina ${path} falhou. url=${page.url()} selector=${readySelector} body=${JSON.stringify(text.slice(0, 600))} cause=${
         error instanceof Error ? error.message : String(error)
@@ -486,7 +492,6 @@ function escapeRegex(value) {
 async function waitForIdlePropagation(delayMs = 1_600) {
   await new Promise((resolve) => setTimeout(resolve, delayMs))
 }
-
 
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : error)

@@ -8,10 +8,7 @@ vi.mock('next-themes', () => ({
   }),
 }))
 
-import {
-  getSessionErrorMessage,
-  resolveActiveNavigation,
-} from './dashboard-shell'
+import { getSessionErrorMessage, resolveActiveNavigation } from './dashboard-shell'
 
 describe('dashboard-shell helpers', () => {
   it('returns a stable fallback error message for non-API failures', () => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { type DropResult } from '@hello-pangea/dnd'
+import type { DropResult } from '@hello-pangea/dnd'
 import type { OperationsLiveResponse } from '@contracts/contracts'
 import type { PdvMesaIntent } from './pdv-navigation-intent'
 import { type Comanda, isEndedComandaStatus, type Mesa } from './pdv-types'

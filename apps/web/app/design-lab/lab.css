@@ -286,7 +286,9 @@
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
-  transition: background 150ms, color 150ms;
+  transition:
+    background 150ms,
+    color 150ms;
   cursor: pointer;
   border: none;
   background: transparent;
@@ -422,7 +424,9 @@
   background: transparent;
   color: var(--lab-fg-soft);
   cursor: pointer;
-  transition: background 150ms, color 150ms;
+  transition:
+    background 150ms,
+    color 150ms;
   flex-shrink: 0;
 }
 
@@ -684,11 +688,26 @@
   white-space: nowrap;
 }
 
-.lab-pill--blue { background: var(--lab-blue-soft); color: var(--lab-blue); }
-.lab-pill--green { background: var(--lab-success-soft); color: var(--lab-success); }
-.lab-pill--red { background: var(--lab-danger-soft); color: var(--lab-danger); }
-.lab-pill--yellow { background: var(--lab-warning-soft); color: var(--lab-warning); }
-.lab-pill--gray { background: var(--lab-surface-hover); color: var(--lab-fg-soft); }
+.lab-pill--blue {
+  background: var(--lab-blue-soft);
+  color: var(--lab-blue);
+}
+.lab-pill--green {
+  background: var(--lab-success-soft);
+  color: var(--lab-success);
+}
+.lab-pill--red {
+  background: var(--lab-danger-soft);
+  color: var(--lab-danger);
+}
+.lab-pill--yellow {
+  background: var(--lab-warning-soft);
+  color: var(--lab-warning);
+}
+.lab-pill--gray {
+  background: var(--lab-surface-hover);
+  color: var(--lab-fg-soft);
+}
 
 /* ─── Table ──────────────────────────────────────────────────────────────────── */
 .lab-table {

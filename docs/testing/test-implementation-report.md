@@ -16,19 +16,20 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 
 ### 1.1 Arquivos de Teste Criados
 
-| Arquivo | Status | Testes | Cobertura Alvo |
-|---------|--------|--------|----------------|
-| `test/products.service.spec.ts` | ✅ Criado | 28 testes | products.service.ts |
-| `test/orders.service.spec.ts` | ✅ Criado | 24 testes | orders.service.ts |
+| Arquivo                          | Status    | Testes    | Cobertura Alvo       |
+| -------------------------------- | --------- | --------- | -------------------- |
+| `test/products.service.spec.ts`  | ✅ Criado | 28 testes | products.service.ts  |
+| `test/orders.service.spec.ts`    | ✅ Criado | 24 testes | orders.service.ts    |
 | `test/admin-pin.service.spec.ts` | ✅ Criado | 22 testes | admin-pin.service.ts |
 | `test/employees.service.spec.ts` | ✅ Criado | 16 testes | employees.service.ts |
-| `test/cache.service.spec.ts` | ✅ Criado | 18 testes | cache.service.ts |
+| `test/cache.service.spec.ts`     | ✅ Criado | 18 testes | cache.service.ts     |
 
 **Total: 108 novos testes criados**
 
 ### 1.2 Cobertura de Funcionalidades Testadas
 
 #### Products Service (28 testes)
+
 - ✅ listForUser - listagem com cache, filtros e paginação (9 testes)
 - ✅ createForUser - criação com validação e sanitização (8 testes)
 - ✅ updateForUser - atualização parcial e completa (5 testes)
@@ -37,12 +38,14 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 - ✅ invalidateProductsCache (1 teste)
 
 #### Orders Service (24 testes)
+
 - ✅ listForUser - listagem com cache e agregações (4 testes)
 - ✅ createForUser - criação com validação de estoque, desconto e PIN (13 testes)
 - ✅ cancelForUser - cancelamento com retorno de estoque (7 testes)
 - ✅ invalidateOrdersCache (1 teste)
 
 #### Admin Pin Service (22 testes)
+
 - ✅ setupPin - criação e alteração de PIN (5 testes)
 - ✅ removePin - remoção de PIN (4 testes)
 - ✅ hasPinConfigured - verificação de existência (3 testes)
@@ -51,12 +54,14 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 - ✅ extractVerificationProof - extração do header (3 testes)
 
 #### Employees Service (16 testes)
+
 - ✅ listForUser - listagem de funcionários (4 testes)
 - ✅ createForUser - criação com hash de senha (7 testes)
 - ✅ updateForUser - atualização de dados (4 testes)
 - ✅ invalidateEmployeesCache (1 teste)
 
 #### Cache Service (18 testes)
+
 - ✅ inicialização (2 testes)
 - ✅ get - obtenção de dados (5 testes)
 - ✅ set - armazenamento com TTL (3 testes)
@@ -68,24 +73,26 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 ### 1.3 Resultados da Execução
 
 **Antes da implementação:**
+
 - 8 arquivos de teste
 - 211 testes
 - 10.6% de cobertura
 
 **Depois da implementação (consolidado):**
+
 - 13 arquivos de teste
 - 337 testes
 - 13 suítes passando (100%)
 
 ### 1.4 Módulos com Cobertura Aprimorada
 
-| Módulo | Cobertura Antiga | Cobertura Nova | Variação |
-|--------|-----------------|----------------|----------|
-| products.service.ts | 0% | 60.97% | +60.97% |
-| orders.service.ts | 0% | 51.92% | +51.92% |
-| admin-pin.service.ts | 0% | 72.3% | +72.3% |
-| employees.service.ts | 0% | 53.91% | +53.91% |
-| cache.service.ts | 10.9% | 58.18% | +47.28% |
+| Módulo               | Cobertura Antiga | Cobertura Nova | Variação |
+| -------------------- | ---------------- | -------------- | -------- |
+| products.service.ts  | 0%               | 60.97%         | +60.97%  |
+| orders.service.ts    | 0%               | 51.92%         | +51.92%  |
+| admin-pin.service.ts | 0%               | 72.3%          | +72.3%   |
+| employees.service.ts | 0%               | 53.91%         | +53.91%  |
+| cache.service.ts     | 10.9%            | 58.18%         | +47.28%  |
 
 ---
 
@@ -93,14 +100,15 @@ Este documento resume o trabalho de implementação de testes unitários e docum
 
 ### 2.1 Documentos Implementados
 
-| Documento | Caminho | Status |
-|-----------|---------|--------|
-| Fluxos de Operação | `docs/operations/flows.md` | ✅ Completo |
+| Documento           | Caminho                                      | Status      |
+| ------------------- | -------------------------------------------- | ----------- |
+| Fluxos de Operação  | `docs/operations/flows.md`                   | ✅ Completo |
 | Relatório de Testes | `docs/testing/test-implementation-report.md` | ✅ Completo |
 
 ### 2.2 Conteúdo da Documentação
 
 #### Fluxos de Operação (flows.md)
+
 - **Hierarquia de Empresa e Funcionários**
   - Modelo de dados
   - Fluxo de cadastro
@@ -190,10 +198,10 @@ describe('ServiceName', () => {
     it('deve fazer algo quando condição', async () => {
       // Arrange
       mockX.mockResolvedValue(value)
-      
+
       // Act
       const result = await service.methodName(params)
-      
+
       // Assert
       expect(result).toEqual(expected)
     })
@@ -271,23 +279,27 @@ function makeEntity(overrides = {}) {
 Os ajustes críticos foram aplicados e validados na suíte completa da API:
 
 1. **Products Service**
-  - ✅ Expectativas de cache alinhadas para `products:list:*`
-  - ✅ Cenários de conflito Prisma `P2002` corrigidos
-  - ✅ Fluxo de importação CSV ajustado aos headers reais
+
+- ✅ Expectativas de cache alinhadas para `products:list:*`
+- ✅ Cenários de conflito Prisma `P2002` corrigidos
+- ✅ Fluxo de importação CSV ajustado aos headers reais
 
 2. **Admin Pin Service**
-  - ✅ Formato de proof ajustado (`string | null` via cookie)
-  - ✅ Teste de método inexistente removido
-  - ✅ Chaves de challenge/rate limit alinhadas
+
+- ✅ Formato de proof ajustado (`string | null` via cookie)
+- ✅ Teste de método inexistente removido
+- ✅ Chaves de challenge/rate limit alinhadas
 
 3. **Employees Service**
-  - ✅ Chaves de cache alinhadas para `employees:list:*`
-  - ✅ Mensagens de erro atualizadas para contrato real
-  - ✅ Email de login ajustado para `staff.<owner>.<code>@login.deskimperial.internal`
+
+- ✅ Chaves de cache alinhadas para `employees:list:*`
+- ✅ Mensagens de erro atualizadas para contrato real
+- ✅ Email de login ajustado para `staff.<owner>.<code>@login.deskimperial.internal`
 
 4. **Orders e Cache Service**
-  - ✅ Factories e chaves de cache corrigidas
-  - ✅ Comportamentos de cancelamento/sumário alinhados
+
+- ✅ Factories e chaves de cache corrigidas
+- ✅ Comportamentos de cancelamento/sumário alinhados
 
 ### 4.2 Evidência de execução
 
@@ -304,14 +316,14 @@ Resultado:
 
 ### 4.3 Próximos incrementos (não bloqueantes)
 
-| Módulo | Prioridade | Testes Estimados |
-|--------|------------|------------------|
-| finance.service.ts | 🔴 Alta | 20 testes |
-| consent.service.ts | 🟠 Média | 15 testes |
-| geocoding.service.ts | 🟠 Média | 12 testes |
-| currency.service.ts | 🟠 Média | 10 testes |
-| mailer.service.ts | 🟡 Baixa | 15 testes |
-| operations-realtime.gateway.ts | 🟡 Baixa | 10 testes |
+| Módulo                         | Prioridade | Testes Estimados |
+| ------------------------------ | ---------- | ---------------- |
+| finance.service.ts             | 🔴 Alta    | 20 testes        |
+| consent.service.ts             | 🟠 Média   | 15 testes        |
+| geocoding.service.ts           | 🟠 Média   | 12 testes        |
+| currency.service.ts            | 🟠 Média   | 10 testes        |
+| mailer.service.ts              | 🟡 Baixa   | 15 testes        |
+| operations-realtime.gateway.ts | 🟡 Baixa   | 10 testes        |
 
 ### 4.4 Testes E2E (backlog)
 
@@ -348,11 +360,12 @@ Resultado:
 
 ### 5.3 Recomendação Final
 
-Os testes criados demonstram **padrões de qualidade enterprise** e estabelecem uma **base sólida** para expansão da cobertura. 
+Os testes criados demonstram **padrões de qualidade enterprise** e estabelecem uma **base sólida** para expansão da cobertura.
 
 Os ajustes críticos já foram concluídos, e a base atual permite evoluir cobertura com foco em módulos ainda sem suíte dedicada.
 
 **Prioridade imediata:**
+
 1. Expandir cobertura de `finance.service.ts` (1-2 dias)
 2. Iniciar trilha E2E com fluxos críticos de autenticação/pedido (3-5 dias)
 3. Adicionar validação de regressão de frontend em componentes do dashboard
@@ -360,6 +373,6 @@ Os ajustes críticos já foram concluídos, e a base atual permite evoluir cober
 ---
 
 **Assinado:**  
-*Equipe de Auditoria Técnica*
+_Equipe de Auditoria Técnica_
 
 26 de março de 2026

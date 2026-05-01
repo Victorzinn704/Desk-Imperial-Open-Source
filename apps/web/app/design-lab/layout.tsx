@@ -4,8 +4,7 @@ import { LabShell } from '@/components/design-lab/lab-shell'
 import './lab.css'
 
 export default function DesignLabLayout({ children }: { children: ReactNode }) {
-  const designLabDisabled =
-    process.env.DISABLE_DESIGN_LAB === '1' || process.env.NEXT_PUBLIC_DISABLE_DESIGN_LAB === '1'
+  const designLabDisabled = process.env.DISABLE_DESIGN_LAB === '1' || process.env.NEXT_PUBLIC_DISABLE_DESIGN_LAB === '1'
 
   if (designLabDisabled) {
     notFound()

@@ -104,16 +104,32 @@ function EquipeLockedState() {
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">preview</LabStatusPill>}
-        padding="md"
-        title="O que abre na equipe"
-      >
+      <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title="O que abre na equipe">
         <div className="space-y-0">
-          <LabSignalRow label="desempenho por pessoa" note="receita, lucro, pedidos e ticket por colaborador" tone="success" value="sim" />
-          <LabSignalRow label="status de acesso" note="quem já entra no web e quem ainda depende de habilitação" tone="info" value="sim" />
-          <LabSignalRow label="ponte com folha" note="a mesma base alimenta comissões e fechamento salarial" tone="neutral" value="sim" />
-          <LabSignalRow label="diretório operacional" note="visão rápida para dono e gestão sem trocar de módulo" tone="warning" value="sim" />
+          <LabSignalRow
+            label="desempenho por pessoa"
+            note="receita, lucro, pedidos e ticket por colaborador"
+            tone="success"
+            value="sim"
+          />
+          <LabSignalRow
+            label="status de acesso"
+            note="quem já entra no web e quem ainda depende de habilitação"
+            tone="info"
+            value="sim"
+          />
+          <LabSignalRow
+            label="ponte com folha"
+            note="a mesma base alimenta comissões e fechamento salarial"
+            tone="neutral"
+            value="sim"
+          />
+          <LabSignalRow
+            label="diretório operacional"
+            note="visão rápida para dono e gestão sem trocar de módulo"
+            tone="warning"
+            value="sim"
+          />
         </div>
       </LabPanel>
     </div>

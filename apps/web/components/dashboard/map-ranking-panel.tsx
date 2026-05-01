@@ -68,7 +68,10 @@ export function MapRankingPanel({
             const displayValue = tab === 'orders' ? String(region.orders) : formatCurrency(value, displayCurrency)
 
             return (
-              <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-4" key={region.label}>
+              <div
+                className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-4"
+                key={region.label}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

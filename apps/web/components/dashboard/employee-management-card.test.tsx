@@ -2,7 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EmployeeManagementCard } from './employee-management-card'
-import { fetchAdminPinStatus, hasRecentAdminPinVerification, rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
+import {
+  fetchAdminPinStatus,
+  hasRecentAdminPinVerification,
+  rememberAdminPinVerification,
+  verifyAdminPin,
+} from '@/lib/admin-pin'
 
 vi.mock('@/lib/admin-pin', () => ({
   fetchAdminPinStatus: vi.fn(),

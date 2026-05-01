@@ -7,40 +7,40 @@
 
 ## 1. Nomenclatura
 
-| Elemento | Convenção | Exemplo |
-|----------|-----------|---------|
-| Arquivos `.ts` (serviços, utils, types) | `kebab-case` | `auth.service.ts`, `document-validation.util.ts` |
-| Arquivos `.tsx` (componentes React) | `kebab-case` | `dashboard-shell.tsx`, `pdv-comanda-modal.tsx` |
-| Arquivos de teste | `*.spec.ts` (API) / `*.test.ts` (Web) | `auth.service.spec.ts`, `validation.test.ts` |
-| Classes / Componentes React | `PascalCase` | `AuthService`, `DashboardShell` |
-| Funções / Variáveis | `camelCase` | `getUserById`, `isComandaOpen` |
-| Constantes (valores imutáveis) | `UPPER_SNAKE_CASE` | `MAX_RETRY_ATTEMPTS`, `DEFAULT_PAGE_SIZE` |
-| Interfaces / Types | `PascalCase` | `CreateOrderDto`, `ComandaRecord` |
-| Enums | `PascalCase` (nome), `UPPER_SNAKE_CASE` (valores) | `OrderStatus.PENDING` |
-| Pastas de módulo | `kebab-case` | `modules/admin-pin/`, `components/dashboard/` |
-| Pastas internas de módulo | `kebab-case` | `dto/`, `guards/`, `decorators/`, `hooks/` |
+| Elemento                                | Convenção                                         | Exemplo                                          |
+| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| Arquivos `.ts` (serviços, utils, types) | `kebab-case`                                      | `auth.service.ts`, `document-validation.util.ts` |
+| Arquivos `.tsx` (componentes React)     | `kebab-case`                                      | `dashboard-shell.tsx`, `pdv-comanda-modal.tsx`   |
+| Arquivos de teste                       | `*.spec.ts` (API) / `*.test.ts` (Web)             | `auth.service.spec.ts`, `validation.test.ts`     |
+| Classes / Componentes React             | `PascalCase`                                      | `AuthService`, `DashboardShell`                  |
+| Funções / Variáveis                     | `camelCase`                                       | `getUserById`, `isComandaOpen`                   |
+| Constantes (valores imutáveis)          | `UPPER_SNAKE_CASE`                                | `MAX_RETRY_ATTEMPTS`, `DEFAULT_PAGE_SIZE`        |
+| Interfaces / Types                      | `PascalCase`                                      | `CreateOrderDto`, `ComandaRecord`                |
+| Enums                                   | `PascalCase` (nome), `UPPER_SNAKE_CASE` (valores) | `OrderStatus.PENDING`                            |
+| Pastas de módulo                        | `kebab-case`                                      | `modules/admin-pin/`, `components/dashboard/`    |
+| Pastas internas de módulo               | `kebab-case`                                      | `dto/`, `guards/`, `decorators/`, `hooks/`       |
 
 ### Sufixos de arquivo
 
-| Sufixo | Uso |
-|--------|-----|
-| `.service.ts` | Serviço NestJS (injetável, com lógica de negócio) |
-| `.controller.ts` | Controller NestJS (rotas, validação de entrada) |
-| `.module.ts` | Módulo NestJS (provedores, imports, exports) |
-| `.guard.ts` | Guard NestJS (autorização, proteção de rota) |
-| `.util.ts` | Utilitário puro (funções sem estado, sem dependências injetadas) |
-| `.utils.ts` | **PROIBIDO** — usar `.util.ts` no singular sempre |
-| `.types.ts` | Tipos e interfaces TypeScript |
-| `.constants.ts` | Constantes do módulo |
-| `.dto.ts` | Data Transfer Objects (class-validator) |
-| `.filter.ts` | Exception filters NestJS |
-| `.decorator.ts` | Custom decorators NestJS |
-| `.gateway.ts` | Socket.IO gateway |
-| `.template.ts` | Templates (email, etc.) |
-| `.config.ts` | Configuração de módulo |
-| `.adapter.ts` | Adapter entre interfaces diferentes |
-| `.publisher.ts` | Publicador de eventos (Socket.IO, Redis, etc.) |
-| `.resolver.ts` | Resolvedor de contexto (ex: session resolver) |
+| Sufixo           | Uso                                                              |
+| ---------------- | ---------------------------------------------------------------- |
+| `.service.ts`    | Serviço NestJS (injetável, com lógica de negócio)                |
+| `.controller.ts` | Controller NestJS (rotas, validação de entrada)                  |
+| `.module.ts`     | Módulo NestJS (provedores, imports, exports)                     |
+| `.guard.ts`      | Guard NestJS (autorização, proteção de rota)                     |
+| `.util.ts`       | Utilitário puro (funções sem estado, sem dependências injetadas) |
+| `.utils.ts`      | **PROIBIDO** — usar `.util.ts` no singular sempre                |
+| `.types.ts`      | Tipos e interfaces TypeScript                                    |
+| `.constants.ts`  | Constantes do módulo                                             |
+| `.dto.ts`        | Data Transfer Objects (class-validator)                          |
+| `.filter.ts`     | Exception filters NestJS                                         |
+| `.decorator.ts`  | Custom decorators NestJS                                         |
+| `.gateway.ts`    | Socket.IO gateway                                                |
+| `.template.ts`   | Templates (email, etc.)                                          |
+| `.config.ts`     | Configuração de módulo                                           |
+| `.adapter.ts`    | Adapter entre interfaces diferentes                              |
+| `.publisher.ts`  | Publicador de eventos (Socket.IO, Redis, etc.)                   |
+| `.resolver.ts`   | Resolvedor de contexto (ex: session resolver)                    |
 
 ---
 
@@ -110,22 +110,23 @@ components/nome-do-modulo/
 
 ```typescript
 // 1. Node.js built-ins
-import path from 'node:path';
+import path from 'node:path'
 
 // 2. External packages (npm)
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common'
+import { PrismaService } from '@prisma/client'
 
 // 3. Internal aliases (@/) ou relative imports de módulos internos
-import { CacheService } from '@/common/services/cache.service';
-import { ComandaRecord } from '@contracts/contracts';
+import { CacheService } from '@/common/services/cache.service'
+import { ComandaRecord } from '@contracts/contracts'
 
 // 4. Relative imports (mesmo módulo)
-import { CreateComandaDto } from './dto/create-comanda.dto';
-import { formatComandaTotal } from './utils/comanda-format.util';
+import { CreateComandaDto } from './dto/create-comanda.dto'
+import { formatComandaTotal } from './utils/comanda-format.util'
 ```
 
 **Regras:**
+
 - API usa imports relativos (`../../common/...`) — **migrar para aliases quando possível**
 - Web usa alias `@/` para tudo dentro de `apps/web/`
 - Tipos compartilhados sempre via `@contracts/contracts` (packages/types)
@@ -177,16 +178,16 @@ catch (error) {
 
 // RUIM: try/catch vazio em hooks
 useEffect(() => {
-  fetchData().catch(() => {}); // ❌ swallowed error
-}, []);
+  fetchData().catch(() => {}) // ❌ swallowed error
+}, [])
 
 // BOM: Log + feedback ao usuário
 useEffect(() => {
   fetchData().catch((error) => {
-    faro.api.pushError(error);
-    toast.error('Falha ao carregar dados');
-  });
-}, []);
+    faro.api.pushError(error)
+    toast.error('Falha ao carregar dados')
+  })
+}, [])
 ```
 
 ---
@@ -204,30 +205,30 @@ useEffect(() => {
 ### DTO (API)
 
 ```typescript
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator'
 
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name: string
 
   @IsNumber()
   @IsOptional()
-  price?: number;
+  price?: number
 }
 ```
 
 ### Schema (Web)
 
 ```typescript
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const productFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   price: z.number().min(0, 'Preço deve ser positivo').optional(),
-});
+})
 
-export type ProductFormData = z.infer<typeof productFormSchema>;
+export type ProductFormData = z.infer<typeof productFormSchema>
 ```
 
 ---
@@ -241,26 +242,26 @@ export type ProductFormData = z.infer<typeof productFormSchema>;
 // Localização: apps/api/test/modules/nome-do-modulo/
 
 describe('NomeDoService', () => {
-  let service: NomeDoService;
+  let service: NomeDoService
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [NomeDoService, MockPrismaService],
-    }).compile();
-    service = module.get(NomeDoService);
-  });
+    }).compile()
+    service = module.get(NomeDoService)
+  })
 
   it('deve criar um registro quando dados válidos', async () => {
     // arrange
     // act
     // assert
-  });
+  })
 
   it('deve lançar NotFoundException quando não encontrar', async () => {
     // arrange
     // act + assert
-  });
-});
+  })
+})
 ```
 
 ### Web (Vitest + Testing Library)
@@ -292,21 +293,22 @@ describe('NomeDoComponente', () => {
 <corpo opcional>
 ```
 
-| Tipo | Uso |
-|------|-----|
-| `feat` | Nova funcionalidade |
-| `fix` | Correção de bug |
+| Tipo       | Uso                                      |
+| ---------- | ---------------------------------------- |
+| `feat`     | Nova funcionalidade                      |
+| `fix`      | Correção de bug                          |
 | `refactor` | Refatoração sem mudança de comportamento |
-| `style` | Formatação, lint, sem mudança de lógica |
-| `test` | Adição ou correção de testes |
-| `docs` | Documentação |
-| `chore` | Manutenção (deps, config, CI) |
-| `perf` | Melhoria de performance |
-| `ci` | Mudança no CI/CD |
+| `style`    | Formatação, lint, sem mudança de lógica  |
+| `test`     | Adição ou correção de testes             |
+| `docs`     | Documentação                             |
+| `chore`    | Manutenção (deps, config, CI)            |
+| `perf`     | Melhoria de performance                  |
+| `ci`       | Mudança no CI/CD                         |
 
 **Escopos válidos:** `api`, `web`, `types`, `infra`, `ci`, `deps`
 
 **Exemplos:**
+
 ```
 feat(api): adicionar endpoint de relatórios financeiros
 fix(web): corrigir formatação de moeda no PDV
@@ -333,12 +335,14 @@ chore(deps): atualizar NestJS para v11
 ## 9. Performance
 
 ### API
+
 - Usar `select` em vez de `include` quando não precisa de todos os campos
 - Paginar todas as listas (limit/offset ou cursor)
 - Cache Redis para dados frequentemente acessados
 - Índices no Prisma para colunas de busca frequente
 
 ### Web
+
 - Code split por rota (Next.js faz automaticamente)
 - `dynamic()` para componentes pesados (Leaflet, AG Grid)
 - Memoizar componentes caros com `React.memo`

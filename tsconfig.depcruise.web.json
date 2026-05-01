@@ -10,9 +10,5 @@
       "@contracts/contracts": ["packages/types/src/index"]
     }
   },
-  "include": [
-    "apps/web/**/*.ts",
-    "apps/web/**/*.tsx",
-    "packages/types/src/**/*.ts"
-  ]
+  "include": ["apps/web/**/*.ts", "apps/web/**/*.tsx", "packages/types/src/**/*.ts"]
 }

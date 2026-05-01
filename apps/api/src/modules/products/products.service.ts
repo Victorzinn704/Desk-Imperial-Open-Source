@@ -16,7 +16,7 @@ import type { UpdateProductDto } from './dto/update-product.dto'
 import { buildProductsResponse, toProductRecord } from './products.types'
 import { CacheService } from '../../common/services/cache.service'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
-import { FinanceService } from '../finance/finance.service'
+import type { FinanceService } from '../finance/finance.service'
 import { normalizeComboItemsInput, assertComboUpdateRules, buildComboItemsPayload } from './products-combo.utils'
 import { validateImportRow, upsertImportRow } from './products-import.utils'
 import { buildProductUpdateData } from './products-update.utils'
@@ -412,7 +412,11 @@ export class ProductsService {
         return product.stock < desiredStock
       }
 
-      return product.stock <= 0 || product.stock < targetStock || (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold)
+      return (
+        product.stock <= 0 ||
+        product.stock < targetStock ||
+        (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold)
+      )
     })
 
     if (selectedProducts.length === 0) {

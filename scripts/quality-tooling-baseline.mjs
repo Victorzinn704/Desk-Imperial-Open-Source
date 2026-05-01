@@ -112,8 +112,16 @@ for (const issue of knipIssues) {
 const knipTopFiles = knipIssues
   .map((issue) => ({
     file: issue.file,
-    score: ['files', 'dependencies', 'devDependencies', 'exports', 'types', 'unresolved', 'duplicates', 'unlisted']
-      .reduce((sum, key) => sum + (Array.isArray(issue[key]) ? issue[key].length : 0), 0),
+    score: [
+      'files',
+      'dependencies',
+      'devDependencies',
+      'exports',
+      'types',
+      'unresolved',
+      'duplicates',
+      'unlisted',
+    ].reduce((sum, key) => sum + (Array.isArray(issue[key]) ? issue[key].length : 0), 0),
     files: issue.files?.length ?? 0,
     exports: issue.exports?.length ?? 0,
     types: issue.types?.length ?? 0,
@@ -159,7 +167,9 @@ const markdown = [
   '## Fallow',
   '',
   `- total findings: ${summary.fallow.totalFindings}`,
-  `- severity counts: ${Object.entries(summary.fallow.severityCounts).map(([key, value]) => `${key}=${value}`).join(', ')}`,
+  `- severity counts: ${Object.entries(summary.fallow.severityCounts)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')}`,
   '',
   '### Top hotspots',
   '',
@@ -173,7 +183,9 @@ const markdown = [
   '## Knip',
   '',
   `- issue files: ${summary.knip.totalIssueFiles}`,
-  `- counts: ${Object.entries(summary.knip.counts).map(([key, value]) => `${key}=${value}`).join(', ')}`,
+  `- counts: ${Object.entries(summary.knip.counts)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')}`,
   '',
   '### Highest-noise files',
   '',

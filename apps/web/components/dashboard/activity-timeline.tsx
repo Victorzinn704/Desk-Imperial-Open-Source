@@ -24,10 +24,18 @@ const getRelativeTime = (date: Date) => {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
-  if (minutes < 1) {return 'agora mesmo'}
-  if (minutes < 60) {return `há ${minutes}m`}
-  if (hours < 24) {return `há ${hours}h`}
-  if (days < 7) {return `há ${days}d`}
+  if (minutes < 1) {
+    return 'agora mesmo'
+  }
+  if (minutes < 60) {
+    return `há ${minutes}m`
+  }
+  if (hours < 24) {
+    return `há ${hours}h`
+  }
+  if (days < 7) {
+    return `há ${days}d`
+  }
   return date.toLocaleDateString('pt-BR')
 }
 
@@ -90,11 +98,11 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
           <p className="text-sm text-[var(--danger)]">Não foi possível carregar o histórico operacional.</p>
         ) : null}
 
-        {!isLoading && !error && activities.length === 0 ? (
+        {!(isLoading || error) && activities.length === 0 ? (
           <p className="text-sm text-[var(--text-soft)]">Nenhuma atividade registrada ainda.</p>
         ) : null}
 
-        {!isLoading && !error && activities.length > 0 ? (
+        {!(isLoading || error) && activities.length > 0 ? (
           <div className="space-y-3">
             {activities.map((activity) => {
               const IconComponent = activity.icon

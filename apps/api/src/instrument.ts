@@ -20,7 +20,8 @@ const DEFAULT_PROD_PROFILE_SAMPLE_RATE = 0.02
 loadEnvironmentFiles()
 
 const dsn = normalizeString(process.env.SENTRY_DSN)
-const environment = normalizeString(process.env.SENTRY_ENVIRONMENT) ?? normalizeString(process.env.NODE_ENV) ?? 'development'
+const environment =
+  normalizeString(process.env.SENTRY_ENVIRONMENT) ?? normalizeString(process.env.NODE_ENV) ?? 'development'
 const isProduction = environment === 'production'
 const tracesSampleRate = parseSampleRate(
   process.env.SENTRY_TRACES_SAMPLE_RATE,

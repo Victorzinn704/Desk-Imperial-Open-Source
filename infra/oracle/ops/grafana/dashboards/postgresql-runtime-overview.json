@@ -28,7 +28,10 @@
           "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
           }
         },
         "overrides": []
@@ -54,7 +57,11 @@
           "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 }]
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
           },
           "unit": "short"
         },
@@ -81,7 +88,11 @@
           "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.7 }, { "color": "red", "value": 0.85 }]
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.7 },
+              { "color": "red", "value": 0.85 }
+            ]
           },
           "unit": "percentunit"
         },
@@ -113,7 +124,10 @@
           "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }]
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
           }
         },
         "overrides": []
@@ -142,7 +156,11 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "expr": "sum by(datname) (pg_stat_database_numbackends{job=\"desk-db-postgres-exporter\"})", "legendFormat": "{{datname}}", "refId": "A" }
+        {
+          "expr": "sum by(datname) (pg_stat_database_numbackends{job=\"desk-db-postgres-exporter\"})",
+          "legendFormat": "{{datname}}",
+          "refId": "A"
+        }
       ],
       "title": "Connections by Database",
       "type": "timeseries"
@@ -157,8 +175,16 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "expr": "rate(node_disk_read_bytes_total{job=\"desk-db-node-exporter\"}[5m])", "legendFormat": "read {{device}}", "refId": "A" },
-        { "expr": "rate(node_disk_written_bytes_total{job=\"desk-db-node-exporter\"}[5m])", "legendFormat": "write {{device}}", "refId": "B" }
+        {
+          "expr": "rate(node_disk_read_bytes_total{job=\"desk-db-node-exporter\"}[5m])",
+          "legendFormat": "read {{device}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_disk_written_bytes_total{job=\"desk-db-node-exporter\"}[5m])",
+          "legendFormat": "write {{device}}",
+          "refId": "B"
+        }
       ],
       "title": "Disk Throughput",
       "type": "timeseries"
@@ -173,7 +199,11 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "expr": "node_memory_MemAvailable_bytes{job=\"desk-db-node-exporter\"}", "legendFormat": "available", "refId": "A" },
+        {
+          "expr": "node_memory_MemAvailable_bytes{job=\"desk-db-node-exporter\"}",
+          "legendFormat": "available",
+          "refId": "A"
+        },
         { "expr": "node_memory_MemTotal_bytes{job=\"desk-db-node-exporter\"}", "legendFormat": "total", "refId": "B" }
       ],
       "title": "Memory Availability",

@@ -13,11 +13,7 @@ const quickRegisterProductSchema = z
     name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
     brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
     category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
-    packagingClass: z
-      .string()
-      .trim()
-      .min(2, 'Informe a classe de cadastro.')
-      .max(120, 'A classe ficou longa demais.'),
+    packagingClass: z.string().trim().min(2, 'Informe a classe de cadastro.').max(120, 'A classe ficou longa demais.'),
     description: z.string().trim().max(280, 'A descrição ficou longa demais.').optional().or(z.literal('')),
     unitCost: z.coerce.number().min(0, 'O custo não pode ser negativo.'),
     unitPrice: z.coerce.number().min(0, 'O preço não pode ser negativo.'),
@@ -107,10 +103,13 @@ export function QuickRegisterProductForm({
     <div className="space-y-5 xl:border-l xl:border-[var(--lab-border)] xl:pl-5">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">persistência real</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+            persistência real
+          </p>
           <h3 className="text-base font-semibold text-[var(--lab-fg)]">Cadastro direto no banco</h3>
           <p className="text-sm leading-6 text-[var(--lab-fg-soft)]">
-            O produto já nasce no catálogo real pela API atual. Quando a leitura estiver válida, o EAN também segue junto para o domínio do produto.
+            O produto já nasce no catálogo real pela API atual. Quando a leitura estiver válida, o EAN também segue
+            junto para o domínio do produto.
           </p>
         </div>
         <LabStatusPill tone={busy ? 'warning' : 'info'}>{busy ? 'salvando' : 'api ativa'}</LabStatusPill>
@@ -227,7 +226,11 @@ export function QuickRegisterProductForm({
           </button>
 
           <LabStatusPill tone={barcodeTone}>
-            {capturedCode.length === 0 ? 'sem código na leitura' : capturedCodeValid ? `leitura ${capturedCode}` : 'código ainda parcial'}
+            {capturedCode.length === 0
+              ? 'sem código na leitura'
+              : capturedCodeValid
+                ? `leitura ${capturedCode}`
+                : 'código ainda parcial'}
           </LabStatusPill>
         </div>
 

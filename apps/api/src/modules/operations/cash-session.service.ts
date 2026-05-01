@@ -11,10 +11,7 @@ import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import { OperationsHelpersService } from './operations-helpers.service'
-import {
-  toCashSessionRecord,
-  toClosureRecord,
-} from './operations.types'
+import { toCashSessionRecord, toClosureRecord } from './operations.types'
 import {
   buildCashClosurePayload,
   formatBusinessDateKey,

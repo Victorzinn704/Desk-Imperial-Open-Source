@@ -24,8 +24,8 @@ export type OwnerComandasViewProps = Readonly<{
     discountAmount: number,
     serviceFeeAmount: number,
     paymentMethod?: ComandaPaymentMethod,
-  ) => Promise<unknown> | void
-  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
+  ) => Promise<unknown> | undefined
+  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | undefined
   isLoading?: boolean
   isOffline?: boolean
   errorMessage?: string | null

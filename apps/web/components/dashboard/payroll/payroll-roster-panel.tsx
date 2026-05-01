@@ -130,7 +130,8 @@ function PayrollRosterToggle({
           <LabStatusPill tone={isPaid ? 'success' : 'warning'}>{isPaid ? 'pago' : 'pendente'}</LabStatusPill>
         </div>
         <p className="mt-1 text-sm text-[var(--lab-fg-soft)]">
-          {row.emp.employeeCode} · base {formatCurrency(row.salarioBaseReais, currency)} · {row.config.percentualVendas}% de comissao
+          {row.emp.employeeCode} · base {formatCurrency(row.salarioBaseReais, currency)} · {row.config.percentualVendas}
+          % de comissao
         </p>
       </div>
 
@@ -183,12 +184,18 @@ function PayrollRosterDetails({
       <div className={`mt-4 grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
         <PayrollBreakdownTile label="vendas no mes" tone="neutral" value={formatCurrency(row.vendasDoMes, currency)} />
         <PayrollBreakdownTile label="comissao" tone="warning" value={formatCurrency(row.comissao, currency)} />
-        <PayrollBreakdownTile label="salario base" tone="neutral" value={formatCurrency(row.salarioBaseReais, currency)} />
+        <PayrollBreakdownTile
+          label="salario base"
+          tone="neutral"
+          value={formatCurrency(row.salarioBaseReais, currency)}
+        />
         <PayrollBreakdownTile label="total a pagar" tone="success" value={formatCurrency(row.totalAPagar, currency)} />
       </div>
 
       {row.vendasDoMes === 0 && row.config.percentualVendas > 0 ? (
-        <p className="mt-3 text-xs text-[var(--lab-warning)]">Nenhuma venda atribuida a este colaborador neste periodo.</p>
+        <p className="mt-3 text-xs text-[var(--lab-warning)]">
+          Nenhuma venda atribuida a este colaborador neste periodo.
+        </p>
       ) : null}
     </div>
   )
@@ -252,5 +259,10 @@ function PayrollBreakdownTile({
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || 'DI'
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'DI'
+  )
 }

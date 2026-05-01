@@ -8,10 +8,10 @@
 ## Resumo por Prioridade Ativa
 
 | Prioridade | Qtde ativa |
-| --- | ---: |
-| `P0` | 0 |
-| `P1` | 8 |
-| `P2` | 4 |
+| ---------- | ---------: |
+| `P0`       |          0 |
+| `P1`       |          8 |
+| `P2`       |          4 |
 
 ---
 

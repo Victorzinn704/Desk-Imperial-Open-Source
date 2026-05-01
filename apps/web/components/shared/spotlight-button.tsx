@@ -12,7 +12,9 @@ export function SpotlightButton({ className, children, loading, disabled, ...pro
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     const btn = ref.current
-    if (!btn) {return}
+    if (!btn) {
+      return
+    }
     const rect = btn.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100

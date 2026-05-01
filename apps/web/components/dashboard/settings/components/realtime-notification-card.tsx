@@ -49,12 +49,10 @@ export function RealtimeNotificationCard() {
   const groupedPreferences = EVENT_GROUPS.map((group) => ({
     ...group,
     webPreference: preferences.find(
-      (preference) =>
-        preference.channel === 'WEB_TOAST' && preference.eventType === group.eventType,
+      (preference) => preference.channel === 'WEB_TOAST' && preference.eventType === group.eventType,
     ),
     mobilePreference: preferences.find(
-      (preference) =>
-        preference.channel === 'MOBILE_TOAST' && preference.eventType === group.eventType,
+      (preference) => preference.channel === 'MOBILE_TOAST' && preference.eventType === group.eventType,
     ),
   }))
 
@@ -80,7 +78,8 @@ export function RealtimeNotificationCard() {
               Controle o ruído do web e do mobile por usuário.
             </h3>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Estas chaves são pessoais. Cada operador decide se quer toast no desktop e no mobile para as mudanças operacionais mais ruidosas.
+              Estas chaves são pessoais. Cada operador decide se quer toast no desktop e no mobile para as mudanças
+              operacionais mais ruidosas.
             </p>
           </div>
         </div>
@@ -105,11 +104,8 @@ export function RealtimeNotificationCard() {
                   label="Web"
                   preference={group.webPreference}
                   onChange={(enabled) =>
-                    handleTogglePreference(
-                      group.webPreference,
-                      enabled,
-                      preferences,
-                      (nextPreferences) => mutation.mutate(nextPreferences),
+                    handleTogglePreference(group.webPreference, enabled, preferences, (nextPreferences) =>
+                      mutation.mutate(nextPreferences),
                     )
                   }
                 />
@@ -119,11 +115,8 @@ export function RealtimeNotificationCard() {
                   label="Mobile"
                   preference={group.mobilePreference}
                   onChange={(enabled) =>
-                    handleTogglePreference(
-                      group.mobilePreference,
-                      enabled,
-                      preferences,
-                      (nextPreferences) => mutation.mutate(nextPreferences),
+                    handleTogglePreference(group.mobilePreference, enabled, preferences, (nextPreferences) =>
+                      mutation.mutate(nextPreferences),
                     )
                   }
                 />

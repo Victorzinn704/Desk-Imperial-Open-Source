@@ -170,7 +170,7 @@ import { api } from '@/lib/api'
 export function useNomeDoHook(resourceId: string) {
   return useQuery({
     queryKey: ['recurso', resourceId],
-    queryFn: () => api.get(`/recurso/${resourceId}`).then(res => res.data),
+    queryFn: () => api.get(`/recurso/${resourceId}`).then((res) => res.data),
     staleTime: 1000 * 60 * 5,
   })
 }
@@ -183,12 +183,14 @@ export function useNomeDoHook(resourceId: string) {
 Antes de aprovar um PR que cria um novo módulo, verifique:
 
 ### Estrutura
+
 - [ ] Segue a estrutura obrigatória (Seção 1)
 - [ ] Nomes de arquivos em `kebab-case`
 - [ ] Sufixos corretos (`.service.ts`, `.controller.ts`, etc.)
 - [ ] Nenhum arquivo excede 300 linhas
 
 ### Código
+
 - [ ] Imports organizados na ordem correta (externos → internos → relativos)
 - [ ] `import type` para tipos
 - [ ] Sem `any` sem justificativa
@@ -197,16 +199,19 @@ Antes de aprovar um PR que cria um novo módulo, verifique:
 - [ ] DTOs com `class-validator` (API) ou Zod (Web)
 
 ### Testes
+
 - [ ] Testes unitários para o serviço
 - [ ] Testes para o controller (API) ou componente (Web)
 - [ ] Testes para caminhos de erro
 
 ### Segurança
+
 - [ ] Rotas protegidas com guards apropriados
 - [ ] Validação de entrada (DTO/Zod)
 - [ ] Sem dados sensíveis em logs
 
 ### Registro
+
 - [ ] Módulo importado no `app.module.ts` (API) ou layout (Web)
 - [ ] Tipos compartilhados adicionados a `packages/types/src/contracts.ts`
 - [ ] Documentação atualizada em `docs/architecture/modules/`

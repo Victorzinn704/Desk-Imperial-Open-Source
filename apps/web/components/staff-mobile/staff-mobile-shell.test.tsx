@@ -848,4 +848,3 @@ describe('StaffMobileShell', () => {
     expect(await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i)).toBeInTheDocument()
   })
 })
-

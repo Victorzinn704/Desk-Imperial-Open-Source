@@ -7,14 +7,14 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
 import { CacheService } from '../../common/services/cache.service'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import type { SmartProductDraftDto } from './dto/smart-product-draft.dto'
 
 type SmartProductDraftSuggestion = {
@@ -207,7 +207,10 @@ export class ProductsSmartDraftService {
     )
     const count = await this.cache.increment(rateLimitKey, 60)
     if (count > 12) {
-      throw new HttpException('Muitas solicitações de cadastro inteligente. Aguarde um minuto.', HttpStatus.TOO_MANY_REQUESTS)
+      throw new HttpException(
+        'Muitas solicitações de cadastro inteligente. Aguarde um minuto.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      )
     }
   }
 
@@ -261,12 +264,12 @@ function normalizeDraftInput(dto: SmartProductDraftDto): NormalizedDraftInput {
 function hasMeaningfulDraftInput(input: NormalizedDraftInput) {
   return Boolean(
     input.barcode ||
-      input.name ||
-      input.brand ||
-      input.category ||
-      input.packagingClass ||
-      input.description ||
-      input.quantityLabel,
+    input.name ||
+    input.brand ||
+    input.category ||
+    input.packagingClass ||
+    input.description ||
+    input.quantityLabel,
   )
 }
 
@@ -312,7 +315,10 @@ function buildSmartDraftPrompt(auth: AuthContext, input: NormalizedDraftInput) {
   ].join('\n')
 }
 
-function normalizeDraftResponse(rawText: string, input: NormalizedDraftInput): Omit<SmartProductDraftResponse, 'generatedAt' | 'model' | 'cached'> {
+function normalizeDraftResponse(
+  rawText: string,
+  input: NormalizedDraftInput,
+): Omit<SmartProductDraftResponse, 'generatedAt' | 'model' | 'cached'> {
   let parsed: GeminiDraftPayload
   try {
     parsed = JSON.parse(rawText) as GeminiDraftPayload
@@ -337,9 +343,10 @@ function normalizeDraftResponse(rawText: string, input: NormalizedDraftInput): O
     description: ensureString(suggestionSource.description, input.description ?? '', 280),
     quantityLabel: ensureNullableString(suggestionSource.quantityLabel, input.quantityLabel),
     servingSize: ensureNullableString(suggestionSource.servingSize, input.servingSize),
-    requiresKitchen: typeof suggestionSource.requiresKitchen === 'boolean'
-      ? suggestionSource.requiresKitchen
-      : (input.requiresKitchen ?? false),
+    requiresKitchen:
+      typeof suggestionSource.requiresKitchen === 'boolean'
+        ? suggestionSource.requiresKitchen
+        : (input.requiresKitchen ?? false),
   }
 
   return {

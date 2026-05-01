@@ -14,7 +14,7 @@ export function sortHistoricoComandas(comandas: Comanda[]) {
 }
 
 export function buildRankingHeadline(ranking: OperationPerformerStanding | undefined) {
-  if (!ranking || !ranking.position || ranking.totalPerformers === 0) {
+  if (!ranking?.position || ranking.totalPerformers === 0) {
     return null
   }
 

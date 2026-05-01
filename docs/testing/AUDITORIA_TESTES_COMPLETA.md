@@ -10,7 +10,7 @@
 ## ⚠️ DISCLAIMER
 
 > **Este documento tem caráter EXPLORATÓRIO E ANALÍTICO.**
-> 
+>
 > - ✅ **O que foi feito:** Exploração profunda, testes, análise de código, identificação de padrões e antipadrões
 > - ❌ **O que NÃO foi feito:** Nenhuma alteração no código fonte
 > - 💡 **Comentários de melhoria:** Incluídos ao longo do documento como recomendações, não como implementações
@@ -19,14 +19,14 @@
 
 ## 📊 SUMÁRIO EXECUTIVO
 
-| Métrica | Valor |
-|---------|-------|
-| **Total de Testes Unitários (Backend)** | 337 testes |
-| **Arquivos de Teste (Backend)** | 13 arquivos `.spec.ts` |
-| **Cobertura Estimada** | ~18-22% (foco em módulos críticos) |
-| **Testes de Frontend** | 3 testes (mínimo) |
-| **Status dos Testes** | ✅ 100% passando |
-| **CI/CD Pipeline** | ✅ Configurado (GitHub Actions) |
+| Métrica                                 | Valor                              |
+| --------------------------------------- | ---------------------------------- |
+| **Total de Testes Unitários (Backend)** | 337 testes                         |
+| **Arquivos de Teste (Backend)**         | 13 arquivos `.spec.ts`             |
+| **Cobertura Estimada**                  | ~18-22% (foco em módulos críticos) |
+| **Testes de Frontend**                  | 3 testes (mínimo)                  |
+| **Status dos Testes**                   | ✅ 100% passando                   |
+| **CI/CD Pipeline**                      | ✅ Configurado (GitHub Actions)    |
 
 ---
 
@@ -66,6 +66,7 @@ Frontend (Next.js)
 ```
 
 **💡 Comentário de Melhoria:**
+
 > Os thresholds atuais (60-70%) são aceitáveis para um projeto em crescimento, mas módulos críticos como `auth` e `finance` deveriam ter thresholds específicos de 80-90%. Recomendo criar uma configuração por módulo no futuro.
 
 ---
@@ -80,27 +81,29 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `register()` - Validação de consentimento LGPD | ✅ Pass | Testa acceptTerms e acceptPrivacy |
-| `register()` - Validação de funcionários | ✅ Pass | hasEmployees=true requer employeeCount≥1 |
-| `register()` - Unicidade de e-mail | ✅ Pass | Normalização lowercase |
-| `register()` - Geocodificação de endereço | ✅ Pass | Nominatim integration |
-| `login()` - Rate limiting | ✅ Pass | Redis-based |
-| `login()` - Usuário inexistente/inativo | ✅ Pass | Não diferencia erro (security) |
-| `login()` - Verificação de senha (argon2id) | ✅ Pass | Mock do argon2 |
-| `login()` - E-mail não verificado | ✅ Pass | Gate de OTP |
-| `buildCsrfToken()` - Determinismo | ✅ Pass | HMAC-SHA256 |
-| Cookie names por ambiente | ✅ Pass | `__Host-` prefix em produção |
+| Cenário                                        | Status  | Observações                              |
+| ---------------------------------------------- | ------- | ---------------------------------------- |
+| `register()` - Validação de consentimento LGPD | ✅ Pass | Testa acceptTerms e acceptPrivacy        |
+| `register()` - Validação de funcionários       | ✅ Pass | hasEmployees=true requer employeeCount≥1 |
+| `register()` - Unicidade de e-mail             | ✅ Pass | Normalização lowercase                   |
+| `register()` - Geocodificação de endereço      | ✅ Pass | Nominatim integration                    |
+| `login()` - Rate limiting                      | ✅ Pass | Redis-based                              |
+| `login()` - Usuário inexistente/inativo        | ✅ Pass | Não diferencia erro (security)           |
+| `login()` - Verificação de senha (argon2id)    | ✅ Pass | Mock do argon2                           |
+| `login()` - E-mail não verificado              | ✅ Pass | Gate de OTP                              |
+| `buildCsrfToken()` - Determinismo              | ✅ Pass | HMAC-SHA256                              |
+| Cookie names por ambiente                      | ✅ Pass | `__Host-` prefix em produção             |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Mocks bem estruturados com factories
 - Testes de segurança (CSRF, rate limiting)
 - Cobertura de casos de borda (whitespace, case sensitivity)
 
 **⚠️ Pontos de Atenção:**
+
 1. **Mock do argon2 complexo:** O mock do argon2 usa `jest.mock()` no nível do módulo porque é ESM. Isso é frágil e pode quebrar em atualizações.
    - **Recomendação:** Considerar wrapper do argon2 para facilitar mocking.
 
@@ -120,32 +123,36 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `setupPin()` - Criação de PIN | ✅ Pass | argon2id hash |
-| `setupPin()` - Alteração de PIN | ✅ Pass | Requer PIN atual |
-| `setupPin()` - Rejeição sem PIN atual | ✅ Pass | ForbiddenException |
-| `removePin()` - Remoção com validação | ✅ Pass | |
-| `hasPinConfigured()` - Verificação | ✅ Pass | |
-| `issueVerificationChallenge()` - Emissão | ✅ Pass | JWT-like no Redis |
+| Cenário                                        | Status  | Observações           |
+| ---------------------------------------------- | ------- | --------------------- |
+| `setupPin()` - Criação de PIN                  | ✅ Pass | argon2id hash         |
+| `setupPin()` - Alteração de PIN                | ✅ Pass | Requer PIN atual      |
+| `setupPin()` - Rejeição sem PIN atual          | ✅ Pass | ForbiddenException    |
+| `removePin()` - Remoção com validação          | ✅ Pass |                       |
+| `hasPinConfigured()` - Verificação             | ✅ Pass |                       |
+| `issueVerificationChallenge()` - Emissão       | ✅ Pass | JWT-like no Redis     |
 | `issueVerificationChallenge()` - Rate limiting | ✅ Pass | Lockout após 3 falhas |
-| `validateVerificationProof()` - Validação | ✅ Pass | Challenge-ID matching |
-| `extractVerificationProof()` - Extração | ✅ Pass | Cookie parsing |
+| `validateVerificationProof()` - Validação      | ✅ Pass | Challenge-ID matching |
+| `extractVerificationProof()` - Extração        | ✅ Pass | Cookie parsing        |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Testes de segurança robustos (lockout, rate limiting)
 - Cobertura de cenários de expiração
 - Validação de sessionId binding
 
 **⚠️ Pontos de Atenção:**
+
 1. **Teste de `pinFingerprint` usa implementação específica:**
+
    ```typescript
    function makePinFingerprint() {
      return createHash('sha256').update(makeUser().adminPinHash).digest('base64url')
    }
    ```
+
    - **Recomendação:** Extrair essa lógica para uma função utilitária testável separadamente.
 
 2. **Ausência de teste para concorrência de desafios:**
@@ -164,26 +171,28 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `get()` - Cache hit | ✅ Pass | Parse JSON |
-| `get()` - Cache miss | ✅ Pass | Retorna null |
-| `get()` - JSON inválido | ✅ Pass | Fallback seguro |
-| `get()` - Redis erro | ✅ Pass | Graceful degradation |
-| `set()` - Com TTL | ✅ Pass | `EX` flag |
-| `set()` - Redis indisponível | ✅ Pass | Void silencioso |
-| `del()` - Remoção | ✅ Pass | |
-| `isReady()` - Verificação | ✅ Pass | Status check |
-| Chaves específicas (finance, products, etc.) | ✅ Pass | Static methods |
+| Cenário                                      | Status  | Observações          |
+| -------------------------------------------- | ------- | -------------------- |
+| `get()` - Cache hit                          | ✅ Pass | Parse JSON           |
+| `get()` - Cache miss                         | ✅ Pass | Retorna null         |
+| `get()` - JSON inválido                      | ✅ Pass | Fallback seguro      |
+| `get()` - Redis erro                         | ✅ Pass | Graceful degradation |
+| `set()` - Com TTL                            | ✅ Pass | `EX` flag            |
+| `set()` - Redis indisponível                 | ✅ Pass | Void silencioso      |
+| `del()` - Remoção                            | ✅ Pass |                      |
+| `isReady()` - Verificação                    | ✅ Pass | Status check         |
+| Chaves específicas (finance, products, etc.) | ✅ Pass | Static methods       |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Excelente cobertura de graceful degradation
 - Testes de fallback quando Redis está indisponível
 - Chaves de cache padronizadas
 
 **⚠️ Pontos de Atenção:**
+
 1. **Não testa serialização de tipos especiais:**
    - **Recomendação:** Adicionar testes para `Date`, `Decimal`, `null`, `undefined` na serialização JSON.
 
@@ -203,31 +212,35 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `listForUser()` - Cache hit | ✅ Pass | |
-| `listForUser()` - Cache miss | ✅ Pass | Query no Prisma |
-| `listForUser()` - Role STAFF | ✅ Pass | Apenas OWNER lista |
-| `createForUser()` - Criação completa | ✅ Pass | Transação Prisma |
-| `createForUser()` - Validação de HTML | ✅ Pass | XSS prevention |
-| `createForUser()` - Duplicate employeeCode | ✅ Pass | ConflictException |
-| `createForUser()` - Audit log | ✅ Pass | |
-| `createForUser()` - Cache invalidation | ✅ Pass | |
-| `updateForUser()` - Atualização parcial | ✅ Pass | |
-| `updateForUser()` - Funcionário inexistente | ✅ Pass | NotFoundException |
+| Cenário                                     | Status  | Observações        |
+| ------------------------------------------- | ------- | ------------------ |
+| `listForUser()` - Cache hit                 | ✅ Pass |                    |
+| `listForUser()` - Cache miss                | ✅ Pass | Query no Prisma    |
+| `listForUser()` - Role STAFF                | ✅ Pass | Apenas OWNER lista |
+| `createForUser()` - Criação completa        | ✅ Pass | Transação Prisma   |
+| `createForUser()` - Validação de HTML       | ✅ Pass | XSS prevention     |
+| `createForUser()` - Duplicate employeeCode  | ✅ Pass | ConflictException  |
+| `createForUser()` - Audit log               | ✅ Pass |                    |
+| `createForUser()` - Cache invalidation      | ✅ Pass |                    |
+| `updateForUser()` - Atualização parcial     | ✅ Pass |                    |
+| `updateForUser()` - Funcionário inexistente | ✅ Pass | NotFoundException  |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Testes de sanitização de entrada (XSS, HTML)
 - Validação de permissões (OWNER vs STAFF)
 - Audit log testado
 
 **⚠️ Pontos de Atenção:**
+
 1. **Email de login do funcionário é hardcoded:**
+
    ```typescript
    email: expect.stringContaining('staff.owner-1.002@login.deskimperial.internal')
    ```
+
    - **Recomendação:** Usar constante ou função utilitária para geração do email.
 
 2. **Não testa rollback de transação:**
@@ -246,33 +259,37 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `listForUser()` - Cache com filtros | ✅ Pass | Não cacheia com filtros |
-| `listForUser()` - Paginação com cursor | ✅ Pass | |
-| `listForUser()` - Limite de 2000 | ✅ Pass | Hard limit |
-| `createForUser()` - Criação válida | ✅ Pass | |
-| `createForUser()` - Sanitização HTML | ✅ Pass | XSS prevention |
-| `createForUser()` - Fórmula de planilha | ✅ Pass | `=SUM()` rejection |
-| `createForUser()` - Duplicate name | ✅ Pass | ConflictException |
-| `updateForUser()` - Update parcial | ✅ Pass | |
-| `archiveForUser()` / `restoreForUser()` | ✅ Pass | Toggle active |
-| `importForUser()` - CSV válido | ✅ Pass | Upsert |
-| `importForUser()` - Linhas inválidas | ✅ Pass | Error reporting |
-| `importForUser()` - Moeda não suportada | ✅ Pass | |
+| Cenário                                 | Status  | Observações             |
+| --------------------------------------- | ------- | ----------------------- |
+| `listForUser()` - Cache com filtros     | ✅ Pass | Não cacheia com filtros |
+| `listForUser()` - Paginação com cursor  | ✅ Pass |                         |
+| `listForUser()` - Limite de 2000        | ✅ Pass | Hard limit              |
+| `createForUser()` - Criação válida      | ✅ Pass |                         |
+| `createForUser()` - Sanitização HTML    | ✅ Pass | XSS prevention          |
+| `createForUser()` - Fórmula de planilha | ✅ Pass | `=SUM()` rejection      |
+| `createForUser()` - Duplicate name      | ✅ Pass | ConflictException       |
+| `updateForUser()` - Update parcial      | ✅ Pass |                         |
+| `archiveForUser()` / `restoreForUser()` | ✅ Pass | Toggle active           |
+| `importForUser()` - CSV válido          | ✅ Pass | Upsert                  |
+| `importForUser()` - Linhas inválidas    | ✅ Pass | Error reporting         |
+| `importForUser()` - Moeda não suportada | ✅ Pass |                         |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Excelente cobertura de importação CSV
 - Testes de segurança (XSS, fórmula de planilha)
 - Validação de moedas suportadas
 
 **⚠️ Pontos de Atenção:**
+
 1. **Teste de fórmula de planilha é frágil:**
+
    ```typescript
    name: '=1+1 Produto'
    ```
+
    - **Recomendação:** Criar lista explícita de prefixes proibidos (`=`, `+`, `-`, `@`, `cmd|`).
 
 2. **Não testa encoding de CSV:**
@@ -291,28 +308,30 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| `listForUser()` - Cache | ✅ Pass | |
-| `listForUser()` - Include cancelled | ✅ Pass | |
-| `createForUser()` - Validação de estoque | ✅ Pass | |
-| `createForUser()` - CPF válido | ✅ Pass | `52998224725` |
-| `createForUser()` - CPF inválido | ✅ Pass | BadRequestException |
-| `createForUser()` - CNPJ inválido | ✅ Pass | |
-| `createForUser()` - Desconto > 15% (STAFF) | ✅ Pass | Requer Admin PIN |
-| `createForUser()` - Desconto ≤ 15% (STAFF) | ✅ Pass | Permitido |
-| `createForUser()` - Sanitização | ✅ Pass | HTML, fórmula |
-| `cancelForUser()` - Retorno de estoque | ✅ Pass | Decrement reversal |
-| `cancelForUser()` - Pedido já cancelado | ✅ Pass | |
+| Cenário                                    | Status  | Observações         |
+| ------------------------------------------ | ------- | ------------------- |
+| `listForUser()` - Cache                    | ✅ Pass |                     |
+| `listForUser()` - Include cancelled        | ✅ Pass |                     |
+| `createForUser()` - Validação de estoque   | ✅ Pass |                     |
+| `createForUser()` - CPF válido             | ✅ Pass | `52998224725`       |
+| `createForUser()` - CPF inválido           | ✅ Pass | BadRequestException |
+| `createForUser()` - CNPJ inválido          | ✅ Pass |                     |
+| `createForUser()` - Desconto > 15% (STAFF) | ✅ Pass | Requer Admin PIN    |
+| `createForUser()` - Desconto ≤ 15% (STAFF) | ✅ Pass | Permitido           |
+| `createForUser()` - Sanitização            | ✅ Pass | HTML, fórmula       |
+| `cancelForUser()` - Retorno de estoque     | ✅ Pass | Decrement reversal  |
+| `cancelForUser()` - Pedido já cancelado    | ✅ Pass |                     |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Validação de CPF/CNPJ testada
 - Regra de desconto (15%) coberta
 - Testes de retorno de estoque
 
 **⚠️ Pontos de Atenção:**
+
 1. **CPF/CNPJ validation usa apenas length check:**
    - **Recomendação:** Implementar validação de dígitos verificadores reais (algoritmo de módulo 11).
 
@@ -332,25 +351,27 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status | Observações |
-|---------|--------|-------------|
-| Mesa CRUD - Criação | ✅ Pass | |
-| Mesa CRUD - Unicidade de label | ✅ Pass | Por workspace |
-| Mesa CRUD - Workspace isolation | ✅ Pass | |
-| Cálculo de lucro | ✅ Pass | `(price - cost) × qty` |
-| Cálculo de total de comanda | ✅ Pass | `subtotal - desconto + acréscimo` |
-| Saldo esperado do caixa | ✅ Pass | `opening + supply - withdrawal + revenue` |
-| Diferença de caixa | ✅ Pass | `counted - expected` |
-| Status de comanda (isOpen) | ✅ Pass | Predicado |
+| Cenário                         | Status  | Observações                               |
+| ------------------------------- | ------- | ----------------------------------------- |
+| Mesa CRUD - Criação             | ✅ Pass |                                           |
+| Mesa CRUD - Unicidade de label  | ✅ Pass | Por workspace                             |
+| Mesa CRUD - Workspace isolation | ✅ Pass |                                           |
+| Cálculo de lucro                | ✅ Pass | `(price - cost) × qty`                    |
+| Cálculo de total de comanda     | ✅ Pass | `subtotal - desconto + acréscimo`         |
+| Saldo esperado do caixa         | ✅ Pass | `opening + supply - withdrawal + revenue` |
+| Diferença de caixa              | ✅ Pass | `counted - expected`                      |
+| Status de comanda (isOpen)      | ✅ Pass | Predicado                                 |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Testes de cálculo matemático precisos
 - Isolamento de workspace bem testado
 - Predicados puros testados
 
 **⚠️ Pontos de Atenção:**
+
 1. **Mock do Prisma é manual e extenso:**
    - **Recomendação:** Considerar `prisma-mock` ou biblioteca similar.
 
@@ -365,6 +386,7 @@ Frontend (Next.js)
 ### 8. Utilitários e Domain Utils
 
 **Arquivos:**
+
 - `operations-domain.utils.spec.ts`
 - `period-classifier.spec.ts`
 - `utils.spec.ts`
@@ -374,28 +396,30 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Função | Cenário | Status |
-|--------|---------|--------|
-| `resolveBusinessDate()` | Parse de data | ✅ Pass |
-| `buildBusinessDateWindow()` | Janela midnight-midnight | ✅ Pass |
-| `formatBusinessDateKey()` | YYYY-MM-DD | ✅ Pass |
-| `toNumber()` | Decimal → number | ✅ Pass |
-| `resolveBuyerTypeFromDocument()` | CPF (11) vs CNPJ (14) | ✅ Pass |
-| `isOpenComandaStatus()` | Predicado de status | ✅ Pass |
-| `isValidCpf()` | Validação de CPF | ✅ Pass |
-| `isValidCnpj()` | Validação de CNPJ | ✅ Pass |
-| `sanitizePlainText()` | HTML, fórmulas | ✅ Pass |
-| `roundCurrency()` | 2 casas decimais | ✅ Pass |
-| `PeriodClassifierService` | Horário de evento | ✅ Pass |
+| Função                           | Cenário                  | Status  |
+| -------------------------------- | ------------------------ | ------- |
+| `resolveBusinessDate()`          | Parse de data            | ✅ Pass |
+| `buildBusinessDateWindow()`      | Janela midnight-midnight | ✅ Pass |
+| `formatBusinessDateKey()`        | YYYY-MM-DD               | ✅ Pass |
+| `toNumber()`                     | Decimal → number         | ✅ Pass |
+| `resolveBuyerTypeFromDocument()` | CPF (11) vs CNPJ (14)    | ✅ Pass |
+| `isOpenComandaStatus()`          | Predicado de status      | ✅ Pass |
+| `isValidCpf()`                   | Validação de CPF         | ✅ Pass |
+| `isValidCnpj()`                  | Validação de CNPJ        | ✅ Pass |
+| `sanitizePlainText()`            | HTML, fórmulas           | ✅ Pass |
+| `roundCurrency()`                | 2 casas decimais         | ✅ Pass |
+| `PeriodClassifierService`        | Horário de evento        | ✅ Pass |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Funções puras com 100% de cobertura
 - Testes de edge cases (virada de ano, mês)
 - Validação de documentos robusta
 
 **⚠️ Pontos de Atenção:**
+
 1. **`isValidCpf` não testa todos os dígitos verificadores:**
    - **Recomendação:** Adicionar testes com CPFs válidos conhecidos (11144477735, 52998224725).
 
@@ -412,24 +436,26 @@ Frontend (Next.js)
 
 #### Templates Testados
 
-| Template | Finalidade | Status |
-|----------|------------|--------|
-| `buildPasswordResetEmailContent` | Recuperação de senha | ✅ Pass |
-| `buildEmailVerificationContent` | Verificação de email | ✅ Pass |
-| `buildPasswordChangedEmailContent` | Alerta de troca | ✅ Pass |
-| `buildLoginAlertEmailContent` | Alerta de login | ✅ Pass |
-| `buildFailedLoginAlertEmailContent` | Múltiplas falhas | ✅ Pass |
-| `buildFeedbackReceiptEmailContent` | Confirmação de feedback | ✅ Pass |
+| Template                            | Finalidade              | Status  |
+| ----------------------------------- | ----------------------- | ------- |
+| `buildPasswordResetEmailContent`    | Recuperação de senha    | ✅ Pass |
+| `buildEmailVerificationContent`     | Verificação de email    | ✅ Pass |
+| `buildPasswordChangedEmailContent`  | Alerta de troca         | ✅ Pass |
+| `buildLoginAlertEmailContent`       | Alerta de login         | ✅ Pass |
+| `buildFailedLoginAlertEmailContent` | Múltiplas falhas        | ✅ Pass |
+| `buildFeedbackReceiptEmailContent`  | Confirmação de feedback | ✅ Pass |
 
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Testes de acentuação em português
 - Validação de HTML bem-formado
 - Testes de XSS escaping
 - Consistência entre templates (greeting formal)
 
 **⚠️ Pontos de Atenção:**
+
 1. **Não testa tamanho de email (spam filters):**
    - **Recomendação:** Adicionar teste que verifica se HTML < 102KB (limite Gmail).
 
@@ -446,14 +472,15 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status |
-|---------|--------|
+| Cenário                        | Status  |
+| ------------------------------ | ------- |
 | Health check com DB e Redis up | ✅ Pass |
-| Health check com DB down | ✅ Pass |
+| Health check com DB down       | ✅ Pass |
 
 #### 💡 Achados e Recomendações
 
 **⚠️ Cobertura Insuficiente:**
+
 - Apenas 2 testes para health check
 - **Recomendação:** Adicionar testes para Redis down, ambos down, e timeout.
 
@@ -469,15 +496,16 @@ Frontend (Next.js)
 
 #### Funcionalidades Testadas
 
-| Cenário | Status |
-|---------|--------|
+| Cenário                             | Status  |
+| ----------------------------------- | ------- |
 | Renderiza nome do usuário e empresa | ✅ Pass |
-| Troca de aba ao clicar | ✅ Pass |
-| Chama API de logout | ✅ Pass |
+| Troca de aba ao clicar              | ✅ Pass |
+| Chama API de logout                 | ✅ Pass |
 
 #### 💡 Achados e Recomendações
 
 **⚠️ Cobertura Extremamente Baixa:**
+
 - Apenas 3 testes para um componente shell inteiro
 - **Recomendação Crítica:** Expandir para 15-20 testes cobrindo:
   - Estados de loading
@@ -487,6 +515,7 @@ Frontend (Next.js)
   - WebSocket realtime
 
 **✅ Pontos Fortes:**
+
 - Setup correto com QueryClientProvider
 - Mock de API bem estruturado
 - User event para interações
@@ -497,25 +526,27 @@ Frontend (Next.js)
 
 ### Modelos Principais
 
-| Modelo | Relacionamentos | Índices | Observações |
-|--------|----------------|---------|-------------|
-| `User` | Sessions, Orders, Products, Employees | 3 índices | Workspace via `companyOwnerId` |
-| `Session` | User | 2 índices | Token hash, não plain text |
-| `Product` | User, OrderItems | 3 índices | Unique name por usuário |
-| `Order` | User, Employee, OrderItems | 6 índices | Status, currency |
-| `Employee` | User (login), Sales | 2 índices | Código único por workspace |
-| `CashSession` | User, Employee, Movements | 3 índices | Business date |
-| `Comanda` | User, Mesa, Employee, Items | 4 índices | Status lifecycle |
-| `Mesa` | User, Comandas | 2 índices | Label único por workspace |
+| Modelo        | Relacionamentos                       | Índices   | Observações                    |
+| ------------- | ------------------------------------- | --------- | ------------------------------ |
+| `User`        | Sessions, Orders, Products, Employees | 3 índices | Workspace via `companyOwnerId` |
+| `Session`     | User                                  | 2 índices | Token hash, não plain text     |
+| `Product`     | User, OrderItems                      | 3 índices | Unique name por usuário        |
+| `Order`       | User, Employee, OrderItems            | 6 índices | Status, currency               |
+| `Employee`    | User (login), Sales                   | 2 índices | Código único por workspace     |
+| `CashSession` | User, Employee, Movements             | 3 índices | Business date                  |
+| `Comanda`     | User, Mesa, Employee, Items           | 4 índices | Status lifecycle               |
+| `Mesa`        | User, Comandas                        | 2 índices | Label único por workspace      |
 
 ### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Índices estratégicos para queries comuns
 - Relacionamentos bem definidos
 - Enums para status (type safety)
 
 **⚠️ Pontos de Atenção:**
+
 1. **Ausência de testes de migração:**
    - **Recomendação:** Criar testes que verificam se migrations são reversíveis.
 
@@ -532,6 +563,7 @@ Frontend (Next.js)
 ### GitHub Actions (`.github/workflows/ci.yml`)
 
 **Jobs:**
+
 1. **quality** - Lint + Typecheck (~30s)
 2. **test** - Testes com coverage (~15min)
 3. **build** - Build completo (após quality + test)
@@ -539,12 +571,14 @@ Frontend (Next.js)
 #### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Jobs rodam em paralelo (quality + test)
 - Concurrency group cancela runs duplicados
 - Upload de artifacts para debugging
 - Secrets isoladas por ambiente
 
 **⚠️ Pontos de Atenção:**
+
 1. **Timeout de 15 minutos para testes é arriscado:**
    - **Recomendação:** Monitorar tempo e otimizar testes lentos.
 
@@ -573,25 +607,27 @@ Frontend (Next.js)
 
 ### Mecanismos de Segurança Testados
 
-| Mecanismo | Status | Testes |
-|-----------|--------|--------|
-| Hash de senha (argon2id) | ✅ Testado | auth.service.spec.ts |
-| Rate limiting (Redis) | ✅ Testado | auth.service.spec.ts |
-| CSRF Token (HMAC-SHA256) | ✅ Testado | auth.service.spec.ts |
-| Cookie HttpOnly + SameSite | ✅ Testado | auth.service.spec.ts |
-| Admin PIN (challenge-response) | ✅ Testado | admin-pin.service.spec.ts |
-| Sanitização de entrada | ✅ Testado | products, orders, employees |
-| Validação de CPF/CNPJ | ✅ Testado | orders.service.spec.ts, utils.spec.ts |
-| XSS prevention | ✅ Testado | Múltiplos módulos |
+| Mecanismo                      | Status     | Testes                                |
+| ------------------------------ | ---------- | ------------------------------------- |
+| Hash de senha (argon2id)       | ✅ Testado | auth.service.spec.ts                  |
+| Rate limiting (Redis)          | ✅ Testado | auth.service.spec.ts                  |
+| CSRF Token (HMAC-SHA256)       | ✅ Testado | auth.service.spec.ts                  |
+| Cookie HttpOnly + SameSite     | ✅ Testado | auth.service.spec.ts                  |
+| Admin PIN (challenge-response) | ✅ Testado | admin-pin.service.spec.ts             |
+| Sanitização de entrada         | ✅ Testado | products, orders, employees           |
+| Validação de CPF/CNPJ          | ✅ Testado | orders.service.spec.ts, utils.spec.ts |
+| XSS prevention                 | ✅ Testado | Múltiplos módulos                     |
 
 ### 💡 Achados e Recomendações
 
 **✅ Pontos Fortes:**
+
 - Múltiplas camadas de segurança
 - Testes de segurança robustos
 - Audit log para eventos sensíveis
 
 **⚠️ Pontos de Atenção:**
+
 1. **CSRF guard não é testado isoladamente:**
    - **Recomendação:** Criar `csrf.guard.spec.ts` com testes de validação de header.
 
@@ -605,21 +641,22 @@ Frontend (Next.js)
 
 ## 📊 COBERTURA DE TESTES POR MÓDULO
 
-| Módulo | Arquivos de Teste | Testes | Cobertura Estimada | Status |
-|--------|------------------|--------|-------------------|--------|
-| **auth** | 1 | 40+ | ~65% | 🟡 Parcial |
-| **admin-pin** | 1 | 22 | ~72% | 🟢 Bom |
-| **cache** | 1 | 18 | ~58% | 🟡 Parcial |
-| **employees** | 1 | 16 | ~54% | 🟡 Parcial |
-| **products** | 1 | 28 | ~61% | 🟡 Parcial |
-| **orders** | 1 | 24 | ~52% | 🟡 Parcial |
-| **operations** | 2 | 20+ | ~45% | 🔴 Baixa |
-| **utils** | 3 | 50+ | ~85% | 🟢 Excelente |
-| **mailer-templates** | 1 | 40+ | ~90% | 🟢 Excelente |
-| **app** | 1 | 2 | ~30% | 🔴 Baixa |
-| **frontend** | 1 | 3 | ~5% | 🔴 Crítico |
+| Módulo               | Arquivos de Teste | Testes | Cobertura Estimada | Status       |
+| -------------------- | ----------------- | ------ | ------------------ | ------------ |
+| **auth**             | 1                 | 40+    | ~65%               | 🟡 Parcial   |
+| **admin-pin**        | 1                 | 22     | ~72%               | 🟢 Bom       |
+| **cache**            | 1                 | 18     | ~58%               | 🟡 Parcial   |
+| **employees**        | 1                 | 16     | ~54%               | 🟡 Parcial   |
+| **products**         | 1                 | 28     | ~61%               | 🟡 Parcial   |
+| **orders**           | 1                 | 24     | ~52%               | 🟡 Parcial   |
+| **operations**       | 2                 | 20+    | ~45%               | 🔴 Baixa     |
+| **utils**            | 3                 | 50+    | ~85%               | 🟢 Excelente |
+| **mailer-templates** | 1                 | 40+    | ~90%               | 🟢 Excelente |
+| **app**              | 1                 | 2      | ~30%               | 🔴 Baixa     |
+| **frontend**         | 1                 | 3      | ~5%                | 🔴 Crítico   |
 
 **Legenda:**
+
 - 🟢 Excelente: >70%
 - 🟡 Parcial: 50-70%
 - 🔴 Baixa: <50%
@@ -637,18 +674,19 @@ Frontend (Next.js)
 **Impacto:** CPFs/CNPJs inválidos matematicamente podem passar.
 
 **Como Consertaria:**
+
 ```typescript
 // Implementar algoritmo de validação real
 function isValidCpf(cpf: string): boolean {
   // Remove non-digits
   cpf = cpf.replace(/\D/g, '')
-  
+
   // Check length
   if (cpf.length !== 11) return false
-  
+
   // Check known invalid patterns
   if (/^(\d)\1+$/.test(cpf)) return false
-  
+
   // Calculate first check digit
   let sum = 0
   for (let i = 0; i < 9; i++) {
@@ -656,7 +694,7 @@ function isValidCpf(cpf: string): boolean {
   }
   let digit1 = 11 - (sum % 11)
   if (digit1 >= 10) digit1 = 0
-  
+
   // Calculate second check digit
   sum = 0
   for (let i = 0; i < 10; i++) {
@@ -664,7 +702,7 @@ function isValidCpf(cpf: string): boolean {
   }
   let digit2 = 11 - (sum % 11)
   if (digit2 >= 10) digit2 = 0
-  
+
   return cpf[9] === digit1.toString() && cpf[10] === digit2.toString()
 }
 ```
@@ -679,6 +717,7 @@ function isValidCpf(cpf: string): boolean {
 **Impacto:** Atualizações do argon2 podem quebrar testes silenciosamente.
 
 **Como Consertaria:**
+
 ```typescript
 // Criar wrapper testável
 // src/common/utils/hash.util.ts
@@ -709,6 +748,7 @@ jest.mock('@/common/utils/hash.util', () => ({
 **Impacto:** Race conditions podem causar dados duplicados ou inconsistentes.
 
 **Como Consertaria:**
+
 ```typescript
 it('deve prevenir criação duplicada em concorrência', async () => {
   // Simular duas requisições simultâneas
@@ -716,7 +756,7 @@ it('deve prevenir criação duplicada em concorrência', async () => {
     service.createForUser(context, dto, request),
     service.createForUser(context, dto, request),
   ])
-  
+
   // Um deve succeeder, outro deve falhar com ConflictException
   expect(result1.status).toBe('fulfilled')
   expect(result2.status).toBe('rejected')
@@ -734,6 +774,7 @@ it('deve prevenir criação duplicada em concorrência', async () => {
 **Impacto:** Regressões de UI não são detectadas automaticamente.
 
 **Como Consertaria:**
+
 - Adicionar testes para todos os componentes do dashboard (39 componentes)
 - Testar hooks customizados
 - Testar integração com API (TanStack Query)
@@ -747,6 +788,7 @@ it('deve prevenir criação duplicada em concorrência', async () => {
 **Problema:** Teste verifica apenas `=`, mas existem múltiplos prefixes perigosos.
 
 **Prefixes Perigosos:**
+
 - `=` (fórmula)
 - `+` (fórmula)
 - `-` (fórmula)
@@ -755,14 +797,13 @@ it('deve prevenir criação duplicada em concorrência', async () => {
 - `\\` (path injection)
 
 **Como Consertaria:**
+
 ```typescript
 const DANGEROUS_PREFIXES = ['=', '+', '-', '@', 'cmd|', '\\\\']
 
 function hasDangerousPrefix(value: string): boolean {
   const trimmed = value.trim()
-  return DANGEROUS_PREFIXES.some(prefix => 
-    trimmed.toLowerCase().startsWith(prefix.toLowerCase())
-  )
+  return DANGEROUS_PREFIXES.some((prefix) => trimmed.toLowerCase().startsWith(prefix.toLowerCase()))
 }
 ```
 
@@ -834,7 +875,7 @@ O projeto **DESK IMPERIAL** demonstra uma **base sólida de testes automatizados
 ✅ **Mocks bem estruturados** - Factories e colaboradores isolados  
 ✅ **Segurança testada** - Rate limiting, CSRF, hash, sanitização  
 ✅ **CI/CD funcional** - Pipeline GitHub Actions integrado  
-✅ **Documentação de testes** - Guides e exemplos disponíveis  
+✅ **Documentação de testes** - Guides e exemplos disponíveis
 
 ### Pontos de Melhoria
 
@@ -842,7 +883,7 @@ O projeto **DESK IMPERIAL** demonstra uma **base sólida de testes automatizados
 ⚠️ **Cobertura desigual** - Módulos inteiros sem testes (finance, consent, geocoding)  
 ⚠️ **Validação de CPF/CNPJ frágil** - Apenas length check  
 ⚠️ **Ausência de E2E** - Nenhum teste de fluxo completo  
-⚠️ **Testes de concorrência inexistentes** - Race conditions não cobertas  
+⚠️ **Testes de concorrência inexistentes** - Race conditions não cobertas
 
 ### Veredito
 

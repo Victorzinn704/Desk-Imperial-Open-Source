@@ -78,9 +78,7 @@ export function OwnerCashView({
       <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
-              Caixa
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">Caixa</p>
             <h1 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">Caixa do turno</h1>
             <p className="mt-1 text-sm leading-6 text-[var(--text-soft,#7a8896)]">
               Abra o caixa, acompanhe esperado e veja quais operadores estão com sessão ativa.
@@ -138,7 +136,9 @@ export function OwnerCashView({
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{formatBRL(row.expectedCashAmount)}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    {formatBRL(row.expectedCashAmount)}
+                  </p>
                   <p className="mt-1 text-[10px] text-[#36f57c]">{row.status === 'OPEN' ? 'aberto' : 'fechado'}</p>
                 </div>
               </div>

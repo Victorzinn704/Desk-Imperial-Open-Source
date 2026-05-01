@@ -124,7 +124,7 @@ function serializeConsentCookieValue(choice: CookieConsentChoice) {
     return 'accepted'
   }
 
-  if (!choice.analytics && !choice.marketing) {
+  if (!(choice.analytics || choice.marketing)) {
     return 'rejected'
   }
 
@@ -142,11 +142,11 @@ function parseConsentCookieValue(value: string): CookieConsentChoice | null {
   }
 
   const [analyticsFlag, marketingFlag] = value.slice(CONSENT_COOKIE_CUSTOM_PREFIX.length).split(':')
-  if (!analyticsFlag || !marketingFlag) {
+  if (!(analyticsFlag && marketingFlag)) {
     return null
   }
 
-  if (!['0', '1'].includes(analyticsFlag) || !['0', '1'].includes(marketingFlag)) {
+  if (!(['0', '1'].includes(analyticsFlag) && ['0', '1'].includes(marketingFlag))) {
     return null
   }
 

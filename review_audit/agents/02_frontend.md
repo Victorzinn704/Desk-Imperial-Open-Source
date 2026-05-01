@@ -15,32 +15,32 @@ The project has a solid foundation with lazy-loaded heavy environments, TanStack
 
 ## Quantitative Evidence
 
-| Metric | Value |
-|---|---|
-| Total .tsx files | ~288 |
-| 'use client' directives (.tsx) | 164 (~57%) |
-| 'use client' directives (.ts) | 32 |
-| Page .tsx files with 'use client' | 19 |
-| Page .tsx files as server components | ~12 (login, cadastro, financeiro, ai, lite/*, dashboard/redirect) |
-| loading.tsx files (anywhere) | 0 |
-| Suspense usages (all in design-lab pages) | 5 (all with fallback={null}) |
-| next/image usages | 2 (product-thumb.tsx, founder-portrait-card.tsx) |
-| next/font/google usages | 1 (layout.tsx — Outfit) |
-| next/dynamic call sites | ~25 (heavy environments, charts, AG Grid, Framer Motion) |
-| React.memo() usages in dashboard/ | 10 (mostly salao sub-components) |
-| useMemo + useCallback matches | ~143 (good adoption in data-heavy components) |
-| createPortal usages | 1 (shared/tooltip.tsx) |
-| React.StrictMode | Enabled (next.config.ts:37) |
-| Context providers at root | 2 (ThemeProvider, QueryProvider) |
-| Largest component: overview-environment.tsx | 1,275 lines |
-| Largest component: portfolio-environment.tsx | 1,243 lines |
-| Largest component: pdv-wireframe-environment.tsx | 744 lines |
-| Largest component: dashboard-shell.tsx | 665 lines |
-| Largest component: pdv-board.tsx | 399 lines |
-| Largest lib file: operations-realtime-patching.ts | 1,088 lines |
-| Google Fonts CSS @import in globals.css | 1 (render-blocking: line 2) |
-| Custom CSS files | 3: globals.css (2320 lines), wireframe-shell.css (874 lines), lab.css |
-| Tailwind CSS 4 | Used via @import 'tailwindcss' in globals.css:4 |
+| Metric                                            | Value                                                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------- |
+| Total .tsx files                                  | ~288                                                                  |
+| 'use client' directives (.tsx)                    | 164 (~57%)                                                            |
+| 'use client' directives (.ts)                     | 32                                                                    |
+| Page .tsx files with 'use client'                 | 19                                                                    |
+| Page .tsx files as server components              | ~12 (login, cadastro, financeiro, ai, lite/\*, dashboard/redirect)    |
+| loading.tsx files (anywhere)                      | 0                                                                     |
+| Suspense usages (all in design-lab pages)         | 5 (all with fallback={null})                                          |
+| next/image usages                                 | 2 (product-thumb.tsx, founder-portrait-card.tsx)                      |
+| next/font/google usages                           | 1 (layout.tsx — Outfit)                                               |
+| next/dynamic call sites                           | ~25 (heavy environments, charts, AG Grid, Framer Motion)              |
+| React.memo() usages in dashboard/                 | 10 (mostly salao sub-components)                                      |
+| useMemo + useCallback matches                     | ~143 (good adoption in data-heavy components)                         |
+| createPortal usages                               | 1 (shared/tooltip.tsx)                                                |
+| React.StrictMode                                  | Enabled (next.config.ts:37)                                           |
+| Context providers at root                         | 2 (ThemeProvider, QueryProvider)                                      |
+| Largest component: overview-environment.tsx       | 1,275 lines                                                           |
+| Largest component: portfolio-environment.tsx      | 1,243 lines                                                           |
+| Largest component: pdv-wireframe-environment.tsx  | 744 lines                                                             |
+| Largest component: dashboard-shell.tsx            | 665 lines                                                             |
+| Largest component: pdv-board.tsx                  | 399 lines                                                             |
+| Largest lib file: operations-realtime-patching.ts | 1,088 lines                                                           |
+| Google Fonts CSS @import in globals.css           | 1 (render-blocking: line 2)                                           |
+| Custom CSS files                                  | 3: globals.css (2320 lines), wireframe-shell.css (874 lines), lab.css |
+| Tailwind CSS 4                                    | Used via @import 'tailwindcss' in globals.css:4                       |
 
 ---
 
@@ -144,6 +144,7 @@ The project has a solid foundation with lazy-loaded heavy environments, TanStack
   - The landing page (`marketing/landing-page.tsx`) and all other marketing components likely use plain `<img>` tags with no optimization
   - `next.config.ts:38-57` has comprehensive `images` config (remote patterns, AVIF/WebP, device sizes) — but it is underutilized
 - **Impact:** Images on the landing page and product thumbnails are served at full resolution without automatic compression, resizing, or lazy loading. This increases LCP and wastes bandwidth on
+
 ---
 
 ## Findings
@@ -154,8 +155,8 @@ The project has a solid foundation with lazy-loaded heavy environments, TanStack
 - **Severity:** HIGH
 - **Confidence:** HIGH
 - **Evidence:**
-  - Glob for apps/web/app/**/loading.tsx returns 0 files — no loading states for any route segment
-  - Only 5 Suspense usages found, all in design-lab/*/page.tsx with fallback={null} (no meaningful loading indicator):
+  - Glob for apps/web/app/\*\*/loading.tsx returns 0 files — no loading states for any route segment
+  - Only 5 Suspense usages found, all in design-lab/\*/page.tsx with fallback={null} (no meaningful loading indicator):
     - design-lab/pdv/page.tsx:139 — <Suspense fallback={null}>
     - design-lab/financeiro/page.tsx:106 — <Suspense fallback={null}>
     - design-lab/salao/page.tsx:156 — <Suspense fallback={null}>
@@ -185,7 +186,6 @@ The project has a solid foundation with lazy-loaded heavy environments, TanStack
 - **Impact:** Any hook state change (navigation, scroll, mobile detection resize) triggers a full re-render through 665 lines of JSX, including all environment components. The header alone processes navigationGroups.flatMap() and sectionTabs.map() on every render. INP (Interaction to Next Paint) is penalized.
 - **Recommendation:** Extract DashboardWireframeHeader, LoadingState, UnauthorizedState, MobileShellLoadingState into separate files. Wrap DashboardWireframeHeader in React.memo. Extract WireframeThemeButton to its own memoized component. Split the shell into a layout + content pattern.
 - **Effort:** M (1-2 days — pure refactoring extraction)
-
 
 ### FE-003 — Massive Environment Components (1275 and 1243 lines)
 
@@ -247,7 +247,6 @@ The project has a solid foundation with lazy-loaded heavy environments, TanStack
 - **Impact:** Images on the landing page and product thumbnails are served at full resolution without automatic compression, resizing, or lazy loading. This increases LCP and wastes bandwidth on mobile.
 - **Recommendation:** Audit all img tags in marketing/ and pdv/ and replace with next/image. For the landing page hero, use priority prop. Add placeholder=blur for known images.
 - **Effort:** M (1-2 days — audit ~15-20 image instances)
-
 
 ### FE-007 — localStorage Access Without SSR Guard in lab-shell.tsx
 

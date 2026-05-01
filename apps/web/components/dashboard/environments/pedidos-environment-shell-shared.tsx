@@ -57,7 +57,6 @@ function toneLabel(tone: LabStatusTone) {
       return 'fila'
     case 'neutral':
       return 'base'
-    case 'info':
     default:
       return 'leitura'
   }
@@ -73,7 +72,6 @@ function toneTextClass(tone: LabStatusTone) {
       return 'text-[var(--lab-warning)]'
     case 'info':
       return 'text-[var(--lab-blue)]'
-    case 'neutral':
     default:
       return 'text-[var(--lab-fg)]'
   }

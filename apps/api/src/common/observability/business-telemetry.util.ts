@@ -78,10 +78,13 @@ const operationsRealtimePublishGlobalListeners = meter.createHistogram(
   },
 )
 
-const operationsRealtimePublishSocketRoomSize = meter.createHistogram('desk.operations.realtime.publish.socket_room_size', {
-  description: 'Quantidade de sockets conectados na room Socket.IO do workspace no momento da publicacao',
-  unit: '{socket}',
-})
+const operationsRealtimePublishSocketRoomSize = meter.createHistogram(
+  'desk.operations.realtime.publish.socket_room_size',
+  {
+    description: 'Quantidade de sockets conectados na room Socket.IO do workspace no momento da publicacao',
+    unit: '{socket}',
+  },
+)
 
 const operationsRealtimePublishDispatchTargets = meter.createHistogram(
   'desk.operations.realtime.publish.dispatch_targets',
@@ -124,13 +127,10 @@ const operationsCloseComandaDuration = meter.createHistogram('desk.operations.co
   unit: 'ms',
 })
 
-const operationsRecalculateCashSessionDuration = meter.createHistogram(
-  'desk.operations.cash.recalculate.duration',
-  {
-    description: 'Tempo para recalcular o agregado de um caixa operacional',
-    unit: 'ms',
-  },
-)
+const operationsRecalculateCashSessionDuration = meter.createHistogram('desk.operations.cash.recalculate.duration', {
+  description: 'Tempo para recalcular o agregado de um caixa operacional',
+  unit: 'ms',
+})
 
 const auditLogRecordDuration = meter.createHistogram('desk.audit.log.record.duration', {
   description: 'Tempo para persistir um audit log',
@@ -214,7 +214,10 @@ export function recordOperationsRealtimePublishTelemetry(
 }
 
 export function recordOperationsRealtimeSocketConnected(attributes: Attributes) {
-  operationsRealtimeSocketConnections.add(1, { ...attributes, 'desk.operations.realtime.connection_result': 'accepted' })
+  operationsRealtimeSocketConnections.add(1, {
+    ...attributes,
+    'desk.operations.realtime.connection_result': 'accepted',
+  })
   operationsRealtimeActiveSockets.add(1, attributes)
 }
 
@@ -250,7 +253,10 @@ export function recordAuditLogRecordTelemetry(durationMs: number, attributes: At
   auditLogRecordDuration.record(durationMs, attributes)
 }
 
-export function recordAuthSessionCacheLookup(result: 'hit' | 'miss' | 'negative_hit' | 'bypass' | 'expired', attributes: Attributes) {
+export function recordAuthSessionCacheLookup(
+  result: 'hit' | 'miss' | 'negative_hit' | 'bypass' | 'expired',
+  attributes: Attributes,
+) {
   authSessionCacheLookups.add(1, {
     ...attributes,
     'desk.auth.session.cache_result': result,

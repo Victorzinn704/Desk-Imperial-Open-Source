@@ -167,16 +167,16 @@ The monorepo structure (`apps/api`, `apps/web`, `packages/types`) is fundamental
 
 ## Architecture Scorecard
 
-| Dimension | Score (0-10) | Notes |
-|---|---|---|
-| Module boundaries | 5 | Circular deps, cross-module leakage, @Global() misuse |
-| Shared contracts adoption | 4 | Types package partially used; orders/products/finance duplicate locally |
-| Extensibility (new module) | 5 | AuthSession guard, CurrencyService, FinanceService must be imported; no interface abstractions |
-| Controller purity | 8 | Controllers are thin; one exception (auth.controller → AuditLogService) |
-| Service layer abstraction | 4 | God services, infrastructure mixed with domain, no repository pattern |
-| Frontend separation (UI/logic/fetch) | 5 | API fetchers are clean; components mix UI + state + logic; large files |
-| Aggregate root clarity | 4 | No explicit aggregates; transactional isolation via DB locks not boundaries |
-| Dependency hygiene | 5 | Undeclared package deps; forwardRef cycles; many direct cross-module imports |
+| Dimension                            | Score (0-10) | Notes                                                                                          |
+| ------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------- |
+| Module boundaries                    | 5            | Circular deps, cross-module leakage, @Global() misuse                                          |
+| Shared contracts adoption            | 4            | Types package partially used; orders/products/finance duplicate locally                        |
+| Extensibility (new module)           | 5            | AuthSession guard, CurrencyService, FinanceService must be imported; no interface abstractions |
+| Controller purity                    | 8            | Controllers are thin; one exception (auth.controller → AuditLogService)                        |
+| Service layer abstraction            | 4            | God services, infrastructure mixed with domain, no repository pattern                          |
+| Frontend separation (UI/logic/fetch) | 5            | API fetchers are clean; components mix UI + state + logic; large files                         |
+| Aggregate root clarity               | 4            | No explicit aggregates; transactional isolation via DB locks not boundaries                    |
+| Dependency hygiene                   | 5            | Undeclared package deps; forwardRef cycles; many direct cross-module imports                   |
 
 **Overall Architecture Health: 5.0/10**
 

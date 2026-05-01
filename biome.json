@@ -21,8 +21,15 @@
           "level": "warn",
           "options": { "maxAllowedComplexity": 15 }
         },
+        "noForEach": "warn",
         "useLiteralKeys": "error",
         "useSimplifiedLogicExpression": "warn"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useButtonType": "warn",
+        "useSemanticElements": "warn"
       },
       "correctness": {
         "noUnusedImports": "warn",
@@ -33,12 +40,16 @@
         "noDangerouslySetInnerHtml": "error"
       },
       "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noAssignInExpressions": "warn",
         "noConsole": {
           "level": "warn",
           "options": { "allow": ["warn", "error"] }
         },
         "noDoubleEquals": "error",
-        "noExplicitAny": "warn"
+        "noEmptyBlock": "warn",
+        "noExplicitAny": "warn",
+        "noMisleadingCharacterClass": "warn"
       },
       "style": {
         "noNonNullAssertion": "warn",

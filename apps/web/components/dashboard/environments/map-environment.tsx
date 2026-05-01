@@ -4,11 +4,7 @@ import Link from 'next/link'
 import type { CurrencyCode } from '@contracts/contracts'
 import { ApiError } from '@/lib/api'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import {
-  LabPageHeader,
-  LabPanel,
-  LabStatusPill,
-} from '@/components/design-lab/lab-primitives'
+import { LabPageHeader, LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { MapSection } from '@/components/dashboard/map-section'
 import { formatCurrency } from '@/lib/currency'
 

@@ -1,14 +1,14 @@
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactPlugin from 'eslint-plugin-react';
-import importPlugin from 'eslint-plugin-import';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
-import reactPerf from 'eslint-plugin-react-perf';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import eslint from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactPlugin from 'eslint-plugin-react'
+import importPlugin from 'eslint-plugin-import'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import reactPerf from 'eslint-plugin-react-perf'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
  * Root ESLint configuration for the Desk Imperial monorepo.
@@ -47,33 +47,42 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
-      'react': reactPlugin,
+      react: reactPlugin,
     },
     rules: {
       // --- Code Size & Complexity ---
-      'max-lines': ['warn', {
-        max: 300,
-        skipComments: true,
-        skipBlankLines: true,
-      }],
-      'max-lines-per-function': ['warn', {
-        max: 50,
-        skipComments: true,
-        skipBlankLines: true,
-      }],
-      'complexity': ['warn', 15],
+      'max-lines': [
+        'warn',
+        {
+          max: 300,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      'max-lines-per-function': [
+        'warn',
+        {
+          max: 50,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      complexity: ['warn', 15],
       'max-depth': ['error', 4],
       'max-params': ['warn', 5],
       'max-nested-callbacks': ['error', 3],
 
       // --- Import Organization ---
-      'sort-imports': ['warn', {
-        ignoreCase: true,
-        ignoreDeclarationSort: true, // Let import/order handle this
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: true,
-      }],
+      'sort-imports': [
+        'warn',
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true, // Let import/order handle this
+          ignoreMemberSort: false,
+          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+          allowSeparatedGroups: true,
+        },
+      ],
       'no-duplicate-imports': 'error',
 
       // --- Code Quality ---
@@ -81,8 +90,8 @@ export default tseslint.config(
       'no-var': 'error',
       'prefer-const': 'error',
       'no-nested-ternary': 'warn',
-      'eqeqeq': ['error', 'always', { null: 'ignore' }],
-      'curly': ['error', 'all'],
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      curly: ['error', 'all'],
       'default-case': 'error',
       'no-return-await': 'error',
       'no-eval': 'error',
@@ -91,15 +100,21 @@ export default tseslint.config(
 
       // --- TypeScript ---
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-      }],
-      '@typescript-eslint/consistent-type-imports': ['error', {
-        prefer: 'type-imports',
-        fixStyle: 'inline-type-imports',
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'inline-type-imports',
+        },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
@@ -142,11 +157,14 @@ export default tseslint.config(
     },
     rules: {
       'react-hooks/exhaustive-deps': 'error',
-      'react/jsx-sort-props': ['warn', {
-        callbacksLast: true,
-        shorthandFirst: true,
-        noSortAlphabetically: false,
-      }],
+      'react/jsx-sort-props': [
+        'warn',
+        {
+          callbacksLast: true,
+          shorthandFirst: true,
+          noSortAlphabetically: false,
+        },
+      ],
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-perf/jsx-no-new-object-as-prop': 'warn',
       'react-perf/jsx-no-new-array-as-prop': 'warn',
@@ -191,5 +209,4 @@ export default tseslint.config(
       'import/no-cycle': ['warn', { maxDepth: 5, ignoreExternal: true }],
     },
   },
-
-);
+)

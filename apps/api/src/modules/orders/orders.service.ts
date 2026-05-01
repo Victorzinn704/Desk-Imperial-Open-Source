@@ -1,29 +1,23 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  Optional,
-} from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { AuditSeverity, BuyerType, OrderStatus, Prisma } from '@prisma/client'
 import type { Request } from 'express'
 import { isValidCnpj, isValidCpf, sanitizeDocument } from '../../common/utils/document-validation.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
-import { AdminPinService } from '../admin-pin/admin-pin.service'
-import { CurrencyService } from '../currency/currency.service'
-import { GeocodingService } from '../geocoding/geocoding.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AdminPinService } from '../admin-pin/admin-pin.service'
+import type { CurrencyService } from '../currency/currency.service'
+import type { GeocodingService } from '../geocoding/geocoding.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import type { CreateOrderDto } from './dto/create-order.dto'
 import type { ListOrdersQueryDto } from './dto/list-orders.query'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
 import { toOrderRecord } from './orders.types'
 import { CacheService } from '../../common/services/cache.service'
-import { FinanceService } from '../finance/finance.service'
+import type { FinanceService } from '../finance/finance.service'
 import {
   buildInventoryProductsById,
   buildProductConsumptionMap,
@@ -356,7 +350,13 @@ export class OrdersService {
         lineProfit,
       }
     })
-    const discountAuthorization = await assertDiscountAuthorization(this.adminPinService, auth, workspaceUserId, request, preparedItems)
+    const discountAuthorization = await assertDiscountAuthorization(
+      this.adminPinService,
+      auth,
+      workspaceUserId,
+      request,
+      preparedItems,
+    )
     const totalRevenue = roundCurrency(preparedItems.reduce((total, item) => total + item.lineRevenue, 0))
     const totalCost = roundCurrency(preparedItems.reduce((total, item) => total + item.lineCost, 0))
     const totalProfit = roundCurrency(totalRevenue - totalCost)
@@ -549,7 +549,9 @@ export class OrdersService {
         }
 
         const productIds = [
-          ...new Set(order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
+          ...new Set(
+            order.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId)),
+          ),
         ]
         const products = productIds.length
           ? await transaction.product.findMany({

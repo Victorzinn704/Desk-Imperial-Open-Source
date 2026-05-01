@@ -122,21 +122,21 @@ This is an execution map, not a brainstorm note.
 
 ## Route Matrix
 
-| Route | Current Source | Current State | Main Risk | Priority |
-|---|---|---|---|---|
-| `/design-lab/overview` | `DesignLabOverviewEnvironment` | mixed visual system | legacy widgets inside lab shell | P0 |
-| `/design-lab/financeiro` | `FinanceiroEnvironment` + `MapEnvironment` | mixed visual system | old financial widgets inside lab shell | P0 |
-| `/design-lab/portfolio` | `PortfolioEnvironment` | best current reference | file is too large, forms still legacy | P0 |
-| `/design-lab/equipe` | `EquipeEnvironment` | mostly coherent | oversized environment | P1 |
-| `/design-lab/payroll` | `PayrollEnvironment` | mostly coherent | oversized environment, no focused tests | P1 |
-| `/design-lab/caixa` | page-native + `CaixaPanel` | shell is good | embedded legacy panel dominates final surface | P1 |
-| `/design-lab/salao` | `SalaoEnvironment` | functional, likely mature | file size and later visual harmonization | P1 |
-| `/design-lab/pdv` | `PdvEnvironment` | functional | still needs density tuning after current cleanup wave | P1 |
-| `/design-lab/pedidos` | `PedidosEnvironment` | already structured | route tests and density refinement | P2 |
-| `/design-lab/cozinha` | page-native + `KitchenOrdersView` | acceptable shell | mobile kitchen view embedded as desktop final UI | P2 |
-| `/design-lab/ia` | page-native + `AIConsultantWorkspace` | acceptable | visual finishing only after core routes | P2 |
-| `/design-lab/config` | `SettingsEnvironment` bridge | acceptable | settings panel still comes from old system | P2 |
-| `/design-lab/calendario` | page-native | shallow but stable | low business urgency | P3 |
+| Route                    | Current Source                             | Current State             | Main Risk                                             | Priority |
+| ------------------------ | ------------------------------------------ | ------------------------- | ----------------------------------------------------- | -------- |
+| `/design-lab/overview`   | `DesignLabOverviewEnvironment`             | mixed visual system       | legacy widgets inside lab shell                       | P0       |
+| `/design-lab/financeiro` | `FinanceiroEnvironment` + `MapEnvironment` | mixed visual system       | old financial widgets inside lab shell                | P0       |
+| `/design-lab/portfolio`  | `PortfolioEnvironment`                     | best current reference    | file is too large, forms still legacy                 | P0       |
+| `/design-lab/equipe`     | `EquipeEnvironment`                        | mostly coherent           | oversized environment                                 | P1       |
+| `/design-lab/payroll`    | `PayrollEnvironment`                       | mostly coherent           | oversized environment, no focused tests               | P1       |
+| `/design-lab/caixa`      | page-native + `CaixaPanel`                 | shell is good             | embedded legacy panel dominates final surface         | P1       |
+| `/design-lab/salao`      | `SalaoEnvironment`                         | functional, likely mature | file size and later visual harmonization              | P1       |
+| `/design-lab/pdv`        | `PdvEnvironment`                           | functional                | still needs density tuning after current cleanup wave | P1       |
+| `/design-lab/pedidos`    | `PedidosEnvironment`                       | already structured        | route tests and density refinement                    | P2       |
+| `/design-lab/cozinha`    | page-native + `KitchenOrdersView`          | acceptable shell          | mobile kitchen view embedded as desktop final UI      | P2       |
+| `/design-lab/ia`         | page-native + `AIConsultantWorkspace`      | acceptable                | visual finishing only after core routes               | P2       |
+| `/design-lab/config`     | `SettingsEnvironment` bridge               | acceptable                | settings panel still comes from old system            | P2       |
+| `/design-lab/calendario` | page-native                                | shallow but stable        | low business urgency                                  | P3       |
 
 ---
 
@@ -156,33 +156,33 @@ This is an execution map, not a brainstorm note.
    - Missing: tests for role-based nav, collapse persistence, theme toggle, mobile overlay and logout.
    - Why: one shell bug now affects every desktop route.
 
-1. `apps/web/app/design-lab/overview/page.tsx`
+4. `apps/web/app/design-lab/overview/page.tsx`
    - Missing: route render and shell integration test.
    - Why: this route is the executive entry point and currently the most mixed surface.
 
-2. `apps/web/components/dashboard/environments/overview-environment.tsx`
+5. `apps/web/components/dashboard/environments/overview-environment.tsx`
    - Missing: lab-mode tests for variant rendering and executive sections.
    - Why: large file, many variants, many opportunities for regression after extraction.
 
-3. `apps/web/app/design-lab/financeiro/page.tsx`
+6. `apps/web/app/design-lab/financeiro/page.tsx`
    - Missing: route test for tab switching and `mapa` branch.
    - Why: this page conditionally swaps environment sources.
 
-4. `apps/web/components/dashboard/environments/financeiro-environment.tsx`
+7. `apps/web/components/dashboard/environments/financeiro-environment.tsx`
    - Missing: tests for each lab tab (`movimentacao`, `fluxo`, `dre`, `contas`).
    - Why: heavy reuse of finance widgets with multiple visual branches.
 
-5. `apps/web/components/dashboard/environments/equipe-environment.tsx`
+8. `apps/web/components/dashboard/environments/equipe-environment.tsx`
    - Missing: tests for `cards`, `perfil`, `folha` split and `surface="lab"` rendering.
    - Why: route behavior changes depending on tab and delegates payroll.
 
-6. `apps/web/components/dashboard/payroll-environment.tsx`
+9. `apps/web/components/dashboard/payroll-environment.tsx`
    - Missing: tests for month switcher, payment toggles, CSV export, inline salary updates.
    - Why: high interaction density with no focused protection today.
 
-7. `apps/web/app/design-lab/layout.tsx` and `apps/web/app/design-lab/page.tsx`
-   - Missing: tests for feature-flag gating and root redirect behavior.
-   - Why: these are small files, but they guard the entire desktop lab entry path.
+10. `apps/web/app/design-lab/layout.tsx` and `apps/web/app/design-lab/page.tsx`
+    - Missing: tests for feature-flag gating and root redirect behavior.
+    - Why: these are small files, but they guard the entire desktop lab entry path.
 
 ### Medium priority
 
@@ -215,21 +215,21 @@ That makes `portfolio` the current behavioral reference, not just a visual one.
 
 Measured current line counts:
 
-| File | Lines | Reading |
-|---|---:|---|
-| `apps/web/components/dashboard/environments/portfolio-environment.tsx` | 1397 | too large for a single environment |
-| `apps/web/components/dashboard/environments/overview-environment.tsx` | 1219 | too many variants and mixed composition strategies |
-| `apps/web/components/dashboard/salao-environment.tsx` | 1087 | mature behavior but high refactor risk |
-| `apps/web/components/dashboard/environments/equipe-environment.tsx` | 778 | environment, ranking, directory and profile live together |
-| `apps/web/components/pdv/pdv-salao-unified.tsx` | 755 | large operational UI boundary |
-| `apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx` | 739 | archived route logic, should stay frozen |
-| `apps/web/components/dashboard/environments/financeiro-environment.tsx` | 684 | too many views in one file |
-| `apps/web/components/pdv/pdv-comanda-modal.tsx` | 670 | large interaction surface |
-| `apps/web/components/dashboard/dashboard-shell.tsx` | 665 | still a frontend hotspot, but not main desktop source now |
-| `apps/web/components/dashboard/payroll-environment.tsx` | 650 | interaction-heavy and under-tested |
-| `apps/web/components/dashboard/environments/pedidos-environment.tsx` | 614 | manageable, but next in line after P0/P1 |
-| `apps/web/app/design-lab/lab.css` | 827 | shell, tokens, compatibility bridge and route visuals still share one stylesheet |
-| `apps/web/components/design-lab/lab-shell.tsx` | 308 | high-leverage shell with no dedicated test protection |
+| File                                                                       | Lines | Reading                                                                          |
+| -------------------------------------------------------------------------- | ----: | -------------------------------------------------------------------------------- |
+| `apps/web/components/dashboard/environments/portfolio-environment.tsx`     |  1397 | too large for a single environment                                               |
+| `apps/web/components/dashboard/environments/overview-environment.tsx`      |  1219 | too many variants and mixed composition strategies                               |
+| `apps/web/components/dashboard/salao-environment.tsx`                      |  1087 | mature behavior but high refactor risk                                           |
+| `apps/web/components/dashboard/environments/equipe-environment.tsx`        |   778 | environment, ranking, directory and profile live together                        |
+| `apps/web/components/pdv/pdv-salao-unified.tsx`                            |   755 | large operational UI boundary                                                    |
+| `apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx` |   739 | archived route logic, should stay frozen                                         |
+| `apps/web/components/dashboard/environments/financeiro-environment.tsx`    |   684 | too many views in one file                                                       |
+| `apps/web/components/pdv/pdv-comanda-modal.tsx`                            |   670 | large interaction surface                                                        |
+| `apps/web/components/dashboard/dashboard-shell.tsx`                        |   665 | still a frontend hotspot, but not main desktop source now                        |
+| `apps/web/components/dashboard/payroll-environment.tsx`                    |   650 | interaction-heavy and under-tested                                               |
+| `apps/web/components/dashboard/environments/pedidos-environment.tsx`       |   614 | manageable, but next in line after P0/P1                                         |
+| `apps/web/app/design-lab/lab.css`                                          |   827 | shell, tokens, compatibility bridge and route visuals still share one stylesheet |
+| `apps/web/components/design-lab/lab-shell.tsx`                             |   308 | high-leverage shell with no dedicated test protection                            |
 
 ### Important note
 
@@ -251,6 +251,7 @@ Cut into:
 - `overview-ledgers.tsx`
 
 Reason:
+
 - current file contains both shared snapshot math and multiple page compositions
 - the `design-lab` version and the old dashboard variants still live together
 
@@ -265,6 +266,7 @@ Cut into:
 - `portfolio-actions.tsx`
 
 Reason:
+
 - current file mixes data shaping, product catalog, sale mode launcher, form shell and action chrome
 - this is the route most likely to become the visual reference for the rest of the app
 
@@ -277,6 +279,7 @@ Cut into:
 - `financeiro-helpers.ts`
 
 Reason:
+
 - tab routing and tab content are mixed in one file
 - `SalesPerformanceCard` and `FinanceOrdersTable` should be wrapped or replaced by lab-native surfaces
 
@@ -291,6 +294,7 @@ Cut into:
 - `payroll-controls.tsx`
 
 Reason:
+
 - team and payroll are already valuable but too coupled
 - these routes need stability more than new widgets
 
@@ -304,6 +308,7 @@ Cut into:
 - `lab-responsive.css`
 
 Reason:
+
 - current stylesheet is not just theme
 - the same file owns tokens, shell, tabs, tables, kanban, mesas and compatibility rules
 - one small change has too much blast radius
@@ -431,15 +436,15 @@ That creates visual noise and makes future sections feel patched instead of desi
 
 ## Section Uniformity Map
 
-| Pattern | Current State | Target |
-|---|---|---|
-| Triggered full-screen work areas | `portfolio` had a custom workbench; other routes can invent their own | use `LabWorkbench` |
-| Compact radar stats | many local `*MiniStat` variants | use `LabMiniStat` |
-| Label/note/value rows | many local `*SignalRow` and meta rows | use `LabSignalRow` |
-| Header facts and contextual facts | local pill variants | use `LabFactPill` |
-| Filters and quick chips | local chip variants | use `LabFilterChip` |
-| KPI cards | already mostly shared | use `LabMetric` |
-| Dense tables | shared but still desktop-biased | use `LabTable`, then add compact alternatives for tablet/mobile where needed |
+| Pattern                           | Current State                                                         | Target                                                                       |
+| --------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Triggered full-screen work areas  | `portfolio` had a custom workbench; other routes can invent their own | use `LabWorkbench`                                                           |
+| Compact radar stats               | many local `*MiniStat` variants                                       | use `LabMiniStat`                                                            |
+| Label/note/value rows             | many local `*SignalRow` and meta rows                                 | use `LabSignalRow`                                                           |
+| Header facts and contextual facts | local pill variants                                                   | use `LabFactPill`                                                            |
+| Filters and quick chips           | local chip variants                                                   | use `LabFilterChip`                                                          |
+| KPI cards                         | already mostly shared                                                 | use `LabMetric`                                                              |
+| Dense tables                      | shared but still desktop-biased                                       | use `LabTable`, then add compact alternatives for tablet/mobile where needed |
 
 ### Migration order by impact
 

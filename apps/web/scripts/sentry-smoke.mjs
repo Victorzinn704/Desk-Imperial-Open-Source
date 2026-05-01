@@ -74,7 +74,9 @@ async function main() {
 
       await page.getByRole('button', { name: 'Enviar erro do servidor' }).click()
       await apiResponsePromise
-      await page.waitForFunction(() => document.querySelector('[data-testid="sentry-api-status"]')?.textContent?.includes('sent'))
+      await page.waitForFunction(() =>
+        document.querySelector('[data-testid="sentry-api-status"]')?.textContent?.includes('sent'),
+      )
       const apiStatus = await page.getByTestId('sentry-api-status').textContent()
 
       const report = {

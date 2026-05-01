@@ -45,7 +45,9 @@ export function DashboardSidebar({
   compact?: boolean
 }>) {
   const [manualCollapsed, setManualCollapsed] = useState<boolean | null>(() => {
-    if (typeof window === 'undefined') {return false}
+    if (typeof window === 'undefined') {
+      return false
+    }
     const stored = globalThis.localStorage.getItem(COLLAPSE_KEY)
     if (stored === 'true' || stored === 'false') {
       return stored === 'true'
@@ -55,7 +57,9 @@ export function DashboardSidebar({
   const collapsed = manualCollapsed ?? compact
 
   useEffect(() => {
-    if (typeof window === 'undefined') {return}
+    if (typeof window === 'undefined') {
+      return
+    }
     if (manualCollapsed !== null) {
       globalThis.localStorage.setItem(COLLAPSE_KEY, String(manualCollapsed))
     }
@@ -81,9 +85,7 @@ export function DashboardSidebar({
       >
         <div className="min-w-0">
           <BrandMark size="sm" wordmark="responsive" />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {companyName || 'Painel corporativo'}
-          </p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{companyName || 'Painel corporativo'}</p>
         </div>
 
         {/* Separador */}

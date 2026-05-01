@@ -132,10 +132,7 @@ export const designLabFinanceiroTabs: ReadonlyArray<DesignLabTabDefinition<Desig
   },
 ]
 
-export function buildDesignLabHref(
-  sectionId: DesignLabSectionId,
-  params?: Record<string, string | null | undefined>,
-) {
+export function buildDesignLabHref(sectionId: DesignLabSectionId, params?: Record<string, string | null | undefined>) {
   const pathname = DESIGN_LAB_SECTION_PATHS[sectionId]
   const nextParams = new URLSearchParams()
 
@@ -208,7 +205,6 @@ export function mapDashboardSectionToDesignLabHref(sectionId: DashboardSectionId
       return buildDesignLabHref('payroll')
     case 'settings':
       return buildDesignLabConfigHref('account')
-    case 'sales':
     default:
       return buildDesignLabHref('overview')
   }
@@ -228,10 +224,7 @@ export function mapDashboardLocationToDesignLabHref({
       return buildDesignLabConfigHref(settingsSectionId)
     case 'pdv':
       return buildDesignLabPdvHref({
-        tab:
-          tabId === 'comandas' || tabId === 'kds' || tabId === 'cobranca'
-            ? tabId
-            : 'grid',
+        tab: tabId === 'comandas' || tabId === 'kds' || tabId === 'cobranca' ? tabId : 'grid',
       })
     case 'salao':
       return buildDesignLabHref('salao', {
@@ -268,8 +261,6 @@ export function mapDashboardLocationToDesignLabHref({
       return buildDesignLabFinanceiroHref('mapa')
     case 'payroll':
       return buildDesignLabHref('payroll')
-    case 'sales':
-    case 'overview':
     default:
       return buildDesignLabHref('overview')
   }

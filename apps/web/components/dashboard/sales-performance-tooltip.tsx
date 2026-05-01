@@ -49,7 +49,7 @@ export function SalesPerformanceTooltip({
   surface = 'default',
   variant = 'revenue-profit',
 }: SalesPerformanceTooltipProps) {
-  if (!active || !payload?.length) {
+  if (!(active && payload?.length)) {
     return null
   }
 

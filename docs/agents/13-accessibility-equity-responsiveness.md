@@ -23,26 +23,31 @@ Nível AAA como aspiração em componentes críticos (formulários, autenticaç�
 ## Checklist obrigatório por mudança de interface
 
 ### Navegação e foco
+
 - A interface é navegável completamente por teclado?
 - A ordem de foco (tab order) faz sentido contextualmente?
 - O foco visível está claramente indicado?
 
 ### Visual e leitura
+
 - O contraste de texto atende AA (mínimo 4.5:1 para texto normal, 3:1 para texto grande)?
 - O texto é compreensível sem depender apenas de cor para transmitir informação?
 - Existe alternativa textual para conteúdo visual (imagens, ícones, gráficos)?
 
 ### Componentes interativos
+
 - Botões, links e controles têm labels descritivos e acessíveis?
 - ARIA roles e atributos estão sendo usados corretamente onde necessário?
 - O componente cria barreira desnecessária para tecnologia assistiva?
 
 ### Mobile e toque
+
 - Áreas de toque têm tamanho mínimo adequado (44x44px recomendado)?
 - O comportamento em viewport pequeno foi testado?
 - Não há dependência de hover para funcionalidade crítica?
 
 ### Feedback e erros
+
 - Mensagens de erro são descritivas e indicam como corrigir?
 - Sucesso, carregamento e estado vazio são comunicados claramente?
 - Animações respeitam `prefers-reduced-motion`?
@@ -66,6 +71,7 @@ Nível AAA como aspiração em componentes críticos (formulários, autenticaç�
 ## Regra para agentes
 
 Toda mudança de interface deve considerar impacto em:
+
 - **Leitura** — o conteúdo é compreensível?
 - **Foco** — a navegação por teclado está correta?
 - **Feedback** — o usuário sabe o que aconteceu e o que fazer?

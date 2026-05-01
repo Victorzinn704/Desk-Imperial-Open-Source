@@ -130,7 +130,10 @@ function ComandaDocumentField({
   const documentInputId = 'comanda-cliente-documento'
   return (
     <div className="px-4 pb-3">
-      <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={documentInputId}>
+      <label
+        className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+        htmlFor={documentInputId}
+      >
         CPF / CNPJ
         {clienteDocumento ? <DocumentValidationChip docLabel={docLabel} docValidation={docValidation} /> : null}
       </label>
@@ -190,7 +193,10 @@ function ComandaNotesField({
   const notesInputId = 'comanda-notes'
   return (
     <div className="px-4 pb-3">
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={notesInputId}>
+      <label
+        className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+        htmlFor={notesInputId}
+      >
         Observação da comanda
       </label>
       <textarea
@@ -266,7 +272,7 @@ function ComandaStatusSection({
   onStatusChange?: (comanda: Comanda, status: Comanda['status']) => Promise<void>
   requirePin: (action: () => void, title: string, description: string) => void
 }>) {
-  if (!isEditing || !onStatusChange || !comanda) {
+  if (!(isEditing && onStatusChange && comanda)) {
     return null
   }
 
@@ -340,7 +346,10 @@ function InputField({
   const inputId = `comanda-input-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={inputId}>
+      <label
+        className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+        htmlFor={inputId}
+      >
         {label}
       </label>
       <input
@@ -379,7 +388,10 @@ function PercentField({
 
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]" htmlFor={inputId}>
+      <label
+        className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]"
+        htmlFor={inputId}
+      >
         {label}
       </label>
       <input

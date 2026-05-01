@@ -1,6 +1,4 @@
-export type Result<TValue, TError> =
-  | { ok: true; value: TValue }
-  | { ok: false; error: TError }
+export type Result<TValue, TError> = { ok: true; value: TValue } | { ok: false; error: TError }
 
 export function ok<TValue>(value: TValue): Result<TValue, never> {
   return { ok: true, value }
@@ -23,4 +21,3 @@ export function matchResult<TValue, TError, TOutput>(
 
   return branches.err(result.error)
 }
-

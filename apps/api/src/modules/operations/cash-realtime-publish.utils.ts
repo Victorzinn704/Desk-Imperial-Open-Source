@@ -1,4 +1,4 @@
-import { CashMovementType, CashSessionStatus } from '@prisma/client'
+import type { CashMovementType, CashSessionStatus } from '@prisma/client'
 import type { AuthContext } from '../auth/auth.types'
 import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
@@ -18,11 +18,15 @@ export function publishCashRealtime(
   businessDate?: Date,
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
-  operationsRealtimeService.publishCashUpdated(auth, {
-    ...buildCashUpdatedPayload(session),
-    ...(businessDate ? { businessDate: formatBusinessDateKey(businessDate) } : {}),
-    cashSession: toRealtimeCashSessionRecord(session),
-  }, instrumentation)
+  operationsRealtimeService.publishCashUpdated(
+    auth,
+    {
+      ...buildCashUpdatedPayload(session),
+      ...(businessDate ? { businessDate: formatBusinessDateKey(businessDate) } : {}),
+      cashSession: toRealtimeCashSessionRecord(session),
+    },
+    instrumentation,
+  )
   publishCashClosureRealtime(operationsRealtimeService, auth, closure)
 }
 
@@ -57,15 +61,19 @@ export function publishCashOpenedRealtime(
   closure: Parameters<typeof buildCashClosurePayload>[0],
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
-  operationsRealtimeService.publishCashOpened(auth, {
-    cashSessionId: session.id,
-    openedAt: session.openedAt.toISOString(),
-    openingAmount: toNumberOrZero(session.openingCashAmount),
-    currency: auth.preferredCurrency,
-    employeeId: session.employeeId,
-    businessDate: formatBusinessDateKey(session.businessDate),
-    cashSession: toRealtimeCashSessionRecord(session),
-  }, instrumentation)
+  operationsRealtimeService.publishCashOpened(
+    auth,
+    {
+      cashSessionId: session.id,
+      openedAt: session.openedAt.toISOString(),
+      openingAmount: toNumberOrZero(session.openingCashAmount),
+      currency: auth.preferredCurrency,
+      employeeId: session.employeeId,
+      businessDate: formatBusinessDateKey(session.businessDate),
+      cashSession: toRealtimeCashSessionRecord(session),
+    },
+    instrumentation,
+  )
   publishCashClosureRealtime(operationsRealtimeService, auth, closure)
 }
 

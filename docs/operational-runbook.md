@@ -71,12 +71,12 @@ Comportamento de status HTTP:
 Diferença entre ambientes:
 
 - **Produção (`NODE_ENV=production`)**:
-	- A API exige URL Redis válida no bootstrap (`REDIS_URL` / `REDIS_PRIVATE_URL` / `REDIS_PUBLIC_URL`).
-	- Sem Redis configurado, a aplicação não sobe.
-	- Com Redis configurado, se o Redis cair depois, `/api/v1/health` passa a responder `503`.
+  - A API exige URL Redis válida no bootstrap (`REDIS_URL` / `REDIS_PRIVATE_URL` / `REDIS_PUBLIC_URL`).
+  - Sem Redis configurado, a aplicação não sobe.
+  - Com Redis configurado, se o Redis cair depois, `/api/v1/health` passa a responder `503`.
 - **Desenvolvimento/Teste**:
-	- A API pode subir sem Redis (fail-open de cache/realtime multi-instância).
-	- Mesmo assim, enquanto Redis estiver indisponível, `/api/v1/health` responde `503`.
+  - A API pode subir sem Redis (fail-open de cache/realtime multi-instância).
+  - Mesmo assim, enquanto Redis estiver indisponível, `/api/v1/health` responde `503`.
 
 Endpoints auxiliares:
 

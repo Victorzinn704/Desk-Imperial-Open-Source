@@ -115,11 +115,11 @@ Código aberto porque a transparência gera confiança. Gratuito porque é para 
 
 ### Em evolução
 
-| Módulo                             | Status                                  |
-| ---------------------------------- | --------------------------------------- |
-| Contrato e consistência do realtime| ⚠️ Em recuperação incremental por waves |
-| Cobertura de testes frontend       | ⚠️ Parcial                              |
-| Governança documental              | ⚠️ Em atualização editorial             |
+| Módulo                              | Status                                  |
+| ----------------------------------- | --------------------------------------- |
+| Contrato e consistência do realtime | ⚠️ Em recuperação incremental por waves |
+| Cobertura de testes frontend        | ⚠️ Parcial                              |
+| Governança documental               | ⚠️ Em atualização editorial             |
 
 ---
 

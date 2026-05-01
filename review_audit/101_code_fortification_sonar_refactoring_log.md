@@ -9,15 +9,15 @@
 
 Fonte principal: `review_audit/102_quality_warning_map.md`.
 
-| Indicador | Valor |
-| --- | ---: |
-| Sonar Quality Gate | `ERROR` |
-| New coverage | `71.7` (meta `90`) |
-| New violations | `96` (meta `0`) |
-| Code smells | `412` |
-| Security hotspots | `0` |
-| ESLint warnings | `466` |
-| ESLint errors | `0` |
+| Indicador          |              Valor |
+| ------------------ | -----------------: |
+| Sonar Quality Gate |            `ERROR` |
+| New coverage       | `71.7` (meta `90`) |
+| New violations     |    `96` (meta `0`) |
+| Code smells        |              `412` |
+| Security hotspots  |                `0` |
+| ESLint warnings    |              `466` |
+| ESLint errors      |                `0` |
 
 Comandos executados com resultado verde nesta rodada:
 

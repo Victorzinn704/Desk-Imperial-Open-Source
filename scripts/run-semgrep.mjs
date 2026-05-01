@@ -65,16 +65,7 @@ if (pythonUserSemgrep && hasCommand(pythonUserSemgrep, ['--version'])) {
 }
 
 if (hasCommand('docker', ['info'])) {
-  const result = run('docker', [
-    'run',
-    '--rm',
-    '-v',
-    `${process.cwd()}:/src`,
-    '-w',
-    '/src',
-    'semgrep/semgrep',
-    ...args,
-  ])
+  const result = run('docker', ['run', '--rm', '-v', `${process.cwd()}:/src`, '-w', '/src', 'semgrep/semgrep', ...args])
   if (result.error) {
     console.error(result.error.message)
     process.exit(1)

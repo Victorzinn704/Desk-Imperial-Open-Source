@@ -42,12 +42,12 @@ Garantir que a informação — de usuários, da empresa e de parceiros — seja
 
 ## Classificação de informação
 
-| Nível | Exemplos | Tratamento |
-|-------|----------|------------|
-| **Público** | Conteúdo marketing, docs públicos | Sem restrição |
-| **Interno** | Configurações, docs de time | Acesso restrito ao time |
-| **Confidencial** | Dados de usuário, contratos | Criptografia, acesso controlado, log de acesso |
-| **Restrito** | Credenciais, chaves, dados de pagamento | Vault, acesso mínimo, auditoria completa |
+| Nível            | Exemplos                                | Tratamento                                     |
+| ---------------- | --------------------------------------- | ---------------------------------------------- |
+| **Público**      | Conteúdo marketing, docs públicos       | Sem restrição                                  |
+| **Interno**      | Configurações, docs de time             | Acesso restrito ao time                        |
+| **Confidencial** | Dados de usuário, contratos             | Criptografia, acesso controlado, log de acesso |
+| **Restrito**     | Credenciais, chaves, dados de pagamento | Vault, acesso mínimo, auditoria completa       |
 
 ## Foco técnico generalista
 

@@ -60,10 +60,6 @@ export async function checkLowStockAfterClose(
   }
 }
 
-export function invalidateLiveSnapshotCache(
-  cache: CacheService,
-  workspaceOwnerUserId: string,
-  businessDate: Date,
-) {
+export function invalidateLiveSnapshotCache(cache: CacheService, workspaceOwnerUserId: string, businessDate: Date) {
   invalidateOperationsLiveCache(cache, workspaceOwnerUserId, businessDate)
 }

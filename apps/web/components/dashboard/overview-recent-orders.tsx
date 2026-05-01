@@ -167,10 +167,10 @@ export function OverviewRecentOrders({
     <div className="rounded-[8px] border border-[var(--border-strong)] bg-[var(--surface)] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-            Pedidos recentes
-          </h3>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">últimos 5 pedidos concluídos</p>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Pedidos recentes</h3>
+          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            últimos 5 pedidos concluídos
+          </p>
         </div>
         {summaryText ? (
           <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-1 font-mono text-[11px] text-[var(--accent)]">
@@ -180,9 +180,7 @@ export function OverviewRecentOrders({
       </div>
 
       {recentFive.length === 0 ? (
-        <p className="mt-8 pb-4 text-center text-xs text-[var(--text-muted)]">
-          Nenhum pedido concluído ainda
-        </p>
+        <p className="mt-8 pb-4 text-center text-xs text-[var(--text-muted)]">Nenhum pedido concluído ainda</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -228,9 +226,7 @@ export function OverviewRecentOrders({
                   <td className="py-3 pr-4 font-semibold text-[var(--text-primary)]">
                     {formatCurrency(order.totalRevenue, displayCurrency)}
                   </td>
-                  <td className="py-3 pr-4 text-[var(--text-soft)] max-lg:hidden">
-                    {order.channel || '—'}
-                  </td>
+                  <td className="py-3 pr-4 text-[var(--text-soft)] max-lg:hidden">{order.channel || '—'}</td>
                   <td className="py-3">
                     <StatusBadge status={order.status} />
                   </td>
@@ -248,8 +244,11 @@ function defaultPillToneClass(tone: LabStatusTone) {
   return {
     neutral: 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)]',
     info: 'border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent-strong)]',
-    success: 'border-[color-mix(in_srgb,var(--success)_28%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]',
-    warning: 'border-[color-mix(in_srgb,var(--warning)_28%,transparent)] bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-[var(--warning)]',
-    danger: 'border-[color-mix(in_srgb,var(--danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-[var(--danger)]',
+    success:
+      'border-[color-mix(in_srgb,var(--success)_28%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]',
+    warning:
+      'border-[color-mix(in_srgb,var(--warning)_28%,transparent)] bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-[var(--warning)]',
+    danger:
+      'border-[color-mix(in_srgb,var(--danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-[var(--danger)]',
   }[tone]
 }

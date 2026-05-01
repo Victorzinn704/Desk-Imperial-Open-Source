@@ -18,12 +18,7 @@ export function OwnerFinanceCategoryMix({
     return null
   }
 
-  return (
-    <FinanceCategoryFlowPanel
-      finance={finance}
-      title="Registro de fluxo por categoria"
-    />
-  )
+  return <FinanceCategoryFlowPanel finance={finance} title="Registro de fluxo por categoria" />
 }
 
 function buildMobileMixFinance(finance: FinanceSummaryResponse): FinanceSummaryResponse {

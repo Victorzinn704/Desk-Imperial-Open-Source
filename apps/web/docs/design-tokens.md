@@ -2,10 +2,10 @@
 
 ## Onde fica o quê
 
-| Arquivo | Função |
-|--------|--------|
-| `app/globals.css` | **Fonte ativa** dos imports globais e da ponte `:root` (`--bg`, `--accent`, `--text-*`) usada pelo código legado; também carrega Leaflet e Tailwind. |
-| snapshot externo `Desk-Imperial-Antigo/dead-code-snapshot-2026-04-30` | Guarda artefatos arquivados fora do monorepo quando um token source ou CSS legado sai de linha. |
+| Arquivo                                                               | Função                                                                                                                                               |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/globals.css`                                                     | **Fonte ativa** dos imports globais e da ponte `:root` (`--bg`, `--accent`, `--text-*`) usada pelo código legado; também carrega Leaflet e Tailwind. |
+| snapshot externo `Desk-Imperial-Antigo/dead-code-snapshot-2026-04-30` | Guarda artefatos arquivados fora do monorepo quando um token source ou CSS legado sai de linha.                                                      |
 
 ## Como usar
 

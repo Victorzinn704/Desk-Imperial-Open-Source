@@ -46,11 +46,11 @@ describe('currency', () => {
     })
 
     it('treats NaN as 0', () => {
-      expect(formatBRL(NaN)).toContain('0,00')
+      expect(formatBRL(Number.NaN)).toContain('0,00')
     })
 
     it('treats Infinity as 0', () => {
-      expect(formatBRL(Infinity)).toContain('0,00')
+      expect(formatBRL(Number.POSITIVE_INFINITY)).toContain('0,00')
     })
 
     it('formats zero', () => {

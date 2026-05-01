@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 
 type NominatimResult = {
   lat: string
@@ -304,7 +304,7 @@ function mapNominatimResult(
   const latitude = Number.parseFloat(result.lat)
   const longitude = Number.parseFloat(result.lon)
 
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+  if (!(Number.isFinite(latitude) && Number.isFinite(longitude))) {
     return null
   }
 

@@ -2,15 +2,16 @@ import { spawnSync } from 'node:child_process'
 
 function runGit(args) {
   const command = `git ${args.map((arg) => `"${arg.replaceAll('"', '\\"')}"`).join(' ')}`
-  const result = process.platform === 'win32'
-    ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', command], {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      })
-    : spawnSync('git', args, {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      })
+  const result =
+    process.platform === 'win32'
+      ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', command], {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
+      : spawnSync('git', args, {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
 
   if (result.error) {
     throw result.error

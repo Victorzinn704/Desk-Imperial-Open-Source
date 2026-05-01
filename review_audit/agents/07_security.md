@@ -9,23 +9,23 @@
 
 ## Summary
 
-Desk Imperial demonstrates **strong security fundamentals**. Cookie attributes (HttpOnly, Secure, SameSite, __Host- prefix), double-submit CSRF protection with timing-safe comparison, argon2id password hashing, workspace-scoped data isolation, and comprehensive rate limiting on auth endpoints are all well-implemented. The CORS policy is restrictive, security headers (CSP, HSTS, X-Frame-Options) are correctly configured, and CI pipelines include dependency auditing and SAST. However, three **user-enumeration vectors** exist (login, password-reset, email-verification), **rate limiting is absent on registration**, and there is **no account deletion/data-erasure endpoint** for LGPD right-to-deletion. No critical vulnerabilities were found.
+Desk Imperial demonstrates **strong security fundamentals**. Cookie attributes (HttpOnly, Secure, SameSite, \_\_Host- prefix), double-submit CSRF protection with timing-safe comparison, argon2id password hashing, workspace-scoped data isolation, and comprehensive rate limiting on auth endpoints are all well-implemented. The CORS policy is restrictive, security headers (CSP, HSTS, X-Frame-Options) are correctly configured, and CI pipelines include dependency auditing and SAST. However, three **user-enumeration vectors** exist (login, password-reset, email-verification), **rate limiting is absent on registration**, and there is **no account deletion/data-erasure endpoint** for LGPD right-to-deletion. No critical vulnerabilities were found.
 
 ---
 
 ## Quantitative Evidence
 
-| Metric | Count |
-|---|---|
-| Files reviewed | 60+ |
-| Lines of security-relevant code inspected | ~6500 |
-| Endpoints with CSRF protection | 29/29 mutating endpoints guarded |
-| Endpoints with rate limiting | 12/13 auth endpoints (register missing) |
-| User-enumeration vectors found | 3 |
-| IDOR vectors found | 0 (workspace-scoping enforced) |
-| Hardcoded production secrets found | 0 |
-| CI security gates | 4 (audit, dependency-review, public-scan, SAST) |
-| LGPD gaps | 1 (no account deletion endpoint) |
+| Metric                                    | Count                                           |
+| ----------------------------------------- | ----------------------------------------------- |
+| Files reviewed                            | 60+                                             |
+| Lines of security-relevant code inspected | ~6500                                           |
+| Endpoints with CSRF protection            | 29/29 mutating endpoints guarded                |
+| Endpoints with rate limiting              | 12/13 auth endpoints (register missing)         |
+| User-enumeration vectors found            | 3                                               |
+| IDOR vectors found                        | 0 (workspace-scoping enforced)                  |
+| Hardcoded production secrets found        | 0                                               |
+| CI security gates                         | 4 (audit, dependency-review, public-scan, SAST) |
+| LGPD gaps                                 | 1 (no account deletion endpoint)                |
 
 ---
 
@@ -41,6 +41,7 @@ Desk Imperial demonstrates **strong security fundamentals**. Cookie attributes (
 `apps/api/src/modules/auth/auth-login.service.ts:93-114`
 
 When login credentials are submitted:
+
 - Invalid password: UnauthorizedException (HTTP 401) "Credenciais invalidas." (line 93, 329)
 - Valid password but unverified email: ForbiddenException (HTTP 403) with verification message (line 113)
 

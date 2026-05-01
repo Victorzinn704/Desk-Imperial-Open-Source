@@ -11,7 +11,7 @@ import { OwnerQuickRegisterFormSection } from './owner-quick-register-form-secti
 import { OwnerQuickRegisterHeader } from './owner-quick-register-header'
 import { OwnerQuickRegisterHero } from './owner-quick-register-hero'
 import { OwnerQuickRegisterRecentProducts } from './owner-quick-register-recent-products'
-import { type LookupFeedback, type OwnerQuickRegisterInput } from './owner-quick-register-model'
+import type { LookupFeedback, OwnerQuickRegisterInput } from './owner-quick-register-model'
 import { useOwnerBarcodeLookup } from './use-owner-barcode-lookup'
 import { useOwnerOfflineProducts } from './use-owner-offline-products'
 import { useOwnerProductCatalog } from './use-owner-product-catalog'
@@ -53,8 +53,7 @@ function useOwnerQuickRegisterController() {
     mutationFn: generateSmartProductDraft,
   })
   const canSubmit =
-    !createProductMutation.isPending &&
-    !barcode.duplicatedProduct &&
+    !(createProductMutation.isPending || barcode.duplicatedProduct) &&
     isBarcodeReady(barcode.normalizedBarcode, barcode.barcodeValid)
   const submitProduct = useOwnerQuickRegisterSubmit({
     activeLookupContext: barcode.activeLookupContext,

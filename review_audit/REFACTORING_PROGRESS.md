@@ -7,15 +7,15 @@
 
 ## 1. Estado Atual de Qualidade
 
-| Indicador | Valor |
-| --- | ---: |
-| `quality:scope:strict` | PASS |
-| `quality:contracts` | PASS |
-| `quality:preflight` | FAIL (`diff whitespace`) |
-| ESLint errors | 0 |
-| ESLint warnings | 463 |
-| Sonar hotspots | 0 |
-| Sonar gate | ERROR |
+| Indicador              |                    Valor |
+| ---------------------- | -----------------------: |
+| `quality:scope:strict` |                     PASS |
+| `quality:contracts`    |                     PASS |
+| `quality:preflight`    | FAIL (`diff whitespace`) |
+| ESLint errors          |                        0 |
+| ESLint warnings        |                      463 |
+| Sonar hotspots         |                        0 |
+| Sonar gate             |                    ERROR |
 
 ---
 

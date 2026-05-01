@@ -899,7 +899,6 @@ function PortfolioProductsPanel({
         return filteredProducts.filter((product) => product.isCombo)
       case 'kitchen':
         return filteredProducts.filter((product) => product.requiresKitchen)
-      case 'all':
       default:
         return filteredProducts
     }

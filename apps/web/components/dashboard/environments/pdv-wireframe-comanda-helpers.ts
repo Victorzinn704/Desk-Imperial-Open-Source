@@ -63,7 +63,6 @@ export function filterPdvComandas(comandas: Comanda[], activeGroup: PdvComandaGr
       return comandas.filter((comanda) => !hasMesa(comanda) || balcaoRegex.test(comanda.mesa ?? ''))
     case 'delivery':
       return comandas.filter((comanda) => deliveryRegex.test(`${comanda.mesa ?? ''} ${comanda.clienteNome ?? ''}`))
-    case 'todas':
     default:
       return comandas
   }

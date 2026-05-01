@@ -119,28 +119,28 @@ export function FinanceCategoriesSidebar({ finance, isLoading, products }: Props
                     const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
 
                     return (
-                  <div className="flex items-center gap-3">
-                    <ProductThumb
-                      product={{
-                        name: product.name,
-                        brand: productBrand,
-                        category: product.category,
-                        barcode: product.barcode ?? catalogProduct?.barcode,
-                        packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
-                        quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
-                        imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
-                        catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
-                        isCombo: product.isCombo ?? catalogProduct?.isCombo,
-                      }}
-                      size="sm"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
-                      {productBrand ? (
-                        <p className="mt-1 truncate text-[11px] text-[var(--text-soft)]">{productBrand}</p>
-                      ) : null}
-                    </div>
-                  </div>
+                      <div className="flex items-center gap-3">
+                        <ProductThumb
+                          product={{
+                            name: product.name,
+                            brand: productBrand,
+                            category: product.category,
+                            barcode: product.barcode ?? catalogProduct?.barcode,
+                            packagingClass: product.packagingClass ?? catalogProduct?.packagingClass,
+                            quantityLabel: product.quantityLabel ?? catalogProduct?.quantityLabel,
+                            imageUrl: product.imageUrl ?? catalogProduct?.imageUrl,
+                            catalogSource: product.catalogSource ?? catalogProduct?.catalogSource,
+                            isCombo: product.isCombo ?? catalogProduct?.isCombo,
+                          }}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</p>
+                          {productBrand ? (
+                            <p className="mt-1 truncate text-[11px] text-[var(--text-soft)]">{productBrand}</p>
+                          ) : null}
+                        </div>
+                      </div>
                     )
                   })()}
 
@@ -295,7 +295,7 @@ export function FinanceCategoriesSidebar({ finance, isLoading, products }: Props
           </h2>
 
           <div className="space-y-2">
-            {topProducts.slice(0, 5).map((product, i) => (
+            {topProducts.slice(0, 5).map((product, i) =>
               (() => {
                 const catalogProduct = productsById.get(product.id)
                 const productBrand = product.brand?.trim() || catalogProduct?.brand?.trim() || null
@@ -334,8 +334,8 @@ export function FinanceCategoriesSidebar({ finance, isLoading, products }: Props
                     </p>
                   </div>
                 )
-              })()
-            ))}
+              })(),
+            )}
           </div>
         </section>
       )}

@@ -19,26 +19,26 @@ Key gaps: the owner bottom nav with 6 columns is tight at 360px, several touch t
 
 ## Quantitative Evidence
 
-| Metric | Value |
-|---|---|
-| Mobile shell components (staff-mobile/) | 20 files (11 .tsx, 7 .ts, 2 .test.tsx) |
-| Mobile shell components (owner-mobile/) | 56 files (30 .tsx, 23 .ts, 3 .test.tsx) |
-| Lite PWA pages | 3 pages (lite/, lite/pwa, lite/web) |
-| PWA manifests | 2 (manifest.json, manifest-lite.json) |
-| Service Worker registrars | 1 (shared/sw-registrar.tsx) |
-| Offline queue mechanism | 1 (shared/use-offline-queue.ts, 188 lines) |
-| Barcode scanner integration | 1 (owner-barcode-scanner-sheet.tsx, 410 lines) |
-| Pull-to-refresh hook | 1 (shared/use-pull-to-refresh.ts, 111 lines) |
-| Haptic feedback utility | 1 (shared/haptic.ts, 43 lines) |
-| Connection status banner | 1 (shared/connection-banner.tsx, 66 lines) |
-| Bottom nav tabs (staff) | 4 (Mesas, Cozinha, Pedidos, Histórico) |
-| Bottom nav tabs (owner) | 6 (Hoje, Comandas, PDV, Caixa, Financeiro, Conta) |
-| Tailwind breakpoints used | sm (640), md (768), min-[420px], max-[640px] |
-| Touch device CSS guard | `@media (pointer: coarse)` in globals.css:39-62 |
-| `hover: none` media queries | globals.css (imperial-card-tilt), lab.css mag cards |
-| CSS theme systems | 2 (globals.css :root/.dark + lab.css [data-lab].lab-dark/.lab-light) |
-| `prefers-reduced-motion` support | globals.css:11-36 |
-| Google Fonts loaded | 4 (Outfit via next/font, 3 via CSS @import) |
+| Metric                                  | Value                                                                |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| Mobile shell components (staff-mobile/) | 20 files (11 .tsx, 7 .ts, 2 .test.tsx)                               |
+| Mobile shell components (owner-mobile/) | 56 files (30 .tsx, 23 .ts, 3 .test.tsx)                              |
+| Lite PWA pages                          | 3 pages (lite/, lite/pwa, lite/web)                                  |
+| PWA manifests                           | 2 (manifest.json, manifest-lite.json)                                |
+| Service Worker registrars               | 1 (shared/sw-registrar.tsx)                                          |
+| Offline queue mechanism                 | 1 (shared/use-offline-queue.ts, 188 lines)                           |
+| Barcode scanner integration             | 1 (owner-barcode-scanner-sheet.tsx, 410 lines)                       |
+| Pull-to-refresh hook                    | 1 (shared/use-pull-to-refresh.ts, 111 lines)                         |
+| Haptic feedback utility                 | 1 (shared/haptic.ts, 43 lines)                                       |
+| Connection status banner                | 1 (shared/connection-banner.tsx, 66 lines)                           |
+| Bottom nav tabs (staff)                 | 4 (Mesas, Cozinha, Pedidos, Histórico)                               |
+| Bottom nav tabs (owner)                 | 6 (Hoje, Comandas, PDV, Caixa, Financeiro, Conta)                    |
+| Tailwind breakpoints used               | sm (640), md (768), min-[420px], max-[640px]                         |
+| Touch device CSS guard                  | `@media (pointer: coarse)` in globals.css:39-62                      |
+| `hover: none` media queries             | globals.css (imperial-card-tilt), lab.css mag cards                  |
+| CSS theme systems                       | 2 (globals.css :root/.dark + lab.css [data-lab].lab-dark/.lab-light) |
+| `prefers-reduced-motion` support        | globals.css:11-36                                                    |
+| Google Fonts loaded                     | 4 (Outfit via next/font, 3 via CSS @import)                          |
 
 ---
 
@@ -223,21 +223,21 @@ Key gaps: the owner bottom nav with 6 columns is tight at 360px, several touch t
 
 ## Resilience Assessment
 
-| Concern | Status | Notes |
-|---|---|---|
-| Offline mode (products/actions) | STRONG | IndexedDB + Background Sync + TTL + SW message bridge |
-| Offline mode (read-only views) | ADEQUATE | Polling fallback at 20s when disconnected; cached data via TanStack Query |
-| Connection status visibility | STRONG | ConnectionBanner with 5s delay, reconnect confirmation, realtime LED in header |
-| PWA installability | STRONG | 2 manifests, standalone display, shortcuts, launch_handler, beforeinstallprompt handler |
-| Safe-area handling | STRONG | All fixed elements use `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)` |
-| Pull-to-refresh | STRONG | Custom touch handler with logarithmic resistance + visual indicator |
-| Haptic feedback | ADEQUATE | Utility exists (haptic.ts) with 5 patterns but `btn-haptic` CSS class not globally defined |
-| Barcode scanner resilience | STRONG | Dual path (BarcodeDetector API + @zxing), camera permission handling, HTTPS guard, all states handled |
-| Touch target compliance | PARTIAL | Bottom nav items OK (53.6px), but 5+ buttons at 36-40px violate 48px minimum |
-| Focus visibility | WEAK | No focus-visible on mobile nav, table grid cards; only shared Button component has it |
-| Small screen (360px) layout | ADEQUATE | Owner 6-col nav tight but functional; content pages use padding appropriately |
-| Dark/light mode consistency | STRONG | Two theme systems both have light/dark; bottom nav shadow hardcoded for dark only |
-| WCAG color contrast | ADEQUATE | Primary text excellent (15:1+); 10px labels at text-soft pass AA (4.8:1); fallback color fails (3.0:1) |
+| Concern                         | Status   | Notes                                                                                                  |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| Offline mode (products/actions) | STRONG   | IndexedDB + Background Sync + TTL + SW message bridge                                                  |
+| Offline mode (read-only views)  | ADEQUATE | Polling fallback at 20s when disconnected; cached data via TanStack Query                              |
+| Connection status visibility    | STRONG   | ConnectionBanner with 5s delay, reconnect confirmation, realtime LED in header                         |
+| PWA installability              | STRONG   | 2 manifests, standalone display, shortcuts, launch_handler, beforeinstallprompt handler                |
+| Safe-area handling              | STRONG   | All fixed elements use `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)`                    |
+| Pull-to-refresh                 | STRONG   | Custom touch handler with logarithmic resistance + visual indicator                                    |
+| Haptic feedback                 | ADEQUATE | Utility exists (haptic.ts) with 5 patterns but `btn-haptic` CSS class not globally defined             |
+| Barcode scanner resilience      | STRONG   | Dual path (BarcodeDetector API + @zxing), camera permission handling, HTTPS guard, all states handled  |
+| Touch target compliance         | PARTIAL  | Bottom nav items OK (53.6px), but 5+ buttons at 36-40px violate 48px minimum                           |
+| Focus visibility                | WEAK     | No focus-visible on mobile nav, table grid cards; only shared Button component has it                  |
+| Small screen (360px) layout     | ADEQUATE | Owner 6-col nav tight but functional; content pages use padding appropriately                          |
+| Dark/light mode consistency     | STRONG   | Two theme systems both have light/dark; bottom nav shadow hardcoded for dark only                      |
+| WCAG color contrast             | ADEQUATE | Primary text excellent (15:1+); 10px labels at text-soft pass AA (4.8:1); fallback color fails (3.0:1) |
 
 ---
 
@@ -262,4 +262,3 @@ Key gaps: the owner bottom nav with 6 columns is tight at 360px, several touch t
 9. **Reduced motion support** — Comprehensive `prefers-reduced-motion: reduce` block disables all animations (skeleton shimmer, card rotate, focus pulse, AI glyphs, map pulse) with `!important`.
 
 10. **Theme token architecture** — CSS variables for all design tokens with separate light/dark blocks in both globals.css and lab.css. The `[data-lab]` adapter remaps lab tokens to the shared variable names, allowing desktop components to render correctly inside the design-lab. Theme toggle button has full-width and compact variants with proper ARIA labels.
-

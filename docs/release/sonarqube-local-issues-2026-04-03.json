@@ -29,11 +29,7 @@
       "effort": "15min",
       "debt": "15min",
       "author": "",
-      "tags": [
-        "cwe",
-        "type-dependent",
-        "obsolete"
-      ],
+      "tags": ["cwe", "type-dependent", "obsolete"],
       "creationDate": "2026-04-03T15:41:06-03:00",
       "updateDate": "2026-04-03T15:41:06-03:00",
       "type": "CODE_SMELL",

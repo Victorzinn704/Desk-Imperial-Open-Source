@@ -1,14 +1,14 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common'
 import { AuditSeverity, TelegramAccountStatus, UserStatus } from '@prisma/client'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CacheService } from '../../common/services/cache.service'
-import { PrismaService } from '../../database/prisma.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
-import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
+import type { PrismaService } from '../../database/prisma.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
+import type { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
 import type { OperationsRealtimeEnvelope } from '../operations-realtime/operations-realtime.types'
-import { TelegramAdapter } from './infra/telegram/telegram.adapter'
-import { NotificationPreferencesService } from './notification-preferences.service'
+import type { TelegramAdapter } from './infra/telegram/telegram.adapter'
+import type { NotificationPreferencesService } from './notification-preferences.service'
 import type {
   NotificationChannel,
   NotificationChannelCapability,
@@ -209,10 +209,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       return queued
     }
 
-    const recipients = await this.resolveTelegramRecipients(
-      envelope.workspaceOwnerUserId,
-      resolved.recipientScope,
-    )
+    const recipients = await this.resolveTelegramRecipients(envelope.workspaceOwnerUserId, resolved.recipientScope)
 
     let sentCount = 0
     for (const recipient of recipients) {
@@ -319,7 +316,7 @@ function resolveOperationsRealtimeNotification(envelope: OperationsRealtimeEnvel
       const mesaLabel = asString(payload.mesaLabel) ?? 'Mesa'
       const comandaId = asString(payload.comandaId) ?? 'comanda'
 
-      if (!previousStatus || !nextStatus || previousStatus === nextStatus) {
+      if (!(previousStatus && nextStatus) || previousStatus === nextStatus) {
         return null
       }
 

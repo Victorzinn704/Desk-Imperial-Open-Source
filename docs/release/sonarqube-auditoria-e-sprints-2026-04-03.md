@@ -53,88 +53,88 @@ O primeiro scan oficial foi executado **localmente**, contra o código da workin
 
 ### Números reais do primeiro scan
 
-| Métrica | Valor |
-| --- | ---: |
-| Issues abertas | `658` |
-| Code Smells | `630` |
-| Bugs | `28` |
-| Vulnerabilities | `0` |
-| Security Hotspots | `47` |
-| Severidade `BLOCKER` | `2` |
-| Severidade `CRITICAL` | `48` |
-| Severidade `MAJOR` | `232` |
-| Severidade `MINOR` | `376` |
-| Cobertura consolidada no Sonar | `55.8%` |
-| Duplicação | `2.6%` |
-| NCLOC | `49,257` |
-| Complexidade | `7,696` |
-| Cognitive Complexity | `4,128` |
+| Métrica                        |    Valor |
+| ------------------------------ | -------: |
+| Issues abertas                 |    `658` |
+| Code Smells                    |    `630` |
+| Bugs                           |     `28` |
+| Vulnerabilities                |      `0` |
+| Security Hotspots              |     `47` |
+| Severidade `BLOCKER`           |      `2` |
+| Severidade `CRITICAL`          |     `48` |
+| Severidade `MAJOR`             |    `232` |
+| Severidade `MINOR`             |    `376` |
+| Cobertura consolidada no Sonar |  `55.8%` |
+| Duplicação                     |   `2.6%` |
+| NCLOC                          | `49,257` |
+| Complexidade                   |  `7,696` |
+| Cognitive Complexity           |  `4,128` |
 
 ### O que mais apareceu
 
 **Regras mais frequentes**
 
-| Regra | Ocorrências | Leitura |
-| --- | ---: | --- |
-| `typescript:S3358` | `102` | ternário aninhado e leitura confusa |
-| `typescript:S7764` | `83` | uso de `window` em vez de `globalThis` |
-| `typescript:S6759` | `61` | acessibilidade/semântica de JSX |
-| `typescript:S7735` | `58` | padrões de JSX/atributos redundantes |
-| `typescript:S1874` | `40` | APIs/de símbolos depreciados |
-| `typescript:S3776` | `31` | funções com complexidade cognitiva excessiva |
+| Regra              | Ocorrências | Leitura                                      |
+| ------------------ | ----------: | -------------------------------------------- |
+| `typescript:S3358` |       `102` | ternário aninhado e leitura confusa          |
+| `typescript:S7764` |        `83` | uso de `window` em vez de `globalThis`       |
+| `typescript:S6759` |        `61` | acessibilidade/semântica de JSX              |
+| `typescript:S7735` |        `58` | padrões de JSX/atributos redundantes         |
+| `typescript:S1874` |        `40` | APIs/de símbolos depreciados                 |
+| `typescript:S3776` |        `31` | funções com complexidade cognitiva excessiva |
 
 **Arquivos com mais issues**
 
-| Arquivo | Issues |
-| --- | ---: |
-| `apps/web/components/dashboard/caixa-panel.tsx` | `28` |
-| `apps/web/components/dashboard/salao-environment.tsx` | `21` |
-| `apps/api/src/modules/products/products.service.ts` | `21` |
-| `apps/api/src/modules/operations/comanda.service.ts` | `20` |
-| `apps/web/components/staff-mobile/mobile-comanda-list.tsx` | `19` |
-| `apps/web/components/pdv/pdv-comanda-modal.tsx` | `18` |
-| `apps/web/lib/validation.ts` | `17` |
-| `apps/api/src/modules/auth/auth.service.ts` | `16` |
+| Arquivo                                                    | Issues |
+| ---------------------------------------------------------- | -----: |
+| `apps/web/components/dashboard/caixa-panel.tsx`            |   `28` |
+| `apps/web/components/dashboard/salao-environment.tsx`      |   `21` |
+| `apps/api/src/modules/products/products.service.ts`        |   `21` |
+| `apps/api/src/modules/operations/comanda.service.ts`       |   `20` |
+| `apps/web/components/staff-mobile/mobile-comanda-list.tsx` |   `19` |
+| `apps/web/components/pdv/pdv-comanda-modal.tsx`            |   `18` |
+| `apps/web/lib/validation.ts`                               |   `17` |
+| `apps/api/src/modules/auth/auth.service.ts`                |   `16` |
 
 ### Achados mais importantes para atacar primeiro
 
 **Blockers**
 
-| Arquivo | Regra | Achado |
-| --- | --- | --- |
-| `apps/web/lib/observability/faro.ts` | `typescript:S3516` | função sempre retorna o mesmo valor |
+| Arquivo                                   | Regra              | Achado                              |
+| ----------------------------------------- | ------------------ | ----------------------------------- |
+| `apps/web/lib/observability/faro.ts`      | `typescript:S3516` | função sempre retorna o mesmo valor |
 | `apps/web/lib/printing/qz-tray.client.ts` | `typescript:S3516` | função sempre retorna o mesmo valor |
 
 **Críticos de maior valor**
 
-| Arquivo | Regra | Achado |
-| --- | --- | --- |
-| `apps/web/components/dashboard/dashboard-shell.tsx` | `typescript:S3776` | complexidade cognitiva `45` |
-| `apps/api/src/config/env.validation.ts` | `typescript:S3776` | complexidade cognitiva `53` |
-| `apps/web/components/operations/operations-executive-grid.tsx` | `typescript:S3776` | complexidade cognitiva `23` |
-| `apps/web/components/dashboard/environments/portfolio-environment.tsx` | `typescript:S3776` | complexidade cognitiva `22` |
-| `apps/web/components/staff-mobile/mobile-order-builder.tsx` | `typescript:S3776` | complexidade cognitiva `22` |
-| `apps/api/src/modules/auth/auth.service.ts` | `typescript:S3776` | múltiplos pontos com complexidade crítica |
-| `apps/api/src/modules/operations/comanda.service.ts` | `typescript:S3776` | complexidade crítica em fluxo operacional |
-| `apps/api/src/common/utils/otel.util.ts` | `typescript:S4123` | `await` inesperado em valor não-Promise |
+| Arquivo                                                                | Regra              | Achado                                    |
+| ---------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
+| `apps/web/components/dashboard/dashboard-shell.tsx`                    | `typescript:S3776` | complexidade cognitiva `45`               |
+| `apps/api/src/config/env.validation.ts`                                | `typescript:S3776` | complexidade cognitiva `53`               |
+| `apps/web/components/operations/operations-executive-grid.tsx`         | `typescript:S3776` | complexidade cognitiva `23`               |
+| `apps/web/components/dashboard/environments/portfolio-environment.tsx` | `typescript:S3776` | complexidade cognitiva `22`               |
+| `apps/web/components/staff-mobile/mobile-order-builder.tsx`            | `typescript:S3776` | complexidade cognitiva `22`               |
+| `apps/api/src/modules/auth/auth.service.ts`                            | `typescript:S3776` | múltiplos pontos com complexidade crítica |
+| `apps/api/src/modules/operations/comanda.service.ts`                   | `typescript:S3776` | complexidade crítica em fluxo operacional |
+| `apps/api/src/common/utils/otel.util.ts`                               | `typescript:S4123` | `await` inesperado em valor não-Promise   |
 
 **Bugs reais detectados**
 
-| Arquivo | Regra | Achado |
-| --- | --- | --- |
-| `apps/api/src/common/services/period-classifier.service.ts` | `typescript:S3923` | condicionais que devolvem o mesmo valor |
-| `apps/api/src/modules/auth/auth.service.ts` | `typescript:S6959` | `reduce()` sem valor inicial |
+| Arquivo                                                             | Regra              | Achado                                   |
+| ------------------------------------------------------------------- | ------------------ | ---------------------------------------- |
+| `apps/api/src/common/services/period-classifier.service.ts`         | `typescript:S3923` | condicionais que devolvem o mesmo valor  |
+| `apps/api/src/modules/auth/auth.service.ts`                         | `typescript:S6959` | `reduce()` sem valor inicial             |
 | `apps/web/components/pdv/comanda-modal/hooks/use-product-filter.ts` | `typescript:S2871` | ordenação alfabética sem `localeCompare` |
-| `apps/web/components/staff-mobile/mobile-order-builder.tsx` | `typescript:S2871` | ordenação sem comparação local confiável |
-| múltiplos componentes interativos | `typescript:S1082` | clique visível sem listener de teclado |
+| `apps/web/components/staff-mobile/mobile-order-builder.tsx`         | `typescript:S2871` | ordenação sem comparação local confiável |
+| múltiplos componentes interativos                                   | `typescript:S1082` | clique visível sem listener de teclado   |
 
 **Security hotspots que exigem revisão humana**
 
-| Grupo | Exemplos | Leitura |
-| --- | --- | --- |
-| senha hard-coded potencial | `apps/api/src/common/constants/password.ts:3`, `apps/api/src/modules/auth/auth.service.ts:597`, `packages/types/src/validation-patterns.ts:20` | revisar se são constantes legítimas de política ou segredos indevidos |
-| regex potencialmente cara | `apps/api/src/common/utils/otel.util.ts:136`, `apps/api/src/modules/currency/currency.service.ts:140` | confirmar ausência de risco de backtracking explosivo |
-| PRNG não criptográfico | `apps/web/components/marketing/space-background.tsx`, `apps/web/lib/api.ts:1264`, `apps/web/lib/operations/operations-optimistic.ts:170` | muitos serão benignos, mas precisam de triagem para não mascarar uso indevido |
+| Grupo                      | Exemplos                                                                                                                                       | Leitura                                                                       |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| senha hard-coded potencial | `apps/api/src/common/constants/password.ts:3`, `apps/api/src/modules/auth/auth.service.ts:597`, `packages/types/src/validation-patterns.ts:20` | revisar se são constantes legítimas de política ou segredos indevidos         |
+| regex potencialmente cara  | `apps/api/src/common/utils/otel.util.ts:136`, `apps/api/src/modules/currency/currency.service.ts:140`                                          | confirmar ausência de risco de backtracking explosivo                         |
+| PRNG não criptográfico     | `apps/web/components/marketing/space-background.tsx`, `apps/web/lib/api.ts:1264`, `apps/web/lib/operations/operations-optimistic.ts:170`       | muitos serão benignos, mas precisam de triagem para não mascarar uso indevido |
 
 > Leitura sênior: o scan mostrou pouca evidência de vulnerabilidade concreta, mas mostrou bastante dívida de **clareza, acessibilidade, complexidade e revisão de hotspots**.
 
@@ -169,21 +169,21 @@ Depois do baseline local, atacamos o bloco mais importante para o gate: blockers
 
 ### Resultado real após a Sprint 1
 
-| Métrica | Antes | Depois | Delta |
-| --- | ---: | ---: | ---: |
-| Quality Gate | `OK` permissivo | `PASSED` | — |
-| Issues abertas | `658` | `649` | `-9` |
-| Code Smells | `630` | `627` | `-3` |
-| Bugs | `28` | `22` | `-6` |
-| Vulnerabilities | `0` | `0` | `0` |
-| Security Hotspots | `47` | `46` | `-1` |
-| Severidade `BLOCKER` | `2` | `0` | `-2` |
-| Severidade `CRITICAL` | `48` | `45` | `-3` |
-| Severidade `MAJOR` | `232` | `228` | `-4` |
-| Severidade `MINOR` | `376` | `376` | `0` |
-| Cobertura consolidada no Sonar | `55.8%` | `57.8%` | `+2.0 pp` |
-| `new_coverage` | — | `84.2%` | gate verde |
-| `new_violations` | — | `0` | gate verde |
+| Métrica                        |           Antes |   Depois |      Delta |
+| ------------------------------ | --------------: | -------: | ---------: |
+| Quality Gate                   | `OK` permissivo | `PASSED` |          — |
+| Issues abertas                 |           `658` |    `649` |       `-9` |
+| Code Smells                    |           `630` |    `627` |       `-3` |
+| Bugs                           |            `28` |     `22` |       `-6` |
+| Vulnerabilities                |             `0` |      `0` |        `0` |
+| Security Hotspots              |            `47` |     `46` |       `-1` |
+| Severidade `BLOCKER`           |             `2` |      `0` |       `-2` |
+| Severidade `CRITICAL`          |            `48` |     `45` |       `-3` |
+| Severidade `MAJOR`             |           `232` |    `228` |       `-4` |
+| Severidade `MINOR`             |           `376` |    `376` |        `0` |
+| Cobertura consolidada no Sonar |         `55.8%` |  `57.8%` |  `+2.0 pp` |
+| `new_coverage`                 |               — |  `84.2%` | gate verde |
+| `new_violations`               |               — |      `0` | gate verde |
 
 ### O que realmente derrubava o gate
 
@@ -240,19 +240,19 @@ Depois da Sprint 1, atacamos os hotspots mais seguros de complexidade e rodamos 
 
 ### Resultado real após a Sprint 2
 
-| Métrica | Pós Sprint 1 | Pós Sprint 2 | Delta |
-| --- | ---: | ---: | ---: |
-| Issues abertas | `649` | `627` | `-22` |
-| Code Smells | `627` | `606` | `-21` |
-| Bugs | `22` | `20` | `-2` |
-| Vulnerabilities | `0` | `0` | `0` |
-| Severidade `BLOCKER` | `0` | `0` | `0` |
-| Severidade `CRITICAL` | `45` | `29` | `-16` |
-| Severidade `MAJOR` | `228` | `223` | `-5` |
-| Severidade `MINOR` | `376` | `374` | `-2` |
-| `new_violations` | `0` | `0` | manteve |
-| `new_blocker_violations` | `0` | `0` | manteve |
-| `new_critical_violations` | `0` | `0` | manteve |
+| Métrica                   | Pós Sprint 1 | Pós Sprint 2 |   Delta |
+| ------------------------- | -----------: | -----------: | ------: |
+| Issues abertas            |        `649` |        `627` |   `-22` |
+| Code Smells               |        `627` |        `606` |   `-21` |
+| Bugs                      |         `22` |         `20` |    `-2` |
+| Vulnerabilities           |          `0` |          `0` |     `0` |
+| Severidade `BLOCKER`      |          `0` |          `0` |     `0` |
+| Severidade `CRITICAL`     |         `45` |         `29` |   `-16` |
+| Severidade `MAJOR`        |        `228` |        `223` |    `-5` |
+| Severidade `MINOR`        |        `376` |        `374` |    `-2` |
+| `new_violations`          |          `0` |          `0` | manteve |
+| `new_blocker_violations`  |          `0` |          `0` | manteve |
+| `new_critical_violations` |          `0` |          `0` | manteve |
 
 ### Como endurecemos o gate
 
@@ -271,13 +271,13 @@ Condições:
 - Status: `FAILED`
 - Leitura honesta: **o código novo ficou limpo de novas violações**, mas **a cobertura do código novo ainda não atingiu a régua mais dura**
 
-| Condição | Resultado |
-| --- | --- |
-| `new_coverage >= 90%` | `74.5%` ❌ |
-| `new_duplicated_lines_density <= 3%` | `0.0%` ✅ |
-| `new_violations = 0` | `0` ✅ |
-| `new_blocker_violations = 0` | `0` ✅ |
-| `new_critical_violations = 0` | `0` ✅ |
+| Condição                             | Resultado  |
+| ------------------------------------ | ---------- |
+| `new_coverage >= 90%`                | `74.5%` ❌ |
+| `new_duplicated_lines_density <= 3%` | `0.0%` ✅  |
+| `new_violations = 0`                 | `0` ✅     |
+| `new_blocker_violations = 0`         | `0` ✅     |
+| `new_critical_violations = 0`        | `0` ✅     |
 
 ### Fechamento da força-tarefa Sonar — `2026-04-03`
 
@@ -302,22 +302,22 @@ Depois da rodada inicial, atacamos exatamente o que o gate estrito estava pedind
 - scan estrito atualizado: `docs/release/sonarqube-local-strict-scan-2026-04-03.json`
 - resumo atualizado: `docs/release/sonarqube-local-scan-2026-04-03.json`
 
-| Métrica | Pós Sprint 2 | Pós força-tarefa | Delta |
-| --- | ---: | ---: | ---: |
-| Quality Gate estrito | `FAILED` | `PASSED` | ✅ |
-| Issues abertas | `627` | `573` | `-54` |
-| Code Smells | `606` | `573` | `-33` |
-| Bugs | `20` | `0` | `-20` |
-| Vulnerabilities | `0` | `0` | `0` |
-| Security Hotspots | `46` | `46` | `0` |
-| Severidade `BLOCKER` | `0` | `0` | `0` |
-| Severidade `CRITICAL` | `29` | `29` | `0` |
-| Severidade `MAJOR` | `223` | `192` | `-31` |
-| Severidade `MINOR` | `374` | `352` | `-22` |
-| `new_coverage` | `74.5%` | `90.9%` | `+16.4 pp` |
-| `new_violations` | `0` | `0` | manteve |
-| `new_blocker_violations` | `0` | `0` | manteve |
-| `new_critical_violations` | `0` | `0` | manteve |
+| Métrica                   | Pós Sprint 2 | Pós força-tarefa |      Delta |
+| ------------------------- | -----------: | ---------------: | ---------: |
+| Quality Gate estrito      |     `FAILED` |         `PASSED` |         ✅ |
+| Issues abertas            |        `627` |            `573` |      `-54` |
+| Code Smells               |        `606` |            `573` |      `-33` |
+| Bugs                      |         `20` |              `0` |      `-20` |
+| Vulnerabilities           |          `0` |              `0` |        `0` |
+| Security Hotspots         |         `46` |             `46` |        `0` |
+| Severidade `BLOCKER`      |          `0` |              `0` |        `0` |
+| Severidade `CRITICAL`     |         `29` |             `29` |        `0` |
+| Severidade `MAJOR`        |        `223` |            `192` |      `-31` |
+| Severidade `MINOR`        |        `374` |            `352` |      `-22` |
+| `new_coverage`            |      `74.5%` |          `90.9%` | `+16.4 pp` |
+| `new_violations`          |          `0` |              `0` |    manteve |
+| `new_blocker_violations`  |          `0` |              `0` |    manteve |
+| `new_critical_violations` |          `0` |              `0` |    manteve |
 
 ### O que essa leitura significa agora
 
@@ -355,25 +355,25 @@ Mesmo sem o servidor SonarQube configurado, já levantamos um baseline técnico 
 
 ### Cobertura atual
 
-| Área | Statements | Branches | Functions | Lines | Evidência |
-| --- | ---: | ---: | ---: | ---: | --- |
-| API (`apps/api`) | `90.20%` | `74.40%` | `92.58%` | `90.05%` | `apps/api/coverage/coverage-summary.json` |
-| Web (`apps/web`) | `69.87%` | `57.70%` | `69.72%` | `70.43%` | `apps/web/coverage/coverage-summary.json` |
+| Área             | Statements | Branches | Functions |    Lines | Evidência                                 |
+| ---------------- | ---------: | -------: | --------: | -------: | ----------------------------------------- |
+| API (`apps/api`) |   `90.20%` | `74.40%` |  `92.58%` | `90.05%` | `apps/api/coverage/coverage-summary.json` |
+| Web (`apps/web`) |   `69.87%` | `57.70%` |  `69.72%` | `70.43%` | `apps/web/coverage/coverage-summary.json` |
 
 ### Hotspots técnicos já visíveis
 
-| Área | Evidência | Leitura |
-| --- | --- | --- |
-| `apps/api/src/modules/auth/auth.service.ts` | `71.97%` lines / `55.17%` branches | serviço grande demais e com muita lógica crítica concentrada |
-| `apps/api/src/common/services/cache.service.ts` | `70.88%` lines | camada sensível para fail-open, invalidação e aquecimento |
-| `apps/api/src/modules/finance/finance.service.ts` | `82.81%` lines / `61.11%` branches | hotspot do resumo financeiro e do cold rebuild |
-| `apps/api/src/modules/operations-realtime/operations-realtime.gateway.ts` | `76.47%` lines / `56.66%` branches | peça central de socket, ainda com bordas pouco cobertas |
-| `apps/api/src/modules/employees/employees.service.ts` | `75.34%` lines | domínio importante com cobertura ainda mediana |
-| `apps/web/components/operations/use-operations-realtime.ts` | `59.36%` lines / `46.13%` branches | hook crítico e complexo, propenso a regressão silenciosa |
-| `apps/web/components/staff-mobile/staff-mobile-shell.tsx` | `39.81%` lines | shell crítico do fluxo de atendimento, pouco protegido |
-| `apps/web/components/owner-mobile/owner-mobile-shell.tsx` | `47.82%` lines | jornada do dono ainda sem cobertura confortável |
-| `apps/web/components/staff-mobile/mobile-comanda-list.tsx` | `50.81%` lines / `30.10%` branches | lista crítica do PDV mobile ainda frágil |
-| `apps/web/components/shared/use-pull-to-refresh.ts` | `48.88%` lines / `17.39%` branches | comportamento de gesto ainda pouco garantido |
+| Área                                                                      | Evidência                          | Leitura                                                      |
+| ------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `apps/api/src/modules/auth/auth.service.ts`                               | `71.97%` lines / `55.17%` branches | serviço grande demais e com muita lógica crítica concentrada |
+| `apps/api/src/common/services/cache.service.ts`                           | `70.88%` lines                     | camada sensível para fail-open, invalidação e aquecimento    |
+| `apps/api/src/modules/finance/finance.service.ts`                         | `82.81%` lines / `61.11%` branches | hotspot do resumo financeiro e do cold rebuild               |
+| `apps/api/src/modules/operations-realtime/operations-realtime.gateway.ts` | `76.47%` lines / `56.66%` branches | peça central de socket, ainda com bordas pouco cobertas      |
+| `apps/api/src/modules/employees/employees.service.ts`                     | `75.34%` lines                     | domínio importante com cobertura ainda mediana               |
+| `apps/web/components/operations/use-operations-realtime.ts`               | `59.36%` lines / `46.13%` branches | hook crítico e complexo, propenso a regressão silenciosa     |
+| `apps/web/components/staff-mobile/staff-mobile-shell.tsx`                 | `39.81%` lines                     | shell crítico do fluxo de atendimento, pouco protegido       |
+| `apps/web/components/owner-mobile/owner-mobile-shell.tsx`                 | `47.82%` lines                     | jornada do dono ainda sem cobertura confortável              |
+| `apps/web/components/staff-mobile/mobile-comanda-list.tsx`                | `50.81%` lines / `30.10%` branches | lista crítica do PDV mobile ainda frágil                     |
+| `apps/web/components/shared/use-pull-to-refresh.ts`                       | `48.88%` lines / `17.39%` branches | comportamento de gesto ainda pouco garantido                 |
 
 ---
 
@@ -571,9 +571,9 @@ O primeiro scan local já aconteceu. A partir daqui, este arquivo deve ser manti
 
 ### Modelo de registro
 
-| Key | Severidade | Arquivo | Regra | Sprint | Status |
-| --- | --- | --- | --- | --- | --- |
-| `SONAR-001` | Critical | `apps/api/src/modules/auth/auth.service.ts` | _preencher após scan_ | Sprint 1 | Aberto |
+| Key         | Severidade | Arquivo                                     | Regra                 | Sprint   | Status |
+| ----------- | ---------- | ------------------------------------------- | --------------------- | -------- | ------ |
+| `SONAR-001` | Critical   | `apps/api/src/modules/auth/auth.service.ts` | _preencher após scan_ | Sprint 1 | Aberto |
 
 ---
 

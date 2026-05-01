@@ -83,7 +83,7 @@ export function AccountProfileCard({
 
         {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
-        <Button fullWidth disabled={!isDirty && !loading} loading={loading} size="lg" type="submit">
+        <Button fullWidth disabled={!(isDirty || loading)} loading={loading} size="lg" type="submit">
           Salvar perfil
         </Button>
       </form>

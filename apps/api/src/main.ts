@@ -174,7 +174,7 @@ function assertBootstrapSecrets(
   if (isTestEnvironment) {
     return
   }
-  if (!isConfiguredSecret(cookieSecret, 16) || !isConfiguredSecret(csrfSecret, 32)) {
+  if (!(isConfiguredSecret(cookieSecret, 16) && isConfiguredSecret(csrfSecret, 32))) {
     throw new Error(
       'Defina COOKIE_SECRET (>=16 chars) e CSRF_SECRET (>=32 chars) com valores fortes e sem placeholder change-me antes de iniciar a API.',
     )
@@ -211,9 +211,7 @@ function configureApiDocs(app: INestApplication, apiDocsEnabled: boolean, logger
       customSiteTitle: 'Desk Imperial API Docs',
     })
   } catch (error) {
-    logger.warn(
-      `API docs desabilitadas neste boot: ${error instanceof Error ? error.message : String(error)}`,
-    )
+    logger.warn(`API docs desabilitadas neste boot: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

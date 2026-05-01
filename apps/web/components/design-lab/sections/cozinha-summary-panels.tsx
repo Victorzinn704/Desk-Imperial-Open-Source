@@ -26,9 +26,12 @@ export function buildKitchenSummary(data: OperationsKitchenResponse | undefined)
   const ready = data?.statusCounts.ready ?? 0
   const total = data?.items.length ?? 0
   const activeMesas = new Set((data?.items ?? []).map((item) => item.mesaLabel)).size
-  const oldestQueued = [...(data?.items ?? [])]
-    .filter((item) => item.kitchenQueuedAt)
-    .sort((left, right) => new Date(left.kitchenQueuedAt ?? 0).getTime() - new Date(right.kitchenQueuedAt ?? 0).getTime())[0] ?? null
+  const oldestQueued =
+    [...(data?.items ?? [])]
+      .filter((item) => item.kitchenQueuedAt)
+      .sort(
+        (left, right) => new Date(left.kitchenQueuedAt ?? 0).getTime() - new Date(right.kitchenQueuedAt ?? 0).getTime(),
+      )[0] ?? null
 
   return {
     queued,
@@ -72,10 +75,30 @@ export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSum
           </div>
 
           <div className="space-y-0">
-            <KitchenSignalRow label="na fila" note="pedidos aguardando início" tone={summary.queued > 0 ? 'warning' : 'neutral'} value={String(summary.queued)} />
-            <KitchenSignalRow label="em preparo" note="itens sob execução agora" tone={summary.inPreparation > 0 ? 'info' : 'neutral'} value={String(summary.inPreparation)} />
-            <KitchenSignalRow label="prontos" note="pedidos que já podem sair" tone={summary.ready > 0 ? 'success' : 'neutral'} value={String(summary.ready)} />
-            <KitchenSignalRow label="próxima ação" note="o próximo passo operacional já vem pronto" tone={resolveNextActionTone(summary)} value={resolveNextActionLabel(summary)} />
+            <KitchenSignalRow
+              label="na fila"
+              note="pedidos aguardando início"
+              tone={summary.queued > 0 ? 'warning' : 'neutral'}
+              value={String(summary.queued)}
+            />
+            <KitchenSignalRow
+              label="em preparo"
+              note="itens sob execução agora"
+              tone={summary.inPreparation > 0 ? 'info' : 'neutral'}
+              value={String(summary.inPreparation)}
+            />
+            <KitchenSignalRow
+              label="prontos"
+              note="pedidos que já podem sair"
+              tone={summary.ready > 0 ? 'success' : 'neutral'}
+              value={String(summary.ready)}
+            />
+            <KitchenSignalRow
+              label="próxima ação"
+              note="o próximo passo operacional já vem pronto"
+              tone={resolveNextActionTone(summary)}
+              value={resolveNextActionLabel(summary)}
+            />
           </div>
         </div>
 
@@ -97,14 +120,25 @@ export function CozinhaSummaryPanels({ summary }: Readonly<{ summary: KitchenSum
 
           <div className="flex flex-wrap gap-2">
             <LabFactPill label="tickets" value={String(summary.total)} />
-            <LabFactPill label="mesa do topo" value={summary.hottestItem ? summary.hottestItem.mesaLabel : 'sem leitura'} />
+            <LabFactPill
+              label="mesa do topo"
+              value={summary.hottestItem ? summary.hottestItem.mesaLabel : 'sem leitura'}
+            />
             <LabFactPill label="fila desde" value={summary.total > 0 ? summary.oldestQueuedLabel : 'agora'} />
           </div>
 
           <div className="space-y-0">
             <KitchenMetaRow label="pressão" tone={summary.pressureTone} value={resolvePressureLabel(summary)} />
-            <KitchenMetaRow label="cozinheiro do topo" tone="neutral" value={summary.hottestItem?.employeeName ?? 'sem leitura'} />
-            <KitchenMetaRow label="status" tone={summary.total > 0 ? 'info' : 'success'} value={summary.total > 0 ? 'operação viva' : 'cozinha livre'} />
+            <KitchenMetaRow
+              label="cozinheiro do topo"
+              tone="neutral"
+              value={summary.hottestItem?.employeeName ?? 'sem leitura'}
+            />
+            <KitchenMetaRow
+              label="status"
+              tone={summary.total > 0 ? 'info' : 'success'}
+              value={summary.total > 0 ? 'operação viva' : 'cozinha livre'}
+            />
           </div>
         </div>
       </div>

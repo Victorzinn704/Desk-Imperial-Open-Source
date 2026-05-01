@@ -32,13 +32,10 @@ import {
 import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
 import { formatCurrency } from '@/lib/currency'
 
-const StaffMobileShell = dynamic(
-  () => import('@/components/staff-mobile').then((module) => module.StaffMobileShell),
-  {
-    ssr: false,
-    loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
-  },
-)
+const StaffMobileShell = dynamic(() => import('@/components/staff-mobile').then((module) => module.StaffMobileShell), {
+  ssr: false,
+  loading: () => <MobileShellLoadingState label="Carregando operacional mobile..." />,
+})
 
 const OwnerMobileShell = dynamic(
   () => import('@/components/owner-mobile/owner-mobile-shell').then((module) => module.OwnerMobileShell),
@@ -50,7 +47,10 @@ const OwnerMobileShell = dynamic(
 
 // ── Section heading labels ──────────────────────────────────────────────────────
 
-const sectionLabels: Record<DashboardProductSectionId | 'settings', { title: string; description: string; meta: string }> = {
+const sectionLabels: Record<
+  DashboardProductSectionId | 'settings',
+  { title: string; description: string; meta: string }
+> = {
   overview: {
     title: 'Overview',
     description: 'Visão geral da operação',
@@ -267,7 +267,9 @@ export function DashboardShell({
       })
       navigateToSection('pdv')
 
-      if (typeof document === 'undefined') {return}
+      if (typeof document === 'undefined') {
+        return
+      }
 
       globalThis.setTimeout(() => {
         const targetElement = document.getElementById('workspace-header')
@@ -346,7 +348,9 @@ export function DashboardShell({
                 {introFacts.map((fact) => (
                   <div className="wireframe-intro-fact" key={fact.label}>
                     <span className="wireframe-intro-fact__label">{fact.label}</span>
-                    <span className={`wireframe-intro-fact__value wireframe-intro-fact__value--${fact.tone}`}>{fact.value}</span>
+                    <span className={`wireframe-intro-fact__value wireframe-intro-fact__value--${fact.tone}`}>
+                      {fact.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -418,7 +422,9 @@ function DashboardWireframeHeader({
         <BrandMark
           href={buildDashboardHref('overview', activeSettingsSection, 'principal', basePath)}
           onClick={(event) => {
-            if (!shouldHandleDashboardNav(event)) {return}
+            if (!shouldHandleDashboardNav(event)) {
+              return
+            }
             event.preventDefault()
             onNavigate('overview', 'principal')
           }}
@@ -434,7 +440,9 @@ function DashboardWireframeHeader({
             href={buildDashboardHref('settings', 'account', undefined, basePath)}
             title={`${user.fullName} · ${user.email}`}
             onClick={(event) => {
-              if (!shouldHandleDashboardNav(event)) {return}
+              if (!shouldHandleDashboardNav(event)) {
+                return
+              }
               event.preventDefault()
               onNavigateSettings('account')
             }}
@@ -455,11 +463,17 @@ function DashboardWireframeHeader({
             return (
               <Link
                 aria-current={active ? 'page' : undefined}
-                className={active ? 'wireframe-primary-nav__item wireframe-primary-nav__item--active' : 'wireframe-primary-nav__item'}
+                className={
+                  active
+                    ? 'wireframe-primary-nav__item wireframe-primary-nav__item--active'
+                    : 'wireframe-primary-nav__item'
+                }
                 href={buildDashboardHref(item.id, activeSettingsSection, undefined, basePath)}
                 key={item.id}
                 onClick={(event) => {
-                  if (!shouldHandleDashboardNav(event)) {return}
+                  if (!shouldHandleDashboardNav(event)) {
+                    return
+                  }
                   event.preventDefault()
                   onNavigate(item.id)
                 }}
@@ -489,7 +503,9 @@ function DashboardWireframeHeader({
                 key={tab.id}
                 title={tab.description}
                 onClick={(event) => {
-                  if (!shouldHandleDashboardNav(event)) {return}
+                  if (!shouldHandleDashboardNav(event)) {
+                    return
+                  }
                   event.preventDefault()
                   onNavigateTab(tab.id)
                 }}
@@ -507,9 +523,15 @@ function DashboardWireframeHeader({
 }
 
 function shouldHandleDashboardNav(event: ReactMouseEvent<HTMLAnchorElement>) {
-  if (event.defaultPrevented) {return false}
-  if (event.button !== 0) {return false}
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {return false}
+  if (event.defaultPrevented) {
+    return false
+  }
+  if (event.button !== 0) {
+    return false
+  }
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return false
+  }
   const target = event.currentTarget.getAttribute('target')
   return !target || target === '_self'
 }

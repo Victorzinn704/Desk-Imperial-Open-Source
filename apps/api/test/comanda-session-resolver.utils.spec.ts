@@ -31,15 +31,10 @@ describe('resolveComandaSessionContext', () => {
     }
 
     await expect(
-      resolveComandaSessionContext(
-        prisma as any,
-        helpers as any,
-        'OWNER',
-        'owner-1',
-        operationalBusinessDate,
-        null,
-        { employeeId: 'emp-1', cashSessionId: 'cash-other' } as any,
-      ),
+      resolveComandaSessionContext(prisma as any, helpers as any, 'OWNER', 'owner-1', operationalBusinessDate, null, {
+        employeeId: 'emp-1',
+        cashSessionId: 'cash-other',
+      } as any),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -60,15 +55,9 @@ describe('resolveComandaSessionContext', () => {
     }
 
     await expect(
-      resolveComandaSessionContext(
-        prisma as any,
-        helpers as any,
-        'OWNER',
-        'owner-1',
-        operationalBusinessDate,
-        null,
-        { cashSessionId: 'cash-closed' } as any,
-      ),
+      resolveComandaSessionContext(prisma as any, helpers as any, 'OWNER', 'owner-1', operationalBusinessDate, null, {
+        cashSessionId: 'cash-closed',
+      } as any),
     ).rejects.toThrow('O caixa informado precisa estar aberto para receber comandas.')
   })
 
@@ -89,15 +78,9 @@ describe('resolveComandaSessionContext', () => {
     }
 
     await expect(
-      resolveComandaSessionContext(
-        prisma as any,
-        helpers as any,
-        'OWNER',
-        'owner-1',
-        operationalBusinessDate,
-        null,
-        { cashSessionId: 'cash-other-day' } as any,
-      ),
+      resolveComandaSessionContext(prisma as any, helpers as any, 'OWNER', 'owner-1', operationalBusinessDate, null, {
+        cashSessionId: 'cash-other-day',
+      } as any),
     ).rejects.toThrow('O caixa informado pertence a outro dia operacional.')
   })
 
@@ -123,15 +106,10 @@ describe('resolveComandaSessionContext', () => {
     }
 
     await expect(
-      resolveComandaSessionContext(
-        prisma as any,
-        helpers as any,
-        'OWNER',
-        'owner-1',
-        operationalBusinessDate,
-        null,
-        { employeeId: 'emp-1', cashSessionId: 'cash-emp-1' } as any,
-      ),
+      resolveComandaSessionContext(prisma as any, helpers as any, 'OWNER', 'owner-1', operationalBusinessDate, null, {
+        employeeId: 'emp-1',
+        cashSessionId: 'cash-emp-1',
+      } as any),
     ).resolves.toEqual({
       currentEmployeeId: 'emp-1',
       cashSessionId: 'cash-emp-1',

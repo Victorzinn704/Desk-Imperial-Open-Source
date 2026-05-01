@@ -143,8 +143,11 @@ export async function POST(request: Request) {
     const packagingText = firstNonEmpty([product.packaging_text_pt, product.packaging_text, product.packaging])
     const packagingClass = inferPackagingClass(name, packagingText, quantity.quantityLabel)
 
-    if (!name && !brand && !category && !quantity.quantityLabel && !packagingClass && !description) {
-      return NextResponse.json({ message: 'EAN encontrado, mas sem dados suficientes para pre-preenchimento.' }, { status: 404 })
+    if (!(name || brand || category || quantity.quantityLabel || packagingClass || description)) {
+      return NextResponse.json(
+        { message: 'EAN encontrado, mas sem dados suficientes para pre-preenchimento.' },
+        { status: 404 },
+      )
     }
 
     const nationalBeverageMatch = resolveBrazilianPackagedBeverageMatch({
@@ -285,11 +288,7 @@ function extractQuantity(rawQuantity: string | undefined) {
   }
 }
 
-function inferPackagingClass(
-  name: string | null,
-  packagingText: string | null,
-  quantityLabel: string | null,
-) {
+function inferPackagingClass(name: string | null, packagingText: string | null, quantityLabel: string | null) {
   const source = `${packagingText ?? ''} ${name ?? ''}`.toLowerCase()
   const packagingBase = resolvePackagingBase(source)
 

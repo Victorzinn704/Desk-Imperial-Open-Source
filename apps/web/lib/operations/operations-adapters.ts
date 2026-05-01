@@ -138,7 +138,6 @@ function mapCashMovementType(
       return 'supply'
     case 'WITHDRAWAL':
       return 'withdrawal'
-    case 'ADJUSTMENT':
     default:
       return 'adjustment'
   }
@@ -155,7 +154,6 @@ function mapComandaStatus(
     case 'CLOSED':
     case 'CANCELLED':
       return 'closed'
-    case 'OPEN':
     default:
       return 'open'
   }

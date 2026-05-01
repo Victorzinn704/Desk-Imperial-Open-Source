@@ -37,35 +37,42 @@ Documentação ruim é dívida técnica invisível. Este agente garante que o pr
 ## Tipos de documentação no projeto
 
 ### README principal
+
 - Visão do produto, como rodar localmente, variáveis de ambiente, estrutura do projeto
 - Deve estar sempre atualizado — é a primeira coisa que qualquer pessoa lê
 - Não incluir detalhes técnicos profundos — referenciar docs específicos
 
 ### Docs de arquitetura (`docs/architecture/`)
+
 - Decisões técnicas com contexto e motivação
 - Fluxos críticos (autenticação, deploy, dados)
 - Padrões de código e convenções
 
 ### Docs de segurança (`docs/security/`)
+
 - Baseline de segurança do projeto
 - Checklist de deploy
 - Guia de observabilidade e logs
 
 ### Docs de frontend (`docs/frontend/`)
+
 - Guia de UI e componentes
 - Padrões de estado e fetch
 
 ### Docs de testes (`docs/testing/`)
+
 - Como rodar testes
 - Estratégia de cobertura
 - Padrões de mock e setup
 
 ### Changelog e commits
+
 - Commits devem seguir o padrão definido em `11-git-and-delivery.md`
 - Mudanças significativas devem ter contexto no corpo do commit
 - Nunca incluir assinatura de ferramentas em mensagens de commit ou docs públicos
 
 ### Case studies (`docs/case-studies/`)
+
 - Incidentes, decisões e aprendizados registrados pelo agente 30
 - Complementam a documentação técnica com contexto histórico
 

@@ -74,7 +74,7 @@ export function syncSummarySnapshotFromLive(
   summarySnapshot: OperationsSummaryResponse | null | undefined,
   liveSnapshot: OperationsLiveResponse | null | undefined,
 ) {
-  if (!summarySnapshot || !liveSnapshot) {
+  if (!(summarySnapshot && liveSnapshot)) {
     return null
   }
 

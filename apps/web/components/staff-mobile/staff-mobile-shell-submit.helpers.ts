@@ -1,7 +1,7 @@
 'use client'
 
 import { toast } from 'sonner'
-import { type QueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { haptic } from '@/components/shared/haptic'
 import { calcSubtotal, type ComandaItem } from '@/components/pdv/pdv-types'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'

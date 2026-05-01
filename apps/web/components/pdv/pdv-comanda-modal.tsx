@@ -10,7 +10,7 @@ import {
   type SimpleProduct,
   useComandaModalController,
 } from './comanda-modal'
-import { type Comanda } from './pdv-types'
+import type { Comanda } from './pdv-types'
 
 type PdvComandaModalProps = Readonly<{
   busy?: boolean

@@ -28,7 +28,11 @@ const POSITIVE_NUMBER_KEYS = [
   'REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS',
   'OTEL_METRICS_EXPORT_INTERVAL_MS',
 ]
-const SAMPLE_RATE_KEYS = ['OTEL_TRACES_SAMPLE_RATE', 'SENTRY_TRACES_SAMPLE_RATE', 'SENTRY_PROFILE_SESSION_SAMPLE_RATE'] as const
+const SAMPLE_RATE_KEYS = [
+  'OTEL_TRACES_SAMPLE_RATE',
+  'SENTRY_TRACES_SAMPLE_RATE',
+  'SENTRY_PROFILE_SESSION_SAMPLE_RATE',
+] as const
 const REDIS_URL_CANDIDATE_KEYS = getRedisUrlKeys()
 const PRODUCTION_DEFAULT_SECRET_VALUES: Record<string, string[]> = {
   COOKIE_SECRET: ['change-me', 'replace-with-a-long-random-cookie-secret'],
@@ -166,11 +170,7 @@ function validateTrustProxy(trustProxyValue: string | undefined, issues: string[
 }
 
 function validateSentryProfileLifecycle(profileLifecycleValue: string | undefined, issues: string[]) {
-  if (
-    profileLifecycleValue !== undefined &&
-    profileLifecycleValue !== 'manual' &&
-    profileLifecycleValue !== 'trace'
-  ) {
+  if (profileLifecycleValue !== undefined && profileLifecycleValue !== 'manual' && profileLifecycleValue !== 'trace') {
     issues.push('SENTRY_PROFILE_LIFECYCLE deve ser "manual" ou "trace".')
   }
 }

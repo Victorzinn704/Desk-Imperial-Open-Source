@@ -42,9 +42,10 @@ export function CookieConsentBanner() {
     return null
   }
 
-  const bottomOffsetClass = pathname === '/app/owner' || pathname === '/app/staff'
-    ? 'bottom-[6.25rem] sm:bottom-[6.75rem]'
-    : 'bottom-4 sm:bottom-5'
+  const bottomOffsetClass =
+    pathname === '/app/owner' || pathname === '/app/staff'
+      ? 'bottom-[6.25rem] sm:bottom-[6.75rem]'
+      : 'bottom-4 sm:bottom-5'
 
   const handleDecision = async (choice: CookieConsentChoice) => {
     setIsSubmitting(true)
@@ -119,13 +120,20 @@ export function CookieConsentBanner() {
         </div>
 
         <div className="grid grid-cols-3 gap-1.5">
-          <ConsentActionButton disabled={isSubmitting} onClick={() => void handleDecision({ analytics: false, marketing: false })}>
+          <ConsentActionButton
+            disabled={isSubmitting}
+            onClick={() => void handleDecision({ analytics: false, marketing: false })}
+          >
             Essenciais
           </ConsentActionButton>
           <ConsentActionButton disabled={isSubmitting} onClick={() => void handleDecision(preferences)}>
             Salvar
           </ConsentActionButton>
-          <ConsentActionButton primary disabled={isSubmitting} onClick={() => void handleDecision({ analytics: true, marketing: true })}>
+          <ConsentActionButton
+            primary
+            disabled={isSubmitting}
+            onClick={() => void handleDecision({ analytics: true, marketing: true })}
+          >
             Aceitar
           </ConsentActionButton>
         </div>

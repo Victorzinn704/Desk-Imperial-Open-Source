@@ -23,11 +23,11 @@ const socialLinks = [
 const floatingMotion = [
   {
     animate: { y: [0, -12, 0], x: [0, 1, 0], rotate: [0, -1.5, 0] },
-    transition: { duration: 4.6, repeat: Infinity, ease: 'easeInOut' as const },
+    transition: { duration: 4.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' as const },
   },
   {
     animate: { y: [-2, -16, -2], x: [0, -1, 0], rotate: [0, 1.5, 0] },
-    transition: { duration: 5.2, repeat: Infinity, ease: 'easeInOut' as const, delay: 0.35 },
+    transition: { duration: 5.2, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' as const, delay: 0.35 },
   },
 ]
 

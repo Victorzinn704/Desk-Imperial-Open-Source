@@ -200,7 +200,7 @@ export function LandingPage() {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     const syncCursorMode = () => {
-      const shouldHideNativeCursor = !coarsePointer.matches && !reducedMotion.matches
+      const shouldHideNativeCursor = !(coarsePointer.matches || reducedMotion.matches)
       document.body.classList.toggle('cursor-none', shouldHideNativeCursor)
     }
 

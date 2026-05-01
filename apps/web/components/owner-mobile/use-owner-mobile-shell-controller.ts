@@ -213,17 +213,9 @@ function useOwnerHandleSubmit({
 
       try {
         if (pendingAction.type === 'edit') {
-          await replaceExistingComanda(
-            pendingAction,
-            items,
-            mutations.replaceComandaMutation.mutateAsync,
-          )
+          await replaceExistingComanda(pendingAction, items, mutations.replaceComandaMutation.mutateAsync)
         } else if (pendingAction.type === 'add') {
-          await submitExistingComanda(
-            pendingAction.comandaId,
-            items,
-            mutations.addComandaItemsMutation.mutateAsync,
-          )
+          await submitExistingComanda(pendingAction.comandaId, items, mutations.addComandaItemsMutation.mutateAsync)
         } else {
           await submitNewComanda(queryClient, pendingAction, items, mutations.openComandaMutation.mutateAsync)
         }

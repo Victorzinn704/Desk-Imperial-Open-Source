@@ -173,9 +173,18 @@ describe('DashboardShell render path', () => {
   it('expõe hrefs explícitos para seção e subseção ativa', () => {
     render(<DashboardShell />)
 
-    expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute('href', '/dashboard?view=overview&tab=principal')
-    expect(screen.getByRole('link', { name: /principal desk imperial/i })).toHaveAttribute('href', '/dashboard?view=overview&tab=principal')
-    expect(screen.getByRole('link', { name: /pdv · comandas/i })).toHaveAttribute('href', '/dashboard?view=pdv&tab=grid')
+    expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute(
+      'href',
+      '/dashboard?view=overview&tab=principal',
+    )
+    expect(screen.getByRole('link', { name: /principal desk imperial/i })).toHaveAttribute(
+      'href',
+      '/dashboard?view=overview&tab=principal',
+    )
+    expect(screen.getByRole('link', { name: /pdv · comandas/i })).toHaveAttribute(
+      'href',
+      '/dashboard?view=pdv&tab=grid',
+    )
   })
 
   it('mantém top navigation em notebooks compactos sem entrar no modo mobile', () => {

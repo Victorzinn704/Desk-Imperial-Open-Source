@@ -17,9 +17,7 @@ export const MesaFloorCard = memo(function MesaFloorCard({ mesa, isDragging }: M
       style={{
         boxShadow: isDragging ? 'var(--shadow-panel-strong)' : 'var(--shadow-panel)',
         borderColor: isDragging ? 'var(--accent)' : 'var(--border)',
-        backgroundColor: isDragging
-          ? 'color-mix(in srgb, var(--accent) 6%, var(--surface))'
-          : 'var(--surface)',
+        backgroundColor: isDragging ? 'color-mix(in srgb, var(--accent) 6%, var(--surface))' : 'var(--surface)',
         transition: isDragging ? 'none' : 'box-shadow 0.15s, border-color 0.15s, background-color 0.15s',
       }}
     >

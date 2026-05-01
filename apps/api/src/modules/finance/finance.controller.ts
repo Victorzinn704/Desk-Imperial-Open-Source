@@ -3,8 +3,8 @@ import { ApiTags } from '@nestjs/swagger'
 import { CurrentAuth } from '../auth/decorators/current-auth.decorator'
 import type { AuthContext } from '../auth/auth.types'
 import { SessionGuard } from '../auth/guards/session.guard'
-import { FinanceService } from './finance.service'
-import { PillarsService } from './pillars.service'
+import type { FinanceService } from './finance.service'
+import type { PillarsService } from './pillars.service'
 
 @ApiTags('finance')
 @UseGuards(SessionGuard)

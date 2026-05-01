@@ -92,7 +92,9 @@ export function useDashboardNavigation({
       const sectionFromUrl = parseDashboardSectionParam(params.get('view'))
       const settingsFromUrl = parseDashboardSettingsSectionParam(params.get('panel'))
       const roleDefaultSection: DashboardSectionId = isStaffUser ? 'pdv' : dashboardDefaultSection
-      const fallbackSection: DashboardSectionId = allowedSections.has(initialSection) ? initialSection : roleDefaultSection
+      const fallbackSection: DashboardSectionId = allowedSections.has(initialSection)
+        ? initialSection
+        : roleDefaultSection
       let nextSection: DashboardSectionId = fallbackSection
       let nextTab = getDashboardDisplayTab(fallbackSection, initialTab)
       let nextSettingsSection = settingsFromUrl ?? initialSettingsSection
@@ -120,8 +122,8 @@ export function useDashboardNavigation({
           : buildDashboardHref(nextSection, nextSettingsSection, nextTab, basePath)
       const shouldCanonicalize =
         nextSection === 'settings'
-          ? !hasView || !hasPanel
-          : !hasView || !hasTab || globalThis.location.search !== new URL(canonicalHref, 'http://localhost').search
+          ? !(hasView && hasPanel)
+          : !(hasView && hasTab) || globalThis.location.search !== new URL(canonicalHref, 'http://localhost').search
 
       if (shouldCanonicalize) {
         globalThis.history.replaceState({}, '', canonicalHref)

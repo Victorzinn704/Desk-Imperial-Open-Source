@@ -16,7 +16,15 @@ import { TelegramBotService } from './telegram-bot.service'
 import { TelegramLinkService } from './telegram-link.service'
 
 @Module({
-  imports: [AuthModule, EmployeesModule, FinanceModule, MailerModule, MonitoringModule, OperationsModule, OperationsRealtimeModule],
+  imports: [
+    AuthModule,
+    EmployeesModule,
+    FinanceModule,
+    MailerModule,
+    MonitoringModule,
+    OperationsModule,
+    OperationsRealtimeModule,
+  ],
   controllers: [NotificationsController, NotificationPreferencesController],
   providers: [
     TelegramAdapter,

@@ -24,8 +24,8 @@ type OwnerComandaCardCloseActionProps = {
     discountAmount: number,
     serviceFeeAmount: number,
     paymentMethod?: ComandaPaymentMethod,
-  ) => Promise<unknown> | void
-  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
+  ) => Promise<unknown> | undefined
+  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | undefined
   total: number
 }
 
@@ -77,7 +77,7 @@ export function OwnerComandaCardCloseAction({
 function useOwnerClosePaymentState(
   activeComanda: Comanda,
   total: number,
-  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void,
+  onCreatePayment?: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | undefined,
 ) {
   const [paymentMethod, setPaymentMethod] = useState<ComandaPaymentMethod>('PIX')
   const paidAmount =
@@ -171,7 +171,7 @@ function OwnerPartialPaymentControls({
   partialAmountKey: string
   paymentMethod: ComandaPaymentMethod
   remainingAmount: number
-  onCreatePayment: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
+  onCreatePayment: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | undefined
   onPartialAmountChange: (state: { key: string; value: number }) => void
 }) {
   return (
@@ -256,7 +256,7 @@ function OwnerPartialAmountInput({
   partialAmountKey: string
   paymentMethod: ComandaPaymentMethod
   remainingAmount: number
-  onCreatePayment: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | void
+  onCreatePayment: (id: string, amount: number, method: ComandaPaymentMethod) => Promise<unknown> | undefined
   onPartialAmountChange: (state: { key: string; value: number }) => void
 }) {
   return (

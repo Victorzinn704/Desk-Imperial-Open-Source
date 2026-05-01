@@ -91,7 +91,9 @@ export class CreateProductDto {
   @MaxLength(64)
   servingSize?: string
 
-  @ApiPropertyOptional({ example: 'https://images.openfoodfacts.org/images/products/789/123/456/7890/front_pt.3.400.jpg' })
+  @ApiPropertyOptional({
+    example: 'https://images.openfoodfacts.org/images/products/789/123/456/7890/front_pt.3.400.jpg',
+  })
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUrl({ require_protocol: true })

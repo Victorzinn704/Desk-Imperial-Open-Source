@@ -14,19 +14,20 @@ A base de testes e funcional e extensa (57 spec API + 114 test web + 5 E2E), mas
 
 ## Evidencia Quantitativa
 
-| Metrica | API (Jest 30) | Web (Vitest 4) | E2E (Playwright) |
-|---|---|---|---|
-| Arquivos de teste | 57 *.spec.ts | 114 *.test.* | 5 *.spec.ts |
-| Linhas de teste | ~11,200 | ~15,464 | ~486 |
-| Cobertura lines | 90.54% | 69.11% | N/A |
-| Cobertura branches | 75.21% | 60.00% | N/A |
-| Cobertura functions | 91.96% | 66.18% | N/A |
-| Gate configurado | 90% lines / 70% branches | 85% lines / 65% branches | N/A |
-| Gate atingido | SIM | NAO (69.11% < 85%) | N/A |
-| Arqs. com 0% coverage | 2 (comanda-realtime.utils.ts, operations-snapshot.utils.ts) | 2+ (verify-email-form.tsx 3.84%, use-admin-pin.ts 9.09%) | N/A |
-| Maior arquivo de teste | products.service.spec.ts (1,411 linhas) | staff-mobile-shell.test.tsx (832 linhas) | critical-flows.spec.ts (129 linhas) |
-| Testes co-localizados | NAO (todos em api/test/) | SIM (junto ao source) | NAO (pasta e2e/) |
-| Mocks de servicos | 780+ jest.fn() invocacoes | vi.mock() para API modules | Route interception |
+| Metrica                | API (Jest 30)                                               | Web (Vitest 4)                                           | E2E (Playwright)                    |
+| ---------------------- | ----------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------- |
+| Arquivos de teste      | 57 \*.spec.ts                                               | 114 _.test._                                             | 5 \*.spec.ts                        |
+| Linhas de teste        | ~11,200                                                     | ~15,464                                                  | ~486                                |
+| Cobertura lines        | 90.54%                                                      | 69.11%                                                   | N/A                                 |
+| Cobertura branches     | 75.21%                                                      | 60.00%                                                   | N/A                                 |
+| Cobertura functions    | 91.96%                                                      | 66.18%                                                   | N/A                                 |
+| Gate configurado       | 90% lines / 70% branches                                    | 85% lines / 65% branches                                 | N/A                                 |
+| Gate atingido          | SIM                                                         | NAO (69.11% < 85%)                                       | N/A                                 |
+| Arqs. com 0% coverage  | 2 (comanda-realtime.utils.ts, operations-snapshot.utils.ts) | 2+ (verify-email-form.tsx 3.84%, use-admin-pin.ts 9.09%) | N/A                                 |
+| Maior arquivo de teste | products.service.spec.ts (1,411 linhas)                     | staff-mobile-shell.test.tsx (832 linhas)                 | critical-flows.spec.ts (129 linhas) |
+| Testes co-localizados  | NAO (todos em api/test/)                                    | SIM (junto ao source)                                    | NAO (pasta e2e/)                    |
+| Mocks de servicos      | 780+ jest.fn() invocacoes                                   | vi.mock() para API modules                               | Route interception                  |
+
 ---
 
 ## Achados
@@ -35,9 +36,9 @@ A base de testes e funcional e extensa (57 spec API + 114 test web + 5 E2E), mas
 
 - **Severidade:** ALTA
 - **Confianca:** MUITO ALTA
-- **Evidencia:** apps/api/src/modules/ contem 0 arquivos *.spec.ts. Todos os 57 specs estao em apps/api/test/. O jest.config.ts:6 define testRegex: '.*\.spec\.ts$' (sem restricao de diretorio), mas nenhum teste foi colocado nos modulos.
+- **Evidencia:** apps/api/src/modules/ contem 0 arquivos _.spec.ts. Todos os 57 specs estao em apps/api/test/. O jest.config.ts:6 define testRegex: '._\.spec\.ts$' (sem restricao de diretorio), mas nenhum teste foi colocado nos modulos.
 - **Impacto:** Desenvolvedores nao tem visibilidade imediata de quais modulos tem/nao tem cobertura. Arquivos como operations-snapshot.utils.ts (0% coverage, apps/api/coverage/coverage-summary.json:74) e comanda-realtime.utils.ts (0% coverage, linha 63) passam despercebidos. A distancia entre teste e source inibe o habito de escrever testes durante o desenvolvimento.
-- **Recomendacao:** Migrar gradualmente para co-localizacao (src/modules/*/__tests__/) ou adotar convencao de *.spec.ts ao lado do source. Comecar pelos 2 arquivos com 0% coverage.
+- **Recomendacao:** Migrar gradualmente para co-localizacao (src/modules/_/**tests**/) ou adotar convencao de _.spec.ts ao lado do source. Comecar pelos 2 arquivos com 0% coverage.
 - **Esforco:** Medio (requer refatoracao de imports e CI pipeline)
 
 ### TST-002 (P1) - Suite completo falha por dependencia de Redis real
@@ -63,20 +64,21 @@ A base de testes e funcional e extensa (57 spec API + 114 test web + 5 E2E), mas
 - **Impacto:** O fluxo operacional core (PDV -> comanda -> cozinha -> pagamento -> fechamento) nao tem protecao de regressao E2E. Bugs criticos de integracao so seriam detectados em producao.
 - **Recomendacao:** Adicionar ao menos 1 spec E2E de fluxo operacional ponta a ponta: login -> abrir PDV -> criar comanda -> adicionar item -> enviar para cozinha -> marcar como pronto -> fechar comanda -> verificar financeiro. Priorizar com fullyParallel: false e workers: 1 (ja configurado em playwright.config.ts:13-14).
 - **Esforco:** Alto (requer seed data, mocks de API ou ambiente staging)
+
 ### TST-004 (P2) - Cobertura web 16pp abaixo do gate com exclusoes que mascaram risco
 
 - **Severidade:** MEDIA
 - **Confianca:** MUITO ALTA
-- **Evidencia:** apps/web/vitest.config.ts:22-28 define coverage.thresholds como 85% lines / 65% branches / 85% functions. O coverage report (apps/web/coverage/coverage-summary.json:1) mostra 69.11% lines / 60% branches / 66.18% functions. As exclusoes em coverageExclude (linhas 6-13) incluem components/shared/** e lib/operations/index.ts, removendo da metrica areas de risco.
+- **Evidencia:** apps/web/vitest.config.ts:22-28 define coverage.thresholds como 85% lines / 65% branches / 85% functions. O coverage report (apps/web/coverage/coverage-summary.json:1) mostra 69.11% lines / 60% branches / 66.18% functions. As exclusoes em coverageExclude (linhas 6-13) incluem components/shared/\*\* e lib/operations/index.ts, removendo da metrica areas de risco.
 - **Impacto:** O gate de 85% nunca sera atingido com a cobertura atual, mas o sonarCoverageMode desabilita thresholds (linha 28-29), criando uma situacao onde o Sonar reporta coverage sem gate local. Arquivos criticos como verify-email-form.tsx (3.84% lines, apps/web/coverage/coverage-summary.json:5) e use-admin-pin.ts (9.09% lines, linha 3) tem cobertura quase nula.
-- **Recomendacao:** (1) Remover components/shared/** da exclusao e adicionar testes para os componentes shared (alguns ja tem: button, input-field, select-field, skeleton, product-thumb); (2) Priorizar testes para os 5 arquivos com menor cobertura; (3) Reduzir o gate para 75% temporariamente e subir gradualmente.
+- **Recomendacao:** (1) Remover components/shared/\*\* da exclusao e adicionar testes para os componentes shared (alguns ja tem: button, input-field, select-field, skeleton, product-thumb); (2) Priorizar testes para os 5 arquivos com menor cobertura; (3) Reduzir o gate para 75% temporariamente e subir gradualmente.
 - **Esforco:** Medio (adicionar ~15-20 testes incrementais)
 
 ### TST-005 (P2) - Repeticao massiva de mock setup entre specs da API
 
 - **Severidade:** MEDIA
 - **Confianca:** ALTA
-- **Evidencia:** 780+ ocorrencias de jest.fn() em arquivos de teste da API (grep em apps/api/test/*.spec.ts). Cada spec reimplementa seu proprio mock de Prisma (ex.: comanda.service.branches.spec.ts:59-91 define 11+ mocks do Prisma; orders.service.spec.ts:38-59 define 11+; auth.service.session-and-recovery.spec.ts:65-88 define 9+). Nao ha factory compartilhada de mocks. Os helpers em apps/api/test/helpers/ contem apenas 3 arquivos (auth-context, request-context, redis-availability).
+- **Evidencia:** 780+ ocorrencias de jest.fn() em arquivos de teste da API (grep em apps/api/test/\*.spec.ts). Cada spec reimplementa seu proprio mock de Prisma (ex.: comanda.service.branches.spec.ts:59-91 define 11+ mocks do Prisma; orders.service.spec.ts:38-59 define 11+; auth.service.session-and-recovery.spec.ts:65-88 define 9+). Nao ha factory compartilhada de mocks. Os helpers em apps/api/test/helpers/ contem apenas 3 arquivos (auth-context, request-context, redis-availability).
 - **Impacto:** DRY violation massivo. Adicionar uma nova tabela ao Prisma requer atualizar dezenas de specs. Manutencao de mock desatualizado e causa comum de falsos positivos.
 - **Recomendacao:** Criar test/helpers/prisma-mock.factory.ts com um builder de mock de Prisma reutilizavel. Extrair mocks comuns de Cache, AuditLog, Realtime para factories compartilhadas.
 - **Esforco:** Medio (refatoracao progressiva)

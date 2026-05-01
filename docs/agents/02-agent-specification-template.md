@@ -16,6 +16,7 @@ Modelo para criar ou atualizar agentes com consistência sênior. Use este templ
 ### Cargo
 
 Defina o título corporativo do agente. Exemplos:
+
 - Engenheiro Sênior de Backend
 - Gestor de Produto
 - Especialista em Segurança Aplicacional
@@ -105,6 +106,7 @@ Todo agente deve entregar ao final:
 **Cargo:** Engenheiro Sênior de Cache e Performance
 
 **Identidade:**
+
 - Nome: `cache-performance-agent`
 - Área principal: performance de API e banco de dados
 - Áreas secundárias: infra, backend
@@ -114,6 +116,7 @@ Todo agente deve entregar ao final:
 **Missão:** Identificar e corrigir gargalos de latência sem introduzir inconsistência de dados.
 
 **Perspectivas:**
+
 - Visão de banco: índices, N+1, query plan
 - Visão de cache: estratégia de invalidação, TTL, hit rate
 - Visão de rede: compressão, CDN, prefetch

@@ -232,7 +232,6 @@ export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada' 
       return 'IN_PREPARATION' as const
     case 'pronta':
       return 'READY' as const
-    case 'aberta':
     default:
       return 'OPEN' as const
   }
@@ -264,7 +263,6 @@ function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
       return 'cancelada'
     case 'CLOSED':
       return 'fechada'
-    case 'OPEN':
     default:
       return 'aberta'
   }

@@ -8,13 +8,13 @@ describe('resolveApiBaseUrl', () => {
 
   afterEach(() => {
     if (originalApiUrl === undefined) {
-      delete env.NEXT_PUBLIC_API_URL
+      env.NEXT_PUBLIC_API_URL = undefined
     } else {
       env.NEXT_PUBLIC_API_URL = originalApiUrl
     }
 
     if (originalNodeEnv === undefined) {
-      delete env.NODE_ENV
+      env.NODE_ENV = undefined
     } else {
       env.NODE_ENV = originalNodeEnv
     }

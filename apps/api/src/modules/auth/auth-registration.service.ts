@@ -28,7 +28,7 @@ export class AuthRegistrationService {
   ) {}
 
   async register(dto: RegisterDto, context: RequestContext) {
-    if (!dto.acceptTerms || !dto.acceptPrivacy) {
+    if (!(dto.acceptTerms && dto.acceptPrivacy)) {
       throw new BadRequestException('Voce precisa aceitar os termos de uso e o aviso de privacidade.')
     }
 

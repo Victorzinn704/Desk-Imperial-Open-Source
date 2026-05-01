@@ -15,7 +15,9 @@ export function LetterCard() {
         tabIndex={0}
         onClick={() => setIsOpen((v) => !v)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {setIsOpen((v) => !v)}
+          if (e.key === 'Enter' || e.key === ' ') {
+            setIsOpen((v) => !v)
+          }
         }}
       >
         {/* ── Carta interna (abre ao hover/click) ─────────────────────── */}

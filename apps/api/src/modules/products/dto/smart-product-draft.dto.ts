@@ -1,15 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import {
-  IsBoolean,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  Min,
-  MinLength,
-} from 'class-validator'
+import { IsBoolean, IsNumber, IsOptional, IsString, Matches, MaxLength, Min, MinLength } from 'class-validator'
 import { normalizeProductBarcodeInput } from '../products-barcode.util'
 
 export class SmartProductDraftDto {

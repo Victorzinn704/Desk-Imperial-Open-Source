@@ -13,10 +13,7 @@ import {
 } from '@/components/design-lab/lab-primitives'
 import { type EmployeeRecord, updateEmployee } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
-import {
-  PayrollClosingPanel,
-  PayrollKpiStrip,
-} from '@/components/dashboard/payroll/payroll-action-panels'
+import { PayrollClosingPanel, PayrollKpiStrip } from '@/components/dashboard/payroll/payroll-action-panels'
 import { PayrollDistributionPanel } from '@/components/dashboard/payroll/payroll-distribution-panel'
 import { PayrollRosterPanel } from '@/components/dashboard/payroll/payroll-roster-panel'
 import { PayrollSignalsPanel } from '@/components/dashboard/payroll/payroll-signals-panel'
@@ -79,7 +76,11 @@ function PayrollView({
 
   return (
     <section className="space-y-5">
-      <LabPageHeader description="Fechamento salarial, comissões e pendências." eyebrow="Gestao salarial" title="Folha de pagamento" />
+      <LabPageHeader
+        description="Fechamento salarial, comissões e pendências."
+        eyebrow="Gestao salarial"
+        title="Folha de pagamento"
+      />
       <PayrollPrimaryBlocks
         currency={currency}
         isEmpty={isEmpty}
@@ -252,11 +253,7 @@ function PayrollEmptyState({
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">checklist</LabStatusPill>}
-        padding="md"
-        title="O que libera a folha"
-      >
+      <LabPanel action={<LabStatusPill tone="info">checklist</LabStatusPill>} padding="md" title="O que libera a folha">
         <div className="space-y-0">
           <LabSignalRow
             label="colaboradores ativos"

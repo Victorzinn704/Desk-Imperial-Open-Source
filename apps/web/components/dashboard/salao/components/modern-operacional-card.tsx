@@ -35,7 +35,9 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
   const itemCount = comanda ? comanda.itens.reduce((sum, item) => sum + item.quantidade, 0) : 0
   const elapsed = comanda ? formatElapsed(comanda.abertaEm) : null
   const waiterLabel = getWaiterLabel(garcomName)
-  const clientLabel = comanda?.clienteNome?.trim() || (mesa.status === 'reservada' ? 'Reserva aguardando chegada' : 'Pronta para abrir nova comanda')
+  const clientLabel =
+    comanda?.clienteNome?.trim() ||
+    (mesa.status === 'reservada' ? 'Reserva aguardando chegada' : 'Pronta para abrir nova comanda')
   const isInteractive = typeof onClick === 'function'
 
   return (
@@ -112,7 +114,13 @@ export const ModernOperacionalCard = memo(function ModernOperacionalCard({
         <MetricCell
           label="Fluxo"
           tone={mesa.status === 'ocupada' ? 'danger' : mesa.status === 'reservada' ? 'warning' : 'success'}
-          value={mesa.status === 'ocupada' ? 'Atendimento em curso' : mesa.status === 'reservada' ? 'Chegada prevista' : 'Pronta para giro'}
+          value={
+            mesa.status === 'ocupada'
+              ? 'Atendimento em curso'
+              : mesa.status === 'reservada'
+                ? 'Chegada prevista'
+                : 'Pronta para giro'
+          }
         />
       </div>
 

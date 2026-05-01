@@ -1,7 +1,7 @@
 'use client'
 
 import type { SaveComandaPayload } from './comanda-modal'
-import { type Comanda, type ComandaStatus, type Mesa } from './pdv-types'
+import type { Comanda, ComandaStatus, Mesa } from './pdv-types'
 import { usePdvBoardDraftMutations } from './use-pdv-board-draft-mutations'
 import { usePdvBoardStatusMutations } from './use-pdv-board-status-mutations'
 

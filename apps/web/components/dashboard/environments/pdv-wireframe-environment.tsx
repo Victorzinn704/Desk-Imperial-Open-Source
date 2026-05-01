@@ -21,7 +21,6 @@ export function PdvWireframeEnvironment({
       return <PdvKitchenView isLoading={data.kitchenLoading} tickets={data.kitchenTickets} />
     case 'cobranca':
       return <PdvChargeView comanda={data.chargeComanda} currency={data.currency} />
-    case 'grid':
     default:
       return (
         <PdvGridView

@@ -23,11 +23,15 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
     let active = true
 
     async function initMap() {
-      if (!containerRef.current || mapRef.current) {return}
+      if (!containerRef.current || mapRef.current) {
+        return
+      }
 
       const L = (await import('leaflet')).default
 
-      if (!active || !containerRef.current) {return}
+      if (!(active && containerRef.current)) {
+        return
+      }
 
       const map = L.map(containerRef.current, {
         center: DEFAULT_CENTER,
@@ -57,7 +61,9 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
       setTimeout(() => {
         map.invalidateSize()
       }, 300)
-      if (active) {setMapReady(true)}
+      if (active) {
+        setMapReady(true)
+      }
     }
 
     initMap()
@@ -75,11 +81,17 @@ export function SalesMapCanvas({ displayCurrency, points }: Readonly<SalesMapCan
     let active = true
 
     async function updateMarkers() {
-      if (!mapRef.current) {return}
+      if (!mapRef.current) {
+        return
+      }
       const L = (await import('leaflet')).default
-      if (!active) {return}
+      if (!active) {
+        return
+      }
 
-      for (const m of markersRef.current) {m.remove()}
+      for (const m of markersRef.current) {
+        m.remove()
+      }
       markersRef.current = []
 
       if (!points.length) {

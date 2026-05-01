@@ -52,8 +52,11 @@ const MesaSquare = memo(function MesaSquare({
   onClickOcupada: (c: Comanda) => void
 }) {
   function handleClick() {
-    if (mesa.status === 'livre' || mesa.status === 'reservada') {onClickLivre(mesa)}
-    else if (mesa.status === 'ocupada' && comanda) {onClickOcupada(comanda)}
+    if (mesa.status === 'livre' || mesa.status === 'reservada') {
+      onClickLivre(mesa)
+    } else if (mesa.status === 'ocupada' && comanda) {
+      onClickOcupada(comanda)
+    }
   }
 
   return (
@@ -109,8 +112,11 @@ const MesaRectCard = memo(function MesaRectCard({
   onClickOcupada: (c: Comanda) => void
 }) {
   function handleClick() {
-    if (mesa.status === 'livre' || mesa.status === 'reservada') {onClickLivre(mesa)}
-    else if (mesa.status === 'ocupada' && comanda) {onClickOcupada(comanda)}
+    if (mesa.status === 'livre' || mesa.status === 'reservada') {
+      onClickLivre(mesa)
+    } else if (mesa.status === 'ocupada' && comanda) {
+      onClickOcupada(comanda)
+    }
   }
 
   return (
@@ -203,10 +209,14 @@ export function PdvMesasKanban({
 
   function handleDragEnd(result: DropResult) {
     const { draggableId, destination } = result
-    if (!destination) {return}
+    if (!destination) {
+      return
+    }
     const newStatus = destination.droppableId as MesaStatus
     const mesa = mesaById.get(draggableId)
-    if (!mesa || mesa.status === newStatus) {return}
+    if (!mesa || mesa.status === newStatus) {
+      return
+    }
     onStatusChange(draggableId, newStatus)
   }
 

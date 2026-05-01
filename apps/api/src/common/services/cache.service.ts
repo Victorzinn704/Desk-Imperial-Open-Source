@@ -9,8 +9,6 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private enabled = false
   private failureCount = 0
 
-  constructor() {}
-
   private handleFailure(context: string) {
     this.failureCount++
     if (this.failureCount >= 3 && this.enabled) {

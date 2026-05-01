@@ -28,15 +28,39 @@ function CaixaReadingPanel({
 }>) {
   return (
     <LabPanel
-      action={<LabStatusPill tone={caixaAberto ? 'success' : 'neutral'}>{caixaAberto ? 'caixa aberto' : 'aguardando abertura'}</LabStatusPill>}
+      action={
+        <LabStatusPill tone={caixaAberto ? 'success' : 'neutral'}>
+          {caixaAberto ? 'caixa aberto' : 'aguardando abertura'}
+        </LabStatusPill>
+      }
       padding="md"
       title="Leitura do caixa"
     >
       <div className="space-y-0">
-        <CaixaSignalRow label="receita" note="fechamentos já consolidados" tone="info" value={fmtBRL(kpis.receitaRealizada)} />
-        <CaixaSignalRow label="lucro" note="resultado líquido realizado" tone={kpis.lucroRealizado >= 0 ? 'success' : 'danger'} value={fmtBRL(kpis.lucroRealizado)} />
-        <CaixaSignalRow label="em aberto" note="valor ainda pendente de fechamento" tone={kpis.faturamentoAberto > 0 ? 'warning' : 'neutral'} value={fmtBRL(kpis.faturamentoAberto)} />
-        <CaixaSignalRow label="esperado" note="referência de caixa para fechamento" tone="neutral" value={fmtBRL(kpis.caixaEsperado)} />
+        <CaixaSignalRow
+          label="receita"
+          note="fechamentos já consolidados"
+          tone="info"
+          value={fmtBRL(kpis.receitaRealizada)}
+        />
+        <CaixaSignalRow
+          label="lucro"
+          note="resultado líquido realizado"
+          tone={kpis.lucroRealizado >= 0 ? 'success' : 'danger'}
+          value={fmtBRL(kpis.lucroRealizado)}
+        />
+        <CaixaSignalRow
+          label="em aberto"
+          note="valor ainda pendente de fechamento"
+          tone={kpis.faturamentoAberto > 0 ? 'warning' : 'neutral'}
+          value={fmtBRL(kpis.faturamentoAberto)}
+        />
+        <CaixaSignalRow
+          label="esperado"
+          note="referência de caixa para fechamento"
+          tone="neutral"
+          value={fmtBRL(kpis.caixaEsperado)}
+        />
       </div>
     </LabPanel>
   )
@@ -66,9 +90,21 @@ function CaixaRadarPanel({
         </div>
 
         <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
-          <CaixaMetaRow label="status" tone={caixaAberto ? 'success' : 'neutral'} value={caixaAberto ? 'operando' : 'fechado'} />
-          <CaixaMetaRow label="comandas abertas" tone={kpis.openComandasCount > 0 ? 'warning' : 'success'} value={String(kpis.openComandasCount)} />
-          <CaixaMetaRow label="lucro esperado" tone={kpis.lucroEsperado >= 0 ? 'success' : 'danger'} value={fmtBRL(kpis.lucroEsperado)} />
+          <CaixaMetaRow
+            label="status"
+            tone={caixaAberto ? 'success' : 'neutral'}
+            value={caixaAberto ? 'operando' : 'fechado'}
+          />
+          <CaixaMetaRow
+            label="comandas abertas"
+            tone={kpis.openComandasCount > 0 ? 'warning' : 'success'}
+            value={String(kpis.openComandasCount)}
+          />
+          <CaixaMetaRow
+            label="lucro esperado"
+            tone={kpis.lucroEsperado >= 0 ? 'success' : 'danger'}
+            value={fmtBRL(kpis.lucroEsperado)}
+          />
           <CaixaMetaRow
             label="próxima ação"
             tone={resolveNextActionTone(kpis.openComandasCount, caixaAberto)}

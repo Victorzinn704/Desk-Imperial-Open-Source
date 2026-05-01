@@ -18,13 +18,7 @@
       "ignoreBinaries": ["k6", "powershell"]
     },
     "apps/api": {
-      "entry": [
-        "src/main.ts",
-        "src/app.module.ts",
-        "src/**/*.module.ts",
-        "prisma/**/*.ts",
-        "test/**/*.ts"
-      ],
+      "entry": ["src/main.ts", "src/app.module.ts", "src/**/*.module.ts", "prisma/**/*.ts", "test/**/*.ts"],
       "project": ["src/**/*.ts"],
       "ignore": ["src/**/*.spec.ts", "dist/**"],
       "ignoreBinaries": ["prisma", "nest", "ts-node"],

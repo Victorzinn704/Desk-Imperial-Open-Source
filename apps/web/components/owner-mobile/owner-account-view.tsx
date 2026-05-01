@@ -1,6 +1,6 @@
 'use client'
 
-import { type OwnerAccountViewProps } from './owner-account-view-model'
+import type { OwnerAccountViewProps } from './owner-account-view-model'
 import { OwnerAccountGroups, OwnerAccountProfile } from './owner-account-view-sections'
 import { ThermalPrintSettingsCard } from '@/components/shared/thermal-print-settings-card'
 

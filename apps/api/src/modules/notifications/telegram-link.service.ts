@@ -4,10 +4,10 @@ import { randomBytes } from 'node:crypto'
 import type { AuthContext } from '../auth/auth.types'
 import { hashToken, resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { PrismaService } from '../../database/prisma.service'
-import { MailerService } from '../mailer/mailer.service'
-import { AuditLogService } from '../monitoring/audit-log.service'
-import { TelegramAdapter } from './infra/telegram/telegram.adapter'
+import type { PrismaService } from '../../database/prisma.service'
+import type { MailerService } from '../mailer/mailer.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
+import type { TelegramAdapter } from './infra/telegram/telegram.adapter'
 import type {
   TelegramHealthResponse,
   TelegramIntegrationStatusResponse,
@@ -119,16 +119,14 @@ export class TelegramLinkService {
   }
 
   private buildAccountStatus(
-    account:
-      | {
-          telegramChatId: bigint
-          telegramUserId: bigint
-          telegramUsername: string | null
-          status: TelegramAccountStatus
-          linkedAt: Date
-          lastActiveAt: Date
-        }
-      | null,
+    account: {
+      telegramChatId: bigint
+      telegramUserId: bigint
+      telegramUsername: string | null
+      status: TelegramAccountStatus
+      linkedAt: Date
+      lastActiveAt: Date
+    } | null,
   ) {
     if (!account) {
       return null

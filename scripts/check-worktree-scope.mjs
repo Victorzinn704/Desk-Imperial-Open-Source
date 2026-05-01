@@ -61,7 +61,12 @@ const knownScopes = [
   {
     name: 'documentacao-planejamento',
     description: 'auditoria, plano e docs sem efeito runtime direto',
-    patterns: [/^review_audit\//, /^docs\/architecture\//, /^\.claude\/napkin\.md$/, /^\.dual-graph\/context-store\.json$/],
+    patterns: [
+      /^review_audit\//,
+      /^docs\/architecture\//,
+      /^\.claude\/napkin\.md$/,
+      /^\.dual-graph\/context-store\.json$/,
+    ],
   },
   {
     name: 'camada-verificacao',

@@ -67,8 +67,8 @@ describe('calcSubtotal — branch coverage', () => {
     expect(
       calcSubtotal({
         itens: [
-          { produtoId: 'p1', nome: 'Item NaN', quantidade: NaN, precoUnitario: 10 },
-          { produtoId: 'p2', nome: 'Item Inf', quantidade: 2, precoUnitario: Infinity },
+          { produtoId: 'p1', nome: 'Item NaN', quantidade: Number.NaN, precoUnitario: 10 },
+          { produtoId: 'p2', nome: 'Item Inf', quantidade: 2, precoUnitario: Number.POSITIVE_INFINITY },
         ],
       }),
     ).toBe(0)
@@ -146,8 +146,8 @@ describe('calcTotal — branch coverage', () => {
   it('trata desconto e acrescimo NaN como zero', () => {
     const comanda = makeComanda({
       itens: [{ produtoId: 'p1', nome: 'Café', quantidade: 1, precoUnitario: 50 }],
-      desconto: NaN,
-      acrescimo: NaN,
+      desconto: Number.NaN,
+      acrescimo: Number.NaN,
     })
     expect(calcTotal(comanda)).toBe(50)
   })

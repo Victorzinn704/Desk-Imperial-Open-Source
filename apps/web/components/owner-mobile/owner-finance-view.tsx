@@ -1,6 +1,6 @@
 'use client'
 
-import { type OwnerFinanceViewProps } from './owner-finance-view-model'
+import type { OwnerFinanceViewProps } from './owner-finance-view-model'
 import { OwnerFinanceCategoryMix } from './owner-finance-category-mix'
 import { OwnerFinanceActions, OwnerFinanceHero, OwnerFinanceStatusBanner } from './owner-finance-view-sections'
 

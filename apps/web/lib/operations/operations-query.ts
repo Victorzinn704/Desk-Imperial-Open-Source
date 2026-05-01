@@ -153,11 +153,13 @@ export function settleScheduledOperationsWorkspaceReconcile(
   })
 
   if (
-    !entry.options.includeLive &&
-    !entry.options.includeOrders &&
-    !entry.options.includeFinance &&
-    !entry.options.includeKitchen &&
-    !entry.options.includeSummary
+    !(
+      entry.options.includeLive ||
+      entry.options.includeOrders ||
+      entry.options.includeFinance ||
+      entry.options.includeKitchen ||
+      entry.options.includeSummary
+    )
   ) {
     clearTimeout(entry.timer)
     registry.delete(scheduleKey)

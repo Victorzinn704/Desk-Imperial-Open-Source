@@ -111,7 +111,6 @@ export function OverviewEnvironment({ variant = 'principal' }: Readonly<{ varian
       return <OverviewOperationalView {...commonProps} />
     case 'editorial':
       return <OverviewEditorialView {...commonProps} />
-    case 'principal':
     default:
       return <OverviewPrincipalView {...commonProps} />
   }
@@ -170,10 +169,7 @@ export function DesignLabOverviewEnvironment() {
         metaContainerClassName="border-0 bg-transparent p-0 xl:max-w-none"
         meta={
           <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
-            <VascoNextMatchWidget
-              className="border-[var(--lab-border)] bg-[var(--lab-surface)]"
-              compact
-            />
+            <VascoNextMatchWidget className="border-[var(--lab-border)] bg-[var(--lab-surface)]" compact />
             <div className="flex h-full flex-col rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] p-4">
               <div className="space-y-3">
                 <LabMetaRow label="Empresa" tone="neutral" value={snapshot.companyName} />

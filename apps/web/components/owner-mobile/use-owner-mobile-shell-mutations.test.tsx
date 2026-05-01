@@ -5,7 +5,10 @@ import type { ReactNode } from 'react'
 import * as api from '@/lib/api'
 import { buildComanda, buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import { OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
-import { getOperationsPerformanceEvents, resetOperationsPerformanceEvents } from '@/lib/operations/operations-performance-diagnostics'
+import {
+  getOperationsPerformanceEvents,
+  resetOperationsPerformanceEvents,
+} from '@/lib/operations/operations-performance-diagnostics'
 import { useOwnerMobileShellMutations } from './use-owner-mobile-shell-mutations'
 
 vi.mock('@/lib/api', () => ({

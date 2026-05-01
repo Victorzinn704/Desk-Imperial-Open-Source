@@ -142,13 +142,8 @@ function useAddComandaItemsMutation(queryClient: QueryClient) {
 
 function useReplaceComandaMutation(queryClient: QueryClient) {
   return useMutation({
-    mutationFn: ({
-      comandaId,
-      payload,
-    }: {
-      comandaId: string
-      payload: Parameters<typeof replaceComanda>[1]
-    }) => replaceComanda(comandaId, payload, { includeSnapshot: false }),
+    mutationFn: ({ comandaId, payload }: { comandaId: string; payload: Parameters<typeof replaceComanda>[1] }) =>
+      replaceComanda(comandaId, payload, { includeSnapshot: false }),
     onMutate: async () => {
       const trace = startOperationsMutationTrace('owner-mobile', 'replace-comanda')
       await queryClient.cancelQueries({ queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY })

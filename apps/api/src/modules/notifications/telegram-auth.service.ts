@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { TelegramAccountStatus, UserStatus } from '@prisma/client'
 import { toAuthUser } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
-import { PrismaService } from '../../database/prisma.service'
-import { TelegramAdapter } from './infra/telegram/telegram.adapter'
+import type { PrismaService } from '../../database/prisma.service'
+import type { TelegramAdapter } from './infra/telegram/telegram.adapter'
 
 const telegramAuthUserSelect = {
   id: true,

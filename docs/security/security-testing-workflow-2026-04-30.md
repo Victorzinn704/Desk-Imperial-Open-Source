@@ -35,12 +35,12 @@ O que falta fechar melhor e a parte **depois do deploy**:
 
 ## Veredito direto sobre as ferramentas
 
-| Ferramenta | Usar agora? | Papel certo no Desk Imperial |
-|---|---|---|
-| **Nmap** | **Sim** | teste de superficie exposta: portas abertas, servicos, versoes e drift de exposicao |
-| **Snort** | **Nao agora** | IDS/IPS de rede para monitoramento continuo, nao scanner pontual do projeto |
-| **Wazuh / SIEM** | **Depois** | correlacao centralizada de eventos, logs, alertas e agentes quando a operacao ficar mais distribuida |
-| **NetFlow** | **Nao como prioridade** | metrica e estatistica de trafego; nao substitui teste de seguranca do produto |
+| Ferramenta       | Usar agora?             | Papel certo no Desk Imperial                                                                         |
+| ---------------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Nmap**         | **Sim**                 | teste de superficie exposta: portas abertas, servicos, versoes e drift de exposicao                  |
+| **Snort**        | **Nao agora**           | IDS/IPS de rede para monitoramento continuo, nao scanner pontual do projeto                          |
+| **Wazuh / SIEM** | **Depois**              | correlacao centralizada de eventos, logs, alertas e agentes quando a operacao ficar mais distribuida |
+| **NetFlow**      | **Nao como prioridade** | metrica e estatistica de trafego; nao substitui teste de seguranca do produto                        |
 
 ---
 
@@ -59,6 +59,7 @@ Segundo a documentacao oficial, a deteccao de versao interroga portas descoberta
 - drift de versao/servico no host publicado
 
 Fonte oficial:
+
 - Nmap service/version detection: https://nmap.org/book/man-version-detection.html
 
 ### Snort
@@ -75,6 +76,7 @@ A propria documentacao oficial descreve o Snort como um IPS/IDS com **analise de
 Ou seja: Snort e mais **vigilancia operacional** do que auditoria inicial do produto.
 
 Fontes oficiais:
+
 - https://www.snort.org/
 - https://docs.snort.org/start/
 
@@ -91,6 +93,7 @@ No Desk Imperial, isso comeca a fazer mais sentido quando:
 - quisermos alertas continuos e resposta operacional mais madura
 
 Fontes oficiais:
+
 - https://documentation.wazuh.com/current/getting-started/index.html
 - https://wazuh.com/platform/
 
@@ -106,6 +109,7 @@ Pela documentacao da Cisco, o foco e metrica de trafego, planejamento, accountin
 - correlacao de eventos de aplicacao
 
 Fonte oficial:
+
 - https://www.cisco.com/c/en/us/tech/quality-of-service-qos/netflow/index.html
 
 ---

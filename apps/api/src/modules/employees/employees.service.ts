@@ -6,12 +6,12 @@ import * as argon2 from 'argon2'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
-import { AuthService } from '../auth/auth.service'
+import type { PrismaService } from '../../database/prisma.service'
+import type { AuthService } from '../auth/auth.service'
 import { authSessionWorkspaceOwnerSelect, resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { ensureEmployeeLoginUser } from '../auth/auth-login-actor.utils'
 import type { AuthContext } from '../auth/auth.types'
-import { AuditLogService } from '../monitoring/audit-log.service'
+import type { AuditLogService } from '../monitoring/audit-log.service'
 import { CacheService } from '../../common/services/cache.service'
 import type { CreateEmployeeDto } from './dto/create-employee.dto'
 import type { UpdateEmployeeDto } from './dto/update-employee.dto'
@@ -353,7 +353,7 @@ export class EmployeesService {
     const workspaceUserId = resolveWorkspaceOwnerUserId(auth)
     const existingEmployee = await this.requireOwnedEmployee(workspaceUserId, employeeId)
 
-    if (!existingEmployee.passwordHash && !existingEmployee.loginUserId) {
+    if (!(existingEmployee.passwordHash || existingEmployee.loginUserId)) {
       return { employee: toEmployeeRecord(existingEmployee) }
     }
 

@@ -10,10 +10,7 @@ export function buildSalesByChannel(
   }>,
   options: FinanceAggregationOptions,
 ) {
-  const channels = new Map<
-    string,
-    { channel: string; orders: number; revenue: number; profit: number }
-  >()
+  const channels = new Map<string, { channel: string; orders: number; revenue: number; profit: number }>()
 
   for (const group of orders) {
     const channelKey = group.channel?.trim() || 'Direto'

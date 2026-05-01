@@ -29,7 +29,9 @@ export function usePullToRefresh({ onRefresh, threshold = 80, maxPull = 120 }: U
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
       const el = containerRef.current
-      if (!el || el.scrollTop > 0 || isRefreshing) {return}
+      if (!el || el.scrollTop > 0 || isRefreshing) {
+        return
+      }
       startY.current = e.touches[0].clientY
       setIsPulling(true)
     },
@@ -38,7 +40,9 @@ export function usePullToRefresh({ onRefresh, threshold = 80, maxPull = 120 }: U
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
-      if (!isPulling || isRefreshing) {return}
+      if (!isPulling || isRefreshing) {
+        return
+      }
       const delta = e.touches[0].clientY - startY.current
       if (delta < 0) {
         setPullDistance(0)
@@ -55,7 +59,9 @@ export function usePullToRefresh({ onRefresh, threshold = 80, maxPull = 120 }: U
   )
 
   const handleTouchEnd = useCallback(async () => {
-    if (!isPulling) {return}
+    if (!isPulling) {
+      return
+    }
     setIsPulling(false)
 
     if (pullDistance >= threshold) {
@@ -74,7 +80,9 @@ export function usePullToRefresh({ onRefresh, threshold = 80, maxPull = 120 }: U
 
   useEffect(() => {
     const el = containerRef.current
-    if (!el) {return}
+    if (!el) {
+      return
+    }
 
     el.addEventListener('touchstart', handleTouchStart, { passive: true })
     el.addEventListener('touchmove', handleTouchMove, { passive: false })

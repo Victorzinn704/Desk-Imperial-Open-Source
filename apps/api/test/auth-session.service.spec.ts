@@ -62,7 +62,13 @@ describe('AuthSessionService', () => {
     const cache = overrides?.cache ?? makeCacheDouble()
 
     return {
-      service: new AuthSessionService(prisma as any, config as any, demoAccess as any, realtimeSessions as any, cache as any),
+      service: new AuthSessionService(
+        prisma as any,
+        config as any,
+        demoAccess as any,
+        realtimeSessions as any,
+        cache as any,
+      ),
       prisma,
       cache,
       realtimeSessions,

@@ -153,7 +153,9 @@ export class AuthSessionService {
       return null
     }
 
-    const cachedNegative = await this.cache.get<NegativeAuthSessionCacheEntry>(this.negativeSessionTokenCacheKey(tokenHash))
+    const cachedNegative = await this.cache.get<NegativeAuthSessionCacheEntry>(
+      this.negativeSessionTokenCacheKey(tokenHash),
+    )
     if (cachedNegative?.negative) {
       recordAuthSessionCacheLookup('negative_hit', {
         'desk.auth.session.cache_scope': 'token',
@@ -480,10 +482,7 @@ export class AuthSessionService {
     )
   }
 
-  private async cacheNegativeSessionToken(
-    tokenHash: string,
-    reason: NegativeAuthSessionCacheEntry['reason'],
-  ) {
+  private async cacheNegativeSessionToken(tokenHash: string, reason: NegativeAuthSessionCacheEntry['reason']) {
     await this.cache.set(
       this.negativeSessionTokenCacheKey(tokenHash),
       {

@@ -17933,9 +17933,7 @@
       "priority": "P0",
       "title": "Security hotspots review",
       "reason": "Sonar is unavailable, so hotspot status cannot be trusted yet.",
-      "actions": [
-        "Run Sonar locally and regenerate this map before changing security-sensitive code."
-      ]
+      "actions": ["Run Sonar locally and regenerate this map before changing security-sensitive code."]
     },
     {
       "priority": "P1",

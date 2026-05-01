@@ -91,7 +91,7 @@ export function OwnerBarcodeScannerSheet({
 
     async function startScanner() {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      if (!window.isSecureContext && !isLocalhost) {
+      if (!(window.isSecureContext || isLocalhost)) {
         setState('unsupported')
         setMessage('A câmera do navegador exige HTTPS. Abra o Desk Imperial pelo endereço seguro do app.')
         return
@@ -122,9 +122,7 @@ export function OwnerBarcodeScannerSheet({
       }
 
       try {
-        const supportedFormats = BarcodeDetector.getSupportedFormats
-          ? await BarcodeDetector.getSupportedFormats()
-          : []
+        const supportedFormats = BarcodeDetector.getSupportedFormats ? await BarcodeDetector.getSupportedFormats() : []
         const formats = supportedFormats.length
           ? preferredBarcodeFormats.filter((format) => supportedFormats.includes(format))
           : [...preferredBarcodeFormats]
@@ -189,7 +187,9 @@ export function OwnerBarcodeScannerSheet({
             timerRef.current = window.setTimeout(scanFrame, 320)
           } catch {
             setState('error')
-            setMessage('A câmera abriu, mas a leitura não conseguiu decodificar o código. Tente aproximar ou melhorar a luz.')
+            setMessage(
+              'A câmera abriu, mas a leitura não conseguiu decodificar o código. Tente aproximar ou melhorar a luz.',
+            )
           }
         }
 
@@ -250,7 +250,9 @@ export function OwnerBarcodeScannerSheet({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">Scanner móvel</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent,#008cff)]">
+              Scanner móvel
+            </p>
             <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]" id="owner-barcode-scanner-title">
               Ler código pela câmera
             </h2>
@@ -269,13 +271,7 @@ export function OwnerBarcodeScannerSheet({
           {showPreview ? (
             <div className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-black">
               <div className="relative aspect-[3/4] w-full bg-black">
-                <video
-                  autoPlay
-                  className="h-full w-full object-cover"
-                  muted
-                  playsInline
-                  ref={videoRef}
-                />
+                <video autoPlay className="h-full w-full object-cover" muted playsInline ref={videoRef} />
                 <div className="pointer-events-none absolute inset-x-5 top-1/2 -translate-y-1/2 rounded-[22px] border border-[rgba(255,255,255,0.72)] px-3 py-12 shadow-[0_0_0_9999px_rgba(0,0,0,0.24)]">
                   <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                     <ScanLine className="size-3.5" />
@@ -318,7 +314,8 @@ export function OwnerBarcodeScannerSheet({
           </div>
 
           <p className="text-[11px] leading-5 text-[var(--text-soft)]">
-            Android/Chrome tende a funcionar melhor aqui. Em navegadores sem leitura nativa, o fluxo continua por EAN manual ou leitor HID.
+            Android/Chrome tende a funcionar melhor aqui. Em navegadores sem leitura nativa, o fluxo continua por EAN
+            manual ou leitor HID.
           </p>
         </div>
       </section>

@@ -3,6 +3,7 @@
 This document outlines the UI design system, component patterns, and interaction guidelines for DESK IMPERIAL's frontend dashboard.
 
 ## Table of Contents
+
 - [Design System](#design-system)
 - [Hover States and Animations](#hover-states-and-animations)
 - [Layout Shift Prevention](#layout-shift-prevention)
@@ -20,32 +21,32 @@ This document outlines the UI design system, component patterns, and interaction
 ```css
 :root {
   color-scheme: dark;
-  
+
   /* Backgrounds */
-  --bg: #080b0e;                    /* Main background */
-  --surface: #0d1014;               /* Cards & elevated surfaces */
-  --surface-muted: #111518;         /* Secondary surfaces */
-  --surface-soft: #161b20;          /* Soft surface variant */
-  
+  --bg: #080b0e; /* Main background */
+  --surface: #0d1014; /* Cards & elevated surfaces */
+  --surface-muted: #111518; /* Secondary surfaces */
+  --surface-soft: #161b20; /* Soft surface variant */
+
   /* Borders */
-  --border: #222830;                /* Default border */
-  --border-strong: #2e3740;         /* Emphasized border */
-  
+  --border: #222830; /* Default border */
+  --border-strong: #2e3740; /* Emphasized border */
+
   /* Text */
-  --text-primary: #dde2e8;          /* Primary text */
-  --text-soft: #7a8896;             /* Secondary text */
-  --text-muted: #9faab5;            /* Tertiary text */
-  
+  --text-primary: #dde2e8; /* Primary text */
+  --text-soft: #7a8896; /* Secondary text */
+  --text-muted: #9faab5; /* Tertiary text */
+
   /* Accent (Gold/Bronze) */
   --accent: #9b8460;
   --accent-strong: #b39a75;
   --accent-soft: rgba(155, 132, 96, 0.14);
-  
+
   /* Semantic Colors */
-  --info: #5a95c4;                  /* Informational */
-  --success: #639371;               /* Success states */
-  --danger: #d47373;                /* Error/danger states */
-  
+  --info: #5a95c4; /* Informational */
+  --success: #639371; /* Success states */
+  --danger: #d47373; /* Error/danger states */
+
   /* Shadows */
   --shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.28);
   --shadow-panel-strong: 0 32px 100px rgba(0, 0, 0, 0.38);
@@ -55,11 +56,17 @@ This document outlines the UI design system, component patterns, and interaction
 ### Typography
 
 **Font Stack:**
+
 ```css
-font-family: Segoe UI, Roboto, Arial, sans-serif;
+font-family:
+  Segoe UI,
+  Roboto,
+  Arial,
+  sans-serif;
 ```
 
 **Type Scale:**
+
 - **Display:** 30px (h1 in emails and hero sections)
 - **Heading 1:** 24px - 28px
 - **Heading 2:** 20px - 22px
@@ -71,6 +78,7 @@ font-family: Segoe UI, Roboto, Arial, sans-serif;
 ### Spacing
 
 Based on 4px grid:
+
 ```
 4px, 8px, 12px, 16px, 20px, 24px, 32px, 40px, 48px, 64px
 ```
@@ -80,9 +88,9 @@ Tailwind utilities: `p-1` (4px), `p-2` (8px), `p-3` (12px), etc.
 ### Border Radius
 
 ```css
---card-radius: 1.75rem;    /* 28px - main cards */
---button-radius: 0.75rem;  /* 12px - buttons */
---input-radius: 0.75rem;   /* 12px - inputs */
+--card-radius: 1.75rem; /* 28px - main cards */
+--button-radius: 0.75rem; /* 12px - buttons */
+--input-radius: 0.75rem; /* 12px - inputs */
 ```
 
 ## Hover States and Animations
@@ -100,19 +108,20 @@ Tailwind utilities: `p-1` (4px), `p-2` (8px), `p-3` (12px), etc.
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--card-radius, 1.75rem);
-  
+
   /* KEY: CSS Containment for performance */
   contain: layout paint style;
-  
+
   background-color: rgba(10, 12, 15, 0.97);
   border: 1px solid rgba(180, 190, 200, 0.07);
-  box-shadow: 
+  box-shadow:
     0 -16px 24px 0 rgba(200, 210, 220, 0.03) inset,
-    0 24px 80px rgba(0, 0, 0, 0.40);
+    0 24px 80px rgba(0, 0, 0, 0.4);
 }
 ```
 
 **What `contain: layout paint style` does:**
+
 - **layout:** Element's dimensions don't affect siblings
 - **paint:** Content doesn't paint outside bounds
 - **style:** Styles are isolated
@@ -122,7 +131,7 @@ Tailwind utilities: `p-1` (4px), `p-2` (8px), `p-3` (12px), etc.
 
 ```css
 /* Recommended transition */
-transition-property: color, background-color, border-color, 
+transition-property: color, background-color, border-color,
                      box-shadow, opacity, transform;
 transition-duration: 200ms;
 transition-timing-function: ease-in-out;
@@ -135,19 +144,21 @@ className="transition-colors duration-200"
 
 ```tsx
 // Primary button with elevation change
-<button className={cn(
-  'border-transparent px-5 py-3',
-  'bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))]',
-  'shadow-[0_16px_36px_rgba(212,177,106,0.28)]',
-  
-  // Hover: elevation only (NO scale)
-  'hover:-translate-y-0.5',
-  'hover:shadow-[0_22px_48px_rgba(212,177,106,0.44)]',
-  
-  // Active: compress
-  'active:translate-y-0',
-  'active:scale-95'
-)}>
+<button
+  className={cn(
+    'border-transparent px-5 py-3',
+    'bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))]',
+    'shadow-[0_16px_36px_rgba(212,177,106,0.28)]',
+
+    // Hover: elevation only (NO scale)
+    'hover:-translate-y-0.5',
+    'hover:shadow-[0_22px_48px_rgba(212,177,106,0.44)]',
+
+    // Active: compress
+    'active:translate-y-0',
+    'active:scale-95',
+  )}
+>
   Enviar
 </button>
 ```
@@ -156,19 +167,21 @@ className="transition-colors duration-200"
 
 ```tsx
 // Subtle border and background change
-<button className={cn(
-  'w-full rounded-xl border p-3',
-  
-  // Pre-allocated border (transparent at rest)
-  'border-[rgba(255,255,255,0.04)]',
-  
-  // Hover: border color + background
-  'hover:border-[rgba(255,255,255,0.1)]',
-  'hover:bg-[rgba(255,255,255,0.06)]',
-  
-  // Transition colors only
-  'transition-colors duration-200'
-)}>
+<button
+  className={cn(
+    'w-full rounded-xl border p-3',
+
+    // Pre-allocated border (transparent at rest)
+    'border-[rgba(255,255,255,0.04)]',
+
+    // Hover: border color + background
+    'hover:border-[rgba(255,255,255,0.1)]',
+    'hover:bg-[rgba(255,255,255,0.06)]',
+
+    // Transition colors only
+    'transition-colors duration-200',
+  )}
+>
   {content}
 </button>
 ```
@@ -177,16 +190,16 @@ className="transition-colors duration-200"
 
 ```tsx
 // ❌ WRONG: Adding border on hover (causes 2px shift)
-className="hover:border hover:border-white/10"
+className = 'hover:border hover:border-white/10'
 
 // ❌ WRONG: Scale causes box dimension change
-className="hover:scale-[1.02]"
+className = 'hover:scale-[1.02]'
 
 // ❌ WRONG: Margin changes shift siblings
-className="hover:mx-2"
+className = 'hover:mx-2'
 
 // ❌ WRONG: Width/height changes cause reflow
-className="hover:w-full"
+className = 'hover:w-full'
 ```
 
 ## Layout Shift Prevention
@@ -213,7 +226,7 @@ className="hover:w-full"
 // BEFORE (caused shift)
 <button className="rounded-xl p-3 hover:border hover:border-white/10">
 
-// AFTER (no shift)  
+// AFTER (no shift)
 <button className={cn(
   'rounded-xl border p-3',
   'border-[rgba(255,255,255,0.04)]',
@@ -227,10 +240,10 @@ className="hover:w-full"
 
 ```tsx
 // ✅ CORRECT: translateY doesn't affect box dimensions
-className="hover:-translate-y-0.5"
+className = 'hover:-translate-y-0.5'
 
 // ❌ WRONG: Scale changes width/height
-className="hover:scale-105"
+className = 'hover:scale-105'
 ```
 
 ### Shadow Elevation
@@ -280,7 +293,6 @@ Always design for mobile first, then enhance for larger screens:
 // Main dashboard layout
 <main className="min-h-screen bg-[var(--bg)] px-4 py-6 sm:px-6">
   <div className="mx-auto max-w-[1600px] xl:grid xl:gap-6">
-    
     {/* Metric cards: 1→2→4 columns */}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <MetricCard title="Vendas" value="R$ 150k" />
@@ -288,7 +300,7 @@ Always design for mobile first, then enhance for larger screens:
       <MetricCard title="Produtos" value="1.2k" />
       <MetricCard title="Ticket Medio" value="R$ 441" />
     </div>
-    
+
     {/* Main content + sidebar: stack→split */}
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div>{/* Main content */}</div>
@@ -326,13 +338,13 @@ Always design for mobile first, then enhance for larger screens:
 
 ```tsx
 // Standard container
-className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+className = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'
 
 // Dashboard container (wider)
-className="mx-auto max-w-[1600px]"
+className = 'mx-auto max-w-[1600px]'
 
 // Content container (narrower, for readability)
-className="mx-auto max-w-3xl"
+className = 'mx-auto max-w-3xl'
 ```
 
 ## Accessibility
@@ -391,8 +403,8 @@ All interactive elements must be keyboard accessible:
 <button
   onMouseEnter={handleShow}
   onMouseLeave={handleHide}
-  onFocus={handleShow}     // ✅ Keyboard support
-  onBlur={handleHide}      // ✅ Keyboard support
+  onFocus={handleShow} // ✅ Keyboard support
+  onBlur={handleHide} // ✅ Keyboard support
   className="..."
 >
   Hover or focus me
@@ -410,13 +422,16 @@ All interactive elements must be keyboard accessible:
 }
 
 @keyframes input-focus-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(155, 132, 96, 0.14),
-                0 0 20px rgba(155, 132, 96, 0.10);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(155, 132, 96, 0.14),
+      0 0 20px rgba(155, 132, 96, 0.1);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(155, 132, 96, 0.24),
-                0 0 32px rgba(155, 132, 96, 0.16);
+    box-shadow:
+      0 0 0 4px rgba(155, 132, 96, 0.24),
+      0 0 32px rgba(155, 132, 96, 0.16);
   }
 }
 
@@ -454,7 +469,7 @@ All interactive elements must be keyboard accessible:
 // Hide decorative elements from screen readers
 <div
   aria-hidden="true"
-  className="pointer-events-none absolute inset-0 rounded-[28px] 
+  className="pointer-events-none absolute inset-0 rounded-[28px]
              opacity-20 blur-sm"
 />
 
@@ -480,37 +495,25 @@ Ensure WCAG AA compliance (4.5:1 for normal text, 3:1 for large text):
 ```tsx
 <article className="imperial-card p-5">
   <header className="mb-4">
-    <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-      Card Title
-    </h2>
+    <h2 className="text-lg font-semibold text-[var(--text-primary)]">Card Title</h2>
   </header>
-  <main>
-    {/* Content */}
-  </main>
+  <main>{/* Content */}</main>
 </article>
 ```
 
 ### Imperial Card Soft (Subtle variant)
 
 ```tsx
-<div className="imperial-card-soft p-5">
-  {/* Lighter background, less prominent */}
-</div>
+<div className="imperial-card-soft p-5">{/* Lighter background, less prominent */}</div>
 ```
 
 ### Imperial Card Stat (Metric card)
 
 ```tsx
 <article className="imperial-card-stat p-5">
-  <div className="text-xs text-[var(--text-soft)] uppercase tracking-wider">
-    Vendas
-  </div>
-  <div className="mt-2 text-3xl font-bold text-[var(--text-primary)]">
-    R$ 150.234
-  </div>
-  <div className="mt-1 text-sm text-[var(--success)]">
-    +12.5% vs mes anterior
-  </div>
+  <div className="text-xs text-[var(--text-soft)] uppercase tracking-wider">Vendas</div>
+  <div className="mt-2 text-3xl font-bold text-[var(--text-primary)]">R$ 150.234</div>
+  <div className="mt-1 text-sm text-[var(--success)]">+12.5% vs mes anterior</div>
 </article>
 ```
 
@@ -528,14 +531,14 @@ const buttonVariants = {
     'hover:shadow-[0_22px_48px_rgba(212,177,106,0.44)]',
     'active:translate-y-0 active:scale-95'
   ),
-  
+
   secondary: cn(
     'border border-[var(--border)] px-5 py-3',
     'bg-[var(--surface)] text-[var(--text-primary)]',
     'hover:border-[var(--border-strong)]',
     'hover:bg-[var(--surface-muted)]'
   ),
-  
+
   ghost: cn(
     'border border-transparent px-5 py-3',
     'text-[var(--text-primary)]',
@@ -552,10 +555,7 @@ const buttonVariants = {
 
 ```tsx
 <div className="space-y-2">
-  <label 
-    htmlFor="email" 
-    className="block text-sm font-medium text-[var(--text-primary)]"
-  >
+  <label htmlFor="email" className="block text-sm font-medium text-[var(--text-primary)]">
     Email
   </label>
   <input
@@ -568,7 +568,7 @@ const buttonVariants = {
       'text-[var(--text-primary)]',
       'placeholder:text-[var(--text-muted)]',
       'focus:border-[var(--accent)]',
-      'focus:outline-none'
+      'focus:outline-none',
     )}
     placeholder="seu@email.com"
   />
@@ -579,13 +579,13 @@ const buttonVariants = {
 
 ```tsx
 import { Tooltip } from '@/components/shared/tooltip'
-
-<Tooltip content="Informação adicional">
+;<Tooltip content="Informação adicional">
   <button>Hover me</button>
 </Tooltip>
 ```
 
 **Implementation features:**
+
 - Portal rendering (avoids overflow issues)
 - Keyboard support (focus/blur)
 - ARIA role="tooltip"
@@ -611,8 +611,12 @@ import { Tooltip } from '@/components/shared/tooltip'
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 ```
 
@@ -629,6 +633,7 @@ Applied to all imperial cards:
 ```
 
 **Benefits:**
+
 - Isolated layout calculations
 - Faster hover animations
 - Reduced paint operations
@@ -640,13 +645,14 @@ Only animate GPU-accelerated properties:
 
 ```tsx
 // ✅ FAST: GPU-accelerated
-className="transition-[transform,opacity] duration-200"
+className = 'transition-[transform,opacity] duration-200'
 
 // ⚠️ SLOW: CPU-bound (causes reflow)
-className="transition-[width,height,margin] duration-200"
+className = 'transition-[width,height,margin] duration-200'
 ```
 
 **Recommended properties:**
+
 - `transform` (translateX, translateY, scale, rotate)
 - `opacity`
 - `color` (via CSS variables)
@@ -658,15 +664,14 @@ className="transition-[width,height,margin] duration-200"
 
 ```tsx
 import Image from 'next/image'
-
-<Image
+;<Image
   src="/product.jpg"
   alt="Product name"
   width={400}
   height={300}
-  loading="lazy"           // Lazy load images
-  placeholder="blur"       // Blur placeholder
-  blurDataURL="data:..."   // Small base64 image
+  loading="lazy" // Lazy load images
+  placeholder="blur" // Blur placeholder
+  blurDataURL="data:..." // Small base64 image
 />
 ```
 
@@ -678,7 +683,7 @@ import dynamic from 'next/dynamic'
 
 const HeavyChart = dynamic(() => import('@/components/heavy-chart'), {
   loading: () => <div className="skeleton-shimmer h-64" />,
-  ssr: false  // Client-side only if needed
+  ssr: false, // Client-side only if needed
 })
 ```
 
@@ -694,10 +699,7 @@ export const ExpensiveCard = memo(function ExpensiveCard({ data }) {
 })
 
 // Use with useMemo for derived data
-const sortedData = useMemo(
-  () => data.sort((a, b) => b.value - a.value),
-  [data]
-)
+const sortedData = useMemo(() => data.sort((a, b) => b.value - a.value), [data])
 ```
 
 ## Checklist for New Components

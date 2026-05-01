@@ -52,9 +52,7 @@ async function main() {
     printSample(sample)
   }
 
-  const failing = results.filter(
-    (sample) => sample.p95ThresholdMs != null && sample.p95Ms > sample.p95ThresholdMs,
-  )
+  const failing = results.filter((sample) => sample.p95ThresholdMs != null && sample.p95Ms > sample.p95ThresholdMs)
 
   if (strictMode && failing.length > 0) {
     throw new Error(
@@ -136,7 +134,9 @@ async function loginDemo() {
   })
 
   if (!response.ok) {
-    throw new Error(`Demo login failed with HTTP ${response.status}. Set DESK_SESSION_COOKIE to reuse an existing session.`)
+    throw new Error(
+      `Demo login failed with HTTP ${response.status}. Set DESK_SESSION_COOKIE to reuse an existing session.`,
+    )
   }
 
   const cookie = extractCookieHeader(response)
@@ -191,10 +191,7 @@ function percentile(values, percentileValue) {
 
 function printSample(sample) {
   const threshold = sample.p95ThresholdMs == null ? '' : ` threshold=${sample.p95ThresholdMs}ms`
-  const status =
-    sample.p95ThresholdMs != null && sample.p95Ms > sample.p95ThresholdMs
-      ? 'SLOW'
-      : 'OK'
+  const status = sample.p95ThresholdMs != null && sample.p95Ms > sample.p95ThresholdMs ? 'SLOW' : 'OK'
   console.log(
     `[perf] ${status} ${sample.name} status=${sample.status} min=${sample.minMs}ms p50=${sample.p50Ms}ms p95=${sample.p95Ms}ms p99=${sample.p99Ms}ms max=${sample.maxMs}ms${threshold} shape=${sample.shape}`,
   )

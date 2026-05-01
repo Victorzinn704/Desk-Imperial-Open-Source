@@ -67,7 +67,7 @@ describe('useDashboardQueries', () => {
         return opts.queryKey[0] === 'consent'
       })
       expect(consentCall).toBeDefined()
-      expect((consentCall![0] as { enabled: boolean }).enabled).toBe(true)
+      expect((consentCall?.[0] as { enabled: boolean }).enabled).toBe(true)
     })
 
     it('disables consent query for non-settings section', () => {
@@ -78,7 +78,7 @@ describe('useDashboardQueries', () => {
         return opts.queryKey[0] === 'consent'
       })
       expect(consentCall).toBeDefined()
-      expect((consentCall![0] as { enabled: boolean }).enabled).toBe(false)
+      expect((consentCall?.[0] as { enabled: boolean }).enabled).toBe(false)
     })
 
     it('enables products for overview, financeiro, pedidos, sales, portfolio and pdv sections', () => {
@@ -91,7 +91,7 @@ describe('useDashboardQueries', () => {
           return opts.queryKey[0] === 'products'
         })
         expect(productsCall).toBeDefined()
-        expect((productsCall![0] as { enabled: boolean }).enabled).toBe(true)
+        expect((productsCall?.[0] as { enabled: boolean }).enabled).toBe(true)
       }
     })
 
@@ -102,7 +102,7 @@ describe('useDashboardQueries', () => {
         const opts = call[0] as { queryKey: string[] }
         return opts.queryKey[0] === 'products'
       })
-      expect((productsCall![0] as { enabled: boolean }).enabled).toBe(false)
+      expect((productsCall?.[0] as { enabled: boolean }).enabled).toBe(false)
     })
 
     it('enables orders for overview, financeiro, pedidos, sales and map', () => {
@@ -114,7 +114,7 @@ describe('useDashboardQueries', () => {
           const opts = call[0] as { queryKey: string[] }
           return opts.queryKey[0] === 'orders'
         })
-        expect((ordersCall![0] as { enabled: boolean }).enabled).toBe(true)
+        expect((ordersCall?.[0] as { enabled: boolean }).enabled).toBe(true)
       }
 
       // Should be disabled for portfolio
@@ -124,7 +124,7 @@ describe('useDashboardQueries', () => {
         const opts = call[0] as { queryKey: string[] }
         return opts.queryKey[0] === 'orders'
       })
-      expect((ordersCall![0] as { enabled: boolean }).enabled).toBe(false)
+      expect((ordersCall?.[0] as { enabled: boolean }).enabled).toBe(false)
     })
 
     it('disables employee and finance queries for non-owner', () => {
@@ -139,8 +139,8 @@ describe('useDashboardQueries', () => {
         return opts.queryKey[0] === 'finance'
       })
       // isOwner=false, so enabled should be false
-      expect((employeesCall![0] as { enabled: boolean }).enabled).toBe(false)
-      expect((financeCall![0] as { enabled: boolean }).enabled).toBe(false)
+      expect((employeesCall?.[0] as { enabled: boolean }).enabled).toBe(false)
+      expect((financeCall?.[0] as { enabled: boolean }).enabled).toBe(false)
     })
 
     it('disables all queries when userId is undefined', () => {

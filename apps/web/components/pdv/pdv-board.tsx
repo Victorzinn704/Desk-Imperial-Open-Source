@@ -79,22 +79,30 @@ export function PdvBoard({
     operations,
     variant,
   })
+  const previewComandaId = controller.previewComandaId
+  const editingComandaId = controller.editingComanda?.id
   const previewDetailsQuery = useQuery({
-    queryKey: ['comanda-details', 'pdv-preview', controller.previewComandaId],
+    queryKey: ['comanda-details', 'pdv-preview', previewComandaId],
     queryFn: async () => {
-      const response = await fetchComandaDetails(controller.previewComandaId!)
+      if (!previewComandaId) {
+        throw new Error('Preview comanda id is required to fetch comanda details')
+      }
+      const response = await fetchComandaDetails(previewComandaId)
       return toPdvComanda(response.comanda)
     },
-    enabled: Boolean(controller.previewComandaId),
+    enabled: Boolean(previewComandaId),
     staleTime: 5_000,
   })
   const editingDetailsQuery = useQuery({
-    queryKey: ['comanda-details', 'pdv-edit', controller.editingComanda?.id],
+    queryKey: ['comanda-details', 'pdv-edit', editingComandaId],
     queryFn: async () => {
-      const response = await fetchComandaDetails(controller.editingComanda!.id)
+      if (!editingComandaId) {
+        throw new Error('Editing comanda id is required to fetch comanda details')
+      }
+      const response = await fetchComandaDetails(editingComandaId)
       return toPdvComanda(response.comanda)
     },
-    enabled: Boolean(controller.editingComanda?.id),
+    enabled: Boolean(editingComandaId),
     staleTime: 5_000,
   })
   const previewComanda = previewDetailsQuery.data ?? controller.previewComanda

@@ -4,9 +4,9 @@ import { OrderStatus } from '@prisma/client'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
 import { recordFinanceSummaryTelemetry } from '../../common/observability/business-telemetry.util'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { PrismaService } from '../../database/prisma.service'
+import type { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
-import { CurrencyService } from '../currency/currency.service'
+import type { CurrencyService } from '../currency/currency.service'
 import { CacheService } from '../../common/services/cache.service'
 import { PillarsService } from './pillars.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
@@ -294,10 +294,10 @@ export class FinanceService {
     )
 
     // Totais computados a partir dos agregados por moeda (O(3) em vez de O(N pedidos))
-    let realizedRevenue = 0,
-      realizedCost = 0,
-      realizedProfit = 0,
-      completedOrdersCount = 0
+    let realizedRevenue = 0
+    let realizedCost = 0
+    let realizedProfit = 0
+    let completedOrdersCount = 0
     for (const agg of allTimeAggregates) {
       realizedRevenue += this.currencyService.convert(
         agg._sum.totalRevenue?.toNumber() ?? 0,
@@ -323,8 +323,8 @@ export class FinanceService {
     realizedCost = roundCurrency(realizedCost)
     realizedProfit = roundCurrency(realizedProfit)
 
-    let currentMonthRevenue = 0,
-      currentMonthProfit = 0
+    let currentMonthRevenue = 0
+    let currentMonthProfit = 0
     for (const agg of currentMonthAggregates) {
       currentMonthRevenue += this.currencyService.convert(
         agg._sum.totalRevenue?.toNumber() ?? 0,
@@ -342,8 +342,8 @@ export class FinanceService {
     currentMonthRevenue = roundCurrency(currentMonthRevenue)
     currentMonthProfit = roundCurrency(currentMonthProfit)
 
-    let previousMonthRevenue = 0,
-      previousMonthProfit = 0
+    let previousMonthRevenue = 0
+    let previousMonthProfit = 0
     for (const agg of previousMonthAggregates) {
       previousMonthRevenue += this.currencyService.convert(
         agg._sum.totalRevenue?.toNumber() ?? 0,
@@ -513,7 +513,7 @@ function isFinanceSummaryCacheEntry(
 }
 
 function getFinanceSummaryCacheAgeMs(entry: FinanceSummaryCacheEntry | FinanceSummaryResponse | null) {
-  if (!entry || !isFinanceSummaryCacheEntry(entry)) {
+  if (!(entry && isFinanceSummaryCacheEntry(entry))) {
     return null
   }
 

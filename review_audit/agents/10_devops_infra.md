@@ -14,21 +14,21 @@ Desk Imperial infrastructure is well-architected for a solo/freelance project. P
 
 ## Quantitative Evidence
 
-| Metric | Value |
-|---|---|
-| Dockerfiles | 5 (3 Oracle multi-stage, 1 sandbox single-stage, 2 utility) |
-| Docker Compose files | 9 (local dev, observability, sandbox x2, Oracle production, Oracle DB, Oracle ops, Oracle runner) |
-| CI jobs per PR | 8 parallel (quality, backend-tests, backend-e2e, frontend-unit, frontend-e2e, security, latency-gate, build) |
-| CI timeout budget | ~111 min total per PR |
-| Infrastructure VMs | 5 (prod, ops/builder, database, runner, sentinel) |
-| Deployment targets | 2 (Oracle Cloud primary, Railway secondary) |
-| Backup retention | 2 full + 7 differential (pgBackRest) |
-| Backup destination | Oracle Object Storage (S3-compatible), AES-256-CBC encrypted |
-| Restore drills | Weekly (Sunday 03:30 UTC), automated |
-| Observability services | 9 (Alloy, Prometheus, Loki, Tempo, Grafana, Alertmanager, Blackbox, node-exporter, postgres-exporter) |
-| Alert rules | 14 (7 infrastructure, 5 business, 2 scrape health) |
-| Secrets in repo | 0 tracked by git (verified via git ls-files) |
-| Health check depth | Deep -- DB SELECT + Redis PING |
+| Metric                 | Value                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Dockerfiles            | 5 (3 Oracle multi-stage, 1 sandbox single-stage, 2 utility)                                                  |
+| Docker Compose files   | 9 (local dev, observability, sandbox x2, Oracle production, Oracle DB, Oracle ops, Oracle runner)            |
+| CI jobs per PR         | 8 parallel (quality, backend-tests, backend-e2e, frontend-unit, frontend-e2e, security, latency-gate, build) |
+| CI timeout budget      | ~111 min total per PR                                                                                        |
+| Infrastructure VMs     | 5 (prod, ops/builder, database, runner, sentinel)                                                            |
+| Deployment targets     | 2 (Oracle Cloud primary, Railway secondary)                                                                  |
+| Backup retention       | 2 full + 7 differential (pgBackRest)                                                                         |
+| Backup destination     | Oracle Object Storage (S3-compatible), AES-256-CBC encrypted                                                 |
+| Restore drills         | Weekly (Sunday 03:30 UTC), automated                                                                         |
+| Observability services | 9 (Alloy, Prometheus, Loki, Tempo, Grafana, Alertmanager, Blackbox, node-exporter, postgres-exporter)        |
+| Alert rules            | 14 (7 infrastructure, 5 business, 2 scrape health)                                                           |
+| Secrets in repo        | 0 tracked by git (verified via git ls-files)                                                                 |
+| Health check depth     | Deep -- DB SELECT + Redis PING                                                                               |
 
 ---
 
@@ -65,7 +65,7 @@ Desk Imperial infrastructure is well-architected for a solo/freelance project. P
 
 - **Severity:** Low (repo is clean; local hygiene issue)
 - **Confidence:** High
-- **Evidence:** 
+- **Evidence:**
   - Root `.env` (not git-tracked, verified) contains real BREVO API key (line 33), Grafana admin password (line 52), SonarQube admin password + CI token (lines 53-54).
   - `infra/oracle/db/.env` (not tracked) contains all DB passwords, S3 access keys, pgBackRest cipher pass.
   - `infra/oracle/ops/.env` (not tracked) contains Grafana password, SonarQube JDBC password, Metabase key.
@@ -136,6 +136,7 @@ Desk Imperial infrastructure is well-architected for a solo/freelance project. P
 ### 8 / 10
 
 **Rationale:**
+
 - **+2** Multi-stage production Dockerfiles with non-root user, proper layer caching
 - **+2** Comprehensive CI pipeline (8 jobs, security scanning, performance gating, OpenAPI contract)
 - **+1.5** Full observability stack (metrics, logs, traces, alerting) with business-level SLI alerts
@@ -163,26 +164,26 @@ Desk Imperial infrastructure is well-architected for a solo/freelance project. P
 
 ## Appendix: Complete File Reference Index
 
-| Category | Key Files (Absolute Paths) |
-|---|---|
-| Docker — Production | `infra/oracle/docker/api.Dockerfile`, `infra/oracle/docker/web.Dockerfile`, `infra/oracle/db/docker/postgres.Dockerfile`, `infra/oracle/db/docker/pgbouncer.Dockerfile`, `infra/oracle/runner/docker/utility.Dockerfile` |
-| Docker — Compose | `infra/oracle/compose.yaml`, `infra/oracle/db/compose.yaml`, `infra/oracle/ops/compose.yaml`, `infra/oracle/runner/compose.yaml`, `infra/docker/docker-compose.yml`, `infra/docker/docker-compose.observability.yml`, `infra/docker/docker-compose.sandbox.yml`, `infra/docker/docker-compose.sandbox.offline.yml` |
-| Docker — Ignore | `.dockerignore` |
-| CI/CD Workflows | `.github/workflows/ci.yml`, `.github/workflows/ci-release-proposal.yml`, `.github/workflows/sonarqube.yml` |
-| CI/CD Actions | `.github/actions/setup-node-workspace/action.yml` |
-| Deploy Scripts | `infra/scripts/oracle-builder-deploy.ps1`, `infra/scripts/railway-build.sh`, `infra/scripts/railway-start.sh`, `infra/scripts/bootstrap-local.ps1` |
-| Backup & Recovery | `infra/oracle/db/config/pgbackrest.conf.template`, `infra/oracle/db/config/postgresql.conf`, `infra/scripts/oracle-db-bootstrap.sh`, `infra/oracle/runner/scripts/restore-check.sh`, `infra/oracle/runner/systemd/restore-check.timer`, `infra/oracle/runner/systemd/restore-check.service` |
-| Health Checks | `apps/api/src/modules/health/health.controller.ts`, `apps/api/src/modules/health/health.module.ts` |
-| Observability Stack | `infra/oracle/ops/compose.yaml`, `infra/oracle/ops/prometheus/prometheus.yml`, `infra/oracle/ops/prometheus/alert.rules.yml`, `infra/oracle/ops/alloy/config.alloy`, `infra/oracle/ops/loki/config.yaml`, `infra/oracle/ops/tempo/tempo.yaml`, `infra/oracle/ops/blackbox/blackbox.yml`, `infra/oracle/ops/grafana/dashboards/*.json` |
+| Category                  | Key Files (Absolute Paths)                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Docker — Production       | `infra/oracle/docker/api.Dockerfile`, `infra/oracle/docker/web.Dockerfile`, `infra/oracle/db/docker/postgres.Dockerfile`, `infra/oracle/db/docker/pgbouncer.Dockerfile`, `infra/oracle/runner/docker/utility.Dockerfile`                                                                                                                                            |
+| Docker — Compose          | `infra/oracle/compose.yaml`, `infra/oracle/db/compose.yaml`, `infra/oracle/ops/compose.yaml`, `infra/oracle/runner/compose.yaml`, `infra/docker/docker-compose.yml`, `infra/docker/docker-compose.observability.yml`, `infra/docker/docker-compose.sandbox.yml`, `infra/docker/docker-compose.sandbox.offline.yml`                                                  |
+| Docker — Ignore           | `.dockerignore`                                                                                                                                                                                                                                                                                                                                                     |
+| CI/CD Workflows           | `.github/workflows/ci.yml`, `.github/workflows/ci-release-proposal.yml`, `.github/workflows/sonarqube.yml`                                                                                                                                                                                                                                                          |
+| CI/CD Actions             | `.github/actions/setup-node-workspace/action.yml`                                                                                                                                                                                                                                                                                                                   |
+| Deploy Scripts            | `infra/scripts/oracle-builder-deploy.ps1`, `infra/scripts/railway-build.sh`, `infra/scripts/railway-start.sh`, `infra/scripts/bootstrap-local.ps1`                                                                                                                                                                                                                  |
+| Backup & Recovery         | `infra/oracle/db/config/pgbackrest.conf.template`, `infra/oracle/db/config/postgresql.conf`, `infra/scripts/oracle-db-bootstrap.sh`, `infra/oracle/runner/scripts/restore-check.sh`, `infra/oracle/runner/systemd/restore-check.timer`, `infra/oracle/runner/systemd/restore-check.service`                                                                         |
+| Health Checks             | `apps/api/src/modules/health/health.controller.ts`, `apps/api/src/modules/health/health.module.ts`                                                                                                                                                                                                                                                                  |
+| Observability Stack       | `infra/oracle/ops/compose.yaml`, `infra/oracle/ops/prometheus/prometheus.yml`, `infra/oracle/ops/prometheus/alert.rules.yml`, `infra/oracle/ops/alloy/config.alloy`, `infra/oracle/ops/loki/config.yaml`, `infra/oracle/ops/tempo/tempo.yaml`, `infra/oracle/ops/blackbox/blackbox.yml`, `infra/oracle/ops/grafana/dashboards/*.json`                               |
 | Observability — Local Dev | `infra/docker/docker-compose.observability.yml`, `infra/docker/observability/prometheus/prometheus.yml`, `infra/docker/observability/prometheus/alert.rules.yml`, `infra/docker/observability/alloy/config.alloy`, `infra/docker/observability/loki/config.yaml`, `infra/docker/observability/tempo/tempo.yaml`, `infra/docker/observability/blackbox/blackbox.yml` |
-| Environment Templates | `.env.example`, `.env.container.example`, `infra/oracle/.env.example`, `infra/oracle/db/.env.example`, `infra/oracle/ops/.env.example`, `infra/oracle/runner/.env.example` |
-| Security Hardening | `infra/scripts/oracle-host-security-hardening.sh`, `infra/scripts/oracle-db-network-guard.sh`, `infra/scripts/oracle-host-input-guard.sh` |
-| Architecture Docs | `infra/oracle/THREE_VM_STRATEGY.md`, `infra/oracle/README.md`, `infra/oracle/db/README.md`, `infra/oracle/ops/README.md`, `infra/oracle/runner/README.md` |
-| Build Pipeline | `turbo.json`, `package.json` (lines 11-57 scripts) |
-| Nginx Config | `infra/oracle/nginx/nginx.conf`, `infra/oracle/nginx/conf.d/deskimperial.conf` |
-| Deployment Targets | `railway.json`, `apps/web/railway.json` |
-| Git Hooks | `.husky/pre-commit` |
-| Git Ignore | `.gitignore` |
-| DB Init | `infra/oracle/db/initdb/010-init-roles.sh`, `infra/oracle/db/initdb/001-init-auth.sql` |
-| BI Refresh | `infra/oracle/db/scripts/refresh-bi.sh`, `infra/oracle/db/sql/refresh-bi.sql`, `infra/oracle/db/systemd/bi-refresh.timer` |
-| WireGuard | `infra/oracle/network/wireguard/*.example.conf`, `infra/oracle/network/wireguard/README.md` |
+| Environment Templates     | `.env.example`, `.env.container.example`, `infra/oracle/.env.example`, `infra/oracle/db/.env.example`, `infra/oracle/ops/.env.example`, `infra/oracle/runner/.env.example`                                                                                                                                                                                          |
+| Security Hardening        | `infra/scripts/oracle-host-security-hardening.sh`, `infra/scripts/oracle-db-network-guard.sh`, `infra/scripts/oracle-host-input-guard.sh`                                                                                                                                                                                                                           |
+| Architecture Docs         | `infra/oracle/THREE_VM_STRATEGY.md`, `infra/oracle/README.md`, `infra/oracle/db/README.md`, `infra/oracle/ops/README.md`, `infra/oracle/runner/README.md`                                                                                                                                                                                                           |
+| Build Pipeline            | `turbo.json`, `package.json` (lines 11-57 scripts)                                                                                                                                                                                                                                                                                                                  |
+| Nginx Config              | `infra/oracle/nginx/nginx.conf`, `infra/oracle/nginx/conf.d/deskimperial.conf`                                                                                                                                                                                                                                                                                      |
+| Deployment Targets        | `railway.json`, `apps/web/railway.json`                                                                                                                                                                                                                                                                                                                             |
+| Git Hooks                 | `.husky/pre-commit`                                                                                                                                                                                                                                                                                                                                                 |
+| Git Ignore                | `.gitignore`                                                                                                                                                                                                                                                                                                                                                        |
+| DB Init                   | `infra/oracle/db/initdb/010-init-roles.sh`, `infra/oracle/db/initdb/001-init-auth.sql`                                                                                                                                                                                                                                                                              |
+| BI Refresh                | `infra/oracle/db/scripts/refresh-bi.sh`, `infra/oracle/db/sql/refresh-bi.sql`, `infra/oracle/db/systemd/bi-refresh.timer`                                                                                                                                                                                                                                           |
+| WireGuard                 | `infra/oracle/network/wireguard/*.example.conf`, `infra/oracle/network/wireguard/README.md`                                                                                                                                                                                                                                                                         |

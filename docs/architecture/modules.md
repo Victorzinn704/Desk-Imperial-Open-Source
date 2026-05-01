@@ -401,17 +401,17 @@ Na borda publica esses endpoints saem sob o prefixo global: `/api/v1/health`, `/
 
 `CacheService` fica fora de `modules/`, mas e parte estrutural do sistema. Chaves relevantes:
 
-| Dado | Chave |
-| --- | --- |
-| Finance summary | `finance:summary:{userId}` |
-| Products list | `products:list:{userId}:{scope}` |
-| Employees list | `employees:list:{userId}` |
-| Orders summary | `orders:summary:{userId}` |
-| Operations live | `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` |
-| Operations kitchen | `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}` |
-| Operations summary | `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}` |
-| Gemini insight | `gemini:insight:{userId}:{currency}:{focus}` |
-| Notification idempotency | `notifications:delivery:{workspaceOwnerUserId}:{idempotencyKey}` |
+| Dado                     | Chave                                                                  |
+| ------------------------ | ---------------------------------------------------------------------- |
+| Finance summary          | `finance:summary:{userId}`                                             |
+| Products list            | `products:list:{userId}:{scope}`                                       |
+| Employees list           | `employees:list:{userId}`                                              |
+| Orders summary           | `orders:summary:{userId}`                                              |
+| Operations live          | `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` |
+| Operations kitchen       | `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}`     |
+| Operations summary       | `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}`     |
+| Gemini insight           | `gemini:insight:{userId}:{currency}:{focus}`                           |
+| Notification idempotency | `notifications:delivery:{workspaceOwnerUserId}:{idempotencyKey}`       |
 
 ---
 

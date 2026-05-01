@@ -36,9 +36,24 @@ describe('finance-analytics.util', () => {
   it('agrega vendas por canal ordenando por receita', () => {
     const result = buildSalesByChannel(
       [
-        { channel: 'PDV', currency: CurrencyCode.BRL, _count: { _all: 1 }, _sum: { totalRevenue: 100, totalProfit: 40 } },
-        { channel: 'Delivery', currency: CurrencyCode.BRL, _count: { _all: 1 }, _sum: { totalRevenue: 220, totalProfit: 80 } },
-        { channel: 'PDV', currency: CurrencyCode.BRL, _count: { _all: 1 }, _sum: { totalRevenue: 150, totalProfit: 60 } },
+        {
+          channel: 'PDV',
+          currency: CurrencyCode.BRL,
+          _count: { _all: 1 },
+          _sum: { totalRevenue: 100, totalProfit: 40 },
+        },
+        {
+          channel: 'Delivery',
+          currency: CurrencyCode.BRL,
+          _count: { _all: 1 },
+          _sum: { totalRevenue: 220, totalProfit: 80 },
+        },
+        {
+          channel: 'PDV',
+          currency: CurrencyCode.BRL,
+          _count: { _all: 1 },
+          _sum: { totalRevenue: 150, totalProfit: 60 },
+        },
       ],
       options,
     )

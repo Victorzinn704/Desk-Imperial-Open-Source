@@ -23,7 +23,13 @@ function DesignLabSalaoPageContent() {
   const user = sessionQuery.data?.user
   const tab = searchParams.get('tab')
   const initialView =
-    tab === 'planta' ? 'planta' : tab === 'configuracao' ? 'configuracao' : tab === 'comandas' ? 'comandas' : 'operacional'
+    tab === 'planta'
+      ? 'planta'
+      : tab === 'configuracao'
+        ? 'configuracao'
+        : tab === 'comandas'
+          ? 'comandas'
+          : 'operacional'
 
   function handleViewChange(nextView: View) {
     const params = new URLSearchParams(searchParams.toString())
@@ -35,11 +41,7 @@ function DesignLabSalaoPageContent() {
   if (sessionQuery.isLoading) {
     return (
       <section className="space-y-6">
-        <LabPageHeader
-          eyebrow="Gestão do salão"
-          title="Salão"
-          description="Ocupação, receita e giro de mesas."
-        />
+        <LabPageHeader eyebrow="Gestão do salão" title="Salão" description="Ocupação, receita e giro de mesas." />
 
         <LabPanel padding="md">
           <p className="text-sm text-[var(--lab-fg-soft)]">Carregando sessão para abrir o salão.</p>
@@ -51,11 +53,7 @@ function DesignLabSalaoPageContent() {
   if (!user) {
     return (
       <section className="space-y-6">
-        <LabPageHeader
-          eyebrow="Gestão do salão"
-          title="Salão"
-          description="Ocupação, receita e giro de mesas."
-        />
+        <LabPageHeader eyebrow="Gestão do salão" title="Salão" description="Ocupação, receita e giro de mesas." />
 
         <SalaoLockedState />
       </section>
@@ -135,16 +133,22 @@ function SalaoLockedState() {
         </div>
       </LabPanel>
 
-      <LabPanel
-        action={<LabStatusPill tone="info">preview</LabStatusPill>}
-        padding="md"
-        title="O que abre no salão"
-      >
+      <LabPanel action={<LabStatusPill tone="info">preview</LabStatusPill>} padding="md" title="O que abre no salão">
         <div className="space-y-0">
-          <LabSignalRow label="operacional" note="grade viva das mesas e status de ocupação" tone="success" value="sim" />
+          <LabSignalRow
+            label="operacional"
+            note="grade viva das mesas e status de ocupação"
+            tone="success"
+            value="sim"
+          />
           <LabSignalRow label="comandas" note="lista de comandas por mesa e acesso ao PDV" tone="info" value="sim" />
           <LabSignalRow label="configuração" note="criação, ativação e edição das mesas" tone="neutral" value="sim" />
-          <LabSignalRow label="planta baixa" note="posicionamento visual do salão por setor" tone="warning" value="sim" />
+          <LabSignalRow
+            label="planta baixa"
+            note="posicionamento visual do salão por setor"
+            tone="warning"
+            value="sim"
+          />
         </div>
       </LabPanel>
     </div>

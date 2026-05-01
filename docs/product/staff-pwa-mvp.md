@@ -99,14 +99,14 @@ Estado atual:
 
 ## Boundary oficial
 
-| Area | Recorte |
-| --- | --- |
-| Mesas | global do salao |
-| Cozinha | global do salao |
-| Comandas abertas | global do salao |
-| Historico | pessoal do funcionario |
-| Ranking | pessoal com contexto de equipe |
-| Vendas | proprias, salvo quando o dono estiver no Owner PWA |
+| Area             | Recorte                                            |
+| ---------------- | -------------------------------------------------- |
+| Mesas            | global do salao                                    |
+| Cozinha          | global do salao                                    |
+| Comandas abertas | global do salao                                    |
+| Historico        | pessoal do funcionario                             |
+| Ranking          | pessoal com contexto de equipe                     |
+| Vendas           | proprias, salvo quando o dono estiver no Owner PWA |
 
 ## Criterio de pronto do MVP
 

@@ -1,4 +1,10 @@
-import { createElement, isValidElement, type ComponentPropsWithoutRef, type HTMLAttributes, type ReactNode } from 'react'
+import {
+  createElement,
+  isValidElement,
+  type ComponentPropsWithoutRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react'
 import { X, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -183,21 +189,20 @@ export function LabPageHeader({
   asideClassName,
 }: LabPageHeaderProps) {
   return (
-    <header
-      className={cn(
-        'lab-page-header space-y-4 border-b border-[var(--lab-border)] pb-4',
-        className,
-      )}
-    >
+    <header className={cn('lab-page-header space-y-4 border-b border-[var(--lab-border)] pb-4', className)}>
       <div className="lab-page-header__main flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="lab-page-header__content min-w-0 flex-1 space-y-3">
           {eyebrow ? (
-            <p className="lab-page-header__eyebrow text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">{eyebrow}</p>
+            <p className="lab-page-header__eyebrow text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+              {eyebrow}
+            </p>
           ) : null}
           <div className="lab-page-header__title-block space-y-1">
             <h1 className="lab-page-header__title text-3xl font-semibold text-[var(--lab-fg)] sm:text-4xl">{title}</h1>
             {description ? (
-              <p className="lab-page-header__description max-w-2xl text-sm leading-6 text-[var(--lab-fg-soft)]">{description}</p>
+              <p className="lab-page-header__description max-w-2xl text-sm leading-6 text-[var(--lab-fg-soft)]">
+                {description}
+              </p>
             ) : null}
           </div>
           {children ? <div className="lab-page-header__children pt-1">{children}</div> : null}
@@ -205,10 +210,7 @@ export function LabPageHeader({
 
         {(meta || actions) && (
           <div
-            className={cn(
-              'lab-page-header__aside flex w-full flex-col gap-3 xl:max-w-md xl:items-end',
-              asideClassName,
-            )}
+            className={cn('lab-page-header__aside flex w-full flex-col gap-3 xl:max-w-md xl:items-end', asideClassName)}
           >
             {meta ? (
               <div
@@ -220,7 +222,9 @@ export function LabPageHeader({
                 {meta}
               </div>
             ) : null}
-            {actions ? <div className="lab-page-header__actions flex flex-wrap items-center gap-2 xl:justify-end">{actions}</div> : null}
+            {actions ? (
+              <div className="lab-page-header__actions flex flex-wrap items-center gap-2 xl:justify-end">{actions}</div>
+            ) : null}
           </div>
         )}
       </div>
@@ -263,7 +267,9 @@ export function LabPanel({
         >
           <div className="min-w-0 flex-1">
             {title ? <h2 className="lab-panel__title text-base font-semibold text-[var(--lab-fg)]">{title}</h2> : null}
-            {subtitle ? <p className="lab-panel__subtitle mt-1 text-sm leading-6 text-[var(--lab-fg-soft)]">{subtitle}</p> : null}
+            {subtitle ? (
+              <p className="lab-panel__subtitle mt-1 text-sm leading-6 text-[var(--lab-fg-soft)]">{subtitle}</p>
+            ) : null}
           </div>
           {action ? <div className="lab-panel__action flex shrink-0 items-center gap-2">{action}</div> : null}
         </div>
@@ -287,8 +293,7 @@ export function LabMetric({
   footer,
   className,
 }: LabMetricProps) {
-  const progressWidth =
-    typeof progress === 'number' ? `${Math.max(0, Math.min(progress, 100))}%` : progress
+  const progressWidth = typeof progress === 'number' ? `${Math.max(0, Math.min(progress, 100))}%` : progress
 
   return (
     <LabPanel className={cn('lab-metric', className)} padding="md">
@@ -301,10 +306,10 @@ export function LabMetric({
               </span>
             ) : null}
             <div className="lab-metric__copy min-w-0">
-              <p className="lab-metric__label text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">{label}</p>
-              <p className={cn('lab-metric__value mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_SECTION_CLASS)}>
-                {value}
+              <p className="lab-metric__label text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+                {label}
               </p>
+              <p className={cn('lab-metric__value mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_SECTION_CLASS)}>{value}</p>
             </div>
           </div>
         </div>
@@ -315,12 +320,17 @@ export function LabMetric({
         ) : null}
       </div>
 
-      {hint ? <p className="lab-metric__hint mt-2 truncate text-[13px] leading-5 text-[var(--lab-fg-soft)]">{hint}</p> : null}
+      {hint ? (
+        <p className="lab-metric__hint mt-2 truncate text-[13px] leading-5 text-[var(--lab-fg-soft)]">{hint}</p>
+      ) : null}
 
       {progressWidth ? (
         <div className="lab-metric__progress mt-4">
           <div className="lab-metric__progress-track h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
-            <div className="lab-metric__progress-bar h-full rounded-full bg-[var(--lab-blue)]" style={{ width: progressWidth }} />
+            <div
+              className="lab-metric__progress-bar h-full rounded-full bg-[var(--lab-blue)]"
+              style={{ width: progressWidth }}
+            />
           </div>
           <div className="lab-metric__progress-meta mt-2 flex items-center justify-between gap-3 text-[11px] font-medium text-[var(--lab-fg-soft)]">
             <span>{progressWidth} concluído</span>
@@ -360,7 +370,12 @@ export function LabTable<Row>({
   }
 
   return (
-    <div className={cn('lab-table overflow-x-auto rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)]', className)}>
+    <div
+      className={cn(
+        'lab-table overflow-x-auto rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)]',
+        className,
+      )}
+    >
       <table className={cn('lab-table__table min-w-full text-sm', tableClassName)}>
         <thead className="lab-table__head border-b border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-xs uppercase text-[var(--lab-fg-muted)]">
           <tr>
@@ -417,14 +432,7 @@ export function LabTable<Row>({
   )
 }
 
-export function LabEmptyState({
-  title,
-  description,
-  icon,
-  action,
-  compact = false,
-  className,
-}: LabEmptyStateProps) {
+export function LabEmptyState({ title, description, icon, action, compact = false, className }: LabEmptyStateProps) {
   const lead = resolveLead(icon)
 
   return (
@@ -435,7 +443,12 @@ export function LabEmptyState({
         className,
       )}
     >
-      <div className={cn('lab-empty-state__content mx-auto flex max-w-xl flex-col items-center text-center', compact ? 'gap-3' : 'gap-4')}>
+      <div
+        className={cn(
+          'lab-empty-state__content mx-auto flex max-w-xl flex-col items-center text-center',
+          compact ? 'gap-3' : 'gap-4',
+        )}
+      >
         {lead ? (
           <span className="lab-empty-state__lead inline-flex size-12 items-center justify-center rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-blue)]">
             {lead}
@@ -443,7 +456,9 @@ export function LabEmptyState({
         ) : null}
         <div className="lab-empty-state__copy space-y-2">
           <h3 className="lab-empty-state__title text-lg font-semibold text-[var(--lab-fg)]">{title}</h3>
-          {description ? <p className="lab-empty-state__description text-xs leading-5 text-[var(--lab-fg-soft)]">{description}</p> : null}
+          {description ? (
+            <p className="lab-empty-state__description text-xs leading-5 text-[var(--lab-fg-soft)]">{description}</p>
+          ) : null}
         </div>
         {action ? <div className="lab-empty-state__action pt-1">{action}</div> : null}
       </div>
@@ -475,13 +490,7 @@ export function LabStatusPill({
   )
 }
 
-export function LabMiniStat({
-  label,
-  value,
-  description,
-  className,
-  ...props
-}: LabMiniStatProps) {
+export function LabMiniStat({ label, value, description, className, ...props }: LabMiniStatProps) {
   return (
     <div
       className={cn(
@@ -491,20 +500,13 @@ export function LabMiniStat({
       {...props}
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">{label}</p>
-      <p className={cn('mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_COMPACT_CLASS)}>
-        {value}
-      </p>
+      <p className={cn('mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_COMPACT_CLASS)}>{value}</p>
       {description ? <p className="mt-1 text-[13px] leading-5 text-[var(--lab-fg-soft)]">{description}</p> : null}
     </div>
   )
 }
 
-export function LabMetricStrip({
-  columnsClassName,
-  className,
-  children,
-  ...props
-}: LabMetricStripProps) {
+export function LabMetricStrip({ columnsClassName, className, children, ...props }: LabMetricStripProps) {
   return (
     <div
       className={cn(
@@ -520,25 +522,14 @@ export function LabMetricStrip({
   )
 }
 
-export function LabMetricStripItem({
-  label,
-  value,
-  description,
-  className,
-  ...props
-}: LabMetricStripItemProps) {
+export function LabMetricStripItem({ label, value, description, className, ...props }: LabMetricStripItemProps) {
   return (
     <div
-      className={cn(
-        'lab-metric-strip__item min-w-0 bg-[var(--lab-surface-raised)] px-4 py-4',
-        className,
-      )}
+      className={cn('lab-metric-strip__item min-w-0 bg-[var(--lab-surface-raised)] px-4 py-4', className)}
       {...props}
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">{label}</p>
-      <p className={cn('mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_COMPACT_CLASS)}>
-        {value}
-      </p>
+      <p className={cn('mt-2 text-[var(--lab-fg)]', LAB_NUMERIC_COMPACT_CLASS)}>{value}</p>
       {description ? <p className="mt-1 text-[13px] leading-5 text-[var(--lab-fg-soft)]">{description}</p> : null}
     </div>
   )
@@ -572,12 +563,7 @@ export function LabSignalRow({
   )
 }
 
-export function LabFactPill({
-  label,
-  value,
-  className,
-  ...props
-}: LabFactPillProps) {
+export function LabFactPill({ label, value, className, ...props }: LabFactPillProps) {
   return (
     <div
       className={cn(
@@ -677,7 +663,9 @@ export function LabModal({
 
         <div className="lab-modal__body max-h-[75vh] overflow-y-auto px-6 py-5">{children}</div>
 
-        {actions ? <div className="lab-modal__footer border-t border-[var(--lab-border)] px-6 py-5">{actions}</div> : null}
+        {actions ? (
+          <div className="lab-modal__footer border-t border-[var(--lab-border)] px-6 py-5">{actions}</div>
+        ) : null}
       </div>
     </div>
   )

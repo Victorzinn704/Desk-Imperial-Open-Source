@@ -44,6 +44,7 @@ O alvo correto e este:
 #### Browser -> API
 
 Continuar com:
+
 - HTTPS obrigatorio
 - HSTS
 - cookies `Secure`
@@ -62,23 +63,27 @@ Existem dois cenarios aceitaveis:
    - usar `sslmode=require` ou `verify-full` quando o stack suportar certificado de servidor
 
 Regra pratica:
+
 - se a conexao sair da malha privada, `sslmode=require` deixa de ser opcional
 
 #### API -> Redis
 
 Mesmo criterio:
+
 - em malha privada/WireGuard, o risco cai
 - fora disso, usar `rediss://`
 
 ### 2. Campo sensivel
 
 Criado o primitivo reutilizavel:
+
 - [field-encryption.util.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/utils/field-encryption.util.ts:1)
 - algoritmo: `AES-256-GCM`
 - payload versionado: `enc.v1.*`
 - suporte a `AAD` para amarrar o payload ao contexto
 
 Teste:
+
 - [field-encryption.util.spec.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/test/field-encryption.util.spec.ts:1)
 
 ### 3. O que deve ser criptografado no banco

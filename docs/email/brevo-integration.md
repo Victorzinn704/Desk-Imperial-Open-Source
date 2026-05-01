@@ -3,6 +3,7 @@
 This document covers the complete Brevo (formerly Sendinblue) email integration for DESK IMPERIAL, including API setup, domain configuration, template customization, and troubleshooting.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [API Setup](#api-setup)
 - [Domain Configuration](#domain-configuration)
@@ -115,6 +116,7 @@ private async sendWithBrevoApi(
 ```
 
 **Key Features:**
+
 - **15-second timeout** on API requests
 - **Message ID tracking** for delivery confirmation
 - **Automatic error detection** and meaningful error messages
@@ -131,6 +133,7 @@ send.deskimperial.com     → Email Sender (Brevo)
 ```
 
 **Why separate email domain?**
+
 - Protects main domain reputation
 - Easier to manage SPF/DKIM records
 - Better email deliverability
@@ -209,11 +212,11 @@ nslookup -type=TXT _dmarc.send.deskimperial.com
 
 ### DMARC Policy Levels
 
-| Policy | Action | Use Case |
-|--------|--------|----------|
-| `p=none` | Monitor only (reports sent) | Initial testing |
-| `p=quarantine` | Mark as spam | Recommended for production |
-| `p=reject` | Reject email | Strict security (may cause false positives) |
+| Policy         | Action                      | Use Case                                    |
+| -------------- | --------------------------- | ------------------------------------------- |
+| `p=none`       | Monitor only (reports sent) | Initial testing                             |
+| `p=quarantine` | Mark as spam                | Recommended for production                  |
+| `p=reject`     | Reject email                | Strict security (may cause false positives) |
 
 **Recommendation for DESK IMPERIAL:** Start with `p=quarantine`, monitor reports, then optionally move to `p=reject`.
 
@@ -231,8 +234,9 @@ export function buildEmailVerificationContent(params: CodeTemplateParams) {
   return buildCodeEmail({
     eyebrow: 'Confirmacao de email',
     title: 'Confirme seu email para liberar o primeiro acesso.',
-    intro: 'Sua conta foi criada com sucesso. Antes de entrar no portal, ' +
-           'precisamos validar este email para liberar o acesso com seguranca.',
+    intro:
+      'Sua conta foi criada com sucesso. Antes de entrar no portal, ' +
+      'precisamos validar este email para liberar o acesso com seguranca.',
     actionLabel: 'Codigo de confirmacao',
     helper: 'Se voce nao criou esta conta, ignore esta mensagem.',
     previewText: 'Confirme seu email para concluir o cadastro no DESK IMPERIAL.',
@@ -241,12 +245,13 @@ export function buildEmailVerificationContent(params: CodeTemplateParams) {
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendEmailVerificationEmail({
   to: user.email,
   fullName: user.fullName,
   code: '12345678',
-  expiresInMinutes: 15
+  expiresInMinutes: 15,
 })
 ```
 
@@ -262,8 +267,8 @@ export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
   return buildCodeEmail({
     eyebrow: 'Recuperacao de acesso',
     title: 'Use este codigo para redefinir sua senha.',
-    intro: 'Recebemos uma solicitacao para redefinir a senha da sua conta. ' +
-           'Se foi voce, use o codigo abaixo no portal.',
+    intro:
+      'Recebemos uma solicitacao para redefinir a senha da sua conta. ' + 'Se foi voce, use o codigo abaixo no portal.',
     actionLabel: 'Codigo de redefinicao',
     helper: 'Se voce nao solicitou essa troca, ignore este email.',
     previewText: 'Codigo para redefinir a senha da sua conta DESK IMPERIAL.',
@@ -272,12 +277,13 @@ export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendPasswordResetEmail({
   to: user.email,
   fullName: user.fullName,
   code: '87654321',
-  expiresInMinutes: 30
+  expiresInMinutes: 30,
 })
 ```
 
@@ -289,13 +295,9 @@ await mailerService.sendPasswordResetEmail({
 **Location:** `apps/api/src/modules/mailer/mailer.templates.ts`
 
 ```typescript
-export function buildPasswordChangedEmailContent(
-  params: PasswordChangedTemplateParams
-) {
+export function buildPasswordChangedEmailContent(params: PasswordChangedTemplateParams) {
   const occurredAt = formatDateTime(params.changedAt)
-  const ipSummary = params.ipAddress
-    ? `IP: ${params.ipAddress}`
-    : 'IP nao identificado'
+  const ipSummary = params.ipAddress ? `IP: ${params.ipAddress}` : 'IP nao identificado'
 
   // Email includes metadata box with timestamp and IP
   return {
@@ -307,12 +309,13 @@ export function buildPasswordChangedEmailContent(
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendPasswordChangedEmail({
   to: user.email,
   fullName: user.fullName,
   changedAt: new Date(),
-  ipAddress: request.ip
+  ipAddress: request.ip,
 })
 ```
 
@@ -324,13 +327,9 @@ await mailerService.sendPasswordChangedEmail({
 **Configuration:** `LOGIN_ALERT_EMAILS_ENABLED=true` (default: false)
 
 ```typescript
-export function buildLoginAlertEmailContent(
-  params: LoginAlertTemplateParams
-) {
+export function buildLoginAlertEmailContent(params: LoginAlertTemplateParams) {
   const occurredAt = formatDateTime(params.occurredAt)
-  const deviceSummary = params.userAgent
-    ? truncate(params.userAgent, 140)
-    : 'Navegador nao identificado'
+  const deviceSummary = params.userAgent ? truncate(params.userAgent, 140) : 'Navegador nao identificado'
 
   return {
     subject: `${params.appName} | Novo acesso detectado`,
@@ -341,13 +340,14 @@ export function buildLoginAlertEmailContent(
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendLoginAlertEmail({
   to: user.email,
   fullName: user.fullName,
   occurredAt: new Date(),
   ipAddress: request.ip,
-  userAgent: request.headers['user-agent']
+  userAgent: request.headers['user-agent'],
 })
 ```
 
@@ -357,15 +357,14 @@ await mailerService.sendLoginAlertEmail({
 
 **Purpose:** Alert user of suspicious login attempts  
 **Configuration:**
+
 ```env
 FAILED_LOGIN_ALERTS_ENABLED=true
 FAILED_LOGIN_ALERT_THRESHOLD=3
 ```
 
 ```typescript
-export function buildFailedLoginAlertEmailContent(
-  params: FailedLoginAlertTemplateParams
-) {
+export function buildFailedLoginAlertEmailContent(params: FailedLoginAlertTemplateParams) {
   return {
     subject: `${params.appName} | Tentativas de acesso na sua conta`,
     tags: ['auth', 'failed-login'],
@@ -375,6 +374,7 @@ export function buildFailedLoginAlertEmailContent(
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendFailedLoginAlertEmail({
   to: user.email,
@@ -383,7 +383,7 @@ await mailerService.sendFailedLoginAlertEmail({
   attemptCount: 5,
   ipAddress: request.ip,
   userAgent: request.headers['user-agent'],
-  locationSummary: 'Brasil'
+  locationSummary: 'Brasil',
 })
 ```
 
@@ -394,9 +394,7 @@ await mailerService.sendFailedLoginAlertEmail({
 **Purpose:** Confirm receipt of user feedback/support ticket
 
 ```typescript
-export function buildFeedbackReceiptEmailContent(
-  params: FeedbackReceiptTemplateParams
-) {
+export function buildFeedbackReceiptEmailContent(params: FeedbackReceiptTemplateParams) {
   const receivedAt = formatDateTime(params.receivedAt)
 
   return {
@@ -408,13 +406,14 @@ export function buildFeedbackReceiptEmailContent(
 ```
 
 **Usage:**
+
 ```typescript
 await mailerService.sendFeedbackReceiptEmail({
   to: user.email,
   fullName: user.fullName,
   subjectLine: 'Bug no dashboard',
   ticketId: 'TKT-20240321-001',
-  receivedAt: new Date()
+  receivedAt: new Date(),
 })
 ```
 
@@ -529,7 +528,7 @@ All text is in `mailer.templates.ts`. To change language:
 // Portuguese → English example
 export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
   return buildCodeEmail({
-    eyebrow: 'Password Recovery',  // was: 'Recuperacao de acesso'
+    eyebrow: 'Password Recovery', // was: 'Recuperacao de acesso'
     title: 'Use this code to reset your password.',
     intro: 'We received a request to reset your account password.',
     actionLabel: 'Reset Code',
@@ -613,6 +612,7 @@ async sendWelcomeEmail(params: {
 **Cause:** Invalid or missing API key
 
 **Fix:**
+
 1. Generate real API key from Brevo → **API & Integration → API Keys**
 2. Update `BREVO_API_KEY` in environment variables
 3. Restart API server
@@ -629,6 +629,7 @@ echo $BREVO_API_KEY
 **Cause:** Email sender not added/validated in Brevo
 
 **Fix:**
+
 1. Go to Brevo → **Senders & IP → Senders**
 2. Add sender: `no-reply@send.deskimperial.com`
 3. Confirm ownership via email link
@@ -639,6 +640,7 @@ echo $BREVO_API_KEY
 **Cause:** DNS records not propagated or incorrect
 
 **Fix:**
+
 1. Check DNS records in Brevo dashboard
 2. Verify records are added to DNS provider
 3. Wait for propagation (up to 48 hours)
@@ -653,6 +655,7 @@ echo $BREVO_API_KEY
 **Cause:** `EMAIL_PROVIDER` set to `log` or Brevo not configured
 
 **Fix:**
+
 ```env
 # Development (console logging)
 EMAIL_PROVIDER=log
@@ -667,6 +670,7 @@ BREVO_API_KEY=<real-brevo-api-key>
 **Cause:** Brevo API taking longer than 15 seconds
 
 **Fix:**
+
 - Check Brevo status page
 - Increase timeout in `mailer.service.ts`:
   ```typescript
@@ -676,12 +680,14 @@ BREVO_API_KEY=<real-brevo-api-key>
 #### 6. Emails Going to Spam
 
 **Possible Causes:**
+
 - DMARC policy too strict (`p=reject`)
 - Missing SPF/DKIM records
 - Low sender reputation (new domain)
 - Generic content triggering spam filters
 
 **Fixes:**
+
 1. Verify all DNS records (SPF, DKIM, DMARC)
 2. Start with `p=quarantine` instead of `p=reject`
 3. Warm up sending domain gradually
@@ -698,16 +704,17 @@ Enable detailed logging in development:
 this.logger.debug('Sending email via Brevo', {
   to: params.to,
   subject: params.subject,
-  tags: params.tags
+  tags: params.tags,
 })
 
 this.logger.debug('Brevo API response', {
   messageId: payload?.messageId,
-  status: response.status
+  status: response.status,
 })
 ```
 
 View logs:
+
 ```bash
 # Development
 npm run dev

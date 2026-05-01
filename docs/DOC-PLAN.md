@@ -63,14 +63,14 @@ Hoje, as referencias prioritarias sao:
 
 ### docs/ — Arquitetura
 
-| Arquivo                                    | Status    | Propósito                                             |
-| ------------------------------------------ | --------- | ----------------------------------------------------- |
-| `docs/architecture/overview.md`            | Existe    | Visão geral da arquitetura — revisar                  |
-| `docs/architecture/modules.md`             | ✅ Criado | Responsabilidade dos módulos de domínio ativos |
-| `docs/architecture/database.md`            | ✅ Criado | Schema completo documentado por entidade              |
-| `docs/architecture/realtime.md`            | ✅ Criado | Fluxo Socket.IO — namespace, eventos, ciclo de vida   |
-| `docs/architecture/authentication-flow.md` | Existe    | Fluxo de autenticação — não alterar                   |
-| `docs/architecture/local-development.md`   | Existe    | Setup local — não alterar                             |
+| Arquivo                                    | Status    | Propósito                                           |
+| ------------------------------------------ | --------- | --------------------------------------------------- |
+| `docs/architecture/overview.md`            | Existe    | Visão geral da arquitetura — revisar                |
+| `docs/architecture/modules.md`             | ✅ Criado | Responsabilidade dos módulos de domínio ativos      |
+| `docs/architecture/database.md`            | ✅ Criado | Schema completo documentado por entidade            |
+| `docs/architecture/realtime.md`            | ✅ Criado | Fluxo Socket.IO — namespace, eventos, ciclo de vida |
+| `docs/architecture/authentication-flow.md` | Existe    | Fluxo de autenticação — não alterar                 |
+| `docs/architecture/local-development.md`   | Existe    | Setup local — não alterar                           |
 
 ### docs/ — Segurança
 

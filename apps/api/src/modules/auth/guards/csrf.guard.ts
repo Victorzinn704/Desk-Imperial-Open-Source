@@ -1,8 +1,14 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
+import type { ConfigService } from '@nestjs/config'
 import { timingSafeEqual } from 'node:crypto'
 import type { SessionRequest } from '../auth.types'
-import { AuthService } from '../auth.service'
+import type { AuthService } from '../auth.service'
 import { getAllowedOrigins, isAllowedOrigin } from '../../../common/utils/origin.util'
 
 @Injectable()
@@ -27,11 +33,11 @@ export class CsrfGuard implements CanActivate {
     const headerToken = this.readHeaderToken(request)
     const expectedToken = this.authService.buildCsrfToken(auth.sessionId)
 
-    if (!cookieToken || !headerToken) {
+    if (!(cookieToken && headerToken)) {
       throw new ForbiddenException('Token CSRF ausente.')
     }
 
-    if (!safeEqual(cookieToken, headerToken) || !safeEqual(cookieToken, expectedToken)) {
+    if (!(safeEqual(cookieToken, headerToken) && safeEqual(cookieToken, expectedToken))) {
       throw new ForbiddenException('Token CSRF invalido.')
     }
 

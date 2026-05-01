@@ -12,4 +12,3 @@ export function buildOwnerMobileFullLabHref(href: string) {
 
   return `${pathname}?${params.toString()}`
 }
-

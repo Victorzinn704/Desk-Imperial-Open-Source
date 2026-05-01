@@ -66,7 +66,9 @@ function applyPackagingPreset(
   }
 
   const preset = productPackagingPresets.find((entry) => entry.key === presetKey)
-  if (!preset) {return}
+  if (!preset) {
+    return
+  }
 
   setValue('packagingClass', preset.label, { shouldDirty: true, shouldValidate: true })
   setValue('measurementUnit', preset.measurementUnit, { shouldDirty: true, shouldValidate: true })
@@ -209,7 +211,11 @@ export function ProductForm({
     resolver: zodResolver(productSchema),
     defaultValues: emptyValues,
   })
-  const { fields: comboFields, append: appendComboItem, remove: removeComboItem } = useFieldArray({
+  const {
+    fields: comboFields,
+    append: appendComboItem,
+    remove: removeComboItem,
+  } = useFieldArray({
     control,
     name: 'comboItems',
   })
@@ -245,7 +251,9 @@ export function ProductForm({
 
   // Auto-toggle requiresKitchen when category name suggests food/prep
   useEffect(() => {
-    if (!categoryValue) {return}
+    if (!categoryValue) {
+      return
+    }
     const shouldBeKitchen = isKitchenCategory(categoryValue)
     // Only auto-set to true — never force to false (user override respected)
     if (shouldBeKitchen && !requiresKitchenValue) {
@@ -323,7 +331,9 @@ export function ProductForm({
         className={isEmbedded ? 'space-y-8' : 'mt-6 space-y-5'}
         onSubmit={handleSubmit((values) => {
           onSubmit(values)
-          if (!product) {resetFormToDefaults()}
+          if (!product) {
+            resetFormToDefaults()
+          }
         })}
       >
         <section className="space-y-5">
@@ -427,7 +437,10 @@ export function ProductForm({
           >
             {isEmbedded ? (
               <>
-                <InlineReading label="cada unidade" value={formatMeasurement(measurementValue, measurementUnitValue || 'UN')} />
+                <InlineReading
+                  label="cada unidade"
+                  value={formatMeasurement(measurementValue, measurementUnitValue || 'UN')}
+                />
                 <InlineReading label="cada caixa/fardo" value={`${unitsPerPackage} und`} />
                 <InlineReading label="estoque calculado" value={`${calculatedStockTotal} und`} />
               </>
@@ -447,7 +460,9 @@ export function ProductForm({
                   </div>
                   <div className="imperial-card-stat px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-soft)]">Estoque calculado</p>
-                    <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">{calculatedStockTotal} und</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
+                      {calculatedStockTotal} und
+                    </p>
                   </div>
                 </div>
               </>
@@ -685,7 +700,7 @@ export function ProductForm({
               aria-checked={requiresKitchenValue}
               className="relative shrink-0 h-6 w-11 rounded-full transition-colors"
               role="switch"
-            style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'var(--surface-muted)' }}
+              style={{ background: requiresKitchenValue ? 'var(--accent, #008cff)' : 'var(--surface-muted)' }}
               type="button"
               onClick={() => setValue('requiresKitchen', !requiresKitchenValue, { shouldDirty: true })}
             >

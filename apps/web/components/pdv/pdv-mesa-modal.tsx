@@ -22,7 +22,9 @@ export function PdvMesaModal({ onClose, onSave }: Readonly<PdvMesaModalProps>) {
   const capacidadeInputId = 'pdv-mesa-capacidade'
 
   function handleSave() {
-    if (!numero.trim()) {return}
+    if (!numero.trim()) {
+      return
+    }
     onSave({ numero: numero.trim(), capacidade, status })
     onClose()
   }

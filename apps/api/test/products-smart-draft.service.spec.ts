@@ -36,7 +36,7 @@ describe('ProductsSmartDraftService', () => {
     cache.increment.mockResolvedValue(1)
     cache.set.mockResolvedValue(undefined)
     auditLogService.record.mockResolvedValue(undefined)
-    global.fetch = (jest.fn(async () => ({
+    global.fetch = jest.fn(async () => ({
       ok: true,
       json: async () => ({
         candidates: [
@@ -66,7 +66,7 @@ describe('ProductsSmartDraftService', () => {
           },
         ],
       }),
-    })) as unknown) as typeof fetch
+    })) as unknown as typeof fetch
 
     service = new ProductsSmartDraftService(
       configService as unknown as ConfigService,
@@ -110,13 +110,9 @@ describe('ProductsSmartDraftService', () => {
   })
 
   it('rejeita payload vazio', async () => {
-    await expect(
-      service.generateDraft(
-        makeOwnerAuthContext(),
-        {},
-        makeRequestContext(),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(service.generateDraft(makeOwnerAuthContext(), {}, makeRequestContext())).rejects.toBeInstanceOf(
+      BadRequestException,
+    )
   })
 
   it('falha quando o Gemini não está configurado', async () => {
@@ -134,11 +130,7 @@ describe('ProductsSmartDraftService', () => {
     )
 
     await expect(
-      service.generateDraft(
-        makeOwnerAuthContext(),
-        { name: 'Brahma' },
-        makeRequestContext(),
-      ),
+      service.generateDraft(makeOwnerAuthContext(), { name: 'Brahma' }, makeRequestContext()),
     ).rejects.toBeInstanceOf(ServiceUnavailableException)
   })
 })

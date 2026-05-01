@@ -54,12 +54,7 @@ export async function resolveMesaSelection(
   const resolvedMesaId = mesa?.active ? mesa.id : null
   const resolvedTableLabel = mesa?.active ? mesa.label : tableLabel
 
-  await helpers.assertOpenTableAvailability(
-    prisma,
-    workspaceOwnerUserId,
-    resolvedTableLabel,
-    currentComandaId,
-  )
+  await helpers.assertOpenTableAvailability(prisma, workspaceOwnerUserId, resolvedTableLabel, currentComandaId)
 
   if (resolvedMesaId) {
     await assertAvailability(resolvedMesaId, currentComandaId)

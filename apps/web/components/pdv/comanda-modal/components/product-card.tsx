@@ -15,12 +15,11 @@ type ProductCardProps = {
 export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd, onDragStart }: ProductCardProps) {
   const available = product.stock - inCartQty
   const isSoldOut = available <= 0
-  const stockColor =
-    isSoldOut
-      ? '#f87171' // vermelho — esgotado
-      : product.isLowStock || available <= 5
-        ? '#f59e0b' // âmbar — baixo
-        : 'var(--text-soft)' // cinza normal
+  const stockColor = isSoldOut
+    ? '#f87171' // vermelho — esgotado
+    : product.isLowStock || available <= 5
+      ? '#f59e0b' // âmbar — baixo
+      : 'var(--text-soft)' // cinza normal
   const stockLabel = isSoldOut ? 'Esgotado' : `${available} und`
 
   return (
@@ -73,9 +72,7 @@ export const ProductCard = memo(function ProductCard({ product, inCartQty, onAdd
       </div>
       <div className="mt-2 flex items-center justify-between gap-3 xl:mt-0">
         <div className="flex flex-col items-start gap-0.5 xl:items-end">
-          <span className="text-sm font-semibold text-[var(--accent)]">
-            {formatCurrency(product.unitPrice, 'BRL')}
-          </span>
+          <span className="text-sm font-semibold text-[var(--accent)]">{formatCurrency(product.unitPrice, 'BRL')}</span>
           <span className="text-[10px] font-medium" style={{ color: stockColor }}>
             {stockLabel}
           </span>

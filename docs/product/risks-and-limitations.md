@@ -20,11 +20,11 @@ Cada item traz:
 
 ### L-01 — Sem integracao com marketplaces de delivery
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Limitacao de produto |
-| Status | Fora do escopo atual |
+| Campo      | Valor                |
+| ---------- | -------------------- |
+| Severidade | Media                |
+| Tipo       | Limitacao de produto |
+| Status     | Fora do escopo atual |
 
 O Desk Imperial ainda nao integra iFood, Rappi ou agregadores parecidos. O produto continua mais forte em atendimento presencial e operacao local.
 
@@ -32,21 +32,21 @@ O Desk Imperial ainda nao integra iFood, Rappi ou agregadores parecidos. O produ
 
 ### L-02 — Multiunidade continua fora do modelo principal
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Limitacao de produto |
-| Status | Fora do escopo atual |
+| Campo      | Valor                |
+| ---------- | -------------------- |
+| Severidade | Media                |
+| Tipo       | Limitacao de produto |
+| Status     | Fora do escopo atual |
 
 Cada workspace representa um negocio operacional unico. Filiais seguem exigindo contas ou separacao operacional externa.
 
 ### L-03 — Relatorios self-service ainda sao limitados
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Baixa |
-| Tipo | Limitacao de produto |
-| Status | Planejado |
+| Campo      | Valor                |
+| ---------- | -------------------- |
+| Severidade | Baixa                |
+| Tipo       | Limitacao de produto |
+| Status     | Planejado            |
 
 O projeto ja tem schema `bi` e Metabase, mas o portal ainda nao oferece construcao self-service de relatorios dentro da propria UI.
 
@@ -58,11 +58,11 @@ O projeto ja tem schema `bi` e Metabase, mas o portal ainda nao oferece construc
 
 ### D-01 — Cobertura frontend ainda e parcial
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Debito tecnico |
-| Status | Conhecido e aceito |
+| Campo      | Valor              |
+| ---------- | ------------------ |
+| Severidade | Media              |
+| Tipo       | Debito tecnico     |
+| Status     | Conhecido e aceito |
 
 O repo melhorou bastante em testes criticos, mas a superficie web/mobile ainda e maior do que a cobertura automatizada atual.
 
@@ -70,11 +70,11 @@ O repo melhorou bastante em testes criticos, mas a superficie web/mobile ainda e
 
 ### D-02 — Consistencia realtime ainda esta em recuperacao
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Alta |
-| Tipo | Debito tecnico |
-| Status | Em correcao |
+| Campo      | Valor          |
+| ---------- | -------------- |
+| Severidade | Alta           |
+| Tipo       | Debito tecnico |
+| Status     | Em correcao    |
 
 A malha realtime ja recebeu:
 
@@ -94,11 +94,11 @@ Mesmo assim, ainda existe debito estrutural em:
 
 ### D-03 — Hotspots operacionais seguem caros para manutencao
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Debito tecnico |
-| Status | Conhecido e aceito |
+| Campo      | Valor              |
+| ---------- | ------------------ |
+| Severidade | Media              |
+| Tipo       | Debito tecnico     |
+| Status     | Conhecido e aceito |
 
 Arquivos como `comanda.service.ts` e parte do patching realtime ainda concentram regra demais.
 
@@ -110,11 +110,11 @@ Arquivos como `comanda.service.ts` e parte do patching realtime ainda concentram
 
 ### O-01 — Runtime publico segue sem alta disponibilidade real
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Alta |
-| Tipo | Risco operacional |
-| Status | Conhecido e aceito |
+| Campo      | Valor              |
+| ---------- | ------------------ |
+| Severidade | Alta               |
+| Tipo       | Risco operacional  |
+| Status     | Conhecido e aceito |
 
 O projeto ainda nao opera em arquitetura ativa-ativa nem em multi-borda com failover automatico.
 
@@ -128,31 +128,31 @@ Estado atual:
 
 ### O-02 — Dependencias externas continuam sem fallback simetrico
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Risco operacional |
-| Status | Parcialmente mitigado |
+| Campo      | Valor                 |
+| ---------- | --------------------- |
+| Severidade | Media                 |
+| Tipo       | Risco operacional     |
+| Status     | Parcialmente mitigado |
 
 Servicos externos atuais:
 
-| Servico | Uso | Comportamento atual |
-| --- | --- | --- |
-| PostgreSQL + PgBouncer (Ampere) | Persistencia | Critico; sem fallback equivalente |
-| Redis | Cache, rate limit, parte do realtime | fail-open controlado, mas com perda de eficiencia e resiliencia |
-| Brevo | Email transacional | sem fallback automatico |
-| Gemini | smart draft e insight IA | erro controlado; nao bloqueia o core transacional |
-| Open Food Facts | lookup por EAN | erro controlado; cadastro continua manual |
-| Telegram API | bot oficial | degradacao localizada; operacao principal continua |
-| Sentry | observabilidade de erro/release | perda de visibilidade, nao de funcionalidade core |
+| Servico                         | Uso                                  | Comportamento atual                                             |
+| ------------------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| PostgreSQL + PgBouncer (Ampere) | Persistencia                         | Critico; sem fallback equivalente                               |
+| Redis                           | Cache, rate limit, parte do realtime | fail-open controlado, mas com perda de eficiencia e resiliencia |
+| Brevo                           | Email transacional                   | sem fallback automatico                                         |
+| Gemini                          | smart draft e insight IA             | erro controlado; nao bloqueia o core transacional               |
+| Open Food Facts                 | lookup por EAN                       | erro controlado; cadastro continua manual                       |
+| Telegram API                    | bot oficial                          | degradacao localizada; operacao principal continua              |
+| Sentry                          | observabilidade de erro/release      | perda de visibilidade, nao de funcionalidade core               |
 
 ### O-03 — Observabilidade melhorou, mas ainda nao e "fim de jogo"
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Risco operacional |
-| Status | Em correcao |
+| Campo      | Valor             |
+| ---------- | ----------------- |
+| Severidade | Media             |
+| Tipo       | Risco operacional |
+| Status     | Em correcao       |
 
 Hoje ja existem:
 
@@ -174,11 +174,11 @@ O risco residual nao e mais "zero observabilidade". O risco agora e governanca:
 
 ### S-01 — Alertas de seguranca ainda nao estao completos por evento de negocio
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Risco de seguranca |
-| Status | Planejado |
+| Campo      | Valor              |
+| ---------- | ------------------ |
+| Severidade | Media              |
+| Tipo       | Risco de seguranca |
+| Status     | Planejado          |
 
 Tentativas de abuso e eventos sensiveis ja entram em audit log, mas a malha de notificacao/alerta ainda nao cobre todo o espectro de seguranca operacional.
 
@@ -186,11 +186,11 @@ Tentativas de abuso e eventos sensiveis ja entram em audit log, mas a malha de n
 
 ### S-02 — Segredos de build exigem disciplina operacional forte
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Media |
-| Tipo | Risco de seguranca |
-| Status | Controlado com guardrails |
+| Campo      | Valor                     |
+| ---------- | ------------------------- |
+| Severidade | Media                     |
+| Tipo       | Risco de seguranca        |
+| Status     | Controlado com guardrails |
 
 O web agora usa `SENTRY_AUTH_TOKEN` no build para release/sourcemaps. Isso resolveu observabilidade, mas introduz um segredo de build que precisa de higiene real.
 
@@ -198,11 +198,11 @@ O web agora usa `SENTRY_AUTH_TOKEN` no build para release/sourcemaps. Isso resol
 
 ### S-03 — API docs continuam configuraveis em producao
 
-| Campo | Valor |
-| --- | --- |
-| Severidade | Baixa |
-| Tipo | Risco de seguranca |
-| Status | Controlado |
+| Campo      | Valor              |
+| ---------- | ------------------ |
+| Severidade | Baixa              |
+| Tipo       | Risco de seguranca |
+| Status     | Controlado         |
 
 `/api/v1/docs` nao sobe por padrao em producao, mas pode ser habilitado por env.
 
@@ -212,13 +212,13 @@ O web agora usa `SENTRY_AUTH_TOKEN` no build para release/sourcemaps. Isso resol
 
 ## Debito de documentacao
 
-| Item | Status |
-| --- | --- |
-| Fontes canonicas de entrada | Corrigido |
-| Produto / realtime / auth / local dev | Corrigido |
-| Deploy / banco / user flows | Corrigido |
-| Troubleshooting residual | Em consolidacao |
-| Docs historicos de release | Mantidos como historico, nao como fonte primaria |
+| Item                                  | Status                                           |
+| ------------------------------------- | ------------------------------------------------ |
+| Fontes canonicas de entrada           | Corrigido                                        |
+| Produto / realtime / auth / local dev | Corrigido                                        |
+| Deploy / banco / user flows           | Corrigido                                        |
+| Troubleshooting residual              | Em consolidacao                                  |
+| Docs historicos de release            | Mantidos como historico, nao como fonte primaria |
 
 ---
 

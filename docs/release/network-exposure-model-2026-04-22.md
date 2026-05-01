@@ -1,4 +1,5 @@
 # Network Exposure Model
+
 ## 2026-04-22
 
 Modelo objetivo para evitar confusão entre "trafego entre VMs" e "serviço exposto na internet".

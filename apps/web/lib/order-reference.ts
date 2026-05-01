@@ -6,9 +6,5 @@ export function formatOrderReference(value: string) {
     hash = Math.imul(hash, 16777619)
   }
 
-  return (hash >>> 0)
-    .toString(36)
-    .toUpperCase()
-    .padStart(6, '0')
-    .slice(-6)
+  return (hash >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(-6)
 }

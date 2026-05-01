@@ -92,10 +92,7 @@ function AnalysisSection({ title, accent, icon: Icon, delay = 0, children }: Ana
       transition={{ duration: 0.38, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex items-center gap-3">
-        <span
-          className="flex size-8 items-center justify-center rounded-xl border"
-          style={toneSurface(accent)}
-        >
+        <span className="flex size-8 items-center justify-center rounded-xl border" style={toneSurface(accent)}>
           <Icon className="size-4" />
         </span>
         <h4 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">{title}</h4>
@@ -303,7 +300,9 @@ export function AIConsultantWorkspace({
                 <span className={cn('text-xs', charPercent > 80 ? 'text-[var(--danger)]' : 'text-[var(--text-soft)]')}>
                   {draftFocus.length}/500
                 </span>
-                <span className="hidden text-xs text-[var(--text-soft)] opacity-70 sm:block">Ctrl+Enter para gerar</span>
+                <span className="hidden text-xs text-[var(--text-soft)] opacity-70 sm:block">
+                  Ctrl+Enter para gerar
+                </span>
               </div>
 
               <Button disabled={!draftFocus.trim()} size="md" type="button" onClick={handleApplyFocus}>
@@ -364,7 +363,7 @@ export function AIConsultantWorkspace({
             </MotionDiv>
           ) : null}
 
-          {!insightQuery.data && !insightQuery.isLoading && !insightQuery.error ? (
+          {!(insightQuery.data || insightQuery.isLoading || insightQuery.error) ? (
             <LabEmptyState
               compact
               icon={BrainCircuit}

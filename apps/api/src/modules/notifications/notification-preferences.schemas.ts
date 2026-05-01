@@ -54,7 +54,5 @@ export const updateUserNotificationPreferencesBodySchema = z
   })
   .strict()
 
-export type UpdateWorkspaceNotificationPreferencesDto = z.infer<
-  typeof updateWorkspaceNotificationPreferencesBodySchema
->
+export type UpdateWorkspaceNotificationPreferencesDto = z.infer<typeof updateWorkspaceNotificationPreferencesBodySchema>
 export type UpdateUserNotificationPreferencesDto = z.infer<typeof updateUserNotificationPreferencesBodySchema>

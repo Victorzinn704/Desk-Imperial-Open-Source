@@ -28,11 +28,11 @@ async function loadFaroModule() {
 describe('faro telemetry behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.NEXT_PUBLIC_FARO_ALLOW_INSECURE_COLLECTOR
-    delete process.env.NEXT_PUBLIC_FARO_SAMPLE_RATE
-    delete process.env.NEXT_PUBLIC_FARO_SLOW_API_SAMPLE_RATE
-    delete process.env.NEXT_PUBLIC_FARO_MAX_SIGNALS_PER_MINUTE
-    delete process.env.NEXT_PUBLIC_FARO_ERROR_DEDUPE_WINDOW_MS
+    process.env.NEXT_PUBLIC_FARO_ALLOW_INSECURE_COLLECTOR = undefined
+    process.env.NEXT_PUBLIC_FARO_SAMPLE_RATE = undefined
+    process.env.NEXT_PUBLIC_FARO_SLOW_API_SAMPLE_RATE = undefined
+    process.env.NEXT_PUBLIC_FARO_MAX_SIGNALS_PER_MINUTE = undefined
+    process.env.NEXT_PUBLIC_FARO_ERROR_DEDUPE_WINDOW_MS = undefined
 
     Reflect.set(process.env, 'NODE_ENV', 'test')
     process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL = 'https://collector.example.com/collect'
@@ -210,7 +210,7 @@ describe('faro telemetry behavior', () => {
   })
 
   it('does not initialize when collector url is missing', async () => {
-    delete process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL
+    process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL = undefined
     const faro = await loadFaroModule()
 
     expect(faro.initializeFrontendFaro()).toBeNull()

@@ -59,19 +59,29 @@ export function PdvHistoricoView({ comandas }: Readonly<{ comandas: Comanda[] }>
   const sorted = useMemo(() => {
     const buscaNormalizada = busca.trim().toLowerCase()
     const matchesFiltro = (comanda: Comanda) => {
-      if (filtro === 'abertas') {return !isEndedComandaStatus(comanda.status)}
-      if (filtro === 'encerradas') {return isEndedComandaStatus(comanda.status)}
+      if (filtro === 'abertas') {
+        return !isEndedComandaStatus(comanda.status)
+      }
+      if (filtro === 'encerradas') {
+        return isEndedComandaStatus(comanda.status)
+      }
       return true
     }
 
     return comandas
       .filter((comanda) => {
-        if (!matchesFiltro(comanda)) {return false}
+        if (!matchesFiltro(comanda)) {
+          return false
+        }
 
         const nomeResponsavel = comanda.garcomNome?.trim() || 'Operação do balcão/empresa'
-        if (responsavel !== 'todos' && nomeResponsavel !== responsavel) {return false}
+        if (responsavel !== 'todos' && nomeResponsavel !== responsavel) {
+          return false
+        }
 
-        if (!buscaNormalizada) {return true}
+        if (!buscaNormalizada) {
+          return true
+        }
 
         const campos = [
           comanda.mesa ?? '',

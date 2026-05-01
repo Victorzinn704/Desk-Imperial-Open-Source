@@ -1,4 +1,4 @@
-import { ComandaStatus, type Prisma } from '@prisma/client'
+import type { ComandaStatus, Prisma } from '@prisma/client'
 import { OPEN_COMANDA_STATUSES } from './operations-domain.utils'
 
 export function buildOperationsComandaWhere(

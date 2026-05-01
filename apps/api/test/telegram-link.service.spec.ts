@@ -44,7 +44,9 @@ describe('TelegramLinkService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    prisma.$transaction.mockImplementation(async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma as never))
+    prisma.$transaction.mockImplementation(async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+      callback(prisma as never),
+    )
     prisma.telegramAccount.findFirst.mockResolvedValue(null)
     prisma.telegramAccount.updateMany.mockResolvedValue({ count: 1 })
     prisma.telegramAccount.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
@@ -76,7 +78,9 @@ describe('TelegramLinkService', () => {
     expect(result.botUsername).toBe('Desk_Imperial_bot')
     expect(prisma.telegramLinkToken.create).toHaveBeenCalled()
     expect(createCall.data.token).not.toBe(result.token)
-    expect(auditLogService.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'telegram.link_token.generated' }))
+    expect(auditLogService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'telegram.link_token.generated' }),
+    )
   })
 
   it('bloqueia geração de token quando o workspace não está liberado', async () => {

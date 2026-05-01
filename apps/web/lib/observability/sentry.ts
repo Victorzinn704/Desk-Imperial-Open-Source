@@ -51,10 +51,12 @@ function getSentryRuntimeConfig(runtime: RuntimeKind): SentryRuntimeConfig {
   const dsn =
     runtime === 'client'
       ? normalizeString(process.env.NEXT_PUBLIC_SENTRY_DSN)
-      : normalizeString(process.env.SENTRY_WEB_DSN) ?? normalizeString(process.env.NEXT_PUBLIC_SENTRY_DSN)
+      : (normalizeString(process.env.SENTRY_WEB_DSN) ?? normalizeString(process.env.NEXT_PUBLIC_SENTRY_DSN))
 
   const environment =
-    normalizeString(runtime === 'client' ? process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT : process.env.SENTRY_WEB_ENVIRONMENT) ??
+    normalizeString(
+      runtime === 'client' ? process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT : process.env.SENTRY_WEB_ENVIRONMENT,
+    ) ??
     normalizeString(process.env.SENTRY_ENVIRONMENT) ??
     normalizeString(process.env.NODE_ENV) ??
     'development'
@@ -66,7 +68,9 @@ function getSentryRuntimeConfig(runtime: RuntimeKind): SentryRuntimeConfig {
 
   const isProduction = environment === 'production'
   const tracesSampleRate = parseSampleRate(
-    runtime === 'client' ? process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE : process.env.SENTRY_WEB_TRACES_SAMPLE_RATE,
+    runtime === 'client'
+      ? process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+      : process.env.SENTRY_WEB_TRACES_SAMPLE_RATE,
     isProduction ? DEFAULT_PROD_TRACE_SAMPLE_RATE : DEFAULT_DEV_TRACE_SAMPLE_RATE,
   )
 

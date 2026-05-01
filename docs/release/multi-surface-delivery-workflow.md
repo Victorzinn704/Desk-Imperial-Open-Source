@@ -163,13 +163,13 @@ So propagar para a proxima superficie depois de smoke e validacao minima da ante
 
 ## Politica de ownership
 
-| Tipo de problema | Superficie dona |
-| --- | --- |
-| Gestao densa | desktop web |
-| Operacao movel do dono | owner PWA |
-| Execucao de equipe | staff PWA |
-| Hardware Android | Kotlin |
-| Expansao iPhone | React Native |
+| Tipo de problema       | Superficie dona |
+| ---------------------- | --------------- |
+| Gestao densa           | desktop web     |
+| Operacao movel do dono | owner PWA       |
+| Execucao de equipe     | staff PWA       |
+| Hardware Android       | Kotlin          |
+| Expansao iPhone        | React Native    |
 
 ## Politica de hardware
 

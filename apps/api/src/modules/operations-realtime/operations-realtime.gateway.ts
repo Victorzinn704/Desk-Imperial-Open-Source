@@ -27,7 +27,10 @@ import {
 } from './operations-realtime.types'
 import { OperationsRealtimeService } from './operations-realtime.service'
 import { OperationsRealtimeSessionsService } from './operations-realtime-sessions.service'
-import { authenticateOperationsRealtimeSocket, extractOperationsRealtimeBearerToken } from './operations-realtime.socket-auth'
+import {
+  authenticateOperationsRealtimeSocket,
+  extractOperationsRealtimeBearerToken,
+} from './operations-realtime.socket-auth'
 import type {
   OperationsRealtimeConnectionContext,
   OperationsRealtimeSocketLike,
@@ -85,7 +88,10 @@ export class OperationsRealtimeGateway
    * Chave: rawToken; Valor: contexto + timer de expiração.
    * Não é compartilhado entre nós — ok em multi-pod (cada nó aquece seu próprio cache).
    */
-  private readonly tokenAuthCache = new Map<string, { context: OperationsRealtimeConnectionContext; timer: ReturnType<typeof setTimeout> }>()
+  private readonly tokenAuthCache = new Map<
+    string,
+    { context: OperationsRealtimeConnectionContext; timer: ReturnType<typeof setTimeout> }
+  >()
 
   @WebSocketServer()
   server!: Namespace
@@ -178,7 +184,9 @@ export class OperationsRealtimeGateway
       }
     }
 
-    const context = await authenticateOperationsRealtimeSocket(socket, (token) => this.authService.validateSessionToken(token))
+    const context = await authenticateOperationsRealtimeSocket(socket, (token) =>
+      this.authService.validateSessionToken(token),
+    )
 
     // Popula cache com TTL — entrada expirará automaticamente.
     if (normalizedToken) {
@@ -311,10 +319,7 @@ export class OperationsRealtimeGateway
     const revokePub = this.redisSessionRevokePubClient
     if (revokePub) {
       try {
-        await revokePub.publish(
-          OperationsRealtimeGateway.SESSION_REVOKE_CHANNEL,
-          JSON.stringify({ sessionIds }),
-        )
+        await revokePub.publish(OperationsRealtimeGateway.SESSION_REVOKE_CHANNEL, JSON.stringify({ sessionIds }))
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error)
         this.logger.warn(`session-revoke: falha ao publicar revogação cross-pod: ${msg}`)

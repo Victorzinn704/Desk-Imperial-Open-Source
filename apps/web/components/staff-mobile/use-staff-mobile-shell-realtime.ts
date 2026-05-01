@@ -52,30 +52,29 @@ export function useOfflineDrain(args: OfflineDrainArgs) {
 
   const runDrain = useCallback(() => {
     return drainQueue(async (action) => {
-        if (action.type === 'add-item') {
-          const { comandaId, payload } = action.payload as {
-            comandaId: string
-            payload: AddComandaItemPayload
-          }
-          await addComandaItem({ comandaId, payload })
-          return
+      if (action.type === 'add-item') {
+        const { comandaId, payload } = action.payload as {
+          comandaId: string
+          payload: AddComandaItemPayload
         }
+        await addComandaItem({ comandaId, payload })
+        return
+      }
 
-        if (action.type === 'open-comanda') {
-          await openComanda(action.payload as OpenComandaPayload)
-        }
-      })
-      .then((result) => {
-        if (result.expiredCount > 0) {
-          const message =
-            result.expiredCount === 1
-              ? '1 ação offline expirou após 10 minutos sem conexão e foi descartada.'
-              : `${result.expiredCount} ações offline expiraram após 10 minutos sem conexão e foram descartadas.`
-          toast.error(message)
-        }
+      if (action.type === 'open-comanda') {
+        await openComanda(action.payload as OpenComandaPayload)
+      }
+    }).then((result) => {
+      if (result.expiredCount > 0) {
+        const message =
+          result.expiredCount === 1
+            ? '1 ação offline expirou após 10 minutos sem conexão e foi descartada.'
+            : `${result.expiredCount} ações offline expiraram após 10 minutos sem conexão e foram descartadas.`
+        toast.error(message)
+      }
 
-        return result
-      })
+      return result
+    })
   }, [addComandaItem, drainQueue, openComanda])
 
   useEffect(() => {

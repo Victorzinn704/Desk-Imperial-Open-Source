@@ -105,7 +105,7 @@ export function resolveProductQuantityLabel(
 
   const normalizedUnit = measurementUnit?.trim().toUpperCase()
   const numericValue = toNumber(measurementValue)
-  if (!normalizedUnit || !Number.isFinite(numericValue) || numericValue <= 0) {
+  if (!(normalizedUnit && Number.isFinite(numericValue)) || numericValue <= 0) {
     return null
   }
 

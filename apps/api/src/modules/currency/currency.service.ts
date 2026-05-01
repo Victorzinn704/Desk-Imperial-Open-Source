@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import type { CurrencyCode } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import {
@@ -226,7 +226,7 @@ function buildSnapshot(payload: AwesomeRatePayload): ExchangeRatesSnapshot {
     const code = normalizeCurrencyCode(quoteCodeSegment(key, 0))
     const codeIn = normalizeCurrencyCode(quoteCodeSegment(key, 1))
 
-    if (!code || !codeIn || !SUPPORTED_CURRENCIES.includes(code) || !SUPPORTED_CURRENCIES.includes(codeIn)) {
+    if (!(code && codeIn && SUPPORTED_CURRENCIES.includes(code) && SUPPORTED_CURRENCIES.includes(codeIn))) {
       continue
     }
 

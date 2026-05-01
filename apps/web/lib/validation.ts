@@ -35,7 +35,7 @@ export const loginSchema = z
     }
 
     if (values.loginMode === 'OWNER') {
-      if (!values.email || !z.string().email().safeParse(values.email).success) {
+      if (!(values.email && z.string().email().safeParse(values.email).success)) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['email'],
@@ -46,7 +46,7 @@ export const loginSchema = z
       return
     }
 
-    if (!values.companyEmail || !z.string().email().safeParse(values.companyEmail).success) {
+    if (!(values.companyEmail && z.string().email().safeParse(values.companyEmail).success)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['companyEmail'],
@@ -364,10 +364,18 @@ export type OrderFormValues = z.output<typeof orderSchema>
 export function getPasswordStrength(password: string) {
   let score = 0
 
-  if (password.length >= 8) {score += 1}
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {score += 1}
-  if (/\d/.test(password)) {score += 1}
-  if (/[^A-Za-z\d]/.test(password)) {score += 1}
+  if (password.length >= 8) {
+    score += 1
+  }
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {
+    score += 1
+  }
+  if (/\d/.test(password)) {
+    score += 1
+  }
+  if (/[^A-Za-z\d]/.test(password)) {
+    score += 1
+  }
 
   if (score <= 1) {
     return { score: 1, label: 'Fraca' }

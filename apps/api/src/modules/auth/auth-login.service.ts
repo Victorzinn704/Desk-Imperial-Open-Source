@@ -29,11 +29,7 @@ import { type LoginDto, LoginModeDto } from './dto/login.dto'
 import { DemoAccessService } from './demo-access.service'
 import { AuthSessionService } from './auth-session.service'
 import type { AuthEmailVerificationService } from './auth-email-verification.service'
-import {
-  resolveLoginActor,
-  resolveDemoOwnerActor,
-  resolveDemoStaffActor,
-} from './auth-login-actor.utils'
+import { resolveLoginActor, resolveDemoOwnerActor, resolveDemoStaffActor } from './auth-login-actor.utils'
 import { sendLoginAlertIfEnabled, sendFailedLoginAlertIfEnabled } from './auth-login-alerts.utils'
 import {
   assertAllowedForKeys,
@@ -171,7 +167,15 @@ export class AuthLoginService {
       userAgent: context.userAgent,
     })
 
-    void sendLoginAlertIfEnabled(this.configService, this.prisma, this.mailerService, this.auditLogService, activeActor.ownerUser, context, session.sessionId)
+    void sendLoginAlertIfEnabled(
+      this.configService,
+      this.prisma,
+      this.mailerService,
+      this.auditLogService,
+      activeActor.ownerUser,
+      context,
+      session.sessionId,
+    )
 
     return {
       user: authUser,
@@ -271,7 +275,15 @@ export class AuthLoginService {
       userAgent: context.userAgent,
     })
 
-    void sendLoginAlertIfEnabled(this.configService, this.prisma, this.mailerService, this.auditLogService, activeActor.ownerUser, context, session.sessionId)
+    void sendLoginAlertIfEnabled(
+      this.configService,
+      this.prisma,
+      this.mailerService,
+      this.auditLogService,
+      activeActor.ownerUser,
+      context,
+      session.sessionId,
+    )
 
     return {
       user: authUser,

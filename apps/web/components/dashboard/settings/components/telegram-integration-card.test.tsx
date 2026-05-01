@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import type * as ApiModule from '@/lib/api'
 import { TelegramIntegrationCard } from './telegram-integration-card'
 import {
   createTelegramLinkToken,
@@ -15,7 +14,7 @@ import {
 } from '@/lib/api'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
   return {
     ...actual,
     fetchTelegramIntegrationStatus: vi.fn(),
@@ -79,22 +78,24 @@ describe('TelegramIntegrationCard', () => {
 
   it('permite ajustar o ruído operacional do Telegram por evento', async () => {
     fetchStatusMock.mockResolvedValue(makeStatus())
-    updatePreferencesMock.mockResolvedValue(makePreferences({
-      preferences: [
-        {
-          channel: 'TELEGRAM',
-          eventType: 'operations.comanda.status_changed',
-          enabled: false,
-          inherited: false,
-        },
-        {
-          channel: 'TELEGRAM',
-          eventType: 'operations.kitchen_item.status_changed',
-          enabled: true,
-          inherited: true,
-        },
-      ],
-    }))
+    updatePreferencesMock.mockResolvedValue(
+      makePreferences({
+        preferences: [
+          {
+            channel: 'TELEGRAM',
+            eventType: 'operations.comanda.status_changed',
+            enabled: false,
+            inherited: false,
+          },
+          {
+            channel: 'TELEGRAM',
+            eventType: 'operations.kitchen_item.status_changed',
+            enabled: true,
+            inherited: true,
+          },
+        ],
+      }),
+    )
 
     renderWithQueryClient(<TelegramIntegrationCard />)
 
@@ -200,9 +201,7 @@ function makeStatus(overrides: Partial<TelegramIntegrationStatusResponse> = {}):
   }
 }
 
-function makePreferences(
-  overrides: Partial<NotificationPreferencesResponse> = {},
-): NotificationPreferencesResponse {
+function makePreferences(overrides: Partial<NotificationPreferencesResponse> = {}): NotificationPreferencesResponse {
   return {
     preferences: [
       {

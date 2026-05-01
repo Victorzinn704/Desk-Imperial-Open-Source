@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { type QueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import type { useOfflineQueue } from '@/components/shared/use-offline-queue'
 import type { useStaffMobileShellMutations } from './use-staff-mobile-shell-mutations'

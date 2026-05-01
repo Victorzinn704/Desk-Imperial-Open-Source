@@ -10,7 +10,7 @@ import {
 import { buildOpenComandaPayload } from './pdv-board.helpers'
 import { normalizeTableLabel } from './normalize-table-label'
 import { toOperationsStatus } from './pdv-operations'
-import { type Comanda, type ComandaStatus, type Mesa } from './pdv-types'
+import type { Comanda, ComandaStatus, Mesa } from './pdv-types'
 
 const OPERATIONS_LIVE_QUERY_KEY = ['operations', 'live'] as const
 

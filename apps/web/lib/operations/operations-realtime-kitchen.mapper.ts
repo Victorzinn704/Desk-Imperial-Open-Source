@@ -40,9 +40,7 @@ export function extractKitchenItemsFromPayload(payload: Record<string, unknown>)
   if (kitchenItems.length) {
     return kitchenItems
       .map((rawItem) =>
-        buildKitchenItemFromPayload(
-          rawItem && typeof rawItem === 'object' ? (rawItem as Record<string, unknown>) : {},
-        ),
+        buildKitchenItemFromPayload(rawItem && typeof rawItem === 'object' ? (rawItem as Record<string, unknown>) : {}),
       )
       .filter((item): item is ResolvedKitchenItemPatch => Boolean(item))
   }
@@ -105,7 +103,7 @@ function buildKitchenItemPatchFromLegacyItem(
   rawItem: unknown,
 ): ResolvedKitchenItemPatch | null {
   const item = asComandaItemRecord(rawItem)
-  if (!item || !comandaId || !mesaLabel) {
+  if (!(item && comandaId && mesaLabel)) {
     return null
   }
 
@@ -141,7 +139,7 @@ function resolveKitchenItemFields(payload: Record<string, unknown>) {
   const mesaLabel = asString(payload.mesaLabel) ?? asString(payload.tableLabel)
   const quantity = legacyItem?.quantity ?? asNumber(payload.quantity)
 
-  if (!itemId || !comandaId || !productName || !mesaLabel || quantity == null) {
+  if (!(itemId && comandaId && productName && mesaLabel) || quantity == null) {
     return null
   }
 

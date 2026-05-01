@@ -46,7 +46,9 @@ export function PayrollClosingPanel({
 
   return (
     <LabPanel
-      action={<LabStatusPill tone={closeTone}>{pendingCount > 0 ? `${pendingCount} pendente(s)` : 'fechado'}</LabStatusPill>}
+      action={
+        <LabStatusPill tone={closeTone}>{pendingCount > 0 ? `${pendingCount} pendente(s)` : 'fechado'}</LabStatusPill>
+      }
       padding="md"
       title="Fechamento do mês"
     >
@@ -97,7 +99,9 @@ function PayrollClosingSummary({
       <div className="flex flex-wrap items-center gap-3">
         <MonthStepper monthLabel={monthLabel} onNext={onNext} onPrev={onPrev} />
         <LabStatusPill tone="info">{rowsCount} colaborador(es)</LabStatusPill>
-        <LabStatusPill tone={totalComissoes > 0 ? 'success' : 'neutral'}>{formatCurrency(totalComissoes, currency)} em comissões</LabStatusPill>
+        <LabStatusPill tone={totalComissoes > 0 ? 'success' : 'neutral'}>
+          {formatCurrency(totalComissoes, currency)} em comissões
+        </LabStatusPill>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -123,7 +127,10 @@ function ClosingProgress({
   return (
     <>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
-        <div className="h-full rounded-full bg-[var(--lab-blue)]" style={{ width: `${Math.max(paidProgress, rowsCount > 0 ? 4 : 0)}%` }} />
+        <div
+          className="h-full rounded-full bg-[var(--lab-blue)]"
+          style={{ width: `${Math.max(paidProgress, rowsCount > 0 ? 4 : 0)}%` }}
+        />
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--lab-fg-muted)]">
         <span>{rowsCount > 0 ? `${paidCount}/${rowsCount} pagos` : 'sem colaboradores ativos'}</span>
@@ -142,12 +149,7 @@ function PayrollClosingActions({
 }>) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row xl:flex-col">
-      <ToolbarButton
-        icon={BadgeCheck}
-        label="Marcar todos"
-        tone="success"
-        onClick={onMarkAllPaid}
-      />
+      <ToolbarButton icon={BadgeCheck} label="Marcar todos" tone="success" onClick={onMarkAllPaid} />
       <ToolbarButton icon={Download} label="Exportar CSV" onClick={onExport} />
     </div>
   )
@@ -174,10 +176,26 @@ export function PayrollKpiStrip({
 }>) {
   return (
     <LabMetricStrip>
-      <LabMetricStripItem description="total estimado do fechamento" label="folha" value={formatCurrency(folhaTotal, currency)} />
-      <LabMetricStripItem description={`${commissionShare.toFixed(0)}% da folha`} label="comissões" value={formatCurrency(totalComissoes, currency)} />
-      <LabMetricStripItem description={`${pendingCount} ainda pendente(s)`} label="pagamentos" value={rowsCount > 0 ? `${paidCount}/${rowsCount}` : '0/0'} />
-      <LabMetricStripItem description="média por colaborador ativo" label="por pessoa" value={formatCurrency(averagePayout, currency)} />
+      <LabMetricStripItem
+        description="total estimado do fechamento"
+        label="folha"
+        value={formatCurrency(folhaTotal, currency)}
+      />
+      <LabMetricStripItem
+        description={`${commissionShare.toFixed(0)}% da folha`}
+        label="comissões"
+        value={formatCurrency(totalComissoes, currency)}
+      />
+      <LabMetricStripItem
+        description={`${pendingCount} ainda pendente(s)`}
+        label="pagamentos"
+        value={rowsCount > 0 ? `${paidCount}/${rowsCount}` : '0/0'}
+      />
+      <LabMetricStripItem
+        description="média por colaborador ativo"
+        label="por pessoa"
+        value={formatCurrency(averagePayout, currency)}
+      />
     </LabMetricStrip>
   )
 }

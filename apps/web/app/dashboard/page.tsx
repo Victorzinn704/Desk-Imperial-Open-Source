@@ -43,13 +43,7 @@ export default async function DashboardPage({ searchParams }: Readonly<Dashboard
   )
 }
 
-function resolveStandaloneDashboardHref({
-  tab,
-  view,
-}: {
-  tab?: string
-  view?: string
-}) {
+function resolveStandaloneDashboardHref({ tab, view }: { tab?: string; view?: string }) {
   const normalizedView = view?.trim().toLowerCase()
 
   if (normalizedView === 'ia' || normalizedView === 'ai') {

@@ -7,9 +7,9 @@ import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
 import { AdminPinGuard } from '../admin-pin/admin-pin.guard'
-import { CreateEmployeeDto } from './dto/create-employee.dto'
-import { UpdateEmployeeDto } from './dto/update-employee.dto'
-import { EmployeesService } from './employees.service'
+import type { CreateEmployeeDto } from './dto/create-employee.dto'
+import type { UpdateEmployeeDto } from './dto/update-employee.dto'
+import type { EmployeesService } from './employees.service'
 
 @ApiTags('employees')
 @Controller('employees')
@@ -41,7 +41,11 @@ export class EmployeesController {
 
   @UseGuards(SessionGuard, CsrfGuard, AdminPinGuard)
   @Post(':employeeId/access')
-  issueEmployeeAccess(@CurrentAuth() auth: AuthContext, @Param('employeeId') employeeId: string, @Req() request: Request) {
+  issueEmployeeAccess(
+    @CurrentAuth() auth: AuthContext,
+    @Param('employeeId') employeeId: string,
+    @Req() request: Request,
+  ) {
     return this.employeesService.issueAccessForUser(auth, employeeId, extractRequestContext(request))
   }
 
@@ -57,7 +61,11 @@ export class EmployeesController {
 
   @UseGuards(SessionGuard, CsrfGuard, AdminPinGuard)
   @Delete(':employeeId/access')
-  revokeEmployeeAccess(@CurrentAuth() auth: AuthContext, @Param('employeeId') employeeId: string, @Req() request: Request) {
+  revokeEmployeeAccess(
+    @CurrentAuth() auth: AuthContext,
+    @Param('employeeId') employeeId: string,
+    @Req() request: Request,
+  ) {
     return this.employeesService.revokeAccessForUser(auth, employeeId, extractRequestContext(request))
   }
 

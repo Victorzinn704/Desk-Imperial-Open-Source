@@ -26,7 +26,7 @@ import { BadRequestException, ForbiddenException, HttpException, HttpStatus } fr
 import type { ConfigService } from '@nestjs/config'
 import { CurrencyCode, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
- 
+
 import { AuthService } from '../src/modules/auth/auth.service'
 import { AuthSessionService } from '../src/modules/auth/auth-session.service'
 import { AuthLoginService } from '../src/modules/auth/auth-login.service'

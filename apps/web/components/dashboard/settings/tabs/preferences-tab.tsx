@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import { CalendarRange } from 'lucide-react'
 import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
 import { CheckboxField } from '@/components/shared/checkbox-field'

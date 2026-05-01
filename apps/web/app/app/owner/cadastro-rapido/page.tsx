@@ -67,7 +67,7 @@ export default function OwnerQuickRegisterPage() {
     )
   }
 
-  if (!user || !isOwner) {
+  if (!(user && isOwner)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
         <div className="size-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent,#9b8460)]" />

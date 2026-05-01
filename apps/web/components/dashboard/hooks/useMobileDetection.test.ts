@@ -8,8 +8,10 @@ describe('useMobileDetection', () => {
   beforeEach(() => {
     listeners = new Map()
     vi.spyOn(window, 'addEventListener').mockImplementation((event, handler) => {
-      if (!listeners.has(event)) {listeners.set(event, new Set())}
-      listeners.get(event)!.add(handler as EventListener)
+      if (!listeners.has(event)) {
+        listeners.set(event, new Set())
+      }
+      listeners.get(event)?.add(handler as EventListener)
     })
     vi.spyOn(window, 'removeEventListener').mockImplementation((event, handler) => {
       listeners.get(event)?.delete(handler as EventListener)

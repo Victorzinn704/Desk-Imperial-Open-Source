@@ -31,19 +31,23 @@ export function publishComandaOpened(
   businessDate: Date,
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
-  realtimeService.publishComandaOpened(auth, {
-    comandaId: comanda.id,
-    mesaLabel: comanda.tableLabel,
-    openedAt: comanda.openedAt.toISOString(),
-    employeeId: comanda.currentEmployeeId,
-    status: toRealtimeOpenStatus(comanda.status),
-    subtotal: toNumberOrZero(comanda.subtotalAmount),
-    discountAmount: toNumberOrZero(comanda.discountAmount),
-    serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
-    totalAmount: toNumberOrZero(comanda.totalAmount),
-    totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
-    businessDate: formatBusinessDateKey(businessDate),
-  }, instrumentation)
+  realtimeService.publishComandaOpened(
+    auth,
+    {
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
+      openedAt: comanda.openedAt.toISOString(),
+      employeeId: comanda.currentEmployeeId,
+      status: toRealtimeOpenStatus(comanda.status),
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
+      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
+      businessDate: formatBusinessDateKey(businessDate),
+    },
+    instrumentation,
+  )
 }
 
 export function publishComandaUpdated(
@@ -71,22 +75,26 @@ export function publishComandaUpdated(
   },
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
-  realtimeService.publishComandaUpdated(auth, {
-    comandaId: comanda.id,
-    mesaLabel: comanda.tableLabel,
-    status: toRealtimeStatus(comanda.status),
-    ...(options?.previousStatus ? { previousStatus: options.previousStatus } : {}),
-    employeeId: comanda.currentEmployeeId,
-    subtotal: toNumberOrZero(comanda.subtotalAmount),
-    discountAmount: toNumberOrZero(comanda.discountAmount),
-    serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
-    totalAmount: toNumberOrZero(comanda.totalAmount),
-    totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
-    businessDate: formatBusinessDateKey(businessDate),
-    ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
-    ...(options?.replaceKitchenItems ? { replaceKitchenItems: true } : {}),
-    ...(options?.kitchenItems ? { kitchenItems: options.kitchenItems } : {}),
-  }, instrumentation)
+  realtimeService.publishComandaUpdated(
+    auth,
+    {
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
+      status: toRealtimeStatus(comanda.status),
+      ...(options?.previousStatus ? { previousStatus: options.previousStatus } : {}),
+      employeeId: comanda.currentEmployeeId,
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
+      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
+      businessDate: formatBusinessDateKey(businessDate),
+      ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
+      ...(options?.replaceKitchenItems ? { replaceKitchenItems: true } : {}),
+      ...(options?.kitchenItems ? { kitchenItems: options.kitchenItems } : {}),
+    },
+    instrumentation,
+  )
 }
 
 export function publishKitchenItemQueued(
@@ -106,11 +114,15 @@ export function publishKitchenItemQueued(
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   const payload = buildKitchenItemRealtimeDelta(comanda, item, businessDate)
-  realtimeService.publishKitchenItemQueued(auth, {
-    ...payload,
-    kitchenStatus: 'QUEUED',
-    kitchenQueuedAt: payload.kitchenQueuedAt ?? new Date().toISOString(),
-  }, instrumentation)
+  realtimeService.publishKitchenItemQueued(
+    auth,
+    {
+      ...payload,
+      kitchenStatus: 'QUEUED',
+      kitchenQueuedAt: payload.kitchenQueuedAt ?? new Date().toISOString(),
+    },
+    instrumentation,
+  )
 }
 
 export function publishKitchenItemUpdated(
@@ -133,11 +145,15 @@ export function publishKitchenItemUpdated(
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
   const payload = buildKitchenItemRealtimeDelta(comanda, item, businessDate)
-  realtimeService.publishKitchenItemUpdated(auth, {
-    ...payload,
-    ...(options?.previousKitchenStatus ? { previousKitchenStatus: options.previousKitchenStatus } : {}),
-    kitchenStatus: resolveRealtimeUpdatedKitchenStatus(item.kitchenStatus),
-  }, instrumentation)
+  realtimeService.publishKitchenItemUpdated(
+    auth,
+    {
+      ...payload,
+      ...(options?.previousKitchenStatus ? { previousKitchenStatus: options.previousKitchenStatus } : {}),
+      kitchenStatus: resolveRealtimeUpdatedKitchenStatus(item.kitchenStatus),
+    },
+    instrumentation,
+  )
 }
 
 export function publishComandaClosed(
@@ -159,20 +175,24 @@ export function publishComandaClosed(
   businessDate: Date,
   instrumentation?: OperationsRealtimePublishInstrumentation,
 ) {
-  realtimeService.publishComandaClosed(auth, {
-    comandaId: comanda.id,
-    mesaLabel: comanda.tableLabel,
-    closedAt: comanda.closedAt?.toISOString() ?? new Date().toISOString(),
-    employeeId: comanda.currentEmployeeId,
-    status: 'CLOSED',
-    subtotal: toNumberOrZero(comanda.subtotalAmount),
-    discountAmount: toNumberOrZero(comanda.discountAmount),
-    serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
-    totalAmount: toNumberOrZero(comanda.totalAmount),
-    totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
-    paymentMethod: null,
-    businessDate: formatBusinessDateKey(businessDate),
-  }, instrumentation)
+  realtimeService.publishComandaClosed(
+    auth,
+    {
+      comandaId: comanda.id,
+      mesaLabel: comanda.tableLabel,
+      closedAt: comanda.closedAt?.toISOString() ?? new Date().toISOString(),
+      employeeId: comanda.currentEmployeeId,
+      status: 'CLOSED',
+      subtotal: toNumberOrZero(comanda.subtotalAmount),
+      discountAmount: toNumberOrZero(comanda.discountAmount),
+      serviceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+      totalAmount: toNumberOrZero(comanda.totalAmount),
+      totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
+      paymentMethod: null,
+      businessDate: formatBusinessDateKey(businessDate),
+    },
+    instrumentation,
+  )
 
   if (refreshedSession) {
     realtimeService.publishCashUpdated(auth, {
@@ -212,10 +232,7 @@ export function buildKitchenItemRealtimeDelta(
   } as const
 }
 
-export function buildKitchenItemRealtimeDeltas(
-  comanda: ComandaLike,
-  businessDate: Date,
-) {
+export function buildKitchenItemRealtimeDeltas(comanda: ComandaLike, businessDate: Date) {
   return (comanda.items ?? [])
     .filter(
       (

@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import type { ConfigService } from '@nestjs/config'
 import { createHash } from 'node:crypto'
 import { CacheService } from '../../common/services/cache.service'
 
@@ -202,7 +202,9 @@ export class AuthRateLimitService {
       return
     }
 
-    throw new ServiceUnavailableException('Serviço de cache indisponível para controle de tentativas. Tente novamente em instantes.')
+    throw new ServiceUnavailableException(
+      'Serviço de cache indisponível para controle de tentativas. Tente novamente em instantes.',
+    )
   }
 
   private getLoginPolicy(): AttemptPolicy {
@@ -250,13 +252,7 @@ export class AuthRateLimitService {
   }
 
   private getRealtimeSocketPolicy(): AttemptPolicy {
-    return this.buildAttemptPolicy(
-      'REALTIME_SOCKET',
-      24,
-      2,
-      1,
-      'Muitas tentativas de conexao realtime.',
-    )
+    return this.buildAttemptPolicy('REALTIME_SOCKET', 24, 2, 1, 'Muitas tentativas de conexao realtime.')
   }
 
   private normalizeKeyValue(value: string) {

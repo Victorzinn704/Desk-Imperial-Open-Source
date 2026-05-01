@@ -47,10 +47,26 @@ function PayrollSignalList({
   totalComissoes: number
 }>) {
   const items = [
-    { label: 'comissoes no periodo', tone: totalComissoes > 0 ? ('success' as const) : ('neutral' as const), value: formatCurrency(totalComissoes, currency) },
-    { label: 'pendentes', tone: pendingCount > 0 ? ('warning' as const) : ('success' as const), value: String(pendingCount) },
-    { label: 'sem vendas atribuidas', tone: noSalesCount > 0 ? ('warning' as const) : ('success' as const), value: String(noSalesCount) },
-    { label: 'maior comissao', tone: maiorComissionado?.comissao ? ('info' as const) : ('neutral' as const), value: maiorComissionado ? formatCurrency(maiorComissionado.comissao, currency) : 'sem leitura' },
+    {
+      label: 'comissoes no periodo',
+      tone: totalComissoes > 0 ? ('success' as const) : ('neutral' as const),
+      value: formatCurrency(totalComissoes, currency),
+    },
+    {
+      label: 'pendentes',
+      tone: pendingCount > 0 ? ('warning' as const) : ('success' as const),
+      value: String(pendingCount),
+    },
+    {
+      label: 'sem vendas atribuidas',
+      tone: noSalesCount > 0 ? ('warning' as const) : ('success' as const),
+      value: String(noSalesCount),
+    },
+    {
+      label: 'maior comissao',
+      tone: maiorComissionado?.comissao ? ('info' as const) : ('neutral' as const),
+      value: maiorComissionado ? formatCurrency(maiorComissionado.comissao, currency) : 'sem leitura',
+    },
   ]
 
   return (

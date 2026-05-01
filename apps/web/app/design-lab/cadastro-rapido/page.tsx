@@ -61,7 +61,7 @@ export default function DesignLabCadastroRapidoPage() {
         </LabPanel>
       ) : null}
 
-      {!sessionQuery.isLoading && !user ? <QuickRegisterLockedState /> : null}
+      {!(sessionQuery.isLoading || user) ? <QuickRegisterLockedState /> : null}
 
       {user ? (
         <QuickRegisterWorkspace

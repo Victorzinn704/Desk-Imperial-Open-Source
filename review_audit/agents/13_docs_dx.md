@@ -14,32 +14,32 @@ Strong documentation culture for a solo-maintainer project. 131 .md files in doc
 
 ## Quantitative Evidence
 
-| Metric | Value |
-|---|---|
-| Total .md files in docs/ | 131 |
-| Root-level governance docs | README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, ROADMAP, LICENSE (7/7 present) |
-| Per-app READMEs | apps/api/README.md, apps/web/README.md (2/2 present) |
-| Package READMEs | packages/types/README.md, packages/api-contract/README.md (2/2 present) |
-| Scripts in scripts/ | 21 (.mjs, .ps1, .cmd) |
-| Scripts in infra/scripts/ | 18 (.ps1, .sh, .cmd, .py) |
-| Scripts in apps/*/scripts/ | api: 4, web: 1 |
-| Scripts in infra/oracle/**/scripts/ | 6 (.sh) |
-| Total scripts across project | ~50 |
-| Scripts with --help / usage | 4 (check-sonar-regression.mjs, oracle-runner-bootstrap.sh, oracle-db-bootstrap.sh, oracle-bootstrap.sh) |
-| Issue templates | bug_report, feature_request, question (3) |
-| PR template | .github/pull_request_template.md (1) |
-| Architecture docs (docs/architecture/) | 15 .md files |
-| Product docs (docs/product/) | 6 .md files |
-| Security docs (docs/security/) | 7 .md files |
-| Testing docs (docs/testing/) | 8 .md files |
-| Operations docs (docs/operations/) | 4 .md files |
-| Release docs (docs/release/) | 20+ .md files + 3 .json files |
-| AI agent definitions (docs/agents/) | 32 .md files |
-| Case studies / lightweight ADRs | 2 (docs/case-studies/) |
-| Pre-commit hook | .husky/pre-commit (1 line: npm run lint-staged) |
-| Code convention files | .editorconfig, .prettierrc, .prettierignore, eslint.config.mjs (4/4 present) |
-| .env.example | 127 lines, fully documented |
-| Troubleshooting scenarios | 19 in docs/troubleshooting.md |
+| Metric                                 | Value                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Total .md files in docs/               | 131                                                                                                     |
+| Root-level governance docs             | README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, ROADMAP, LICENSE (7/7 present)              |
+| Per-app READMEs                        | apps/api/README.md, apps/web/README.md (2/2 present)                                                    |
+| Package READMEs                        | packages/types/README.md, packages/api-contract/README.md (2/2 present)                                 |
+| Scripts in scripts/                    | 21 (.mjs, .ps1, .cmd)                                                                                   |
+| Scripts in infra/scripts/              | 18 (.ps1, .sh, .cmd, .py)                                                                               |
+| Scripts in apps/\*/scripts/            | api: 4, web: 1                                                                                          |
+| Scripts in infra/oracle/\*\*/scripts/  | 6 (.sh)                                                                                                 |
+| Total scripts across project           | ~50                                                                                                     |
+| Scripts with --help / usage            | 4 (check-sonar-regression.mjs, oracle-runner-bootstrap.sh, oracle-db-bootstrap.sh, oracle-bootstrap.sh) |
+| Issue templates                        | bug_report, feature_request, question (3)                                                               |
+| PR template                            | .github/pull_request_template.md (1)                                                                    |
+| Architecture docs (docs/architecture/) | 15 .md files                                                                                            |
+| Product docs (docs/product/)           | 6 .md files                                                                                             |
+| Security docs (docs/security/)         | 7 .md files                                                                                             |
+| Testing docs (docs/testing/)           | 8 .md files                                                                                             |
+| Operations docs (docs/operations/)     | 4 .md files                                                                                             |
+| Release docs (docs/release/)           | 20+ .md files + 3 .json files                                                                           |
+| AI agent definitions (docs/agents/)    | 32 .md files                                                                                            |
+| Case studies / lightweight ADRs        | 2 (docs/case-studies/)                                                                                  |
+| Pre-commit hook                        | .husky/pre-commit (1 line: npm run lint-staged)                                                         |
+| Code convention files                  | .editorconfig, .prettierrc, .prettierignore, eslint.config.mjs (4/4 present)                            |
+| .env.example                           | 127 lines, fully documented                                                                             |
+| Troubleshooting scenarios              | 19 in docs/troubleshooting.md                                                                           |
 
 ---
 

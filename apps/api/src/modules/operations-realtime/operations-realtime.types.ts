@@ -44,7 +44,10 @@ export function resolveOperationsRealtimeSocketChannels(input: {
   return channels
 }
 
-export function resolveOperationsRealtimeEventChannels(workspaceOwnerUserId: string, event: OperationsRealtimeEventName) {
+export function resolveOperationsRealtimeEventChannels(
+  workspaceOwnerUserId: string,
+  event: OperationsRealtimeEventName,
+) {
   switch (event) {
     case 'cash.opened':
     case 'cash.updated':

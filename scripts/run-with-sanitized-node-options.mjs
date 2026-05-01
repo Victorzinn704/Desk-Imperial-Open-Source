@@ -41,10 +41,10 @@ function sanitizeNodeOptions(rawValue) {
         const nextNormalized = stripWrappingQuotes(nextToken.trim())
 
         if (
-          nextNormalized.length > 0
-          && nextNormalized !== '""'
-          && nextNormalized !== "''"
-          && !nextNormalized.startsWith('-')
+          nextNormalized.length > 0 &&
+          nextNormalized !== '""' &&
+          nextNormalized !== "''" &&
+          !nextNormalized.startsWith('-')
         ) {
           hasValidLocalStorageFlag = true
           sanitizedTokens.push(token)
@@ -176,9 +176,7 @@ function resolveCommand(command) {
   }
 
   const localBin = path.join(process.cwd(), 'node_modules', '.bin')
-  const candidates = process.platform === 'win32'
-    ? [`${command}.cmd`, `${command}.exe`, command]
-    : [command]
+  const candidates = process.platform === 'win32' ? [`${command}.cmd`, `${command}.exe`, command] : [command]
 
   for (const candidate of candidates) {
     const fullPath = path.join(localBin, candidate)
@@ -201,15 +199,20 @@ function quoteForCmd(argument) {
   return `"${argument.replace(/"/g, '\\"')}"`
 }
 
-const child = process.platform === 'win32'
-  ? spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', [resolvedCommand, ...args].map(quoteForCmd).join(' ')], {
-      stdio: 'inherit',
-      env: process.env,
-    })
-  : spawn(resolvedCommand, args, {
-      stdio: 'inherit',
-      env: process.env,
-    })
+const child =
+  process.platform === 'win32'
+    ? spawn(
+        process.env.ComSpec || 'cmd.exe',
+        ['/d', '/s', '/c', [resolvedCommand, ...args].map(quoteForCmd).join(' ')],
+        {
+          stdio: 'inherit',
+          env: process.env,
+        },
+      )
+    : spawn(resolvedCommand, args, {
+        stdio: 'inherit',
+        env: process.env,
+      })
 
 child.on('error', (error) => {
   console.error(`[runner] Falha ao iniciar comando: ${error.message}`)

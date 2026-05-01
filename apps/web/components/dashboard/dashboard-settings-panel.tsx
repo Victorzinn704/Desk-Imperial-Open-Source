@@ -76,7 +76,8 @@ export function DashboardSettingsPanel({
   const acceptedCount = legalAcceptances.length
   const companyLocation = useMemo(() => formatCompanyLocation(user), [user])
   const activeTabMeta = dashboardSettingsNav.find((tab) => tab.id === activeTab) ?? dashboardSettingsNav[0]
-  const enabledCookiePreferences = Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
+  const enabledCookiePreferences =
+    Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
 
   const renderedTabContent =
     activeTab === 'account' ? (
@@ -131,9 +132,7 @@ export function DashboardSettingsPanel({
                   <button
                     className={cn(
                       'w-full rounded-xl px-3 py-3 text-left transition-colors',
-                      isActive
-                        ? 'bg-[var(--lab-blue-soft)]'
-                        : 'hover:bg-[var(--lab-surface-hover)]',
+                      isActive ? 'bg-[var(--lab-blue-soft)]' : 'hover:bg-[var(--lab-surface-hover)]',
                     )}
                     key={tab.id}
                     type="button"
@@ -168,9 +167,7 @@ export function DashboardSettingsPanel({
             </div>
 
             <div className="mt-5 border-t border-[var(--lab-border)] pt-5">
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">
-                Comandos
-              </p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">Comandos</p>
               <div className="mt-3 grid gap-2">
                 <Button
                   fullWidth
@@ -356,7 +353,12 @@ function SettingSignal({
   valueTone?: string
 }>) {
   return (
-    <div className={cn('flex items-start justify-between gap-4 border-t border-[var(--lab-border)] py-3', first && 'border-t-0 pt-0')}>
+    <div
+      className={cn(
+        'flex items-start justify-between gap-4 border-t border-[var(--lab-border)] py-3',
+        first && 'border-t-0 pt-0',
+      )}
+    >
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</p>
         {note ? <p className="mt-1 text-xs leading-5 text-[var(--lab-fg-soft)]">{note}</p> : null}

@@ -44,7 +44,12 @@ function sleep(ms) {
 
 async function readHealth(container) {
   try {
-    const output = await run('docker', ['inspect', '--format', '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}', container])
+    const output = await run('docker', [
+      'inspect',
+      '--format',
+      '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
+      container,
+    ])
     return output.trim()
   } catch (error) {
     return `unavailable:${error instanceof Error ? error.message : String(error)}`

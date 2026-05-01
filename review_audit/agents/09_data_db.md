@@ -42,7 +42,7 @@
 - **Severity**: Low
 - **Confidence**: Medium
 - **Evidence**: All 22 models use `@default(cuid())` (`schema.prisma:103,164,188,206,221,239,258,272,
-  282,300,341,357,383,416,438,462,481,522,543,562,590,632`).
+282,300,341,357,383,416,438,462,481,522,543,562,590,632`).
 - **Impact**: CUIDs are not time-ordered. PostgreSQL B-tree indexes on random PKs cause page-split
   churn, especially on high-write tables (`AuditLog`, `CashMovement`, `ComandaItem`, `OrderItem`).
   Measurable at scale (~100k+ rows/day) but academic at current volumes.
@@ -212,17 +212,17 @@
 
 ## Summary
 
-| ID | Title | Severity | Effort |
-|----|-------|----------|--------|
-| DB-001 | Missing FK indexes (7 FKs) | Medium | Low |
-| DB-002 | CUID PK index fragmentation | Low | High |
-| DB-003 | Audit trail gaps (product/employee/cash) | High | Medium |
-| DB-004 | TOCTOU in stock pre-check | Low | Low |
-| DB-005 | Audit log silently drops failures | High | Medium |
-| DB-006 | Kitchen items use ReadCommitted | Medium | Low |
-| DB-007 | Barcode unique constraint with null | Low | Low |
-| DB-008 | No cursor pagination indexes | Low | Low |
-| DB-009 | Denormalized tableLabel on Comanda | Low | Low |
-| DB-010 | stock Int — no fractional support | Low | Low |
+| ID     | Title                                    | Severity | Effort |
+| ------ | ---------------------------------------- | -------- | ------ |
+| DB-001 | Missing FK indexes (7 FKs)               | Medium   | Low    |
+| DB-002 | CUID PK index fragmentation              | Low      | High   |
+| DB-003 | Audit trail gaps (product/employee/cash) | High     | Medium |
+| DB-004 | TOCTOU in stock pre-check                | Low      | Low    |
+| DB-005 | Audit log silently drops failures        | High     | Medium |
+| DB-006 | Kitchen items use ReadCommitted          | Medium   | Low    |
+| DB-007 | Barcode unique constraint with null      | Low      | Low    |
+| DB-008 | No cursor pagination indexes             | Low      | Low    |
+| DB-009 | Denormalized tableLabel on Comanda       | Low      | Low    |
+| DB-010 | stock Int — no fractional support        | Low      | Low    |
 
 **Top priorities**: DB-005 (audit persistence), DB-003 (audit coverage), DB-001 (FK indexes).

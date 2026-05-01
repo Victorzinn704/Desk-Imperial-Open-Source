@@ -222,8 +222,8 @@ export class OperationsRealtimeService {
   }
 
   private resolveSocketRoomSize(channels: string[]) {
-    const rooms = (this.namespace as { adapter?: { rooms?: Map<string, Set<string> | { size: number }> } } | null)?.adapter
-      ?.rooms
+    const rooms = (this.namespace as { adapter?: { rooms?: Map<string, Set<string> | { size: number }> } } | null)
+      ?.adapter?.rooms
     if (!rooms) {
       return null
     }

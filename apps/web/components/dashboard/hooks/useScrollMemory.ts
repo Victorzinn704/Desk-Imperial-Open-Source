@@ -14,15 +14,21 @@ export function useScrollMemory(activeSection: DashboardSectionId, isMobile: boo
 
   // Restore scroll position when switching sections
   useEffect(() => {
-    if (isMobile) {return}
+    if (isMobile) {
+      return
+    }
     const container = scrollRef.current
-    if (!container) {return}
+    if (!container) {
+      return
+    }
     container.scrollTop = memoryRef.current[activeSection] ?? 0
   }, [isMobile, activeSection])
 
   const onScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
-      if (isMobile) {return}
+      if (isMobile) {
+        return
+      }
       memoryRef.current[activeSection] = event.currentTarget.scrollTop
     },
     [isMobile, activeSection],

@@ -26,13 +26,13 @@ O objetivo nao e "ter app em todo lugar". O objetivo e manter uma unica regra de
 
 ## Papel de cada superficie
 
-| Superficie | Papel oficial | Deve conter | Nao deve conter |
-| --- | --- | --- | --- |
-| Desktop web | centro de gestao | configuracao completa, financeiro denso, operacao consolidada, IA, relatorios, equipe, catalogo | hacks de hardware local como se fosse app nativo |
-| Owner PWA | centro operacional movel | hoje, comandas, PDV, financeiro resumido, cadastro rapido, conta | BI desktop comprimido, telas gigantes, configuracao confusa |
-| Staff PWA | execucao operacional | mesas, pedido, cozinha, historico proprio, vendas proprias, ranking do turno em contexto de equipe, reconexao e offline | financeiro global, vendas de outros por detalhe sensivel, settings densos, fluxo executivo |
-| Android Kotlin | camada dedicada de hardware e operacao critica | impressora, bluetooth classico, USB, fiscal, scan de alta frequencia, fluxos offline mais fortes | duplicar o desktop inteiro |
-| React Native | camada movel secundaria para iPhone e expansao cross-platform | fluxos moveis ja estabilizados, consumo de contratos e navegacao unificada | experimentar regras novas antes de estabilizar no backend |
+| Superficie     | Papel oficial                                                 | Deve conter                                                                                                             | Nao deve conter                                                                            |
+| -------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Desktop web    | centro de gestao                                              | configuracao completa, financeiro denso, operacao consolidada, IA, relatorios, equipe, catalogo                         | hacks de hardware local como se fosse app nativo                                           |
+| Owner PWA      | centro operacional movel                                      | hoje, comandas, PDV, financeiro resumido, cadastro rapido, conta                                                        | BI desktop comprimido, telas gigantes, configuracao confusa                                |
+| Staff PWA      | execucao operacional                                          | mesas, pedido, cozinha, historico proprio, vendas proprias, ranking do turno em contexto de equipe, reconexao e offline | financeiro global, vendas de outros por detalhe sensivel, settings densos, fluxo executivo |
+| Android Kotlin | camada dedicada de hardware e operacao critica                | impressora, bluetooth classico, USB, fiscal, scan de alta frequencia, fluxos offline mais fortes                        | duplicar o desktop inteiro                                                                 |
+| React Native   | camada movel secundaria para iPhone e expansao cross-platform | fluxos moveis ja estabilizados, consumo de contratos e navegacao unificada                                              | experimentar regras novas antes de estabilizar no backend                                  |
 
 ## Boundary ja aplicado no Staff PWA
 
@@ -71,15 +71,15 @@ O objetivo nao e "ter app em todo lugar". O objetivo e manter uma unica regra de
 
 ## Fonte de verdade por camada
 
-| Camada | Fonte de verdade |
-| --- | --- |
-| Regra de negocio | `apps/api` |
-| Contratos HTTP e schema | `packages/types` + `packages/api-contract` |
-| Estado remoto e sincronizacao | TanStack Query + realtime por workspace |
-| Persistencia relacional | Prisma + PostgreSQL |
-| Cache/rate limit | Redis |
-| Tema e tokens web/PWA | `apps/web` |
-| Hardware Android | app Kotlin + adapters dedicados |
+| Camada                        | Fonte de verdade                           |
+| ----------------------------- | ------------------------------------------ |
+| Regra de negocio              | `apps/api`                                 |
+| Contratos HTTP e schema       | `packages/types` + `packages/api-contract` |
+| Estado remoto e sincronizacao | TanStack Query + realtime por workspace    |
+| Persistencia relacional       | Prisma + PostgreSQL                        |
+| Cache/rate limit              | Redis                                      |
+| Tema e tokens web/PWA         | `apps/web`                                 |
+| Hardware Android              | app Kotlin + adapters dedicados            |
 
 ## Regras nao negociaveis
 
@@ -166,16 +166,16 @@ Se houver necessidade de hardware pesado no iPhone, isso deve ser tratado com mo
 
 ## Fronteira entre web/PWA e app dedicado
 
-| Capability | PWA | Kotlin | React Native |
-| --- | --- | --- | --- |
-| Comandas ao vivo | sim | sim | sim |
-| PDV movel | sim | sim | sim |
-| Historico de comandas | sim | sim | sim |
-| Cadastro rapido via camera | sim | sim | sim |
-| Impressao termica Bluetooth classico | nao assumir | sim | depois, via bridge |
-| USB | nao assumir | sim | depois, via bridge |
-| Fiscal local | nao assumir | sim | depois, se necessario |
-| Painel executivo completo | nao | opcional | nao |
+| Capability                           | PWA         | Kotlin   | React Native          |
+| ------------------------------------ | ----------- | -------- | --------------------- |
+| Comandas ao vivo                     | sim         | sim      | sim                   |
+| PDV movel                            | sim         | sim      | sim                   |
+| Historico de comandas                | sim         | sim      | sim                   |
+| Cadastro rapido via camera           | sim         | sim      | sim                   |
+| Impressao termica Bluetooth classico | nao assumir | sim      | depois, via bridge    |
+| USB                                  | nao assumir | sim      | depois, via bridge    |
+| Fiscal local                         | nao assumir | sim      | depois, se necessario |
+| Painel executivo completo            | nao         | opcional | nao                   |
 
 ## Referencias de estudo fixadas
 

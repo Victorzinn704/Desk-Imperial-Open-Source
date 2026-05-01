@@ -5,7 +5,7 @@ import type { FinanceSummaryResponse, ProductRecord } from '@contracts/contracts
 import { cn } from '@/lib/utils'
 import { FinanceCategoryDetail } from './finance-category-flow-detail'
 import { FinanceCategoryFlowList } from './finance-category-flow-list'
-import { type FinanceCategoryFlowTab } from './finance-category-flow.shared'
+import type { FinanceCategoryFlowTab } from './finance-category-flow.shared'
 import { FinanceCategoryTopProducts } from './finance-category-flow-top-products'
 
 export type { FinanceCategoryFlowTab } from './finance-category-flow.shared'

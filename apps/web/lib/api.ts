@@ -49,7 +49,12 @@ export {
   importProducts,
 } from './api-products'
 
-export type { ProductPayload, BulkRestockProductsPayload, SmartProductDraftPayload, SmartProductDraftResponse } from './api-products'
+export type {
+  ProductPayload,
+  BulkRestockProductsPayload,
+  SmartProductDraftPayload,
+  SmartProductDraftResponse,
+} from './api-products'
 
 export { fetchFinanceSummary, fetchPillars, fetchMarketInsight } from './api-finance'
 

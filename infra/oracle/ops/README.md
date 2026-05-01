@@ -4,13 +4,13 @@ Esta pasta materializa a camada operacional da `vm-free-02`.
 
 ## Topologia
 
-| VM                    | Papel         | Serviços                                                                                                                          |
-| --------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `vm-free-01`          | Produção      | `web`, `api`, `redis`, `nginx`, `certbot`, `node-exporter` privado                                                                |
-| `vm-free-02`          | Ops/Builder   | `Grafana`, `Prometheus`, `Loki`, `Tempo`, `Alloy`, `Alertmanager`, `Blackbox`, `SonarQube`, `registry privado`, `Metabase`      |
-| `lohana-ampere-01`    | Banco         | `PostgreSQL 17`, `PgBouncer`, `pgBackRest`, `postgres_exporter`, `node-exporter`                                                 |
-| `lohana-amd-micro-01` | Runner        | restore drill, relatórios `pgBadger`, checagem de backup                                                                          |
-| `vm-amd-micro-01`     | Sentinela     | healthcheck externo leve                                                                                                          |
+| VM                    | Papel       | Serviços                                                                                                                   |
+| --------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `vm-free-01`          | Produção    | `web`, `api`, `redis`, `nginx`, `certbot`, `node-exporter` privado                                                         |
+| `vm-free-02`          | Ops/Builder | `Grafana`, `Prometheus`, `Loki`, `Tempo`, `Alloy`, `Alertmanager`, `Blackbox`, `SonarQube`, `registry privado`, `Metabase` |
+| `lohana-ampere-01`    | Banco       | `PostgreSQL 17`, `PgBouncer`, `pgBackRest`, `postgres_exporter`, `node-exporter`                                           |
+| `lohana-amd-micro-01` | Runner      | restore drill, relatórios `pgBadger`, checagem de backup                                                                   |
+| `vm-amd-micro-01`     | Sentinela   | healthcheck externo leve                                                                                                   |
 
 ## Segurança
 

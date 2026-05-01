@@ -61,7 +61,10 @@ export const ComandaItemRow = memo(function ComandaItemRow({ item, onChangeQty, 
       </div>
 
       <div className="mt-3 border-t border-dashed border-[var(--border)] pt-3">
-        <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]" htmlFor={noteInputId}>
+        <label
+          className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]"
+          htmlFor={noteInputId}
+        >
           Observação do item
         </label>
         <input

@@ -5,8 +5,7 @@ export {
   CANVAS_H,
   CARD_W,
   CARD_H,
-
-CANVAS_PADDING,
+  CANVAS_PADDING,
   fmtBRL,
   defaultCreateForm,
   getAutoPosition,

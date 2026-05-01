@@ -72,7 +72,11 @@ services:
     networks:
       - db
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 6432 -U "$$PGBOUNCER_AUTH_USER" -d "$$POSTGRES_APP_DB" || nc -z 127.0.0.1 6432']
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -h 127.0.0.1 -p 6432 -U "$$PGBOUNCER_AUTH_USER" -d "$$POSTGRES_APP_DB" || nc -z 127.0.0.1 6432',
+        ]
       interval: 10s
       timeout: 5s
       retries: 12

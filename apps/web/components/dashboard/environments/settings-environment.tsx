@@ -53,7 +53,8 @@ export function SettingsEnvironment({
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const documentTitles = new Map(consentQuery.data?.documents.map((doc) => [doc.key, doc.title]) ?? [])
   const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error : undefined
-  const enabledCookiePreferences = Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
+  const enabledCookiePreferences =
+    Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
 
   const handleLogout = () => {
     _logoutMutation.mutate(undefined, {
@@ -160,7 +161,11 @@ function SettingsLockedState({ error }: Readonly<{ error: ApiError | null }>) {
         </div>
       </LabPageHeader>
 
-      <LabPanel action={<LabStatusPill tone="warning">sessão necessária</LabStatusPill>} padding="md" title="Configuração bloqueada">
+      <LabPanel
+        action={<LabStatusPill tone="warning">sessão necessária</LabStatusPill>}
+        padding="md"
+        title="Configuração bloqueada"
+      >
         <div className="space-y-5">
           <div className="flex flex-wrap gap-2">
             <LabFactPill label="conta" value="perfil + workspace" />
@@ -169,12 +174,7 @@ function SettingsLockedState({ error }: Readonly<{ error: ApiError | null }>) {
           </div>
 
           <div className="space-y-0">
-            <LabSignalRow
-              label="acesso"
-              note={accessMessage}
-              tone="warning"
-              value="login"
-            />
+            <LabSignalRow label="acesso" note={accessMessage} tone="warning" value="login" />
             <LabSignalRow
               label="preview"
               note="Sem sessão, a tela só mostra casca de navegação. Perfil, governança e integrações continuam fechados."
@@ -191,7 +191,9 @@ function SettingsLockedState({ error }: Readonly<{ error: ApiError | null }>) {
 
           <div className="flex flex-col gap-4 rounded-[24px] border border-[var(--lab-border)] bg-[var(--lab-surface-2)] p-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-[var(--lab-fg)]">A configuração real abre no mesmo shell depois do login.</p>
+              <p className="text-sm font-semibold text-[var(--lab-fg)]">
+                A configuração real abre no mesmo shell depois do login.
+              </p>
               <p className="text-sm leading-6 text-[var(--lab-fg-soft)]">
                 Entre no Desk para liberar conta, segurança, preferências, compliance e vínculo do Telegram oficial.
               </p>

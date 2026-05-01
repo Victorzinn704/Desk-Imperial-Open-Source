@@ -63,7 +63,7 @@ export function parseProductImportCsv(content: string): ProductImportRow[] {
     }
   }
 
-  if (!headers.includes('stock') && !headers.includes('stockpackages') && !headers.includes('stocklooseunits')) {
+  if (!(headers.includes('stock') || headers.includes('stockpackages') || headers.includes('stocklooseunits'))) {
     throw new Error('O CSV precisa conter "stock" ou o par "stockPackages" e "stockLooseUnits".')
   }
 
