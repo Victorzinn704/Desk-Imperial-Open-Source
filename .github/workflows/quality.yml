@@ -285,14 +285,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [lint-api, lint-web]
-    # continue-on-error: falha silenciosa se QODANA_TOKEN não estiver configurado em Secrets
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Qodana preflight
+        id: qodana-preflight
+        shell: bash
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        run: |
+          if [[ -n "$QODANA_TOKEN" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Qodana token configurado; scan habilitado." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Qodana skipped"
+              echo
+              echo "O workflow continua valido, mas o scan foi pulado porque o secret \`QODANA_TOKEN\` nao esta configurado."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Qodana scan
+        if: steps.qodana-preflight.outputs.enabled == 'true'
         uses: JetBrains/qodana-action@v2024.3
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}

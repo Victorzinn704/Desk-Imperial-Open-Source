@@ -22,6 +22,7 @@ As fontes canonicas para entendimento tecnico atual sao:
 - `architecture/local-development.md`
 - `product/overview.md`
 - `product/requirements.md`
+- `product/catalog-intelligence.md`
 - `operations/telegram-bot-rollout.md`
 - `operations/sentry-rollout-2026-05-01.md`
 - `operations/realtime-performance-runbook.md`
@@ -38,6 +39,7 @@ Estes grupos continuam uteis, mas nao sao a fonte primaria do estado atual:
 - `release/` — diagnosticos, pareceres e planos de momentos anteriores
 - `case-studies/` — estudos e analises de mudanca
 - `agents/`, `review_audit/` e `_meta/` — apoio interno de auditoria e governanca
+- `_meta/contribution.md` e `_meta/style-guide.md` — regras de manutencao e escrita
 
 ## 4. Status da Documentacao
 
@@ -51,16 +53,17 @@ Estes grupos continuam uteis, mas nao sao a fonte primaria do estado atual:
 - `architecture/local-development.md`
 - `product/overview.md`
 - `product/requirements.md`
+- `product/catalog-intelligence.md`
 - `testing/testing-guide.md`
 - `operations/telegram-bot-rollout.md`
 - `operations/sentry-rollout-2026-05-01.md`
 - `operations/realtime-performance-runbook.md`
+- `security/security-baseline.md`
 - `security/security-testing-workflow-2026-04-30.md`
 - `waves/realtime-*`
 
 ### 4.2 Parcialmente atual
 
-- `security/security-baseline.md`
 - `operations/kpi-realtime-mapping.md`
 - `DOC-PLAN.md`
 

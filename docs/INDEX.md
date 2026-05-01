@@ -46,6 +46,7 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 | [product/overview.md](./product/overview.md)                           | O que é o Desk Imperial, para quem é, por que existe, missão |
 | [product/requirements.md](./product/requirements.md)                   | Requisitos funcionais (RF) e não-funcionais (RNF)            |
 | [product/user-flows.md](./product/user-flows.md)                       | Fluxos principais do dono e do funcionário                   |
+| [product/catalog-intelligence.md](./product/catalog-intelligence.md)   | Cadastro inteligente, barcode, catalogo e imagens            |
 | [product/risks-and-limitations.md](./product/risks-and-limitations.md) | Riscos conhecidos, limitações atuais, débito técnico         |
 | [product/owner-pwa-mvp.md](./product/owner-pwa-mvp.md)                 | Escopo oficial do Owner PWA e prioridade do cadastro rápido  |
 | [product/staff-pwa-mvp.md](./product/staff-pwa-mvp.md)                 | Escopo oficial do Staff PWA e boundary operacional           |
@@ -141,13 +142,15 @@ Material importante para contexto, mas não é a fonte primária do estado atual
 
 ## Comunidade e criador
 
-| Documento                                  | O que cobre                                |
-| ------------------------------------------ | ------------------------------------------ |
-| [CREATOR.md](./CREATOR.md)                 | História e motivação do criador do projeto |
-| [GETTING-STARTED.md](./GETTING-STARTED.md) | Dicas práticas para novos desenvolvedores  |
-| [DOC-PLAN.md](./DOC-PLAN.md)               | Plano mestre desta documentação            |
-| [ROADMAP.md](../ROADMAP.md)                | O que está feito, em andamento e planejado |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)      | Como contribuir com o projeto              |
+| Documento                                         | O que cobre                                |
+| ------------------------------------------------- | ------------------------------------------ |
+| [CREATOR.md](./CREATOR.md)                        | História e motivação do criador do projeto |
+| [GETTING-STARTED.md](./GETTING-STARTED.md)        | Dicas práticas para novos desenvolvedores  |
+| [DOC-PLAN.md](./DOC-PLAN.md)                      | Plano mestre desta documentação            |
+| [\_meta/contribution.md](./_meta/contribution.md) | Regras de manutencao e anti-drift das docs |
+| [\_meta/style-guide.md](./_meta/style-guide.md)   | Convenções editoriais e termos travados    |
+| [ROADMAP.md](../ROADMAP.md)                       | O que está feito, em andamento e planejado |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)             | Como contribuir com o projeto              |
 
 ---
 
@@ -163,6 +166,7 @@ docs/
 │   ├── overview.md           # O produto, para quem, por que
 │   ├── requirements.md       # RF e RNF
 │   ├── user-flows.md         # Fluxos do usuário
+│   ├── catalog-intelligence.md
 │   ├── owner-pwa-mvp.md      # Escopo do PWA do dono
 │   ├── staff-pwa-mvp.md      # Escopo do PWA do funcionário
 │   └── risks-and-limitations.md
@@ -197,6 +201,10 @@ docs/
 ├── testing/
 │   ├── testing-guide.md
 │   └── AUDITORIA_TESTES_COMPLETA.md
+├── _meta/
+│   ├── style-guide.md
+│   ├── contribution.md
+│   └── audit/
 └── release/
     ├── multi-surface-delivery-workflow.md
     ├── web-pwa-closure-workflow-2026-04-21.md
