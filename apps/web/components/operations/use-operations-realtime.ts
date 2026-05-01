@@ -213,6 +213,22 @@ export function useOperationsRealtime(
         return
       }
 
+      // C10: descarte precoce por businessDate divergente (virada de dia em sessão longa).
+      // O patcher já filtra internamente, mas descartar aqui evita rodar todos os patchers
+      // e ainda registra o drop para observabilidade em produção 24h.
+      const envelopeBusinessDate = asString(envelope.payload.businessDate)
+      if (envelopeBusinessDate) {
+        const liveSnapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+        if (liveSnapshot && liveSnapshot.businessDate && liveSnapshot.businessDate !== envelopeBusinessDate) {
+          recordOperationsRealtimeEnvelopeDropped({
+            event: envelope.event,
+            entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+            reason: 'stale-business-date',
+          })
+          return
+        }
+      }
+
       const startedAt = now()
       const entityKey = resolveRealtimeEnvelopeEntityKey(envelope)
       const eventCreatedAtMs = parseRealtimeEnvelopeCreatedAt(envelope.createdAt)

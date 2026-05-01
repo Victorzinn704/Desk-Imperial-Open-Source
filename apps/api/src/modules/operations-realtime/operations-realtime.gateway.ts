@@ -78,6 +78,14 @@ export class OperationsRealtimeGateway
   private redisSessionRevokePubClient: Redis | null = null
 
   private static readonly SESSION_REVOKE_CHANNEL = 'operations:realtime:session-revoke'
+  /** TTL do cache de validação de token — reduz DB hits em reconexões em massa. */
+  private static readonly TOKEN_AUTH_CACHE_TTL_MS = 60_000
+  /**
+   * Cache in-process de contextos de autenticação de token.
+   * Chave: rawToken; Valor: contexto + timer de expiração.
+   * Não é compartilhado entre nós — ok em multi-pod (cada nó aquece seu próprio cache).
+   */
+  private readonly tokenAuthCache = new Map<string, { context: OperationsRealtimeConnectionContext; timer: ReturnType<typeof setTimeout> }>()
 
   @WebSocketServer()
   server!: Namespace
@@ -156,7 +164,46 @@ export class OperationsRealtimeGateway
   }
 
   async authenticateConnection(socket: OperationsRealtimeSocketLike): Promise<OperationsRealtimeConnectionContext> {
-    return authenticateOperationsRealtimeSocket(socket, (rawToken) => this.authService.validateSessionToken(rawToken))
+    const rawToken = (socket.handshake as { auth?: { token?: string } }).auth?.token
+    const normalizedToken = rawToken ? rawToken.replace(/^Bearer\s+/i, '').trim() : null
+
+    if (normalizedToken) {
+      const cached = this.tokenAuthCache.get(normalizedToken)
+      if (cached) {
+        // Reusa contexto em cache — preenche socket.data para o caller
+        socket.data.auth = cached.context.auth
+        socket.data.workspaceOwnerUserId = cached.context.workspaceOwnerUserId
+        socket.data.workspaceChannel = cached.context.workspaceChannel
+        return cached.context
+      }
+    }
+
+    const context = await authenticateOperationsRealtimeSocket(socket, (token) => this.authService.validateSessionToken(token))
+
+    // Popula cache com TTL — entrada expirará automaticamente.
+    if (normalizedToken) {
+      const timer = setTimeout(() => {
+        this.tokenAuthCache.delete(normalizedToken)
+      }, OperationsRealtimeGateway.TOKEN_AUTH_CACHE_TTL_MS)
+      if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
+        timer.unref()
+      }
+      this.tokenAuthCache.set(normalizedToken, { context, timer })
+      socket.data.rawToken = normalizedToken
+    }
+
+    return context
+  }
+
+  /** Invalida a entrada de cache de um token após disconnect (evita servir contexto obsoleto). */
+  private invalidateTokenAuthCache(rawToken: string | null | undefined) {
+    if (!rawToken) return
+    const normalizedToken = rawToken.replace(/^Bearer\s+/i, '').trim()
+    const cached = this.tokenAuthCache.get(normalizedToken)
+    if (cached) {
+      clearTimeout(cached.timer)
+      this.tokenAuthCache.delete(normalizedToken)
+    }
   }
 
   async handleConnection(socket: Socket) {
@@ -199,6 +246,14 @@ export class OperationsRealtimeGateway
         'desk.operations.realtime.has_workspace': Boolean(connection.workspaceOwnerUserId),
       })
 
+      // C9: ACK de entrega para eventos terminais — cliente emite este evento após receber comanda.closed / cash.closure.updated.
+      socket.on('operations.ack', (payload: unknown) => {
+        const ackPayload = payload as { envelopeId?: string; event?: string } | null
+        this.logger.debug(
+          `Socket ${socket.id} confirmou entrega: ${ackPayload?.event ?? 'desconhecido'} envelope=${ackPayload?.envelopeId ?? 'sem-id'}`,
+        )
+      })
+
       this.logger.debug(
         `Socket ${socket.id} conectado em ${scopedChannels.join(', ')} (${connection.auth.userId} -> ${connection.workspaceOwnerUserId})`,
       )
@@ -226,6 +281,9 @@ export class OperationsRealtimeGateway
     if (sessionId) {
       this.realtimeSessions.untrackSessionSocket(sessionId, socket.id)
     }
+
+    // Invalida cache de auth para este token — evita servir contexto obsoleto em re-autenticacao.
+    this.invalidateTokenAuthCache(socket.data.rawToken)
 
     const workspaceChannel = socket.data.workspaceChannel
     if (workspaceChannel) {

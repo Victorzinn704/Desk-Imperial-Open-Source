@@ -28,6 +28,12 @@ export const OPERATIONS_EVENTS = [
   'mesa.upserted',
 ] as const
 
+/**
+ * Eventos terminais que enviam ACK de volta ao servidor após entrega (C9).
+ * Permite ao servidor correlacionar entrega sem bloquear o consumer.
+ */
+const TERMINAL_EVENTS_FOR_ACK = new Set<string>(['comanda.closed', 'cash.closure.updated'])
+
 export function useOperationsSocket(
   enabled: boolean,
   onEvent: (envelope?: OperationsRealtimeEnvelope) => void,
@@ -140,6 +146,10 @@ export function useOperationsSocket(
     }
     const handleEvent = (envelope?: OperationsRealtimeEnvelope) => {
       onEventRef.current?.(envelope)
+      // C9: ACK seletivo para eventos terminais — fire-and-forget, não bloqueia o consumer.
+      if (envelope?.id && TERMINAL_EVENTS_FOR_ACK.has(envelope.event) && socket.connected) {
+        socket.emit('operations.ack', { envelopeId: envelope.id, event: envelope.event })
+      }
     }
 
     socket.on('connect', onConnect)

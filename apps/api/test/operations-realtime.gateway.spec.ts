@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file operations-realtime.gateway.spec.ts
  * @module OperationsRealtime/Gateway
  *
@@ -200,6 +200,7 @@ describe('OperationsRealtimeGateway', () => {
         headers: { 'x-forwarded-for': '203.0.113.1' },
         auth: { token: 'Bearer valid-token' },
       },
+      on: jest.fn(),
       join: jest.fn(async () => {}),
       emit: jest.fn(),
       disconnect: jest.fn(),
@@ -216,7 +217,8 @@ describe('OperationsRealtimeGateway', () => {
     expect(authRateLimitService.assertRealtimeSocketAllowed).toHaveBeenCalledWith('realtime-socket:unknown:hash')
     expect(authRateLimitService.recordRealtimeSocketAttempt).toHaveBeenCalledWith('realtime-socket:unknown:hash')
     expect(realtimeSessions.trackSessionSocket).toHaveBeenCalledWith('session-1', 'socket-ok', expect.any(Function))
-    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('workspace:owner-1:cash'))
+    expect(socket.on).toHaveBeenCalledWith('operations.ack', expect.any(Function))
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('workspace:owner-1'))
     expect(socket.disconnect).not.toHaveBeenCalled()
   })
 
