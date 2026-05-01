@@ -37,6 +37,10 @@ import { asString, mapComandaStatus, mapKitchenStatus } from '@/lib/operations/o
 const OPERATIONS_DEBOUNCE_MS = 200
 const COMMERCIAL_DEBOUNCE_MS = 500
 const SUMMARY_DEBOUNCE_MS = 1_500
+// Janela de dedup por envelope.id (FIFO). Cobre rede instável que retransmite o mesmo evento.
+const MAX_PROCESSED_ENVELOPE_IDS = 200
+// Buffer de envelopes recebidos durante reidratação REST. Acima disso, prefere descartar e re-baseline.
+const MAX_REIDRATATION_BUFFER = 100
 
 export type { RealtimeStatus } from './hooks/use-operations-socket'
 export { OPERATIONS_EVENTS }
@@ -59,6 +63,14 @@ export function useOperationsRealtime(
   const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const notifiedEnvelopeIdsRef = useRef<string[]>([])
+  // Idempotência de patch: dedup por envelope.id em janela FIFO (cap em MAX_PROCESSED_ENVELOPE_IDS).
+  const processedEnvelopeIdsRef = useRef<Set<string>>(new Set())
+  const processedEnvelopeIdsOrderRef = useRef<string[]>([])
+  // Reidratação REST: durante refreshBaseline, envelopes WS são bufferizados e drenados na ordem após o refetch resolver.
+  const isSyncingRef = useRef(false)
+  const reidratationBufferRef = useRef<OperationsRealtimeEnvelope[]>([])
+  // Permite refreshBaseline drenar via handleEvent sem criar dependência circular no useCallback.
+  const handleEventRef = useRef<(envelope?: OperationsRealtimeEnvelope) => void>(() => {})
 
   useEffect(
     () => () => {
@@ -86,6 +98,12 @@ export function useOperationsRealtime(
 
   const refreshBaseline = useCallback(async () => {
     const startedAt = now()
+    // Abre janela de reidratação: envelopes que chegarem agora vão pro buffer em vez de patchear estado stale.
+    isSyncingRef.current = true
+    reidratationBufferRef.current = []
+    // Reset da janela de dedup — envelopes pós-baseline são processados de novo, mesmo que id colida com pré-queda.
+    processedEnvelopeIdsRef.current.clear()
+    processedEnvelopeIdsOrderRef.current.length = 0
 
     try {
       await Promise.all([
@@ -95,12 +113,21 @@ export function useOperationsRealtime(
         }),
         queryClient.invalidateQueries({ queryKey: ['mesas'] }),
       ])
+      // Fecha janela ANTES de drenar para que o handleEvent processe normalmente cada um.
+      isSyncingRef.current = false
+      const buffered = reidratationBufferRef.current
+      reidratationBufferRef.current = []
+      for (const envelope of buffered) {
+        handleEventRef.current?.(envelope)
+      }
       recordOperationsReconnectRefreshEvent({
         status: 'success',
         durationMs: Math.max(0, now() - startedAt),
         invalidatedMesas: true,
       })
     } catch (error) {
+      isSyncingRef.current = false
+      reidratationBufferRef.current = []
       recordOperationsReconnectRefreshEvent({
         status: 'error',
         durationMs: Math.max(0, now() - startedAt),
@@ -159,6 +186,30 @@ export function useOperationsRealtime(
         queueOperationsRefresh()
         queueKitchenRefresh()
         queueSummaryRefresh()
+        return
+      }
+
+      // Reidratação em curso: bufferiza para drenar na ordem após o baseline REST resolver.
+      if (isSyncingRef.current) {
+        if (reidratationBufferRef.current.length < MAX_REIDRATATION_BUFFER) {
+          reidratationBufferRef.current.push(envelope)
+        } else {
+          recordOperationsRealtimeEnvelopeDropped({
+            event: envelope.event,
+            entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+            reason: 'buffer-overflow',
+          })
+        }
+        return
+      }
+
+      // Idempotência: se o envelope já foi aplicado nesta sessão, ignora a retransmissão.
+      if (envelope.id && processedEnvelopeIdsRef.current.has(envelope.id)) {
+        recordOperationsRealtimeEnvelopeDropped({
+          event: envelope.event,
+          entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+          reason: 'duplicate-id',
+        })
         return
       }
 
@@ -236,9 +287,15 @@ export function useOperationsRealtime(
         queueCommercialRefresh()
       }
 
-      if (patchResult.livePatched || patchResult.kitchenPatched) {
-        recordRealtimeEnvelopeProcessing(envelope, isSelfEvent, startedAt, patchResult)
-        return
+      if (envelope.id) {
+        processedEnvelopeIdsRef.current.add(envelope.id)
+        processedEnvelopeIdsOrderRef.current.push(envelope.id)
+        while (processedEnvelopeIdsOrderRef.current.length > MAX_PROCESSED_ENVELOPE_IDS) {
+          const evicted = processedEnvelopeIdsOrderRef.current.shift()
+          if (evicted) {
+            processedEnvelopeIdsRef.current.delete(evicted)
+          }
+        }
       }
 
       recordRealtimeEnvelopeProcessing(envelope, isSelfEvent, startedAt, patchResult)
@@ -258,6 +315,10 @@ export function useOperationsRealtime(
   const handleSocketError = useCallback((message: string) => {
     toast.error(message)
   }, [])
+
+  useEffect(() => {
+    handleEventRef.current = handleEvent
+  }, [handleEvent])
 
   const { status } = useOperationsSocket(enabled, handleEvent, refreshBaseline, handleSocketError)
 

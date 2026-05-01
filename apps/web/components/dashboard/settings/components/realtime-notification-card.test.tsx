@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as ApiModule from '@/lib/api'
 import { RealtimeNotificationCard } from './realtime-notification-card'
 import {
   fetchUserNotificationPreferences,
@@ -9,7 +10,7 @@ import {
 } from '@/lib/api'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
   return {
     ...actual,
     fetchUserNotificationPreferences: vi.fn(),

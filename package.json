@@ -125,7 +125,6 @@
   },
   "overrides": {
     "next": {
-      ".": "$next",
       "postcss": "8.5.10"
     },
     "postcss": "8.5.10",

@@ -110,6 +110,11 @@ export class OperationsRealtimeGateway
       }
     } else {
       recordOperationsRealtimeRedisAdapterState(false, 'missing_redis_url')
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'REDIS_URL obrigatório em produção: defina REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL para que o adapter Socket.IO atravesse instâncias.',
+        )
+      }
       this.logger.log(
         'Redis não definido (REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL) — Socket.IO usando adapter em memória (instância única).',
       )

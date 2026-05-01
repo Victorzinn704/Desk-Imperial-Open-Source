@@ -60,12 +60,13 @@ export function useOperationsSocket(
     setStatus('connecting')
 
     const socket = io(buildOperationsSocketUrl(), {
-      transports: ['websocket'],
-      upgrade: false,
+      transports: ['websocket', 'polling'],
+      upgrade: true,
       withCredentials: true,
       timeout: 8_000,
       reconnectionDelay: 2_000,
       reconnectionDelayMax: 10_000,
+      randomizationFactor: 0.5,
     })
     socketRef.current = socket
     const listenerCount = OPERATIONS_EVENTS.length + 4

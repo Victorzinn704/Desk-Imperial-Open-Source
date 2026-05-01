@@ -48,7 +48,7 @@ Fluxo típico de mutação:
 ### Transport
 
 - servidor aceita `websocket` e `polling`
-- cliente web atual conecta com `websocket` apenas, `upgrade: false`
+- cliente web atual tenta `polling` + `websocket`, com upgrade habilitado e jitter de reconexao
 
 ### Heartbeat
 
@@ -213,6 +213,7 @@ Quando Redis não está disponível:
 - o gateway cai para adapter em memória;
 - o realtime continua funcional em instância única;
 - a escala horizontal deixa de propagar eventos entre nós.
+- em `production`, o bootstrap do gateway falha se nenhum `REDIS_URL` estiver configurado, para evitar cluster parcial e perda silenciosa de propagacao entre instancias.
 
 O runtime atual grava telemetria explícita sobre esse estado.
 

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { EventEmitter } from 'node:events'
-import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
 import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import {

@@ -10,6 +10,10 @@ concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  security-events: write
+
 env:
   NODE_VERSION: "22"
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -165,7 +169,7 @@ jobs:
         continue-on-error: true
 
       - name: OSV-Scanner
-        uses: google/osv-scanner-action@v2
+        uses: google/osv-scanner-action@v2.3.0
         with:
           scan-args: |-
             --lockfile=package-lock.json

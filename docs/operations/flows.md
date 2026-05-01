@@ -281,7 +281,7 @@ efeitos:
 
 - namespace: `/operations`
 - servidor: `websocket + polling`
-- cliente web atual: `websocket` only, `upgrade: false`
+- cliente web atual: `polling + websocket`, `upgrade: true`, `randomizationFactor: 0.5`
 - autenticacao: cookie de sessao, `Authorization`, `X-Access-Token` ou `handshake.auth.token`
 
 ### 4.2 Rooms atuais
@@ -329,8 +329,9 @@ Regras atuais:
 ```text
 frontend
   -> io(`${NEXT_PUBLIC_API_URL}/operations`, {
-       transports: ['websocket'],
-       upgrade: false,
+       transports: ['websocket', 'polling'],
+       upgrade: true,
+       randomizationFactor: 0.5,
        withCredentials: true
      })
   -> gateway valida:
@@ -345,6 +346,8 @@ frontend
        - operations.error
   -> ao reconectar, o cliente agenda refresh do baseline HTTP
 ```
+
+Em producao, o gateway exige `REDIS_URL` valido para nao operar com adapter em memoria em topologia multi-instancia.
 
 ### 4.5 Garantias e limites
 
@@ -489,8 +492,9 @@ async function createOrder(payload: CreateOrderPayload) {
 
 ```typescript
 const socket = io(`${apiBaseUrl}/operations`, {
-  transports: ['websocket'],
-  upgrade: false,
+  transports: ['websocket', 'polling'],
+  upgrade: true,
+  randomizationFactor: 0.5,
   withCredentials: true,
 })
 

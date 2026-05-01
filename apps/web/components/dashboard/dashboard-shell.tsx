@@ -217,7 +217,7 @@ export function DashboardShell({
     navigateToTab,
   } = useDashboardNavigation({ basePath, initialSection, initialSettingsSection, initialTab, isStaffUser })
 
-  const { consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
+  const { employeesQuery, financeQuery } = useDashboardScopedQueries({
     userId: currentUser?.userId,
     isOwner: currentUser?.role === 'OWNER',
     section: activeSection,

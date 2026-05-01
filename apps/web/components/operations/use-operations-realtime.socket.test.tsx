@@ -3,6 +3,7 @@ import { act, render, waitFor } from '@testing-library/react'
 import { useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
+import type * as ApiModule from '@/lib/api'
 import { USER_NOTIFICATION_PREFERENCES_QUERY_KEY } from '@/lib/api'
 import { getOperationsPerformanceEvents, resetOperationsPerformanceEvents } from '@/lib/operations/operations-performance-diagnostics'
 import { useOperationsRealtime } from './use-operations-realtime'
@@ -63,7 +64,7 @@ const { fetchUserNotificationPreferencesMock } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
   return {
     ...actual,
     fetchUserNotificationPreferences: fetchUserNotificationPreferencesMock,
@@ -138,14 +139,15 @@ describe('useOperationsRealtime socket wiring', () => {
     ])
   })
 
-  it('abre o socket operacional apenas por websocket sem fallback para polling', () => {
+  it('abre o socket operacional com websocket, polling e upgrade habilitado', () => {
     render(<RealtimeHarness />)
 
     expect(ioMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        transports: ['websocket'],
-        upgrade: false,
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        randomizationFactor: 0.5,
         timeout: 8_000,
       }),
     )

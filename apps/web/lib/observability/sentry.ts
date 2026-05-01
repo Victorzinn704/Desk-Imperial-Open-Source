@@ -1,3 +1,5 @@
+import type * as SentryNext from '@sentry/nextjs'
+
 const DEFAULT_DEV_TRACE_SAMPLE_RATE = 1
 const DEFAULT_PROD_TRACE_SAMPLE_RATE = 0.1
 
@@ -15,7 +17,7 @@ type SentryRuntimeConfig = {
 
 let frontendSentryInitializationAttempted = false
 
-export function initializeFrontendSentry(Sentry: typeof import('@sentry/nextjs')) {
+export function initializeFrontendSentry(Sentry: typeof SentryNext) {
   if (frontendSentryInitializationAttempted) {
     return Sentry.getClient()
   }

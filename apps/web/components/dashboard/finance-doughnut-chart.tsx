@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import { Cell, Pie, PieChart } from 'recharts'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
 import { formatCompactCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { buildFinanceCategoryMixRows, type FinanceCategoryMixRow } from './finance-category-mix'

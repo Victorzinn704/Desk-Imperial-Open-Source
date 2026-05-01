@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: OSV-Scanner — lockfile + recursive
-        uses: google/osv-scanner-action@v2
+        uses: google/osv-scanner-action@v2.3.0
         with:
           scan-args: |-
             --lockfile=package-lock.json

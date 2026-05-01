@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, beforeEach, vi } from 'vitest'
+import type * as ApiModule from '@/lib/api'
 import { TelegramIntegrationCard } from './telegram-integration-card'
 import {
   createTelegramLinkToken,
@@ -14,7 +15,7 @@ import {
 } from '@/lib/api'
 
 vi.mock('@/lib/api', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api')
+  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
   return {
     ...actual,
     fetchTelegramIntegrationStatus: vi.fn(),
@@ -61,7 +62,7 @@ describe('TelegramIntegrationCard', () => {
     createLinkMock.mockResolvedValue({
       token: 'abc',
       deeplink: 'https://t.me/Desk_Imperial_bot?start=abc',
-      expiresAt: '2026-05-01T10:00:00.000Z',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
       botUsername: 'Desk_Imperial_bot',
     } satisfies TelegramLinkTokenResponse)
 
