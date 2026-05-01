@@ -200,7 +200,7 @@ npm run test:load:ci
 - Testes unitários, de integração e E2E cobrindo auth, operations, orders, finance, notifications e segurança
 - Testes E2E com Playwright no frontend
 - Load tests com K6 (health, login web/API e cenário crítico com metas p95/p99)
-- CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
+- CI principal com gates de `quality`, `backend tests`, `backend e2e`, `frontend unit`, `frontend e2e`, `security`, `performance` e `build`
 - Workflow opcional de SonarQube pronto para auditoria estática contínua quando `SONAR_HOST_URL` e `SONAR_TOKEN` forem configurados
 - Scan local oficial já validado com Quality Gate verde e backlog por sprint em `docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md`
 
@@ -216,7 +216,7 @@ desk-imperial/
 ├── packages/
 │   ├── api-contract/ # Contrato OpenAPI versionado
 │   └── types/        # Contratos compartilhados API ↔ frontend
-├── docs/             # 70+ arquivos de documentação técnica
+├── docs/             # documentação técnica, operacional e histórica do projeto
 ├── infra/            # Docker Compose + scripts de deploy
 └── tests/load/k6/    # Load tests
 ```

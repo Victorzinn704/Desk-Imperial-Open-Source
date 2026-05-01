@@ -287,5 +287,5 @@
 ## Restrições conhecidas
 
 1. **Realtime** ainda está em recuperação incremental de topologia, consistência e ruído.
-2. **Service Worker** está limitado ao módulo `/app` — não cobre todas as rotas.
+2. **Service Worker** cobre hoje as superfícies `/app` e `/lite`, mas ainda não é uma política única para todas as rotas públicas e experimentais.
 3. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.
