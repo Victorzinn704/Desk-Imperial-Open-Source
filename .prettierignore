@@ -15,3 +15,4 @@ apps/api/prisma/migrations/
 .dual-graph/
 *.log
 CHANGELOG.md
+packages/api-contract/openapi.json
