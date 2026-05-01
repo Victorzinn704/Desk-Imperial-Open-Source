@@ -93,6 +93,6 @@ test.describe('Auth E2E - Chromium Smoke', () => {
     await page.getByRole('button', { name: 'Entrar no portal' }).click()
 
     await expect(page).toHaveURL(/\/login$/)
-    await expect(page.getByText(/inválid|invalid|erro|incorret/i)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Credenciais inválidas.', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 })

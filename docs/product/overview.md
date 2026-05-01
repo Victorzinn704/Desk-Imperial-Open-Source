@@ -1,139 +1,147 @@
-# O Produto — Desk Imperial
+# O Produto - Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01
-
----
-
-## O que é
-
-O Desk Imperial é um sistema de gestão comercial gratuito, de código aberto, feito para pequenos e médios comerciantes brasileiros.
-
-Ele nasceu para resolver um problema concreto: o pequeno comerciante não tem como pagar por um sistema de PDV profissional, então controla tudo em planilha — ou pior, de cabeça. Isso gera erros, perda de dinheiro e dificuldade de crescer.
-
-O Desk Imperial oferece o que esses comerciantes precisam, sem mensalidade.
+**Versao:** 1.1  
+**Ultima atualizacao:** 2026-05-01
 
 ---
 
-## Para quem é
+## O que e
 
-### Perfil 1 — O dono do negócio
+O Desk Imperial e um sistema de gestao comercial gratuito, de codigo aberto, feito para pequenos e medios comerciantes brasileiros.
 
-**Quem é:** dono de restaurante, lanchonete, bar, distribuidora ou qualquer comércio com atendimento presencial.
+Ele nasceu para resolver um problema concreto: o pequeno comerciante nao consegue pagar por um sistema de PDV profissional e acaba controlando tudo em planilha, caderno ou memoria. Isso gera erro, perda de dinheiro e trava o crescimento.
+
+O Desk Imperial oferece o que esses comerciantes realmente precisam, sem mensalidade.
+
+> Este documento descreve o estado atual conhecido do produto.  
+> O mirror aberto e sincronizado por waves, entao a documentacao publica pode cobrir trilhas mais novas antes do sync completo de toda a arvore de codigo.
+
+---
+
+## Para quem e
+
+### Perfil 1 - O dono do negocio
+
+**Quem e:** dono de restaurante, lanchonete, bar, distribuidora ou qualquer comercio com atendimento presencial.
 
 **O que ele precisa:**
 
 - Saber quanto entrou e quanto saiu no dia
-- Ver o que a equipe está fazendo em tempo real
+- Ver o que a equipe esta fazendo em tempo real
 - Saber quem vende mais e quem precisa melhorar
-- Calcular salário e comissão sem fazer conta na mão
-- Ter controle sem precisar estar no balcão o tempo todo
+- Calcular salario e comissao sem fazer conta na mao
+- Ter controle sem precisar estar no balcao o tempo todo
 
 **O que o sistema entrega para ele:**
 
-- Painel financeiro com receita, custo e margem por período
-- PDV ao vivo com visão de todas as comandas abertas
-- Ranking de vendedores e histórico por funcionário
-- Folha de pagamento automática (salário fixo + comissão sobre vendas)
-- Mapa de onde estão vindo os pedidos
+- Painel financeiro com receita, custo e margem por periodo
+- PDV ao vivo com visao de todas as comandas abertas
+- Ranking de vendedores e historico por funcionario
+- Folha de pagamento automatica (salario fixo + comissao sobre vendas)
+- Mapa de onde estao vindo os pedidos
 - Acesso via celular com painel executivo mobile
-- Admin PIN para proteger ações sensíveis
+- Admin PIN para proteger acoes sensiveis
+- Alertas e comandos de notificacao por Telegram no rollout principal
 
 ---
 
-### Perfil 2 — O funcionário
+### Perfil 2 - O funcionario
 
-**Quem é:** garçom, atendente, caixa — alguém que trabalha no balcão ou no salão.
+**Quem e:** garcom, atendente, caixa; alguem que trabalha no balcao ou no salao.
 
 **O que ele precisa:**
 
-- Anotar pedido rápido sem complicação
-- Ver o status do atendimento sem precisar perguntar para ninguém
-- Acompanhar o que está pronto para entregar
+- Anotar pedido rapido sem complicacao
+- Ver o status do atendimento sem precisar perguntar para ninguem
+- Acompanhar o que esta pronto para entregar
 
 **O que o sistema entrega para ele:**
 
 - PDV mobile com lista de produtos e abertura de comanda
-- Visão do kanban de atendimento em tempo real
+- Visao do kanban de atendimento em tempo real
 - Interface simples, sem precisar de treinamento longo
 
 ---
 
-### Perfil 3 — O desenvolvedor
+### Perfil 3 - O desenvolvedor
 
-**Quem é:** estudante, desenvolvedor júnior ou sênior interessado em contribuir, estudar ou usar como base.
+**Quem e:** estudante, desenvolvedor junior ou senior interessado em contribuir, estudar ou usar como base.
 
 **O que ele encontra aqui:**
 
-- Monorepo NestJS + Next.js com arquitetura real de produção
-- 16 módulos de domínio bem separados
-- Padrões de segurança: CSRF, cookies HttpOnly, rate limit, isolamento de workspace
-- 53+ testes cobrindo os módulos críticos
-- CI completo com 6 estágios
-- Código aberto com licença MIT
+- Monorepo NestJS + Next.js com arquitetura real de producao
+- Dominios operacionais, financeiros, auth, realtime e mobile
+- Padroes de seguranca: CSRF, cookies HttpOnly, rate limit, isolamento de workspace
+- Trilha publica de recovery do realtime e rollout de observabilidade
+- CI completo com gates de qualidade, seguranca, testes e build
+- Codigo aberto com licenca MIT
 
 ---
 
 ## Por que existe
 
-O projeto nasceu a partir de uma necessidade real: um comércio familiar precisava de controle e não havia uma opção gratuita e acessível.
+O projeto nasceu a partir de uma necessidade real: um comercio familiar precisava de controle e nao havia uma opcao gratuita e acessivel.
 
-Quando o criador começou a pesquisar, percebeu que o problema era maior. Muitos pequenos comerciantes brasileiros não têm acesso a sistemas de gestão porque são caros, complicados ou os dois ao mesmo tempo.
+Quando o criador comecou a pesquisar, percebeu que o problema era maior. Muitos pequenos comerciantes brasileiros nao tem acesso a sistemas de gestao porque eles sao caros, complicados ou os dois.
 
-A missão do Desk Imperial é simples: **tirar o comerciante brasileiro da planilha.**
+A missao do Desk Imperial e simples: **tirar o comerciante brasileiro da planilha.**
 
-Código aberto porque a transparência gera confiança. Gratuito porque é para quem precisa, não para quem pode pagar.
+Codigo aberto porque a transparencia gera confianca. Gratuito porque e para quem precisa, nao para quem pode pagar.
 
 ---
 
 ## O que o produto entrega hoje
 
-### Funcional e rodando em produção
+### Funcional e rodando em producao
 
-| Módulo                                | Status      |
-| ------------------------------------- | ----------- |
-| PDV / Comandas (kanban 4 colunas)     | ✅ Produção |
-| Operação em tempo real (Socket.IO)    | ✅ Produção |
-| Financeiro com KPIs por período       | ✅ Produção |
-| Folha de pagamento automática         | ✅ Produção |
-| Gestão de equipe e ranking            | ✅ Produção |
-| Calendário comercial                  | ✅ Produção |
-| Mapa de vendas por região             | ✅ Produção |
-| Export CSV                            | ✅ Produção |
-| Admin PIN com rate limit              | ✅ Produção |
-| Mobile dono                           | ✅ Produção |
-| Mobile funcionário                    | ✅ Produção |
-| Autenticação segura (CSRF + HttpOnly) | ✅ Produção |
-| Insight IA (Gemini)                   | ✅ Produção |
-| LGPD / consentimento                  | ✅ Produção |
+| Modulo                          | Status                |
+| ------------------------------- | --------------------- |
+| PDV / Comandas                  | Producao              |
+| Operacao em tempo real          | Producao              |
+| Financeiro com KPIs por periodo | Producao              |
+| Folha de pagamento automatica   | Producao              |
+| Gestao de equipe e ranking      | Producao              |
+| Calendario comercial            | Producao              |
+| Mapa de vendas por regiao       | Producao              |
+| Export CSV                      | Producao              |
+| Admin PIN com rate limit        | Producao              |
+| Mobile dono                     | Producao              |
+| Mobile funcionario              | Producao              |
+| Autenticacao segura             | Producao              |
+| Insight IA (Gemini)             | Producao              |
+| LGPD / consentimento            | Producao              |
+| Rollout Telegram empresarial    | Em expansao           |
+| Observabilidade com Sentry      | Em rollout por wave   |
+| Recovery do realtime            | Em execucao por waves |
 
-### Em evolução
+### Em evolucao
 
-| Módulo                             | Status                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| Import CSV de produtos             | ⚠️ Desativado (lógica existe, endpoint bloqueado) |
-| Monitoramento de erros em produção | ⚠️ Stack OSS em implantação progressiva           |
-| Cobertura de testes frontend       | ⚠️ Parcial                                        |
+| Trilha                             | Status                     |
+| ---------------------------------- | -------------------------- |
+| Importacao CSV de produtos         | Em revisao                 |
+| Monitoramento de erros em producao | Em implantacao progressiva |
+| Cobertura de testes frontend       | Parcial                    |
+| Sync completo do mirror aberto     | Incremental por wave       |
 
 ---
 
-## O que o produto não é
+## O que o produto nao e
 
-- **Não é um ERP completo.** O foco é o pequeno comerciante, não uma empresa com múltiplos departamentos.
-- **Não é um aplicativo de entrega.** Não tem integração com iFood, Rappi ou similares.
-- **Não tem plano pago.** É gratuito por decisão de produto, não por ser beta.
-- **Não é um produto acabado.** Está em evolução ativa. Funciona, mas há funcionalidades em desenvolvimento.
+- **Nao e um ERP completo.** O foco e o pequeno comerciante, nao uma empresa com multiplos departamentos.
+- **Nao e um aplicativo de entrega.** Nao tem integracao com iFood, Rappi ou similares.
+- **Nao tem plano pago.** E gratuito por decisao de produto, nao por ser beta.
+- **Nao e um produto acabado.** Esta em evolucao ativa. Funciona, mas ainda tem trilhas abertas de realtime, observabilidade e sync publico.
 
 ---
 
 ## Acesso
 
-- **Produção:** [app.deskimperial.online](https://app.deskimperial.online)
+- **Producao:** [app.deskimperial.online](https://app.deskimperial.online)
 - **API:** [api.deskimperial.online](https://api.deskimperial.online/api/health)
 - **Demo:** [docs/DEMO.md](../DEMO.md)
 
 ---
 
-## Licença
+## Licenca
 
 MIT. Use, modifique e distribua livremente. Veja [LICENSE](../../LICENSE).
