@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common'
 import Redis from 'ioredis'
 import { resolveRedisUrl } from '../utils/redis-url.util'
 
@@ -60,7 +60,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return null
     }
     try {
@@ -77,7 +77,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return
     }
     try {
@@ -89,7 +89,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async setIfAbsent(key: string, value: unknown, ttlSeconds: number): Promise<boolean> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return true
     }
     try {
@@ -103,7 +103,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async increment(key: string, ttlSeconds?: number): Promise<number> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return 0
     }
     try {
@@ -120,7 +120,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async del(key: string): Promise<void> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return
     }
     try {
@@ -132,7 +132,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async delByPrefix(prefix: string): Promise<void> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return
     }
     try {
@@ -155,7 +155,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async ping(): Promise<boolean> {
-    if (!this.enabled || !this.client) {
+    if (!(this.enabled && this.client)) {
       return false
     }
     try {

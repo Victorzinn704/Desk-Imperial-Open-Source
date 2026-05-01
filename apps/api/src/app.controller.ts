@@ -1,11 +1,11 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common'
+import { Controller, Get, HttpStatus, Inject, Res } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
 import type { Response } from 'express'
 import { AppService } from './app.service'
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(@Inject(AppService) private readonly appService: AppService) {}
 
   @SkipThrottle()
   @Get('health')

@@ -32,9 +32,9 @@ test.describe('Auth E2E - Chromium Smoke', () => {
     await page.getByRole('button', { name: 'Funcionário' }).click()
 
     await expect(page.getByText('Email da Empresa')).toBeVisible()
-    await expect(page.getByText('ID do Funcionário')).toBeVisible()
-    await expect(page.getByPlaceholder('VD-001')).toBeVisible()
-    await expect(page.getByPlaceholder('••••••')).toBeVisible()
+    await expect(page.getByText('ID de acesso', { exact: true })).toBeVisible()
+    await expect(page.getByPlaceholder('A7K2M9')).toBeVisible()
+    await expect(page.getByPlaceholder('••••••••')).toBeVisible()
   })
 
   test('TC-E2E-AUTH-003: bloqueia submit vazio e mantém o usuário na tela de login', async ({ page }) => {

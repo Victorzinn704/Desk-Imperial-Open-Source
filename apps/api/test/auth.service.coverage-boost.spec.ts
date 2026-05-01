@@ -209,6 +209,11 @@ function createSetup(options: SetupOptions = {}) {
     set: jest.fn(async () => {}),
     get: jest.fn(async (): Promise<any> => null),
     del: jest.fn(async () => {}),
+    isReady: jest.fn(() => true),
+  }
+
+  const realtimeSessions = {
+    disconnectSessions: jest.fn(),
   }
 
   const audit = _audit
@@ -218,6 +223,7 @@ function createSetup(options: SetupOptions = {}) {
     prisma as any,
     config as unknown as ConfigService,
     demo as any,
+    realtimeSessions as any,
     cache as any,
   )
   const emailVerificationService = new AuthEmailVerificationService(

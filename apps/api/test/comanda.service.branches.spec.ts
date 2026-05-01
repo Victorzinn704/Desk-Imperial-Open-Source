@@ -331,8 +331,8 @@ describe('ComandaService branch happy paths', () => {
       { includeSnapshot: false },
     )
 
-    expect(realtime.publishComandaUpdated).toHaveBeenCalledWith(
-      expect.any(Object),
+    expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(realtime.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         replaceKitchenItems: true,
       }),
@@ -412,8 +412,8 @@ describe('ComandaService branch happy paths', () => {
         ],
       }),
     )
-    expect(realtime.publishComandaUpdated).toHaveBeenCalledWith(
-      expect.any(Object),
+    expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(realtime.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         replaceKitchenItems: true,
       }),

@@ -21,6 +21,14 @@ test.describe('Navigation E2E - Chromium Smoke', () => {
 
   for (const route of protectedRoutes) {
     test(`TC-E2E-NAV-REDIRECT: ${route} redireciona para login sem sessão`, async ({ page }) => {
+      await page.route('**/api/v1/auth/me', async (handler) => {
+        await handler.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Sessao expirada.' }),
+        })
+      })
+
       await gotoWithConsent(page, route)
 
       await expect(page).toHaveURL(/\/login$/)

@@ -271,8 +271,9 @@ describe('ComandaService helpers', () => {
       },
     )
 
-    expect(operationsRealtimeService.publishComandaUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(operationsRealtimeService.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(operationsRealtimeService.publishComandaUpdated.mock.calls[0][0]).toBe(auth)
+    expect(operationsRealtimeService.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         status: 'READY',
@@ -322,18 +323,21 @@ describe('ComandaService helpers', () => {
       new Date('2026-04-01T00:00:00.000Z'),
     )
 
-    expect(operationsRealtimeService.publishComandaClosed).toHaveBeenCalledWith(
-      auth,
+    expect(operationsRealtimeService.publishComandaClosed).toHaveBeenCalledTimes(1)
+    expect(operationsRealtimeService.publishComandaClosed.mock.calls[0][0]).toBe(auth)
+    expect(operationsRealtimeService.publishComandaClosed.mock.calls[0][1]).toEqual(
       expect.objectContaining({ comandaId: 'comanda-1', status: 'CLOSED' }),
     )
     const closedPayload = operationsRealtimeService.publishComandaClosed.mock.calls[0][1]
     expect(closedPayload.businessDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-    expect(operationsRealtimeService.publishCashUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(operationsRealtimeService.publishCashUpdated).toHaveBeenCalledTimes(1)
+    expect(operationsRealtimeService.publishCashUpdated.mock.calls[0][0]).toBe(auth)
+    expect(operationsRealtimeService.publishCashUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({ cashSessionId: 'cash-1', status: 'OPEN' }),
     )
-    expect(operationsRealtimeService.publishCashClosureUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(operationsRealtimeService.publishCashClosureUpdated).toHaveBeenCalledTimes(1)
+    expect(operationsRealtimeService.publishCashClosureUpdated.mock.calls[0][0]).toBe(auth)
+    expect(operationsRealtimeService.publishCashClosureUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({ closureId: 'closure-1', status: 'CLOSED' }),
     )
   })

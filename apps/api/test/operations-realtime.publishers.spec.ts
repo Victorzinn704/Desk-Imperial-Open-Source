@@ -54,8 +54,9 @@ describe('Operations realtime publishers', () => {
       new Date(2026, 2, 30),
     )
 
-    expect(realtimeService.publishComandaOpened).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaOpened).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaOpened.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaOpened.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         mesaLabel: 'Mesa 01',
@@ -94,8 +95,9 @@ describe('Operations realtime publishers', () => {
       new Date(2026, 2, 30),
     )
 
-    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishKitchenItemQueued.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishKitchenItemQueued.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         itemId: 'item-1',
         comandaId: 'comanda-1',
@@ -135,8 +137,9 @@ describe('Operations realtime publishers', () => {
       },
     )
 
-    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         requiresKitchenRefresh: true,
@@ -179,8 +182,9 @@ describe('Operations realtime publishers', () => {
       },
     )
 
-    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         replaceKitchenItems: true,
@@ -228,8 +232,9 @@ describe('Operations realtime publishers', () => {
       new Date(2026, 2, 30),
     )
 
-    expect(realtimeService.publishComandaClosed).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaClosed).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaClosed.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaClosed.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         mesaLabel: 'Mesa 01',

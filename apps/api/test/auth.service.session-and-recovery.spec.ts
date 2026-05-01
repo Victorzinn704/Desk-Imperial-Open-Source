@@ -170,6 +170,11 @@ function createSetup(options: SetupOptions = {}) {
     get: jest.fn(async (): Promise<any> => null),
     del: jest.fn(async () => {}),
     delByPrefix: jest.fn(async () => {}),
+    isReady: jest.fn(() => true),
+  }
+
+  const realtimeSessions = {
+    disconnectSessions: jest.fn(),
   }
 
   const session = {
@@ -223,6 +228,7 @@ function createSetup(options: SetupOptions = {}) {
     prisma as any,
     config as unknown as ConfigService,
     demo as any,
+    realtimeSessions as any,
     cache as any,
   )
   const emailVerificationService = new AuthEmailVerificationService(
@@ -475,8 +481,10 @@ describe('AuthService session and recovery flows', () => {
     )
     expect(response.clearCookie).toHaveBeenCalledTimes(3)
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.logout.succeeded' }))
-    // invalidateWorkspaceDerivedCaches calls cache.del 5 times (finance, pillars, products x2, orders)
-    expect(cache.del).toHaveBeenCalledTimes(5)
+    expect(cache.del).toHaveBeenCalledTimes(8)
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:from-cache')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-logout')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:negative:from-cache')
   })
 
   it('getCurrentUser emite csrf cookie e retorna payload de sessao', async () => {
@@ -551,6 +559,8 @@ describe('AuthService session and recovery flows', () => {
     // refreshWorkspaceSessionCaches limpa as sessoes do workspace e o update invalida caches derivados
     expect(cache.del).toHaveBeenCalledWith('auth:session:token:profile-token')
     expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-profile')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:profile-other')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-other')
     expect(cache.del).toHaveBeenCalledWith('finance:summary:owner-1')
     expect(cache.del).toHaveBeenCalledWith('finance:pillars:owner-1')
   })
@@ -819,7 +829,10 @@ describe('AuthService session and recovery flows', () => {
       message: 'Senha redefinida com sucesso. Entre novamente para continuar.',
     })
     expect(prisma.$transaction).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    expect(cache.del).toHaveBeenCalledTimes(3)
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:token-hash-1')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-1')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:negative:token-hash-1')
     expect(rateLimit.clear).toHaveBeenCalledTimes(2)
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.password-reset.completed' }))
     expect(demo.closeGrantsForUser).toHaveBeenCalledWith('user-1', expect.any(Date))

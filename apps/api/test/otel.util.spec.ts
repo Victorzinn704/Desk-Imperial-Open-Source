@@ -1,6 +1,12 @@
 const mockDiagSetLogger = jest.fn()
 const mockGetNodeAutoInstrumentations = jest.fn(() => ['auto-instrumentations'])
 const mockResourceFromAttributes = jest.fn((attributes) => ({ attributes }))
+const mockSentryGetClient = jest.fn(() => null)
+const mockSentryValidateOpenTelemetrySetup = jest.fn()
+const mockSentryContextManager = jest.fn(() => ({ type: 'sentry-context-manager' }))
+const mockSentryPropagator = jest.fn(() => ({ type: 'sentry-propagator' }))
+const mockSentrySampler = jest.fn((client) => ({ client, type: 'sentry-sampler' }))
+const mockSentrySpanProcessor = jest.fn(() => ({ type: 'sentry-span-processor' }))
 
 const mockTraceExporter = jest.fn((options) => ({ kind: 'trace-exporter', options }))
 const mockMetricExporter = jest.fn((options) => ({ kind: 'metric-exporter', options }))
@@ -8,6 +14,7 @@ const mockLogExporter = jest.fn((options) => ({ kind: 'log-exporter', options })
 
 const mockBatchLogRecordProcessor = jest.fn((exporter) => ({ exporter, type: 'batch-log-processor' }))
 const mockPeriodicExportingMetricReader = jest.fn((options) => ({ ...options, type: 'metric-reader' }))
+const mockBatchSpanProcessor = jest.fn((exporter) => ({ exporter, type: 'batch-span-processor' }))
 
 const mockTraceIdRatioBasedSampler = jest.fn((rate) => ({ rate, type: 'ratio-sampler' }))
 const mockParentBasedSampler = jest.fn((options) => ({ ...options, type: 'parent-sampler' }))
@@ -61,6 +68,7 @@ jest.mock('@opentelemetry/sdk-metrics', () => ({
 }))
 
 jest.mock('@opentelemetry/sdk-trace-base', () => ({
+  BatchSpanProcessor: mockBatchSpanProcessor,
   ParentBasedSampler: mockParentBasedSampler,
   TraceIdRatioBasedSampler: mockTraceIdRatioBasedSampler,
 }))
@@ -69,6 +77,18 @@ jest.mock('@opentelemetry/semantic-conventions', () => ({
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT: 'deployment.environment.name',
   SEMRESATTRS_SERVICE_NAME: 'service.name',
   SEMRESATTRS_SERVICE_VERSION: 'service.version',
+}))
+
+jest.mock('@sentry/nestjs', () => ({
+  getClient: mockSentryGetClient,
+  validateOpenTelemetrySetup: mockSentryValidateOpenTelemetrySetup,
+  SentryContextManager: mockSentryContextManager,
+}))
+
+jest.mock('@sentry/opentelemetry', () => ({
+  SentryPropagator: mockSentryPropagator,
+  SentrySampler: mockSentrySampler,
+  SentrySpanProcessor: mockSentrySpanProcessor,
 }))
 
 function loadOtelModule() {
@@ -80,12 +100,19 @@ describe('otel util', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     delete process.env.NODE_ENV
+    mockSentryGetClient.mockReturnValue(null)
   })
 
   it('retorna false quando nenhum endpoint OTLP for informado', async () => {
     const { initializeApiOpenTelemetry } = loadOtelModule()
 
-    await expect(initializeApiOpenTelemetry({})).resolves.toBe(false)
+    await expect(initializeApiOpenTelemetry({})).resolves.toEqual({
+      enabled: false,
+      otlpLogsEnabled: false,
+      otlpMetricsEnabled: false,
+      otlpTracesEnabled: false,
+      sentryBridgeEnabled: false,
+    })
 
     expect(mockNodeSDK).not.toHaveBeenCalled()
     expect(mockNodeSdkStart).not.toHaveBeenCalled()
@@ -105,7 +132,13 @@ describe('otel util', () => {
         serviceVersion: '',
         environment: ' ',
       }),
-    ).resolves.toBe(true)
+    ).resolves.toEqual({
+      enabled: true,
+      otlpLogsEnabled: true,
+      otlpMetricsEnabled: true,
+      otlpTracesEnabled: true,
+      sentryBridgeEnabled: false,
+    })
 
     expect(mockDiagSetLogger).toHaveBeenCalledTimes(1)
     expect(mockResourceFromAttributes).toHaveBeenCalledWith({
@@ -157,13 +190,25 @@ describe('otel util', () => {
         serviceVersion: '2.0.0',
         environment: 'production',
       }),
-    ).resolves.toBe(true)
+    ).resolves.toEqual({
+      enabled: true,
+      otlpLogsEnabled: true,
+      otlpMetricsEnabled: true,
+      otlpTracesEnabled: true,
+      sentryBridgeEnabled: false,
+    })
 
     await expect(
       initializeApiOpenTelemetry({
         tracesEndpoint: 'https://ignored.example.com/v1/traces',
       }),
-    ).resolves.toBe(true)
+    ).resolves.toEqual({
+      enabled: true,
+      otlpLogsEnabled: true,
+      otlpMetricsEnabled: true,
+      otlpTracesEnabled: true,
+      sentryBridgeEnabled: false,
+    })
 
     expect(mockTraceExporter).toHaveBeenCalledWith(
       expect.objectContaining({

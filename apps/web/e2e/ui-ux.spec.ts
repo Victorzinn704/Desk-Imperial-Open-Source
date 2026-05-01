@@ -6,7 +6,7 @@ test.describe('UI UX E2E - Chromium Smoke', () => {
 
     await expect(page.getByRole('heading', { level: 1, name: 'Entre e comande seu comércio' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 2, name: 'Entre e comande seu comércio' })).toBeVisible()
-    await expect(page.getByText('Seu acesso seguro')).toBeVisible()
+    await expect(page.getByText('Seu acesso seguro').first()).toBeVisible()
   })
 
   test('TC-E2E-UI-002: login permanece utilizável em mobile', async ({ page }) => {

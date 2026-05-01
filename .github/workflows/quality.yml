@@ -61,6 +61,7 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
+          generate-prisma: 'true'
       - name: Lint API
         run: npm --workspace @partner/api run lint
       - name: TypeCheck API
@@ -139,19 +140,19 @@ jobs:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true
 
-      - name: Merge SARIFs
-        run: |
-          jq -s '{
-            version: .[0].version,
-            "$schema": .[0]["$schema"],
-            runs: [.[].runs[]] }' desk-imperial.sarif semgrep-auto.sarif > semgrep.sarif 2>/dev/null || cp desk-imperial.sarif semgrep.sarif
-
-      - name: Upload SARIF ao GitHub Security
+      - name: Upload SARIF custom ao GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: semgrep.sarif
-          category: semgrep
+          sarif_file: desk-imperial.sarif
+          category: semgrep-custom
+
+      - name: Upload SARIF auto ao GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-auto.sarif
+          category: semgrep-auto
 
 # ── Estágio 6: SCA — npm audit + OSV-Scanner + Trivy ─────────────────────────
   sca:
@@ -169,10 +170,10 @@ jobs:
         continue-on-error: true
 
       - name: OSV-Scanner
-        uses: google/osv-scanner-action@v2.3.0
-        with:
-          scan-args: |-
-            --lockfile=package-lock.json
+        run: |
+          docker pull ghcr.io/google/osv-scanner:latest
+          docker run --rm -v "${PWD}:/src" ghcr.io/google/osv-scanner:latest \
+            scan -L /src/package-lock.json --verbosity warn
         continue-on-error: true
 
       - name: Trivy — filesystem scan
@@ -231,12 +232,13 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
+          generate-prisma: 'true'
 
       - name: API — tests + coverage
-        run: npm --workspace @partner/api run test -- --coverage --passWithNoTests
+        run: npm --workspace @partner/api run test:coverage:sonar
 
       - name: Web — tests + coverage
-        run: npm --workspace @partner/web run test:coverage
+        run: npm --workspace @partner/web run test:coverage:sonar
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4

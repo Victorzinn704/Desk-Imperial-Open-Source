@@ -1,4 +1,4 @@
-const ACCENT_MARKS_PATTERN = /[\u0300-\u036f]/g
+const ACCENT_MARKS_PATTERN = /[\u0300-\u036f]/gu
 
 const DRINK_CATEGORY_KEYWORDS = [
   'cerveja',

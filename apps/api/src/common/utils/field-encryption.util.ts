@@ -61,7 +61,7 @@ export function decryptFieldValue(encryptedValue: string, rawKey: string, aad?: 
   const tagSegment = segments[3]
   const dataSegment = segments[4]
 
-  if (!ivSegment || !tagSegment || !dataSegment) {
+  if (!(ivSegment && tagSegment && dataSegment)) {
     throw new FieldEncryptionError('Payload criptografado incompleto.')
   }
 

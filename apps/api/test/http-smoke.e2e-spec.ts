@@ -150,7 +150,7 @@ describe('HTTP smoke (e2e)', () => {
       expect(cookies.some((value) => value.startsWith('session='))).toBe(true)
     })
 
-    it('accepts staff login payload with 6-digit PIN', async () => {
+    it('accepts staff login payload with 8-digit PIN', async () => {
       mockAuthService.login.mockImplementation(
         async (
           _dto: unknown,
@@ -177,7 +177,7 @@ describe('HTTP smoke (e2e)', () => {
           loginMode: 'STAFF',
           companyEmail: 'ceo@empresa.com',
           employeeCode: 'VD-001',
-          password: '123456',
+          password: '12345678',
         })
         .expect(201)
 

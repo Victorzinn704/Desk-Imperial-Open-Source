@@ -343,9 +343,21 @@ function buildService(
 
   const sessionService =
     overrides.session ??
-    new AuthSessionService(prisma, config, demo, {
-      disconnectSessions: jest.fn(),
-    } as any)
+    new AuthSessionService(
+      prisma,
+      config,
+      demo,
+      {
+        disconnectSessions: jest.fn(),
+      } as any,
+      {
+        get: jest.fn(async () => null),
+        set: jest.fn(async () => {}),
+        del: jest.fn(async () => {}),
+        delByPrefix: jest.fn(async () => {}),
+        isReady: jest.fn(() => true),
+      } as any,
+    )
   const emailVerificationService =
     overrides.emailVerification ?? new AuthEmailVerificationService(prisma, config, mailer, audit, rateLimit)
   const registrationService =
